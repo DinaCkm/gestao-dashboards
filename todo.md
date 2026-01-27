@@ -68,14 +68,14 @@
 - [ ] Mudar texto para "BEM VINDO AO ECOSSISTEMA DO BEM"
 
 ## Próximos Passos - Processamento de Dados
-- [ ] Implementar parser para SEBRAEACRE-Mentorias.xlsx (33 alunos, 493 registros)
-- [ ] Implementar parser para SEBRAEACRE-Eventos.xlsx (791 registros)
-- [ ] Implementar parser para BS2SEBRAETO-Tutorias.xlsx (50 alunos, 403 registros)
-- [ ] Implementar parser para BS2SEBRAETO-Eventos.xlsx (861 registros)
-- [ ] Implementar parser para EMBRAPII-Mentorias.xlsx (16 alunos, 130 registros)
-- [ ] Implementar parser para EMBRAPII-Eventos.xlsx (269 registros)
+- [x] Implementar parser para SEBRAEACRE-Mentorias.xlsx (33 alunos, 493 registros)
+- [ ] Implementar parser para SEBRAEACRE-Eventos.xlsx (791 registros) - formato diferente
+- [x] Implementar parser para BS2SEBRAETO-Tutorias.xlsx (50 alunos, 403 registros)
+- [ ] Implementar parser para BS2SEBRAETO-Eventos.xlsx (861 registros) - formato diferente
+- [x] Implementar parser para EMBRAPII-Mentorias.xlsx (16 alunos, 130 registros)
+- [ ] Implementar parser para EMBRAPII-Eventos.xlsx (269 registros) - formato diferente
 - [ ] Implementar parser para relatorio-de-performance.xlsx (34 colunas)
-- [ ] Cruzar dados usando Id Usuário como chave principal
+- [x] Cruzar dados usando Id Usuário como chave principal
 
 ## Cálculo dos 5 Indicadores (20% cada)
 - [x] Indicador 1: Participação Mentorias (coluna "Mentoria" - Presente/Ausente)
@@ -94,3 +94,7 @@
 
 ## Interface
 - [x] Logo temporariamente removido (aguardando novo logo do usuário)
+
+## Importação de Dados
+- [x] Importar dados das 7 planilhas para o banco de dados (99 alunos, 1014 sessões de mentoria)
+- [x] Verificar dashboards com dados reais
