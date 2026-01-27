@@ -6,7 +6,8 @@ import {
   PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   Legend
 } from "recharts";
-import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, ArrowLeft } from "lucide-react";
+import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, ArrowLeft, HelpCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Link, useParams } from "wouter";
@@ -342,8 +343,100 @@ export default function DashboardEmpresa() {
         {/* Lista de Alunos */}
         <Card>
           <CardHeader>
-            <CardTitle>Alunos da Empresa</CardTitle>
-            <CardDescription>Ordenados por nota (maior para menor)</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Alunos da Empresa</CardTitle>
+                <CardDescription>Ordenados por nota (maior para menor)</CardDescription>
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <HelpCircle className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <HelpCircle className="h-5 w-5 text-primary" />
+                      Como a Nota Final é Calculada?
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 text-sm">
+                    <p className="text-muted-foreground">
+                      A nota final de cada aluno é calculada com base em <strong>5 indicadores</strong>, cada um com peso de <strong>20%</strong>:
+                    </p>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                        <span className="font-bold text-blue-600">1.</span>
+                        <div>
+                          <p className="font-medium">Participação nas Mentorias</p>
+                          <p className="text-xs text-muted-foreground">Fonte: Planilhas de Mentorias (coluna "Mentoria" - Presente/Ausente)</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                        <span className="font-bold text-green-600">2.</span>
+                        <div>
+                          <p className="font-medium">Atividades Práticas</p>
+                          <p className="text-xs text-muted-foreground">Fonte: Planilhas de Mentorias (coluna "Atividade proposta" - Entregue/Não entregue)</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg">
+                        <span className="font-bold text-yellow-600">3.</span>
+                        <div>
+                          <p className="font-medium">Engajamento</p>
+                          <p className="text-xs text-muted-foreground">Fonte: Planilhas de Mentorias (coluna "Evolução/Engajamento" - nota 1 a 5)</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                        <span className="font-bold text-purple-600">4.</span>
+                        <div>
+                          <p className="font-medium">Performance de Competências</p>
+                          <p className="text-xs text-muted-foreground">Fonte: Relatório de Performance (notas das competências ≥ 7 = aprovado)</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg">
+                        <span className="font-bold text-orange-600">5.</span>
+                        <div>
+                          <p className="font-medium">Participação em Eventos</p>
+                          <p className="text-xs text-muted-foreground">Fonte: Planilhas de Eventos (coluna "Status Presença" - Presente/Ausente)</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="border-t pt-4">
+                      <p className="font-medium mb-2">Classificação por Estágio:</p>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-green-600"></span>
+                          <span><strong>Excelência:</strong> 9.0 - 10.0</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-blue-600"></span>
+                          <span><strong>Avançado:</strong> 7.0 - 8.9</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+                          <span><strong>Intermediário:</strong> 5.0 - 6.9</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+                          <span><strong>Básico:</strong> 3.0 - 4.9</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                          <span><strong>Inicial:</strong> 0.0 - 2.9</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
