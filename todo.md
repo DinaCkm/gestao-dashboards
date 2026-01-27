@@ -98,3 +98,11 @@
 ## Importação de Dados
 - [x] Importar dados das 7 planilhas para o banco de dados (99 alunos, 1014 sessões de mentoria)
 - [x] Verificar dashboards com dados reais
+
+## Visão do Mentor
+- [x] Criar dashboard do mentor com estatísticas de mentorias
+- [x] Mostrar quantidade de mentorias por empresa
+- [x] Exibir datas das mentorias realizadas
+- [x] Listar alunos avaliados pelo mentor
+- [x] Importar 13 mentores das planilhas
+- [x] Associar 1.014 sessões aos mentores corretos

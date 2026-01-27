@@ -34,7 +34,8 @@ import {
   Settings,
   FileText,
   Calculator,
-  User
+  User,
+  UserCheck
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -53,6 +54,7 @@ const allMenuItems: MenuItem[] = [
   { icon: Upload, label: "Upload de Planilhas", path: "/upload", roles: ["admin", "manager"] },
   { icon: BarChart3, label: "Visão Geral", path: "/dashboard/visao-geral", roles: ["admin"] },
   { icon: Building2, label: "Por Empresa", path: "/dashboard/admin", roles: ["admin"] },
+  { icon: UserCheck, label: "Visão do Mentor", path: "/dashboard/mentor", roles: ["admin", "manager"] },
   { icon: Building2, label: "Dashboard Gerencial", path: "/dashboard/gerencial", roles: ["admin", "manager"] },
   { icon: User, label: "Meu Dashboard", path: "/dashboard/individual", roles: ["admin", "manager", "user"] },
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager", "user"] },

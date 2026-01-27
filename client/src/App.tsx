@@ -18,6 +18,7 @@ import Formulas from "./pages/Formulas";
 import History from "./pages/History";
 import DashboardVisaoGeral from "./pages/DashboardVisaoGeral";
 import DashboardEmpresa from "./pages/DashboardEmpresa";
+import DashboardMentor from "./pages/DashboardMentor";
 
 function Router() {
   return (
@@ -34,6 +35,7 @@ function Router() {
       <Route path={"/historico"} component={History} />
       <Route path={"/dashboard/visao-geral"} component={DashboardVisaoGeral} />
       <Route path={"/dashboard/empresa/:codigo"} component={DashboardEmpresa} />
+      <Route path={"/dashboard/mentor"} component={DashboardMentor} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

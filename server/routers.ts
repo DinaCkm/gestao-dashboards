@@ -613,6 +613,61 @@ export const appRouter = router({
       return programs.map(p => ({ id: p.id, nome: p.name, codigo: p.code }));
     }),
   }),
+
+  // Mentor/Consultor routes
+  mentor: router({
+    // Lista todos os mentores
+    list: protectedProcedure.query(async () => {
+      return await db.getConsultors();
+    }),
+
+    // Detalhes de um mentor específico
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const consultor = await db.getConsultorById(input.id);
+        if (!consultor) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Mentor não encontrado' });
+        }
+        return consultor;
+      }),
+
+    // Estatísticas completas de um mentor
+    stats: protectedProcedure
+      .input(z.object({ consultorId: z.number() }))
+      .query(async ({ input }) => {
+        const stats = await db.getConsultorStats(input.consultorId);
+        if (!stats) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Estatísticas não encontradas' });
+        }
+        return stats;
+      }),
+
+    // Dashboard consolidado de todos os mentores
+    dashboardGeral: managerProcedure.query(async () => {
+      const consultors = await db.getConsultors();
+      const allStats = [];
+      
+      for (const consultor of consultors) {
+        const stats = await db.getConsultorStats(consultor.id);
+        if (stats) {
+          allStats.push({
+            id: consultor.id,
+            nome: consultor.name,
+            totalMentorias: stats.totalMentorias,
+            totalAlunos: stats.totalAlunos,
+            totalEmpresas: stats.totalEmpresas,
+            porEmpresa: stats.porEmpresa
+          });
+        }
+      }
+      
+      return {
+        totalMentores: consultors.length,
+        mentores: allStats.sort((a, b) => b.totalMentorias - a.totalMentorias)
+      };
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

@@ -8,7 +8,8 @@ import {
   calculationFormulas, InsertCalculationFormula, CalculationFormula,
   processedData, InsertProcessedData, ProcessedData,
   dashboardMetrics, InsertDashboardMetric, DashboardMetric,
-  reports, InsertReport, Report
+  reports, InsertReport, Report,
+  consultors, Consultor, InsertConsultor
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -392,7 +393,7 @@ export async function getSystemStats() {
 
 
 // ============ PROGRAM FUNCTIONS ============
-import { programs, InsertProgram, Program, alunos, InsertAluno, Aluno, turmas, InsertTurma, Turma, mentoringSessions, InsertMentoringSession, MentoringSession, events, InsertEvent, Event, eventParticipation, InsertEventParticipation, EventParticipation, consultors, InsertConsultor, Consultor, trilhas, InsertTrilha, Trilha } from "../drizzle/schema";
+import { programs, InsertProgram, Program, alunos, InsertAluno, Aluno, turmas, InsertTurma, Turma, mentoringSessions, InsertMentoringSession, MentoringSession, events, InsertEvent, Event, eventParticipation, InsertEventParticipation, EventParticipation, trilhas, InsertTrilha, Trilha } from "../drizzle/schema";
 
 export async function getPrograms(): Promise<Program[]> {
   const db = await getDb();
@@ -626,4 +627,110 @@ export async function getProgramStats() {
   }
   
   return stats;
+}
+
+
+// ============ MENTOR/CONSULTOR DASHBOARD FUNCTIONS ============
+export async function getConsultors(): Promise<Consultor[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(consultors).orderBy(consultors.name);
+}
+
+export async function getConsultorById(id: number): Promise<Consultor | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(consultors).where(eq(consultors.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getConsultorByName(name: string): Promise<Consultor | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(consultors).where(eq(consultors.name, name)).limit(1);
+  return result[0];
+}
+
+export async function getMentoringSessionsByConsultor(consultorId: number): Promise<MentoringSession[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(mentoringSessions).where(eq(mentoringSessions.consultorId, consultorId));
+}
+
+export async function getConsultorStats(consultorId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Get all sessions for this consultor
+  const sessions = await getMentoringSessionsByConsultor(consultorId);
+  
+  // Get unique alunos
+  const alunoIds = Array.from(new Set(sessions.map(s => s.alunoId)));
+  const alunosList = await getAlunos();
+  const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+  
+  // Get programs
+  const programsList = await getPrograms();
+  const programMap = new Map(programsList.map(p => [p.id, p]));
+  
+  // Calculate stats per program
+  const statsByProgram: Record<string, { mentorias: number; alunos: Set<number>; datas: Set<string> }> = {};
+  
+  for (const session of sessions) {
+    const aluno = alunoMap.get(session.alunoId);
+    if (!aluno) continue;
+    
+    const program = aluno.programId ? programMap.get(aluno.programId) : null;
+    const programName = program?.name || 'Sem Programa';
+    
+    if (!statsByProgram[programName]) {
+      statsByProgram[programName] = { mentorias: 0, alunos: new Set(), datas: new Set() };
+    }
+    
+    statsByProgram[programName].mentorias++;
+    statsByProgram[programName].alunos.add(session.alunoId);
+    if (session.sessionDate) {
+      statsByProgram[programName].datas.add(String(session.sessionDate));
+    }
+  }
+  
+  // Get aluno details
+  const alunosAtendidos = alunoIds.map(id => {
+    const aluno = alunoMap.get(id);
+    if (!aluno) return null;
+    const program = aluno.programId ? programMap.get(aluno.programId) : null;
+    const alunoSessions = sessions.filter(s => s.alunoId === id);
+    return {
+      id: aluno.id,
+      nome: aluno.name,
+      empresa: program?.name || 'Sem Programa',
+      totalMentorias: alunoSessions.length,
+      ultimaMentoria: alunoSessions.length > 0 ? alunoSessions[alunoSessions.length - 1].sessionDate : null
+    };
+  }).filter(Boolean);
+  
+  return {
+    totalMentorias: sessions.length,
+    totalAlunos: alunoIds.length,
+    totalEmpresas: Object.keys(statsByProgram).length,
+    porEmpresa: Object.entries(statsByProgram).map(([empresa, stats]) => ({
+      empresa,
+      mentorias: stats.mentorias,
+      alunos: stats.alunos.size,
+      datas: Array.from(stats.datas).sort()
+    })),
+    alunosAtendidos,
+    sessoes: sessions.map(s => {
+      const aluno = alunoMap.get(s.alunoId);
+      const program = aluno?.programId ? programMap.get(aluno.programId) : null;
+      return {
+        id: s.id,
+        data: s.sessionDate,
+        aluno: aluno?.name || 'Desconhecido',
+        empresa: program?.name || 'Sem Programa',
+        presenca: s.presence,
+        engajamento: s.engagementScore
+      };
+    })
+  };
 }
