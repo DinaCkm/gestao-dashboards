@@ -164,3 +164,4 @@
 - [x] Corrigir programId null nos alunos (associados via turmaId)
 - [ ] Corrigir erro NotFoundError na página Visão Geral ao clicar nos cards de empresas (erro de Portal/removeChild)
 - [x] Adicionar popup/tooltip de ajuda explicando origem dos dados e cálculo das notas nos dashboards
+- [x] Substituir card 'Alunos Excelência' por 'Melhor Nota' (maior nota atual) e adicionar 'Meta' (expectativa 9.0) ao lado

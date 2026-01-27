@@ -91,6 +91,12 @@ export default function DashboardEmpresa() {
 
   const { visaoEmpresa, porTurma, alunos } = data;
 
+  // Calcular melhor nota e nome do aluno
+  const melhorAluno = alunos.length > 0 
+    ? alunos.reduce((best, current) => current.notaFinal > best.notaFinal ? current : best, alunos[0])
+    : null;
+  const META_EXCELENCIA = 9.0;
+
   // Dados para o gráfico de radar dos indicadores
   const radarData = [
     { indicador: 'Mentorias', valor: visaoEmpresa.mediaParticipacaoMentorias },
@@ -150,15 +156,18 @@ export default function DashboardEmpresa() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Alunos Excelência</CardTitle>
+              <CardTitle className="text-sm font-medium">Melhor Nota</CardTitle>
               <Award className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{visaoEmpresa.alunosExcelencia}</div>
-              <p className="text-xs text-muted-foreground">
-                {visaoEmpresa.totalAlunos > 0 
-                  ? `${((visaoEmpresa.alunosExcelencia / visaoEmpresa.totalAlunos) * 100).toFixed(0)}% do total`
-                  : '0% do total'}
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-green-600">
+                  {melhorAluno ? melhorAluno.notaFinal.toFixed(1) : '0.0'}
+                </span>
+                <span className="text-sm text-muted-foreground">/ {META_EXCELENCIA.toFixed(1)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground truncate" title={melhorAluno?.nomeAluno}>
+                {melhorAluno ? melhorAluno.nomeAluno : 'Nenhum aluno'}
               </p>
             </CardContent>
           </Card>
