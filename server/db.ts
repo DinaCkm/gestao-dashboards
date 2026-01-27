@@ -183,12 +183,12 @@ export async function updateUploadBatchStatus(id: number, status: "pending" | "p
 
 export async function getLatestBatch() {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return null;
   const result = await db.select().from(uploadBatches)
     .where(eq(uploadBatches.status, "completed"))
     .orderBy(desc(uploadBatches.createdAt))
     .limit(1);
-  return result[0];
+  return result[0] ?? null;
 }
 
 // ============ UPLOADED FILES FUNCTIONS ============

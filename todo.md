@@ -47,3 +47,6 @@
   - Participação em Eventos
 - [x] Estágios de desenvolvimento (Excelência, Avançado, Intermediário, Básico, Inicial)
 - [x] Visualização por programa (SEBRAE Acre, SEBRAE TO, EMBRAPII)
+
+## Bugs Reportados
+- [x] Erro: dashboard.latestBatch retornando undefined - Query data cannot be undefined (corrigido: retornando null em vez de undefined)
