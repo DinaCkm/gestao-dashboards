@@ -19,6 +19,7 @@ import History from "./pages/History";
 import DashboardVisaoGeral from "./pages/DashboardVisaoGeral";
 import DashboardEmpresa from "./pages/DashboardEmpresa";
 import DashboardMentor from "./pages/DashboardMentor";
+import AdminCadastros from "./pages/AdminCadastros";
 
 function Router() {
   return (
@@ -37,6 +38,7 @@ function Router() {
       <Route path={"/dashboard/empresa"} component={DashboardEmpresa} />
       <Route path={"/dashboard/empresa/:codigo"} component={DashboardEmpresa} />
       <Route path={"/dashboard/mentor"} component={DashboardMentor} />
+      <Route path={"/cadastros"} component={AdminCadastros} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

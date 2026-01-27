@@ -751,3 +751,301 @@ export async function getConsultorStats(consultorId: number) {
     })
   };
 }
+
+
+// ============ CUSTOM LOGIN FUNCTIONS ============
+
+// Login para Alunos (Id Usuário + Email)
+export async function authenticateAluno(externalId: string, email: string): Promise<{ success: boolean; user?: any; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+  
+  const [aluno] = await db.select()
+    .from(alunos)
+    .where(and(
+      eq(alunos.externalId, externalId),
+      eq(alunos.email, email.toLowerCase()),
+      eq(alunos.canLogin, 1),
+      eq(alunos.isActive, 1)
+    ))
+    .limit(1);
+  
+  if (!aluno) {
+    return { success: false, message: "ID ou email inválido. Verifique suas credenciais." };
+  }
+  
+  return { 
+    success: true, 
+    user: {
+      id: aluno.id,
+      type: 'aluno',
+      name: aluno.name,
+      email: aluno.email,
+      externalId: aluno.externalId,
+      turmaId: aluno.turmaId,
+      programId: aluno.programId,
+      role: 'user'
+    }
+  };
+}
+
+// Login para Mentores (Email + Id criado pelo admin)
+export async function authenticateMentor(loginId: string, email: string): Promise<{ success: boolean; user?: any; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+  
+  const [consultor] = await db.select()
+    .from(consultors)
+    .where(and(
+      eq(consultors.loginId, loginId),
+      eq(consultors.email, email.toLowerCase()),
+      eq(consultors.role, 'mentor'),
+      eq(consultors.canLogin, 1),
+      eq(consultors.isActive, 1)
+    ))
+    .limit(1);
+  
+  if (!consultor) {
+    return { success: false, message: "ID ou email inválido. Verifique suas credenciais." };
+  }
+  
+  return { 
+    success: true, 
+    user: {
+      id: consultor.id,
+      type: 'mentor',
+      name: consultor.name,
+      email: consultor.email,
+      loginId: consultor.loginId,
+      programId: consultor.programId,
+      role: 'manager'
+    }
+  };
+}
+
+// Login para Gerentes (Email + Id criado pelo admin)
+export async function authenticateGerente(loginId: string, email: string): Promise<{ success: boolean; user?: any; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+  
+  const [consultor] = await db.select()
+    .from(consultors)
+    .where(and(
+      eq(consultors.loginId, loginId),
+      eq(consultors.email, email.toLowerCase()),
+      eq(consultors.role, 'gerente'),
+      eq(consultors.canLogin, 1),
+      eq(consultors.isActive, 1)
+    ))
+    .limit(1);
+  
+  if (!consultor) {
+    return { success: false, message: "ID ou email inválido. Verifique suas credenciais." };
+  }
+  
+  return { 
+    success: true, 
+    user: {
+      id: consultor.id,
+      type: 'gerente',
+      name: consultor.name,
+      email: consultor.email,
+      loginId: consultor.loginId,
+      managedProgramId: consultor.managedProgramId,
+      role: 'manager'
+    }
+  };
+}
+
+// Criar ou atualizar acesso de mentor
+export async function createMentorAccess(consultorId: number, loginId: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.update(consultors)
+    .set({ loginId, canLogin: 1 })
+    .where(eq(consultors.id, consultorId));
+  
+  return true;
+}
+
+// Criar ou atualizar acesso de gerente
+export async function createGerenteAccess(consultorId: number, loginId: string, managedProgramId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.update(consultors)
+    .set({ loginId, canLogin: 1, role: 'gerente', managedProgramId })
+    .where(eq(consultors.id, consultorId));
+  
+  return true;
+}
+
+// Listar mentores com acesso
+export async function getMentorsWithAccess(): Promise<Consultor[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select()
+    .from(consultors)
+    .where(and(
+      eq(consultors.role, 'mentor'),
+      eq(consultors.canLogin, 1)
+    ));
+}
+
+// Listar gerentes com acesso
+export async function getGerentesWithAccess(): Promise<Consultor[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select()
+    .from(consultors)
+    .where(and(
+      eq(consultors.role, 'gerente'),
+      eq(consultors.canLogin, 1)
+    ));
+}
+
+// Atualizar email do aluno
+export async function updateAlunoEmail(alunoId: number, email: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.update(alunos)
+    .set({ email: email.toLowerCase() })
+    .where(eq(alunos.id, alunoId));
+  
+  return true;
+}
+
+
+// ============ ADMIN CRUD FUNCTIONS ============
+
+// Programs/Empresas
+export async function getAllPrograms() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(programs).orderBy(programs.name);
+}
+
+export async function createProgram(data: { name: string; code: string; description?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+  
+  const [result] = await db.insert(programs).values({
+    name: data.name,
+    code: data.code,
+    description: data.description || null,
+    isActive: 1,
+  });
+  
+  return { id: result.insertId, ...data };
+}
+
+// Mentores
+export async function getAllMentores() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select()
+    .from(consultors)
+    .where(eq(consultors.role, 'mentor'))
+    .orderBy(consultors.name);
+}
+
+export async function createMentor(data: { name: string; email: string; loginId?: string; programId?: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+  
+  const [result] = await db.insert(consultors).values({
+    name: data.name,
+    email: data.email.toLowerCase(),
+    loginId: data.loginId || null,
+    programId: data.programId || null,
+    role: 'mentor',
+    canLogin: data.loginId ? 1 : 0,
+    isActive: 1,
+  });
+  
+  return { id: result.insertId, ...data };
+}
+
+// Gerentes
+export async function getAllGerentes() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select()
+    .from(consultors)
+    .where(eq(consultors.role, 'gerente'))
+    .orderBy(consultors.name);
+}
+
+export async function createGerente(data: { name: string; email: string; loginId?: string; managedProgramId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+  
+  const [result] = await db.insert(consultors).values({
+    name: data.name,
+    email: data.email.toLowerCase(),
+    loginId: data.loginId || null,
+    managedProgramId: data.managedProgramId,
+    role: 'gerente',
+    canLogin: data.loginId ? 1 : 0,
+    isActive: 1,
+  });
+  
+  return { id: result.insertId, ...data };
+}
+
+// Update consultor access
+export async function updateConsultorAccess(consultorId: number, loginId: string | null, canLogin: boolean, role: 'mentor' | 'gerente') {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+  
+  await db.update(consultors)
+    .set({ 
+      loginId: loginId,
+      canLogin: canLogin ? 1 : 0,
+      role: role
+    })
+    .where(eq(consultors.id, consultorId));
+  
+  return { success: true };
+}
+
+// Alunos
+export async function getAllAlunosForAdmin() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select()
+    .from(alunos)
+    .orderBy(alunos.name)
+    .limit(500);
+}
+
+export async function createAluno(data: { name: string; email: string; externalId: string; programId?: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+  
+  // Verificar se já existe aluno com este externalId
+  const [existing] = await db.select()
+    .from(alunos)
+    .where(eq(alunos.externalId, data.externalId))
+    .limit(1);
+  
+  if (existing) {
+    throw new Error(`Já existe um aluno com o ID ${data.externalId}`);
+  }
+  
+  const [result] = await db.insert(alunos).values({
+    name: data.name,
+    email: data.email.toLowerCase(),
+    externalId: data.externalId,
+    programId: data.programId || null,
+    canLogin: 1,
+    isActive: 1,
+  });
+  
+  return { id: result.insertId, ...data };
+}
+

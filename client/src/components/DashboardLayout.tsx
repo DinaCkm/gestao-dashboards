@@ -41,6 +41,7 @@ import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import CustomLogin from "./CustomLogin";
 
 type MenuItem = {
   icon: React.ElementType;
@@ -64,9 +65,11 @@ const allMenuItems: MenuItem[] = [
   // === ALUNO INDIVIDUAL ===
   { icon: User, label: "Meu Dashboard", path: "/dashboard/individual", roles: ["admin", "manager", "user"] },
   
+  // === CADASTROS ===
+  { icon: Users, label: "Cadastros", path: "/cadastros", roles: ["admin"] },
+  
   // === RELATÓRIOS E GESTÃO ===
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager", "user"] },
-  { icon: Users, label: "Usuários", path: "/usuarios", roles: ["admin"] },
   { icon: Building2, label: "Departamentos", path: "/departamentos", roles: ["admin"] },
   { icon: Calculator, label: "Fórmulas", path: "/formulas", roles: ["admin"] },
   { icon: FileSpreadsheet, label: "Histórico", path: "/historico", roles: ["admin", "manager"] },
@@ -98,41 +101,7 @@ export default function DashboardLayout({
   }
 
   if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen gradient-bg">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-          {/* Geometric decorations */}
-          <div className="absolute top-20 left-20 w-32 h-32 border border-secondary/20 rotate-45" />
-          <div className="absolute bottom-20 right-20 w-24 h-24 border border-primary/20 rotate-12" />
-          
-          <div className="flex flex-col items-center gap-6 relative z-10">
-            {/* Logo será adicionado aqui quando disponível */}
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
-              <span className="text-3xl font-bold text-white">B.E.M</span>
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight text-center text-gradient">
-              BEM VINDO AO
-            </h1>
-            <h2 className="text-2xl font-bold tracking-tight text-center">
-              <span className="text-primary">ECOSSISTEMA DO </span>
-              <span className="text-secondary">BEM</span>
-            </h2>
-            <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Acesse sua conta para visualizar dashboards, relatórios e gerenciar dados.
-            </p>
-          </div>
-          <Button
-            onClick={() => {
-              window.location.href = getLoginUrl();
-            }}
-            size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all glow-orange"
-          >
-            Entrar
-          </Button>
-        </div>
-      </div>
-    );
+    return <CustomLogin />;
   }
 
   return (

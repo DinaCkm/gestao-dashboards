@@ -113,3 +113,23 @@
 - [ ] Implementar visão do Gerente de Empresa (por empresa específica)
 - [ ] Ajustar visão do Aluno Individual
 - [x] Corrigir contadores da Home (agora mostra dados reais)
+
+## Sistema de Login Personalizado
+- [x] Atualizar schema do banco para suportar login por Id + Email
+- [x] Criar tela de login com campos Id Usuário e Email
+- [ ] Implementar autenticação para Alunos (Id Usuário + Email das planilhas)
+- [ ] Implementar autenticação para Mentores (Email + Id criado pelo admin)
+- [ ] Implementar autenticação para Gerentes (Email + Id criado pelo admin)
+- [x] Criar interface admin para cadastrar mentores com Id e Email
+- [x] Criar interface admin para cadastrar gerentes com Id e Email
+- [ ] Importar emails dos alunos do relatório de performance
+- [ ] Testar login para cada tipo de usuário
+
+## Páginas de Administração (Cadastros)
+- [x] Criar página de cadastro de Empresas (Programas)
+- [x] Alunos vêm das planilhas (não precisam de cadastro manual)
+- [x] Criar página de cadastro de Gerentes com Id e Email
+- [x] Criar página de cadastro de Mentores com Id e Email
+- [x] Adicionar rotas de API para CRUD de cada entidade
+- [x] 13 mentores importados das planilhas com botão "Ativar Acesso" entidade
+- [x] 13 mentores importados das planilhas com botão "Ativar Acesso"

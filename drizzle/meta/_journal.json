@@ -29,6 +29,13 @@
       "when": 1769543769095,
       "tag": "0003_little_leper_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1769552252357,
+      "tag": "0004_glossy_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

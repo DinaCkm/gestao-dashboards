@@ -35,6 +35,59 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    
+    // Login customizado para Alunos, Mentores e Gerentes
+    customLogin: publicProcedure
+      .input(z.object({
+        type: z.enum(["aluno", "mentor", "gerente"]),
+        id: z.string().min(1),
+        email: z.string().email()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        let result;
+        
+        switch (input.type) {
+          case "aluno":
+            result = await db.authenticateAluno(input.id, input.email);
+            break;
+          case "mentor":
+            result = await db.authenticateMentor(input.id, input.email);
+            break;
+          case "gerente":
+            result = await db.authenticateGerente(input.id, input.email);
+            break;
+          default:
+            return { success: false, message: "Tipo de login inválido" };
+        }
+        
+        if (!result.success) {
+          return { success: false, message: result.message };
+        }
+        
+        // Criar usuário no sistema se não existir e criar sessão
+        const openId = `custom_${input.type}_${result.user.id}`;
+        await db.upsertUser({
+          openId,
+          name: result.user.name,
+          email: result.user.email,
+          loginMethod: `custom_${input.type}`,
+          role: result.user.role as "user" | "admin" | "manager",
+          lastSignedIn: new Date(),
+        });
+        
+        // Usar o SDK para criar token de sessão
+        const { sdk } = await import("./_core/sdk");
+        const { ONE_YEAR_MS } = await import("@shared/const");
+        const token = await sdk.createSessionToken(openId, {
+          name: result.user.name || "",
+          expiresInMs: ONE_YEAR_MS,
+        });
+        
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        
+        return { success: true, user: result.user };
+      }),
   }),
 
   // User management
@@ -667,6 +720,92 @@ export const appRouter = router({
         mentores: allStats.sort((a, b) => b.totalMentorias - a.totalMentorias)
       };
     }),
+  }),
+
+  // Admin - Cadastros
+  admin: router({
+    // Empresas/Programas
+    listEmpresas: adminProcedure.query(async () => {
+      return await db.getAllPrograms();
+    }),
+    
+    createEmpresa: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        code: z.string().min(1),
+        description: z.string().optional()
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createProgram(input);
+      }),
+    
+    // Mentores
+    listMentores: adminProcedure.query(async () => {
+      return await db.getAllMentores();
+    }),
+    
+    createMentor: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        loginId: z.string().optional(),
+        programId: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createMentor(input);
+      }),
+    
+    updateAcessoMentor: adminProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        loginId: z.string().nullable(),
+        canLogin: z.boolean()
+      }))
+      .mutation(async ({ input }) => {
+        return await db.updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, 'mentor');
+      }),
+    
+    // Gerentes
+    listGerentes: adminProcedure.query(async () => {
+      return await db.getAllGerentes();
+    }),
+    
+    createGerente: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        loginId: z.string().optional(),
+        managedProgramId: z.number()
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createGerente(input);
+      }),
+    
+    updateAcessoGerente: adminProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        loginId: z.string().nullable(),
+        canLogin: z.boolean()
+      }))
+      .mutation(async ({ input }) => {
+        return await db.updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, 'gerente');
+      }),
+    
+    // Alunos
+    listAlunos: adminProcedure.query(async () => {
+      return await db.getAllAlunosForAdmin();
+    }),
+    
+    createAluno: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        externalId: z.string().min(1),
+        programId: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createAluno(input);
+      }),
   }),
 });
 

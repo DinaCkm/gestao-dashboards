@@ -41,10 +41,14 @@ export type InsertProgram = typeof programs.$inferInsert;
  */
 export const consultors = mysqlTable("consultors", {
   id: int("id").autoincrement().primaryKey(),
+  loginId: varchar("loginId", { length: 50 }), // ID criado pelo admin para login
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }),
   programId: int("programId"),
+  role: mysqlEnum("role", ["mentor", "gerente"]).default("mentor").notNull(),
+  managedProgramId: int("managedProgramId"), // Para gerentes: qual empresa gerencia
   isActive: int("isActive").default(1).notNull(),
+  canLogin: int("canLogin").default(0).notNull(), // 1 = pode fazer login
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -88,14 +92,15 @@ export type InsertTrilha = typeof trilhas.$inferInsert;
  */
 export const alunos = mysqlTable("alunos", {
   id: int("id").autoincrement().primaryKey(),
-  externalId: varchar("externalId", { length: 100 }),
+  externalId: varchar("externalId", { length: 100 }), // Id Usuário da planilha (usado para login)
   name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 320 }),
+  email: varchar("email", { length: 320 }), // Email para login
   turmaId: int("turmaId"),
   trilhaId: int("trilhaId"),
   consultorId: int("consultorId"),
   programId: int("programId"),
   isActive: int("isActive").default(1).notNull(),
+  canLogin: int("canLogin").default(1).notNull(), // 1 = pode fazer login
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
