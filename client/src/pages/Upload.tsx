@@ -203,14 +203,21 @@ export default function UploadPage() {
       const byteArray = new Uint8Array(byteNumbers);
       const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       
+      // Usar URL.createObjectURL com link temporário sem manipulação direta do DOM
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = result.filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = result.filename;
+      link.style.display = 'none';
+      
+      // Usar setTimeout para evitar conflitos com o React
+      setTimeout(() => {
+        link.click();
+        // Limpar URL após download
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 100);
+      }, 0);
       
       toast.success(`Modelo ${type} baixado com sucesso!`);
     } catch (error) {

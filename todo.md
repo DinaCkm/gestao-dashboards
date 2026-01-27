@@ -173,3 +173,6 @@
 - [x] Limitar histórico a 3 versões anteriores (excluir mais antigas automaticamente)
 - [x] Botão "Ver Histórico de Uploads" com diálogo mostrando arquivos anteriores
 - [x] Tooltips de ajuda explicando o formato esperado de cada modelo
+
+## Bug Reportado (27/01/2026) - Baixar Modelo
+- [x] Corrigir erro NotFoundError: Falha ao executar 'insertBefore' ao clicar em Baixar Modelo (corrigido: removida manipulação direta do DOM)
