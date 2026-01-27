@@ -129,7 +129,7 @@ export const appRouter = router({
         batchId: z.number(),
         fileName: z.string(),
         fileData: z.string(), // Base64 encoded
-        fileType: z.enum(["mentoria", "eventos", "alunos", "outro"])
+        fileType: z.enum(["sebraeacre_mentorias", "sebraeacre_eventos", "sebraeto_mentorias", "sebraeto_eventos", "embrapii_mentorias", "embrapii_eventos", "performance"])
       }))
       .mutation(async ({ ctx, input }) => {
         const buffer = Buffer.from(input.fileData, 'base64');

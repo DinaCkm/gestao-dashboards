@@ -186,7 +186,7 @@ export const uploadedFiles = mysqlTable("uploaded_files", {
   fileName: varchar("fileName", { length: 255 }).notNull(),
   fileKey: varchar("fileKey", { length: 512 }).notNull(),
   fileUrl: text("fileUrl").notNull(),
-  fileType: mysqlEnum("fileType", ["mentoria", "eventos", "alunos", "outro"]).default("mentoria").notNull(),
+  fileType: mysqlEnum("fileType", ["sebraeacre_mentorias", "sebraeacre_eventos", "sebraeto_mentorias", "sebraeto_eventos", "embrapii_mentorias", "embrapii_eventos", "performance"]).default("sebraeacre_mentorias").notNull(),
   fileSize: int("fileSize"),
   rowCount: int("rowCount"),
   columnCount: int("columnCount"),

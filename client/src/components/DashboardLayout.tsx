@@ -95,11 +95,10 @@ export default function DashboardLayout({
           <div className="absolute bottom-20 right-20 w-24 h-24 border border-primary/20 rotate-12" />
           
           <div className="flex flex-col items-center gap-6 relative z-10">
-            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center glow-orange">
-              <BarChart3 className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight text-center text-gradient">
-              Sistema de Gestão
+            <img src="/logo-bem.svg" alt="B.E.M." className="h-20 w-auto" />
+            <img src="/logo-bem-full.svg" alt="B.E.M." className="h-16 w-auto" />
+            <h1 className="text-2xl font-bold tracking-tight text-center text-gradient">
+              ECOSSISTEMA DO BEM
             </h1>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
               Acesse sua conta para visualizar dashboards, relatórios e gerenciar dados.
@@ -227,8 +226,9 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-bold tracking-tight truncate text-gradient">
-                    Gestão
+                  <img src="/logo-bem.svg" alt="B.E.M." className="h-8 w-auto" />
+                  <span className="font-bold tracking-tight truncate text-sidebar-foreground">
+                    ECOSSISTEMA DO BEM
                   </span>
                 </div>
               ) : null}

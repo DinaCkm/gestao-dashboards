@@ -16,13 +16,22 @@ import {
   Loader2,
   Users,
   Calendar,
-  BookOpen,
-  AlertCircle
+  BarChart3,
+  AlertCircle,
+  Building2
 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 
-type FileType = "mentoria" | "eventos" | "alunos" | "outro";
+// Tipos de arquivo específicos do sistema B.E.M.
+type FileType = 
+  | "sebraeacre_mentorias" 
+  | "sebraeacre_eventos" 
+  | "sebraeto_mentorias" 
+  | "sebraeto_eventos" 
+  | "embrapii_mentorias" 
+  | "embrapii_eventos" 
+  | "performance";
 
 type UploadedFileInfo = {
   name: string;
@@ -32,12 +41,88 @@ type UploadedFileInfo = {
   error?: string;
 };
 
-const FILE_TYPE_CONFIG: Record<FileType, { label: string; icon: typeof FileSpreadsheet; color: string }> = {
-  mentoria: { label: "Sessões de Mentoria", icon: Users, color: "text-primary" },
-  eventos: { label: "Participação em Eventos", icon: Calendar, color: "text-secondary" },
-  alunos: { label: "Cadastro de Alunos", icon: BookOpen, color: "text-chart-3" },
-  outro: { label: "Outros Dados", icon: FileSpreadsheet, color: "text-muted-foreground" }
+// Configuração dos 7 tipos de arquivos
+const FILE_TYPE_CONFIG: Record<FileType, { 
+  label: string; 
+  icon: typeof FileSpreadsheet; 
+  color: string;
+  empresa: string;
+  description: string;
+}> = {
+  sebraeacre_mentorias: { 
+    label: "SEBRAE ACRE - Mentorias", 
+    icon: Users, 
+    color: "text-primary",
+    empresa: "SEBRAE ACRE",
+    description: "Sessões de mentoria com presença, tarefas e engajamento"
+  },
+  sebraeacre_eventos: { 
+    label: "SEBRAE ACRE - Eventos", 
+    icon: Calendar, 
+    color: "text-primary",
+    empresa: "SEBRAE ACRE",
+    description: "Participação em webinars e eventos"
+  },
+  sebraeto_mentorias: { 
+    label: "SEBRAE TO - Mentorias", 
+    icon: Users, 
+    color: "text-secondary",
+    empresa: "SEBRAE TO",
+    description: "Sessões de mentoria com presença, tarefas e engajamento"
+  },
+  sebraeto_eventos: { 
+    label: "SEBRAE TO - Eventos", 
+    icon: Calendar, 
+    color: "text-secondary",
+    empresa: "SEBRAE TO",
+    description: "Participação em webinars e eventos"
+  },
+  embrapii_mentorias: { 
+    label: "EMBRAPII - Mentorias", 
+    icon: Users, 
+    color: "text-chart-3",
+    empresa: "EMBRAPII",
+    description: "Sessões de mentoria com presença, tarefas e engajamento"
+  },
+  embrapii_eventos: { 
+    label: "EMBRAPII - Eventos", 
+    icon: Calendar, 
+    color: "text-chart-3",
+    empresa: "EMBRAPII",
+    description: "Participação em webinars e eventos"
+  },
+  performance: { 
+    label: "Relatório de Performance", 
+    icon: BarChart3, 
+    color: "text-chart-4",
+    empresa: "Consolidado",
+    description: "Progresso em competências, notas e avaliações"
+  }
 };
+
+// Agrupar por empresa para exibição
+const EMPRESAS = [
+  { 
+    nome: "SEBRAE ACRE", 
+    tipos: ["sebraeacre_mentorias", "sebraeacre_eventos"] as FileType[],
+    color: "border-primary/30 bg-primary/5"
+  },
+  { 
+    nome: "SEBRAE TO", 
+    tipos: ["sebraeto_mentorias", "sebraeto_eventos"] as FileType[],
+    color: "border-secondary/30 bg-secondary/5"
+  },
+  { 
+    nome: "EMBRAPII", 
+    tipos: ["embrapii_mentorias", "embrapii_eventos"] as FileType[],
+    color: "border-chart-3/30 bg-chart-3/5"
+  },
+  { 
+    nome: "Consolidado", 
+    tipos: ["performance"] as FileType[],
+    color: "border-chart-4/30 bg-chart-4/5"
+  }
+];
 
 export default function UploadPage() {
   const { user } = useAuth();
@@ -53,7 +138,7 @@ export default function UploadPage() {
   const [files, setFiles] = useState<UploadedFileInfo[]>([]);
   const [batchId, setBatchId] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedFileType, setSelectedFileType] = useState<FileType>("mentoria");
+  const [selectedFileType, setSelectedFileType] = useState<FileType>("sebraeacre_mentorias");
   const [fileObjects, setFileObjects] = useState<Map<string, File>>(new Map());
 
   const createBatchMutation = trpc.uploads.createBatch.useMutation();
@@ -66,8 +151,8 @@ export default function UploadPage() {
     const selectedFiles = event.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
 
-    if (files.length + selectedFiles.length > 6) {
-      toast.error("Máximo de 6 arquivos permitidos por lote");
+    if (files.length + selectedFiles.length > 7) {
+      toast.error("Máximo de 7 arquivos permitidos por lote");
       return;
     }
 
@@ -83,9 +168,23 @@ export default function UploadPage() {
         return;
       }
 
+      // Detectar automaticamente o tipo baseado no nome do arquivo
+      let detectedType: FileType = selectedFileType;
+      const lowerName = file.name.toLowerCase();
+      
+      if (lowerName.includes('sebraeacre') || lowerName.includes('sebrae acre') || lowerName.includes('sebrae-acre')) {
+        detectedType = lowerName.includes('evento') ? 'sebraeacre_eventos' : 'sebraeacre_mentorias';
+      } else if (lowerName.includes('sebraeto') || lowerName.includes('sebrae to') || lowerName.includes('bs2')) {
+        detectedType = lowerName.includes('evento') ? 'sebraeto_eventos' : 'sebraeto_mentorias';
+      } else if (lowerName.includes('embrapii')) {
+        detectedType = lowerName.includes('evento') ? 'embrapii_eventos' : 'embrapii_mentorias';
+      } else if (lowerName.includes('performance') || lowerName.includes('relatorio')) {
+        detectedType = 'performance';
+      }
+
       newFiles.push({
         name: file.name,
-        type: selectedFileType,
+        type: detectedType,
         status: "pending"
       });
       newFileObjects.set(file.name, file);
@@ -103,6 +202,12 @@ export default function UploadPage() {
       newMap.delete(fileName);
       return newMap;
     });
+  }, []);
+
+  const updateFileType = useCallback((fileName: string, newType: FileType) => {
+    setFiles(prev => prev.map(f => 
+      f.name === fileName ? { ...f, type: newType } : f
+    ));
   }, []);
 
   const readFileAsBase64 = (fileName: string): Promise<string | null> => {
@@ -213,7 +318,7 @@ export default function UploadPage() {
         <div>
           <h1 className="text-3xl font-bold text-gradient">Upload de Planilhas</h1>
           <p className="text-muted-foreground mt-1">
-            Carregue os dados semanais de mentorias, eventos e alunos
+            Carregue os 7 arquivos semanais: Mentorias e Eventos de cada empresa + Relatório de Performance
           </p>
         </div>
 
@@ -226,7 +331,7 @@ export default function UploadPage() {
                 Configuração do Lote
               </CardTitle>
               <CardDescription>
-                Defina o período e tipo dos dados
+                Defina o período dos dados
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -258,25 +363,6 @@ export default function UploadPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="fileType">Tipo de Arquivo</Label>
-                <Select value={selectedFileType} onValueChange={(v) => setSelectedFileType(v as FileType)}>
-                  <SelectTrigger className="bg-background/50">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(FILE_TYPE_CONFIG).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>
-                        <div className="flex items-center gap-2">
-                          <config.icon className={`h-4 w-4 ${config.color}`} />
-                          {config.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="notes">Observações (opcional)</Label>
                 <Textarea
                   id="notes"
@@ -297,7 +383,7 @@ export default function UploadPage() {
                 Arquivos
               </CardTitle>
               <CardDescription>
-                Arraste ou selecione planilhas Excel (.xlsx, .xls, .csv)
+                Arraste ou selecione planilhas Excel (.xlsx, .xls)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -311,7 +397,7 @@ export default function UploadPage() {
                   Clique para selecionar ou arraste arquivos aqui
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Máximo 6 arquivos por lote
+                  O sistema detecta automaticamente o tipo pelo nome do arquivo
                 </p>
                 <input
                   id="file-upload"
@@ -336,20 +422,38 @@ export default function UploadPage() {
                         key={`${file.name}-${index}`}
                         className="flex items-center justify-between p-3 rounded-lg bg-background/30 border border-border/30"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg bg-background/50`}>
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className={`p-2 rounded-lg bg-background/50 shrink-0`}>
                             <Icon className={`h-4 w-4 ${config.color}`} />
                           </div>
-                          <div>
-                            <p className="text-sm font-medium truncate max-w-[200px]">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">
                               {file.name}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              {config.label}
-                            </p>
+                            {file.status === "pending" ? (
+                              <Select 
+                                value={file.type} 
+                                onValueChange={(v) => updateFileType(file.name, v as FileType)}
+                              >
+                                <SelectTrigger className="h-6 text-xs mt-1 bg-transparent border-0 p-0 w-auto">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Object.entries(FILE_TYPE_CONFIG).map(([key, cfg]) => (
+                                    <SelectItem key={key} value={key} className="text-xs">
+                                      {cfg.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">
+                                {config.label}
+                              </p>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                           {file.status === "pending" && (
                             <Button
                               variant="ghost"
@@ -369,7 +473,6 @@ export default function UploadPage() {
                           {file.status === "error" && (
                             <div className="flex items-center gap-1">
                               <AlertCircle className="h-4 w-4 text-destructive" />
-                              <span className="text-xs text-destructive">{file.error}</span>
                             </div>
                           )}
                         </div>
@@ -412,30 +515,44 @@ export default function UploadPage() {
           </Card>
         </div>
 
-        {/* Instructions */}
+        {/* Instructions - Organized by Company */}
         <Card className="gradient-card">
           <CardHeader>
-            <CardTitle>Instruções de Upload</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              Arquivos Esperados por Empresa
+            </CardTitle>
+            <CardDescription>
+              São 7 arquivos no total: 2 por empresa (Mentorias + Eventos) + 1 Relatório de Performance consolidado
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {Object.entries(FILE_TYPE_CONFIG).map(([key, config]) => {
-                const Icon = config.icon;
-                return (
-                  <div key={key} className="p-4 rounded-lg bg-background/30 border border-border/30">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icon className={`h-5 w-5 ${config.color}`} />
-                      <span className="font-medium">{config.label}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {key === "mentoria" && "Dados de sessões de mentoria com presença, tarefas e engajamento"}
-                      {key === "eventos" && "Participação em webinars e eventos coletivos"}
-                      {key === "alunos" && "Cadastro e atualização de dados dos alunos"}
-                      {key === "outro" && "Outros dados complementares do programa"}
-                    </p>
+              {EMPRESAS.map((empresa) => (
+                <div key={empresa.nome} className={`p-4 rounded-lg border ${empresa.color}`}>
+                  <h3 className="font-semibold mb-3">{empresa.nome}</h3>
+                  <div className="space-y-2">
+                    {empresa.tipos.map((tipo) => {
+                      const config = FILE_TYPE_CONFIG[tipo];
+                      const Icon = config.icon;
+                      return (
+                        <div key={tipo} className="flex items-start gap-2">
+                          <Icon className={`h-4 w-4 mt-0.5 ${config.color}`} />
+                          <div>
+                            <p className="text-sm font-medium">
+                              {tipo.includes('mentorias') ? 'Mentorias' : 
+                               tipo.includes('eventos') ? 'Eventos' : 'Performance'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {config.description}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

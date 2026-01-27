@@ -51,3 +51,14 @@
 ## Bugs Reportados
 - [x] Erro: dashboard.latestBatch retornando undefined - Query data cannot be undefined (corrigido: retornando null em vez de undefined)
 - [x] Alterar design para gradiente claro com tons suaves de azul e creme
+- [x] Aplicar identidade visual B.E.M. (azul marinho e laranja)
+- [x] Renomear sistema para ECOSSISTEMA DO BEM
+- [x] Adicionar logo B.E.M. na sidebar e interface
+- [x] Configurar 3 empresas: SEBRAE TO, SEBRAE ACRE, EMBRAPII
+- [ ] Implementar 3 níveis de visão: Geral, Por Empresa, Por Aluno
+- [ ] Atualizar dashboards com filtros por empresa
+- [x] Configurar upload para aceitar os 7 arquivos: SEBRAEACRE-Mentorias, SEBRAEACRE-Eventos, EMBRAPII-Mentorias, EMBRAPII-Eventos, BS2SEBRAETO-Mentorias, BS2SEBRAETO-Eventos, relatorio-de-performance
+- [ ] Usar Id Usuário como chave principal para cruzar planilhas
+- [ ] Implementar hierarquia: Empresa → Turma → Aluno → Trilha/Competências
+- [ ] Adicionar visão por Turma nos dashboards
+- [ ] Implementar regra de aprovação (nota ≥7 = aprovado)

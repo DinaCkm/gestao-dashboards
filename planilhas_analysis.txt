@@ -1,0 +1,255 @@
+
+================================================================================
+ARQUIVO: SEBRAEACRE-Mentorias.xlsx
+================================================================================
+Abas encontradas: ['Resposta ao Formulario 1', 'Codigo_nome', 'Id Turmas', 'Id Trilhas']
+
+--- Aba: Resposta ao Formulario 1 ---
+Linhas: 493, Colunas: 15
+Colunas: ['Carimbo de data/hora', 'Endereço de e-mail', 'Nome do Consultor', 'Id Usuário ', 'Nome do aluno', 'Id Turma', 'Grupo/Turma', 'Ciclo', 'Id Trilha', 'TRILHA', 'Data da Mentoria', 'Mentoria', 'Atividade proposta', 'Evolução/Engajamento', 'Breve parecer sobre o Aluno.']
+
+Primeiras 3 linhas:
+  Linha 0: {'Carimbo de data/hora': datetime.datetime(2025, 6, 6, 13, 55, 54, 936000), 'Endereço de e-mail': 'drikadeusckm@gmail.com', 'Nome do Consultor': 'Equipe CKM Talents', 'Id Usuário ': 616662, 'Nome do aluno': 'Adonay Fares Custódio Dos Santos', 'Id Turma': 9464301, 'Grupo/Turma': '[2024] SEBRAE Acre - Turma 1.0', 'Ciclo': 'Ciclo 00', 'Id Trilha': '01J8094529YD53AEGPQDAQDYRH', 'TRILHA': 'Gestão do Tempo - Básica', 'Data da Mentoria': Timestamp('2024-09-19 00:00:00'), 'Mentoria': 'Presente', 'Atividade proposta': 'Encontro Inicial: Apresentação do Banco de Sucessores SEBRAEAC.', 'Evolução/Engajamento': 2, 'Breve parecer sobre o Aluno.': 'Encontro Inicial: Apresentação do Banco de Sucessores SEBRAEAC.'}
+  Linha 1: {'Carimbo de data/hora': datetime.datetime(2025, 3, 24, 13, 16, 21, 130000), 'Endereço de e-mail': 'ana.carol.2010@hotmail.com', 'Nome do Consultor': 'Ana Carolina Cardoso Viana Rocha', 'Id Usuário ': 616662, 'Nome do aluno': 'Adonay Fares Custódio Dos Santos', 'Id Turma': 9464301, 'Grupo/Turma': '[2024] SEBRAE Acre - Turma 1.0', 'Ciclo': 'Ciclo 00', 'Id Trilha': '01J8094529YD53AEGPQDAQDYRH', 'TRILHA': 'Gestão do Tempo - Básica', 'Data da Mentoria': Timestamp('2024-10-07 00:00:00'), 'Mentoria': 'Presente', 'Atividade proposta': 'NÃO TEM TAREFA: 1ª Sessão', 'Evolução/Engajamento': 3, 'Breve parecer sobre o Aluno.': 'Com Adonay, é possível destacar sua trajetória sólida e versátil, combinando habilidades técnicas e de gestão, com foco em liderança e resultados. Ao longo de sua carreira, Adonay demonstrou capacidade de adaptação, resiliência e comprometimento com a excelência, especialmente em contextos de compliance e gestão de projetos. Seus pontos fortes incluem sua habilidade para liderar, inovar e tomar decisões assertivas em ambientes desafiadores, bem como sua flexibilidade para lidar com mudanças. No entanto, ele pode desenvolver ainda mais suas habilidades de interação social e a gestão de tempo, além de continuar ampliando sua visão estratégica de longo prazo.'}
+  Linha 2: {'Carimbo de data/hora': datetime.datetime(2025, 3, 24, 13, 20, 40, 363000), 'Endereço de e-mail': 'ana.carol.2010@hotmail.com', 'Nome do Consultor': 'Ana Carolina Cardoso Viana Rocha', 'Id Usuário ': 616662, 'Nome do aluno': 'Adonay Fares Custódio Dos Santos', 'Id Turma': 9464301, 'Grupo/Turma': '[2024] SEBRAE Acre - Turma 1.0', 'Ciclo': 'Ciclo 00', 'Id Trilha': '01J8094529YD53AEGPQDAQDYRH', 'TRILHA': 'Gestão do Tempo - Básica', 'Data da Mentoria': Timestamp('2024-11-07 00:00:00'), 'Mentoria': 'Presente', 'Atividade proposta': 'NÃO TEM TAREFA: 2ª Sessão', 'Evolução/Engajamento': 5, 'Breve parecer sobre o Aluno.': 'Na primeira tutoria grupal, destacou-se por sua participação ativa, trazendo exemplos práticos e enriquecendo as discussões nas dinâmicas em duplas e trios. Demonstrou proatividade ao fazer perguntas reflexivas, incentivando o engajamento dos colegas, além de sugerir ações concretas para aplicação das soluções discutidas.'}
+
+--- Aba: Codigo_nome ---
+Linhas: 33, Colunas: 2
+Colunas: ['Id Usuário', 'Nome do aluno']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Usuário': 616662, 'Nome do aluno': 'Adonay Fares Custódio Dos Santos'}
+  Linha 1: {'Id Usuário': 605365, 'Nome do aluno': 'Adriana Elizabete De Souza Dantas'}
+  Linha 2: {'Id Usuário': 615723, 'Nome do aluno': 'Adrielle De Araújo Santos Bessa'}
+
+--- Aba: Id Turmas ---
+Linhas: 4, Colunas: 2
+Colunas: ['Turma ', 'Id Turma']
+
+Primeiras 3 linhas:
+  Linha 0: {'Turma ': '[2024] SEBRAE Acre - Turma 1.0', 'Id Turma': 9464301}
+  Linha 1: {'Turma ': '[2025] SEBRAE Acre - B.E.M. | Básicas', 'Id Turma': 7871092}
+  Linha 2: {'Turma ': '[2025] SEBRAE Acre - B.E.M. | Essenciais', 'Id Turma': 7477720}
+
+--- Aba: Id Trilhas ---
+Linhas: 36, Colunas: 2
+Colunas: ['Id Trilha', 'TRILHA']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Trilha': '01J7XFQV2N5Z65PYVRCJV3VM67', 'TRILHA': 'Atenção - Básica'}
+  Linha 1: {'Id Trilha': '01J805YN0WJF9BCE0A2KQDBJ5C', 'TRILHA': 'Autopercepção - Básica'}
+  Linha 2: {'Id Trilha': '01J80620M940GZ1STEAGG2NJHG', 'TRILHA': 'Disciplina - Básica'}
+
+================================================================================
+ARQUIVO: SEBRAEACRE-Eventos.xlsx
+================================================================================
+Abas encontradas: ['PARTICIPAÇÃO_EVENTOS', 'LISTA DE ALUNOS', 'Id Turmas', 'Id Trilhas']
+
+--- Aba: PARTICIPAÇÃO_EVENTOS ---
+Linhas: 791, Colunas: 11
+Colunas: ['RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE - SEBRAE ACRE', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10']
+
+Primeiras 3 linhas:
+  Linha 0: {'RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE - SEBRAE ACRE': nan, 'Unnamed: 1': nan, 'Unnamed: 2': nan, 'Unnamed: 3': nan, 'Unnamed: 4': nan, 'Unnamed: 5': nan, 'Unnamed: 6': nan, 'Unnamed: 7': nan, 'Unnamed: 8': nan, 'Unnamed: 9': nan, 'Unnamed: 10': nan}
+  Linha 1: {'RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE - SEBRAE ACRE': 'Id Usuário ', 'Unnamed: 1': 'Nome do aluno', 'Unnamed: 2': 'Id Turma', 'Unnamed: 3': 'Turma/Grupo', 'Unnamed: 4': 'Ciclo/Trilha', 'Unnamed: 5': 'Id Trilha', 'Unnamed: 6': 'Trilha', 'Unnamed: 7': 'Tipo do evento', 'Unnamed: 8': 'Titulo do Evento', 'Unnamed: 9': 'Data do evento', 'Unnamed: 10': 'Status Presença'}
+  Linha 2: {'RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE - SEBRAE ACRE': 616662, 'Unnamed: 1': 'Adonay Fares Custódio Dos Santos', 'Unnamed: 2': 9464301, 'Unnamed: 3': '[2024] SEBRAE Acre - Turma 1.0', 'Unnamed: 4': 'Ciclo 00', 'Unnamed: 5': '01J8094529YD53AEGPQDAQDYRH', 'Unnamed: 6': 'Gestão do Tempo - Básica', 'Unnamed: 7': 'Webinar', 'Unnamed: 8': '2025/01 - Gestão do Tempo com Edson Herreiro', 'Unnamed: 9': datetime.datetime(2024, 10, 30, 0, 0), 'Unnamed: 10': 'Ausente'}
+
+--- Aba: LISTA DE ALUNOS ---
+Linhas: 33, Colunas: 2
+Colunas: ['Id Usuário ', 'Nome do aluno']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Usuário ': 616662, 'Nome do aluno': 'Adonay Fares Custódio Dos Santos'}
+  Linha 1: {'Id Usuário ': 605365, 'Nome do aluno': 'Adriana Elizabete De Souza Dantas'}
+  Linha 2: {'Id Usuário ': 615723, 'Nome do aluno': 'Adrielle De Araújo Santos Bessa'}
+
+--- Aba: Id Turmas ---
+Linhas: 4, Colunas: 2
+Colunas: ['Turma ', 'Id Turma']
+
+Primeiras 3 linhas:
+  Linha 0: {'Turma ': '[2024] SEBRAE Acre - Turma 1.0', 'Id Turma': 9464301}
+  Linha 1: {'Turma ': '[2025] SEBRAE Acre - B.E.M. | Básicas', 'Id Turma': 7871092}
+  Linha 2: {'Turma ': '[2025] SEBRAE Acre - B.E.M. | Essenciais', 'Id Turma': 7477720}
+
+--- Aba: Id Trilhas ---
+Linhas: 36, Colunas: 2
+Colunas: ['Id Trilha', 'TRILHA']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Trilha': '01J7XFQV2N5Z65PYVRCJV3VM67', 'TRILHA': 'Atenção - Básica'}
+  Linha 1: {'Id Trilha': '01J805YN0WJF9BCE0A2KQDBJ5C', 'TRILHA': 'Autopercepção - Básica'}
+  Linha 2: {'Id Trilha': '01J80620M940GZ1STEAGG2NJHG', 'TRILHA': 'Disciplina - Básica'}
+
+================================================================================
+ARQUIVO: EMBRAPII-Mentorias.xlsx
+================================================================================
+Abas encontradas: ['Form_Responses1', 'código_nomes', 'Id Turma', 'Id Trilha']
+
+--- Aba: Form_Responses1 ---
+Linhas: 130, Colunas: 15
+Colunas: ['Carimbo de data/hora', 'Endereço de e-mail', 'Nome do Consultor', 'Id Usuário ', 'Nome do aluno', 'Id Turma', 'Grupo/Turma', 'Id Trilha', 'Trilha', 'Ciclo', 'Data da Mentoria', 'Mentoria', 'Atividade proposta', 'Evolução/Engajamento', 'Breve parecer sobre o Aluno.']
+
+Primeiras 3 linhas:
+  Linha 0: {'Carimbo de data/hora': Timestamp('2025-03-10 10:40:05'), 'Endereço de e-mail': 'giovanna.braga@gmail.com', 'Nome do Consultor': 'Giovanna Braga Schmitz', 'Id Usuário ': 651881, 'Nome do aluno': 'Fabio Maya Cavalcante', 'Id Turma': 97600, 'Grupo/Turma': '[2025] Embrapii | Básicas', 'Id Trilha': '01J7XFQV2N5Z65PYVRCJV3VM67', 'Trilha': 'Atenção - Básica', 'Ciclo': 'Ciclo I', 'Data da Mentoria': Timestamp('2025-03-10 00:00:00'), 'Mentoria': 'Presente', 'Atividade proposta': 'NÃO TEM TAREFA: 1ª Sessão', 'Evolução/Engajamento': 2, 'Breve parecer sobre o Aluno.': 'Fábio compartilhou sua trajetória acadêmica e profissional, destacando sua experiência em engenharia e sua transição para o serviço público. Ele expressou a importância de manter limites entre trabalho e vida pessoal, buscando crescimento profissional sem sacrificar seu tempo livre. Durante a sessão, foram discutidos seus hobbies, interesses e aspirações futuras, além de um diagnóstico de perfil comportamental que revelou suas habilidades de comunicação e influência. Fábio demonstrou engajamento ao se mostrar aberto a feedbacks e disposto a realizar as tarefas propostas, como o diagnóstico de produtividade e gestão do tempo. Ele também manifestou interesse em se capacitar mais, planejando um mestrado e explorando oportunidades de crescimento na Embrapii. O comprometimento de Fábio com seu desenvolvimento é evidente, refletindo sua motivação para evoluir tanto pessoal quanto profissionalmente.'}
+  Linha 1: {'Carimbo de data/hora': Timestamp('2025-03-10 14:53:51'), 'Endereço de e-mail': 'lucyematheus@gmail.com', 'Nome do Consultor': 'Luciana Pereira Figueiredo da Silva', 'Id Usuário ': 651887, 'Nome do aluno': 'Thiago Bizerra Fideles', 'Id Turma': 97600, 'Grupo/Turma': '[2025] Embrapii | Básicas', 'Id Trilha': '01J7XFQV2N5Z65PYVRCJV3VM67', 'Trilha': 'Atenção - Básica', 'Ciclo': 'Ciclo I', 'Data da Mentoria': Timestamp('2025-03-10 00:00:00'), 'Mentoria': 'Presente', 'Atividade proposta': 'NÃO TEM TAREFA: 1ª Sessão', 'Evolução/Engajamento': 3, 'Breve parecer sobre o Aluno.': 'Este primeiro encontro foi muito bom. Muito produtivo, falamos sobre os resultados do DiSC e onde deseja alcançar uma melhoria, falou dos pontos que deseja evoluir, caminhar e dos desafios até aqui. Thiago se mostrou muito animado, feliz pela oportunidade e com muita vontade em fazer dar certo. Juntos vamos caminhar e trabalhar as competências essenciais para melhor profissional e pessoal. Fizemos alguns alinhamentos e ele me pareceu muito animado.'}
+  Linha 2: {'Carimbo de data/hora': Timestamp('2025-03-10 17:20:57'), 'Endereço de e-mail': 'flavia.balieiro@embrapii.org.br', 'Nome do Consultor': 'Gislaine Fabiola Marques Righi Cassemiro', 'Id Usuário ': 651882, 'Nome do aluno': 'Flavia Pereira Balieiro Salgado', 'Id Turma': 97600, 'Grupo/Turma': '[2025] Embrapii | Básicas', 'Id Trilha': '01J7XFQV2N5Z65PYVRCJV3VM67', 'Trilha': 'Atenção - Básica', 'Ciclo': 'Ciclo I', 'Data da Mentoria': Timestamp('2025-03-10 00:00:00'), 'Mentoria': 'Presente', 'Atividade proposta': 'NÃO TEM TAREFA: 1ª Sessão', 'Evolução/Engajamento': 3, 'Breve parecer sobre o Aluno.': 'Na sessão, apresentei o programa de tutoria, explicando sua estrutura, com sessões mensais, atividades e acompanhamento por plataforma. Flávia participou de sua trajetória profissional e de seus desafios atuais, especialmente em maternidade conciliar e carreira. Flávia realizou o teste de perfil comportamental DISC, o qual revelou que, no âmbito pessoal, ela é comunicativa e focada em pessoas. No profissional, a necessidade de ser mais convencional e multitarefa lhe causa incômodo. Destacamos a importância de trabalhar sua autoconfiança, comunicação assertiva e tomada de decisões.\nA tarefa proposta foi observar e ajustar suas práticas diárias para melhorar a gestão do tempo, utilizando a Matriz de Eisenhower e a técnica Pomodoro. Flávia declarou abertura para trabalhar nas áreas identificadas e se comprometeu a entregar a atividade proposta até o dia 25 de abril. As competências a serem desenvolvidas incluem autoconfiança, comunicação assertiva, gestão do tempo e capacidade de delegar tarefas . A próxima sessão está agendada para 3 de abril.'}
+
+--- Aba: código_nomes ---
+Linhas: 16, Colunas: 2
+Colunas: ['Id Usuário', 'Nome do aluno']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Usuário': 716197, 'Nome do aluno': 'Alexandre Crepory Abbott de Oliveira'}
+  Linha 1: {'Id Usuário': 651876, 'Nome do aluno': 'Allan Kassio De Oliveira Santos Ribeiro'}
+  Linha 2: {'Id Usuário': 651877, 'Nome do aluno': 'Brenno Soffredi Passoni'}
+
+--- Aba: Id Turma ---
+Linhas: 3, Colunas: 2
+Colunas: ['Id Turma', 'Turma']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Turma': 97600, 'Turma': '[2025] Embrapii | Básicas'}
+  Linha 1: {'Id Turma': 108153, 'Turma': '[2026] Embrapii | Visão do Futuro'}
+  Linha 2: {'Id Turma': 106854, 'Turma': '[2025] Embrapii | Jornada Personalizada'}
+
+--- Aba: Id Trilha ---
+Linhas: 36, Colunas: 2
+Colunas: ['Id Trilha', 'TRILHA']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Trilha': '01J7XFQV2N5Z65PYVRCJV3VM67', 'TRILHA': 'Atenção - Básica'}
+  Linha 1: {'Id Trilha': '01J805YN0WJF9BCE0A2KQDBJ5C', 'TRILHA': 'Autopercepção - Básica'}
+  Linha 2: {'Id Trilha': '01J80620M940GZ1STEAGG2NJHG', 'TRILHA': 'Disciplina - Básica'}
+
+================================================================================
+ARQUIVO: EMBRAPII-Eventos.xlsx
+================================================================================
+Abas encontradas: ['PARTICIPAÇÃO_EVENTOS', 'Página1', 'LISTA DE ALUNOS']
+
+--- Aba: PARTICIPAÇÃO_EVENTOS ---
+Linhas: 269, Colunas: 11
+Colunas: ['Unnamed: 0', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE - PDI BANRISUL', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10']
+
+Primeiras 3 linhas:
+  Linha 0: {'Unnamed: 0': nan, 'Unnamed: 1': 'Participação nas Atividades ', 'Unnamed: 2': nan, 'Unnamed: 3': nan, 'Unnamed: 4': nan, 'Unnamed: 5': nan, 'Unnamed: 6': nan, 'RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE - PDI BANRISUL': nan, 'Unnamed: 8': nan, 'Unnamed: 9': nan, 'Unnamed: 10': nan}
+  Linha 1: {'Unnamed: 0': 'Id Usuários ', 'Unnamed: 1': 'Nome do aluno', 'Unnamed: 2': 'Id Turma', 'Unnamed: 3': 'Turma/Grupo', 'Unnamed: 4': 'Ciclo/Trilha', 'Unnamed: 5': 'Id Trilha', 'Unnamed: 6': 'Trilha', 'RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE - PDI BANRISUL': 'Tipo do evento', 'Unnamed: 8': 'Titulo do Evento', 'Unnamed: 9': 'Data do evento', 'Unnamed: 10': 'Status Presença'}
+  Linha 2: {'Unnamed: 0': 716197, 'Unnamed: 1': 'Alexandre Crepory Abbott de Oliveira', 'Unnamed: 2': nan, 'Unnamed: 3': 'Turma 03', 'Unnamed: 4': 'Ciclo I', 'Unnamed: 5': nan, 'Unnamed: 6': nan, 'RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE - PDI BANRISUL': 'Webinar', 'Unnamed: 8': 'Webinar 18 - Mindfulness na Comunicação e no Tempo com Otácia', 'Unnamed: 9': datetime.datetime(2025, 10, 1, 0, 0), 'Unnamed: 10': 'Presente'}
+
+--- Aba: Página1 ---
+Linhas: 0, Colunas: 0
+Colunas: []
+
+--- Aba: LISTA DE ALUNOS ---
+Linhas: 16, Colunas: 2
+Colunas: ['Id Usuário', 'Nome do aluno']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Usuário': 716197, 'Nome do aluno': 'Alexandre Crepory Abbott de Oliveira'}
+  Linha 1: {'Id Usuário': 651876, 'Nome do aluno': 'Allan Kassio De Oliveira Santos Ribeiro'}
+  Linha 2: {'Id Usuário': 651877, 'Nome do aluno': 'Brenno Soffredi Passoni'}
+
+================================================================================
+ARQUIVO: BS2SEBRAETO-Tutorias(respostas).xlsx
+================================================================================
+Abas encontradas: ['Respostas ao formulário 1', 'Codigo_nome', 'ID TURMAS', 'ID TRILHA', 'Extrutura']
+
+--- Aba: Respostas ao formulário 1 ---
+Linhas: 403, Colunas: 15
+Colunas: ['Carimbo de data/hora', 'Endereço de e-mail', 'Nome do Consultor', 'Id Usuário ', 'Nome do aluno', 'Id Turma', 'Grupo/Turma', 'Id Trilha', 'TRILHA', 'Ciclo', 'Data da Mentoria', 'Mentoria', 'Atividade proposta', 'Evolução/Engajamento', 'Breve parecer sobre o Aluno.']
+
+Primeiras 3 linhas:
+  Linha 0: {'Carimbo de data/hora': Timestamp('2025-04-23 17:20:57.937000'), 'Endereço de e-mail': 'marciarocha@terra.com.br', 'Nome do Consultor': 'Marcia Rocha', 'Id Usuário ': 667286.0, 'Nome do aluno': 'Layala Cardoso Da Silva Istofel', 'Id Turma': 103111.0, 'Grupo/Turma': '[2025] SEBRAE Tocantins - Visão de Futuro [BS2]', 'Id Trilha': '01JQ7P5YM30780ZYZ8WQBMA893', 'TRILHA': 'Mindset Visionário - Visão de Futuro', 'Ciclo': 'Ciclo IV', 'Data da Mentoria': Timestamp('2025-04-23 00:00:00'), 'Mentoria': 'Presente', 'Atividade proposta': 'NÃO TEM TAREFA: 1ª Sessão', 'Evolução/Engajamento': 2, 'Breve parecer sobre o Aluno.': 'Layala demonstra um bom posicionamento em relação ao seu desempenho, mostrando-se empenhada em realizar as atividades propostas na plataforma e nos webinars. Ela já começou a navegar pela plataforma e está ciente da importância de preencher as matrizes de atividades, conforme orientado pela mentora. Apesar de ter enfrentado algumas dificuldades iniciais com o acesso, Layala conseguiu resolver a situação e agora utiliza um e-mail corporativo para facilitar a comunicação.\n\nO grau de comprometimento de Layala é muito bom, evidenciado por sua disposição em anotar informações e buscar compreender melhor as tarefas. Ela expressa vontade de se desenvolver, participando ativamente das discussões e demonstrando interesse em aplicar os conceitos aprendidos, como a Matriz de Eisenhower.\n\nA mentora, percebe Layala como uma aluna comprometida e envolvida, com uma atitude positiva em relação ao aprendizado. A mentora destaca a importância de Layala desenvolver talentos em sua nova função de coordenação de vendas, o que requer uma gestão eficaz do tempo e a capacidade de delegar tarefas. A mentora acredita que Layala está no caminho certo para alcançar seus objetivos e se mostra otimista quanto ao seu progresso.\n\nComplementarmente, Layala já possui experiência anterior como gerente, o que pode contribuir para sua adaptação e aprendizado nas novas responsabilidades, além de indicar um perfil proativo e voltado para resultados.'}
+  Linha 1: {'Carimbo de data/hora': Timestamp('2025-04-23 17:25:10.879000'), 'Endereço de e-mail': 'marciarocha@terra.com.br', 'Nome do Consultor': 'Marcia Rocha', 'Id Usuário ': 667303.0, 'Nome do aluno': 'Thiago Dias Da Silva', 'Id Turma': 103111.0, 'Grupo/Turma': '[2025] SEBRAE Tocantins - Visão de Futuro [BS2]', 'Id Trilha': '01JQ7P5YM30780ZYZ8WQBMA893', 'TRILHA': 'Mindset Visionário - Visão de Futuro', 'Ciclo': 'Ciclo IV', 'Data da Mentoria': Timestamp('2025-04-23 00:00:00'), 'Mentoria': 'Presente', 'Atividade proposta': 'NÃO TEM TAREFA: 1ª Sessão', 'Evolução/Engajamento': 2, 'Breve parecer sobre o Aluno.': 'Thiago está se mostrando comprometido com seu desempenho e demonstrando empenho nas atividades da plataforma e nos webinares. Ele expressou interesse em continuar o trabalho e em realizar as tarefas propostas, como a elaboração das matrizes de Eisenhower. No entanto, ele mencionou algumas dúvidas sobre a sobreposição de atividades entre o programa de mentoria e o PDI, o que indica uma preocupação em gerenciar suas responsabilidades.\n\nA mentora, percebeu que Thiago está aberto ao aprendizado e disposto a se desenvolver. Ela destacou que ele chegou tímido, mas ao longo da conversa, foi se mostrando mais à vontade e engajado. A mentora acredita que Thiago possui potencial para crescer, especialmente ao assumir interinamente funções de liderança, o que pode ajudá-lo a desenvolver habilidades de gestão e comunicação.\n\nThiago parece ter um perfil proativo, buscando esclarecer suas dúvidas e se organizando para cumprir as tarefas. Ele está disposto a utilizar os recursos disponíveis na plataforma e a se comunicar com a mentora sempre que necessário, o que demonstra um bom nível de comprometimento e vontade de se desenvolver profissionalmente.'}
+  Linha 2: {'Carimbo de data/hora': Timestamp('2025-04-23 17:33:49.899000'), 'Endereço de e-mail': 'marciarocha@terra.com.br', 'Nome do Consultor': 'Marcia Rocha', 'Id Usuário ': 667306.0, 'Nome do aluno': 'Vera Lucia Teodoro Braga', 'Id Turma': 103111.0, 'Grupo/Turma': '[2025] SEBRAE Tocantins - Visão de Futuro [BS2]', 'Id Trilha': '01JQ7P5YM30780ZYZ8WQBMA893', 'TRILHA': 'Mindset Visionário - Visão de Futuro', 'Ciclo': 'Ciclo IV', 'Data da Mentoria': Timestamp('2025-04-16 00:00:00'), 'Mentoria': 'Presente', 'Atividade proposta': 'NÃO TEM TAREFA: 1ª Sessão', 'Evolução/Engajamento': 2, 'Breve parecer sobre o Aluno.': 'Vera demonstra um posicionamento positivo em relação ao seu desenvolvimento, mostrando disposição para participar das atividades propostas na plataforma e nos webinars. Ela expressa interesse em realizar as tarefas, como a construção da matriz de Eisenhower, e está comprometida em organizar suas atividades de forma a priorizar o que é importante e urgente. No entanto, Vera também menciona a necessidade de refletir sobre as tarefas e como elas se encaixam em sua rotina, o que indica uma busca por clareza e eficácia em sua gestão de tempo.\n\nAs dificuldades que Vera enfrenta parecem estar relacionadas à priorização de tarefas e à delegação de responsabilidades, o que é comum em processos de desenvolvimento pessoal e profissional. Apesar disso, seu grau de comprometimento é evidente, pois ela se propõe a entregar as matrizes semanalmente e a registrar suas experiências e aprendizados.\n\nA mentora, percebe Vera como uma aluna engajada e disposta a aprender. Ela destaca a importância da comunicação e do acompanhamento contínuo, o que sugere que Vera está aberta a receber feedback e orientações. A mentora vê potencial em Vera para desenvolver suas habilidades de liderança e gestão, reconhecendo sua vontade de crescer e se aprimorar.\n\nComplementarmente, Vera parece ser uma profissional que busca ativamente seu desenvolvimento, o que é um indicativo de sua proatividade e interesse em se tornar uma líder mais eficaz. Essa atitude positiva é um ponto forte em seu perfil, contribuindo para seu progresso nas atividades propostas.'}
+
+--- Aba: Codigo_nome ---
+Linhas: 50, Colunas: 2
+Colunas: ['Id Usuário ', 'Nome do Aluno']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Usuário ': 667257, 'Nome do Aluno': 'Admary Monteiro Barbosa'}
+  Linha 1: {'Id Usuário ': 667258, 'Nome do Aluno': 'Aldeni Batista Torres'}
+  Linha 2: {'Id Usuário ': 667261, 'Nome do Aluno': 'Alencar Hubner Borelli'}
+
+--- Aba: ID TURMAS ---
+Linhas: 4, Colunas: 2
+Colunas: ['Turma ', 'Id Turma']
+
+Primeiras 3 linhas:
+  Linha 0: {'Turma ': '[2025] SEBRAE Tocantins - Básicas [BS1]', 'Id Turma': 104073}
+  Linha 1: {'Turma ': '[2025] SEBRAE Tocantins - Básicas [BS3]', 'Id Turma': 105645}
+  Linha 2: {'Turma ': '[2025] SEBRAE Tocantins - Essenciais [BS1]', 'Id Turma': 105373}
+
+--- Aba: ID TRILHA ---
+Linhas: 36, Colunas: 2
+Colunas: ['Id Trilha', 'TRILHA']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Trilha': '01J7XFQV2N5Z65PYVRCJV3VM67', 'TRILHA': 'Atenção - Básica'}
+  Linha 1: {'Id Trilha': '01J805YN0WJF9BCE0A2KQDBJ5C', 'TRILHA': 'Autopercepção - Básica'}
+  Linha 2: {'Id Trilha': '01J80620M940GZ1STEAGG2NJHG', 'TRILHA': 'Disciplina - Básica'}
+
+--- Aba: Extrutura ---
+Linhas: 3, Colunas: 5
+Colunas: ['Aba (origem/destino)', 'Coluna de entrada', 'Coluna de saída', 'Base de referência', 'Observação']
+
+Primeiras 3 linhas:
+  Linha 0: {'Aba (origem/destino)': 'Respostas ao formulário 1', 'Coluna de entrada': 'E = Nome do aluno', 'Coluna de saída': 'D = Id Usuário', 'Base de referência': 'Codigo_nome (A = Id Usuário, B = Nome do Aluno)', 'Observação': 'Preenche o Id do aluno automaticamente'}
+  Linha 1: {'Aba (origem/destino)': 'Respostas ao formulário 1', 'Coluna de entrada': 'G = Turma', 'Coluna de saída': 'F = Id Turma', 'Base de referência': 'ID TURMAS (A = Turma, B = Id Turma)', 'Observação': 'Preenche o Id da turma'}
+  Linha 2: {'Aba (origem/destino)': 'Respostas ao formulário 1', 'Coluna de entrada': 'I = Trilha', 'Coluna de saída': 'H = Id Trilha', 'Base de referência': 'ID TRILHA (A = Id Trilha, B = Trilha)', 'Observação': 'Preenche o Id da trilha'}
+
+================================================================================
+ARQUIVO: BS2SEBRAETO-Eventos.xlsx
+================================================================================
+Abas encontradas: ['PARTICIPAÇÃO_EVENTOS', 'LISTA DE ALUNOS', 'ID TURMAS', 'ID TRILHA']
+
+--- Aba: PARTICIPAÇÃO_EVENTOS ---
+Linhas: 861, Colunas: 11
+Colunas: ['RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE EM EVENTOS - SEBRAE TOCANTINS', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10']
+
+Primeiras 3 linhas:
+  Linha 0: {'RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE EM EVENTOS - SEBRAE TOCANTINS': nan, 'Unnamed: 1': nan, 'Unnamed: 2': nan, 'Unnamed: 3': nan, 'Unnamed: 4': nan, 'Unnamed: 5': nan, 'Unnamed: 6': nan, 'Unnamed: 7': nan, 'Unnamed: 8': nan, 'Unnamed: 9': nan, 'Unnamed: 10': nan}
+  Linha 1: {'RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE EM EVENTOS - SEBRAE TOCANTINS': nan, 'Unnamed: 1': 'Nome do aluno', 'Unnamed: 2': nan, 'Unnamed: 3': 'Turma/Grupo', 'Unnamed: 4': 'Ciclo/Trilha', 'Unnamed: 5': nan, 'Unnamed: 6': 'TRILHA', 'Unnamed: 7': 'Tipo do evento', 'Unnamed: 8': 'Titulo do Evento', 'Unnamed: 9': 'Data do evento', 'Unnamed: 10': 'Status Presença'}
+  Linha 2: {'RELATÓRIO DE ACOMPANHAMENTO DA PERFORMANCE EM EVENTOS - SEBRAE TOCANTINS': 667257.0, 'Unnamed: 1': 'Admary Monteiro Barbosa', 'Unnamed: 2': 103111.0, 'Unnamed: 3': '[2025] SEBRAE Tocantins - Visão de Futuro [BS2]', 'Unnamed: 4': 'Ciclo IV/1', 'Unnamed: 5': '01JQ7P5YM30780ZYZ8WQBMA893', 'Unnamed: 6': 'Mindset Visionário - Visão de Futuro', 'Unnamed: 7': 'Webinar', 'Unnamed: 8': '2025/06 - Liderança Tóxica com Emerson Dias', 'Unnamed: 9': datetime.datetime(2025, 4, 2, 0, 0), 'Unnamed: 10': 'Presente'}
+
+--- Aba: LISTA DE ALUNOS ---
+Linhas: 50, Colunas: 2
+Colunas: ['Id Usuário ', 'Nome do Aluno']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Usuário ': 667257, 'Nome do Aluno': 'Admary Monteiro Barbosa'}
+  Linha 1: {'Id Usuário ': 667258, 'Nome do Aluno': 'Aldeni Batista Torres'}
+  Linha 2: {'Id Usuário ': 667261, 'Nome do Aluno': 'Alencar Hubner Borelli'}
+
+--- Aba: ID TURMAS ---
+Linhas: 4, Colunas: 2
+Colunas: ['Turma ', 'Id Turma']
+
+Primeiras 3 linhas:
+  Linha 0: {'Turma ': '[2025] SEBRAE Tocantins - Básicas [BS1]', 'Id Turma': 104073}
+  Linha 1: {'Turma ': '[2025] SEBRAE Tocantins - Básicas [BS3]', 'Id Turma': 105645}
+  Linha 2: {'Turma ': '[2025] SEBRAE Tocantins - Essenciais [BS1]', 'Id Turma': 105373}
+
+--- Aba: ID TRILHA ---
+Linhas: 36, Colunas: 2
+Colunas: ['Id Trilha', 'TRILHA']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Trilha': '01J7XFQV2N5Z65PYVRCJV3VM67', 'TRILHA': 'Atenção - Básica'}
+  Linha 1: {'Id Trilha': '01J805YN0WJF9BCE0A2KQDBJ5C', 'TRILHA': 'Autopercepção - Básica'}
+  Linha 2: {'Id Trilha': '01J80620M940GZ1STEAGG2NJHG', 'TRILHA': 'Disciplina - Básica'}
+
+================================================================================
+ARQUIVO: relatorio-de-performance.xlsx
+================================================================================
+Abas encontradas: ['Sheet1']
+
+--- Aba: Sheet1 ---
+Linhas: 1031, Colunas: 34
+Colunas: ['Id Usuário', 'Nome Usuário', 'Último acesso', 'E-mail', 'Id Turma (agrupador 1)', 'Turma (agrupador 1)', 'Id Competência (agrupador 2)', 'Competência (agrupador 2)', 'Data de início', 'Data de conclusão', 'Total de aulas', 'Aulas disponíveis', 'Aulas concluídas', 'Aulas em andamento', 'Aulas não iniciadas', 'Aulas agendadas', 'Progresso Total', 'Carga horária total', 'Carga horária concluída', 'Progresso em aulas disponíveis', 'Avaliações de diagnóstico', 'Média das avaliações de diagnóstico', 'Avaliações finais', 'Média das avaliações finais', 'Avaliações disponíveis', 'Avaliações respondidas', 'Avaliações pendentes', 'Avaliações agendadas', 'Média em avaliações disponíveis', 'Média em avaliações respondidas', 'Concluído dentro do prazo (%)', 'Concluído em atraso (%)', 'Não Concluído e dentro do prazo (%)', 'Não Concluído e em atraso (%)']
+
+Primeiras 3 linhas:
+  Linha 0: {'Id Usuário': 605198, 'Nome Usuário': 'DANIELA RIVA KELLER', 'Último acesso': datetime.datetime(2025, 4, 28, 18, 20), 'E-mail': 'daniela_keller@banrisul.com.br', 'Id Turma (agrupador 1)': 95590, 'Turma (agrupador 1)': '[2024] Banrisul - B.E.M. | Básicas', 'Id Competência (agrupador 2)': '01J7XFQV2N5Z65PYVRCJV3VM67', 'Competência (agrupador 2)': 'Atenção - Básica', 'Data de início': datetime.datetime(2024, 11, 4, 18, 51), 'Data de conclusão': datetime.datetime(2024, 11, 9, 18, 29), 'Total de aulas': 6, 'Aulas disponíveis': 6, 'Aulas concluídas': 6, 'Aulas em andamento': 0, 'Aulas não iniciadas': 0, 'Aulas agendadas': 0, 'Progresso Total': 100, 'Carga horária total': datetime.time(0, 21, 30), 'Carga horária concluída': datetime.time(0, 21, 30), 'Progresso em aulas disponíveis': 100, 'Avaliações de diagnóstico': 0, 'Média das avaliações de diagnóstico': 0, 'Avaliações finais': 0, 'Média das avaliações finais': 0, 'Avaliações disponíveis': 1, 'Avaliações respondidas': 1, 'Avaliações pendentes': 0, 'Avaliações agendadas': 0, 'Média em avaliações disponíveis': 100, 'Média em avaliações respondidas': 100, 'Concluído dentro do prazo (%)': 'Não existem conteúdos com prazo', 'Concluído em atraso (%)': 'Não existem conteúdos com prazo', 'Não Concluído e dentro do prazo (%)': 'Não existem conteúdos com prazo', 'Não Concluído e em atraso (%)': 'Não existem conteúdos com prazo'}
+  Linha 1: {'Id Usuário': 605198, 'Nome Usuário': 'DANIELA RIVA KELLER', 'Último acesso': datetime.datetime(2025, 4, 28, 18, 20), 'E-mail': 'daniela_keller@banrisul.com.br', 'Id Turma (agrupador 1)': 95590, 'Turma (agrupador 1)': '[2024] Banrisul - B.E.M. | Básicas', 'Id Competência (agrupador 2)': '01J805YN0WJF9BCE0A2KQDBJ5C', 'Competência (agrupador 2)': 'Autopercepção - Básica', 'Data de início': datetime.datetime(2024, 11, 4, 20, 6), 'Data de conclusão': datetime.datetime(2024, 11, 12, 19, 13), 'Total de aulas': 6, 'Aulas disponíveis': 6, 'Aulas concluídas': 6, 'Aulas em andamento': 0, 'Aulas não iniciadas': 0, 'Aulas agendadas': 0, 'Progresso Total': 100, 'Carga horária total': datetime.time(1, 7, 30), 'Carga horária concluída': datetime.time(1, 7, 30), 'Progresso em aulas disponíveis': 100, 'Avaliações de diagnóstico': 0, 'Média das avaliações de diagnóstico': 0, 'Avaliações finais': 0, 'Média das avaliações finais': 0, 'Avaliações disponíveis': 1, 'Avaliações respondidas': 1, 'Avaliações pendentes': 0, 'Avaliações agendadas': 0, 'Média em avaliações disponíveis': 96, 'Média em avaliações respondidas': 96, 'Concluído dentro do prazo (%)': 'Não existem conteúdos com prazo', 'Concluído em atraso (%)': 'Não existem conteúdos com prazo', 'Não Concluído e dentro do prazo (%)': 'Não existem conteúdos com prazo', 'Não Concluído e em atraso (%)': 'Não existem conteúdos com prazo'}
+  Linha 2: {'Id Usuário': 605198, 'Nome Usuário': 'DANIELA RIVA KELLER', 'Último acesso': datetime.datetime(2025, 4, 28, 18, 20), 'E-mail': 'daniela_keller@banrisul.com.br', 'Id Turma (agrupador 1)': 95590, 'Turma (agrupador 1)': '[2024] Banrisul - B.E.M. | Básicas', 'Id Competência (agrupador 2)': '01J80620M940GZ1STEAGG2NJHG', 'Competência (agrupador 2)': 'Disciplina - Básica', 'Data de início': datetime.datetime(2024, 11, 12, 19, 14), 'Data de conclusão': datetime.datetime(2024, 11, 21, 21, 2), 'Total de aulas': 6, 'Aulas disponíveis': 6, 'Aulas concluídas': 6, 'Aulas em andamento': 0, 'Aulas não iniciadas': 0, 'Aulas agendadas': 0, 'Progresso Total': 100, 'Carga horária total': datetime.time(0, 59), 'Carga horária concluída': datetime.time(0, 59), 'Progresso em aulas disponíveis': 100, 'Avaliações de diagnóstico': 0, 'Média das avaliações de diagnóstico': 0, 'Avaliações finais': 0, 'Média das avaliações finais': 0, 'Avaliações disponíveis': 1, 'Avaliações respondidas': 1, 'Avaliações pendentes': 0, 'Avaliações agendadas': 0, 'Média em avaliações disponíveis': 100, 'Média em avaliações respondidas': 100, 'Concluído dentro do prazo (%)': 'Não existem conteúdos com prazo', 'Concluído em atraso (%)': 'Não existem conteúdos com prazo', 'Não Concluído e dentro do prazo (%)': 'Não existem conteúdos com prazo', 'Não Concluído e em atraso (%)': 'Não existem conteúdos com prazo'}

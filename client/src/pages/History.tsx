@@ -11,10 +11,23 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
-  Shield
+  Shield,
+  Users,
+  BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+
+// Configuração dos tipos de arquivo
+const FILE_TYPE_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
+  sebraeacre_mentorias: { label: "SEBRAE ACRE - Mentorias", color: "text-primary", bgColor: "bg-primary/20" },
+  sebraeacre_eventos: { label: "SEBRAE ACRE - Eventos", color: "text-primary", bgColor: "bg-primary/10" },
+  sebraeto_mentorias: { label: "SEBRAE TO - Mentorias", color: "text-secondary", bgColor: "bg-secondary/20" },
+  sebraeto_eventos: { label: "SEBRAE TO - Eventos", color: "text-secondary", bgColor: "bg-secondary/10" },
+  embrapii_mentorias: { label: "EMBRAPII - Mentorias", color: "text-chart-3", bgColor: "bg-chart-3/20" },
+  embrapii_eventos: { label: "EMBRAPII - Eventos", color: "text-chart-3", bgColor: "bg-chart-3/10" },
+  performance: { label: "Relatório de Performance", color: "text-chart-4", bgColor: "bg-chart-4/20" }
+};
 
 export default function HistoryPage() {
   const { user } = useAuth();
@@ -48,183 +61,97 @@ export default function HistoryPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "completed":
       case "processed":
-        return <CheckCircle2 className="h-4 w-4 text-green-400" />;
-      case "error":
-        return <XCircle className="h-4 w-4 text-red-400" />;
+      case "completed":
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case "processing":
-        return <Loader2 className="h-4 w-4 text-yellow-400 animate-spin" />;
+        return <Loader2 className="h-4 w-4 text-primary animate-spin" />;
+      case "error":
+        return <XCircle className="h-4 w-4 text-destructive" />;
       default:
         return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "Concluído";
-      case "processed":
-        return "Processado";
-      case "error":
-        return "Erro";
-      case "processing":
-        return "Processando";
-      default:
-        return "Pendente";
-    }
+  const getFileConfig = (fileType: string) => {
+    return FILE_TYPE_CONFIG[fileType] || { label: fileType, color: "text-muted-foreground", bgColor: "bg-muted" };
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes('mentorias')) return Users;
+    if (fileType.includes('eventos')) return Calendar;
+    if (fileType === 'performance') return BarChart3;
+    return FileSpreadsheet;
   };
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="geometric-accent pl-4">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Histórico de <span className="text-gradient">Uploads</span>
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Visualize todos os lotes de planilhas carregados no sistema
+        <div>
+          <h1 className="text-3xl font-bold text-gradient">Histórico de Uploads</h1>
+          <p className="text-muted-foreground mt-1">
+            Visualize todos os lotes de planilhas enviados ao sistema
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="gradient-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <FileSpreadsheet className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{batches?.length || 0}</p>
-                  <p className="text-xs text-muted-foreground">Total de Lotes</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="gradient-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                  <CheckCircle2 className="h-5 w-5 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">
-                    {batches?.filter(b => b.status === 'completed').length || 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Processados</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="gradient-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-yellow-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">
-                    {batches?.filter(b => b.status === 'pending' || b.status === 'processing').length || 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Pendentes</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="gradient-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
-                  <XCircle className="h-5 w-5 text-red-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">
-                    {batches?.filter(b => b.status === 'error').length || 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Com Erro</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Batches List */}
-          <div className="lg:col-span-2">
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Batch List */}
+          <div className="lg:col-span-1">
             <Card className="gradient-card">
               <CardHeader>
-                <CardTitle>Lotes de Upload</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  Lotes Enviados
+                </CardTitle>
                 <CardDescription>
-                  Clique em um lote para ver os arquivos
+                  Selecione um lote para ver detalhes
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
                 ) : batches && batches.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto">
                     {batches.map((batch) => (
-                      <div 
+                      <button
                         key={batch.id}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                          selectedBatchId === batch.id 
-                            ? 'bg-primary/10 border-primary' 
-                            : 'bg-muted/30 border-border hover:bg-muted/50'
-                        }`}
                         onClick={() => setSelectedBatchId(batch.id)}
+                        className={`w-full p-3 rounded-lg text-left transition-all ${
+                          selectedBatchId === batch.id
+                            ? "bg-primary/10 border border-primary/30"
+                            : "bg-background/30 border border-border/30 hover:bg-background/50"
+                        }`}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                              <FileSpreadsheet className="h-6 w-6 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-semibold">Semana {batch.weekNumber}/{batch.year}</p>
-                              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  {new Date(batch.createdAt).toLocaleDateString('pt-BR', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric'
-                                  })}
-                                </span>
-                              </div>
-                            </div>
+                          <div>
+                            <p className="font-medium">
+                              Semana {batch.weekNumber}/{batch.year}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {batch.totalRecords || 0} registro(s)
+                            </p>
                           </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(batch.status)}
-                            <span className={`text-sm ${
-                              batch.status === 'completed' ? 'text-green-400' :
-                              batch.status === 'error' ? 'text-red-400' :
-                              'text-muted-foreground'
-                            }`}>
-                              {getStatusLabel(batch.status)}
-                            </span>
-                          </div>
+                          {getStatusIcon(batch.status)}
                         </div>
-                        
-                        {batch.notes && (
-                          <p className="text-sm text-muted-foreground mt-3 pl-16">
-                            {batch.notes}
-                          </p>
-                        )}
-                      </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(batch.createdAt).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="font-medium">Nenhum upload realizado</p>
-                    <p className="text-sm">Os lotes de planilhas aparecerão aqui</p>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileSpreadsheet className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                    <p>Nenhum lote enviado ainda</p>
                   </div>
                 )}
               </CardContent>
@@ -232,79 +159,113 @@ export default function HistoryPage() {
           </div>
 
           {/* Batch Details */}
-          <div>
-            <Card className="gradient-card sticky top-4">
+          <div className="lg:col-span-2">
+            <Card className="gradient-card">
               <CardHeader>
-                <CardTitle>Arquivos do Lote</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5 text-secondary" />
+                  Detalhes do Lote
+                </CardTitle>
                 <CardDescription>
-                  {selectedBatchId ? `Lote #${selectedBatchId}` : 'Selecione um lote'}
+                  {selectedBatchId 
+                    ? `Arquivos do lote selecionado`
+                    : "Selecione um lote para ver os arquivos"
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {selectedBatchId ? (
-                  batchFiles && batchFiles.length > 0 ? (
-                    <div className="space-y-3">
-                      {batchFiles.map((file) => (
-                        <div 
-                          key={file.id}
-                          className="p-3 rounded-lg bg-muted/30"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                                file.fileType === 'mentoria' 
-                                  ? 'bg-primary/20' 
-                                  : file.fileType === 'eventos' ? 'bg-secondary/20' : 'bg-chart-3/20'
-                              }`}>
-                                <FileSpreadsheet className={`h-4 w-4 ${
-                                  file.fileType === 'mentoria' 
-                                    ? 'text-primary' 
-                                    : file.fileType === 'eventos' ? 'text-secondary' : 'text-chart-3'
-                                }`} />
+                {selectedBatchId && batchFiles ? (
+                  <div className="space-y-4">
+                    {/* Batch Info */}
+                    {batches && (
+                      <div className="p-4 rounded-lg bg-background/30 border border-border/30">
+                        {(() => {
+                          const batch = batches.find(b => b.id === selectedBatchId);
+                          if (!batch) return null;
+                          return (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <p className="text-muted-foreground">Semana</p>
+                                <p className="font-medium">{batch.weekNumber}/{batch.year}</p>
                               </div>
                               <div>
-                                <p className="text-sm font-medium truncate max-w-[150px]">
-                                  {file.fileName}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {file.fileType === 'mentoria' ? 'Mentoria' : file.fileType === 'eventos' ? 'Eventos' : file.fileType === 'alunos' ? 'Alunos' : 'Outros'}
+                                <p className="text-muted-foreground">Arquivos</p>
+                                <p className="font-medium">{batch.totalRecords || '-'}</p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">Status</p>
+                                <div className="flex items-center gap-1">
+                                  {getStatusIcon(batch.status)}
+                                  <span className="font-medium capitalize">{batch.status}</span>
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">Data</p>
+                                <p className="font-medium">
+                                  {new Date(batch.createdAt).toLocaleDateString('pt-BR')}
                                 </p>
                               </div>
                             </div>
-                            {getStatusIcon(file.status)}
-                          </div>
-                          
-                          <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground">
-                            <div className="flex justify-between">
-                              <span>Linhas: {file.rowCount || '-'}</span>
-                              <span>Colunas: {file.columnCount || '-'}</span>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Files Grid */}
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {batchFiles.map((file) => {
+                        const config = getFileConfig(file.fileType);
+                        const Icon = getFileIcon(file.fileType);
+                        
+                        return (
+                          <div
+                            key={file.id}
+                            className="p-4 rounded-lg bg-background/30 border border-border/30"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg ${config.bgColor}`}>
+                                  <Icon className={`h-4 w-4 ${config.color}`} />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium truncate max-w-[150px]">
+                                    {file.fileName}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {config.label}
+                                  </p>
+                                </div>
+                              </div>
+                              {getStatusIcon(file.status)}
                             </div>
+                            
+                            <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground">
+                              <div className="flex justify-between">
+                                <span>Linhas: {file.rowCount || '-'}</span>
+                                <span>Colunas: {file.columnCount || '-'}</span>
+                              </div>
+                            </div>
+                            
+                            {file.fileUrl && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full mt-3"
+                                onClick={() => window.open(file.fileUrl, '_blank')}
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Download
+                              </Button>
+                            )}
                           </div>
-                          
-                          {file.fileUrl && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="w-full mt-2"
-                              onClick={() => window.open(file.fileUrl, '_blank')}
-                            >
-                              <Download className="h-3 w-3 mr-2" />
-                              Baixar
-                            </Button>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FileSpreadsheet className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Nenhum arquivo neste lote</p>
-                    </div>
-                  )
+                  </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Selecione um lote para ver os arquivos</p>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Eye className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                    <p>Selecione um lote na lista ao lado</p>
                   </div>
                 )}
               </CardContent>
