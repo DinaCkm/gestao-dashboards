@@ -106,3 +106,10 @@
 - [x] Listar alunos avaliados pelo mentor
 - [x] Importar 13 mentores das planilhas
 - [x] Associar 1.014 sessões aos mentores corretos
+
+## Reorganização Hierárquica do Sistema
+- [x] Atualizar página inicial do Administrador com dados reais (198 alunos, 1014 sessões, 13 mentores, 3 empresas)
+- [x] Reorganizar menu seguindo hierarquia: Admin → Mentor → Gerente Empresa → Aluno
+- [ ] Implementar visão do Gerente de Empresa (por empresa específica)
+- [ ] Ajustar visão do Aluno Individual
+- [x] Corrigir contadores da Home (agora mostra dados reais)

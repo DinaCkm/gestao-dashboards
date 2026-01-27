@@ -34,6 +34,7 @@ function Router() {
       <Route path={"/formulas"} component={Formulas} />
       <Route path={"/historico"} component={History} />
       <Route path={"/dashboard/visao-geral"} component={DashboardVisaoGeral} />
+      <Route path={"/dashboard/empresa"} component={DashboardEmpresa} />
       <Route path={"/dashboard/empresa/:codigo"} component={DashboardEmpresa} />
       <Route path={"/dashboard/mentor"} component={DashboardMentor} />
       <Route path={"/404"} component={NotFound} />

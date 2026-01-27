@@ -1,18 +1,19 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { 
   Upload, 
   BarChart3, 
   Users, 
   FileSpreadsheet, 
-  TrendingUp, 
-  TrendingDown,
   ArrowRight,
   Building2,
-  FileText
+  FileText,
+  GraduationCap,
+  UserCheck,
+  Calendar,
+  TrendingUp
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -40,9 +41,9 @@ export default function Home() {
     }] : []),
     { 
       icon: BarChart3, 
-      label: "Meu Dashboard", 
-      description: "Visualizar métricas pessoais",
-      path: "/individual",
+      label: "Visão Geral", 
+      description: "Dashboard consolidado",
+      path: "/dashboard/visao-geral",
       color: "from-secondary to-secondary/80"
     },
     { 
@@ -80,63 +81,67 @@ export default function Home() {
 
         {/* Stats Cards - Admin Only */}
         {isAdmin && stats && (
-          <div className="dashboard-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Alunos */}
             <Card className="gradient-card card-hover">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total de Usuários
+                  Total de Alunos
                 </CardTitle>
-                <Users className="h-4 w-4 text-primary" />
+                <GraduationCap className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{stats.totalUsers}</div>
+                <div className="text-3xl font-bold">{stats.totalAlunos}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Usuários cadastrados
+                  Alunos cadastrados
                 </p>
               </CardContent>
             </Card>
 
+            {/* Mentores */}
             <Card className="gradient-card card-hover">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Departamentos
+                  Mentores
                 </CardTitle>
-                <Building2 className="h-4 w-4 text-secondary" />
+                <UserCheck className="h-4 w-4 text-secondary" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{stats.totalDepartments}</div>
+                <div className="text-3xl font-bold">{stats.totalMentores}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Departamentos ativos
+                  Consultores ativos
                 </p>
               </CardContent>
             </Card>
 
+            {/* Sessões de Mentoria */}
             <Card className="gradient-card card-hover">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Uploads Realizados
+                  Sessões de Mentoria
                 </CardTitle>
-                <FileSpreadsheet className="h-4 w-4 text-chart-3" />
+                <Calendar className="h-4 w-4 text-chart-3" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{stats.totalBatches}</div>
+                <div className="text-3xl font-bold">{stats.totalSessoes}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Lotes de planilhas
+                  Mentorias realizadas
                 </p>
               </CardContent>
             </Card>
 
+            {/* Empresas */}
             <Card className="gradient-card card-hover">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Relatórios Gerados
+                  Empresas
                 </CardTitle>
-                <FileText className="h-4 w-4 text-chart-4" />
+                <Building2 className="h-4 w-4 text-chart-4" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{stats.totalReports}</div>
+                <div className="text-3xl font-bold">{stats.totalEmpresas}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Relatórios exportados
+                  Programas ativos
                 </p>
               </CardContent>
             </Card>
@@ -207,14 +212,12 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Role-specific message */}
+        {/* Hierarchy Info */}
         <Card className="gradient-card border-primary/20">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
-                {isAdmin ? <BarChart3 className="h-5 w-5 text-primary" /> : 
-                 isManager ? <Building2 className="h-5 w-5 text-secondary" /> :
-                 <TrendingUp className="h-5 w-5 text-chart-3" />}
+                <TrendingUp className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h3 className="font-semibold mb-1">
@@ -224,7 +227,7 @@ export default function Home() {
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {isAdmin 
-                    ? "Você tem acesso completo a todas as funcionalidades do sistema, incluindo gerenciamento de usuários, departamentos e configurações de cálculo."
+                    ? "Você tem acesso completo: Visão Geral, Mentores, Empresas e Alunos. Gerencie usuários, departamentos e configurações."
                     : isManager 
                       ? "Você pode visualizar métricas da sua equipe, fazer upload de planilhas e gerar relatórios departamentais."
                       : "Você pode acompanhar suas métricas pessoais, histórico de evolução e gerar relatórios individuais."}

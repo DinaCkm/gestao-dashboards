@@ -376,18 +376,35 @@ export async function getAllReports(limit = 50) {
 // ============ STATISTICS FUNCTIONS ============
 export async function getSystemStats() {
   const db = await getDb();
-  if (!db) return { totalUsers: 0, totalDepartments: 0, totalBatches: 0, totalReports: 0 };
+  if (!db) return { 
+    totalUsers: 0, 
+    totalDepartments: 0, 
+    totalBatches: 0, 
+    totalReports: 0,
+    totalAlunos: 0,
+    totalMentores: 0,
+    totalSessoes: 0,
+    totalEmpresas: 0
+  };
   
   const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
   const [deptCount] = await db.select({ count: sql<number>`count(*)` }).from(departments);
   const [batchCount] = await db.select({ count: sql<number>`count(*)` }).from(uploadBatches);
   const [reportCount] = await db.select({ count: sql<number>`count(*)` }).from(reports);
+  const [alunoCount] = await db.select({ count: sql<number>`count(*)` }).from(alunos);
+  const [mentorCount] = await db.select({ count: sql<number>`count(*)` }).from(consultors);
+  const [sessionCount] = await db.select({ count: sql<number>`count(*)` }).from(mentoringSessions);
+  const [programCount] = await db.select({ count: sql<number>`count(*)` }).from(programs).where(eq(programs.isActive, 1));
   
   return {
     totalUsers: userCount?.count || 0,
     totalDepartments: deptCount?.count || 0,
     totalBatches: batchCount?.count || 0,
-    totalReports: reportCount?.count || 0
+    totalReports: reportCount?.count || 0,
+    totalAlunos: alunoCount?.count || 0,
+    totalMentores: mentorCount?.count || 0,
+    totalSessoes: sessionCount?.count || 0,
+    totalEmpresas: programCount?.count || 0
   };
 }
 

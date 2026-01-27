@@ -50,13 +50,21 @@ type MenuItem = {
 };
 
 const allMenuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/", roles: ["admin", "manager", "user"] },
-  { icon: Upload, label: "Upload de Planilhas", path: "/upload", roles: ["admin", "manager"] },
+  // === ADMINISTRADOR ===
+  { icon: LayoutDashboard, label: "Painel Admin", path: "/", roles: ["admin"] },
+  { icon: Upload, label: "Upload de Planilhas", path: "/upload", roles: ["admin"] },
   { icon: BarChart3, label: "Visão Geral", path: "/dashboard/visao-geral", roles: ["admin"] },
-  { icon: Building2, label: "Por Empresa", path: "/dashboard/admin", roles: ["admin"] },
+  
+  // === MENTORES ===
   { icon: UserCheck, label: "Visão do Mentor", path: "/dashboard/mentor", roles: ["admin", "manager"] },
-  { icon: Building2, label: "Dashboard Gerencial", path: "/dashboard/gerencial", roles: ["admin", "manager"] },
+  
+  // === GERENTES DE EMPRESA ===
+  { icon: Building2, label: "Por Empresa", path: "/dashboard/empresa", roles: ["admin", "manager"] },
+  
+  // === ALUNO INDIVIDUAL ===
   { icon: User, label: "Meu Dashboard", path: "/dashboard/individual", roles: ["admin", "manager", "user"] },
+  
+  // === RELATÓRIOS E GESTÃO ===
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager", "user"] },
   { icon: Users, label: "Usuários", path: "/usuarios", roles: ["admin"] },
   { icon: Building2, label: "Departamentos", path: "/departamentos", roles: ["admin"] },
