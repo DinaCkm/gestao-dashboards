@@ -133,3 +133,27 @@
 - [x] Adicionar rotas de API para CRUD de cada entidade
 - [x] 13 mentores importados das planilhas com botão "Ativar Acesso" entidade
 - [x] 13 mentores importados das planilhas com botão "Ativar Acesso"
+
+## Bug Reportado - SEBRAE PARA
+- [x] Investigar origem do "SEBRAE PARA" no dropdown de empresas (erro no banco de dados)
+- [x] Corrigir processo de identificação de empresas (UPDATE no banco)
+- [x] Garantir que apenas SEBRAE ACRE, SEBRAE TO e EMBRAPII apareçam
+
+## Refatoração da Importação de Dados
+- [x] Usar planilha de Performance como BASE PRINCIPAL (fonte da verdade)
+- [x] Importar primeiro: Id Usuário, Nome, Email, Turma, Competências da Performance
+- [x] Cruzar dados com planilhas de Mentorias
+- [ ] Cruzar dados com planilhas de Eventos
+- [x] Gerar ALERTAS para inconsistências:
+  - Aluno na Mentoria mas NÃO na Performance (0 casos - todos estão OK!)
+  - Aluno nos Eventos mas NÃO na Performance
+  - Aluno na Performance mas NÃO na Mentoria
+  - Aluno na Performance mas NÃO nos Eventos
+- [ ] Exibir relatório de inconsistências no sistema
+
+## Dados Importados (Atualizado)
+- [x] 4 Empresas: SEBRAE ACRE, SEBRAE TO, EMBRAPII, BANRISUL
+- [x] 125 Alunos (da planilha de Performance)
+- [x] 13 Turmas
+- [x] 26 Consultores/Mentores
+- [x] 1.014 Sessões de Mentoria
