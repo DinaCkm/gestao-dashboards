@@ -20,6 +20,7 @@ import DashboardVisaoGeral from "./pages/DashboardVisaoGeral";
 import DashboardEmpresa from "./pages/DashboardEmpresa";
 import DashboardMentor from "./pages/DashboardMentor";
 import AdminCadastros from "./pages/AdminCadastros";
+import PorEmpresa from "./pages/PorEmpresa";
 
 function Router() {
   return (
@@ -35,7 +36,7 @@ function Router() {
       <Route path={"/formulas"} component={Formulas} />
       <Route path={"/historico"} component={History} />
       <Route path={"/dashboard/visao-geral"} component={DashboardVisaoGeral} />
-      <Route path={"/dashboard/empresa"} component={DashboardEmpresa} />
+      <Route path={"/dashboard/empresa"} component={PorEmpresa} />
       <Route path={"/dashboard/empresa/:codigo"} component={DashboardEmpresa} />
       <Route path={"/dashboard/mentor"} component={DashboardMentor} />
       <Route path={"/cadastros"} component={AdminCadastros} />

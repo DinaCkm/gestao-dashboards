@@ -157,3 +157,8 @@
 - [x] 13 Turmas
 - [x] 26 Consultores/Mentores
 - [x] 1.014 Sessões de Mentoria
+
+## Bugs Reportados (27/01/2026)
+- [x] Corrigir "SEBRAE PARA" para "SEBRAE TO" no banco de dados (corrigido via UPDATE no banco)
+- [x] Corrigir erro NotFoundError: Falha ao executar 'removeChild' na página Por Empresa (criada página PorEmpresa.tsx dedicada)
+- [x] Corrigir programId null nos alunos (associados via turmaId)
