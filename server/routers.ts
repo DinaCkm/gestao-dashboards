@@ -8,6 +8,7 @@ import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
 import { calcularIndicadoresTodosAlunos, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicators } from "./indicatorsCalculator";
 import { notifyOwner } from "./_core/notification";
+import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -262,6 +263,49 @@ export const appRouter = router({
       .input(z.object({ batchId: z.number() }))
       .query(async ({ input }) => {
         return await db.getFilesByBatchId(input.batchId);
+      }),
+    
+    // Baixar template de planilha
+    downloadTemplate: publicProcedure
+      .input(z.object({
+        type: z.enum(["mentorias", "eventos", "performance"])
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = generateTemplate(input.type as TemplateType);
+        return {
+          data: buffer.toString('base64'),
+          filename: `modelo_${input.type}.xlsx`
+        };
+      }),
+    
+    // Obter estrutura esperada do template
+    getTemplateStructure: publicProcedure
+      .input(z.object({
+        type: z.enum(["mentorias", "eventos", "performance"])
+      }))
+      .query(({ input }) => {
+        return TEMPLATE_STRUCTURES[input.type as TemplateType];
+      }),
+    
+    // Validar planilha antes do upload
+    validateFile: protectedProcedure
+      .input(z.object({
+        fileData: z.string(), // Base64
+        expectedType: z.enum(["mentorias", "eventos", "performance"])
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.fileData, 'base64');
+        return validateSpreadsheet(buffer, input.expectedType as TemplateType);
+      }),
+    
+    // Listar histórico de uploads por tipo
+    getUploadHistory: protectedProcedure
+      .input(z.object({
+        fileType: z.string().optional(),
+        limit: z.number().optional()
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getUploadHistory(input?.fileType, input?.limit || 10);
       }),
   }),
 

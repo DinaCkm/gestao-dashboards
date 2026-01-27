@@ -165,3 +165,11 @@
 - [ ] Corrigir erro NotFoundError na página Visão Geral ao clicar nos cards de empresas (erro de Portal/removeChild)
 - [x] Adicionar popup/tooltip de ajuda explicando origem dos dados e cálculo das notas nos dashboards
 - [x] Substituir card 'Alunos Excelência' por 'Melhor Nota' (maior nota atual) e adicionar 'Meta' (expectativa 9.0) ao lado
+
+## Sistema de Upload de Planilhas (27/01/2026)
+- [x] Criar templates/modelos de planilha para download (Performance, Mentorias, Eventos)
+- [x] Implementar validação de formato com popup de erro detalhado
+- [x] Implementar substituição de planilha mantendo histórico com data
+- [x] Limitar histórico a 3 versões anteriores (excluir mais antigas automaticamente)
+- [x] Botão "Ver Histórico de Uploads" com diálogo mostrando arquivos anteriores
+- [x] Tooltips de ajuda explicando o formato esperado de cada modelo

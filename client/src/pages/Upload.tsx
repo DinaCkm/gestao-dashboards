@@ -18,10 +18,38 @@ import {
   Calendar,
   BarChart3,
   AlertCircle,
-  Building2
+  Building2,
+  Download,
+  History,
+  HelpCircle,
+  Trash2
 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Tipos de arquivo específicos do sistema B.E.M.
 type FileType = 
@@ -140,10 +168,57 @@ export default function UploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedFileType, setSelectedFileType] = useState<FileType>("sebraeacre_mentorias");
   const [fileObjects, setFileObjects] = useState<Map<string, File>>(new Map());
+  
+  // Estados para validação e histórico
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
 
   const createBatchMutation = trpc.uploads.createBatch.useMutation();
   const uploadFileMutation = trpc.uploads.uploadFile.useMutation();
   const completeBatchMutation = trpc.uploads.completeBatch.useMutation();
+  const downloadTemplateMutation = trpc.uploads.downloadTemplate.useMutation();
+  const validateFileMutation = trpc.uploads.validateFile.useMutation();
+  
+  // Query para histórico de uploads
+  const { data: uploadHistory, refetch: refetchHistory } = trpc.uploads.getUploadHistory.useQuery(
+    { limit: 10 },
+    { enabled: showHistoryDialog }
+  );
+
+  // Função para baixar template
+  const handleDownloadTemplate = async (type: "mentorias" | "eventos" | "performance") => {
+    setIsDownloadingTemplate(true);
+    try {
+      const result = await downloadTemplateMutation.mutateAsync({ type });
+      
+      // Converter base64 para blob e fazer download
+      const byteCharacters = atob(result.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success(`Modelo ${type} baixado com sucesso!`);
+    } catch (error) {
+      toast.error('Erro ao baixar modelo: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
+  };
 
   const handleFileChange = useCallback((
     event: React.ChangeEvent<HTMLInputElement>
@@ -515,6 +590,125 @@ export default function UploadPage() {
           </Card>
         </div>
 
+        {/* Templates Download Section */}
+        <Card className="gradient-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5 text-green-600" />
+              Modelos de Planilha
+            </CardTitle>
+            <CardDescription>
+              Baixe os modelos com o formato correto para cada tipo de arquivo
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="p-4 rounded-lg border border-primary/30 bg-primary/5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    <span className="font-medium">Mentorias</span>
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Colunas: Nome do Aluno, Turma, Mentor, Data, Mentoria (Presente/Ausente), Atividade proposta, Engajamento (1-5)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">Sessões de mentoria com presença, tarefas e engajamento</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => handleDownloadTemplate('mentorias')}
+                  disabled={isDownloadingTemplate}
+                >
+                  {isDownloadingTemplate ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                  Baixar Modelo
+                </Button>
+              </div>
+              
+              <div className="p-4 rounded-lg border border-secondary/30 bg-secondary/5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-secondary" />
+                    <span className="font-medium">Eventos</span>
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Colunas: Nome do Aluno, Turma, Nome do Evento, Data, Tipo (Webinar/Workshop), Status Presença</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">Participação em webinars e eventos</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => handleDownloadTemplate('eventos')}
+                  disabled={isDownloadingTemplate}
+                >
+                  {isDownloadingTemplate ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                  Baixar Modelo
+                </Button>
+              </div>
+              
+              <div className="p-4 rounded-lg border border-chart-4/30 bg-chart-4/5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-chart-4" />
+                    <span className="font-medium">Performance</span>
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Colunas: Nome do Aluno, Turma, Empresa, Competência 1-5, Média Competências</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">Relatório consolidado de competências</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => handleDownloadTemplate('performance')}
+                  disabled={isDownloadingTemplate}
+                >
+                  {isDownloadingTemplate ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                  Baixar Modelo
+                </Button>
+              </div>
+            </div>
+            
+            {/* Botão de Histórico */}
+            <div className="mt-4 pt-4 border-t border-border/30">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowHistoryDialog(true)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <History className="h-4 w-4 mr-2" />
+                Ver Histórico de Uploads
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Instructions - Organized by Company */}
         <Card className="gradient-card">
           <CardHeader>
@@ -557,6 +751,104 @@ export default function UploadPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Diálogo de Erros de Validação */}
+      <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              Erro na Planilha
+            </DialogTitle>
+            <DialogDescription>
+              A planilha não está no formato esperado. Corrija os erros abaixo:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {validationErrors.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-destructive">Erros (impedem o upload):</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-destructive">
+                  {validationErrors.map((error, i) => (
+                    <li key={i}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {validationWarnings.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-yellow-600">Avisos (podem causar problemas):</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-yellow-600">
+                  {validationWarnings.map((warning, i) => (
+                    <li key={i}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowValidationDialog(false)}>
+              Entendi
+            </Button>
+            <Button onClick={() => handleDownloadTemplate('mentorias')}>
+              <Download className="h-4 w-4 mr-2" />
+              Baixar Modelo Correto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Histórico */}
+      <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Histórico de Uploads
+            </DialogTitle>
+            <DialogDescription>
+              Últimos arquivos enviados. Mantemos as 3 versões mais recentes de cada tipo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            {uploadHistory && uploadHistory.length > 0 ? (
+              uploadHistory.map((file) => (
+                <div 
+                  key={file.id} 
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileSpreadsheet className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{file.fileName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {file.fileType} • Semana {file.weekNumber}/{file.year} • {file.rowCount || 0} linhas
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {file.createdAt ? new Date(file.createdAt).toLocaleString('pt-BR') : 'Data não disponível'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded ${file.status === 'processed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      {file.status === 'processed' ? 'Processado' : file.status}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                Nenhum arquivo enviado ainda.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHistoryDialog(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

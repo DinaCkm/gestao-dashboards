@@ -1049,3 +1049,80 @@ export async function createAluno(data: { name: string; email: string; externalI
   return { id: result.insertId, ...data };
 }
 
+
+// ============ UPLOAD HISTORY FUNCTIONS ============
+export async function getUploadHistory(fileType?: string, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let query = db.select({
+    id: uploadedFiles.id,
+    fileName: uploadedFiles.fileName,
+    fileKey: uploadedFiles.fileKey,
+    fileUrl: uploadedFiles.fileUrl,
+    fileType: uploadedFiles.fileType,
+    fileSize: uploadedFiles.fileSize,
+    rowCount: uploadedFiles.rowCount,
+    status: uploadedFiles.status,
+    createdAt: uploadedFiles.createdAt,
+    batchId: uploadedFiles.batchId,
+    weekNumber: uploadBatches.weekNumber,
+    year: uploadBatches.year
+  })
+  .from(uploadedFiles)
+  .leftJoin(uploadBatches, eq(uploadedFiles.batchId, uploadBatches.id))
+  .orderBy(desc(uploadedFiles.createdAt))
+  .limit(limit);
+  
+  if (fileType) {
+    return await db.select({
+      id: uploadedFiles.id,
+      fileName: uploadedFiles.fileName,
+      fileKey: uploadedFiles.fileKey,
+      fileUrl: uploadedFiles.fileUrl,
+      fileType: uploadedFiles.fileType,
+      fileSize: uploadedFiles.fileSize,
+      rowCount: uploadedFiles.rowCount,
+      status: uploadedFiles.status,
+      createdAt: uploadedFiles.createdAt,
+      batchId: uploadedFiles.batchId,
+      weekNumber: uploadBatches.weekNumber,
+      year: uploadBatches.year
+    })
+    .from(uploadedFiles)
+    .leftJoin(uploadBatches, eq(uploadedFiles.batchId, uploadBatches.id))
+    .where(eq(uploadedFiles.fileType, fileType as any))
+    .orderBy(desc(uploadedFiles.createdAt))
+    .limit(limit);
+  }
+  
+  return await query;
+}
+
+// Obter arquivos antigos para limpeza (mais de 3 versões por tipo)
+export async function getOldFilesToCleanup(fileType: string, keepCount = 3) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Pegar todos os arquivos do tipo, ordenados por data
+  const allFiles = await db.select()
+    .from(uploadedFiles)
+    .where(eq(uploadedFiles.fileType, fileType as any))
+    .orderBy(desc(uploadedFiles.createdAt));
+  
+  // Retornar apenas os que excedem o limite
+  if (allFiles.length > keepCount) {
+    return allFiles.slice(keepCount);
+  }
+  
+  return [];
+}
+
+// Deletar arquivo do histórico
+export async function deleteUploadedFile(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.delete(uploadedFiles).where(eq(uploadedFiles.id, id));
+  return true;
+}
