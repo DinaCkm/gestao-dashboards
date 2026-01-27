@@ -51,7 +51,8 @@ type MenuItem = {
 const allMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/", roles: ["admin", "manager", "user"] },
   { icon: Upload, label: "Upload de Planilhas", path: "/upload", roles: ["admin", "manager"] },
-  { icon: BarChart3, label: "Dashboard Admin", path: "/dashboard/admin", roles: ["admin"] },
+  { icon: BarChart3, label: "Visão Geral", path: "/dashboard/visao-geral", roles: ["admin"] },
+  { icon: Building2, label: "Por Empresa", path: "/dashboard/admin", roles: ["admin"] },
   { icon: Building2, label: "Dashboard Gerencial", path: "/dashboard/gerencial", roles: ["admin", "manager"] },
   { icon: User, label: "Meu Dashboard", path: "/dashboard/individual", roles: ["admin", "manager", "user"] },
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager", "user"] },
@@ -63,7 +64,7 @@ const allMenuItems: MenuItem[] = [
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
-const DEFAULT_WIDTH = 280;
+const DEFAULT_WIDTH = 320;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 480;
 
@@ -95,11 +96,17 @@ export default function DashboardLayout({
           <div className="absolute bottom-20 right-20 w-24 h-24 border border-primary/20 rotate-12" />
           
           <div className="flex flex-col items-center gap-6 relative z-10">
-            <img src="/logo-bem.svg" alt="B.E.M." className="h-20 w-auto" />
-            <img src="/logo-bem-full.svg" alt="B.E.M." className="h-16 w-auto" />
-            <h1 className="text-2xl font-bold tracking-tight text-center text-gradient">
-              ECOSSISTEMA DO BEM
+            {/* Logo será adicionado aqui quando disponível */}
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+              <span className="text-3xl font-bold text-white">B.E.M</span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-center text-gradient">
+              BEM VINDO AO
             </h1>
+            <h2 className="text-2xl font-bold tracking-tight text-center">
+              <span className="text-primary">ECOSSISTEMA DO </span>
+              <span className="text-secondary">BEM</span>
+            </h2>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
               Acesse sua conta para visualizar dashboards, relatórios e gerenciar dados.
             </p>
@@ -226,12 +233,18 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <img src="/logo-bem.svg" alt="B.E.M." className="h-8 w-auto" />
-                  <span className="font-bold tracking-tight truncate text-sidebar-foreground">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-secondary to-secondary/80 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-white">BEM</span>
+                  </div>
+                  <span className="font-bold tracking-tight text-sidebar-foreground text-sm whitespace-nowrap">
                     ECOSSISTEMA DO BEM
                   </span>
                 </div>
-              ) : null}
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-secondary to-secondary/80 flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">BEM</span>
+                </div>
+              )}
             </div>
           </SidebarHeader>
 

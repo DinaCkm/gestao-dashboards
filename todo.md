@@ -55,10 +55,42 @@
 - [x] Renomear sistema para ECOSSISTEMA DO BEM
 - [x] Adicionar logo B.E.M. na sidebar e interface
 - [x] Configurar 3 empresas: SEBRAE TO, SEBRAE ACRE, EMBRAPII
-- [ ] Implementar 3 níveis de visão: Geral, Por Empresa, Por Aluno
-- [ ] Atualizar dashboards com filtros por empresa
+- [x] Implementar 3 níveis de visão: Geral, Por Empresa, Por Aluno
+- [x] Atualizar dashboards com filtros por empresa
 - [x] Configurar upload para aceitar os 7 arquivos: SEBRAEACRE-Mentorias, SEBRAEACRE-Eventos, EMBRAPII-Mentorias, EMBRAPII-Eventos, BS2SEBRAETO-Mentorias, BS2SEBRAETO-Eventos, relatorio-de-performance
 - [ ] Usar Id Usuário como chave principal para cruzar planilhas
 - [ ] Implementar hierarquia: Empresa → Turma → Aluno → Trilha/Competências
 - [ ] Adicionar visão por Turma nos dashboards
 - [ ] Implementar regra de aprovação (nota ≥7 = aprovado)
+- [ ] Corrigir nome do sistema para ECOSSISTEMA DO BEM em todos os lugares (sidebar, título, etc.)
+- [ ] Corrigir nome cortado na sidebar - mostrar ECOSSISTEMA DO BEM completo
+- [ ] Corrigir logo que não aparece na tela de login
+- [ ] Mudar texto para "BEM VINDO AO ECOSSISTEMA DO BEM"
+
+## Próximos Passos - Processamento de Dados
+- [ ] Implementar parser para SEBRAEACRE-Mentorias.xlsx (33 alunos, 493 registros)
+- [ ] Implementar parser para SEBRAEACRE-Eventos.xlsx (791 registros)
+- [ ] Implementar parser para BS2SEBRAETO-Tutorias.xlsx (50 alunos, 403 registros)
+- [ ] Implementar parser para BS2SEBRAETO-Eventos.xlsx (861 registros)
+- [ ] Implementar parser para EMBRAPII-Mentorias.xlsx (16 alunos, 130 registros)
+- [ ] Implementar parser para EMBRAPII-Eventos.xlsx (269 registros)
+- [ ] Implementar parser para relatorio-de-performance.xlsx (34 colunas)
+- [ ] Cruzar dados usando Id Usuário como chave principal
+
+## Cálculo dos 5 Indicadores (20% cada)
+- [x] Indicador 1: Participação Mentorias (coluna "Mentoria" - Presente/Ausente)
+- [x] Indicador 2: Atividades Práticas (coluna "Atividade proposta" - Entregue/Não entregue)
+- [x] Indicador 3: Engajamento (coluna "Evolução/Engajamento" - nota 1-5)
+- [x] Indicador 4: Performance Competências (relatorio-de-performance - notas ≥7)
+- [x] Indicador 5: Participação Eventos (coluna "Status Presença" - Presente/Ausente)
+- [x] Calcular nota final (média ponderada dos 5 indicadores)
+- [x] Classificar em estágios (Excelência 9-10, Avançado 7-8, Intermediário 5-6, Básico 3-4, Inicial 0-2)
+
+## Dashboards por Nível
+- [x] Dashboard Visão Geral (consolidado 3 empresas)
+- [x] Dashboard por Empresa (SEBRAE ACRE, SEBRAE TO, EMBRAPII)
+- [ ] Dashboard por Turma (dentro de cada empresa)
+- [ ] Dashboard por Aluno (performance individual com histórico)
+
+## Interface
+- [x] Logo temporariamente removido (aguardando novo logo do usuário)

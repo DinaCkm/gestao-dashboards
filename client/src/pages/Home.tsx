@@ -67,7 +67,7 @@ export default function Home() {
         {/* Header */}
         <div className="geometric-accent pl-4">
           <h1 className="text-3xl font-bold tracking-tight">
-            Bem-vindo, <span className="text-gradient">{user?.name?.split(' ')[0] || 'Usuário'}</span>
+            Bem-vindo ao <span className="text-gradient">ECOSSISTEMA DO BEM</span>, {user?.name?.split(' ')[0] || 'Usuário'}
           </h1>
           <p className="text-muted-foreground mt-2">
             {isAdmin 

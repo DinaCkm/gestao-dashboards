@@ -5,7 +5,8 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
-import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData } from "./excelProcessor";
+import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
+import { calcularIndicadoresTodosAlunos, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicators } from "./indicatorsCalculator";
 import { notifyOwner } from "./_core/notification";
 
 // Admin-only procedure
@@ -351,6 +352,265 @@ export const appRouter = router({
   stats: router({
     overview: adminProcedure.query(async () => {
       return await db.getSystemStats();
+    }),
+  }),
+
+  // Programs (Empresas)
+  programs: router({
+    list: protectedProcedure.query(async () => {
+      return await db.getPrograms();
+    }),
+    
+    stats: adminProcedure.query(async () => {
+      return await db.getProgramStats();
+    }),
+  }),
+
+  // Turmas
+  turmas: router({
+    list: protectedProcedure
+      .input(z.object({ programId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getTurmas(input?.programId);
+      }),
+  }),
+
+  // Alunos
+  alunos: router({
+    list: protectedProcedure
+      .input(z.object({ programId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getAlunos(input?.programId);
+      }),
+    
+    byTurma: protectedProcedure
+      .input(z.object({ turmaId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAlunosByTurma(input.turmaId);
+      }),
+  }),
+
+  // Indicadores BEM
+  indicadores: router({
+    // Dashboard Visão Geral (consolidado de todas as empresas)
+    visaoGeral: adminProcedure.query(async () => {
+      // Buscar todos os dados de mentorias e eventos
+      const mentoringSessions = await db.getAllMentoringSessions();
+      const eventParticipations = await db.getAllEventParticipation();
+      const alunosList = await db.getAlunos();
+      const programsList = await db.getPrograms();
+      
+      // Converter para formato do calculador
+      const mentorias: MentoringRecord[] = [];
+      const eventos: EventRecord[] = [];
+      const performance: PerformanceRecord[] = [];
+      
+      // Mapear alunos e programas
+      const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+      const programMap = new Map(programsList.map(p => [p.id, p]));
+      
+      for (const session of mentoringSessions) {
+        const aluno = alunoMap.get(session.alunoId);
+        if (!aluno) continue;
+        const program = aluno.programId ? programMap.get(aluno.programId) : null;
+        
+        mentorias.push({
+          idUsuario: aluno.externalId || String(aluno.id),
+          nomeAluno: aluno.name,
+          empresa: program?.name || 'Desconhecida',
+          turma: String(aluno.turmaId || ''),
+          presenca: session.presence as 'presente' | 'ausente',
+          atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
+          engajamento: session.engagementScore || undefined
+        });
+      }
+      
+      for (const participation of eventParticipations) {
+        const aluno = alunoMap.get(participation.alunoId);
+        if (!aluno) continue;
+        const program = aluno.programId ? programMap.get(aluno.programId) : null;
+        
+        eventos.push({
+          idUsuario: aluno.externalId || String(aluno.id),
+          nomeAluno: aluno.name,
+          empresa: program?.name || 'Desconhecida',
+          tituloEvento: 'Evento',
+          presenca: participation.status as 'presente' | 'ausente'
+        });
+      }
+      
+      // Calcular indicadores
+      const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);
+      const dashboard = gerarDashboardGeral(indicadores);
+      
+      return dashboard;
+    }),
+    
+    // Dashboard por Empresa
+    porEmpresa: adminProcedure
+      .input(z.object({ empresa: z.string() }))
+      .query(async ({ input }) => {
+        const mentoringSessions = await db.getAllMentoringSessions();
+        const eventParticipations = await db.getAllEventParticipation();
+        const alunosList = await db.getAlunos();
+        const programsList = await db.getPrograms();
+        
+        const mentorias: MentoringRecord[] = [];
+        const eventos: EventRecord[] = [];
+        const performance: PerformanceRecord[] = [];
+        
+        const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+        const programMap = new Map(programsList.map(p => [p.id, p]));
+        
+        for (const session of mentoringSessions) {
+          const aluno = alunoMap.get(session.alunoId);
+          if (!aluno) continue;
+          const program = aluno.programId ? programMap.get(aluno.programId) : null;
+          
+          mentorias.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeAluno: aluno.name,
+            empresa: program?.name || 'Desconhecida',
+            turma: String(aluno.turmaId || ''),
+            presenca: session.presence as 'presente' | 'ausente',
+            atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
+            engajamento: session.engagementScore || undefined
+          });
+        }
+        
+        for (const participation of eventParticipations) {
+          const aluno = alunoMap.get(participation.alunoId);
+          if (!aluno) continue;
+          const program = aluno.programId ? programMap.get(aluno.programId) : null;
+          
+          eventos.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeAluno: aluno.name,
+            empresa: program?.name || 'Desconhecida',
+            tituloEvento: 'Evento',
+            presenca: participation.status as 'presente' | 'ausente'
+          });
+        }
+        
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);
+        const dashboard = gerarDashboardEmpresa(indicadores, input.empresa);
+        
+        return dashboard;
+      }),
+    
+    // Dashboard por Turma
+    porTurma: managerProcedure
+      .input(z.object({ turmaId: z.number() }))
+      .query(async ({ input }) => {
+        const mentoringSessions = await db.getAllMentoringSessions();
+        const eventParticipations = await db.getAllEventParticipation();
+        const alunosList = await db.getAlunosByTurma(input.turmaId);
+        const programsList = await db.getPrograms();
+        
+        const mentorias: MentoringRecord[] = [];
+        const eventos: EventRecord[] = [];
+        const performance: PerformanceRecord[] = [];
+        
+        const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+        const programMap = new Map(programsList.map(p => [p.id, p]));
+        
+        for (const session of mentoringSessions) {
+          const aluno = alunoMap.get(session.alunoId);
+          if (!aluno) continue;
+          const program = aluno.programId ? programMap.get(aluno.programId) : null;
+          
+          mentorias.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeAluno: aluno.name,
+            empresa: program?.name || 'Desconhecida',
+            turma: String(aluno.turmaId || ''),
+            presenca: session.presence as 'presente' | 'ausente',
+            atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
+            engajamento: session.engagementScore || undefined
+          });
+        }
+        
+        for (const participation of eventParticipations) {
+          const aluno = alunoMap.get(participation.alunoId);
+          if (!aluno) continue;
+          const program = aluno.programId ? programMap.get(aluno.programId) : null;
+          
+          eventos.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeAluno: aluno.name,
+            empresa: program?.name || 'Desconhecida',
+            tituloEvento: 'Evento',
+            presenca: participation.status as 'presente' | 'ausente'
+          });
+        }
+        
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);
+        const agregado = agregarIndicadores(indicadores, 'turma', String(input.turmaId));
+        const alunos = indicadores.filter(i => i.turma === String(input.turmaId));
+        
+        return { visaoTurma: agregado, alunos };
+      }),
+    
+    // Dashboard Individual (por aluno)
+    porAluno: protectedProcedure
+      .input(z.object({ alunoId: z.string() }))
+      .query(async ({ input }) => {
+        const mentoringSessions = await db.getAllMentoringSessions();
+        const eventParticipations = await db.getAllEventParticipation();
+        const alunosList = await db.getAlunos();
+        const programsList = await db.getPrograms();
+        
+        const mentorias: MentoringRecord[] = [];
+        const eventos: EventRecord[] = [];
+        const performance: PerformanceRecord[] = [];
+        
+        const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+        const programMap = new Map(programsList.map(p => [p.id, p]));
+        
+        for (const session of mentoringSessions) {
+          const aluno = alunoMap.get(session.alunoId);
+          if (!aluno) continue;
+          const program = aluno.programId ? programMap.get(aluno.programId) : null;
+          
+          mentorias.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeAluno: aluno.name,
+            empresa: program?.name || 'Desconhecida',
+            turma: String(aluno.turmaId || ''),
+            presenca: session.presence as 'presente' | 'ausente',
+            atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
+            engajamento: session.engagementScore || undefined
+          });
+        }
+        
+        for (const participation of eventParticipations) {
+          const aluno = alunoMap.get(participation.alunoId);
+          if (!aluno) continue;
+          const program = aluno.programId ? programMap.get(aluno.programId) : null;
+          
+          eventos.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeAluno: aluno.name,
+            empresa: program?.name || 'Desconhecida',
+            tituloEvento: 'Evento',
+            presenca: participation.status as 'presente' | 'ausente'
+          });
+        }
+        
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);
+        const alunoIndicadores = indicadores.find(i => i.idUsuario === input.alunoId);
+        
+        if (!alunoIndicadores) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+        }
+        
+        return alunoIndicadores;
+      }),
+    
+    // Lista de empresas disponíveis
+    empresas: protectedProcedure.query(async () => {
+      const programs = await db.getPrograms();
+      return programs.map(p => ({ id: p.id, nome: p.name, codigo: p.code }));
     }),
   }),
 });

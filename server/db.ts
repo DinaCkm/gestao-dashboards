@@ -389,3 +389,241 @@ export async function getSystemStats() {
     totalReports: reportCount?.count || 0
   };
 }
+
+
+// ============ PROGRAM FUNCTIONS ============
+import { programs, InsertProgram, Program, alunos, InsertAluno, Aluno, turmas, InsertTurma, Turma, mentoringSessions, InsertMentoringSession, MentoringSession, events, InsertEvent, Event, eventParticipation, InsertEventParticipation, EventParticipation, consultors, InsertConsultor, Consultor, trilhas, InsertTrilha, Trilha } from "../drizzle/schema";
+
+export async function getPrograms(): Promise<Program[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(programs).where(eq(programs.isActive, 1));
+}
+
+export async function getProgramByCode(code: string): Promise<Program | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(programs).where(eq(programs.code, code)).limit(1);
+  return result[0];
+}
+
+export async function upsertProgram(program: InsertProgram): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const existing = await getProgramByCode(program.code);
+  if (existing) {
+    await db.update(programs).set(program).where(eq(programs.id, existing.id));
+    return existing.id;
+  }
+  
+  const result = await db.insert(programs).values(program);
+  return result[0].insertId;
+}
+
+// ============ TURMA FUNCTIONS ============
+export async function getTurmas(programId?: number): Promise<Turma[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (programId) {
+    return await db.select().from(turmas).where(and(eq(turmas.programId, programId), eq(turmas.isActive, 1)));
+  }
+  return await db.select().from(turmas).where(eq(turmas.isActive, 1));
+}
+
+export async function getTurmaByExternalId(externalId: string): Promise<Turma | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(turmas).where(eq(turmas.externalId, externalId)).limit(1);
+  return result[0];
+}
+
+export async function upsertTurma(turma: InsertTurma): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  if (turma.externalId) {
+    const existing = await getTurmaByExternalId(turma.externalId);
+    if (existing) {
+      await db.update(turmas).set(turma).where(eq(turmas.id, existing.id));
+      return existing.id;
+    }
+  }
+  
+  const result = await db.insert(turmas).values(turma);
+  return result[0].insertId;
+}
+
+// ============ ALUNO FUNCTIONS ============
+export async function getAlunos(programId?: number): Promise<Aluno[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (programId) {
+    return await db.select().from(alunos).where(and(eq(alunos.programId, programId), eq(alunos.isActive, 1)));
+  }
+  return await db.select().from(alunos).where(eq(alunos.isActive, 1));
+}
+
+export async function getAlunoByExternalId(externalId: string): Promise<Aluno | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(alunos).where(eq(alunos.externalId, externalId)).limit(1);
+  return result[0];
+}
+
+export async function upsertAluno(aluno: InsertAluno): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  if (aluno.externalId) {
+    const existing = await getAlunoByExternalId(aluno.externalId);
+    if (existing) {
+      await db.update(alunos).set(aluno).where(eq(alunos.id, existing.id));
+      return existing.id;
+    }
+  }
+  
+  const result = await db.insert(alunos).values(aluno);
+  return result[0].insertId;
+}
+
+export async function getAlunosByTurma(turmaId: number): Promise<Aluno[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(alunos).where(and(eq(alunos.turmaId, turmaId), eq(alunos.isActive, 1)));
+}
+
+// ============ MENTORING SESSION FUNCTIONS ============
+export async function insertMentoringSessions(sessions: InsertMentoringSession[]): Promise<void> {
+  const db = await getDb();
+  if (!db || sessions.length === 0) return;
+  await db.insert(mentoringSessions).values(sessions);
+}
+
+export async function getMentoringSessionsByBatch(batchId: number): Promise<MentoringSession[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(mentoringSessions).where(eq(mentoringSessions.batchId, batchId));
+}
+
+export async function getMentoringSessionsByAluno(alunoId: number): Promise<MentoringSession[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
+}
+
+export async function getAllMentoringSessions(): Promise<MentoringSession[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(mentoringSessions);
+}
+
+// ============ EVENT FUNCTIONS ============
+export async function insertEvents(evts: InsertEvent[]): Promise<void> {
+  const db = await getDb();
+  if (!db || evts.length === 0) return;
+  await db.insert(events).values(evts);
+}
+
+export async function getEventsByProgram(programId: number): Promise<Event[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(events).where(eq(events.programId, programId));
+}
+
+// ============ EVENT PARTICIPATION FUNCTIONS ============
+export async function insertEventParticipation(participations: InsertEventParticipation[]): Promise<void> {
+  const db = await getDb();
+  if (!db || participations.length === 0) return;
+  await db.insert(eventParticipation).values(participations);
+}
+
+export async function getEventParticipationByBatch(batchId: number): Promise<EventParticipation[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(eventParticipation).where(eq(eventParticipation.batchId, batchId));
+}
+
+export async function getEventParticipationByAluno(alunoId: number): Promise<EventParticipation[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(eventParticipation).where(eq(eventParticipation.alunoId, alunoId));
+}
+
+export async function getAllEventParticipation(): Promise<EventParticipation[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(eventParticipation);
+}
+
+// ============ CONSULTOR FUNCTIONS ============
+export async function upsertConsultor(consultor: InsertConsultor): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Try to find by name and program
+  const existing = await db.select().from(consultors)
+    .where(and(
+      eq(consultors.name, consultor.name),
+      consultor.programId ? eq(consultors.programId, consultor.programId) : sql`1=1`
+    ))
+    .limit(1);
+  
+  if (existing[0]) {
+    return existing[0].id;
+  }
+  
+  const result = await db.insert(consultors).values(consultor);
+  return result[0].insertId;
+}
+
+// ============ TRILHA FUNCTIONS ============
+export async function upsertTrilha(trilha: InsertTrilha): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  if (trilha.externalId) {
+    const existing = await db.select().from(trilhas).where(eq(trilhas.externalId, trilha.externalId)).limit(1);
+    if (existing[0]) {
+      return existing[0].id;
+    }
+  }
+  
+  const result = await db.insert(trilhas).values(trilha);
+  return result[0].insertId;
+}
+
+// ============ STATISTICS WITH PROGRAMS ============
+export async function getProgramStats() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const programList = await getPrograms();
+  const stats = [];
+  
+  for (const program of programList) {
+    const [alunoCount] = await db.select({ count: sql<number>`count(*)` })
+      .from(alunos)
+      .where(eq(alunos.programId, program.id));
+    
+    const [turmaCount] = await db.select({ count: sql<number>`count(*)` })
+      .from(turmas)
+      .where(eq(turmas.programId, program.id));
+    
+    const [sessionCount] = await db.select({ count: sql<number>`count(*)` })
+      .from(mentoringSessions)
+      .innerJoin(alunos, eq(mentoringSessions.alunoId, alunos.id))
+      .where(eq(alunos.programId, program.id));
+    
+    stats.push({
+      programId: program.id,
+      programName: program.name,
+      programCode: program.code,
+      totalAlunos: alunoCount?.count || 0,
+      totalTurmas: turmaCount?.count || 0,
+      totalSessions: sessionCount?.count || 0
+    });
+  }
+  
+  return stats;
+}
