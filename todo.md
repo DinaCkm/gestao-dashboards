@@ -50,3 +50,4 @@
 
 ## Bugs Reportados
 - [x] Erro: dashboard.latestBatch retornando undefined - Query data cannot be undefined (corrigido: retornando null em vez de undefined)
+- [x] Alterar design para gradiente claro com tons suaves de azul e creme

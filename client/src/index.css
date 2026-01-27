@@ -61,40 +61,40 @@
 }
 
 :root {
-  /* Cinematographic dark theme with teal and burnt orange */
+  /* Light theme with soft blue and cream gradient */
   --radius: 0.625rem;
-  --background: oklch(0.15 0.02 220);
-  --foreground: oklch(0.98 0.005 220);
-  --card: oklch(0.18 0.025 220);
-  --card-foreground: oklch(0.98 0.005 220);
-  --popover: oklch(0.20 0.03 220);
-  --popover-foreground: oklch(0.98 0.005 220);
-  --primary: oklch(0.65 0.18 45);
-  --primary-foreground: oklch(0.15 0.02 220);
-  --secondary: oklch(0.55 0.15 195);
-  --secondary-foreground: oklch(0.98 0.005 220);
-  --muted: oklch(0.25 0.03 220);
-  --muted-foreground: oklch(0.65 0.02 220);
-  --accent: oklch(0.55 0.15 195);
-  --accent-foreground: oklch(0.98 0.005 220);
+  --background: oklch(0.97 0.01 85);
+  --foreground: oklch(0.20 0.02 220);
+  --card: oklch(0.99 0.005 85);
+  --card-foreground: oklch(0.20 0.02 220);
+  --popover: oklch(0.99 0.005 85);
+  --popover-foreground: oklch(0.20 0.02 220);
+  --primary: oklch(0.55 0.15 220);
+  --primary-foreground: oklch(0.99 0.005 85);
+  --secondary: oklch(0.65 0.12 45);
+  --secondary-foreground: oklch(0.15 0.02 220);
+  --muted: oklch(0.94 0.015 85);
+  --muted-foreground: oklch(0.45 0.02 220);
+  --accent: oklch(0.55 0.15 220);
+  --accent-foreground: oklch(0.99 0.005 85);
   --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.98 0.005 220);
-  --border: oklch(0.30 0.04 220);
-  --input: oklch(0.25 0.03 220);
-  --ring: oklch(0.65 0.18 45);
-  --chart-1: oklch(0.65 0.18 45);
-  --chart-2: oklch(0.55 0.15 195);
+  --destructive-foreground: oklch(0.99 0.005 85);
+  --border: oklch(0.88 0.02 220);
+  --input: oklch(0.94 0.015 85);
+  --ring: oklch(0.55 0.15 220);
+  --chart-1: oklch(0.55 0.15 220);
+  --chart-2: oklch(0.65 0.12 45);
   --chart-3: oklch(0.60 0.12 160);
-  --chart-4: oklch(0.70 0.15 55);
-  --chart-5: oklch(0.50 0.10 210);
-  --sidebar: oklch(0.12 0.02 220);
-  --sidebar-foreground: oklch(0.98 0.005 220);
-  --sidebar-primary: oklch(0.65 0.18 45);
-  --sidebar-primary-foreground: oklch(0.15 0.02 220);
-  --sidebar-accent: oklch(0.25 0.04 220);
-  --sidebar-accent-foreground: oklch(0.98 0.005 220);
-  --sidebar-border: oklch(0.25 0.03 220);
-  --sidebar-ring: oklch(0.65 0.18 45);
+  --chart-4: oklch(0.50 0.15 195);
+  --chart-5: oklch(0.70 0.10 85);
+  --sidebar: oklch(0.98 0.01 220);
+  --sidebar-foreground: oklch(0.20 0.02 220);
+  --sidebar-primary: oklch(0.55 0.15 220);
+  --sidebar-primary-foreground: oklch(0.99 0.005 85);
+  --sidebar-accent: oklch(0.94 0.02 220);
+  --sidebar-accent-foreground: oklch(0.20 0.02 220);
+  --sidebar-border: oklch(0.90 0.02 220);
+  --sidebar-ring: oklch(0.55 0.15 220);
 }
 
 .dark {
@@ -139,20 +139,20 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
-  /* Custom scrollbar for dark theme */
+  /* Custom scrollbar for light theme */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: oklch(0.15 0.02 220);
+    background: oklch(0.95 0.01 85);
   }
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.35 0.04 220);
+    background: oklch(0.75 0.03 220);
     border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.45 0.05 220);
+    background: oklch(0.60 0.05 220);
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -168,26 +168,27 @@
 }
 
 @layer utilities {
-  /* Cinematographic gradient backgrounds */
+  /* Light gradient backgrounds - soft blue and cream */
   .gradient-bg {
     background: linear-gradient(
       135deg,
-      oklch(0.12 0.03 220) 0%,
-      oklch(0.18 0.04 200) 50%,
-      oklch(0.15 0.08 45) 100%
+      oklch(0.97 0.02 220) 0%,
+      oklch(0.96 0.015 85) 50%,
+      oklch(0.94 0.025 200) 100%
     );
   }
 
   .gradient-card {
     background: linear-gradient(
       145deg,
-      oklch(0.18 0.025 220) 0%,
-      oklch(0.22 0.035 210) 100%
+      oklch(0.99 0.005 85) 0%,
+      oklch(0.97 0.015 220) 100%
     );
-    border: 1px solid oklch(0.30 0.04 220);
+    border: 1px solid oklch(0.88 0.02 220);
+    box-shadow: 0 2px 8px oklch(0.55 0.15 220 / 0.08);
   }
 
-  /* Geometric accent decorations */
+  /* Geometric accent decorations - blue and orange */
   .geometric-accent {
     position: relative;
   }
@@ -196,7 +197,7 @@
     position: absolute;
     width: 60px;
     height: 2px;
-    background: linear-gradient(90deg, oklch(0.55 0.15 195), transparent);
+    background: linear-gradient(90deg, oklch(0.55 0.15 220), transparent);
     top: -10px;
     left: 0;
   }
@@ -205,25 +206,25 @@
     position: absolute;
     width: 2px;
     height: 60px;
-    background: linear-gradient(180deg, oklch(0.65 0.18 45), transparent);
+    background: linear-gradient(180deg, oklch(0.65 0.12 45), transparent);
     top: -10px;
     left: -10px;
   }
 
-  /* Glow effects */
+  /* Glow effects - softer for light theme */
   .glow-orange {
-    box-shadow: 0 0 20px oklch(0.65 0.18 45 / 0.3),
-                0 0 40px oklch(0.65 0.18 45 / 0.1);
+    box-shadow: 0 4px 15px oklch(0.65 0.12 45 / 0.2),
+                0 2px 30px oklch(0.65 0.12 45 / 0.08);
   }
 
-  .glow-cyan {
-    box-shadow: 0 0 20px oklch(0.55 0.15 195 / 0.3),
-                0 0 40px oklch(0.55 0.15 195 / 0.1);
+  .glow-blue {
+    box-shadow: 0 4px 15px oklch(0.55 0.15 220 / 0.2),
+                0 2px 30px oklch(0.55 0.15 220 / 0.08);
   }
 
-  /* Text gradient */
+  /* Text gradient - blue to orange */
   .text-gradient {
-    background: linear-gradient(135deg, oklch(0.65 0.18 45), oklch(0.55 0.15 195));
+    background: linear-gradient(135deg, oklch(0.45 0.15 220), oklch(0.60 0.15 45));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -235,8 +236,8 @@
   }
   .card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 40px oklch(0 0 0 / 0.3),
-                0 0 20px oklch(0.65 0.18 45 / 0.1);
+    box-shadow: 0 8px 25px oklch(0.55 0.15 220 / 0.15),
+                0 4px 10px oklch(0.65 0.12 45 / 0.08);
   }
 
   /* Dashboard grid */
@@ -244,6 +245,23 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
+  }
+
+  /* Stat card styling for light theme */
+  .stat-card {
+    background: linear-gradient(
+      135deg,
+      oklch(0.99 0.005 85) 0%,
+      oklch(0.97 0.02 220) 100%
+    );
+    border: 1px solid oklch(0.90 0.02 220);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+  }
+  .stat-card:hover {
+    box-shadow: 0 4px 20px oklch(0.55 0.15 220 / 0.12);
+    transform: translateY(-1px);
   }
 }
 
