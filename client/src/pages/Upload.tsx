@@ -784,45 +784,69 @@ export default function UploadPage() {
 
       {/* Diálogo de Erros de Validação */}
       <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertCircle className="h-5 w-5" />
-              Erro na Planilha
+              Arquivo Rejeitado
             </DialogTitle>
             <DialogDescription>
-              A planilha não está no formato esperado. Corrija os erros abaixo:
+              O sistema só aceita planilhas com nomes específicos.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {validationErrors.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-medium text-destructive">Erros (impedem o upload):</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm text-destructive">
-                  {validationErrors.map((error, i) => (
-                    <li key={i}>{error}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {validationWarnings.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-medium text-yellow-600">Avisos (podem causar problemas):</h4>
-                <ul className="list-disc list-inside space-y-1 text-sm text-yellow-600">
-                  {validationWarnings.map((warning, i) => (
-                    <li key={i}>{warning}</li>
-                  ))}
-                </ul>
+              <div className="space-y-3">
+                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                  <h4 className="font-medium text-destructive mb-2">Arquivo(s) com nome incorreto:</h4>
+                  <div className="space-y-1">
+                    {validationErrors.filter(e => e.startsWith('•')).map((error, i) => (
+                      <p key={i} className="text-sm font-mono bg-background px-2 py-1 rounded text-destructive">
+                        {error.replace('• ', '')}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="p-3 bg-primary/5 border border-primary/30 rounded-lg">
+                  <h4 className="font-medium text-primary mb-2">Renomeie usando um destes nomes:</h4>
+                  <div className="grid gap-1 text-xs font-mono">
+                    <div className="flex justify-between p-1 bg-background rounded">
+                      <span>SEBRAEACRE-Mentorias.xlsx</span>
+                      <span className="text-muted-foreground">Mentorias SEBRAE ACRE</span>
+                    </div>
+                    <div className="flex justify-between p-1 bg-background rounded">
+                      <span>SEBRAEACRE-Eventos.xlsx</span>
+                      <span className="text-muted-foreground">Eventos SEBRAE ACRE</span>
+                    </div>
+                    <div className="flex justify-between p-1 bg-background rounded">
+                      <span>SEBRAETO-Mentorias.xlsx</span>
+                      <span className="text-muted-foreground">Mentorias SEBRAE TO</span>
+                    </div>
+                    <div className="flex justify-between p-1 bg-background rounded">
+                      <span>SEBRAETO-Eventos.xlsx</span>
+                      <span className="text-muted-foreground">Eventos SEBRAE TO</span>
+                    </div>
+                    <div className="flex justify-between p-1 bg-background rounded">
+                      <span>EMBRAPII-Mentorias.xlsx</span>
+                      <span className="text-muted-foreground">Mentorias EMBRAPII</span>
+                    </div>
+                    <div className="flex justify-between p-1 bg-background rounded">
+                      <span>EMBRAPII-Eventos.xlsx</span>
+                      <span className="text-muted-foreground">Eventos EMBRAPII</span>
+                    </div>
+                    <div className="flex justify-between p-1 bg-background rounded">
+                      <span>relatorio-de-performance.xlsx</span>
+                      <span className="text-muted-foreground">Performance Consolidado</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowValidationDialog(false)}>
               Entendi
-            </Button>
-            <Button onClick={() => handleDownloadTemplate('mentorias')}>
-              <Download className="h-4 w-4 mr-2" />
-              Baixar Modelo Correto
             </Button>
           </DialogFooter>
         </DialogContent>

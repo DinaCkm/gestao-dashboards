@@ -184,3 +184,9 @@
 - [ ] Guardar as 3 últimas versões de cada tipo de planilha com data do upload
 - [ ] Remover seção redundante de "Arquivos Esperados por Empresa" e simplificar interface
 - [x] Implementar histórico de uploads visível com nome da planilha, data e horário do upload (tabela com colunas: Nome, Tipo, Data, Horário, Status)
+
+## Validação de Upload (27/01/2026)
+- [x] Implementar validação para rejeitar automaticamente uploads de planilhas com nomes incorretos
+- [x] Mostrar popup de erro claro quando nome não corresponder aos 7 aceitos
+- [x] Lista visível dos 7 nomes de arquivos aceitos com numeração (01-07)
+- [x] Dica para copiar o nome exato ao renomear arquivos
