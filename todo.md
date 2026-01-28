@@ -217,3 +217,4 @@
 
 ## Bug Login Administrativo (28/01/2026)
 - [x] Corrigir botão Login Administrativo que redireciona para Manus OAuth em vez de mostrar tela de usuário/senha
+- [x] Desabilitar redirecionamento automático para OAuth no main.tsx

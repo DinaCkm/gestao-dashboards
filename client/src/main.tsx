@@ -18,7 +18,9 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  window.location.href = getLoginUrl();
+  // Não redirecionar automaticamente - deixar o CustomLogin tratar
+  // window.location.href = getLoginUrl();
+  console.log("[Auth] User not authenticated, showing login screen");
 };
 
 queryClient.getQueryCache().subscribe(event => {
