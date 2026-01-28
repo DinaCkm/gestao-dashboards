@@ -44,12 +44,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+// Tooltips removidos para evitar erro de Portal
 
 // Tipos de arquivo específicos do sistema B.E.M.
 type FileType = 
@@ -611,21 +606,15 @@ export default function UploadPage() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
               <div className="p-4 rounded-lg border border-primary/30 bg-primary/5">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    <span className="font-medium">Mentorias</span>
-                  </div>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Colunas: Nome do Aluno, Turma, Mentor, Data, Mentoria (Presente/Ausente), Atividade proposta, Engajamento (1-5)</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <span className="font-medium">Mentorias</span>
+                  <span 
+                    className="text-muted-foreground cursor-help" 
+                    title="Colunas: Nome do Aluno, Turma, Mentor, Data, Mentoria (Presente/Ausente), Atividade proposta, Engajamento (1-5)"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">Sessões de mentoria com presença, tarefas e engajamento</p>
                 <Button 
@@ -641,21 +630,15 @@ export default function UploadPage() {
               </div>
               
               <div className="p-4 rounded-lg border border-secondary/30 bg-secondary/5">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-secondary" />
-                    <span className="font-medium">Eventos</span>
-                  </div>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Colunas: Nome do Aluno, Turma, Nome do Evento, Data, Tipo (Webinar/Workshop), Status Presença</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="h-5 w-5 text-secondary" />
+                  <span className="font-medium">Eventos</span>
+                  <span 
+                    className="text-muted-foreground cursor-help" 
+                    title="Colunas: Nome do Aluno, Turma, Nome do Evento, Data, Tipo (Webinar/Workshop), Status Presença"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">Participação em webinars e eventos</p>
                 <Button 
@@ -671,21 +654,15 @@ export default function UploadPage() {
               </div>
               
               <div className="p-4 rounded-lg border border-chart-4/30 bg-chart-4/5">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-chart-4" />
-                    <span className="font-medium">Performance</span>
-                  </div>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Colunas: Nome do Aluno, Turma, Empresa, Competência 1-5, Média Competências</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart3 className="h-5 w-5 text-chart-4" />
+                  <span className="font-medium">Desempenho</span>
+                  <span 
+                    className="text-muted-foreground cursor-help" 
+                    title="Colunas: Nome do Aluno, Turma, Empresa, Competência 1-5, Média Competências"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">Relatório consolidado de competências</p>
                 <Button 
