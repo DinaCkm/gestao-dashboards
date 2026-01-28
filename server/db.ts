@@ -449,6 +449,56 @@ export async function getTurmas(programId?: number): Promise<Turma[]> {
   return await db.select().from(turmas).where(eq(turmas.isActive, 1));
 }
 
+export async function getTurmasWithDetails(): Promise<Array<{
+  id: number;
+  name: string;
+  externalId: string | null;
+  year: number;
+  programId: number;
+  programName: string;
+  programCode: string;
+  totalAlunos: number;
+  isActive: number;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db
+    .select({
+      id: turmas.id,
+      name: turmas.name,
+      externalId: turmas.externalId,
+      year: turmas.year,
+      programId: turmas.programId,
+      programName: programs.name,
+      programCode: programs.code,
+      isActive: turmas.isActive,
+    })
+    .from(turmas)
+    .leftJoin(programs, eq(turmas.programId, programs.id))
+    .where(eq(turmas.isActive, 1))
+    .orderBy(programs.name, turmas.name);
+  
+  // Buscar contagem de alunos para cada turma
+  const turmasWithCount = await Promise.all(
+    result.map(async (turma) => {
+      const alunosCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(alunos)
+        .where(eq(alunos.turmaId, turma.id));
+      
+      return {
+        ...turma,
+        programName: turma.programName || 'Sem Empresa',
+        programCode: turma.programCode || 'N/A',
+        totalAlunos: alunosCount[0]?.count || 0,
+      };
+    })
+  );
+  
+  return turmasWithCount;
+}
+
 export async function getTurmaByExternalId(externalId: string): Promise<Turma | undefined> {
   const db = await getDb();
   if (!db) return undefined;

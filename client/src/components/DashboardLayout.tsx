@@ -35,7 +35,8 @@ import {
   FileText,
   Calculator,
   User,
-  UserCheck
+  UserCheck,
+  GraduationCap
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -70,7 +71,7 @@ const allMenuItems: MenuItem[] = [
   
   // === RELATÓRIOS E GESTÃO ===
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager", "user"] },
-  { icon: Building2, label: "Departamentos", path: "/departamentos", roles: ["admin"] },
+  { icon: GraduationCap, label: "Turmas", path: "/turmas", roles: ["admin"] },
   { icon: Calculator, label: "Fórmulas", path: "/formulas", roles: ["admin"] },
   { icon: FileSpreadsheet, label: "Histórico", path: "/historico", roles: ["admin", "manager"] },
   { icon: Settings, label: "Configurações", path: "/configuracoes", roles: ["admin"] },

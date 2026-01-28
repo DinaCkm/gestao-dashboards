@@ -1,0 +1,218 @@
+{
+  "query": "SELECT t.id, t.name as turma, t.year, p.name as empresa, p.code as empresa_code, \n       (SELECT COUNT(*) FROM alunos a WHERE a.turmaId = t.id) as total_alunos\nFROM turmas t \nLEFT JOIN programs p ON t.programId = p.id \nORDER BY p.name, t.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT t.id, t.name as turma, t.year, p.name as empresa, p.code as empresa_code, \n       (SELECT COUNT(*) FROM alunos a WHERE a.turmaId = t.id) as total_alunos\nFROM turmas t \nLEFT JOIN programs p ON t.programId = p.id \nORDER BY p.name, t.name;",
+  "rows": [
+    {
+      "id": "36",
+      "turma": "[2024] Banrisul - B.E.M. | Básicas",
+      "year": "2024",
+      "empresa": "BANRISUL",
+      "empresa_code": "BANRISUL",
+      "total_alunos": "26"
+    },
+    {
+      "id": "23",
+      "turma": "[2024] Banrisul - B.E.M. | Básicas",
+      "year": "2024",
+      "empresa": "BANRISUL",
+      "empresa_code": "BANRISUL",
+      "total_alunos": "0"
+    },
+    {
+      "id": "37",
+      "turma": "[2024] Banrisul - B.E.M. | Essenciais",
+      "year": "2024",
+      "empresa": "BANRISUL",
+      "empresa_code": "BANRISUL",
+      "total_alunos": "0"
+    },
+    {
+      "id": "24",
+      "turma": "[2024] Banrisul - B.E.M. | Essenciais",
+      "year": "2024",
+      "empresa": "BANRISUL",
+      "empresa_code": "BANRISUL",
+      "total_alunos": "0"
+    },
+    {
+      "id": "26",
+      "turma": "[2025] Embrapii | Básicas",
+      "year": "2025",
+      "empresa": "EMBRAPII",
+      "empresa_code": "EMBRAPII",
+      "total_alunos": "0"
+    },
+    {
+      "id": "39",
+      "turma": "[2025] Embrapii | Básicas",
+      "year": "2025",
+      "empresa": "EMBRAPII",
+      "empresa_code": "EMBRAPII",
+      "total_alunos": "16"
+    },
+    {
+      "id": "40",
+      "turma": "[2025] Embrapii | Jornada Personalizada",
+      "year": "2025",
+      "empresa": "EMBRAPII",
+      "empresa_code": "EMBRAPII",
+      "total_alunos": "0"
+    },
+    {
+      "id": "27",
+      "turma": "[2025] Embrapii | Jornada Personalizada",
+      "year": "2025",
+      "empresa": "EMBRAPII",
+      "empresa_code": "EMBRAPII",
+      "total_alunos": "0"
+    },
+    {
+      "id": "35",
+      "turma": "[2026] Embrapii | Visão do Futuro",
+      "year": "2026",
+      "empresa": "EMBRAPII",
+      "empresa_code": "EMBRAPII",
+      "total_alunos": "0"
+    },
+    {
+      "id": "48",
+      "turma": "[2026] Embrapii | Visão do Futuro",
+      "year": "2026",
+      "empresa": "EMBRAPII",
+      "empresa_code": "EMBRAPII",
+      "total_alunos": "0"
+    },
+    {
+      "id": "38",
+      "turma": "[2024] SEBRAE Acre - Turma 1.0",
+      "year": "2024",
+      "empresa": "SEBRAE ACRE",
+      "empresa_code": "SEBRAE_ACRE",
+      "total_alunos": "33"
+    },
+    {
+      "id": "25",
+      "turma": "[2024] SEBRAE Acre - Turma 1.0",
+      "year": "2024",
+      "empresa": "SEBRAE ACRE",
+      "empresa_code": "SEBRAE_ACRE",
+      "total_alunos": "0"
+    },
+    {
+      "id": "28",
+      "turma": "[2025] SEBRAE Acre - B.E.M. | Básicas",
+      "year": "2025",
+      "empresa": "SEBRAE ACRE",
+      "empresa_code": "SEBRAE_ACRE",
+      "total_alunos": "0"
+    },
+    {
+      "id": "41",
+      "turma": "[2025] SEBRAE Acre - B.E.M. | Básicas",
+      "year": "2025",
+      "empresa": "SEBRAE ACRE",
+      "empresa_code": "SEBRAE_ACRE",
+      "total_alunos": "0"
+    },
+    {
+      "id": "29",
+      "turma": "[2025] SEBRAE Acre - B.E.M. | Essenciais",
+      "year": "2025",
+      "empresa": "SEBRAE ACRE",
+      "empresa_code": "SEBRAE_ACRE",
+      "total_alunos": "0"
+    },
+    {
+      "id": "42",
+      "turma": "[2025] SEBRAE Acre - B.E.M. | Essenciais",
+      "year": "2025",
+      "empresa": "SEBRAE ACRE",
+      "empresa_code": "SEBRAE_ACRE",
+      "total_alunos": "0"
+    },
+    {
+      "id": "30",
+      "turma": "[2025] SEBRAE Acre - B.E.M. | Masters",
+      "year": "2025",
+      "empresa": "SEBRAE ACRE",
+      "empresa_code": "SEBRAE_ACRE",
+      "total_alunos": "0"
+    },
+    {
+      "id": "43",
+      "turma": "[2025] SEBRAE Acre - B.E.M. | Masters",
+      "year": "2025",
+      "empresa": "SEBRAE ACRE",
+      "empresa_code": "SEBRAE_ACRE",
+      "total_alunos": "0"
+    },
+    {
+      "id": "44",
+      "turma": "[2025] SEBRAE Tocantins - Básicas [BS1]",
+      "year": "2025",
+      "empresa": "SEBRAE TO",
+      "empresa_code": "SEBRAE_TO",
+      "total_alunos": "11"
+    },
+    {
+      "id": "31",
+      "turma": "[2025] SEBRAE Tocantins - Básicas [BS1]",
+      "year": "2025",
+      "empresa": "SEBRAE TO",
+      "empresa_code": "SEBRAE_TO",
+      "total_alunos": "0"
+    },
+    {
+      "id": "32",
+      "turma": "[2025] SEBRAE Tocantins - Básicas [BS3]",
+      "year": "2025",
+      "empresa": "SEBRAE TO",
+      "empresa_code": "SEBRAE_TO",
+      "total_alunos": "0"
+    },
+    {
+      "id": "45",
+      "turma": "[2025] SEBRAE Tocantins - Básicas [BS3]",
+      "year": "2025",
+      "empresa": "SEBRAE TO",
+      "empresa_code": "SEBRAE_TO",
+      "total_alunos": "7"
+    },
+    {
+      "id": "33",
+      "turma": "[2025] SEBRAE Tocantins - Essenciais [BS1]",
+      "year": "2025",
+      "empresa": "SEBRAE TO",
+      "empresa_code": "SEBRAE_TO",
+      "total_alunos": "0"
+    },
+    {
+      "id": "46",
+      "turma": "[2025] SEBRAE Tocantins - Essenciais [BS1]",
+      "year": "2025",
+      "empresa": "SEBRAE TO",
+      "empresa_code": "SEBRAE_TO",
+      "total_alunos": "0"
+    },
+    {
+      "id": "34",
+      "turma": "[2025] SEBRAE Tocantins - Visão de Futuro [BS2]",
+      "year": "2025",
+      "empresa": "SEBRAE TO",
+      "empresa_code": "SEBRAE_TO",
+      "total_alunos": "0"
+    },
+    {
+      "id": "47",
+      "turma": "[2025] SEBRAE Tocantins - Visão de Futuro [BS2]",
+      "year": "2025",
+      "empresa": "SEBRAE TO",
+      "empresa_code": "SEBRAE_TO",
+      "total_alunos": "32"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tturma\tyear\tempresa\tempresa_code\ttotal_alunos\n36\t[2024] Banrisul - B.E.M. | Básicas\t2024\tBANRISUL\tBANRISUL\t26\n23\t[2024] Banrisul - B.E.M. | Básicas\t2024\tBANRISUL\tBANRISUL\t0\n37\t[2024] Banrisul - B.E.M. | Essenciais\t2024\tBANRISUL\tBANRISUL\t0\n24\t[2024] Banrisul - B.E.M. | Essenciais\t2024\tBANRISUL\tBANRISUL\t0\n26\t[2025] Embrapii | Básicas\t2025\tEMBRAPII\tEMBRAPII\t0\n39\t[2025] Embrapii | Básicas\t2025\tEMBRAPII\tEMBRAPII\t16\n40\t[2025] Embrapii | Jornada Personalizada\t2025\tEMBRAPII\tEMBRAPII\t0\n27\t[2025] Embrapii | Jornada Personalizada\t2025\tEMBRAPII\tEMBRAPII\t0\n35\t[2026] Embrapii | Visão do Futuro\t2026\tEMBRAPII\tEMBRAPII\t0\n48\t[2026] Embrapii | Visão do Futuro\t2026\tEMBRAPII\tEMBRAPII\t0\n38\t[2024] SEBRAE Acre - Turma 1.0\t2024\tSEBRAE ACRE\tSEBRAE_ACRE\t33\n25\t[2024] SEBRAE Acre - Turma 1.0\t2024\tSEBRAE ACRE\tSEBRAE_ACRE\t0\n28\t[2025] SEBRAE Acre - B.E.M. | Básicas\t2025\tSEBRAE ACRE\tSEBRAE_ACRE\t0\n41\t[2025] SEBRAE Acre - B.E.M. | Básicas\t2025\tSEBRAE ACRE\tSEBRAE_ACRE\t0\n29\t[2025] SEBRAE Acre - B.E.M. | Essenciais\t2025\tSEBRAE ACRE\tSEBRAE_ACRE\t0\n42\t[2025] SEBRAE Acre - B.E.M. | Essenciais\t2025\tSEBRAE ACRE\tSEBRAE_ACRE\t0\n30\t[2025] SEBRAE Acre - B.E.M. | Masters\t2025\tSEBRAE ACRE\tSEBRAE_ACRE\t0\n43\t[2025] SEBRAE Acre - B.E.M. | Masters\t2025\tSEBRAE ACRE\tSEBRAE_ACRE\t0\n44\t[2025] SEBRAE Tocantins - Básicas [BS1]\t2025\tSEBRAE TO\tSEBRAE_TO\t11\n31\t[2025] SEBRAE Tocantins - Básicas [BS1]\t2025\tSEBRAE TO\tSEBRAE_TO\t0\n32\t[2025] SEBRAE Tocantins - Básicas [BS3]\t2025\tSEBRAE TO\tSEBRAE_TO\t0\n45\t[2025] SEBRAE Tocantins - Básicas [BS3]\t2025\tSEBRAE TO\tSEBRAE_TO\t7\n33\t[2025] SEBRAE Tocantins - Essenciais [BS1]\t2025\tSEBRAE TO\tSEBRAE_TO\t0\n46\t[2025] SEBRAE Tocantins - Essenciais [BS1]\t2025\tSEBRAE TO\tSEBRAE_TO\t0\n34\t[2025] SEBRAE Tocantins - Visão de Futuro [BS2]\t2025\tSEBRAE TO\tSEBRAE_TO\t0\n47\t[2025] SEBRAE Tocantins - Visão de Futuro [BS2]\t2025\tSEBRAE TO\tSEBRAE_TO\t32\n",
+  "stderr": "",
+  "execution_time_ms": 395
+}

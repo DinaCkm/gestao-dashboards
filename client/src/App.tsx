@@ -13,7 +13,7 @@ import ManagerDashboard from "./pages/ManagerDashboard";
 import IndividualDashboard from "./pages/IndividualDashboard";
 import Reports from "./pages/Reports";
 import Users from "./pages/Users";
-import Departments from "./pages/Departments";
+import Turmas from "./pages/Turmas";
 import Formulas from "./pages/Formulas";
 import History from "./pages/History";
 import DashboardVisaoGeral from "./pages/DashboardVisaoGeral";
@@ -32,7 +32,7 @@ function Router() {
       <Route path={"/dashboard/individual"} component={IndividualDashboard} />
       <Route path={"/relatorios"} component={Reports} />
       <Route path={"/usuarios"} component={Users} />
-      <Route path={"/departamentos"} component={Departments} />
+      <Route path={"/turmas"} component={Turmas} />
       <Route path={"/formulas"} component={Formulas} />
       <Route path={"/historico"} component={History} />
       <Route path={"/dashboard/visao-geral"} component={DashboardVisaoGeral} />

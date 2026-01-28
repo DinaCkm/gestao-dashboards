@@ -470,6 +470,10 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getTurmas(input?.programId);
       }),
+    
+    listWithDetails: protectedProcedure.query(async () => {
+      return await db.getTurmasWithDetails();
+    }),
   }),
 
   // Alunos
