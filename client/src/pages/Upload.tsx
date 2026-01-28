@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Select removido para evitar erro de Portal
 import { trpc } from "@/lib/trpc";
 import { 
   Upload as UploadIcon, 
@@ -536,27 +536,9 @@ export default function UploadPage() {
                             <p className="text-sm font-medium truncate">
                               {file.name}
                             </p>
-                            {file.status === "pending" ? (
-                              <Select 
-                                value={file.type} 
-                                onValueChange={(v) => updateFileType(file.name, v as FileType)}
-                              >
-                                <SelectTrigger className="h-6 text-xs mt-1 bg-transparent border-0 p-0 w-auto">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {Object.entries(FILE_TYPE_CONFIG).map(([key, cfg]) => (
-                                    <SelectItem key={key} value={key} className="text-xs">
-                                      {cfg.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <p className="text-xs text-muted-foreground">
-                                {config.label}
-                              </p>
-                            )}
+                            <p className="text-xs text-muted-foreground">
+                              {config.label}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">

@@ -179,8 +179,8 @@
 - [x] URGENTE: Erro NotFoundError persiste na versão publicada ao clicar em Baixar Modelo - corrigido removendo Tooltips e usando title nativo
 
 ## Melhorias Upload de Planilhas (27/01/2026)
-- [ ] Mostrar lista visível com os 7 nomes exatos de arquivos aceitos
-- [ ] Validar nome do arquivo antes de aceitar upload (mostrar erro se nome incorreto)
+- [x] Mostrar lista visível com os 7 nomes exatos de arquivos aceitos
+- [x] Validar nome do arquivo antes de aceitar upload (mostrar erro se nome incorreto)
 - [ ] Guardar as 3 últimas versões de cada tipo de planilha com data do upload
 - [ ] Remover seção redundante de "Arquivos Esperados por Empresa" e simplificar interface
 - [x] Implementar histórico de uploads visível com nome da planilha, data e horário do upload (tabela com colunas: Nome, Tipo, Data, Horário, Status)
@@ -190,3 +190,6 @@
 - [x] Mostrar popup de erro claro quando nome não corresponder aos 7 aceitos
 - [x] Lista visível dos 7 nomes de arquivos aceitos com numeração (01-07)
 - [x] Dica para copiar o nome exato ao renomear arquivos
+
+## Bug Crítico - Enviar Arquivos (27/01/2026)
+- [x] Corrigir erro NotFoundError ao clicar em Enviar Arquivos na página de Upload (erro de Portal/DOM) - CORRIGIDO: removido Select que usava Portal
