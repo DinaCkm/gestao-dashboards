@@ -98,7 +98,9 @@ export function calcularIndicadoresAluno(
   // Dados básicos do aluno
   const primeiroRegistro = mentoriasAluno[0] || eventosAluno[0];
   const nomeAluno = primeiroRegistro?.nomeAluno || 'Desconhecido';
-  const empresa = primeiroRegistro?.empresa || 'Desconhecida';
+  // Empresa vem da coluna "Turma (agrupador 1)" da planilha de Performance
+  // Se não houver, usa o campo empresa das mentorias/eventos como fallback
+  const empresa = performanceAluno[0]?.nomeTurma || primeiroRegistro?.empresa || 'Desconhecida';
   const turma = mentoriasAluno[0]?.turma || eventosAluno[0]?.turma;
   const trilha = mentoriasAluno[0]?.trilha || eventosAluno[0]?.trilha;
 

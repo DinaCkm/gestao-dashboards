@@ -204,3 +204,6 @@
 ## Limpeza de Menu (27/01/2026)
 - [x] Remover página Departamentos do menu lateral (não há dados no banco)
 - [x] Criar página de Turmas mostrando todas as turmas e suas respectivas empresas
+
+## Correção Extração de Empresa (27/01/2026)
+- [x] Extrair nome da empresa da coluna "Turma (agrupador 1)" da planilha Performance

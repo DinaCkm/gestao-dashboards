@@ -339,6 +339,7 @@ export interface EventRecord {
 export interface PerformanceRecord {
   idUsuario: string;
   idTurma?: string;
+  nomeTurma?: string; // Turma (agrupador 1) - contém o nome da empresa
   idCompetencia?: string;
   nomeCompetencia?: string;
   progressoAulas?: number; // percentual
@@ -651,7 +652,8 @@ export function processPerformanceSheet(buffer: Buffer): BemProcessingResult {
     
     // Encontrar índices das colunas principais
     const colIdUsuario = findColumnIndex(headers, 'id usuário', 'id usuario', 'idusuario');
-    const colIdTurma = findColumnIndex(headers, 'id turma', 'idturma');
+    const colIdTurma = findColumnIndex(headers, 'id turma (agrupador 1)', 'id turma', 'idturma');
+    const colNomeTurma = findColumnIndex(headers, 'turma (agrupador 1)', 'turma agrupador', 'nome turma');
     const colIdCompetencia = findColumnIndex(headers, 'id competência', 'id competencia', 'idcompetencia');
     const colNomeCompetencia = findColumnIndex(headers, 'competência', 'competencia', 'nome competência');
     const colProgresso = findColumnIndex(headers, 'progresso', 'progresso aulas', '% aulas');
@@ -674,6 +676,7 @@ export function processPerformanceSheet(buffer: Buffer): BemProcessingResult {
         const record: PerformanceRecord = {
           idUsuario,
           idTurma: colIdTurma >= 0 ? String(row[colIdTurma] || '').trim() : undefined,
+          nomeTurma: colNomeTurma >= 0 ? String(row[colNomeTurma] || '').trim() : undefined,
           idCompetencia: colIdCompetencia >= 0 ? String(row[colIdCompetencia] || '').trim() : undefined,
           nomeCompetencia: colNomeCompetencia >= 0 ? String(row[colNomeCompetencia] || '').trim() : undefined,
           progressoAulas: colProgresso >= 0 ? Number(row[colProgresso]) || 0 : undefined,
