@@ -177,10 +177,9 @@ export default function UploadPage() {
   const downloadTemplateMutation = trpc.uploads.downloadTemplate.useMutation();
   const validateFileMutation = trpc.uploads.validateFile.useMutation();
   
-  // Query para histórico de uploads
-  const { data: uploadHistory, refetch: refetchHistory } = trpc.uploads.getUploadHistory.useQuery(
-    { limit: 10 },
-    { enabled: showHistoryDialog }
+  // Query para histórico de uploads - sempre carrega para mostrar na seção visível
+  const { data: uploadHistory, refetch: refetchHistory, isLoading: isLoadingHistory } = trpc.uploads.getUploadHistory.useQuery(
+    { limit: 10 }
   );
 
   // Função para baixar template
@@ -759,6 +758,123 @@ export default function UploadPage() {
                 <strong>Dica:</strong> Copie o nome exato acima e cole ao renomear seu arquivo. 
                 O sistema mantém as 3 últimas versões de cada arquivo.
               </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Seção de Histórico de Uploads */}
+        <Card className="gradient-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-secondary" />
+              Histórico de Uploads
+            </CardTitle>
+            <CardDescription>
+              Últimos arquivos enviados ao sistema. O sistema mantém as 3 versões mais recentes de cada tipo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingHistory ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-muted-foreground">Carregando histórico...</span>
+              </div>
+            ) : uploadHistory && uploadHistory.length > 0 ? (
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left p-3 text-sm font-medium">Arquivo</th>
+                      <th className="text-left p-3 text-sm font-medium hidden sm:table-cell">Tipo</th>
+                      <th className="text-left p-3 text-sm font-medium">Data/Hora</th>
+                      <th className="text-center p-3 text-sm font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {uploadHistory.map((file, index) => {
+                      const uploadDate = file.createdAt ? new Date(file.createdAt) : null;
+                      const fileTypeConfig = file.fileType ? FILE_TYPE_CONFIG[file.fileType as FileType] : null;
+                      const Icon = fileTypeConfig?.icon || FileSpreadsheet;
+                      
+                      return (
+                        <tr key={file.id} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <Icon className={`h-4 w-4 ${fileTypeConfig?.color || 'text-muted-foreground'} shrink-0`} />
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate" title={file.fileName}>
+                                  {file.fileName}
+                                </p>
+                                <p className="text-xs text-muted-foreground sm:hidden">
+                                  {fileTypeConfig?.label || file.fileType?.replace('_', ' ')}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-3 hidden sm:table-cell">
+                            <span className={`text-xs px-2 py-1 rounded ${fileTypeConfig?.color ? `bg-${fileTypeConfig.color.replace('text-', '')}/10` : 'bg-muted'}`}>
+                              {fileTypeConfig?.label || file.fileType?.replace('_', ' ').toUpperCase() || 'N/A'}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            {uploadDate ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-3.5 w-3.5 text-primary" />
+                                  <span className="text-sm font-semibold text-foreground">
+                                    {uploadDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-muted-foreground pl-5">
+                                  às {uploadDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${
+                              file.status === 'processed' 
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                                : file.status === 'error'
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                            }`}>
+                              {file.status === 'processed' ? (
+                                <><CheckCircle2 className="h-3 w-3" /> Processado</>
+                              ) : file.status === 'error' ? (
+                                <><XCircle className="h-3 w-3" /> Erro</>
+                              ) : (
+                                <><Loader2 className="h-3 w-3" /> {file.status}</>
+                              )}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center p-8 border-2 border-dashed border-border/50 rounded-lg">
+                <FileSpreadsheet className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                <p className="text-muted-foreground">Nenhum arquivo enviado ainda.</p>
+                <p className="text-sm text-muted-foreground mt-1">Os arquivos enviados aparecerão aqui.</p>
+              </div>
+            )}
+            
+            {/* Botão para atualizar */}
+            <div className="mt-4 flex justify-end">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => refetchHistory()}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <History className="h-4 w-4 mr-2" />
+                Atualizar Histórico
+              </Button>
             </div>
           </CardContent>
         </Card>

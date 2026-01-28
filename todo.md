@@ -193,3 +193,10 @@
 
 ## Bug Crítico - Enviar Arquivos (27/01/2026)
 - [x] Corrigir erro NotFoundError ao clicar em Enviar Arquivos na página de Upload (erro de Portal/DOM) - CORRIGIDO: removido Select que usava Portal
+
+## Seção de Histórico de Uploads (27/01/2026)
+- [x] Criar seção de histórico visível na página de Upload (não apenas em diálogo)
+- [x] Mostrar últimos arquivos enviados com nome, tipo, data, horário e status
+- [x] Permitir visualização rápida sem precisar abrir diálogo
+
+- [x] Melhorar exibição da data de upload no histórico - destacar data de cada planilha com ícone de calendário
