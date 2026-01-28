@@ -214,3 +214,6 @@
 - [x] Configurar adm1 com senha 0001
 - [x] Configurar adm2 com senha 0002
 - [ ] Rastrear qual admin fez cada upload (pendente)
+
+## Bug Login Administrativo (28/01/2026)
+- [ ] Corrigir botão Login Administrativo que redireciona para Manus OAuth em vez de mostrar tela de usuário/senha
