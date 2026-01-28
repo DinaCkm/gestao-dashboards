@@ -6,13 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
-import { Loader2, User, UserCheck, Building2, AlertCircle } from "lucide-react";
-import { getLoginUrl } from "@/const";
+import { Loader2, User, UserCheck, Building2, AlertCircle, Shield } from "lucide-react";
 
 export default function CustomLogin() {
   const [activeTab, setActiveTab] = useState("aluno");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
   
   // Form states
   const [alunoId, setAlunoId] = useState("");
@@ -21,11 +21,29 @@ export default function CustomLogin() {
   const [mentorEmail, setMentorEmail] = useState("");
   const [gerenteId, setGerenteId] = useState("");
   const [gerenteEmail, setGerenteEmail] = useState("");
+  
+  // Admin login states
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
 
   const loginMutation = trpc.auth.customLogin.useMutation({
     onSuccess: (data) => {
       if (data.success) {
-        // Reload page to get authenticated state
+        window.location.reload();
+      } else {
+        setError(data.message || "Erro ao fazer login");
+      }
+      setLoading(false);
+    },
+    onError: (err) => {
+      setError(err.message || "Erro ao fazer login. Verifique suas credenciais.");
+      setLoading(false);
+    },
+  });
+
+  const adminLoginMutation = trpc.auth.adminLogin.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
         window.location.reload();
       } else {
         setError(data.message || "Erro ao fazer login");
@@ -70,6 +88,115 @@ export default function CustomLogin() {
       email: gerenteEmail.trim().toLowerCase(),
     });
   };
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    adminLoginMutation.mutate({
+      username: adminUsername.trim(),
+      password: adminPassword,
+    });
+  };
+
+  // Admin Login Screen
+  if (showAdminLogin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen gradient-bg">
+        <div className="flex flex-col items-center gap-6 p-8 max-w-lg w-full">
+          <div className="absolute top-20 left-20 w-32 h-32 border border-secondary/20 rotate-45" />
+          <div className="absolute bottom-20 right-20 w-24 h-24 border border-primary/20 rotate-12" />
+          
+          <div className="flex flex-col items-center gap-4 relative z-10">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+              <Shield className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-center text-gradient">
+              LOGIN ADMINISTRATIVO
+            </h1>
+            <h2 className="text-xl font-bold tracking-tight text-center">
+              <span className="text-primary">ECOSSISTEMA DO </span>
+              <span className="text-secondary">BEM</span>
+            </h2>
+          </div>
+
+          <Card className="w-full gradient-card relative z-10">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="flex items-center justify-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                Acesso Administrativo
+              </CardTitle>
+              <CardDescription>
+                Digite suas credenciais de administrador
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <form onSubmit={handleAdminLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-username">Usuário</Label>
+                  <Input
+                    id="admin-username"
+                    placeholder="Digite seu usuário (ex: adm1)"
+                    value={adminUsername}
+                    onChange={(e) => setAdminUsername(e.target.value)}
+                    required
+                    autoComplete="username"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">Senha</Label>
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    placeholder="Digite sua senha"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                  />
+                </div>
+                <Button type="submit" className="w-full glow-orange" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="mr-2 h-4 w-4" />
+                      Entrar como Administrador
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              <div className="mt-6 pt-4 border-t border-border">
+                <Button
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => {
+                    setShowAdminLogin(false);
+                    setError(null);
+                    setAdminUsername("");
+                    setAdminPassword("");
+                  }}
+                >
+                  ← Voltar para login normal
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen gradient-bg">
@@ -252,10 +379,12 @@ export default function CustomLogin() {
                 variant="outline"
                 className="w-full"
                 onClick={() => {
-                  window.location.href = getLoginUrl();
+                  setShowAdminLogin(true);
+                  setError(null);
                 }}
               >
-                Login Administrativo (Manus)
+                <Shield className="mr-2 h-4 w-4" />
+                Login Administrativo
               </Button>
             </div>
           </CardContent>

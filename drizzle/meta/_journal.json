@@ -36,6 +36,13 @@
       "when": 1769552252357,
       "tag": "0004_glossy_shinobi_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1769563306003,
+      "tag": "0005_familiar_zaladane",
+      "breakpoints": true
     }
   ]
 }

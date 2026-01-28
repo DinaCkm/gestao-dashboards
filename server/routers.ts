@@ -37,6 +37,37 @@ export const appRouter = router({
       return { success: true } as const;
     }),
     
+    // Login para administrador com usuário e senha
+    adminLogin: publicProcedure
+      .input(z.object({
+        username: z.string().min(1),
+        password: z.string().min(1)
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const crypto = await import('crypto');
+        const passwordHash = crypto.createHash('sha256').update(input.password).digest('hex');
+        
+        // Buscar usuário admin pelo openId (username) e verificar senha
+        const result = await db.authenticateAdmin(input.username, passwordHash);
+        
+        if (!result.success) {
+          return { success: false, message: result.message };
+        }
+        
+        // Criar sessão
+        const { sdk } = await import("./_core/sdk");
+        const { ONE_YEAR_MS } = await import("@shared/const");
+        const token = await sdk.createSessionToken(result.user.openId, {
+          name: result.user.name || "",
+          expiresInMs: ONE_YEAR_MS,
+        });
+        
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        
+        return { success: true, user: result.user };
+      }),
+    
     // Login customizado para Alunos, Mentores e Gerentes
     customLogin: publicProcedure
       .input(z.object({

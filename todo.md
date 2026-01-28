@@ -207,3 +207,10 @@
 
 ## Correção Extração de Empresa (27/01/2026)
 - [x] Extrair nome da empresa da coluna "Turma (agrupador 1)" da planilha Performance
+
+## Login Tradicional para Administradores (27/01/2026)
+- [x] Adicionar campo de senha na tabela de usuários
+- [x] Criar endpoint de login com usuário e senha
+- [x] Configurar adm1 com senha 0001
+- [x] Configurar adm2 com senha 0002
+- [ ] Rastrear qual admin fez cada upload (pendente)

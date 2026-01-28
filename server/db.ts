@@ -1176,3 +1176,48 @@ export async function deleteUploadedFile(id: number) {
   await db.delete(uploadedFiles).where(eq(uploadedFiles.id, id));
   return true;
 }
+
+
+// ============ ADMIN LOGIN FUNCTIONS ============
+
+// Login para Administradores (username + password)
+export async function authenticateAdmin(username: string, passwordHash: string): Promise<{ success: boolean; user?: any; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+  
+  const [user] = await db.select()
+    .from(users)
+    .where(and(
+      eq(users.openId, username),
+      eq(users.role, 'admin')
+    ))
+    .limit(1);
+  
+  if (!user) {
+    return { success: false, message: "Usuário não encontrado ou não é administrador" };
+  }
+  
+  if (!user.passwordHash) {
+    return { success: false, message: "Este usuário não possui senha configurada. Use o login Manus." };
+  }
+  
+  if (user.passwordHash !== passwordHash) {
+    return { success: false, message: "Senha incorreta" };
+  }
+  
+  // Atualizar último login
+  await db.update(users)
+    .set({ lastSignedIn: new Date() })
+    .where(eq(users.id, user.id));
+  
+  return {
+    success: true,
+    user: {
+      id: user.id,
+      openId: user.openId,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }
+  };
+}
