@@ -222,6 +222,17 @@ export default function UploadPage() {
     }
   };
 
+  // Nomes de arquivos aceitos pelo sistema
+  const ACCEPTED_FILE_NAMES: Record<string, FileType> = {
+    'sebraeacre-mentorias.xlsx': 'sebraeacre_mentorias',
+    'sebraeacre-eventos.xlsx': 'sebraeacre_eventos',
+    'sebraeto-mentorias.xlsx': 'sebraeto_mentorias',
+    'sebraeto-eventos.xlsx': 'sebraeto_eventos',
+    'embrapii-mentorias.xlsx': 'embrapii_mentorias',
+    'embrapii-eventos.xlsx': 'embrapii_eventos',
+    'relatorio-de-performance.xlsx': 'performance',
+  };
+
   const handleFileChange = useCallback((
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -235,6 +246,7 @@ export default function UploadPage() {
 
     const newFiles: UploadedFileInfo[] = [];
     const newFileObjects = new Map(fileObjects);
+    const rejectedFiles: string[] = [];
 
     Array.from(selectedFiles).forEach(file => {
       const validExtensions = ['.xlsx', '.xls', '.csv'];
@@ -245,18 +257,14 @@ export default function UploadPage() {
         return;
       }
 
-      // Detectar automaticamente o tipo baseado no nome do arquivo
-      let detectedType: FileType = selectedFileType;
+      // Verificar se o nome do arquivo é aceito
       const lowerName = file.name.toLowerCase();
+      const detectedType = ACCEPTED_FILE_NAMES[lowerName];
       
-      if (lowerName.includes('sebraeacre') || lowerName.includes('sebrae acre') || lowerName.includes('sebrae-acre')) {
-        detectedType = lowerName.includes('evento') ? 'sebraeacre_eventos' : 'sebraeacre_mentorias';
-      } else if (lowerName.includes('sebraeto') || lowerName.includes('sebrae to') || lowerName.includes('bs2')) {
-        detectedType = lowerName.includes('evento') ? 'sebraeto_eventos' : 'sebraeto_mentorias';
-      } else if (lowerName.includes('embrapii')) {
-        detectedType = lowerName.includes('evento') ? 'embrapii_eventos' : 'embrapii_mentorias';
-      } else if (lowerName.includes('performance') || lowerName.includes('relatorio')) {
-        detectedType = 'performance';
+      if (!detectedType) {
+        // Nome não reconhecido - mostrar erro
+        rejectedFiles.push(file.name);
+        return;
       }
 
       newFiles.push({
@@ -267,10 +275,31 @@ export default function UploadPage() {
       newFileObjects.set(file.name, file);
     });
 
-    setFiles(prev => [...prev, ...newFiles]);
-    setFileObjects(newFileObjects);
+    // Mostrar erro se houver arquivos rejeitados
+    if (rejectedFiles.length > 0) {
+      setValidationErrors([
+        `Nome(s) de arquivo não reconhecido(s):`,
+        ...rejectedFiles.map(f => `\u2022 ${f}`),
+        '',
+        'Renomeie o arquivo usando um dos nomes aceitos:',
+        '\u2022 SEBRAEACRE-Mentorias.xlsx',
+        '\u2022 SEBRAEACRE-Eventos.xlsx',
+        '\u2022 SEBRAETO-Mentorias.xlsx',
+        '\u2022 SEBRAETO-Eventos.xlsx',
+        '\u2022 EMBRAPII-Mentorias.xlsx',
+        '\u2022 EMBRAPII-Eventos.xlsx',
+        '\u2022 relatorio-de-performance.xlsx'
+      ]);
+      setValidationWarnings([]);
+      setShowValidationDialog(true);
+    }
+
+    if (newFiles.length > 0) {
+      setFiles(prev => [...prev, ...newFiles]);
+      setFileObjects(newFileObjects);
+    }
     event.target.value = "";
-  }, [files.length, selectedFileType, fileObjects]);
+  }, [files.length, fileObjects]);
 
   const removeFile = useCallback((fileName: string) => {
     setFiles(prev => prev.filter(f => f.name !== fileName));
@@ -693,44 +722,61 @@ export default function UploadPage() {
           </CardContent>
         </Card>
 
-        {/* Instructions - Organized by Company */}
-        <Card className="gradient-card">
+        {/* Lista de Nomes de Arquivos Aceitos */}
+        <Card className="gradient-card border-2 border-primary/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
-              Arquivos Esperados por Empresa
+              <AlertCircle className="h-5 w-5 text-primary" />
+              Nomes de Arquivos Aceitos
             </CardTitle>
             <CardDescription>
-              São 7 arquivos no total: 2 por empresa (Mentorias + Eventos) + 1 Relatório de Performance consolidado
+              <strong className="text-foreground">IMPORTANTE:</strong> O sistema só aceita planilhas com os nomes exatos abaixo. 
+              Renomeie seus arquivos antes de fazer upload.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {EMPRESAS.map((empresa) => (
-                <div key={empresa.nome} className={`p-4 rounded-lg border ${empresa.color}`}>
-                  <h3 className="font-semibold mb-3">{empresa.nome}</h3>
-                  <div className="space-y-2">
-                    {empresa.tipos.map((tipo) => {
-                      const config = FILE_TYPE_CONFIG[tipo];
-                      const Icon = config.icon;
-                      return (
-                        <div key={tipo} className="flex items-start gap-2">
-                          <Icon className={`h-4 w-4 mt-0.5 ${config.color}`} />
-                          <div>
-                            <p className="text-sm font-medium">
-                              {tipo.includes('mentorias') ? 'Mentorias' : 
-                               tipo.includes('eventos') ? 'Eventos' : 'Performance'}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {config.description}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+            <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+              <div className="grid gap-2">
+                <div className="flex items-center gap-3 p-2 rounded bg-primary/10 border border-primary/20">
+                  <span className="font-mono text-sm bg-background px-2 py-1 rounded font-bold">01</span>
+                  <code className="font-mono text-sm font-medium">SEBRAEACRE-Mentorias.xlsx</code>
+                  <span className="text-xs text-muted-foreground ml-auto">Mentorias SEBRAE ACRE</span>
                 </div>
-              ))}
+                <div className="flex items-center gap-3 p-2 rounded bg-primary/10 border border-primary/20">
+                  <span className="font-mono text-sm bg-background px-2 py-1 rounded font-bold">02</span>
+                  <code className="font-mono text-sm font-medium">SEBRAEACRE-Eventos.xlsx</code>
+                  <span className="text-xs text-muted-foreground ml-auto">Eventos SEBRAE ACRE</span>
+                </div>
+                <div className="flex items-center gap-3 p-2 rounded bg-secondary/10 border border-secondary/20">
+                  <span className="font-mono text-sm bg-background px-2 py-1 rounded font-bold">03</span>
+                  <code className="font-mono text-sm font-medium">SEBRAETO-Mentorias.xlsx</code>
+                  <span className="text-xs text-muted-foreground ml-auto">Mentorias SEBRAE TO</span>
+                </div>
+                <div className="flex items-center gap-3 p-2 rounded bg-secondary/10 border border-secondary/20">
+                  <span className="font-mono text-sm bg-background px-2 py-1 rounded font-bold">04</span>
+                  <code className="font-mono text-sm font-medium">SEBRAETO-Eventos.xlsx</code>
+                  <span className="text-xs text-muted-foreground ml-auto">Eventos SEBRAE TO</span>
+                </div>
+                <div className="flex items-center gap-3 p-2 rounded bg-chart-3/10 border border-chart-3/20">
+                  <span className="font-mono text-sm bg-background px-2 py-1 rounded font-bold">05</span>
+                  <code className="font-mono text-sm font-medium">EMBRAPII-Mentorias.xlsx</code>
+                  <span className="text-xs text-muted-foreground ml-auto">Mentorias EMBRAPII</span>
+                </div>
+                <div className="flex items-center gap-3 p-2 rounded bg-chart-3/10 border border-chart-3/20">
+                  <span className="font-mono text-sm bg-background px-2 py-1 rounded font-bold">06</span>
+                  <code className="font-mono text-sm font-medium">EMBRAPII-Eventos.xlsx</code>
+                  <span className="text-xs text-muted-foreground ml-auto">Eventos EMBRAPII</span>
+                </div>
+                <div className="flex items-center gap-3 p-2 rounded bg-chart-4/10 border border-chart-4/20">
+                  <span className="font-mono text-sm bg-background px-2 py-1 rounded font-bold">07</span>
+                  <code className="font-mono text-sm font-medium">relatorio-de-performance.xlsx</code>
+                  <span className="text-xs text-muted-foreground ml-auto">Performance Consolidado</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/30">
+                <strong>Dica:</strong> Copie o nome exato acima e cole ao renomear seu arquivo. 
+                O sistema mantém as 3 últimas versões de cada arquivo.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -784,48 +830,88 @@ export default function UploadPage() {
 
       {/* Diálogo de Histórico */}
       <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <History className="h-5 w-5" />
               Histórico de Uploads
             </DialogTitle>
             <DialogDescription>
-              Últimos arquivos enviados. Mantemos as 3 versões mais recentes de cada tipo.
+              Últimos arquivos enviados. O sistema mantém as 3 versões mais recentes de cada tipo de planilha.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            {uploadHistory && uploadHistory.length > 0 ? (
-              uploadHistory.map((file) => (
-                <div 
-                  key={file.id} 
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/30"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileSpreadsheet className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">{file.fileName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {file.fileType} • Semana {file.weekNumber}/{file.year} • {file.rowCount || 0} linhas
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {file.createdAt ? new Date(file.createdAt).toLocaleString('pt-BR') : 'Data não disponível'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-1 rounded ${file.status === 'processed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      {file.status === 'processed' ? 'Processado' : file.status}
-                    </span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhum arquivo enviado ainda.
-              </p>
-            )}
+          
+          {/* Tabela de Histórico */}
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left p-3 text-sm font-medium">Nome da Planilha</th>
+                  <th className="text-left p-3 text-sm font-medium">Tipo</th>
+                  <th className="text-left p-3 text-sm font-medium">Data</th>
+                  <th className="text-left p-3 text-sm font-medium">Horário</th>
+                  <th className="text-center p-3 text-sm font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {uploadHistory && uploadHistory.length > 0 ? (
+                  uploadHistory.map((file, index) => {
+                    const uploadDate = file.createdAt ? new Date(file.createdAt) : null;
+                    return (
+                      <tr key={file.id} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <FileSpreadsheet className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="text-sm font-medium truncate max-w-[200px]" title={file.fileName}>
+                              {file.fileName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <span className="text-xs px-2 py-1 rounded bg-primary/10 text-primary">
+                            {file.fileType?.replace('_', ' ').toUpperCase() || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-sm">
+                          {uploadDate ? uploadDate.toLocaleDateString('pt-BR', { 
+                            day: '2-digit', 
+                            month: '2-digit', 
+                            year: 'numeric' 
+                          }) : '-'}
+                        </td>
+                        <td className="p-3 text-sm">
+                          {uploadDate ? uploadDate.toLocaleTimeString('pt-BR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            second: '2-digit'
+                          }) : '-'}
+                        </td>
+                        <td className="p-3 text-center">
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            file.status === 'processed' 
+                              ? 'bg-green-100 text-green-700' 
+                              : file.status === 'error'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {file.status === 'processed' ? '✓ Processado' : 
+                             file.status === 'error' ? '✗ Erro' : file.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                      Nenhum arquivo enviado ainda.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowHistoryDialog(false)}>
               Fechar
