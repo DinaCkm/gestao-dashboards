@@ -17,7 +17,8 @@ import {
   turmas, InsertTurma, Turma,
   mentoringSessions, InsertMentoringSession, MentoringSession,
   events, InsertEvent, Event,
-  eventParticipation, InsertEventParticipation, EventParticipation
+  eventParticipation, InsertEventParticipation, EventParticipation,
+  planoIndividual, InsertPlanoIndividual, PlanoIndividual
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1333,6 +1334,165 @@ export async function getCompetenciasWithTrilha() {
   .from(competencias)
   .leftJoin(trilhas, eq(competencias.trilhaId, trilhas.id))
   .orderBy(trilhas.ordem, competencias.ordem);
+  
+  return result;
+}
+
+
+// ============ PLANO INDIVIDUAL FUNCTIONS ============
+
+// Buscar plano individual de um aluno
+export async function getPlanoIndividualByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    id: planoIndividual.id,
+    alunoId: planoIndividual.alunoId,
+    competenciaId: planoIndividual.competenciaId,
+    isObrigatoria: planoIndividual.isObrigatoria,
+    notaAtual: planoIndividual.notaAtual,
+    metaNota: planoIndividual.metaNota,
+    status: planoIndividual.status,
+    competenciaNome: competencias.nome,
+    competenciaCodigo: competencias.codigoIntegracao,
+    trilhaId: competencias.trilhaId,
+    trilhaNome: trilhas.name
+  })
+  .from(planoIndividual)
+  .leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id))
+  .leftJoin(trilhas, eq(competencias.trilhaId, trilhas.id))
+  .where(eq(planoIndividual.alunoId, alunoId))
+  .orderBy(trilhas.ordem, competencias.ordem);
+  
+  return result;
+}
+
+// Adicionar competência ao plano individual
+export async function addCompetenciaToPlano(data: {
+  alunoId: number;
+  competenciaId: number;
+  isObrigatoria?: number;
+  metaNota?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.insert(planoIndividual).values({
+    alunoId: data.alunoId,
+    competenciaId: data.competenciaId,
+    isObrigatoria: data.isObrigatoria ?? 1,
+    metaNota: data.metaNota ?? "7.00",
+    status: "pendente"
+  });
+  
+  return result.insertId;
+}
+
+// Adicionar múltiplas competências ao plano individual
+export async function addCompetenciasToPlano(alunoId: number, competenciaIds: number[]) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const values = competenciaIds.map(competenciaId => ({
+    alunoId,
+    competenciaId,
+    isObrigatoria: 1,
+    metaNota: "7.00",
+    status: "pendente" as const
+  }));
+  
+  await db.insert(planoIndividual).values(values);
+  return true;
+}
+
+// Remover competência do plano individual
+export async function removeCompetenciaFromPlano(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.delete(planoIndividual).where(eq(planoIndividual.id, id));
+  return true;
+}
+
+// Atualizar item do plano individual
+export async function updatePlanoIndividualItem(id: number, data: {
+  isObrigatoria?: number;
+  notaAtual?: string;
+  metaNota?: string;
+  status?: "pendente" | "em_progresso" | "concluida";
+}) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.update(planoIndividual)
+    .set(data)
+    .where(eq(planoIndividual.id, id));
+  return true;
+}
+
+// Limpar plano individual de um aluno
+export async function clearPlanoIndividual(alunoId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.delete(planoIndividual).where(eq(planoIndividual.alunoId, alunoId));
+  return true;
+}
+
+// Buscar alunos com seus planos individuais
+export async function getAlunosWithPlano(programId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Buscar alunos
+  let alunosList;
+  if (programId) {
+    alunosList = await db.select().from(alunos).where(eq(alunos.programId, programId));
+  } else {
+    alunosList = await db.select().from(alunos);
+  }
+  
+  // Para cada aluno, contar competências do plano
+  const result = [];
+  for (const aluno of alunosList) {
+    const planoItems = await db.select()
+      .from(planoIndividual)
+      .where(eq(planoIndividual.alunoId, aluno.id));
+    
+    const obrigatorias = planoItems.filter(p => p.isObrigatoria === 1).length;
+    const concluidas = planoItems.filter(p => p.status === "concluida").length;
+    
+    result.push({
+      ...aluno,
+      totalCompetencias: planoItems.length,
+      competenciasObrigatorias: obrigatorias,
+      competenciasConcluidas: concluidas,
+      progressoPlano: obrigatorias > 0 ? Math.round((concluidas / obrigatorias) * 100) : 0
+    });
+  }
+  
+  return result;
+}
+
+// Buscar competências obrigatórias de um aluno (para cálculo de performance)
+export async function getCompetenciasObrigatoriasAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    competenciaId: planoIndividual.competenciaId,
+    codigoIntegracao: competencias.codigoIntegracao,
+    notaAtual: planoIndividual.notaAtual,
+    metaNota: planoIndividual.metaNota,
+    status: planoIndividual.status
+  })
+  .from(planoIndividual)
+  .leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id))
+  .where(and(
+    eq(planoIndividual.alunoId, alunoId),
+    eq(planoIndividual.isObrigatoria, 1)
+  ));
   
   return result;
 }

@@ -22,6 +22,7 @@ import DashboardMentor from "./pages/DashboardMentor";
 import AdminCadastros from "./pages/AdminCadastros";
 import PorEmpresa from "./pages/PorEmpresa";
 import TrilhasCompetencias from "./pages/TrilhasCompetencias";
+import PlanoIndividual from "./pages/PlanoIndividual";
 
 function Router() {
   return (
@@ -42,6 +43,7 @@ function Router() {
       <Route path={"/dashboard/mentor"} component={DashboardMentor} />
       <Route path={"/cadastros"} component={AdminCadastros} />
       <Route path={"/trilhas-competencias"} component={TrilhasCompetencias} />
+      <Route path={"/plano-individual"} component={PlanoIndividual} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

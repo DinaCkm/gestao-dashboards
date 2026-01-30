@@ -111,6 +111,24 @@ export type Competencia = typeof competencias.$inferSelect;
 export type InsertCompetencia = typeof competencias.$inferInsert;
 
 /**
+ * Plano Individual - Competências obrigatórias vinculadas a cada aluno
+ */
+export const planoIndividual = mysqlTable("plano_individual", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  competenciaId: int("competenciaId").notNull(), // FK para competencias
+  isObrigatoria: int("isObrigatoria").default(1).notNull(), // 1 = obrigatória, 0 = opcional
+  notaAtual: decimal("notaAtual", { precision: 5, scale: 2 }), // Nota atual na competência
+  metaNota: decimal("metaNota", { precision: 5, scale: 2 }).default("7.00"), // Meta padrão = 7
+  status: mysqlEnum("status", ["pendente", "em_progresso", "concluida"]).default("pendente").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PlanoIndividual = typeof planoIndividual.$inferSelect;
+export type InsertPlanoIndividual = typeof planoIndividual.$inferInsert;
+
+/**
  * Students/Alunos - The mentees/tutorados
  */
 export const alunos = mysqlTable("alunos", {

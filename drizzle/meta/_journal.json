@@ -57,6 +57,13 @@
       "when": 1769791637975,
       "tag": "0007_burly_smasher",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1769803519091,
+      "tag": "0008_pink_kate_bishop",
+      "breakpoints": true
     }
   ]
 }

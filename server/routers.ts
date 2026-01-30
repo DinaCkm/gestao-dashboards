@@ -615,6 +615,85 @@ export const appRouter = router({
       }),
   }),
 
+  // Plano Individual (Competências obrigatórias por aluno)
+  planoIndividual: router({
+    // Buscar plano de um aluno
+    byAluno: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPlanoIndividualByAluno(input.alunoId);
+      }),
+    
+    // Adicionar competência ao plano
+    addCompetencia: adminProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        competenciaId: z.number(),
+        isObrigatoria: z.number().optional(),
+        metaNota: z.string().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.addCompetenciaToPlano(input);
+        return { success: true, id };
+      }),
+    
+    // Adicionar múltiplas competências
+    addMultiple: adminProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        competenciaIds: z.array(z.number())
+      }))
+      .mutation(async ({ input }) => {
+        const success = await db.addCompetenciasToPlano(input.alunoId, input.competenciaIds);
+        return { success };
+      }),
+    
+    // Remover competência do plano
+    remove: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const success = await db.removeCompetenciaFromPlano(input.id);
+        return { success };
+      }),
+    
+    // Atualizar item do plano
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        isObrigatoria: z.number().optional(),
+        notaAtual: z.string().optional(),
+        metaNota: z.string().optional(),
+        status: z.enum(["pendente", "em_progresso", "concluida"]).optional()
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const success = await db.updatePlanoIndividualItem(id, data);
+        return { success };
+      }),
+    
+    // Limpar plano de um aluno
+    clear: adminProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input }) => {
+        const success = await db.clearPlanoIndividual(input.alunoId);
+        return { success };
+      }),
+    
+    // Listar alunos com progresso do plano
+    alunosWithPlano: protectedProcedure
+      .input(z.object({ programId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getAlunosWithPlano(input?.programId);
+      }),
+    
+    // Buscar competências obrigatórias de um aluno
+    competenciasObrigatorias: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCompetenciasObrigatoriasAluno(input.alunoId);
+      }),
+  }),
+
   // Alunos
   alunos: router({
     list: protectedProcedure

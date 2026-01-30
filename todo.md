@@ -237,3 +237,15 @@
 - [ ] Atualizar formulário de registro de sessão de mentoria
 - [ ] Atualizar cálculo do indicador "Evolução/Engajamento"
 - [ ] Atualizar dashboards para mostrar média da nota de evolução
+
+### BLOCO 2 - Plano Individual do Aluno
+- [x] Criar tabela `plano_individual` para vincular competências obrigatórias a cada aluno
+- [x] Criar endpoints tRPC para gerenciar plano individual
+- [x] Criar tela de administração para definir competências obrigatórias por aluno
+- [x] Permitir seleção de competências por trilha
+- [ ] Exibir plano individual no perfil do aluno
+
+### BLOCO 3 - Performance Filtrada
+- [ ] Atualizar cálculo de performance para considerar apenas competências obrigatórias
+- [ ] Criar indicador de progresso do plano individual
+- [ ] Atualizar dashboards com nova lógica de cálculo
