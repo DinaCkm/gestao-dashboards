@@ -36,7 +36,8 @@ import {
   Calculator,
   User,
   UserCheck,
-  GraduationCap
+  GraduationCap,
+  BookOpen
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -72,6 +73,7 @@ const allMenuItems: MenuItem[] = [
   // === RELATÓRIOS E GESTÃO ===
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager", "user"] },
   { icon: GraduationCap, label: "Turmas", path: "/turmas", roles: ["admin"] },
+  { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias", roles: ["admin"] },
   { icon: Calculator, label: "Fórmulas", path: "/formulas", roles: ["admin"] },
   { icon: FileSpreadsheet, label: "Histórico", path: "/historico", roles: ["admin", "manager"] },
   { icon: Settings, label: "Configurações", path: "/configuracoes", roles: ["admin"] },

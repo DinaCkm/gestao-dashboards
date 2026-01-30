@@ -75,18 +75,40 @@ export type Turma = typeof turmas.$inferSelect;
 export type InsertTurma = typeof turmas.$inferInsert;
 
 /**
- * Trilhas - Learning paths within a program
+ * Trilhas - Learning paths (Básicas, Essenciais, Master, Jornada do Futuro)
  */
 export const trilhas = mysqlTable("trilhas", {
   id: int("id").autoincrement().primaryKey(),
   externalId: varchar("externalId", { length: 100 }),
   name: varchar("name", { length: 255 }).notNull(),
+  codigo: varchar("codigo", { length: 50 }), // Código único para integração
+  ordem: int("ordem").default(0), // Ordem de exibição
   programId: int("programId"),
+  isActive: int("isActive").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Trilha = typeof trilhas.$inferSelect;
 export type InsertTrilha = typeof trilhas.$inferInsert;
+
+/**
+ * Competências - Skills within each trilha (36 total)
+ */
+export const competencias = mysqlTable("competencias", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  trilhaId: int("trilhaId").notNull(), // FK para trilhas
+  codigoIntegracao: varchar("codigoIntegracao", { length: 100 }), // Chave para casar com planilha
+  descricao: text("descricao"),
+  ordem: int("ordem").default(0), // Ordem de exibição
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Competencia = typeof competencias.$inferSelect;
+export type InsertCompetencia = typeof competencias.$inferInsert;
 
 /**
  * Students/Alunos - The mentees/tutorados
@@ -124,6 +146,7 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   presence: mysqlEnum("presence", ["presente", "ausente"]).notNull(),
   taskStatus: mysqlEnum("taskStatus", ["entregue", "nao_entregue", "sem_tarefa"]),
   engagementScore: int("engagementScore"),
+  notaEvolucao: int("notaEvolucao"), // Nota da mentora (0-10) - BLOCO 8
   feedback: text("feedback"),
   batchId: int("batchId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

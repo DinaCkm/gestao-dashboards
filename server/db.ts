@@ -9,7 +9,15 @@ import {
   processedData, InsertProcessedData, ProcessedData,
   dashboardMetrics, InsertDashboardMetric, DashboardMetric,
   reports, InsertReport, Report,
-  consultors, Consultor, InsertConsultor
+  consultors, Consultor, InsertConsultor,
+  trilhas, Trilha, InsertTrilha,
+  competencias, Competencia, InsertCompetencia,
+  programs, InsertProgram, Program,
+  alunos, InsertAluno, Aluno,
+  turmas, InsertTurma, Turma,
+  mentoringSessions, InsertMentoringSession, MentoringSession,
+  events, InsertEvent, Event,
+  eventParticipation, InsertEventParticipation, EventParticipation
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -410,7 +418,6 @@ export async function getSystemStats() {
 
 
 // ============ PROGRAM FUNCTIONS ============
-import { programs, InsertProgram, Program, alunos, InsertAluno, Aluno, turmas, InsertTurma, Turma, mentoringSessions, InsertMentoringSession, MentoringSession, events, InsertEvent, Event, eventParticipation, InsertEventParticipation, EventParticipation, trilhas, InsertTrilha, Trilha } from "../drizzle/schema";
 
 export async function getPrograms(): Promise<Program[]> {
   const db = await getDb();
@@ -1220,4 +1227,112 @@ export async function authenticateAdmin(username: string, passwordHash: string):
       role: user.role
     }
   };
+}
+
+
+// ============ TRILHAS FUNCTIONS ============
+
+export async function createTrilha(data: InsertTrilha) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(trilhas).values(data);
+  return result[0].insertId;
+}
+
+export async function getAllTrilhas() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(trilhas).orderBy(trilhas.ordem);
+}
+
+export async function getTrilhaById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(trilhas).where(eq(trilhas.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateTrilha(id: number, data: Partial<InsertTrilha>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(trilhas).set(data).where(eq(trilhas.id, id));
+}
+
+export async function deleteTrilha(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  // Verificar se há competências vinculadas
+  const competenciasVinculadas = await db.select().from(competencias).where(eq(competencias.trilhaId, id));
+  if (competenciasVinculadas.length > 0) {
+    return false; // Não pode excluir trilha com competências vinculadas
+  }
+  await db.delete(trilhas).where(eq(trilhas.id, id));
+  return true;
+}
+
+// ============ COMPETÊNCIAS FUNCTIONS ============
+
+export async function createCompetencia(data: InsertCompetencia) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(competencias).values(data);
+  return result[0].insertId;
+}
+
+export async function getAllCompetencias() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(competencias).orderBy(competencias.trilhaId, competencias.ordem);
+}
+
+export async function getCompetenciasByTrilha(trilhaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(competencias)
+    .where(eq(competencias.trilhaId, trilhaId))
+    .orderBy(competencias.ordem);
+}
+
+export async function getCompetenciaById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(competencias).where(eq(competencias.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateCompetencia(id: number, data: Partial<InsertCompetencia>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(competencias).set(data).where(eq(competencias.id, id));
+}
+
+export async function deleteCompetencia(id: number) {
+  const db = await getDb();
+  if (!db) return false;
+  // TODO: Verificar se há PDIs vinculados antes de excluir
+  await db.delete(competencias).where(eq(competencias.id, id));
+  return true;
+}
+
+// Buscar competências com detalhes da trilha
+export async function getCompetenciasWithTrilha() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    id: competencias.id,
+    nome: competencias.nome,
+    codigoIntegracao: competencias.codigoIntegracao,
+    descricao: competencias.descricao,
+    ordem: competencias.ordem,
+    isActive: competencias.isActive,
+    trilhaId: competencias.trilhaId,
+    trilhaNome: trilhas.name,
+    trilhaCodigo: trilhas.codigo
+  })
+  .from(competencias)
+  .leftJoin(trilhas, eq(competencias.trilhaId, trilhas.id))
+  .orderBy(trilhas.ordem, competencias.ordem);
+  
+  return result;
 }

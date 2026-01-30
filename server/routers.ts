@@ -507,6 +507,114 @@ export const appRouter = router({
     }),
   }),
 
+  // Trilhas (Catálogo de Trilhas)
+  trilhas: router({
+    list: protectedProcedure.query(async () => {
+      return await db.getAllTrilhas();
+    }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getTrilhaById(input.id);
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        codigo: z.string().optional(),
+        ordem: z.number().optional(),
+        programId: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createTrilha(input);
+        return { success: true, id };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        codigo: z.string().optional(),
+        ordem: z.number().optional(),
+        isActive: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateTrilha(id, data);
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const success = await db.deleteTrilha(input.id);
+        if (!success) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não é possível excluir trilha com competências vinculadas' });
+        }
+        return { success: true };
+      }),
+  }),
+
+  // Competências (Catálogo de Competências)
+  competencias: router({
+    list: protectedProcedure.query(async () => {
+      return await db.getAllCompetencias();
+    }),
+    
+    listWithTrilha: protectedProcedure.query(async () => {
+      return await db.getCompetenciasWithTrilha();
+    }),
+    
+    byTrilha: protectedProcedure
+      .input(z.object({ trilhaId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCompetenciasByTrilha(input.trilhaId);
+      }),
+    
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCompetenciaById(input.id);
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        nome: z.string().min(1),
+        trilhaId: z.number(),
+        codigoIntegracao: z.string().optional(),
+        descricao: z.string().optional(),
+        ordem: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createCompetencia(input);
+        return { success: true, id };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        nome: z.string().optional(),
+        trilhaId: z.number().optional(),
+        codigoIntegracao: z.string().optional(),
+        descricao: z.string().optional(),
+        ordem: z.number().optional(),
+        isActive: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateCompetencia(id, data);
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const success = await db.deleteCompetencia(input.id);
+        return { success };
+      }),
+  }),
+
   // Alunos
   alunos: router({
     list: protectedProcedure

@@ -21,6 +21,7 @@ import DashboardEmpresa from "./pages/DashboardEmpresa";
 import DashboardMentor from "./pages/DashboardMentor";
 import AdminCadastros from "./pages/AdminCadastros";
 import PorEmpresa from "./pages/PorEmpresa";
+import TrilhasCompetencias from "./pages/TrilhasCompetencias";
 
 function Router() {
   return (
@@ -40,6 +41,7 @@ function Router() {
       <Route path={"/dashboard/empresa/:codigo"} component={DashboardEmpresa} />
       <Route path={"/dashboard/mentor"} component={DashboardMentor} />
       <Route path={"/cadastros"} component={AdminCadastros} />
+      <Route path={"/trilhas-competencias"} component={TrilhasCompetencias} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

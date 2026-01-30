@@ -218,3 +218,22 @@
 ## Bug Login Administrativo (28/01/2026)
 - [x] Corrigir botão Login Administrativo que redireciona para Manus OAuth em vez de mostrar tela de usuário/senha
 - [x] Desabilitar redirecionamento automático para OAuth no main.tsx
+
+
+## FASE 1 - Especificação Funcional (30/01/2026)
+
+### BLOCO 1 - Catálogo de Trilhas e Competências
+- [x] Criar tabela `trilhas` no schema.ts
+- [x] Criar tabela `competencias` no schema.ts
+- [x] Executar migração do banco de dados
+- [x] Criar endpoints tRPC para CRUD de trilhas
+- [x] Criar endpoints tRPC para CRUD de competências
+- [x] Criar script seed com as 36 competências oficiais (4 trilhas + 36 competências)
+- [x] Criar tela de administração de Trilhas e Competências
+- [x] Adicionar menu "Trilhas e Competências" no Admin
+
+### BLOCO 8 - Nota da Mentora (Evolução)
+- [x] Adicionar campo `nota_evolucao` (0-10) na tabela mentoring_sessions
+- [ ] Atualizar formulário de registro de sessão de mentoria
+- [ ] Atualizar cálculo do indicador "Evolução/Engajamento"
+- [ ] Atualizar dashboards para mostrar média da nota de evolução
