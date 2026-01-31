@@ -1,0 +1,70 @@
+{
+  "query": "SELECT nome FROM competencias ORDER BY nome LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT nome FROM competencias ORDER BY nome LIMIT 20;",
+  "rows": [
+    {
+      "nome": "Adaptabilidade"
+    },
+    {
+      "nome": "Análise de Dados"
+    },
+    {
+      "nome": "Apresentação"
+    },
+    {
+      "nome": "Autoconhecimento"
+    },
+    {
+      "nome": "Comunicação"
+    },
+    {
+      "nome": "Criatividade"
+    },
+    {
+      "nome": "Diversidade e Inclusão"
+    },
+    {
+      "nome": "Economia Circular"
+    },
+    {
+      "nome": "Empreendedorismo"
+    },
+    {
+      "nome": "Ética Profissional"
+    },
+    {
+      "nome": "Feedback"
+    },
+    {
+      "nome": "Gestão de Conflitos"
+    },
+    {
+      "nome": "Gestão de Mudanças"
+    },
+    {
+      "nome": "Gestão de Pessoas"
+    },
+    {
+      "nome": "Gestão de Projetos"
+    },
+    {
+      "nome": "Gestão do Tempo"
+    },
+    {
+      "nome": "Inovação"
+    },
+    {
+      "nome": "Inteligência Artificial"
+    },
+    {
+      "nome": "Inteligência Emocional"
+    },
+    {
+      "nome": "Liderança"
+    }
+  ],
+  "messages": [],
+  "stdout": "nome\nAdaptabilidade\nAnálise de Dados\nApresentação\nAutoconhecimento\nComunicação\nCriatividade\nDiversidade e Inclusão\nEconomia Circular\nEmpreendedorismo\nÉtica Profissional\nFeedback\nGestão de Conflitos\nGestão de Mudanças\nGestão de Pessoas\nGestão de Projetos\nGestão do Tempo\nInovação\nInteligência Artificial\nInteligência Emocional\nLiderança\n",
+  "stderr": "",
+  "execution_time_ms": 343
+}

@@ -251,3 +251,13 @@
 - [x] Atualizar dashboards com nova lógica de cálculo
 - [x] Criar endpoint performanceFiltrada no tRPC
 - [x] Exibir indicadores filtrados na página Plano Individual
+
+
+### Parsers de Dados Pendentes (31/01/2026)
+- [x] Implementar parser para SEBRAEACRE-Eventos.xlsx
+- [x] Implementar parser para BS2SEBRAETO-Eventos.xlsx
+- [x] Implementar parser para EMBRAPII-Eventos.xlsx
+- [x] Implementar parser para relatorio-de-performance.xlsx
+- [x] Importar dados de eventos para o banco (4.027 participações)
+- [x] Importar dados de performance para o banco (506 registros com notas)
+- [x] Verificar indicadores com dados completos

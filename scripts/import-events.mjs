@@ -41,13 +41,19 @@ function parseEventsFile(filePath, empresa) {
   console.log(`  Cabeçalho encontrado na linha ${headerRowIndex + 1}`);
   
   // Mapear índices das colunas
-  const colIndex = {
-    idUsuario: headers.findIndex(h => String(h).toLowerCase().includes('id usu')),
-    nomeAluno: headers.findIndex(h => String(h).toLowerCase().includes('nome do aluno')),
+  let colIndex = {
+    idUsuario: headers.findIndex(h => String(h).toLowerCase().includes('id usu') || String(h).toLowerCase() === 'id usuários' || String(h).toLowerCase().includes('id usuário')),
+    nomeAluno: headers.findIndex(h => String(h).toLowerCase().includes('nome do aluno') || String(h).toLowerCase() === 'nome do aluno'),
     turma: headers.findIndex(h => String(h).toLowerCase().includes('turma')),
     tituloEvento: headers.findIndex(h => String(h).toLowerCase().includes('titulo')),
     statusPresenca: headers.findIndex(h => String(h).toLowerCase().includes('status') && String(h).toLowerCase().includes('presen'))
   };
+  
+  // Se Id Usuário não encontrado mas Nome do Aluno está na coluna 1, assumir Id Usuário na coluna 0
+  if (colIndex.idUsuario === -1 && colIndex.nomeAluno === 1) {
+    colIndex.idUsuario = 0;
+    console.log('  -> Id Usuário assumido na coluna 0 (sem cabeçalho)');
+  }
   
   console.log(`  Colunas: idUsuario=${colIndex.idUsuario}, nomeAluno=${colIndex.nomeAluno}, turma=${colIndex.turma}, titulo=${colIndex.tituloEvento}, presenca=${colIndex.statusPresenca}`);
   
