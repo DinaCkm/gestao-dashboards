@@ -679,6 +679,22 @@ export const appRouter = router({
         return { success };
       }),
     
+    // Atribuir competências em lote para uma turma inteira
+    addToTurma: adminProcedure
+      .input(z.object({
+        turmaId: z.number(),
+        competenciaIds: z.array(z.number())
+      }))
+      .mutation(async ({ input }) => {
+        const alunos = await db.getAlunosByTurma(input.turmaId);
+        let totalAdded = 0;
+        for (const aluno of alunos) {
+          const success = await db.addCompetenciasToPlano(aluno.id, input.competenciaIds);
+          if (success) totalAdded++;
+        }
+        return { success: true, alunosAtualizados: totalAdded, totalAlunos: alunos.length };
+      }),
+    
     // Listar alunos com progresso do plano
     alunosWithPlano: protectedProcedure
       .input(z.object({ programId: z.number().optional() }).optional())
@@ -1055,6 +1071,28 @@ export const appRouter = router({
         return stats;
       }),
 
+    // Sessões de mentoria por aluno
+    sessionsByAluno: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getMentoringSessionsByAluno(input.alunoId);
+      }),
+    
+    // Atualizar sessão de mentoria (nota de evolução e feedback)
+    updateSession: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        notaEvolucao: z.number().min(0).max(10).optional(),
+        feedback: z.string().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const success = await db.updateMentoringSession(input.sessionId, {
+          notaEvolucao: input.notaEvolucao,
+          feedback: input.feedback
+        });
+        return { success };
+      }),
+    
     // Dashboard consolidado de todos os mentores
     dashboardGeral: managerProcedure.query(async () => {
       const consultors = await db.getConsultors();

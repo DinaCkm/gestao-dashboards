@@ -20,6 +20,10 @@ export default function PlanoIndividual() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedCompetencias, setSelectedCompetencias] = useState<number[]>([]);
   const [selectedTrilha, setSelectedTrilha] = useState<string>("all");
+  const [isLoteDialogOpen, setIsLoteDialogOpen] = useState(false);
+  const [selectedTurma, setSelectedTurma] = useState<string>("");
+  const [selectedCompetenciasLote, setSelectedCompetenciasLote] = useState<number[]>([]);
+  const [selectedTrilhaLote, setSelectedTrilhaLote] = useState<string>("all");
 
   // Queries
   const { data: alunosWithPlano, isLoading: loadingAlunos, refetch: refetchAlunos } = trpc.planoIndividual.alunosWithPlano.useQuery();
@@ -30,6 +34,7 @@ export default function PlanoIndividual() {
   );
   const { data: competencias } = trpc.competencias.listWithTrilha.useQuery();
   const { data: trilhas } = trpc.trilhas.list.useQuery();
+  const { data: turmas } = trpc.turmas.list.useQuery();
   
   // Query de performance filtrada (BLOCO 3)
   const { data: performanceFiltrada } = trpc.indicadores.performanceFiltrada.useQuery(
@@ -67,6 +72,19 @@ export default function PlanoIndividual() {
       toast.success("Plano atualizado!");
       refetchPlano();
       refetchAlunos();
+    },
+    onError: (error) => {
+      toast.error(`Erro: ${error.message}`);
+    }
+  });
+
+  const addToTurmaMutation = trpc.planoIndividual.addToTurma.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Competências atribuídas a ${data.alunosAtualizados} de ${data.totalAlunos} alunos!`);
+      refetchAlunos();
+      setIsLoteDialogOpen(false);
+      setSelectedCompetenciasLote([]);
+      setSelectedTurma("");
     },
     onError: (error) => {
       toast.error(`Erro: ${error.message}`);
@@ -128,6 +146,23 @@ export default function PlanoIndividual() {
 
   const selectedAlunoData = alunosWithPlano?.find(a => a.id === selectedAluno);
 
+  // Filtrar competências para atribuição em lote
+  const competenciasLoteDisponiveis = competencias?.filter(comp => {
+    const matchesTrilha = selectedTrilhaLote === "all" || comp.trilhaId === parseInt(selectedTrilhaLote);
+    return matchesTrilha;
+  }) || [];
+
+  const handleAddToTurma = () => {
+    if (!selectedTurma || selectedCompetenciasLote.length === 0) {
+      toast.error("Selecione uma turma e pelo menos uma competência");
+      return;
+    }
+    addToTurmaMutation.mutate({
+      turmaId: parseInt(selectedTurma),
+      competenciaIds: selectedCompetenciasLote
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -137,6 +172,92 @@ export default function PlanoIndividual() {
             <h1 className="text-3xl font-bold text-slate-800">Plano Individual</h1>
             <p className="text-slate-600">Defina as competências obrigatórias para cada aluno</p>
           </div>
+          <Dialog open={isLoteDialogOpen} onOpenChange={setIsLoteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-[#E87722] hover:bg-[#d06a1e]">
+                <Users className="w-4 h-4 mr-2" />
+                Atribuir em Lote
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Atribuir Competências em Lote</DialogTitle>
+                <DialogDescription>
+                  Selecione uma turma e as competências para atribuir a todos os alunos da turma
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <label className="text-sm font-medium">Turma</label>
+                  <Select value={selectedTurma} onValueChange={setSelectedTurma}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma turma" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {turmas?.map(turma => (
+                        <SelectItem key={turma.id} value={String(turma.id)}>
+                          {turma.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Filtrar por Trilha</label>
+                  <Select value={selectedTrilhaLote} onValueChange={setSelectedTrilhaLote}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas as trilhas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as trilhas</SelectItem>
+                      {trilhas?.map(trilha => (
+                        <SelectItem key={trilha.id} value={String(trilha.id)}>
+                          {trilha.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Competências ({selectedCompetenciasLote.length} selecionadas)
+                  </label>
+                  <div className="border rounded-lg max-h-60 overflow-y-auto p-2 space-y-1">
+                    {competenciasLoteDisponiveis.map(comp => (
+                      <div key={comp.id} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded">
+                        <Checkbox
+                          checked={selectedCompetenciasLote.includes(comp.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedCompetenciasLote([...selectedCompetenciasLote, comp.id]);
+                            } else {
+                              setSelectedCompetenciasLote(selectedCompetenciasLote.filter(id => id !== comp.id));
+                            }
+                          }}
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{comp.nome}</p>
+                          <p className="text-xs text-slate-500">{comp.trilhaNome}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsLoteDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleAddToTurma}
+                  disabled={addToTurmaMutation.isPending || !selectedTurma || selectedCompetenciasLote.length === 0}
+                  className="bg-[#E87722] hover:bg-[#d06a1e]"
+                >
+                  {addToTurmaMutation.isPending ? "Atribuindo..." : "Atribuir Competências"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Stats Cards */}

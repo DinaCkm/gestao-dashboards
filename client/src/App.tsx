@@ -23,6 +23,8 @@ import AdminCadastros from "./pages/AdminCadastros";
 import PorEmpresa from "./pages/PorEmpresa";
 import TrilhasCompetencias from "./pages/TrilhasCompetencias";
 import PlanoIndividual from "./pages/PlanoIndividual";
+import DashboardAluno from "./pages/DashboardAluno";
+import RegistroMentoria from "./pages/RegistroMentoria";
 
 function Router() {
   return (
@@ -44,6 +46,8 @@ function Router() {
       <Route path={"/cadastros"} component={AdminCadastros} />
       <Route path={"/trilhas-competencias"} component={TrilhasCompetencias} />
       <Route path={"/plano-individual"} component={PlanoIndividual} />
+      <Route path={"/dashboard/aluno"} component={DashboardAluno} />
+      <Route path={"/registro-mentoria"} component={RegistroMentoria} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

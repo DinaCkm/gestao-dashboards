@@ -261,3 +261,28 @@
 - [x] Importar dados de eventos para o banco (4.027 participações)
 - [x] Importar dados de performance para o banco (506 registros com notas)
 - [x] Verificar indicadores com dados completos
+
+
+### Dashboard por Aluno (31/01/2026)
+- [x] Criar página DashboardAluno.tsx com performance filtrada
+- [x] Exibir histórico de mentorias do aluno
+- [x] Exibir participação em eventos do aluno
+- [x] Mostrar plano individual com competências obrigatórias
+- [ ] Adicionar gráficos de evolução (pendente - requer dados históricos)
+- [x] Adicionar rota e menu para acessar dashboard do aluno
+
+### BLOCO 8 - Nota de Evolução do Mentor (31/01/2026)
+- [x] Criar interface para mentor registrar nota de evolução (0-10)
+- [x] Criar página RegistroMentoria.tsx
+- [x] Criar endpoint updateSession no tRPC
+- [x] Adicionar menu "Registro de Mentoria" no sidebar
+- [ ] Atualizar cálculo do indicador de Engajamento (usar nota de evolução)
+- [ ] Exibir média da nota de evolução nos dashboards
+
+### Atribuição de Competências em Lote (31/01/2026)
+- [x] Criar funcionalidade para atribuir competências a uma turma inteira
+- [x] Criar endpoint addToTurma no tRPC
+- [x] Adicionar botão "Atribuir em Lote" na página Plano Individual
+- [x] Criar dialog para selecionar turma e competências
+- [ ] Permitir seleção múltipla de competências
+- [ ] Aplicar competências a todos os alunos da turma selecionada

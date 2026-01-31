@@ -588,6 +588,22 @@ export async function getMentoringSessionsByAluno(alunoId: number): Promise<Ment
   return await db.select().from(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
 }
 
+export async function updateMentoringSession(sessionId: number, data: { notaEvolucao?: number; feedback?: string }): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const updateData: Record<string, unknown> = {};
+  if (data.notaEvolucao !== undefined) updateData.notaEvolucao = data.notaEvolucao;
+  if (data.feedback !== undefined) updateData.feedback = data.feedback;
+  
+  if (Object.keys(updateData).length === 0) return true;
+  
+  await db.update(mentoringSessions)
+    .set(updateData)
+    .where(eq(mentoringSessions.id, sessionId));
+  return true;
+}
+
 export async function getAllMentoringSessions(): Promise<MentoringSession[]> {
   const db = await getDb();
   if (!db) return [];
