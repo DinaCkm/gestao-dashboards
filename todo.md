@@ -246,6 +246,8 @@
 - [ ] Exibir plano individual no perfil do aluno
 
 ### BLOCO 3 - Performance Filtrada
-- [ ] Atualizar cálculo de performance para considerar apenas competências obrigatórias
-- [ ] Criar indicador de progresso do plano individual
-- [ ] Atualizar dashboards com nova lógica de cálculo
+- [x] Atualizar cálculo de performance para considerar apenas competências obrigatórias
+- [x] Criar indicador de progresso do plano individual
+- [x] Atualizar dashboards com nova lógica de cálculo
+- [x] Criar endpoint performanceFiltrada no tRPC
+- [x] Exibir indicadores filtrados na página Plano Individual

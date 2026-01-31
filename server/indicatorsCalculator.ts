@@ -380,3 +380,219 @@ export function gerarDashboardEmpresa(
     alunos
   };
 }
+
+
+/**
+ * Interface para competência obrigatória do plano individual
+ */
+export interface CompetenciaObrigatoria {
+  competenciaId: number;
+  codigoIntegracao: string | null;
+  notaAtual: string | null;
+  metaNota: string | null;
+  status: string;
+}
+
+/**
+ * Calcula performance filtrada considerando apenas competências obrigatórias do plano individual
+ * BLOCO 3 - Performance Filtrada
+ */
+export function calcularPerformanceFiltrada(
+  competenciasObrigatorias: CompetenciaObrigatoria[],
+  performance: PerformanceRecord[]
+): {
+  totalObrigatorias: number;
+  aprovadas: number;
+  percentualAprovacao: number;
+  mediaNotas: number;
+  detalhes: {
+    codigoIntegracao: string | null;
+    notaAtual: number | null;
+    metaNota: number;
+    aprovada: boolean;
+  }[];
+} {
+  if (competenciasObrigatorias.length === 0) {
+    return {
+      totalObrigatorias: 0,
+      aprovadas: 0,
+      percentualAprovacao: 0,
+      mediaNotas: 0,
+      detalhes: []
+    };
+  }
+
+  const detalhes: {
+    codigoIntegracao: string | null;
+    notaAtual: number | null;
+    metaNota: number;
+    aprovada: boolean;
+  }[] = [];
+
+  let somaNotas = 0;
+  let competenciasComNota = 0;
+  let aprovadas = 0;
+
+  for (const comp of competenciasObrigatorias) {
+    const metaNota = parseFloat(comp.metaNota || '7.00');
+    let notaAtual: number | null = null;
+    let aprovada = false;
+
+    // Primeiro, verificar se já tem nota no plano individual
+    if (comp.notaAtual) {
+      notaAtual = parseFloat(comp.notaAtual);
+    } else if (comp.codigoIntegracao) {
+      // Buscar nota na planilha de performance pelo código de integração
+      // Usa idCompetencia ou nomeCompetencia para fazer o match
+      const perfRecord = performance.find(p => 
+        p.idCompetencia?.toLowerCase() === comp.codigoIntegracao?.toLowerCase() ||
+        p.nomeCompetencia?.toLowerCase() === comp.codigoIntegracao?.toLowerCase()
+      );
+      if (perfRecord && perfRecord.notaAvaliacao !== undefined) {
+        notaAtual = perfRecord.notaAvaliacao;
+      }
+    }
+
+    if (notaAtual !== null) {
+      somaNotas += notaAtual;
+      competenciasComNota++;
+      aprovada = notaAtual >= metaNota;
+      if (aprovada) aprovadas++;
+    }
+
+    detalhes.push({
+      codigoIntegracao: comp.codigoIntegracao,
+      notaAtual,
+      metaNota,
+      aprovada
+    });
+  }
+
+  const totalObrigatorias = competenciasObrigatorias.length;
+  const percentualAprovacao = totalObrigatorias > 0 
+    ? (aprovadas / totalObrigatorias) * 100 
+    : 0;
+  const mediaNotas = competenciasComNota > 0 
+    ? somaNotas / competenciasComNota 
+    : 0;
+
+  return {
+    totalObrigatorias,
+    aprovadas,
+    percentualAprovacao,
+    mediaNotas,
+    detalhes
+  };
+}
+
+/**
+ * Calcula indicadores de um aluno usando performance filtrada (apenas competências obrigatórias)
+ * BLOCO 3 - Versão atualizada do cálculo
+ */
+export function calcularIndicadoresAlunoFiltrado(
+  idUsuario: string,
+  mentorias: MentoringRecord[],
+  eventos: EventRecord[],
+  performance: PerformanceRecord[],
+  competenciasObrigatorias: CompetenciaObrigatoria[]
+): StudentIndicators & { performanceFiltrada: ReturnType<typeof calcularPerformanceFiltrada> } {
+  // Filtrar registros do aluno
+  const mentoriasAluno = mentorias.filter(m => m.idUsuario === idUsuario);
+  const eventosAluno = eventos.filter(e => e.idUsuario === idUsuario);
+  const performanceAluno = performance.filter(p => p.idUsuario === idUsuario);
+
+  // Dados básicos do aluno
+  const primeiroRegistro = mentoriasAluno[0] || eventosAluno[0];
+  const nomeAluno = primeiroRegistro?.nomeAluno || 'Desconhecido';
+  const empresa = performanceAluno[0]?.nomeTurma || primeiroRegistro?.empresa || 'Desconhecida';
+  const turma = mentoriasAluno[0]?.turma || eventosAluno[0]?.turma;
+  const trilha = mentoriasAluno[0]?.trilha || eventosAluno[0]?.trilha;
+
+  // 1. Participação nas Mentorias (20%)
+  const totalMentorias = mentoriasAluno.length;
+  const mentoriasPresente = mentoriasAluno.filter(m => m.presenca === 'presente').length;
+  const participacaoMentorias = totalMentorias > 0 
+    ? (mentoriasPresente / totalMentorias) * 100 
+    : 0;
+
+  // 2. Atividades Práticas (20%)
+  const atividadesComTarefa = mentoriasAluno.filter(m => m.atividadeEntregue !== 'sem_tarefa');
+  const totalAtividades = atividadesComTarefa.length;
+  const atividadesEntregues = atividadesComTarefa.filter(m => m.atividadeEntregue === 'entregue').length;
+  const atividadesPraticas = totalAtividades > 0 
+    ? (atividadesEntregues / totalAtividades) * 100 
+    : 0;
+
+  // 3. Engajamento (20%)
+  const notasEngajamento = mentoriasAluno
+    .filter(m => m.engajamento !== undefined)
+    .map(m => m.engajamento!);
+  const mediaEngajamentoRaw = notasEngajamento.length > 0
+    ? notasEngajamento.reduce((a, b) => a + b, 0) / notasEngajamento.length
+    : 0;
+  const engajamento = ((mediaEngajamentoRaw - 1) / 4) * 100;
+
+  // 4. Performance de Competências FILTRADA (20%) - BLOCO 3
+  const performanceFiltrada = calcularPerformanceFiltrada(competenciasObrigatorias, performanceAluno);
+  
+  // Se tem plano individual, usa performance filtrada; senão, usa cálculo original
+  let performanceCompetencias: number;
+  let totalCompetencias: number;
+  let competenciasAprovadas: number;
+
+  if (competenciasObrigatorias.length > 0) {
+    performanceCompetencias = performanceFiltrada.percentualAprovacao;
+    totalCompetencias = performanceFiltrada.totalObrigatorias;
+    competenciasAprovadas = performanceFiltrada.aprovadas;
+  } else {
+    // Fallback para cálculo original se não tem plano individual
+    totalCompetencias = performanceAluno.length;
+    competenciasAprovadas = performanceAluno.filter(p => p.aprovado === true).length;
+    performanceCompetencias = totalCompetencias > 0
+      ? (competenciasAprovadas / totalCompetencias) * 100
+      : 0;
+  }
+
+  // 5. Participação em Eventos (20%)
+  const totalEventos = eventosAluno.length;
+  const eventosPresente = eventosAluno.filter(e => e.presenca === 'presente').length;
+  const participacaoEventos = totalEventos > 0
+    ? (eventosPresente / totalEventos) * 100
+    : 0;
+
+  // Nota Final (média ponderada - todos com peso igual de 20%)
+  const notaFinal = (
+    participacaoMentorias * 0.20 +
+    atividadesPraticas * 0.20 +
+    engajamento * 0.20 +
+    performanceCompetencias * 0.20 +
+    participacaoEventos * 0.20
+  ) / 10;
+
+  const classificacao = classificarNota(notaFinal);
+
+  return {
+    idUsuario,
+    nomeAluno,
+    empresa,
+    turma,
+    trilha,
+    participacaoMentorias,
+    atividadesPraticas,
+    engajamento,
+    performanceCompetencias,
+    participacaoEventos,
+    notaFinal,
+    classificacao,
+    totalMentorias,
+    mentoriasPresente,
+    totalAtividades,
+    atividadesEntregues,
+    totalEventos,
+    eventosPresente,
+    totalCompetencias,
+    competenciasAprovadas,
+    mediaEngajamentoRaw,
+    performanceFiltrada
+  };
+}

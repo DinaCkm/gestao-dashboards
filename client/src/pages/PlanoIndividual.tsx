@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { Search, Plus, Trash2, BookOpen, Target, CheckCircle2, Clock, AlertCircle, Users, Building2 } from "lucide-react";
+import { Search, Plus, Trash2, BookOpen, Target, CheckCircle2, Clock, AlertCircle, Users, Building2, TrendingUp, Award, BarChart3 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 export default function PlanoIndividual() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,6 +30,12 @@ export default function PlanoIndividual() {
   );
   const { data: competencias } = trpc.competencias.listWithTrilha.useQuery();
   const { data: trilhas } = trpc.trilhas.list.useQuery();
+  
+  // Query de performance filtrada (BLOCO 3)
+  const { data: performanceFiltrada } = trpc.indicadores.performanceFiltrada.useQuery(
+    { alunoId: selectedAluno! },
+    { enabled: !!selectedAluno }
+  );
 
   // Mutations
   const addMultipleMutation = trpc.planoIndividual.addMultiple.useMutation({
@@ -423,6 +430,130 @@ export default function PlanoIndividual() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Indicadores de Performance Filtrada - BLOCO 3 */}
+        {selectedAluno && performanceFiltrada && planoAluno && planoAluno.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-blue-600" />
+                Performance Filtrada
+              </CardTitle>
+              <CardDescription>
+                Indicadores calculados apenas com as competências obrigatórias do plano individual
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {/* Nota Final */}
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Award className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">Nota Final</span>
+                  </div>
+                  <p className="text-3xl font-bold text-blue-900">
+                    {performanceFiltrada.indicadores.notaFinal.toFixed(1)}
+                  </p>
+                  <Badge className={`mt-2 ${
+                    performanceFiltrada.indicadores.classificacao === 'Excelência' ? 'bg-green-500' :
+                    performanceFiltrada.indicadores.classificacao === 'Avançado' ? 'bg-blue-500' :
+                    performanceFiltrada.indicadores.classificacao === 'Intermediário' ? 'bg-yellow-500' :
+                    performanceFiltrada.indicadores.classificacao === 'Básico' ? 'bg-orange-500' : 'bg-red-500'
+                  }`}>
+                    {performanceFiltrada.indicadores.classificacao}
+                  </Badge>
+                </div>
+
+                {/* Competências Aprovadas */}
+                <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <span className="text-sm font-medium text-green-800">Competências</span>
+                  </div>
+                  <p className="text-3xl font-bold text-green-900">
+                    {performanceFiltrada.planoIndividual.competenciasAprovadas}/{performanceFiltrada.planoIndividual.totalCompetencias}
+                  </p>
+                  <p className="text-sm text-green-700 mt-1">
+                    {performanceFiltrada.planoIndividual.percentualAprovacao.toFixed(0)}% aprovadas
+                  </p>
+                </div>
+
+                {/* Média das Notas */}
+                <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                    <span className="text-sm font-medium text-purple-800">Média Notas</span>
+                  </div>
+                  <p className="text-3xl font-bold text-purple-900">
+                    {performanceFiltrada.planoIndividual.mediaNotas.toFixed(1)}
+                  </p>
+                  <p className="text-sm text-purple-700 mt-1">Meta: ≥ 7.0</p>
+                </div>
+
+                {/* Participação Mentorias */}
+                <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-5 h-5 text-orange-600" />
+                    <span className="text-sm font-medium text-orange-800">Mentorias</span>
+                  </div>
+                  <p className="text-3xl font-bold text-orange-900">
+                    {performanceFiltrada.indicadores.participacaoMentorias.toFixed(0)}%
+                  </p>
+                  <p className="text-sm text-orange-700 mt-1">
+                    {performanceFiltrada.indicadores.mentoriasPresente}/{performanceFiltrada.indicadores.totalMentorias} presenças
+                  </p>
+                </div>
+              </div>
+
+              {/* Barra de Progresso dos 5 Indicadores */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-slate-700">Detalhamento dos 5 Indicadores (20% cada)</h4>
+                
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-slate-600">Participação Mentorias</span>
+                      <span className="text-sm font-medium">{performanceFiltrada.indicadores.participacaoMentorias.toFixed(0)}%</span>
+                    </div>
+                    <Progress value={performanceFiltrada.indicadores.participacaoMentorias} className="h-2" />
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-slate-600">Atividades Práticas</span>
+                      <span className="text-sm font-medium">{performanceFiltrada.indicadores.atividadesPraticas.toFixed(0)}%</span>
+                    </div>
+                    <Progress value={performanceFiltrada.indicadores.atividadesPraticas} className="h-2" />
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-slate-600">Engajamento</span>
+                      <span className="text-sm font-medium">{performanceFiltrada.indicadores.engajamento.toFixed(0)}%</span>
+                    </div>
+                    <Progress value={performanceFiltrada.indicadores.engajamento} className="h-2" />
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-slate-600">Performance Competências (Filtrada)</span>
+                      <span className="text-sm font-medium text-blue-600 font-bold">{performanceFiltrada.indicadores.performanceCompetencias.toFixed(0)}%</span>
+                    </div>
+                    <Progress value={performanceFiltrada.indicadores.performanceCompetencias} className="h-2 bg-blue-100" />
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-slate-600">Participação Eventos</span>
+                      <span className="text-sm font-medium">{performanceFiltrada.indicadores.participacaoEventos.toFixed(0)}%</span>
+                    </div>
+                    <Progress value={performanceFiltrada.indicadores.participacaoEventos} className="h-2" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );

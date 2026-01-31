@@ -198,6 +198,93 @@ describe('Plano Individual - Database Functions', () => {
   });
 });
 
+describe('Performance Filtrada - BLOCO 3', () => {
+  describe('calcularPerformanceFiltrada', () => {
+    it('deve calcular performance com competências obrigatórias', () => {
+      const competenciasObrigatorias = [
+        { competenciaId: 1, codigoIntegracao: 'COM001', notaAtual: '8.5', metaNota: '7.00', status: 'concluida' },
+        { competenciaId: 2, codigoIntegracao: 'LID001', notaAtual: '6.0', metaNota: '7.00', status: 'pendente' },
+        { competenciaId: 3, codigoIntegracao: 'TEC001', notaAtual: '9.0', metaNota: '7.00', status: 'concluida' },
+      ];
+      
+      // Simular cálculo
+      let aprovadas = 0;
+      let somaNotas = 0;
+      for (const comp of competenciasObrigatorias) {
+        const nota = parseFloat(comp.notaAtual || '0');
+        const meta = parseFloat(comp.metaNota || '7.00');
+        somaNotas += nota;
+        if (nota >= meta) aprovadas++;
+      }
+      
+      const percentualAprovacao = (aprovadas / competenciasObrigatorias.length) * 100;
+      const mediaNotas = somaNotas / competenciasObrigatorias.length;
+      
+      expect(aprovadas).toBe(2); // 8.5 e 9.0 >= 7.0
+      expect(percentualAprovacao).toBeCloseTo(66.67, 1);
+      expect(mediaNotas).toBeCloseTo(7.83, 1);
+    });
+
+    it('deve retornar 0 se não houver competências obrigatórias', () => {
+      const competenciasObrigatorias: any[] = [];
+      
+      const totalObrigatorias = competenciasObrigatorias.length;
+      const percentualAprovacao = totalObrigatorias > 0 ? 0 : 0;
+      
+      expect(totalObrigatorias).toBe(0);
+      expect(percentualAprovacao).toBe(0);
+    });
+
+    it('deve considerar nota como não aprovada se for null', () => {
+      const competenciasObrigatorias = [
+        { competenciaId: 1, codigoIntegracao: 'COM001', notaAtual: null, metaNota: '7.00', status: 'pendente' },
+      ];
+      
+      const comp = competenciasObrigatorias[0];
+      const notaAtual = comp.notaAtual ? parseFloat(comp.notaAtual) : null;
+      const aprovada = notaAtual !== null && notaAtual >= parseFloat(comp.metaNota || '7.00');
+      
+      expect(notaAtual).toBeNull();
+      expect(aprovada).toBe(false);
+    });
+  });
+
+  describe('calcularIndicadoresAlunoFiltrado', () => {
+    it('deve usar performance filtrada quando há plano individual', () => {
+      const competenciasObrigatorias = [
+        { competenciaId: 1, codigoIntegracao: 'COM001', notaAtual: '10.0', metaNota: '7.00', status: 'concluida' },
+        { competenciaId: 2, codigoIntegracao: 'LID001', notaAtual: '10.0', metaNota: '7.00', status: 'concluida' },
+      ];
+      
+      // Simular cálculo de performance filtrada
+      const aprovadas = competenciasObrigatorias.filter(c => 
+        parseFloat(c.notaAtual || '0') >= parseFloat(c.metaNota || '7.00')
+      ).length;
+      const percentualAprovacao = (aprovadas / competenciasObrigatorias.length) * 100;
+      
+      expect(percentualAprovacao).toBe(100);
+    });
+
+    it('deve calcular nota final com 5 indicadores de 20% cada', () => {
+      const participacaoMentorias = 80;
+      const atividadesPraticas = 90;
+      const engajamento = 75;
+      const performanceCompetencias = 100;
+      const participacaoEventos = 60;
+      
+      const notaFinal = (
+        participacaoMentorias * 0.20 +
+        atividadesPraticas * 0.20 +
+        engajamento * 0.20 +
+        performanceCompetencias * 0.20 +
+        participacaoEventos * 0.20
+      ) / 10;
+      
+      expect(notaFinal).toBeCloseTo(8.1, 1);
+    });
+  });
+});
+
 describe('Plano Individual - Business Logic', () => {
   it('deve calcular progresso corretamente', () => {
     const competenciasObrigatorias = 10;

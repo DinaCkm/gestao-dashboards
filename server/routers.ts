@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
-import { calcularIndicadoresTodosAlunos, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicators } from "./indicatorsCalculator";
+import { calcularIndicadoresTodosAlunos, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicators, calcularIndicadoresAlunoFiltrado, calcularPerformanceFiltrada, CompetenciaObrigatoria } from "./indicatorsCalculator";
 import { notifyOwner } from "./_core/notification";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 
@@ -931,6 +931,99 @@ export const appRouter = router({
       const programs = await db.getPrograms();
       return programs.map(p => ({ id: p.id, nome: p.name, codigo: p.code }));
     }),
+    
+    // Performance Filtrada - BLOCO 3
+    // Calcula indicadores considerando apenas competências obrigatórias do plano individual
+    performanceFiltrada: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        // Buscar aluno
+        const alunosList = await db.getAlunos();
+        const aluno = alunosList.find(a => a.id === input.alunoId);
+        if (!aluno) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+        }
+        
+        // Buscar competências obrigatórias do plano individual
+        const competenciasObrigatorias = await db.getCompetenciasObrigatoriasAluno(input.alunoId);
+        
+        // Buscar dados de mentorias e eventos
+        const mentoringSessions = await db.getAllMentoringSessions();
+        const eventParticipations = await db.getAllEventParticipation();
+        const programsList = await db.getPrograms();
+        
+        const mentorias: MentoringRecord[] = [];
+        const eventos: EventRecord[] = [];
+        const performance: PerformanceRecord[] = [];
+        
+        const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+        const programMap = new Map(programsList.map(p => [p.id, p]));
+        
+        for (const session of mentoringSessions) {
+          const sessionAluno = alunoMap.get(session.alunoId);
+          if (!sessionAluno) continue;
+          const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
+          
+          mentorias.push({
+            idUsuario: sessionAluno.externalId || String(sessionAluno.id),
+            nomeAluno: sessionAluno.name,
+            empresa: program?.name || 'Desconhecida',
+            turma: String(sessionAluno.turmaId || ''),
+            presenca: session.presence as 'presente' | 'ausente',
+            atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
+            engajamento: session.engagementScore || undefined
+          });
+        }
+        
+        for (const participation of eventParticipations) {
+          const partAluno = alunoMap.get(participation.alunoId);
+          if (!partAluno) continue;
+          const program = partAluno.programId ? programMap.get(partAluno.programId) : null;
+          
+          eventos.push({
+            idUsuario: partAluno.externalId || String(partAluno.id),
+            nomeAluno: partAluno.name,
+            empresa: program?.name || 'Desconhecida',
+            tituloEvento: 'Evento',
+            presenca: participation.status as 'presente' | 'ausente'
+          });
+        }
+        
+        // Converter competências para o formato esperado
+        const compObrigatorias: CompetenciaObrigatoria[] = competenciasObrigatorias.map(c => ({
+          competenciaId: c.competenciaId,
+          codigoIntegracao: c.codigoIntegracao,
+          notaAtual: c.notaAtual,
+          metaNota: c.metaNota,
+          status: c.status || 'pendente'
+        }));
+        
+        // Calcular indicadores filtrados
+        const idUsuario = aluno.externalId || String(aluno.id);
+        const indicadores = calcularIndicadoresAlunoFiltrado(
+          idUsuario,
+          mentorias,
+          eventos,
+          performance,
+          compObrigatorias
+        );
+        
+        return {
+          aluno: {
+            id: aluno.id,
+            nome: aluno.name,
+            externalId: aluno.externalId
+          },
+          indicadores,
+          planoIndividual: {
+            totalCompetencias: compObrigatorias.length,
+            competenciasAprovadas: indicadores.performanceFiltrada.aprovadas,
+            percentualAprovacao: indicadores.performanceFiltrada.percentualAprovacao,
+            mediaNotas: indicadores.performanceFiltrada.mediaNotas,
+            detalhes: indicadores.performanceFiltrada.detalhes
+          }
+        };
+      }),
   }),
 
   // Mentor/Consultor routes
