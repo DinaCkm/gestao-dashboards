@@ -100,9 +100,9 @@ export function calcularIndicadoresAluno(
   // Dados básicos do aluno
   const primeiroRegistro = mentoriasAluno[0] || eventosAluno[0];
   const nomeAluno = primeiroRegistro?.nomeAluno || 'Desconhecido';
-  // Empresa vem da coluna "Turma (agrupador 1)" da planilha de Performance
-  // Se não houver, usa o campo empresa das mentorias/eventos como fallback
-  const empresa = performanceAluno[0]?.nomeTurma || primeiroRegistro?.empresa || 'Desconhecida';
+  // Empresa vem da tabela programs (via mentorias/eventos)
+  // Fallback para nomeTurma da planilha de performance apenas se não houver outro dado
+  const empresa = primeiroRegistro?.empresa || performanceAluno[0]?.nomeTurma || 'Desconhecida';
   const turma = mentoriasAluno[0]?.turma || eventosAluno[0]?.turma;
   const trilha = mentoriasAluno[0]?.trilha || eventosAluno[0]?.trilha;
 
@@ -512,7 +512,7 @@ export function calcularIndicadoresAlunoFiltrado(
   // Dados básicos do aluno
   const primeiroRegistro = mentoriasAluno[0] || eventosAluno[0];
   const nomeAluno = primeiroRegistro?.nomeAluno || 'Desconhecido';
-  const empresa = performanceAluno[0]?.nomeTurma || primeiroRegistro?.empresa || 'Desconhecida';
+  const empresa = primeiroRegistro?.empresa || performanceAluno[0]?.nomeTurma || 'Desconhecida';
   const turma = mentoriasAluno[0]?.turma || eventosAluno[0]?.turma;
   const trilha = mentoriasAluno[0]?.trilha || eventosAluno[0]?.trilha;
 

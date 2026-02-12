@@ -734,6 +734,7 @@ export const appRouter = router({
       const eventParticipations = await db.getAllEventParticipation();
       const alunosList = await db.getAlunos();
       const programsList = await db.getPrograms();
+      const allPlanoItems = await db.getAllPlanoIndividual();
       
       // Converter para formato do calculador
       const mentorias: MentoringRecord[] = [];
@@ -774,6 +775,22 @@ export const appRouter = router({
         });
       }
       
+      // Adicionar dados de performance de competências do plano individual
+      for (const item of allPlanoItems) {
+        if (item.notaAtual) {
+          const aluno = alunoMap.get(item.alunoId);
+          if (!aluno) continue;
+          performance.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeTurma: '',
+            idCompetencia: String(item.competenciaId),
+            nomeCompetencia: item.competenciaNome || '',
+            notaAvaliacao: parseFloat(item.notaAtual),
+            aprovado: parseFloat(item.notaAtual) >= 7,
+          });
+        }
+      }
+      
       // Calcular indicadores
       const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);
       const dashboard = gerarDashboardGeral(indicadores);
@@ -789,6 +806,7 @@ export const appRouter = router({
         const eventParticipations = await db.getAllEventParticipation();
         const alunosList = await db.getAlunos();
         const programsList = await db.getPrograms();
+        const allPlanoItems = await db.getAllPlanoIndividual();
         
         const mentorias: MentoringRecord[] = [];
         const eventos: EventRecord[] = [];
@@ -825,6 +843,22 @@ export const appRouter = router({
             tituloEvento: 'Evento',
             presenca: participation.status as 'presente' | 'ausente'
           });
+        }
+        
+        // Adicionar dados de performance de competências do plano individual
+        for (const item of allPlanoItems) {
+          if (item.notaAtual) {
+            const aluno = alunoMap.get(item.alunoId);
+            if (!aluno) continue;
+            performance.push({
+              idUsuario: aluno.externalId || String(aluno.id),
+              nomeTurma: '',
+              idCompetencia: String(item.competenciaId),
+              nomeCompetencia: item.competenciaNome || '',
+              notaAvaliacao: parseFloat(item.notaAtual),
+              aprovado: parseFloat(item.notaAtual) >= 7,
+            });
+          }
         }
         
         const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);
@@ -841,6 +875,7 @@ export const appRouter = router({
         const eventParticipations = await db.getAllEventParticipation();
         const alunosList = await db.getAlunosByTurma(input.turmaId);
         const programsList = await db.getPrograms();
+        const allPlanoItems = await db.getAllPlanoIndividual();
         
         const mentorias: MentoringRecord[] = [];
         const eventos: EventRecord[] = [];
@@ -877,6 +912,22 @@ export const appRouter = router({
             tituloEvento: 'Evento',
             presenca: participation.status as 'presente' | 'ausente'
           });
+        }
+        
+        // Adicionar dados de performance de competências do plano individual
+        for (const item of allPlanoItems) {
+          if (item.notaAtual) {
+            const aluno = alunoMap.get(item.alunoId);
+            if (!aluno) continue;
+            performance.push({
+              idUsuario: aluno.externalId || String(aluno.id),
+              nomeTurma: '',
+              idCompetencia: String(item.competenciaId),
+              nomeCompetencia: item.competenciaNome || '',
+              notaAvaliacao: parseFloat(item.notaAtual),
+              aprovado: parseFloat(item.notaAtual) >= 7,
+            });
+          }
         }
         
         const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);
@@ -894,6 +945,7 @@ export const appRouter = router({
         const eventParticipations = await db.getAllEventParticipation();
         const alunosList = await db.getAlunos();
         const programsList = await db.getPrograms();
+        const allPlanoItems = await db.getAllPlanoIndividual();
         
         const mentorias: MentoringRecord[] = [];
         const eventos: EventRecord[] = [];
@@ -930,6 +982,22 @@ export const appRouter = router({
             tituloEvento: 'Evento',
             presenca: participation.status as 'presente' | 'ausente'
           });
+        }
+        
+        // Adicionar dados de performance de competências do plano individual
+        for (const item of allPlanoItems) {
+          if (item.notaAtual) {
+            const aluno = alunoMap.get(item.alunoId);
+            if (!aluno) continue;
+            performance.push({
+              idUsuario: aluno.externalId || String(aluno.id),
+              nomeTurma: '',
+              idCompetencia: String(item.competenciaId),
+              nomeCompetencia: item.competenciaNome || '',
+              notaAvaliacao: parseFloat(item.notaAtual),
+              aprovado: parseFloat(item.notaAtual) >= 7,
+            });
+          }
         }
         
         const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);

@@ -1,0 +1,27 @@
+{
+  "query": "SELECT * FROM mentoring_sessions LIMIT 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT * FROM mentoring_sessions LIMIT 1",
+  "rows": [
+    {
+      "id": "3043",
+      "alunoId": "225",
+      "consultorId": "27",
+      "turmaId": "NULL",
+      "trilhaId": "NULL",
+      "ciclo": "NULL",
+      "sessionNumber": "NULL",
+      "sessionDate": "NULL",
+      "presence": "presente",
+      "taskStatus": "sem_tarefa",
+      "engagementScore": "2",
+      "feedback": "NULL",
+      "batchId": "NULL",
+      "createdAt": "2026-01-27 23:07:23",
+      "notaEvolucao": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tconsultorId\tturmaId\ttrilhaId\tciclo\tsessionNumber\tsessionDate\tpresence\ttaskStatus\tengagementScore\tfeedback\tbatchId\tcreatedAt\tnotaEvolucao\n3043\t225\t27\tNULL\tNULL\tNULL\tNULL\tNULL\tpresente\tsem_tarefa\t2\tNULL\tNULL\t2026-01-27 23:07:23\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}

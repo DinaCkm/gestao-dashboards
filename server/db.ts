@@ -1519,3 +1519,22 @@ export async function getCompetenciasObrigatoriasAluno(alunoId: number) {
   
   return result;
 }
+
+// Buscar todos os registros do plano individual (para cálculo de indicadores em massa)
+export async function getAllPlanoIndividual() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    id: planoIndividual.id,
+    alunoId: planoIndividual.alunoId,
+    competenciaId: planoIndividual.competenciaId,
+    isObrigatoria: planoIndividual.isObrigatoria,
+    notaAtual: planoIndividual.notaAtual,
+    competenciaNome: competencias.nome,
+  })
+  .from(planoIndividual)
+  .leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id));
+  
+  return result;
+}

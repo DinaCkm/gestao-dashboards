@@ -295,3 +295,10 @@
 - [x] BUG 4: Corrigir fórmula da Performance para média de notas (nota/10)*100
 - [x] BUG 5: Corrigir "Meu Dashboard" reescrito com dados reais do aluno logado
 - [x] Testes atualizados para refletir novas fórmulas (41 passando)
+
+### Dados BANRISUL (12/02/2026)
+- [x] Inserir sessões de mentoria neutras para 26 alunos do BANRISUL (130 sessões inseridas)
+- [x] Engajamento nota 3 (neutro), presença 100%, atividades 100% entregues
+- [x] Verificar que Visão Geral mostra 125 alunos em 4 empresas
+- [x] BUG: Competências 0% corrigido - plano_individual agora alimenta todos os dashboards
+- [x] BUG: SEBRAE PARA corrigido - empresa agora vem da tabela programs (não do nomeTurma da planilha)
