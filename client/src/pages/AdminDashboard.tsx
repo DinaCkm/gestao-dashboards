@@ -295,6 +295,7 @@ export default function AdminDashboard() {
                       paddingAngle={5}
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      isAnimationActive={false}
                     >
                       {programData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -336,7 +337,7 @@ export default function AdminDashboard() {
                     }}
                     formatter={(value, name) => [`${value}%`, 'Percentual']}
                   />
-                  <Bar dataKey="percentual" fill={COLORS[0]} radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="percentual" fill={COLORS[0]} radius={[0, 4, 4, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -362,8 +363,8 @@ export default function AdminDashboard() {
                     }} 
                   />
                   <Legend />
-                  <Line type="monotone" dataKey="alunos" name="Alunos Ativos" stroke={COLORS[0]} strokeWidth={2} dot={{ fill: COLORS[0] }} />
-                  <Line type="monotone" dataKey="sessoes" name="Sessões Realizadas" stroke={COLORS[1]} strokeWidth={2} dot={{ fill: COLORS[1] }} />
+                  <Line type="monotone" dataKey="alunos" name="Alunos Ativos" stroke={COLORS[0]} strokeWidth={2} dot={{ fill: COLORS[0] }} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="sessoes" name="Sessões Realizadas" stroke={COLORS[1]} strokeWidth={2} dot={{ fill: COLORS[1] }} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>

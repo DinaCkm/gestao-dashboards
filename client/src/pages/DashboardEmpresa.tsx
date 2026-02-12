@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Link, useParams } from "wouter";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const COLORS = ['#1E3A5F', '#F5A623', '#2E7D32', '#D32F2F', '#7B1FA2'];
@@ -26,6 +26,9 @@ const CLASSIFICATION_COLORS: Record<string, string> = {
 export default function DashboardEmpresa() {
   const params = useParams<{ codigo: string }>();
   const empresaCodigo = params.codigo || '';
+  
+  // Memoize the codigo to prevent unnecessary re-renders
+  const stableEmpresaCodigo = useMemo(() => empresaCodigo, [empresaCodigo]);
   
   const { data: empresas } = trpc.indicadores.empresas.useQuery();
   const empresaNome = empresas?.find(e => e.codigo === empresaCodigo)?.nome || empresaCodigo;
@@ -278,6 +281,7 @@ export default function DashboardEmpresa() {
                       fill="#8884d8"
                       dataKey="quantidade"
                       nameKey="nome"
+                      isAnimationActive={false}
                     >
                       {visaoEmpresa.distribuicaoClassificacao.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={CLASSIFICATION_COLORS[entry.nome] || COLORS[index % COLORS.length]} />
@@ -310,6 +314,7 @@ export default function DashboardEmpresa() {
                       stroke="#1E3A5F"
                       fill="#1E3A5F"
                       fillOpacity={0.6}
+                      isAnimationActive={false}
                     />
                     <Tooltip />
                   </RadarChart>
@@ -341,7 +346,7 @@ export default function DashboardEmpresa() {
                     <XAxis type="number" domain={[0, 10]} />
                     <YAxis dataKey="nome" type="category" width={120} />
                     <Tooltip />
-                    <Bar dataKey="nota" fill="#F5A623" name="Nota Média" />
+                    <Bar dataKey="nota" fill="#F5A623" name="Nota Média" isAnimationActive={false} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

@@ -162,7 +162,7 @@
 - [x] Corrigir "SEBRAE PARA" para "SEBRAE TO" no banco de dados (corrigido via UPDATE no banco)
 - [x] Corrigir erro NotFoundError: Falha ao executar 'removeChild' na página Por Empresa (criada página PorEmpresa.tsx dedicada)
 - [x] Corrigir programId null nos alunos (associados via turmaId)
-- [ ] Corrigir erro NotFoundError na página Visão Geral ao clicar nos cards de empresas (erro de Portal/removeChild)
+- [x] Corrigir erro NotFoundError na página Visão Geral ao clicar nos cards de empresas (erro de Portal/removeChild)
 - [x] Adicionar popup/tooltip de ajuda explicando origem dos dados e cálculo das notas nos dashboards
 - [x] Substituir card 'Alunos Excelência' por 'Melhor Nota' (maior nota atual) e adicionar 'Meta' (expectativa 9.0) ao lado
 
@@ -302,3 +302,9 @@
 - [x] Verificar que Visão Geral mostra 125 alunos em 4 empresas
 - [x] BUG: Competências 0% corrigido - plano_individual agora alimenta todos os dashboards
 - [x] BUG: SEBRAE PARA corrigido - empresa agora vem da tabela programs (não do nomeTurma da planilha)
+
+## Bug Reportado (12/02/2026) - NotFoundError nas Visões por Empresa
+- [x] Corrigir erro NotFoundError: removeChild ao navegar para visões por empresa
+- [x] Melhorar ErrorBoundary para resetar automaticamente na mudança de rota
+- [x] Adicionar isAnimationActive={false} nos gráficos Recharts para evitar conflitos de DOM
+- [x] Usar key prop nos containers de gráficos para forçar remontagem limpa

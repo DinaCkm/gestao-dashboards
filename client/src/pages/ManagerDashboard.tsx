@@ -225,6 +225,7 @@ export default function ManagerDashboard() {
                       stroke="oklch(0.65 0.18 45)" 
                       strokeWidth={3}
                       dot={{ fill: 'oklch(0.65 0.18 45)', strokeWidth: 2 }}
+                      isAnimationActive={false}
                     />
                     <Line 
                       type="monotone" 
@@ -234,6 +235,7 @@ export default function ManagerDashboard() {
                       strokeWidth={2}
                       strokeDasharray="5 5"
                       dot={{ fill: 'oklch(0.55 0.15 195)', strokeWidth: 2 }}
+                      isAnimationActive={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>

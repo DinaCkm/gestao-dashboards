@@ -243,6 +243,7 @@ export default function DashboardVisaoGeral() {
                       fill="#8884d8"
                       dataKey="quantidade"
                       nameKey="nome"
+                      isAnimationActive={false}
                     >
                       {visaoGeral.distribuicaoClassificacao.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={CLASSIFICATION_COLORS[entry.nome] || COLORS[index % COLORS.length]} />
@@ -275,6 +276,7 @@ export default function DashboardVisaoGeral() {
                       stroke="#1E3A5F"
                       fill="#1E3A5F"
                       fillOpacity={0.6}
+                      isAnimationActive={false}
                     />
                     <Tooltip />
                   </RadarChart>
@@ -303,7 +305,7 @@ export default function DashboardVisaoGeral() {
                       name === 'nota' ? 'Nota Média' : 'Total de Alunos'
                     ]}
                   />
-                  <Bar dataKey="nota" fill="#1E3A5F" name="Nota Média" />
+                  <Bar dataKey="nota" fill="#1E3A5F" name="Nota Média" isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -116,8 +116,8 @@ function DashboardMentorContent() {
                   />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="totalMentorias" fill="#1E3A5F" name="Total de Mentorias" />
-                  <Bar dataKey="totalAlunos" fill="#F5A623" name="Alunos Atendidos" />
+                  <Bar dataKey="totalMentorias" fill="#1E3A5F" name="Total de Mentorias" isAnimationActive={false} />
+                  <Bar dataKey="totalAlunos" fill="#F5A623" name="Alunos Atendidos" isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -249,6 +249,7 @@ function DashboardMentorContent() {
                             cy="50%"
                             outerRadius={80}
                             label={({ empresa, percent }) => `${empresa}: ${(percent * 100).toFixed(0)}%`}
+                            isAnimationActive={false}
                           >
                             {stats.porEmpresa.map((_, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
