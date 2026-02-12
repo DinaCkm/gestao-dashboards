@@ -210,10 +210,10 @@ export default function DashboardAluno() {
                             </div>
                             <div>
                               <p className="text-sm text-gray-500">Mentorias</p>
-                              <p className="text-xl font-bold">{(performanceData.indicadores.participacaoMentorias * 100).toFixed(0)}%</p>
+                              <p className="text-xl font-bold">{performanceData.indicadores.participacaoMentorias.toFixed(0)}%</p>
                             </div>
                           </div>
-                          <Progress value={performanceData.indicadores.participacaoMentorias * 100} className="mt-3 h-2" />
+                          <Progress value={performanceData.indicadores.participacaoMentorias} className="mt-3 h-2" />
                         </CardContent>
                       </Card>
 
@@ -225,10 +225,10 @@ export default function DashboardAluno() {
                             </div>
                             <div>
                               <p className="text-sm text-gray-500">Atividades</p>
-                              <p className="text-xl font-bold">{(performanceData.indicadores.atividadesPraticas * 100).toFixed(0)}%</p>
+                              <p className="text-xl font-bold">{performanceData.indicadores.atividadesPraticas.toFixed(0)}%</p>
                             </div>
                           </div>
-                          <Progress value={performanceData.indicadores.atividadesPraticas * 100} className="mt-3 h-2" />
+                          <Progress value={performanceData.indicadores.atividadesPraticas} className="mt-3 h-2" />
                         </CardContent>
                       </Card>
 
@@ -240,10 +240,10 @@ export default function DashboardAluno() {
                             </div>
                             <div>
                               <p className="text-sm text-gray-500">Engajamento</p>
-                              <p className="text-xl font-bold">{(performanceData.indicadores.engajamento * 100).toFixed(0)}%</p>
+                              <p className="text-xl font-bold">{performanceData.indicadores.engajamento.toFixed(0)}%</p>
                             </div>
                           </div>
-                          <Progress value={performanceData.indicadores.engajamento * 100} className="mt-3 h-2" />
+                          <Progress value={performanceData.indicadores.engajamento} className="mt-3 h-2" />
                         </CardContent>
                       </Card>
 
@@ -255,10 +255,10 @@ export default function DashboardAluno() {
                             </div>
                             <div>
                               <p className="text-sm text-gray-500">Competências</p>
-                              <p className="text-xl font-bold">{(performanceData.indicadores.performanceCompetencias * 100).toFixed(0)}%</p>
+                              <p className="text-xl font-bold">{performanceData.indicadores.performanceCompetencias.toFixed(0)}%</p>
                             </div>
                           </div>
-                          <Progress value={performanceData.indicadores.performanceCompetencias * 100} className="mt-3 h-2" />
+                          <Progress value={performanceData.indicadores.performanceCompetencias} className="mt-3 h-2" />
                         </CardContent>
                       </Card>
 
@@ -270,10 +270,10 @@ export default function DashboardAluno() {
                             </div>
                             <div>
                               <p className="text-sm text-gray-500">Eventos</p>
-                              <p className="text-xl font-bold">{(performanceData.indicadores.participacaoEventos * 100).toFixed(0)}%</p>
+                              <p className="text-xl font-bold">{performanceData.indicadores.participacaoEventos.toFixed(0)}%</p>
                             </div>
                           </div>
-                          <Progress value={performanceData.indicadores.participacaoEventos * 100} className="mt-3 h-2" />
+                          <Progress value={performanceData.indicadores.participacaoEventos} className="mt-3 h-2" />
                         </CardContent>
                       </Card>
                     </div>
@@ -428,7 +428,7 @@ export default function DashboardAluno() {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600">Taxa de presença</span>
-                              <span className="font-medium">{(performanceData.indicadores.participacaoMentorias * 100).toFixed(0)}%</span>
+                              <span className="font-medium">{performanceData.indicadores.participacaoMentorias.toFixed(0)}%</span>
                             </div>
                           </div>
                         </div>
@@ -450,7 +450,7 @@ export default function DashboardAluno() {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600">Taxa de participação</span>
-                              <span className="font-medium">{(performanceData.indicadores.participacaoEventos * 100).toFixed(0)}%</span>
+                              <span className="font-medium">{performanceData.indicadores.participacaoEventos.toFixed(0)}%</span>
                             </div>
                           </div>
                         </div>

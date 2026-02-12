@@ -563,6 +563,13 @@ export async function upsertAluno(aluno: InsertAluno): Promise<number | null> {
   return result[0].insertId;
 }
 
+export async function getAlunoByEmail(email: string): Promise<Aluno | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(alunos).where(eq(alunos.email, email)).limit(1);
+  return result[0];
+}
+
 export async function getAlunosByTurma(turmaId: number): Promise<Aluno[]> {
   const db = await getDb();
   if (!db) return [];

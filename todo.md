@@ -286,3 +286,12 @@
 - [x] Criar dialog para selecionar turma e competências
 - [ ] Permitir seleção múltipla de competências
 - [ ] Aplicar competências a todos os alunos da turma selecionada
+
+
+### Correção de Bugs Críticos e Alinhamento com Guia CKM (12/02/2026)
+- [x] BUG 1: Corrigir percentuais absurdos no Dashboard Aluno (multiplicação dupla x100)
+- [x] BUG 2: Corrigir Engajamento >100% na Visão Geral (limitar a 100%)
+- [x] BUG 3: Corrigir fórmula do Engajamento para (Nota/5)*100 conforme confirmado pelo usuário
+- [x] BUG 4: Corrigir fórmula da Performance para média de notas (nota/10)*100
+- [x] BUG 5: Corrigir "Meu Dashboard" reescrito com dados reais do aluno logado
+- [x] Testes atualizados para refletir novas fórmulas (41 passando)

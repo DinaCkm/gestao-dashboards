@@ -75,10 +75,12 @@ export function classificarNota(nota: number): string {
 
 /**
  * Converte nota de engajamento (1-5) para escala 0-100
+ * Fórmula: (Nota / 5) × 100
+ * Nota 1 = 20%, Nota 2 = 40%, Nota 3 = 60%, Nota 4 = 80%, Nota 5 = 100%
  */
 function engajamentoParaPercentual(nota: number): number {
-  // 1 = 0%, 2 = 25%, 3 = 50%, 4 = 75%, 5 = 100%
-  return ((nota - 1) / 4) * 100;
+  // Limitar a 100% para evitar valores absurdos
+  return Math.min((nota / 5) * 100, 100);
 }
 
 /**
@@ -119,7 +121,7 @@ export function calcularIndicadoresAluno(
     ? (atividadesEntregues / totalAtividades) * 100 
     : 0;
 
-  // 3. Engajamento (20%)
+  // 3. Engajamento (20%) - Nota da mentora (1-5) convertida para base 100: (Nota/5)*100
   const notasEngajamento = mentoriasAluno
     .filter(m => m.engajamento !== undefined)
     .map(m => m.engajamento!);
@@ -128,12 +130,18 @@ export function calcularIndicadoresAluno(
     : 0;
   const engajamento = engajamentoParaPercentual(mediaEngajamentoRaw);
 
-  // 4. Performance de Competências (20%)
+  // 4. Performance de Competências (20%) - Média das notas da plataforma de cursos
   const totalCompetencias = performanceAluno.length;
   const competenciasAprovadas = performanceAluno.filter(p => p.aprovado === true).length;
-  const performanceCompetencias = totalCompetencias > 0
-    ? (competenciasAprovadas / totalCompetencias) * 100
+  // Usar média das notas das autoavaliações (plataforma de cursos)
+  const notasCompetencias = performanceAluno
+    .filter(p => p.notaAvaliacao !== undefined && p.notaAvaliacao !== null && p.notaAvaliacao > 0)
+    .map(p => p.notaAvaliacao!);
+  const mediaNotasCompetencias = notasCompetencias.length > 0
+    ? notasCompetencias.reduce((a, b) => a + b, 0) / notasCompetencias.length
     : 0;
+  // Converter média (0-10) para percentual (0-100)
+  const performanceCompetencias = (mediaNotasCompetencias / 10) * 100;
 
   // 5. Participação em Eventos (20%)
   const totalEventos = eventosAluno.length;
@@ -523,34 +531,39 @@ export function calcularIndicadoresAlunoFiltrado(
     ? (atividadesEntregues / totalAtividades) * 100 
     : 0;
 
-  // 3. Engajamento (20%)
+  // 3. Engajamento (20%) - Nota da mentora (1-5) convertida para base 100: (Nota/5)*100
   const notasEngajamento = mentoriasAluno
     .filter(m => m.engajamento !== undefined)
     .map(m => m.engajamento!);
   const mediaEngajamentoRaw = notasEngajamento.length > 0
     ? notasEngajamento.reduce((a, b) => a + b, 0) / notasEngajamento.length
     : 0;
-  const engajamento = ((mediaEngajamentoRaw - 1) / 4) * 100;
+  const engajamento = engajamentoParaPercentual(mediaEngajamentoRaw);
 
-  // 4. Performance de Competências FILTRADA (20%) - BLOCO 3
+  // 4. Performance de Competências FILTRADA (20%) - BLOCO 3 + Média de notas
   const performanceFiltrada = calcularPerformanceFiltrada(competenciasObrigatorias, performanceAluno);
   
-  // Se tem plano individual, usa performance filtrada; senão, usa cálculo original
+  // Se tem plano individual, usa performance filtrada; senão, usa média de notas (Guia CKM)
   let performanceCompetencias: number;
   let totalCompetencias: number;
   let competenciasAprovadas: number;
 
   if (competenciasObrigatorias.length > 0) {
-    performanceCompetencias = performanceFiltrada.percentualAprovacao;
+    // Usar média de notas das competências filtradas
+    performanceCompetencias = (performanceFiltrada.mediaNotas / 10) * 100;
     totalCompetencias = performanceFiltrada.totalObrigatorias;
     competenciasAprovadas = performanceFiltrada.aprovadas;
   } else {
-    // Fallback para cálculo original se não tem plano individual
+    // Fallback: média das notas de todas as competências (Guia CKM)
     totalCompetencias = performanceAluno.length;
     competenciasAprovadas = performanceAluno.filter(p => p.aprovado === true).length;
-    performanceCompetencias = totalCompetencias > 0
-      ? (competenciasAprovadas / totalCompetencias) * 100
+    const notasComp = performanceAluno
+      .filter(p => p.notaAvaliacao !== undefined && p.notaAvaliacao !== null && p.notaAvaliacao > 0)
+      .map(p => p.notaAvaliacao!);
+    const mediaNotas = notasComp.length > 0
+      ? notasComp.reduce((a, b) => a + b, 0) / notasComp.length
       : 0;
+    performanceCompetencias = (mediaNotas / 10) * 100;
   }
 
   // 5. Participação em Eventos (20%)

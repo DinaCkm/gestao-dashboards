@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { trpc } from "@/lib/trpc";
 import { 
   User,
   Target,
@@ -11,71 +12,78 @@ import {
   TrendingUp,
   Award,
   BookOpen,
-  Clock
+  Clock,
+  XCircle,
+  Users,
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import {
-  LineChart,
-  Line,
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer
 } from "recharts";
 
-// Chart colors
-const COLORS = {
-  primary: 'oklch(0.65 0.18 45)',
-  secondary: 'oklch(0.55 0.15 195)',
-  chart3: 'oklch(0.60 0.12 160)',
-};
-
-// Demo data for individual performance
-const performanceRadar = [
-  { indicator: 'Presença Mentorias', value: 92, fullMark: 100 },
-  { indicator: 'Atividades Práticas', value: 85, fullMark: 100 },
-  { indicator: 'Engajamento', value: 78, fullMark: 100 },
-  { indicator: 'Competências', value: 72, fullMark: 100 },
-  { indicator: 'Eventos', value: 88, fullMark: 100 },
-];
-
-const evolutionData = [
-  { mes: 'Jan', nota: 6.5 },
-  { mes: 'Fev', nota: 7.0 },
-  { mes: 'Mar', nota: 7.2 },
-  { mes: 'Abr', nota: 7.8 },
-  { mes: 'Mai', nota: 8.1 },
-  { mes: 'Jun', nota: 8.3 },
-];
-
-const sessionsHistory = [
-  { sessao: 1, data: '05/01', presenca: true, tarefa: 'entregue' },
-  { sessao: 2, data: '12/01', presenca: true, tarefa: 'entregue' },
-  { sessao: 3, data: '19/01', presenca: false, tarefa: 'nao_entregue' },
-  { sessao: 4, data: '26/01', presenca: true, tarefa: 'entregue' },
-  { sessao: 5, data: '02/02', presenca: true, tarefa: 'entregue' },
-  { sessao: 6, data: '09/02', presenca: true, tarefa: 'sem_tarefa' },
-];
-
 function getPerformanceStage(score: number): { label: string; color: string; description: string } {
-  if (score >= 9) return { label: 'Excelência', color: 'bg-green-500', description: 'Alto nível de engajamento' };
-  if (score >= 7) return { label: 'Avançado', color: 'bg-blue-500', description: 'Bom nível de engajamento' };
-  if (score >= 5) return { label: 'Intermediário', color: 'bg-yellow-500', description: 'Comprometimento adequado' };
+  if (score >= 9) return { label: 'Excelência', color: 'bg-emerald-500', description: 'Alto nível de engajamento e performance' };
+  if (score >= 7) return { label: 'Avançado', color: 'bg-blue-500', description: 'Bom nível de engajamento e performance' };
+  if (score >= 5) return { label: 'Intermediário', color: 'bg-amber-500', description: 'Comprometimento adequado' };
   if (score >= 3) return { label: 'Básico', color: 'bg-orange-500', description: 'Participação irregular' };
   return { label: 'Inicial', color: 'bg-red-500', description: 'Baixo engajamento' };
 }
 
 export default function IndividualDashboard() {
   const { user } = useAuth();
+  const { data: dashboardData, isLoading } = trpc.indicadores.meuDashboard.useQuery();
 
-  // Calculate overall score (average of 5 indicators)
-  const overallScore = performanceRadar.reduce((acc, item) => acc + item.value, 0) / performanceRadar.length / 10;
-  const stage = getPerformanceStage(overallScore);
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-[#1B3A5D]" />
+          <span className="ml-3 text-gray-500">Carregando seu dashboard...</span>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!dashboardData || !dashboardData.found) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Meu Dashboard</h1>
+            <p className="text-gray-500 mt-1">Acompanhe sua evolução no programa de mentoria</p>
+          </div>
+          <Card>
+            <CardContent className="py-12 text-center">
+              <AlertCircle className="h-16 w-16 mx-auto mb-4 text-amber-400" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Perfil não vinculado</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Nenhum perfil de aluno foi encontrado vinculado à sua conta ({user?.email || user?.name}).
+                Entre em contato com o administrador para vincular seu perfil.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const { aluno, indicadores, sessoes, planoIndividual } = dashboardData;
+  const stage = getPerformanceStage(indicadores.notaFinal);
+
+  const performanceRadar = [
+    { indicator: 'Mentorias', value: indicadores.participacaoMentorias, fullMark: 100 },
+    { indicator: 'Atividades', value: indicadores.atividadesPraticas, fullMark: 100 },
+    { indicator: 'Engajamento', value: indicadores.engajamento, fullMark: 100 },
+    { indicator: 'Competências', value: indicadores.performanceCompetencias, fullMark: 100 },
+    { indicator: 'Eventos', value: indicadores.participacaoEventos, fullMark: 100 },
+  ];
 
   return (
     <DashboardLayout>
@@ -83,54 +91,60 @@ export default function IndividualDashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gradient">Meu Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-2xl font-bold text-gray-900">Meu Dashboard</h1>
+            <p className="text-gray-500 mt-1">
               Acompanhe sua evolução no programa de mentoria
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="px-3 py-1">
+            <Badge variant="outline" className="px-3 py-1 border-[#1B3A5D] text-[#1B3A5D]">
               <BookOpen className="h-4 w-4 mr-2" />
-              Ciclo IV
-            </Badge>
-            <Badge variant="outline" className="px-3 py-1">
-              SEBRAE Acre
+              {aluno.programa}
             </Badge>
           </div>
         </div>
 
         {/* Performance Overview Card */}
-        <Card className="bg-card border-border overflow-hidden">
+        <Card>
           <div className="grid md:grid-cols-3">
             {/* Score Section */}
-            <div className="p-6 border-r border-border/50">
+            <div className="p-6 border-r border-gray-200">
               <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 rounded-xl bg-primary/10">
-                  <Award className="h-8 w-8 text-primary" />
+                <div className="p-3 rounded-xl bg-[#1B3A5D]/10">
+                  <Award className="h-8 w-8 text-[#1B3A5D]" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Visão Geral</p>
-                  <p className="text-4xl font-bold">{overallScore.toFixed(1)}</p>
+                  <p className="text-sm text-gray-500">Nota Final</p>
+                  <p className="text-4xl font-bold text-gray-900">{indicadores.notaFinal.toFixed(1)}</p>
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Estágio</span>
-                  <Badge className={stage.color}>{stage.label}</Badge>
+                  <span className="text-sm text-gray-600">Estágio</span>
+                  <Badge className={`${stage.color} text-white`}>{stage.label}</Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">{stage.description}</p>
+                <p className="text-xs text-gray-500">{stage.description}</p>
               </div>
             </div>
 
             {/* Indicators Progress */}
             <div className="p-6 col-span-2">
-              <h3 className="font-semibold mb-4">5 Indicadores de Performance</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">5 Indicadores de Performance</h3>
               <div className="space-y-3">
-                {performanceRadar.map((item) => (
-                  <div key={item.indicator} className="space-y-1">
+                {[
+                  { label: 'Presença Mentorias', value: indicadores.participacaoMentorias, icon: Calendar, color: 'text-blue-600' },
+                  { label: 'Atividades Práticas', value: indicadores.atividadesPraticas, icon: CheckCircle2, color: 'text-emerald-600' },
+                  { label: 'Engajamento', value: indicadores.engajamento, icon: TrendingUp, color: 'text-amber-600' },
+                  { label: 'Competências', value: indicadores.performanceCompetencias, icon: BookOpen, color: 'text-purple-600' },
+                  { label: 'Eventos', value: indicadores.participacaoEventos, icon: Users, color: 'text-rose-600' },
+                ].map((item) => (
+                  <div key={item.label} className="space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span>{item.indicator}</span>
-                      <span className="font-medium">{item.value}%</span>
+                      <span className="flex items-center gap-2">
+                        <item.icon className={`h-4 w-4 ${item.color}`} />
+                        {item.label}
+                      </span>
+                      <span className="font-medium text-gray-900">{item.value.toFixed(0)}%</span>
                     </div>
                     <Progress value={item.value} className="h-2" />
                   </div>
@@ -140,31 +154,31 @@ export default function IndividualDashboard() {
           </div>
         </Card>
 
-        {/* Charts Row */}
+        {/* Charts and Details Row */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Radar Chart */}
-          <Card className="bg-card border-border">
+          <Card>
             <CardHeader>
-              <CardTitle>Perfil de Performance</CardTitle>
+              <CardTitle className="text-lg">Perfil de Performance</CardTitle>
               <CardDescription>Visualização dos 5 indicadores</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <RadarChart data={performanceRadar}>
-                  <PolarGrid stroke="oklch(0.30 0.04 220)" />
-                  <PolarAngleAxis dataKey="indicator" tick={{ fill: 'oklch(0.65 0.02 220)', fontSize: 11 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'oklch(0.65 0.02 220)' }} />
+                  <PolarGrid stroke="#e5e7eb" />
+                  <PolarAngleAxis dataKey="indicator" tick={{ fill: '#6b7280', fontSize: 11 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#9ca3af' }} />
                   <Radar
                     name="Performance"
                     dataKey="value"
-                    stroke={COLORS.primary}
-                    fill={COLORS.primary}
-                    fillOpacity={0.3}
+                    stroke="#1B3A5D"
+                    fill="#1B3A5D"
+                    fillOpacity={0.2}
                   />
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: 'oklch(0.18 0.025 220)', 
-                      border: '1px solid oklch(0.30 0.04 220)',
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e5e7eb',
                       borderRadius: '8px'
                     }} 
                   />
@@ -173,144 +187,155 @@ export default function IndividualDashboard() {
             </CardContent>
           </Card>
 
-          {/* Evolution Chart */}
-          <Card className="bg-card border-border">
+          {/* Quick Stats */}
+          <Card>
             <CardHeader>
-              <CardTitle>Evolução do Engajamento</CardTitle>
-              <CardDescription>Nota mensal de engajamento (0-10)</CardDescription>
+              <CardTitle className="text-lg">Resumo</CardTitle>
+              <CardDescription>Seus números no programa</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={evolutionData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.30 0.04 220)" />
-                  <XAxis dataKey="mes" stroke="oklch(0.65 0.02 220)" />
-                  <YAxis domain={[0, 10]} stroke="oklch(0.65 0.02 220)" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'oklch(0.18 0.025 220)', 
-                      border: '1px solid oklch(0.30 0.04 220)',
-                      borderRadius: '8px'
-                    }} 
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="nota" 
-                    name="Engajamento"
-                    stroke={COLORS.primary} 
-                    strokeWidth={3}
-                    dot={{ fill: COLORS.primary, strokeWidth: 2 }}
-                    activeDot={{ r: 8, fill: COLORS.primary }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-blue-50 rounded-lg text-center">
+                  <Calendar className="h-6 w-6 text-blue-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900">{indicadores.totalMentorias}</p>
+                  <p className="text-sm text-gray-500">Sessões de Mentoria</p>
+                </div>
+                <div className="p-4 bg-emerald-50 rounded-lg text-center">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900">{indicadores.mentoriasPresente}</p>
+                  <p className="text-sm text-gray-500">Presenças</p>
+                </div>
+                <div className="p-4 bg-rose-50 rounded-lg text-center">
+                  <Users className="h-6 w-6 text-rose-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900">{indicadores.totalEventos}</p>
+                  <p className="text-sm text-gray-500">Eventos</p>
+                </div>
+                <div className="p-4 bg-amber-50 rounded-lg text-center">
+                  <Target className="h-6 w-6 text-amber-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-gray-900">{planoIndividual.length}</p>
+                  <p className="text-sm text-gray-500">Competências no Plano</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Sessions History */}
-        <Card className="bg-card border-border">
+        <Card>
           <CardHeader>
-            <CardTitle>Histórico de Sessões</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-[#1B3A5D]" />
+              Histórico de Sessões
+            </CardTitle>
             <CardDescription>Registro de presenças e entregas de tarefas</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {sessionsHistory.map((session) => (
-                <div 
-                  key={session.sessao}
-                  className="flex items-center justify-between p-4 rounded-lg bg-background/30 border border-border/30"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      session.presenca ? 'bg-green-500/20' : 'bg-red-500/20'
-                    }`}>
-                      <span className="font-bold text-sm">{session.sessao}</span>
+            {sessoes.length > 0 ? (
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {sessoes.map((session) => (
+                  <div 
+                    key={session.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-100"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        session.presence === 'presente' ? 'bg-emerald-100' : 'bg-red-100'
+                      }`}>
+                        <span className="font-bold text-sm text-gray-700">{session.sessionNumber || '-'}</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">Sessão {session.sessionNumber || '-'}</p>
+                        <p className="text-xs text-gray-500">
+                          {session.sessionDate ? new Date(session.sessionDate).toLocaleDateString('pt-BR') : 'Data não informada'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">Sessão {session.sessao}</p>
-                      <p className="text-xs text-muted-foreground">{session.data}</p>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge variant={session.presence === 'presente' ? "default" : "destructive"} className="text-xs">
+                        {session.presence === 'presente' ? 'Presente' : 'Ausente'}
+                      </Badge>
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs ${
+                          session.taskStatus === 'entregue' ? 'border-emerald-500 text-emerald-600' :
+                          session.taskStatus === 'nao_entregue' ? 'border-red-500 text-red-600' :
+                          'border-gray-300 text-gray-500'
+                        }`}
+                      >
+                        {session.taskStatus === 'entregue' ? 'Tarefa OK' :
+                         session.taskStatus === 'nao_entregue' ? 'Pendente' : 'Sem tarefa'}
+                      </Badge>
+                      {session.engagementScore && (
+                        <span className="text-xs text-gray-500">Eng: {session.engagementScore}/5</span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <Badge variant={session.presenca ? "default" : "destructive"} className="text-xs">
-                      {session.presenca ? 'Presente' : 'Ausente'}
-                    </Badge>
-                    <Badge 
-                      variant="outline" 
-                      className={`text-xs ${
-                        session.tarefa === 'entregue' ? 'border-green-500 text-green-500' :
-                        session.tarefa === 'nao_entregue' ? 'border-red-500 text-red-500' :
-                        'border-muted-foreground'
-                      }`}
-                    >
-                      {session.tarefa === 'entregue' ? 'Tarefa OK' :
-                       session.tarefa === 'nao_entregue' ? 'Pendente' : 'Sem tarefa'}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Clock className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p>Nenhuma sessão de mentoria registrada ainda.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Quick Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-primary/10">
-                  <Calendar className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">6</p>
-                  <p className="text-sm text-muted-foreground">Sessões no Ciclo</p>
-                </div>
+        {/* Plano Individual */}
+        {planoIndividual.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Target className="h-5 w-5 text-[#E87722]" />
+                Meu Plano de Competências
+              </CardTitle>
+              <CardDescription>
+                {planoIndividual.length} competências obrigatórias definidas no seu plano individual
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {planoIndividual.map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      {item.status === 'concluida' ? (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                      ) : item.status === 'em_progresso' ? (
+                        <Clock className="h-5 w-5 text-blue-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-gray-400" />
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-900">{item.competenciaNome}</p>
+                        <p className="text-sm text-gray-500">{item.trilhaNome}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className={
+                        item.status === 'concluida' ? 'bg-emerald-100 text-emerald-800' :
+                        item.status === 'em_progresso' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }>
+                        {item.status === 'concluida' ? 'Concluída' :
+                         item.status === 'em_progresso' ? 'Em Progresso' : 'Pendente'}
+                      </Badge>
+                      {item.notaAtual && (
+                        <div className="text-right">
+                          <p className={`text-lg font-bold ${parseFloat(item.notaAtual) >= 7 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {parseFloat(item.notaAtual).toFixed(1)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-
-          <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-secondary/10">
-                  <CheckCircle2 className="h-6 w-6 text-secondary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">4/5</p>
-                  <p className="text-sm text-muted-foreground">Tarefas Entregues</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-chart-3/10">
-                  <Target className="h-6 w-6 text-chart-3" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">12</p>
-                  <p className="text-sm text-muted-foreground">Eventos Participados</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-green-500/10">
-                  <TrendingUp className="h-6 w-6 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">+1.8</p>
-                  <p className="text-sm text-muted-foreground">Evolução no Ciclo</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        )}
       </div>
     </DashboardLayout>
   );

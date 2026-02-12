@@ -1040,6 +1040,145 @@ export const appRouter = router({
           }
         };
       }),
+
+    // Meu Dashboard - dados do aluno logado
+    meuDashboard: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) {
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Usuário não autenticado' });
+      }
+
+      // Tentar encontrar o aluno pelo email do usuário logado
+      let aluno = ctx.user.email ? await db.getAlunoByEmail(ctx.user.email) : undefined;
+      
+      // Se não encontrou pelo email, tentar pelo openId como externalId
+      if (!aluno) {
+        aluno = await db.getAlunoByExternalId(ctx.user.openId);
+      }
+
+      if (!aluno) {
+        return { found: false as const, message: 'Nenhum perfil de aluno vinculado a esta conta.' };
+      }
+
+      // Buscar competências obrigatórias do plano individual
+      const competenciasObrigatorias = await db.getCompetenciasObrigatoriasAluno(aluno.id);
+
+      // Buscar dados
+      const allSessions = await db.getAllMentoringSessions();
+      const eventParticipations = await db.getAllEventParticipation();
+      const alunosList = await db.getAlunos();
+      const programsList = await db.getPrograms();
+
+      const mentorias: MentoringRecord[] = [];
+      const eventos: EventRecord[] = [];
+      const performance: PerformanceRecord[] = [];
+
+      const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+      const programMap = new Map(programsList.map(p => [p.id, p]));
+
+      for (const session of allSessions) {
+        const sessionAluno = alunoMap.get(session.alunoId);
+        if (!sessionAluno) continue;
+        const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
+        mentorias.push({
+          idUsuario: sessionAluno.externalId || String(sessionAluno.id),
+          nomeAluno: sessionAluno.name,
+          empresa: program?.name || 'Desconhecida',
+          turma: '',
+          trilha: '',
+          ciclo: session.ciclo || '',
+          sessao: session.sessionNumber || 0,
+          dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
+          presenca: session.presence as 'presente' | 'ausente',
+          atividadeEntregue: (session.taskStatus || 'sem_tarefa') as 'entregue' | 'nao_entregue' | 'sem_tarefa',
+          engajamento: session.engagementScore || undefined,
+          feedback: session.feedback || '',
+        });
+      }
+
+      for (const ep of eventParticipations) {
+        const epAluno = alunoMap.get(ep.alunoId);
+        if (!epAluno) continue;
+        const program = epAluno.programId ? programMap.get(epAluno.programId) : null;
+        eventos.push({
+          idUsuario: epAluno.externalId || String(epAluno.id),
+          nomeAluno: epAluno.name,
+          empresa: program?.name || 'Desconhecida',
+          turma: '',
+          trilha: '',
+          tituloEvento: 'Evento',
+          dataEvento: undefined,
+          presenca: ep.status as 'presente' | 'ausente',
+        });
+      }
+
+      // Buscar performance de competências do plano individual
+      const planoItems = await db.getPlanoIndividualByAluno(aluno.id);
+      for (const item of planoItems) {
+        if (item.notaAtual) {
+          performance.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeTurma: '',
+            idCompetencia: String(item.competenciaId),
+            nomeCompetencia: item.competenciaNome || '',
+            notaAvaliacao: parseFloat(item.notaAtual),
+            aprovado: parseFloat(item.notaAtual) >= 7,
+          });
+        }
+      }
+
+      const idUsuario = aluno.externalId || String(aluno.id);
+      const compObrigatorias: CompetenciaObrigatoria[] = competenciasObrigatorias.map(c => ({
+        competenciaId: c.competenciaId,
+        codigoIntegracao: c.codigoIntegracao,
+        notaAtual: c.notaAtual,
+        metaNota: c.metaNota,
+        status: c.status,
+      }));
+
+      const indicadores = calcularIndicadoresAlunoFiltrado(
+        idUsuario, mentorias, eventos, performance, compObrigatorias
+      );
+
+      // Buscar sessões individuais do aluno para histórico
+      const sessoesAluno = await db.getMentoringSessionsByAluno(aluno.id);
+
+      // Buscar programa do aluno
+      const programa = aluno.programId ? programMap.get(aluno.programId) : null;
+
+      return {
+        found: true as const,
+        aluno: {
+          id: aluno.id,
+          name: aluno.name,
+          email: aluno.email,
+          programa: programa?.name || 'Não definido',
+        },
+        indicadores: {
+          participacaoMentorias: indicadores.participacaoMentorias,
+          atividadesPraticas: indicadores.atividadesPraticas,
+          engajamento: indicadores.engajamento,
+          performanceCompetencias: indicadores.performanceCompetencias,
+          participacaoEventos: indicadores.participacaoEventos,
+          notaFinal: indicadores.notaFinal,
+          classificacao: indicadores.classificacao,
+          totalMentorias: indicadores.totalMentorias,
+          mentoriasPresente: indicadores.mentoriasPresente,
+          totalEventos: indicadores.totalEventos,
+          eventosPresente: indicadores.eventosPresente,
+        },
+        sessoes: sessoesAluno.map(s => ({
+          id: s.id,
+          sessionNumber: s.sessionNumber,
+          sessionDate: s.sessionDate,
+          presence: s.presence,
+          taskStatus: s.taskStatus,
+          engagementScore: s.engagementScore,
+          notaEvolucao: s.notaEvolucao,
+          feedback: s.feedback,
+        })),
+        planoIndividual: planoItems,
+      };
+    }),
   }),
 
   // Mentor/Consultor routes

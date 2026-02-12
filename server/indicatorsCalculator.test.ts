@@ -175,11 +175,11 @@ describe('calcularIndicadoresAluno', () => {
     // Atividades: 2/3 = 66.67%
     expect(indicadores.atividadesPraticas).toBeCloseTo(66.67, 1);
     
-    // Engajamento: média (5+4+3)/3 = 4 -> (4-1)/4*100 = 75%
-    expect(indicadores.engajamento).toBeCloseTo(75, 0);
+    // Engajamento: média (5+4+3)/3 = 4 -> (4/5)*100 = 80%
+    expect(indicadores.engajamento).toBeCloseTo(80, 0);
     
-    // Performance: 1/2 = 50%
-    expect(indicadores.performanceCompetencias).toBe(50);
+    // Performance: média notas (8+6)/2 = 7 -> (7/10)*100 = 70%
+    expect(indicadores.performanceCompetencias).toBeCloseTo(70, 0);
     
     // Eventos: 1/2 = 50%
     expect(indicadores.participacaoEventos).toBe(50);
@@ -207,17 +207,17 @@ describe('calcularIndicadoresAluno', () => {
     // Atividades: 2/2 = 100%
     expect(indicadores.atividadesPraticas).toBe(100);
     
-    // Engajamento: média 5 -> (5-1)/4*100 = 100%
+    // Engajamento: média 5 -> (5/5)*100 = 100%
     expect(indicadores.engajamento).toBe(100);
     
-    // Performance: 2/2 = 100%
-    expect(indicadores.performanceCompetencias).toBe(100);
+    // Performance: média notas (9+8)/2 = 8.5 -> (8.5/10)*100 = 85%
+    expect(indicadores.performanceCompetencias).toBeCloseTo(85, 0);
     
     // Eventos: 2/2 = 100%
     expect(indicadores.participacaoEventos).toBe(100);
     
-    // Nota final deve ser 10 (100% em todos)
-    expect(indicadores.notaFinal).toBe(10);
+    // Nota final: (100+100+100+85+100)/5 = 97 -> 9.7
+    expect(indicadores.notaFinal).toBeCloseTo(9.7, 0);
     expect(indicadores.classificacao).toBe('Excelência');
   });
 });
@@ -262,7 +262,7 @@ describe('agregarIndicadores', () => {
 
     expect(agregadoAcre.totalAlunos).toBe(1);
     expect(agregadoTO.totalAlunos).toBe(1);
-    expect(agregadoTO.mediaNotaFinal).toBe(10); // Maria tem 100% em tudo
+    expect(agregadoTO.mediaNotaFinal).toBeCloseTo(9.7, 0); // Maria tem 97% (performance 85%)
   });
 });
 
