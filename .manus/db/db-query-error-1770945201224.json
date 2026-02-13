@@ -1,0 +1,8 @@
+{
+  "query": "SELECT a.id, a.nome, a.email, a.programId, p.nome as programa FROM alunos a JOIN programs p ON a.programId = p.id WHERE p.nome LIKE '%SEBRAE TO%' LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.nome, a.email, a.programId, p.nome as programa FROM alunos a JOIN programs p ON a.programId = p.id WHERE p.nome LIKE '%SEBRAE TO%' LIMIT 5",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'p.nome' in 'where clause'"
+  ]
+}

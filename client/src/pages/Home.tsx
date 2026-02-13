@@ -32,7 +32,7 @@ export default function Home() {
     }
     
     if (user.role === "user") {
-      setLocation("/dashboard/aluno");
+      setLocation("/meu-dashboard");
       return;
     }
     // admin stays on Home

@@ -626,49 +626,72 @@ export default function PlanoIndividual() {
                 </div>
               </div>
 
-              {/* Barra de Progresso dos 5 Indicadores */}
+              {/* Barra de Progresso dos 7 Indicadores (6 individuais + Performance Geral) */}
               <div className="space-y-4">
-                <h4 className="font-semibold text-slate-700">Detalhamento dos 5 Indicadores (20% cada)</h4>
+                <h4 className="font-semibold text-slate-700">7 Indicadores de Performance</h4>
                 
                 <div className="space-y-3">
+                  {/* Indicador 1 */}
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">Participação Mentorias</span>
+                      <span className="text-sm text-slate-600">1. Participação nas Mentorias</span>
                       <span className="text-sm font-medium">{performanceFiltrada.indicadores.participacaoMentorias.toFixed(0)}%</span>
                     </div>
                     <Progress value={performanceFiltrada.indicadores.participacaoMentorias} className="h-2" />
                   </div>
                   
+                  {/* Indicador 2 */}
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">Atividades Práticas</span>
+                      <span className="text-sm text-slate-600">2. Atividades Práticas</span>
                       <span className="text-sm font-medium">{performanceFiltrada.indicadores.atividadesPraticas.toFixed(0)}%</span>
                     </div>
                     <Progress value={performanceFiltrada.indicadores.atividadesPraticas} className="h-2" />
                   </div>
                   
+                  {/* Indicador 3 */}
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">Engajamento</span>
+                      <span className="text-sm text-slate-600">3. Evolução / Engajamento</span>
                       <span className="text-sm font-medium">{performanceFiltrada.indicadores.engajamento.toFixed(0)}%</span>
                     </div>
                     <Progress value={performanceFiltrada.indicadores.engajamento} className="h-2" />
                   </div>
                   
+                  {/* Indicador 4 */}
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">Performance Competências (Filtrada)</span>
+                      <span className="text-sm text-slate-600">4. Performance das Competências</span>
                       <span className="text-sm font-medium text-blue-600 font-bold">{performanceFiltrada.indicadores.performanceCompetencias.toFixed(0)}%</span>
                     </div>
                     <Progress value={performanceFiltrada.indicadores.performanceCompetencias} className="h-2 bg-blue-100" />
                   </div>
                   
+                  {/* Indicador 5 */}
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">Participação Eventos</span>
+                      <span className="text-sm text-slate-600">5. Performance de Aprendizado</span>
+                      <span className="text-sm font-medium">{(performanceFiltrada.indicadores as any).performanceAprendizado?.toFixed(0) ?? performanceFiltrada.indicadores.performanceCompetencias.toFixed(0)}%</span>
+                    </div>
+                    <Progress value={(performanceFiltrada.indicadores as any).performanceAprendizado ?? performanceFiltrada.indicadores.performanceCompetencias} className="h-2" />
+                  </div>
+                  
+                  {/* Indicador 6 */}
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-slate-600">6. Participação em Eventos</span>
                       <span className="text-sm font-medium">{performanceFiltrada.indicadores.participacaoEventos.toFixed(0)}%</span>
                     </div>
                     <Progress value={performanceFiltrada.indicadores.participacaoEventos} className="h-2" />
+                  </div>
+
+                  {/* Indicador 7 - Performance Geral */}
+                  <div className="pt-3 border-t">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-semibold text-slate-800">7. Performance Geral (Média dos 6)</span>
+                      <span className="text-sm font-bold text-primary">{performanceFiltrada.indicadores.notaFinal.toFixed(1)}%</span>
+                    </div>
+                    <Progress value={performanceFiltrada.indicadores.notaFinal} className="h-3" />
                   </div>
                 </div>
               </div>

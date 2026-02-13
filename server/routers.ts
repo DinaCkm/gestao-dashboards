@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
-import { calcularIndicadoresTodosAlunos, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicators, calcularIndicadoresAlunoFiltrado, calcularPerformanceFiltrada, CompetenciaObrigatoria } from "./indicatorsCalculator";
+import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicators, calcularIndicadoresAlunoFiltrado, calcularPerformanceFiltrada, CompetenciaObrigatoria, CicloExecucaoData } from './indicatorsCalculator';
 import { notifyOwner } from "./_core/notification";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 
@@ -818,8 +818,11 @@ export const appRouter = router({
         }
       }
       
+      // Buscar ciclos de execução
+      const ciclosPorAluno = await db.getAllCiclosForCalculator();
+      
       // Calcular indicadores
-      const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);
+      const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno);
       const dashboard = gerarDashboardGeral(indicadores);
       
       return dashboard;
@@ -872,7 +875,6 @@ export const appRouter = router({
           });
         }
         
-        // Adicionar dados de performance de competências do plano individual
         for (const item of allPlanoItems) {
           if (item.notaAtual) {
             const aluno = alunoMap.get(item.alunoId);
@@ -888,7 +890,8 @@ export const appRouter = router({
           }
         }
         
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);
+        const ciclosPorAluno = await db.getAllCiclosForCalculator();
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno);
         const dashboard = gerarDashboardEmpresa(indicadores, input.empresa);
         
         return dashboard;
@@ -957,7 +960,8 @@ export const appRouter = router({
           }
         }
         
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);
+        const ciclosPorAluno = await db.getAllCiclosForCalculator();
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno);
         const agregado = agregarIndicadores(indicadores, 'turma', String(input.turmaId));
         const alunos = indicadores.filter(i => i.turma === String(input.turmaId));
         
@@ -1027,7 +1031,8 @@ export const appRouter = router({
           }
         }
         
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance);
+        const ciclosPorAluno = await db.getAllCiclosForCalculator();
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno);
         const alunoIndicadores = indicadores.find(i => i.idUsuario === input.alunoId);
         
         if (!alunoIndicadores) {
@@ -1109,6 +1114,9 @@ export const appRouter = router({
           status: c.status || 'pendente'
         }));
         
+        // Buscar ciclos de execução do aluno
+        const ciclosAluno = await db.getCiclosForCalculator(input.alunoId);
+        
         // Calcular indicadores filtrados
         const idUsuario = aluno.externalId || String(aluno.id);
         const indicadores = calcularIndicadoresAlunoFiltrado(
@@ -1116,7 +1124,8 @@ export const appRouter = router({
           mentorias,
           eventos,
           performance,
-          compObrigatorias
+          compObrigatorias,
+          ciclosAluno
         );
         
         return {
@@ -1142,10 +1151,15 @@ export const appRouter = router({
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Usuário não autenticado' });
       }
 
-      // Tentar encontrar o aluno pelo email do usuário logado
-      let aluno = ctx.user.email ? await db.getAlunoByEmail(ctx.user.email) : undefined;
-      
-      // Se não encontrou pelo email, tentar pelo openId como externalId
+      // Tentar encontrar o aluno: primeiro pelo alunoId do user, depois email, depois openId
+      let aluno: Awaited<ReturnType<typeof db.getAlunoByEmail>> | undefined;
+      if (ctx.user.alunoId) {
+        const allAlunos = await db.getAlunos();
+        aluno = allAlunos.find(a => a.id === ctx.user!.alunoId) || undefined;
+      }
+      if (!aluno && ctx.user.email) {
+        aluno = await db.getAlunoByEmail(ctx.user.email);
+      }
       if (!aluno) {
         aluno = await db.getAlunoByExternalId(ctx.user.openId);
       }
@@ -1157,11 +1171,12 @@ export const appRouter = router({
       // Buscar competências obrigatórias do plano individual
       const competenciasObrigatorias = await db.getCompetenciasObrigatoriasAluno(aluno.id);
 
-      // Buscar dados
+      // Buscar dados globais para cálculo de indicadores e ranking
       const allSessions = await db.getAllMentoringSessions();
-      const eventParticipations = await db.getAllEventParticipation();
+      const allEventParticipations = await db.getAllEventParticipation();
       const alunosList = await db.getAlunos();
       const programsList = await db.getPrograms();
+      const turmasList = await db.getTurmas();
 
       const mentorias: MentoringRecord[] = [];
       const eventos: EventRecord[] = [];
@@ -1169,16 +1184,18 @@ export const appRouter = router({
 
       const alunoMap = new Map(alunosList.map(a => [a.id, a]));
       const programMap = new Map(programsList.map(p => [p.id, p]));
+      const turmaMap = new Map(turmasList.map(t => [t.id, t]));
 
       for (const session of allSessions) {
         const sessionAluno = alunoMap.get(session.alunoId);
         if (!sessionAluno) continue;
         const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
+        const turma = sessionAluno.turmaId ? turmaMap.get(sessionAluno.turmaId) : null;
         mentorias.push({
           idUsuario: sessionAluno.externalId || String(sessionAluno.id),
           nomeAluno: sessionAluno.name,
           empresa: program?.name || 'Desconhecida',
-          turma: '',
+          turma: turma?.name || '',
           trilha: '',
           ciclo: session.ciclo || '',
           sessao: session.sessionNumber || 0,
@@ -1190,7 +1207,7 @@ export const appRouter = router({
         });
       }
 
-      for (const ep of eventParticipations) {
+      for (const ep of allEventParticipations) {
         const epAluno = alunoMap.get(ep.alunoId);
         if (!epAluno) continue;
         const program = epAluno.programId ? programMap.get(epAluno.programId) : null;
@@ -1230,15 +1247,77 @@ export const appRouter = router({
         status: c.status,
       }));
 
+      // Buscar ciclos de execução do aluno
+      const ciclosAluno = await db.getCiclosForCalculator(aluno.id);
+
       const indicadores = calcularIndicadoresAlunoFiltrado(
-        idUsuario, mentorias, eventos, performance, compObrigatorias
+        idUsuario, mentorias, eventos, performance, compObrigatorias, ciclosAluno
       );
 
       // Buscar sessões individuais do aluno para histórico
       const sessoesAluno = await db.getMentoringSessionsByAluno(aluno.id);
 
-      // Buscar programa do aluno
+      // Buscar participações em eventos do aluno com detalhes
+      const eventosAluno = await db.getEventParticipationByAluno(aluno.id);
+      // Buscar detalhes dos eventos
+      const allEvents = aluno.programId ? await db.getEventsByProgram(aluno.programId) : [];
+      const eventMap = new Map(allEvents.map(e => [e.id, e]));
+      const eventosDetalhados = eventosAluno.map(ep => {
+        const evento = eventMap.get(ep.eventId);
+        return {
+          id: ep.id,
+          eventId: ep.eventId,
+          titulo: evento?.title || `Evento #${ep.eventId}`,
+          tipo: evento?.eventType || 'webinar',
+          data: evento?.eventDate || null,
+          status: ep.status,
+        };
+      });
+
+      // Buscar programa, turma e mentor do aluno
       const programa = aluno.programId ? programMap.get(aluno.programId) : null;
+      const turmaAluno = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
+      const mentorAluno = aluno.consultorId ? await db.getConsultorById(aluno.consultorId) : null;
+
+      // Calcular ranking na empresa (posição entre colegas da mesma empresa)
+      let ranking = { posicao: 0, totalAlunos: 0 };
+      if (aluno.programId) {
+        const colegasEmpresa = alunosList.filter(a => a.programId === aluno!.programId && a.isActive === 1);
+        // Calcular nota de cada colega
+        const notasColegas: { alunoId: number; nota: number }[] = [];
+        for (const colega of colegasEmpresa) {
+          const colegaId = colega.externalId || String(colega.id);
+          const compObrigatoriasColega = await db.getCompetenciasObrigatoriasAluno(colega.id);
+          const planoColega = await db.getPlanoIndividualByAluno(colega.id);
+          const perfColega: PerformanceRecord[] = [];
+          for (const item of planoColega) {
+            if (item.notaAtual) {
+              perfColega.push({
+                idUsuario: colegaId,
+                nomeTurma: '',
+                idCompetencia: String(item.competenciaId),
+                nomeCompetencia: item.competenciaNome || '',
+                notaAvaliacao: parseFloat(item.notaAtual),
+                aprovado: parseFloat(item.notaAtual) >= 7,
+              });
+            }
+          }
+          const compObrigColega: CompetenciaObrigatoria[] = compObrigatoriasColega.map(c => ({
+            competenciaId: c.competenciaId,
+            codigoIntegracao: c.codigoIntegracao,
+            notaAtual: c.notaAtual,
+            metaNota: c.metaNota,
+            status: c.status,
+          }));
+          const indColega = calcularIndicadoresAlunoFiltrado(
+            colegaId, mentorias, eventos, perfColega, compObrigColega
+          );
+          notasColegas.push({ alunoId: colega.id, nota: indColega.notaFinal });
+        }
+        notasColegas.sort((a, b) => b.nota - a.nota);
+        const posicao = notasColegas.findIndex(n => n.alunoId === aluno!.id) + 1;
+        ranking = { posicao, totalAlunos: notasColegas.length };
+      }
 
       return {
         found: true as const,
@@ -1247,20 +1326,33 @@ export const appRouter = router({
           name: aluno.name,
           email: aluno.email,
           programa: programa?.name || 'Não definido',
+          turma: turmaAluno?.name || 'Não definida',
+          mentor: mentorAluno?.name || 'Não definido',
         },
         indicadores: {
           participacaoMentorias: indicadores.participacaoMentorias,
           atividadesPraticas: indicadores.atividadesPraticas,
           engajamento: indicadores.engajamento,
           performanceCompetencias: indicadores.performanceCompetencias,
+          performanceAprendizado: indicadores.performanceAprendizado,
           participacaoEventos: indicadores.participacaoEventos,
+          performanceGeral: indicadores.performanceGeral,
           notaFinal: indicadores.notaFinal,
           classificacao: indicadores.classificacao,
           totalMentorias: indicadores.totalMentorias,
           mentoriasPresente: indicadores.mentoriasPresente,
+          totalAtividades: indicadores.totalAtividades,
+          atividadesEntregues: indicadores.atividadesEntregues,
           totalEventos: indicadores.totalEventos,
           eventosPresente: indicadores.eventosPresente,
+          totalCompetencias: indicadores.totalCompetencias,
+          competenciasAprovadas: indicadores.competenciasAprovadas,
+          mediaEngajamentoRaw: indicadores.mediaEngajamentoRaw,
+          engajamentoComponentes: indicadores.engajamentoComponentes,
+          ciclosFinalizados: indicadores.ciclosFinalizados,
+          ciclosEmAndamento: indicadores.ciclosEmAndamento,
         },
+        ranking,
         sessoes: sessoesAluno.map(s => ({
           id: s.id,
           sessionNumber: s.sessionNumber,
@@ -1270,7 +1362,9 @@ export const appRouter = router({
           engagementScore: s.engagementScore,
           notaEvolucao: s.notaEvolucao,
           feedback: s.feedback,
+          ciclo: s.ciclo,
         })),
+        eventos: eventosDetalhados,
         planoIndividual: planoItems,
       };
     }),
@@ -1474,6 +1568,58 @@ export const appRouter = router({
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.toggleAccessUserStatus(input.userId);
+      }),
+  }),
+
+  // Ciclos de Execução da Trilha
+  ciclos: router({
+    // Listar ciclos de um aluno
+    porAluno: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCiclosByAluno(input.alunoId);
+      }),
+
+    // Criar ciclo
+    criar: adminProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        nomeCiclo: z.string().min(1),
+        dataInicio: z.string(),
+        dataFim: z.string(),
+        competenciaIds: z.array(z.number()).min(1),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const cicloId = await db.createCicloExecucao({
+          ...input,
+          definidoPor: ctx.user.id,
+        });
+        return { success: true, cicloId };
+      }),
+
+    // Atualizar ciclo
+    atualizar: adminProcedure
+      .input(z.object({
+        cicloId: z.number(),
+        nomeCiclo: z.string().optional(),
+        dataInicio: z.string().optional(),
+        dataFim: z.string().optional(),
+        competenciaIds: z.array(z.number()).optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { cicloId, ...data } = input;
+        const success = await db.updateCicloExecucao(cicloId, data);
+        return { success };
+      }),
+
+    // Excluir ciclo
+    excluir: adminProcedure
+      .input(z.object({ cicloId: z.number() }))
+      .mutation(async ({ input }) => {
+        const success = await db.deleteCicloExecucao(input.cicloId);
+        return { success };
       }),
   }),
 });

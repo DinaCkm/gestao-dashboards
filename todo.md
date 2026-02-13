@@ -345,3 +345,105 @@
 - [x] Sidebar filtrado por perfil (admin vê tudo, gestor vê empresa, aluno vê próprio)
 - [x] Redirecionamento automático para dashboard correto após login
 - [ ] Testar fluxo completo dos 3 perfis
+
+## Dashboard Completo do Aluno Logado via Email+CPF (12/02/2026)
+- [ ] Endpoint backend completo: assessment, trilha, eventos, mentorias, performance
+- [ ] Seção 1: Assessment original (notas por competência que originaram o plano)
+- [ ] Seção 2: Trilha de Desenvolvimento (competências obrigatórias e progresso)
+- [ ] Seção 3: Performance e Crescimento (nota final, classificação, indicadores)
+- [ ] Seção 4: Participação em Webinars/Eventos (presença e histórico)
+- [ ] Seção 5: Mentorias (sessões, presença, atividades, engajamento)
+- [ ] Seção 6: Nota Final e Classificação (posição no ranking da empresa)
+- [ ] Ajustar rota e redirecionamento automático para aluno logado
+- [ ] Testar fluxo completo do aluno logado
+
+## Clarificação dos Indicadores (12/02/2026) - Informações do Usuário
+
+### Indicador 1 — Participação nas Mentorias
+- [x] Fórmula: (Mentorias com presença / Total de mentorias) × 100
+- [x] Já implementado corretamente
+
+### Indicador 2 — Atividades Práticas
+- [x] Fórmula: (Atividades entregues / Total de atividades previstas) × 100
+- [x] Já implementado corretamente
+
+### Indicador 3 — Evolução / Engajamento
+- [x] É um CONJUNTO de 3 informações combinadas:
+  - Presença nas mentorias (Indicador 1)
+  - Entrega de atividades (Indicador 2)
+  - Nota da Mentora (0 a 5, convertida para % pela tabela de faixas: 0=0%, 1=20%, 2=40%, 3=60%, 4=80%, 5=100%)
+- [x] Ajustar cálculo para combinar as 3 informações (média dos 3 componentes)
+
+### Indicador 4 — Performance das Competências (Planilha de Performance)
+- [x] Mede o número de competências concluídas (aulas concluídas / total de aulas por competência)
+- [x] Regra crítica: só considerar competências dentro do PERÍODO DE LIBERAÇÃO
+- [x] Competências fora do período de liberação são IGNORADAS no cálculo
+- [x] Competências dentro do período mas com nota 0 CONTAM no cálculo (puxa média para baixo)
+- [x] CRIAR TABELA DE EXECUÇÃO DA TRILHA no banco de dados:
+  - Vinculada ao plano individual do aluno
+  - Define data_inicio e data_fim de liberação de cada competência
+  - Preenchida pela mentora durante o Assessment
+  - Usada para filtrar quais competências entram no cálculo do Indicador 4
+- [ ] Criar interface para mentora definir períodos de liberação das competências (UI pendente)
+- [x] Ajustar cálculo do Indicador 4 para respeitar períodos de liberação
+
+### Indicador 5 — Performance de Aprendizado (Notas das Provas)
+- [x] Média das notas das provas por competência (ciclos finalizados)
+
+### Indicador 6 — Participação em Eventos
+- [x] Fórmula: (Eventos com presença / Total de eventos) × 100
+
+
+### Visualização Complementar — Caminho de Realização das Competências
+- [ ] Criar visualização do progresso na trilha (quantas competências concluídas / quantas faltam)
+- [ ] Exibir como caminho/jornada visual em TODOS os dashboards (Admin, Gestor, Aluno)
+- [ ] Sistema de cores por status de prazo:
+  - Verde: dentro do prazo de execução
+  - Vermelho: atrasado (passou do prazo sem concluir)
+  - Azul: adiantado / excelência (concluiu antes do prazo)
+- [ ] Depende da Tabela de Execução da Trilha (períodos de liberação)
+
+### Regra da 1ª Mentoria (Assessment)
+- [x] A 1ª sessão de mentoria (Assessment) NUNCA tem entrega de trabalho prático
+- [x] Excluir a 1ª mentoria do cálculo do Indicador 2 (Atividades Práticas)
+- [x] A 1ª mentoria não entra no total de atividades previstas
+
+
+## Sistema de Ciclos de Competências (12/02/2026)
+
+### Regras de Ciclos
+- [ ] Mentora define ciclos para cada aluno durante o Assessment
+- [ ] Cada ciclo = grupo de competências + data_inicio + data_fim
+- [ ] Aluno pode ter múltiplos ciclos rodando em paralelo
+- [ ] Ciclo com data_fim < hoje = FINALIZADO → entra na Performance Geral (Ind. 4 e 5)
+- [ ] Ciclo com data_inicio <= hoje <= data_fim = EM ANDAMENTO → aparece separado, NÃO entra na Performance Geral
+- [ ] Ciclo com data_inicio > hoje = FUTURO → invisível no cálculo e visualização
+- [ ] Se aluno não terminou ciclo no prazo, nota baixa fica registrada até ele completar
+- [ ] Aluno pode voltar e completar ciclo atrasado, melhorando a Performance Geral
+
+### Implementação
+- [x] Criar tabela `execucao_trilha` no schema (ciclos com datas)
+- [x] Criar endpoints CRUD para gerenciar ciclos
+- [ ] Criar interface para mentora definir ciclos (competências + datas) — UI pendente
+- [x] Refatorar indicatorsCalculator para 7 indicadores (6 individuais + Performance Geral)
+- [x] Indicador 3: combinar presença + atividades + nota mentora (média dos 3)
+- [x] Indicador 4: % aulas concluídas (só ciclos finalizados)
+- [x] Indicador 5: notas das provas (só ciclos finalizados)
+- [x] Indicador 7: Performance Geral = média dos 6 indicadores
+- [x] Excluir 1ª mentoria (Assessment) do cálculo do Indicador 2
+- [x] Atualizar todos os dashboards (Admin, Gestor, Aluno) com 7 indicadores
+- [x] Adicionar visualização de ciclos em andamento separada
+- [ ] Adicionar visualização do caminho de competências (verde/vermelho/azul) — pendente
+
+
+### Transparência nos Dashboards
+- [x] Cada card de indicador deve ter explicação abaixo mostrando:
+  - Fórmula usada no cálculo
+  - Números reais que compõem o resultado (ex: "8 presenças de 10 sessões")
+  - Regras aplicadas (ex: "1ª mentoria excluída por ser Assessment")
+  - Para Indicadores 4 e 5: quais ciclos entraram e quais estão em andamento
+
+
+### Correção Menu Admin (12/02/2026)
+- [x] Remover "Meu Dashboard" e "Dashboard Aluno" do menu do administrador (são páginas do perfil do aluno, não do admin)
+

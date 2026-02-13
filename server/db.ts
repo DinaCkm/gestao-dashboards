@@ -1749,3 +1749,193 @@ export async function getAllPlanoIndividual() {
   
   return result;
 }
+
+
+// ============ CICLOS DE EXECUÇÃO FUNCTIONS ============
+
+import { ciclosExecucao, InsertCicloExecucao, CicloExecucao, cicloCompetencias, InsertCicloCompetencia, CicloCompetencia } from "../drizzle/schema";
+
+// Criar ciclo de execução
+export async function createCicloExecucao(data: {
+  alunoId: number;
+  nomeCiclo: string;
+  dataInicio: string;
+  dataFim: string;
+  definidoPor?: number;
+  observacoes?: string;
+  competenciaIds: number[];
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.insert(ciclosExecucao).values({
+    alunoId: data.alunoId,
+    nomeCiclo: data.nomeCiclo,
+    dataInicio: new Date(data.dataInicio + 'T00:00:00'),
+    dataFim: new Date(data.dataFim + 'T00:00:00'),
+    definidoPor: data.definidoPor,
+    observacoes: data.observacoes,
+  });
+  
+  const cicloId = result.insertId;
+  
+  // Adicionar competências ao ciclo
+  if (data.competenciaIds.length > 0) {
+    const values = data.competenciaIds.map(competenciaId => ({
+      cicloId,
+      competenciaId,
+    }));
+    await db.insert(cicloCompetencias).values(values);
+  }
+  
+  return cicloId;
+}
+
+// Buscar ciclos de um aluno
+export async function getCiclosByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const ciclos = await db.select()
+    .from(ciclosExecucao)
+    .where(eq(ciclosExecucao.alunoId, alunoId))
+    .orderBy(ciclosExecucao.dataInicio);
+  
+  // Para cada ciclo, buscar competências vinculadas
+  const result = [];
+  for (const ciclo of ciclos) {
+    const comps = await db.select({
+      id: cicloCompetencias.id,
+      competenciaId: cicloCompetencias.competenciaId,
+      competenciaNome: competencias.nome,
+      competenciaCodigo: competencias.codigoIntegracao,
+      trilhaId: competencias.trilhaId,
+      trilhaNome: trilhas.name,
+    })
+    .from(cicloCompetencias)
+    .leftJoin(competencias, eq(cicloCompetencias.competenciaId, competencias.id))
+    .leftJoin(trilhas, eq(competencias.trilhaId, trilhas.id))
+    .where(eq(cicloCompetencias.cicloId, ciclo.id));
+    
+    result.push({
+      ...ciclo,
+      competencias: comps,
+      competenciaIds: comps.map(c => c.competenciaId),
+    });
+  }
+  
+  return result;
+}
+
+// Buscar todos os ciclos (para cálculo em massa)
+export async function getAllCiclos() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const ciclos = await db.select().from(ciclosExecucao).orderBy(ciclosExecucao.alunoId, ciclosExecucao.dataInicio);
+  
+  const allComps = await db.select()
+    .from(cicloCompetencias);
+  
+  // Agrupar competências por ciclo
+  const compsByCiclo = new Map<number, number[]>();
+  for (const comp of allComps) {
+    const existing = compsByCiclo.get(comp.cicloId) || [];
+    existing.push(comp.competenciaId);
+    compsByCiclo.set(comp.cicloId, existing);
+  }
+  
+  return ciclos.map(ciclo => ({
+    ...ciclo,
+    competenciaIds: compsByCiclo.get(ciclo.id) || [],
+  }));
+}
+
+// Atualizar ciclo de execução
+export async function updateCicloExecucao(cicloId: number, data: {
+  nomeCiclo?: string;
+  dataInicio?: string;
+  dataFim?: string;
+  observacoes?: string;
+  competenciaIds?: number[];
+}) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const updateData: Record<string, unknown> = {};
+  if (data.nomeCiclo !== undefined) updateData.nomeCiclo = data.nomeCiclo;
+  if (data.dataInicio !== undefined) updateData.dataInicio = new Date(data.dataInicio + 'T00:00:00');
+  if (data.dataFim !== undefined) updateData.dataFim = new Date(data.dataFim + 'T00:00:00');
+  if (data.observacoes !== undefined) updateData.observacoes = data.observacoes;
+  
+  if (Object.keys(updateData).length > 0) {
+    await db.update(ciclosExecucao).set(updateData).where(eq(ciclosExecucao.id, cicloId));
+  }
+  
+  // Se competências foram fornecidas, atualizar
+  if (data.competenciaIds !== undefined) {
+    // Remover competências existentes
+    await db.delete(cicloCompetencias).where(eq(cicloCompetencias.cicloId, cicloId));
+    
+    // Adicionar novas
+    if (data.competenciaIds.length > 0) {
+      const values = data.competenciaIds.map(competenciaId => ({
+        cicloId,
+        competenciaId,
+      }));
+      await db.insert(cicloCompetencias).values(values);
+    }
+  }
+  
+  return true;
+}
+
+// Excluir ciclo de execução
+export async function deleteCicloExecucao(cicloId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  // Remover competências vinculadas
+  await db.delete(cicloCompetencias).where(eq(cicloCompetencias.cicloId, cicloId));
+  // Remover ciclo
+  await db.delete(ciclosExecucao).where(eq(ciclosExecucao.id, cicloId));
+  
+  return true;
+}
+
+// Buscar ciclos por aluno formatados para o calculador de indicadores
+export async function getCiclosForCalculator(alunoId: number) {
+  const ciclos = await getCiclosByAluno(alunoId);
+  return ciclos.map(c => ({
+    id: c.id,
+    nomeCiclo: c.nomeCiclo,
+    dataInicio: typeof c.dataInicio === 'string' ? c.dataInicio : new Date(c.dataInicio).toISOString().split('T')[0],
+    dataFim: typeof c.dataFim === 'string' ? c.dataFim : new Date(c.dataFim).toISOString().split('T')[0],
+    competenciaIds: c.competenciaIds,
+  }));
+}
+
+// Buscar todos os ciclos formatados para cálculo em massa (agrupados por alunoId)
+export async function getAllCiclosForCalculator() {
+  const allCiclos = await getAllCiclos();
+  const alunosList = await getAlunos();
+  
+  const ciclosPorAluno = new Map<string, { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[] }[]>();
+  
+  for (const ciclo of allCiclos) {
+    const aluno = alunosList.find(a => a.id === ciclo.alunoId);
+    const alunoKey = aluno?.externalId || String(ciclo.alunoId);
+    
+    const existing = ciclosPorAluno.get(alunoKey) || [];
+    existing.push({
+      id: ciclo.id,
+      nomeCiclo: ciclo.nomeCiclo,
+      dataInicio: typeof ciclo.dataInicio === 'string' ? ciclo.dataInicio : new Date(ciclo.dataInicio).toISOString().split('T')[0],
+      dataFim: typeof ciclo.dataFim === 'string' ? ciclo.dataFim : new Date(ciclo.dataFim).toISOString().split('T')[0],
+      competenciaIds: ciclo.competenciaIds,
+    });
+    ciclosPorAluno.set(alunoKey, existing);
+  }
+  
+  return ciclosPorAluno;
+}

@@ -116,6 +116,38 @@ export type Competencia = typeof competencias.$inferSelect;
 export type InsertCompetencia = typeof competencias.$inferInsert;
 
 /**
+ * Ciclos de Execução da Trilha - Define períodos de liberação de competências por aluno
+ * Preenchido pela mentora durante o Assessment (1ª sessão de mentoria)
+ */
+export const ciclosExecucao = mysqlTable("ciclos_execucao", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  nomeCiclo: varchar("nomeCiclo", { length: 255 }).notNull(), // Ex: "Ciclo 1 - Competências Básicas"
+  dataInicio: date("dataInicio").notNull(), // Data de liberação do ciclo
+  dataFim: date("dataFim").notNull(), // Data limite para conclusão
+  definidoPor: int("definidoPor"), // FK para consultors (mentora que definiu)
+  observacoes: text("observacoes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CicloExecucao = typeof ciclosExecucao.$inferSelect;
+export type InsertCicloExecucao = typeof ciclosExecucao.$inferInsert;
+
+/**
+ * Competências vinculadas a cada ciclo de execução
+ */
+export const cicloCompetencias = mysqlTable("ciclo_competencias", {
+  id: int("id").autoincrement().primaryKey(),
+  cicloId: int("cicloId").notNull(), // FK para ciclos_execucao
+  competenciaId: int("competenciaId").notNull(), // FK para competencias
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CicloCompetencia = typeof cicloCompetencias.$inferSelect;
+export type InsertCicloCompetencia = typeof cicloCompetencias.$inferInsert;
+
+/**
  * Plano Individual - Competências obrigatórias vinculadas a cada aluno
  */
 export const planoIndividual = mysqlTable("plano_individual", {

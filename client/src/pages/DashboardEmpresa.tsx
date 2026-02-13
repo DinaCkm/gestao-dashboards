@@ -6,7 +6,8 @@ import {
   PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   Legend
 } from "recharts";
-import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, ArrowLeft, HelpCircle } from "lucide-react";
+import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, ArrowLeft, HelpCircle, GraduationCap, PartyPopper, Info } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -100,12 +101,13 @@ export default function DashboardEmpresa() {
     : null;
   const META_EXCELENCIA = 9.0;
 
-  // Dados para o gráfico de radar dos indicadores
+  // Dados para o gráfico de radar dos 6 indicadores
   const radarData = [
     { indicador: 'Mentorias', valor: visaoEmpresa.mediaParticipacaoMentorias },
     { indicador: 'Atividades', valor: visaoEmpresa.mediaAtividadesPraticas },
     { indicador: 'Engajamento', valor: visaoEmpresa.mediaEngajamento },
     { indicador: 'Competências', valor: visaoEmpresa.mediaPerformanceCompetencias },
+    { indicador: 'Aprendizado', valor: visaoEmpresa.mediaPerformanceAprendizado || 0 },
     { indicador: 'Eventos', valor: visaoEmpresa.mediaParticipacaoEventos },
   ];
 
@@ -146,14 +148,12 @@ export default function DashboardEmpresa() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Nota Média</CardTitle>
+              <CardTitle className="text-sm font-medium">Performance Geral</CardTitle>
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{visaoEmpresa.mediaNotaFinal.toFixed(1)}</div>
-              <p className="text-xs text-muted-foreground">
-                De 0 a 10 pontos
-              </p>
+              <div className="text-2xl font-bold">{(visaoEmpresa.mediaPerformanceGeral || visaoEmpresa.mediaNotaFinal * 10 || 0).toFixed(0)}%</div>
+              <p className="text-xs text-muted-foreground">Média dos 6 indicadores</p>
             </CardContent>
           </Card>
 
@@ -191,13 +191,13 @@ export default function DashboardEmpresa() {
           </Card>
         </div>
 
-        {/* 5 Indicadores */}
-        <div className="grid gap-4 md:grid-cols-5">
+        {/* 7 Indicadores */}
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
           <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Mentorias
+                Ind. 1: Mentorias
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -210,7 +210,7 @@ export default function DashboardEmpresa() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
-                Atividades
+                Ind. 2: Atividades
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -223,7 +223,7 @@ export default function DashboardEmpresa() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Zap className="h-4 w-4" />
-                Engajamento
+                Ind. 3: Engajamento
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -236,7 +236,7 @@ export default function DashboardEmpresa() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Award className="h-4 w-4" />
-                Competências
+                Ind. 4: Competências
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -245,16 +245,43 @@ export default function DashboardEmpresa() {
             </CardContent>
           </Card>
 
+          <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                Ind. 5: Aprendizado
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{(visaoEmpresa.mediaPerformanceAprendizado || 0).toFixed(0)}%</div>
+              <p className="text-xs text-muted-foreground">Notas das provas</p>
+            </CardContent>
+          </Card>
+
           <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Eventos
+                <PartyPopper className="h-4 w-4" />
+                Ind. 6: Eventos
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{visaoEmpresa.mediaParticipacaoEventos.toFixed(0)}%</div>
               <p className="text-xs text-muted-foreground">Presença</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 border-primary bg-gradient-to-br from-primary/5 to-primary/10">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Ind. 7: Performance Geral
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{(visaoEmpresa.mediaPerformanceGeral || 0).toFixed(0)}%</div>
+              <Progress value={visaoEmpresa.mediaPerformanceGeral || 0} className="h-2 mt-1" />
+              <p className="text-xs text-muted-foreground mt-1">Média dos 6 indicadores</p>
             </CardContent>
           </Card>
         </div>
@@ -299,7 +326,7 @@ export default function DashboardEmpresa() {
           <Card>
             <CardHeader>
               <CardTitle>Radar de Indicadores</CardTitle>
-              <CardDescription>Média dos 5 indicadores da empresa</CardDescription>
+              <CardDescription>Média dos 6 indicadores da empresa</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -377,7 +404,7 @@ export default function DashboardEmpresa() {
                   </DialogHeader>
                   <div className="space-y-4 text-sm">
                     <p className="text-muted-foreground">
-                      A nota final de cada aluno é calculada com base em <strong>5 indicadores</strong>, cada um com peso de <strong>20%</strong>:
+                      A Performance Geral de cada aluno é calculada com base em <strong>6 indicadores</strong>, cada um com peso igual:
                     </p>
                     
                     <div className="space-y-3">
@@ -409,41 +436,49 @@ export default function DashboardEmpresa() {
                         <span className="font-bold text-purple-600">4.</span>
                         <div>
                           <p className="font-medium">Performance de Competências</p>
-                          <p className="text-xs text-muted-foreground">Fonte: Relatório de Performance (notas das competências ≥ 7 = aprovado)</p>
+                          <p className="text-xs text-muted-foreground">% de aulas concluídas (somente ciclos finalizados)</p>
                         </div>
                       </div>
                       
+                      <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
+                        <span className="font-bold text-red-600">5.</span>
+                        <div>
+                          <p className="font-medium">Performance de Aprendizado</p>
+                          <p className="text-xs text-muted-foreground">Média das notas das provas por aula (somente ciclos finalizados)</p>
+                        </div>
+                      </div>
+
                       <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg">
-                        <span className="font-bold text-orange-600">5.</span>
+                        <span className="font-bold text-orange-600">6.</span>
                         <div>
                           <p className="font-medium">Participação em Eventos</p>
-                          <p className="text-xs text-muted-foreground">Fonte: Planilhas de Eventos (coluna "Status Presença" - Presente/Ausente)</p>
+                          <p className="text-xs text-muted-foreground">Fonte: Planilhas de Eventos (Presente/Ausente)</p>
                         </div>
                       </div>
                     </div>
                     
                     <div className="border-t pt-4">
-                      <p className="font-medium mb-2">Classificação por Estágio:</p>
+                      <p className="font-medium mb-2">Classificação por Estágio (Performance Geral %):</p>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="flex items-center gap-2">
                           <span className="w-3 h-3 rounded-full bg-green-600"></span>
-                          <span><strong>Excelência:</strong> 9.0 - 10.0</span>
+                          <span><strong>Excelência:</strong> 90-100%</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="w-3 h-3 rounded-full bg-blue-600"></span>
-                          <span><strong>Avançado:</strong> 7.0 - 8.9</span>
+                          <span><strong>Avançado:</strong> 70-89%</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
-                          <span><strong>Intermediário:</strong> 5.0 - 6.9</span>
+                          <span><strong>Intermediário:</strong> 50-69%</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-                          <span><strong>Básico:</strong> 3.0 - 4.9</span>
+                          <span><strong>Básico:</strong> 30-49%</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                          <span><strong>Inicial:</strong> 0.0 - 2.9</span>
+                          <span><strong>Inicial:</strong> 0-29%</span>
                         </div>
                       </div>
                     </div>
@@ -470,11 +505,10 @@ export default function DashboardEmpresa() {
                     </div>
                     <div className="text-right">
                       <p className={`font-bold ${
-                        aluno.notaFinal >= 7 ? 'text-green-600' : 
-                        aluno.notaFinal >= 5 ? 'text-yellow-600' : 'text-red-500'
+                        (aluno.performanceGeral || aluno.notaFinal * 10) >= 70 ? 'text-green-600' : 
+                        (aluno.performanceGeral || aluno.notaFinal * 10) >= 50 ? 'text-yellow-600' : 'text-red-500'
                       }`}>
-                        {aluno.notaFinal.toFixed(1)}
-                      </p>
+                        {(aluno.performanceGeral || aluno.notaFinal * 10).toFixed(0)}%                      </p>
                       <p className="text-xs text-muted-foreground">{aluno.classificacao}</p>
                     </div>
                   </div>

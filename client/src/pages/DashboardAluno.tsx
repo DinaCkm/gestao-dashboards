@@ -18,8 +18,14 @@ import {
   XCircle,
   Clock,
   BarChart3,
-  GraduationCap
+  GraduationCap,
+  Zap,
+  PartyPopper,
+  Info,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function DashboardAluno() {
   const [selectedAlunoId, setSelectedAlunoId] = useState<number | null>(null);
@@ -173,9 +179,9 @@ export default function DashboardAluno() {
                         <span className="font-semibold">{performanceData.indicadores.classificacao}</span>
                       </div>
                       <p className="text-2xl font-bold text-gray-900 mt-2">
-                        {performanceData.indicadores.notaFinal.toFixed(1)}
+                        {(performanceData.indicadores.performanceGeral || 0).toFixed(0)}%
                       </p>
-                      <p className="text-sm text-gray-500">Nota Final</p>
+                      <p className="text-sm text-gray-500">Performance Geral</p>
                     </div>
                   )}
                 </div>
@@ -200,8 +206,31 @@ export default function DashboardAluno() {
                   </Card>
                 ) : performanceData ? (
                   <>
-                    {/* Cards de Indicadores */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    {/* Card Performance Geral (destaque) */}
+                    <Card className="border-2 border-[#1B3A5D]">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="h-12 w-12 rounded-lg bg-[#1B3A5D] flex items-center justify-center">
+                              <Target className="h-6 w-6 text-white" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Ind. 7: Performance Geral</p>
+                              <p className="text-3xl font-bold text-[#1B3A5D]">{(performanceData.indicadores.performanceGeral || 0).toFixed(0)}%</p>
+                            </div>
+                          </div>
+                          <div className={`px-4 py-2 rounded-full ${getEstagioColor(performanceData.indicadores.classificacao)} text-white font-semibold`}>
+                            {performanceData.indicadores.classificacao}
+                          </div>
+                        </div>
+                        <Progress value={performanceData.indicadores.performanceGeral || 0} className="mt-3 h-3" />
+                        <p className="text-xs text-gray-400 mt-2">Média dos 6 indicadores abaixo (peso igual)</p>
+                      </CardContent>
+                    </Card>
+
+                    {/* 6 Indicadores individuais */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Ind 1 - Mentorias */}
                       <Card>
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
@@ -209,14 +238,18 @@ export default function DashboardAluno() {
                               <Calendar className="h-5 w-5 text-blue-600" />
                             </div>
                             <div>
-                              <p className="text-sm text-gray-500">Mentorias</p>
+                              <p className="text-sm text-gray-500">Ind. 1: Mentorias</p>
                               <p className="text-xl font-bold">{performanceData.indicadores.participacaoMentorias.toFixed(0)}%</p>
                             </div>
                           </div>
                           <Progress value={performanceData.indicadores.participacaoMentorias} className="mt-3 h-2" />
+                          <p className="text-xs text-gray-400 mt-2">
+                            {performanceData.indicadores.mentoriasPresente || 0} presenças de {performanceData.indicadores.totalMentorias || 0} sessões
+                          </p>
                         </CardContent>
                       </Card>
 
+                      {/* Ind 2 - Atividades */}
                       <Card>
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
@@ -224,29 +257,33 @@ export default function DashboardAluno() {
                               <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                             </div>
                             <div>
-                              <p className="text-sm text-gray-500">Atividades</p>
+                              <p className="text-sm text-gray-500">Ind. 2: Atividades</p>
                               <p className="text-xl font-bold">{performanceData.indicadores.atividadesPraticas.toFixed(0)}%</p>
                             </div>
                           </div>
                           <Progress value={performanceData.indicadores.atividadesPraticas} className="mt-3 h-2" />
+                          <p className="text-xs text-gray-400 mt-2">1ª mentoria (Assessment) excluída do cálculo</p>
                         </CardContent>
                       </Card>
 
+                      {/* Ind 3 - Engajamento */}
                       <Card>
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                              <TrendingUp className="h-5 w-5 text-amber-600" />
+                              <Zap className="h-5 w-5 text-amber-600" />
                             </div>
                             <div>
-                              <p className="text-sm text-gray-500">Engajamento</p>
+                              <p className="text-sm text-gray-500">Ind. 3: Engajamento</p>
                               <p className="text-xl font-bold">{performanceData.indicadores.engajamento.toFixed(0)}%</p>
                             </div>
                           </div>
                           <Progress value={performanceData.indicadores.engajamento} className="mt-3 h-2" />
+                          <p className="text-xs text-gray-400 mt-2">Média de: presença + atividades + nota mentora</p>
                         </CardContent>
                       </Card>
 
+                      {/* Ind 4 - Competências */}
                       <Card>
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
@@ -254,70 +291,51 @@ export default function DashboardAluno() {
                               <BookOpen className="h-5 w-5 text-purple-600" />
                             </div>
                             <div>
-                              <p className="text-sm text-gray-500">Competências</p>
+                              <p className="text-sm text-gray-500">Ind. 4: Competências</p>
                               <p className="text-xl font-bold">{performanceData.indicadores.performanceCompetencias.toFixed(0)}%</p>
                             </div>
                           </div>
                           <Progress value={performanceData.indicadores.performanceCompetencias} className="mt-3 h-2" />
+                          <p className="text-xs text-gray-400 mt-2">% aulas concluídas (ciclos finalizados)</p>
                         </CardContent>
                       </Card>
 
+                      {/* Ind 5 - Aprendizado */}
+                      <Card>
+                        <CardContent className="pt-6">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center">
+                              <GraduationCap className="h-5 w-5 text-red-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-500">Ind. 5: Aprendizado</p>
+                              <p className="text-xl font-bold">{(performanceData.indicadores.performanceAprendizado || 0).toFixed(0)}%</p>
+                            </div>
+                          </div>
+                          <Progress value={performanceData.indicadores.performanceAprendizado || 0} className="mt-3 h-2" />
+                          <p className="text-xs text-gray-400 mt-2">Média das notas das provas (ciclos finalizados)</p>
+                        </CardContent>
+                      </Card>
+
+                      {/* Ind 6 - Eventos */}
                       <Card>
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center">
-                              <Users className="h-5 w-5 text-rose-600" />
+                              <PartyPopper className="h-5 w-5 text-rose-600" />
                             </div>
                             <div>
-                              <p className="text-sm text-gray-500">Eventos</p>
+                              <p className="text-sm text-gray-500">Ind. 6: Eventos</p>
                               <p className="text-xl font-bold">{performanceData.indicadores.participacaoEventos.toFixed(0)}%</p>
                             </div>
                           </div>
                           <Progress value={performanceData.indicadores.participacaoEventos} className="mt-3 h-2" />
+                          <p className="text-xs text-gray-400 mt-2">
+                            {performanceData.indicadores.eventosPresente || 0} presenças de {performanceData.indicadores.totalEventos || 0} eventos
+                          </p>
                         </CardContent>
                       </Card>
                     </div>
-
-                    {/* Performance Filtrada */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Target className="h-5 w-5 text-[#E87722]" />
-                          Performance Filtrada (Plano Individual)
-                        </CardTitle>
-                        <CardDescription>
-                          Indicadores calculados apenas com as competências obrigatórias do plano individual
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div className="text-center p-4 bg-gray-50 rounded-lg">
-                            <p className="text-3xl font-bold text-[#1B3A5D]">
-                              {performanceData.planoIndividual.totalCompetencias}
-                            </p>
-                            <p className="text-sm text-gray-500">Total Competências</p>
-                          </div>
-                          <div className="text-center p-4 bg-emerald-50 rounded-lg">
-                            <p className="text-3xl font-bold text-emerald-600">
-                              {performanceData.planoIndividual.competenciasAprovadas}
-                            </p>
-                            <p className="text-sm text-gray-500">Aprovadas (≥7)</p>
-                          </div>
-                          <div className="text-center p-4 bg-blue-50 rounded-lg">
-                            <p className="text-3xl font-bold text-blue-600">
-                              {performanceData.planoIndividual.percentualAprovacao.toFixed(0)}%
-                            </p>
-                            <p className="text-sm text-gray-500">% Aprovação</p>
-                          </div>
-                          <div className="text-center p-4 bg-amber-50 rounded-lg">
-                            <p className="text-3xl font-bold text-amber-600">
-                              {performanceData.planoIndividual.mediaNotas.toFixed(1)}
-                            </p>
-                            <p className="text-sm text-gray-500">Média Notas</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
                   </>
                 ) : (
                   <Card>

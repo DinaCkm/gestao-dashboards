@@ -69,8 +69,7 @@ const allMenuItems: MenuItem[] = [
   { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"] },
   
   // === ALUNO INDIVIDUAL ===
-  { icon: User, label: "Meu Dashboard", path: "/", roles: ["user"] },
-  { icon: GraduationCap, label: "Dashboard Aluno", path: "/dashboard/aluno", roles: ["admin"] },
+  { icon: User, label: "Meu Dashboard", path: "/meu-dashboard", roles: ["user"] },
   
   // === CADASTROS ===
   { icon: Users, label: "Cadastros", path: "/cadastros", roles: ["admin"] },
