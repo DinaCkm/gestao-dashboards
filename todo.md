@@ -384,7 +384,7 @@
   - Define data_inicio e data_fim de liberação de cada competência
   - Preenchida pela mentora durante o Assessment
   - Usada para filtrar quais competências entram no cálculo do Indicador 4
-- [ ] Criar interface para mentora definir períodos de liberação das competências (UI pendente)
+- [x] Criar interface para mentora definir períodos de liberação das competências
 - [x] Ajustar cálculo do Indicador 4 para respeitar períodos de liberação
 
 ### Indicador 5 — Performance de Aprendizado (Notas das Provas)
@@ -424,7 +424,7 @@
 ### Implementação
 - [x] Criar tabela `execucao_trilha` no schema (ciclos com datas)
 - [x] Criar endpoints CRUD para gerenciar ciclos
-- [ ] Criar interface para mentora definir ciclos (competências + datas) — UI pendente
+- [x] Criar interface para mentora definir ciclos (competências + datas)
 - [x] Refatorar indicatorsCalculator para 7 indicadores (6 individuais + Performance Geral)
 - [x] Indicador 3: combinar presença + atividades + nota mentora (média dos 3)
 - [x] Indicador 4: % aulas concluídas (só ciclos finalizados)
@@ -446,4 +446,13 @@
 
 ### Correção Menu Admin (12/02/2026)
 - [x] Remover "Meu Dashboard" e "Dashboard Aluno" do menu do administrador (são páginas do perfil do aluno, não do admin)
+
+
+## UI para Mentora Definir Ciclos de Competências (12/02/2026)
+- [x] Criar seção de gestão de ciclos na página Plano Individual
+- [x] Formulário para criar novo ciclo (nome, data início, data fim)
+- [x] Seleção de competências do plano individual para vincular ao ciclo
+- [x] Lista de ciclos existentes com status (futuro/em andamento/finalizado)
+- [x] Edição e exclusão de ciclos
+- [x] Indicação visual de cores (verde/vermelho/azul) por status do ciclo
 

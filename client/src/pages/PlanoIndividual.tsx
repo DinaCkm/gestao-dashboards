@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { Search, Plus, Trash2, BookOpen, Target, CheckCircle2, Clock, AlertCircle, Users, Building2, TrendingUp, Award, BarChart3 } from "lucide-react";
+import { Search, Plus, Trash2, BookOpen, Target, CheckCircle2, Clock, AlertCircle, Users, Building2, TrendingUp, Award, BarChart3, Calendar, Edit2, ChevronRight, Circle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function PlanoIndividual() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,6 +26,16 @@ export default function PlanoIndividual() {
   const [selectedCompetenciasLote, setSelectedCompetenciasLote] = useState<number[]>([]);
   const [selectedTrilhaLote, setSelectedTrilhaLote] = useState<string>("all");
 
+  // Ciclos state
+  const [isCicloDialogOpen, setIsCicloDialogOpen] = useState(false);
+  const [editingCiclo, setEditingCiclo] = useState<any>(null);
+  const [cicloNome, setCicloNome] = useState("");
+  const [cicloDataInicio, setCicloDataInicio] = useState("");
+  const [cicloDataFim, setCicloDataFim] = useState("");
+  const [cicloObservacoes, setCicloObservacoes] = useState("");
+  const [cicloCompetenciasSelecionadas, setCicloCompetenciasSelecionadas] = useState<number[]>([]);
+  const [cicloTrilhaFiltro, setCicloTrilhaFiltro] = useState<string>("all");
+
   // Queries
   const { data: alunosWithPlano, isLoading: loadingAlunos, refetch: refetchAlunos } = trpc.planoIndividual.alunosWithPlano.useQuery();
   const { data: empresas } = trpc.indicadores.empresas.useQuery();
@@ -36,7 +47,13 @@ export default function PlanoIndividual() {
   const { data: trilhas } = trpc.trilhas.list.useQuery();
   const { data: turmas } = trpc.turmas.list.useQuery();
   
-  // Query de performance filtrada (BLOCO 3)
+  // Query de ciclos do aluno selecionado
+  const { data: ciclosAluno, refetch: refetchCiclos } = trpc.ciclos.porAluno.useQuery(
+    { alunoId: selectedAluno! },
+    { enabled: !!selectedAluno }
+  );
+
+  // Query de performance filtrada
   const { data: performanceFiltrada } = trpc.indicadores.performanceFiltrada.useQuery(
     { alunoId: selectedAluno! },
     { enabled: !!selectedAluno }
@@ -91,6 +108,39 @@ export default function PlanoIndividual() {
     }
   });
 
+  // Ciclos mutations
+  const criarCicloMutation = trpc.ciclos.criar.useMutation({
+    onSuccess: () => {
+      toast.success("Ciclo criado com sucesso!");
+      refetchCiclos();
+      resetCicloForm();
+    },
+    onError: (error) => {
+      toast.error(`Erro ao criar ciclo: ${error.message}`);
+    }
+  });
+
+  const atualizarCicloMutation = trpc.ciclos.atualizar.useMutation({
+    onSuccess: () => {
+      toast.success("Ciclo atualizado com sucesso!");
+      refetchCiclos();
+      resetCicloForm();
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar ciclo: ${error.message}`);
+    }
+  });
+
+  const excluirCicloMutation = trpc.ciclos.excluir.useMutation({
+    onSuccess: () => {
+      toast.success("Ciclo excluído com sucesso!");
+      refetchCiclos();
+    },
+    onError: (error) => {
+      toast.error(`Erro ao excluir ciclo: ${error.message}`);
+    }
+  });
+
   // Filtrar alunos
   const filteredAlunos = alunosWithPlano?.filter(aluno => {
     const matchesSearch = aluno.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,6 +163,22 @@ export default function PlanoIndividual() {
     acc[trilha].push(item);
     return acc;
   }, {} as Record<string, typeof planoAluno>) || {};
+
+  // Competências do plano filtradas para o dialog de ciclo
+  const competenciasParaCiclo = useMemo(() => {
+    if (!planoAluno) return [];
+    const filtered = planoAluno.filter(p => {
+      const matchesTrilha = cicloTrilhaFiltro === "all" || String(p.trilhaId) === cicloTrilhaFiltro;
+      return matchesTrilha;
+    });
+    return filtered;
+  }, [planoAluno, cicloTrilhaFiltro]);
+
+  // Filtrar competências para atribuição em lote
+  const competenciasLoteDisponiveis = competencias?.filter(comp => {
+    const matchesTrilha = selectedTrilhaLote === "all" || comp.trilhaId === parseInt(selectedTrilhaLote);
+    return matchesTrilha;
+  }) || [];
 
   const handleAddCompetencias = () => {
     if (!selectedAluno || selectedCompetencias.length === 0) return;
@@ -146,12 +212,6 @@ export default function PlanoIndividual() {
 
   const selectedAlunoData = alunosWithPlano?.find(a => a.id === selectedAluno);
 
-  // Filtrar competências para atribuição em lote
-  const competenciasLoteDisponiveis = competencias?.filter(comp => {
-    const matchesTrilha = selectedTrilhaLote === "all" || comp.trilhaId === parseInt(selectedTrilhaLote);
-    return matchesTrilha;
-  }) || [];
-
   const handleAddToTurma = () => {
     if (!selectedTurma || selectedCompetenciasLote.length === 0) {
       toast.error("Selecione uma turma e pelo menos uma competência");
@@ -163,6 +223,83 @@ export default function PlanoIndividual() {
     });
   };
 
+  // Ciclos helpers
+  const resetCicloForm = () => {
+    setIsCicloDialogOpen(false);
+    setEditingCiclo(null);
+    setCicloNome("");
+    setCicloDataInicio("");
+    setCicloDataFim("");
+    setCicloObservacoes("");
+    setCicloCompetenciasSelecionadas([]);
+    setCicloTrilhaFiltro("all");
+  };
+
+  const openEditCiclo = (ciclo: any) => {
+    setEditingCiclo(ciclo);
+    setCicloNome(ciclo.nomeCiclo);
+    setCicloDataInicio(typeof ciclo.dataInicio === 'string' ? ciclo.dataInicio.split('T')[0] : new Date(ciclo.dataInicio).toISOString().split('T')[0]);
+    setCicloDataFim(typeof ciclo.dataFim === 'string' ? ciclo.dataFim.split('T')[0] : new Date(ciclo.dataFim).toISOString().split('T')[0]);
+    setCicloObservacoes(ciclo.observacoes || "");
+    setCicloCompetenciasSelecionadas(ciclo.competenciaIds || []);
+    setIsCicloDialogOpen(true);
+  };
+
+  const handleSaveCiclo = () => {
+    if (!cicloNome || !cicloDataInicio || !cicloDataFim || cicloCompetenciasSelecionadas.length === 0) {
+      toast.error("Preencha todos os campos obrigatórios e selecione pelo menos uma competência");
+      return;
+    }
+    if (new Date(cicloDataFim) <= new Date(cicloDataInicio)) {
+      toast.error("A data de fim deve ser posterior à data de início");
+      return;
+    }
+
+    if (editingCiclo) {
+      atualizarCicloMutation.mutate({
+        cicloId: editingCiclo.id,
+        nomeCiclo: cicloNome,
+        dataInicio: cicloDataInicio,
+        dataFim: cicloDataFim,
+        competenciaIds: cicloCompetenciasSelecionadas,
+        observacoes: cicloObservacoes || undefined,
+      });
+    } else {
+      criarCicloMutation.mutate({
+        alunoId: selectedAluno!,
+        nomeCiclo: cicloNome,
+        dataInicio: cicloDataInicio,
+        dataFim: cicloDataFim,
+        competenciaIds: cicloCompetenciasSelecionadas,
+        observacoes: cicloObservacoes || undefined,
+      });
+    }
+  };
+
+  const handleExcluirCiclo = (cicloId: number, nomeCiclo: string) => {
+    if (confirm(`Tem certeza que deseja excluir o ciclo "${nomeCiclo}"? Esta ação não pode ser desfeita.`)) {
+      excluirCicloMutation.mutate({ cicloId });
+    }
+  };
+
+  const getCicloStatus = (ciclo: any) => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const inicio = new Date(ciclo.dataInicio);
+    inicio.setHours(0, 0, 0, 0);
+    const fim = new Date(ciclo.dataFim);
+    fim.setHours(0, 0, 0, 0);
+
+    if (hoje < inicio) return { label: "Futuro", color: "bg-slate-400", textColor: "text-slate-600", borderColor: "border-slate-300" };
+    if (hoje > fim) return { label: "Finalizado", color: "bg-green-500", textColor: "text-green-700", borderColor: "border-green-300" };
+    return { label: "Em Andamento", color: "bg-blue-500", textColor: "text-blue-700", borderColor: "border-blue-300" };
+  };
+
+  const formatDate = (date: string | Date) => {
+    const d = new Date(date);
+    return d.toLocaleDateString('pt-BR');
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -170,7 +307,7 @@ export default function PlanoIndividual() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">Plano Individual</h1>
-            <p className="text-slate-600">Defina as competências obrigatórias para cada aluno</p>
+            <p className="text-slate-600">Defina as competências obrigatórias e ciclos de execução para cada aluno</p>
           </div>
           <Dialog open={isLoteDialogOpen} onOpenChange={setIsLoteDialogOpen}>
             <DialogTrigger asChild>
@@ -326,7 +463,6 @@ export default function PlanoIndividual() {
               <CardDescription>Selecione um aluno para gerenciar seu plano</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Filtros */}
               <div className="space-y-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -350,7 +486,6 @@ export default function PlanoIndividual() {
                 </Select>
               </div>
 
-              {/* Lista */}
               <div className="max-h-[500px] overflow-y-auto space-y-2">
                 {loadingAlunos ? (
                   <p className="text-center text-slate-500 py-4">Carregando...</p>
@@ -487,72 +622,370 @@ export default function PlanoIndividual() {
                   <Target className="w-12 h-12 mb-4 opacity-50" />
                   <p>Selecione um aluno na lista ao lado</p>
                 </div>
-              ) : !planoAluno || planoAluno.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-500">
-                  <BookOpen className="w-12 h-12 mb-4 opacity-50" />
-                  <p>Nenhuma competência definida</p>
-                  <p className="text-sm">Clique em "Adicionar Competências" para começar</p>
-                </div>
               ) : (
-                <div className="space-y-6">
-                  {Object.entries(planoAgrupado).map(([trilha, items]) => (
-                    <div key={trilha}>
-                      <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                        <BookOpen className="w-4 h-4" />
-                        {trilha}
-                        <Badge variant="outline" className="ml-2">{items?.length || 0}</Badge>
-                      </h3>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Competência</TableHead>
-                            <TableHead className="w-32">Status</TableHead>
-                            <TableHead className="w-24">Meta</TableHead>
-                            <TableHead className="w-24">Ações</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {items?.map(item => (
-                            <TableRow key={item.id}>
-                              <TableCell>
-                                <div>
-                                  <p className="font-medium">{item.competenciaNome}</p>
-                                  {item.competenciaCodigo && (
-                                    <p className="text-xs text-slate-500">{item.competenciaCodigo}</p>
+                <Tabs defaultValue="competencias" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="competencias">Competências</TabsTrigger>
+                    <TabsTrigger value="ciclos">
+                      Ciclos de Execução
+                      {ciclosAluno && ciclosAluno.length > 0 && (
+                        <Badge variant="secondary" className="ml-2 text-xs">{ciclosAluno.length}</Badge>
+                      )}
+                    </TabsTrigger>
+                  </TabsList>
+
+                  {/* Tab: Competências */}
+                  <TabsContent value="competencias">
+                    {!planoAluno || planoAluno.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                        <BookOpen className="w-12 h-12 mb-4 opacity-50" />
+                        <p>Nenhuma competência definida</p>
+                        <p className="text-sm">Clique em "Adicionar Competências" para começar</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {Object.entries(planoAgrupado).map(([trilha, items]) => (
+                          <div key={trilha}>
+                            <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                              <BookOpen className="w-4 h-4" />
+                              {trilha}
+                              <Badge variant="outline" className="ml-2">{items?.length || 0}</Badge>
+                            </h3>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Competência</TableHead>
+                                  <TableHead className="w-32">Status</TableHead>
+                                  <TableHead className="w-24">Meta</TableHead>
+                                  <TableHead className="w-24">Ações</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {items?.map(item => (
+                                  <TableRow key={item.id}>
+                                    <TableCell>
+                                      <div>
+                                        <p className="font-medium">{item.competenciaNome}</p>
+                                        {item.competenciaCodigo && (
+                                          <p className="text-xs text-slate-500">{item.competenciaCodigo}</p>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <button onClick={() => handleToggleStatus(item.id, item.status)}>
+                                        {getStatusBadge(item.status)}
+                                      </button>
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className="text-slate-600">&ge; {item.metaNota}</span>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleRemove(item.id)}
+                                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Tab: Ciclos de Execução */}
+                  <TabsContent value="ciclos">
+                    <div className="space-y-4">
+                      {/* Header dos Ciclos */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-slate-600">
+                            Defina os ciclos de execução com períodos e competências que o aluno deve cumprir.
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            resetCicloForm();
+                            setIsCicloDialogOpen(true);
+                          }}
+                          disabled={!planoAluno || planoAluno.length === 0}
+                          className="bg-[#E87722] hover:bg-[#d06a1e]"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Novo Ciclo
+                        </Button>
+                      </div>
+
+                      {(!planoAluno || planoAluno.length === 0) && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+                          <AlertCircle className="w-4 h-4 inline mr-2" />
+                          Adicione competências ao plano do aluno antes de criar ciclos de execução.
+                        </div>
+                      )}
+
+                      {/* Lista de Ciclos */}
+                      {!ciclosAluno || ciclosAluno.length === 0 ? (
+                        planoAluno && planoAluno.length > 0 && (
+                          <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                            <Calendar className="w-12 h-12 mb-4 opacity-50" />
+                            <p>Nenhum ciclo de execução definido</p>
+                            <p className="text-sm">Clique em "Novo Ciclo" para definir os períodos de execução</p>
+                          </div>
+                        )
+                      ) : (
+                        <div className="space-y-4">
+                          {/* Visualização do Caminho / Timeline */}
+                          <div className="relative">
+                            {ciclosAluno.map((ciclo, index) => {
+                              const status = getCicloStatus(ciclo);
+                              return (
+                                <div key={ciclo.id} className="relative flex gap-4 pb-6">
+                                  {/* Linha vertical conectora */}
+                                  {index < ciclosAluno.length - 1 && (
+                                    <div className="absolute left-[19px] top-10 bottom-0 w-0.5 bg-slate-200" />
                                   )}
+                                  
+                                  {/* Indicador de status */}
+                                  <div className="flex-shrink-0 mt-1">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${status.color} text-white`}>
+                                      {status.label === "Finalizado" ? (
+                                        <CheckCircle2 className="w-5 h-5" />
+                                      ) : status.label === "Em Andamento" ? (
+                                        <Clock className="w-5 h-5" />
+                                      ) : (
+                                        <Circle className="w-5 h-5" />
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Card do Ciclo */}
+                                  <div className={`flex-1 border rounded-lg p-4 ${status.borderColor} bg-white`}>
+                                    <div className="flex items-start justify-between mb-3">
+                                      <div>
+                                        <div className="flex items-center gap-2">
+                                          <h4 className="font-semibold text-slate-800">{ciclo.nomeCiclo}</h4>
+                                          <Badge className={`${status.color} text-white text-xs`}>
+                                            {status.label}
+                                          </Badge>
+                                        </div>
+                                        <p className="text-sm text-slate-500 mt-1">
+                                          <Calendar className="w-3 h-3 inline mr-1" />
+                                          {formatDate(ciclo.dataInicio)} até {formatDate(ciclo.dataFim)}
+                                        </p>
+                                        {ciclo.observacoes && (
+                                          <p className="text-sm text-slate-500 mt-1 italic">{ciclo.observacoes}</p>
+                                        )}
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => openEditCiclo(ciclo)}
+                                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                        >
+                                          <Edit2 className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleExcluirCiclo(ciclo.id, ciclo.nomeCiclo)}
+                                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+
+                                    {/* Competências do Ciclo */}
+                                    <div className="flex flex-wrap gap-2">
+                                      {ciclo.competencias?.map((comp: any) => (
+                                        <Badge key={comp.id} variant="outline" className="text-xs">
+                                          {comp.competenciaNome}
+                                          {comp.trilhaNome && (
+                                            <span className="text-slate-400 ml-1">({comp.trilhaNome})</span>
+                                          )}
+                                        </Badge>
+                                      ))}
+                                    </div>
+
+                                    {/* Info do ciclo */}
+                                    <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
+                                      <span>{ciclo.competencias?.length || 0} competência(s)</span>
+                                      {status.label === "Finalizado" && (
+                                        <span className="text-green-600 font-medium">
+                                          Entra no cálculo da Performance Geral
+                                        </span>
+                                      )}
+                                      {status.label === "Em Andamento" && (
+                                        <span className="text-blue-600 font-medium">
+                                          Não entra na Performance Geral (ciclo em andamento)
+                                        </span>
+                                      )}
+                                      {status.label === "Futuro" && (
+                                        <span className="text-slate-400">
+                                          Aguardando início
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                              </TableCell>
-                              <TableCell>
-                                <button onClick={() => handleToggleStatus(item.id, item.status)}>
-                                  {getStatusBadge(item.status)}
-                                </button>
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-slate-600">≥ {item.metaNota}</span>
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleRemove(item.id)}
-                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                              );
+                            })}
+                          </div>
+
+                          {/* Legenda */}
+                          <div className="flex items-center gap-6 text-xs text-slate-500 pt-2 border-t">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 rounded-full bg-green-500" />
+                              <span>Finalizado (entra na Performance Geral)</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 rounded-full bg-blue-500" />
+                              <span>Em Andamento (separado)</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 rounded-full bg-slate-400" />
+                              <span>Futuro (não entra no cálculo)</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  </TabsContent>
+                </Tabs>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Indicadores de Performance Filtrada - BLOCO 3 */}
+        {/* Dialog para Criar/Editar Ciclo */}
+        <Dialog open={isCicloDialogOpen} onOpenChange={(open) => { if (!open) resetCicloForm(); else setIsCicloDialogOpen(true); }}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingCiclo ? `Editar Ciclo: ${editingCiclo.nomeCiclo}` : "Novo Ciclo de Execução"}
+              </DialogTitle>
+              <DialogDescription>
+                Defina o período e as competências que o aluno deve cumprir neste ciclo.
+                Após o período finalizar, as competências deste ciclo entrarão no cálculo da Performance Geral.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              {/* Nome do Ciclo */}
+              <div>
+                <label className="text-sm font-medium block mb-1">Nome do Ciclo *</label>
+                <Input
+                  placeholder="Ex: Ciclo 1 - Competências Comportamentais"
+                  value={cicloNome}
+                  onChange={(e) => setCicloNome(e.target.value)}
+                />
+              </div>
+
+              {/* Datas */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium block mb-1">Data de Início *</label>
+                  <Input
+                    type="date"
+                    value={cicloDataInicio}
+                    onChange={(e) => setCicloDataInicio(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium block mb-1">Data de Fim *</label>
+                  <Input
+                    type="date"
+                    value={cicloDataFim}
+                    onChange={(e) => setCicloDataFim(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Observações */}
+              <div>
+                <label className="text-sm font-medium block mb-1">Observações</label>
+                <Input
+                  placeholder="Observações opcionais sobre este ciclo"
+                  value={cicloObservacoes}
+                  onChange={(e) => setCicloObservacoes(e.target.value)}
+                />
+              </div>
+
+              {/* Seleção de Competências */}
+              <div>
+                <label className="text-sm font-medium block mb-2">
+                  Competências do Ciclo * ({cicloCompetenciasSelecionadas.length} selecionadas)
+                </label>
+                
+                {/* Filtro por trilha */}
+                <Select value={cicloTrilhaFiltro} onValueChange={setCicloTrilhaFiltro}>
+                  <SelectTrigger className="mb-2">
+                    <SelectValue placeholder="Filtrar por trilha" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as trilhas</SelectItem>
+                    {trilhas?.map(trilha => (
+                      <SelectItem key={trilha.id} value={String(trilha.id)}>{trilha.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <div className="border rounded-lg max-h-60 overflow-y-auto p-2 space-y-1">
+                  {competenciasParaCiclo.length === 0 ? (
+                    <p className="text-center text-slate-500 py-4 text-sm">
+                      Nenhuma competência disponível no plano do aluno
+                    </p>
+                  ) : (
+                    competenciasParaCiclo.map(item => (
+                      <div key={item.competenciaId} className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded">
+                        <Checkbox
+                          checked={cicloCompetenciasSelecionadas.includes(item.competenciaId)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setCicloCompetenciasSelecionadas([...cicloCompetenciasSelecionadas, item.competenciaId]);
+                            } else {
+                              setCicloCompetenciasSelecionadas(cicloCompetenciasSelecionadas.filter(id => id !== item.competenciaId));
+                            }
+                          }}
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{item.competenciaNome}</p>
+                          <p className="text-xs text-slate-500">{item.trilhaNome || "Sem trilha"}</p>
+                        </div>
+                        {getStatusBadge(item.status)}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={resetCicloForm}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSaveCiclo}
+                disabled={criarCicloMutation.isPending || atualizarCicloMutation.isPending || !cicloNome || !cicloDataInicio || !cicloDataFim || cicloCompetenciasSelecionadas.length === 0}
+                className="bg-[#E87722] hover:bg-[#d06a1e]"
+              >
+                {criarCicloMutation.isPending || atualizarCicloMutation.isPending
+                  ? "Salvando..."
+                  : editingCiclo ? "Atualizar Ciclo" : "Criar Ciclo"
+                }
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Indicadores de Performance Filtrada */}
         {selectedAluno && performanceFiltrada && planoAluno && planoAluno.length > 0 && (
           <Card>
             <CardHeader>
@@ -566,14 +999,13 @@ export default function PlanoIndividual() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {/* Nota Final */}
                 <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <Award className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-800">Nota Final</span>
+                    <span className="text-sm font-medium text-blue-800">Performance Geral</span>
                   </div>
                   <p className="text-3xl font-bold text-blue-900">
-                    {performanceFiltrada.indicadores.notaFinal.toFixed(1)}
+                    {performanceFiltrada.indicadores.notaFinal.toFixed(1)}%
                   </p>
                   <Badge className={`mt-2 ${
                     performanceFiltrada.indicadores.classificacao === 'Excelência' ? 'bg-green-500' :
@@ -585,7 +1017,6 @@ export default function PlanoIndividual() {
                   </Badge>
                 </div>
 
-                {/* Competências Aprovadas */}
                 <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -599,7 +1030,6 @@ export default function PlanoIndividual() {
                   </p>
                 </div>
 
-                {/* Média das Notas */}
                 <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="w-5 h-5 text-purple-600" />
@@ -608,10 +1038,9 @@ export default function PlanoIndividual() {
                   <p className="text-3xl font-bold text-purple-900">
                     {performanceFiltrada.planoIndividual.mediaNotas.toFixed(1)}
                   </p>
-                  <p className="text-sm text-purple-700 mt-1">Meta: ≥ 7.0</p>
+                  <p className="text-sm text-purple-700 mt-1">Meta: &ge; 7.0</p>
                 </div>
 
-                {/* Participação Mentorias */}
                 <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="w-5 h-5 text-orange-600" />
@@ -626,12 +1055,9 @@ export default function PlanoIndividual() {
                 </div>
               </div>
 
-              {/* Barra de Progresso dos 7 Indicadores (6 individuais + Performance Geral) */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-slate-700">7 Indicadores de Performance</h4>
-                
                 <div className="space-y-3">
-                  {/* Indicador 1 */}
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm text-slate-600">1. Participação nas Mentorias</span>
@@ -639,8 +1065,6 @@ export default function PlanoIndividual() {
                     </div>
                     <Progress value={performanceFiltrada.indicadores.participacaoMentorias} className="h-2" />
                   </div>
-                  
-                  {/* Indicador 2 */}
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm text-slate-600">2. Atividades Práticas</span>
@@ -648,8 +1072,6 @@ export default function PlanoIndividual() {
                     </div>
                     <Progress value={performanceFiltrada.indicadores.atividadesPraticas} className="h-2" />
                   </div>
-                  
-                  {/* Indicador 3 */}
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm text-slate-600">3. Evolução / Engajamento</span>
@@ -657,17 +1079,13 @@ export default function PlanoIndividual() {
                     </div>
                     <Progress value={performanceFiltrada.indicadores.engajamento} className="h-2" />
                   </div>
-                  
-                  {/* Indicador 4 */}
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm text-slate-600">4. Performance das Competências</span>
-                      <span className="text-sm font-medium text-blue-600 font-bold">{performanceFiltrada.indicadores.performanceCompetencias.toFixed(0)}%</span>
+                      <span className="text-sm font-medium">{performanceFiltrada.indicadores.performanceCompetencias.toFixed(0)}%</span>
                     </div>
-                    <Progress value={performanceFiltrada.indicadores.performanceCompetencias} className="h-2 bg-blue-100" />
+                    <Progress value={performanceFiltrada.indicadores.performanceCompetencias} className="h-2" />
                   </div>
-                  
-                  {/* Indicador 5 */}
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm text-slate-600">5. Performance de Aprendizado</span>
@@ -675,8 +1093,6 @@ export default function PlanoIndividual() {
                     </div>
                     <Progress value={(performanceFiltrada.indicadores as any).performanceAprendizado ?? performanceFiltrada.indicadores.performanceCompetencias} className="h-2" />
                   </div>
-                  
-                  {/* Indicador 6 */}
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm text-slate-600">6. Participação em Eventos</span>
@@ -684,8 +1100,6 @@ export default function PlanoIndividual() {
                     </div>
                     <Progress value={performanceFiltrada.indicadores.participacaoEventos} className="h-2" />
                   </div>
-
-                  {/* Indicador 7 - Performance Geral */}
                   <div className="pt-3 border-t">
                     <div className="flex justify-between mb-1">
                       <span className="text-sm font-semibold text-slate-800">7. Performance Geral (Média dos 6)</span>
