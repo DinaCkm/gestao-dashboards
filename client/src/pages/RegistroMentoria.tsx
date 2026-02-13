@@ -191,8 +191,11 @@ export default function RegistroMentoria() {
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Aluno</label>
                 <Select 
-                  value={selectedAlunoId ? String(selectedAlunoId) : ""} 
-                  onValueChange={(v) => setSelectedAlunoId(parseInt(v))}
+                  value={selectedAlunoId !== null ? String(selectedAlunoId) : undefined} 
+                  onValueChange={(v) => {
+                    const id = parseInt(v);
+                    if (!isNaN(id)) setSelectedAlunoId(id);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um aluno" />

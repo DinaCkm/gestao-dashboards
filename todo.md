@@ -647,3 +647,4 @@
 - [x] BUG: Filtros de Empresa e Aluno nas páginas Registro de Mentoria e Assessment/PDI - código corrigido, precisa publicar para a Adriana ver
 - [x] BUG RECORRENTE: Dropdown de empresa não abre para mentora Adriana - resolvido removendo filtro de empresa da área do mentor
 - [x] Remover filtro de empresa da área do mentor (Registro de Mentoria e Assessment/PDI) - mentor vê apenas lista de alunos
+- [x] BUG: Ao selecionar aluno no filtro, nada acontece - corrigido: Select usava value="" em vez de undefined (RegistroMentoria + DashboardAluno)
