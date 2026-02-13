@@ -634,3 +634,10 @@
 - [x] Ordenar listas de alunos, mentores e gerentes: ativos primeiro, inativos no final
 - [x] Limpar registros de teste restantes ("Primeiro usuário 177...") do banco - 6 registros removidos
 - [x] BUG: Login da mentora Adriana não funciona - authenticateByEmailCpf agora busca também na tabela consultors e cria registro em users automaticamente
+
+## Correção Números Dashboard do Mentor (13/02/2026)
+- [x] Investigar sessões órfãs inflando números do dashboard do mentor (1.014 sessões referenciando 99 alunos inexistentes)
+- [x] Limpar sessões de mentoria órfãs (alunos que não existem mais na tabela alunos - importação antiga substituída) - 1.014 sessões removidas
+- [x] Corrigir números do painel da Adriana Deus: 46 mentorias → 26 válidas, 30 alunos → 16 válidos
+- [x] BUG: Filtro de empresa não seleciona na página Registro de Mentoria do mentor - agora mostra apenas empresas do mentor
+- [x] BUG: Filtro de alunos mostra todos os alunos do sistema - agora filtra por mentor logado (endpoints byConsultor e programsByConsultor)

@@ -50,11 +50,23 @@ function AssessmentContent() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [expandedPdiId, setExpandedPdiId] = useState<number | null>(null);
 
-  // Data queries
-  const { data: programs = [] } = trpc.programs.list.useQuery();
-  const { data: alunos = [] } = trpc.alunos.list.useQuery(
-    selectedProgramId !== "all" ? { programId: parseInt(selectedProgramId) } : undefined
+  // Data queries - filtrar por mentor logado quando não é admin
+  const { data: allPrograms = [] } = trpc.programs.list.useQuery(undefined, { enabled: isAdmin });
+  const { data: mentorPrograms = [] } = trpc.alunos.programsByConsultor.useQuery(
+    { consultorId: userConsultorId! },
+    { enabled: !!userConsultorId && !isAdmin }
   );
+  const programs = isAdmin ? allPrograms : mentorPrograms;
+
+  const { data: adminAlunos = [] } = trpc.alunos.list.useQuery(
+    selectedProgramId !== "all" ? { programId: parseInt(selectedProgramId) } : undefined,
+    { enabled: isAdmin }
+  );
+  const { data: mentorAlunos = [] } = trpc.alunos.byConsultor.useQuery(
+    { consultorId: userConsultorId!, programId: selectedProgramId !== "all" ? parseInt(selectedProgramId) : undefined },
+    { enabled: !!userConsultorId && !isAdmin }
+  );
+  const alunos = isAdmin ? adminAlunos : mentorAlunos;
   const { data: trilhas = [] } = trpc.trilhas.list.useQuery();
   const { data: mentores = [] } = trpc.mentor.list.useQuery();
 

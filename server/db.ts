@@ -540,6 +540,50 @@ export async function getAlunos(programId?: number): Promise<Aluno[]> {
   return await db.select().from(alunos).where(eq(alunos.isActive, 1));
 }
 
+export async function getAlunosByConsultor(consultorId: number, programId?: number): Promise<Aluno[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get distinct alunoIds from mentoring sessions for this consultor
+  const sessions = await db.select({ alunoId: mentoringSessions.alunoId })
+    .from(mentoringSessions)
+    .where(eq(mentoringSessions.consultorId, consultorId));
+  
+  const uniqueAlunoIds = Array.from(new Set(sessions.map(s => s.alunoId)));
+  if (uniqueAlunoIds.length === 0) return [];
+  
+  // Get alunos that match these IDs
+  const allAlunos = await db.select().from(alunos).where(eq(alunos.isActive, 1));
+  let result = allAlunos.filter(a => uniqueAlunoIds.includes(a.id));
+  
+  // Optionally filter by programId
+  if (programId) {
+    result = result.filter(a => a.programId === programId);
+  }
+  
+  return result;
+}
+
+export async function getProgramsByConsultor(consultorId: number): Promise<{ id: number; name: string }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get distinct programIds from alunos that have sessions with this consultor
+  const sessions = await db.select({ alunoId: mentoringSessions.alunoId })
+    .from(mentoringSessions)
+    .where(eq(mentoringSessions.consultorId, consultorId));
+  
+  const uniqueAlunoIds = Array.from(new Set(sessions.map(s => s.alunoId)));
+  if (uniqueAlunoIds.length === 0) return [];
+  
+  const allAlunos = await db.select().from(alunos).where(eq(alunos.isActive, 1));
+  const mentorAlunos = allAlunos.filter(a => uniqueAlunoIds.includes(a.id));
+  const programIds = Array.from(new Set(mentorAlunos.map(a => a.programId).filter(Boolean))) as number[];
+  
+  const programsList = await getPrograms();
+  return programsList.filter(p => programIds.includes(p.id)).map(p => ({ id: p.id, name: p.name }));
+}
+
 export async function getAlunoByExternalId(externalId: string): Promise<Aluno | undefined> {
   const db = await getDb();
   if (!db) return undefined;
@@ -767,14 +811,18 @@ export async function getConsultorStats(consultorId: number) {
   const alunosList = await getAlunos();
   const alunoMap = new Map(alunosList.map(a => [a.id, a]));
   
+  // Filter only valid sessions (aluno exists in alunos table)
+  const validSessions = sessions.filter(s => alunoMap.has(s.alunoId));
+  const validAlunoIds = Array.from(new Set(validSessions.map(s => s.alunoId)));
+  
   // Get programs
   const programsList = await getPrograms();
   const programMap = new Map(programsList.map(p => [p.id, p]));
   
-  // Calculate stats per program
+  // Calculate stats per program (only valid sessions)
   const statsByProgram: Record<string, { mentorias: number; alunos: Set<number>; datas: Set<string> }> = {};
   
-  for (const session of sessions) {
+  for (const session of validSessions) {
     const aluno = alunoMap.get(session.alunoId);
     if (!aluno) continue;
     
@@ -792,12 +840,12 @@ export async function getConsultorStats(consultorId: number) {
     }
   }
   
-  // Get aluno details
-  const alunosAtendidos = alunoIds.map(id => {
+  // Get aluno details (only valid alunos)
+  const alunosAtendidos = validAlunoIds.map(id => {
     const aluno = alunoMap.get(id);
     if (!aluno) return null;
     const program = aluno.programId ? programMap.get(aluno.programId) : null;
-    const alunoSessions = sessions.filter(s => s.alunoId === id);
+    const alunoSessions = validSessions.filter(s => s.alunoId === id);
     return {
       id: aluno.id,
       nome: aluno.name,
@@ -808,8 +856,8 @@ export async function getConsultorStats(consultorId: number) {
   }).filter(Boolean);
   
   return {
-    totalMentorias: sessions.length,
-    totalAlunos: alunoIds.length,
+    totalMentorias: validSessions.length,
+    totalAlunos: validAlunoIds.length,
     totalEmpresas: Object.keys(statsByProgram).length,
     porEmpresa: Object.entries(statsByProgram).map(([empresa, stats]) => ({
       empresa,
@@ -818,7 +866,7 @@ export async function getConsultorStats(consultorId: number) {
       datas: Array.from(stats.datas).sort()
     })),
     alunosAtendidos,
-    sessoes: sessions.map(s => {
+    sessoes: validSessions.map(s => {
       const aluno = alunoMap.get(s.alunoId);
       const program = aluno?.programId ? programMap.get(aluno.programId) : null;
       return {

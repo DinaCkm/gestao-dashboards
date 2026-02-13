@@ -750,6 +750,20 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getAlunosByTurma(input.turmaId);
       }),
+
+    // Alunos vinculados a um mentor (via sessões de mentoria)
+    byConsultor: protectedProcedure
+      .input(z.object({ consultorId: z.number(), programId: z.number().optional() }))
+      .query(async ({ input }) => {
+        return await db.getAlunosByConsultor(input.consultorId, input.programId);
+      }),
+
+    // Empresas/programas de um mentor (via alunos atendidos)
+    programsByConsultor: protectedProcedure
+      .input(z.object({ consultorId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProgramsByConsultor(input.consultorId);
+      }),
   }),
 
   // Indicadores BEM

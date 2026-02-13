@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { 
@@ -22,19 +22,41 @@ import {
 } from "lucide-react";
 
 export default function RegistroMentoria() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const userConsultorId = (user as any)?.consultorId as number | null;
+
   const [selectedProgramId, setSelectedProgramId] = useState<string>("all");
   const [selectedAlunoId, setSelectedAlunoId] = useState<number | null>(null);
   const [editingSession, setEditingSession] = useState<number | null>(null);
   const [notaEvolucao, setNotaEvolucao] = useState<string>("");
   const [feedback, setFeedback] = useState<string>("");
 
-  // Buscar lista de programas
-  const { data: programs = [] } = trpc.programs.list.useQuery();
-  
-  // Buscar lista de alunos
-  const { data: alunos = [] } = trpc.alunos.list.useQuery(
-    selectedProgramId !== "all" ? { programId: parseInt(selectedProgramId) } : undefined
+  // Para admin: buscar todos os programas; para mentor: buscar apenas os programas do mentor
+  const { data: allPrograms = [] } = trpc.programs.list.useQuery(undefined, { enabled: isAdmin });
+  const { data: mentorPrograms = [] } = trpc.alunos.programsByConsultor.useQuery(
+    { consultorId: userConsultorId! },
+    { enabled: !!userConsultorId && !isAdmin }
   );
+
+  const programs = isAdmin ? allPrograms : mentorPrograms;
+
+  // Para admin: buscar todos os alunos (opcionalmente filtrados por programa)
+  // Para mentor: buscar apenas os alunos do mentor (opcionalmente filtrados por programa)
+  const { data: adminAlunos = [] } = trpc.alunos.list.useQuery(
+    selectedProgramId !== "all" ? { programId: parseInt(selectedProgramId) } : undefined,
+    { enabled: isAdmin }
+  );
+
+  const { data: mentorAlunos = [] } = trpc.alunos.byConsultor.useQuery(
+    { 
+      consultorId: userConsultorId!, 
+      programId: selectedProgramId !== "all" ? parseInt(selectedProgramId) : undefined 
+    },
+    { enabled: !!userConsultorId && !isAdmin }
+  );
+
+  const alunos = isAdmin ? adminAlunos : mentorAlunos;
 
   // Buscar sessões de mentoria do aluno
   const { data: sessions = [], refetch: refetchSessions } = trpc.mentor.sessionsByAluno.useQuery(
@@ -66,6 +88,9 @@ export default function RegistroMentoria() {
     if (!selectedAluno?.programId) return null;
     return programs.find(p => p.id === selectedAluno.programId);
   }, [selectedAluno, programs]);
+
+  // Mentor name
+  const mentorName = (user as any)?.name || 'Mentor';
 
   // Iniciar edição de uma sessão
   const handleEdit = (session: { id: number; notaEvolucao?: number | null; feedback?: string | null }) => {
@@ -114,6 +139,12 @@ export default function RegistroMentoria() {
     }
   };
 
+  // Reset aluno when program changes
+  const handleProgramChange = (value: string) => {
+    setSelectedProgramId(value);
+    setSelectedAlunoId(null);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -130,14 +161,19 @@ export default function RegistroMentoria() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <User className="h-5 w-5 text-[#1B3A5D]" />
-              Selecionar Aluno
+              {!isAdmin ? mentorName : "Selecionar Aluno"}
             </CardTitle>
+            {!isAdmin && (
+              <CardDescription>
+                Mostrando apenas seus alunos ({alunos.length} aluno{alunos.length !== 1 ? 's' : ''})
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Empresa/Programa</label>
-                <Select value={selectedProgramId} onValueChange={setSelectedProgramId}>
+                <Select value={selectedProgramId} onValueChange={handleProgramChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todas as empresas" />
                   </SelectTrigger>
