@@ -721,11 +721,9 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
   const [email, setEmail] = useState("");
   const [cpfMentor, setCpfMentor] = useState("");
   const [loginId, setLoginId] = useState("");
-  const [programId, setProgramId] = useState("");
   const [editNome, setEditNome] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editCpf, setEditCpf] = useState("");
-  const [editProgramId, setEditProgramId] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -753,14 +751,12 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
       name: nome, 
       email: trimmedEmail, 
       cpf: cpfDigits,
-      loginId: loginId || undefined,
-      programId: programId ? parseInt(programId) : undefined 
+      loginId: loginId || undefined
     });
     setNome("");
     setEmail("");
     setCpfMentor("");
     setLoginId("");
-    setProgramId("");
     setOpen(false);
   };
 
@@ -778,7 +774,6 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
     setEditNome(mentor.name || "");
     setEditEmail(mentor.email || "");
     setEditCpf(mentor.cpf ? formatCpf(mentor.cpf) : "");
-    setEditProgramId(mentor.programId?.toString() || "");
     setEditOpen(true);
   };
 
@@ -790,8 +785,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
       consultorId: editMentor.id, 
       name: editNome, 
       email: editEmail || undefined,
-      cpf: cpfDigits || undefined,
-      programId: editProgramId ? parseInt(editProgramId) : undefined 
+      cpf: cpfDigits || undefined
     });
     setEditOpen(false);
   };
@@ -831,19 +825,6 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                   <Label htmlFor="loginId-mentor">ID de Login (opcional)</Label>
                   <Input id="loginId-mentor" value={loginId} onChange={(e) => setLoginId(e.target.value)} placeholder="Ex: M0001" />
                   <p className="text-xs text-muted-foreground">Se não informado, será gerado automaticamente ao ativar o acesso</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="programa-mentor">Empresa/Programa (opcional)</Label>
-                  <Select value={programId} onValueChange={setProgramId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma empresa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {empresas.map((emp) => (
-                        <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
               <DialogFooter>
@@ -937,19 +918,6 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                 <div className="space-y-2">
                   <Label htmlFor="edit-cpf-mentor">CPF</Label>
                   <Input id="edit-cpf-mentor" value={editCpf} onChange={(e) => setEditCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-programa-mentor">Empresa/Programa</Label>
-                  <Select value={editProgramId} onValueChange={setEditProgramId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma empresa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {empresas.map((emp) => (
-                        <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
               <DialogFooter>
