@@ -562,3 +562,11 @@
 - [x] Registrar lotes de upload no Histórico para os eventos importados (3 planilhas de eventos)
 - [x] Registrar lotes de upload no Histórico para as mentorias importadas (3 planilhas de mentorias)
 - [x] Unificar páginas "Upload de Planilhas" e "Histórico de Uploads" em uma única página (agora "Gestão de Planilhas" com tabs Upload/Histórico)
+
+## Importação de Alunos para Gestão de Acesso (13/02/2026)
+- [x] Analisar dados dos 100 alunos (Email + ID) da planilha de performance
+- [x] Verificar quais alunos já existem na tabela users (1 encontrado: Bruno)
+- [x] Importar 99 alunos para users com perfil "user", loginMethod "email_cpf" e vinculação à empresa
+- [x] Atualizar registro do Bruno (alunoId corrigido de 274 para 30080)
+- [x] 100 alunos com alunoId vinculado (34 SEBRAE Acre + 50 SEBRAE TO + 16 EMBRAPII)
+- [x] 77 testes passando
