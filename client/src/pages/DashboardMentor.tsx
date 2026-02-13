@@ -76,7 +76,7 @@ function DashboardMentorContent() {
         </h1>
         <p className="text-muted-foreground mt-1">
           {isAdmin 
-            ? "Visualize estatísticas de mentorias por consultor" 
+            ? "Visualize estatísticas de mentorias por mentor" 
             : `Bem-vindo(a), ${selectedMentor?.name || user?.name || 'Mentor'}`
           }
         </p>

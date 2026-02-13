@@ -395,7 +395,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">12</p>
-                  <p className="text-sm text-muted-foreground">Consultores</p>
+                  <p className="text-sm text-muted-foreground">Mentores</p>
                 </div>
               </div>
             </CardContent>

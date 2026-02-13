@@ -32,14 +32,22 @@ function displayCpf(cpf: string | null): string {
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador",
   manager: "Gestor de Empresa",
+  mentor: "Mentor",
   user: "Aluno",
 };
 
 const ROLE_COLORS: Record<string, string> = {
   admin: "bg-red-600",
   manager: "bg-blue-600",
+  mentor: "bg-purple-600",
   user: "bg-green-600",
 };
+
+// Helper to determine display role (mentor vs manager)
+function getDisplayRole(user: any): string {
+  if (user.role === 'manager' && user.consultorId) return 'mentor';
+  return user.role;
+}
 
 export default function AdminCadastros() {
   const [activeTab, setActiveTab] = useState("acesso");
@@ -223,7 +231,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState(""); // "admin" | "manager" | "mentor" | "user"
   const [programId, setProgramId] = useState("");
 
   // Edit form
@@ -244,7 +252,8 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
       toast.error("Selecione o perfil do usuário");
       return;
     }
-    if ((role === "manager" || role === "user") && !programId) {
+    const actualRole = role === "mentor" ? "manager" : role;
+    if ((role === "manager" || role === "mentor" || role === "user") && !programId) {
       toast.error("Selecione a empresa vinculada");
       return;
     }
@@ -252,8 +261,9 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
       name: nome, 
       email, 
       cpf: cpfDigits,
-      role: role as "user" | "admin" | "manager",
+      role: actualRole as "user" | "admin" | "manager",
       programId: programId ? parseInt(programId) : null,
+      isMentor: role === "mentor",
     });
     setNome("");
     setEmail("");
@@ -268,7 +278,8 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
     setEditNome(user.name || "");
     setEditEmail(user.email || "");
     setEditCpf(displayCpf(user.cpf));
-    setEditRole(user.role);
+    // Mapear role para exibição: manager com consultorId = mentor
+    setEditRole(getDisplayRole(user));
     setEditProgramId(user.programId ? user.programId.toString() : "");
     setEditOpen(true);
   };
@@ -281,12 +292,13 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
       toast.error("CPF deve conter 11 dígitos");
       return;
     }
+    const actualEditRole = editRole === "mentor" ? "manager" : editRole;
     onUpdate({
       userId: editUser.id,
       name: editNome,
       email: editEmail,
       cpf: cpfDigits,
-      role: editRole as "user" | "admin" | "manager",
+      role: actualEditRole as "user" | "admin" | "manager",
       programId: editProgramId ? parseInt(editProgramId) : null,
     });
     setEditOpen(false);
@@ -346,12 +358,13 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="mentor">Mentor</SelectItem>
                       <SelectItem value="manager">Gestor de Empresa</SelectItem>
                       <SelectItem value="user">Aluno</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                {(role === "manager" || role === "user") && (
+                {(role === "manager" || role === "mentor" || role === "user") && (
                   <div className="space-y-2">
                     <Label htmlFor="access-empresa">Empresa Vinculada *</Label>
                     <select
@@ -411,12 +424,13 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="mentor">Mentor</SelectItem>
                       <SelectItem value="manager">Gestor de Empresa</SelectItem>
                       <SelectItem value="user">Aluno</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                {(editRole === "manager" || editRole === "user") && (
+                {(editRole === "manager" || editRole === "mentor" || editRole === "user") && (
                   <div className="space-y-2">
                     <Label>Empresa Vinculada *</Label>
                     <select
@@ -445,14 +459,18 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
         ) : (
           <>
             {/* Summary cards */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-4 gap-4 mb-6">
               <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
                 <p className="text-sm text-muted-foreground">Administradores</p>
                 <p className="text-2xl font-bold">{accessUsers.filter(u => u.role === 'admin').length}</p>
               </div>
+              <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                <p className="text-sm text-muted-foreground">Mentores</p>
+                <p className="text-2xl font-bold">{accessUsers.filter(u => u.role === 'manager' && u.consultorId).length}</p>
+              </div>
               <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
                 <p className="text-sm text-muted-foreground">Gestores</p>
-                <p className="text-2xl font-bold">{accessUsers.filter(u => u.role === 'manager').length}</p>
+                <p className="text-2xl font-bold">{accessUsers.filter(u => u.role === 'manager' && !u.consultorId).length}</p>
               </div>
               <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
                 <p className="text-sm text-muted-foreground">Alunos</p>
@@ -479,8 +497,8 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                     <TableCell>{user.email || "-"}</TableCell>
                     <TableCell className="font-mono text-sm">{displayCpf(user.cpf)}</TableCell>
                     <TableCell>
-                      <Badge className={ROLE_COLORS[user.role] || "bg-gray-600"}>
-                        {ROLE_LABELS[user.role] || user.role}
+                      <Badge className={ROLE_COLORS[getDisplayRole(user)] || "bg-gray-600"}>
+                        {ROLE_LABELS[getDisplayRole(user)] || user.role}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -679,7 +697,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Mentores</CardTitle>
-          <CardDescription>Gerencie os mentores/consultores do programa</CardDescription>
+          <CardDescription>Gerencie os mentores do programa</CardDescription>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>

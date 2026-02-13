@@ -499,3 +499,16 @@
 - [x] Criar dashboard próprio do mentor logado ("Meu Dashboard" do mentor)
 - [x] Mentor logado vê automaticamente seus próprios dados (alunos, mentorias, empresas)
 - [x] Garantir redirecionamento correto por perfil após login (admin/gestor/mentor/aluno)
+
+## Bugs Reportados (13/02/2026) - Turmas e Trilhas
+- [x] Corrigir turmas duplicadas na listagem (13 turmas duplicadas removidas do banco, de 26 para 13)
+- [x] Verificar nome da trilha "Bosas" → No banco está correto "Básicas" (pode ter sido editado manualmente)
+- [x] Verificar nome da trilha "Mestre" → No banco está correto "Master" (pode ter sido editado manualmente)
+- [x] Verificar empresa "SEBRAE PARA" → No banco está correto "SEBRAE TO" (turmas duplicadas causavam confusão)
+
+## Correção Formulário de Cadastro e Uniformização (13/02/2026)
+- [x] Adicionar perfil "Mentor" na lista de perfis de acesso do formulário de cadastro
+- [x] Adicionar campo "Empresa" no formulário quando perfil for Gestor de Empresa ou Mentor
+- [x] Vincular mentor ao consultor correspondente no cadastro (cria registro na tabela consultors)
+- [x] Corrigir turmas duplicadas no banco (13 removidas - já feito via SQL)
+- [x] Uniformizar nomenclatura: Consultor → Mentor em todo o sistema (frontend visível)

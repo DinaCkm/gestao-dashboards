@@ -1624,9 +1624,26 @@ export const appRouter = router({
         cpf: z.string().min(11),
         role: z.enum(["user", "admin", "manager"]),
         programId: z.number().nullable().optional(),
+        isMentor: z.boolean().optional(), // true = Mentor, false/undefined = Gestor de Empresa
       }))
       .mutation(async ({ input }) => {
-        return await db.createAccessUser(input);
+        const { isMentor, ...userData } = input;
+        
+        // Se for Mentor, criar registro na tabela consultors primeiro
+        if (isMentor && userData.role === 'manager') {
+          const mentorResult = await db.createMentor({
+            name: userData.name,
+            email: userData.email,
+            programId: userData.programId ?? undefined,
+          });
+          // Vincular o consultorId ao user
+          return await db.createAccessUser({
+            ...userData,
+            consultorId: mentorResult.id as number,
+          });
+        }
+        
+        return await db.createAccessUser(userData);
       }),
     
     updateAccessUser: adminProcedure

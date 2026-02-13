@@ -141,7 +141,7 @@ export default function Home() {
               <CardContent>
                 <div className="text-3xl font-bold">{stats.totalMentores}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Consultores ativos
+                  Mentores ativos
                 </p>
               </CardContent>
             </Card>
