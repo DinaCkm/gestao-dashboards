@@ -345,7 +345,7 @@ export default function DashboardAluno() {
                             </div>
                           </div>
                           <Progress value={performanceData.indicadores.engajamento} className="mt-3 h-2" />
-                          <p className="text-xs text-gray-400 mt-2">Média de: presença + atividades + nota mentora (0-5 convertida para base 100)</p>
+                          <p className="text-xs text-gray-400 mt-2">Média de 3 componentes base 100: presença (100/0) + tarefa (100/0) + nota evolução (nota/10×100)</p>
                         </CardContent>
                       </Card>
 
@@ -704,7 +704,7 @@ export default function DashboardAluno() {
                                 )}
                               </TableCell>
                               <TableCell className="text-center font-medium">
-                                {sessao.engagementScore != null ? `${sessao.engagementScore}/5` : '—'}
+                                {sessao.engagementScore != null ? `${sessao.engagementScore}/10` : '—'}
                               </TableCell>
                               <TableCell className="text-center font-medium">
                                 {sessao.notaEvolucao != null ? `${sessao.notaEvolucao}/10` : '—'}

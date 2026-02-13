@@ -216,11 +216,10 @@ export default function DashboardVisaoGeral() {
               cor="#2E7D32"
               descricao="Evolução e engajamento geral"
               regras={[
-                "Combinação de 3 componentes com peso igual:",
-                "1) Participação nas Mentorias (Ind.1)",
-                "2) Entrega de Atividades (Ind.2)",
-                "3) Nota da Mentora (0 a 5, convertida para base 100: 0=0%, 1=20%, 2=40%, 3=60%, 4=80%, 5=100%)",
-                "Todos os indicadores são base 100",
+                "Média de 3 componentes, todos convertidos para base 100:",
+                "1) Presença nas Mentorias (Ind.1): presente=100, ausente=0",
+                "2) Entrega de Tarefas (Ind.2): entregue=100, não entregue=0",
+                "3) Nota de Evolução da Mentora (0 a 10, convertida: nota/10 × 100)",
                 "Fórmula: (Comp.1 + Comp.2 + Comp.3) / 3"
               ]}
             />

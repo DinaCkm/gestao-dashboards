@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
+import { getEvolucaoStage } from "@/lib/evolucaoStages";
 import { 
   User,
   Target,
@@ -265,9 +266,17 @@ export default function IndividualDashboard() {
                         {session.taskStatus === 'entregue' ? 'Tarefa OK' :
                          session.taskStatus === 'nao_entregue' ? 'Pendente' : 'Sem tarefa'}
                       </Badge>
-                      {session.engagementScore && (
-                        <span className="text-xs text-gray-500">Eng: {session.engagementScore}/5</span>
+                      {session.engagementScore != null && (
+                        <span className="text-xs text-gray-500">Eng: {session.engagementScore}/10</span>
                       )}
+                      {(session as any).notaEvolucao != null && (() => {
+                        const stage = getEvolucaoStage((session as any).notaEvolucao);
+                        return (
+                          <span className={`text-xs font-medium ${stage.textColor}`}>
+                            Evolução: {(session as any).notaEvolucao}/10 ({stage.label})
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 ))}

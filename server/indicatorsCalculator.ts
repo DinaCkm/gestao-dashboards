@@ -63,7 +63,7 @@ export interface StudentIndicators {
   eventosPresente: number;
   totalCompetencias: number;
   competenciasAprovadas: number;
-  mediaEngajamentoRaw: number;           // Média original (0-5)
+  mediaEngajamentoRaw: number;           // Média original (0-10)
   
   // Componentes do Indicador 3 (para explicação no card)
   engajamentoComponentes: {
@@ -134,11 +134,12 @@ export function classificarPercentual(percentual: number): string {
 }
 
 /**
- * Converte nota de engajamento (0-5) para escala 0-100
- * Tabela de faixas: 0=0%, 1=20%, 2=40%, 3=60%, 4=80%, 5=100%
+ * Converte nota de engajamento (0-10) para escala 0-100
+ * Escala: 0=0%, 1=10%, 2=20%, 3=30%, 4=40%, 5=50%, 6=60%, 7=70%, 8=80%, 9=90%, 10=100%
+ * Estágios: Inicial (0-2), Básico (3-4), Intermediário (5-6), Avançado (7-8), Excelência (9-10)
  */
 function engajamentoParaPercentual(nota: number): number {
-  return Math.min((nota / 5) * 100, 100);
+  return Math.min((nota / 10) * 100, 100);
 }
 
 /**
@@ -225,7 +226,8 @@ export function calcularIndicadoresAluno(
   // ============================================================
   // INDICADOR 3: Evolução / Engajamento
   // Fórmula: (Ind.1 + Ind.2 + Nota Mentora %) / 3
-  // Nota Mentora: média das notas (0-5) convertida para % via (nota/5)*100
+  // Nota Mentora: média das notas (0-10) convertida para % via (nota/10)*100
+  // Estágios: Inicial (0-2), Básico (3-4), Intermediário (5-6), Avançado (7-8), Excelência (9-10)
   // ============================================================
   const notasEngajamento = mentoriasAluno
     .filter(m => m.engajamento !== undefined && m.engajamento !== null)

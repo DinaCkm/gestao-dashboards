@@ -155,6 +155,7 @@ async function main() {
       if (h.includes('mentoria') && !h.includes('data') && !h.includes('registro')) colMap.presence = i;
       if (h.includes('atividade')) colMap.taskStatus = i;
       if (h.includes('evolu') || h.includes('engajamento')) colMap.engagement = i;
+      if (h.includes('nota') && h.includes('evolu')) colMap.notaEvolucao = i;
       if (h.includes('parecer') || h.includes('breve')) colMap.feedback = i;
     }
 
@@ -250,6 +251,11 @@ async function main() {
       const engagement = engagementRaw ? parseInt(engagementRaw) : null;
       const feedback = feedbackRaw ? String(feedbackRaw).substring(0, 10000) : null;
 
+      // notaEvolucao: se existir coluna separada, usar; senão, usar engagement como nota de evolução
+      const notaEvolucao = colMap.notaEvolucao !== undefined 
+        ? (row[colMap.notaEvolucao] ? parseInt(row[colMap.notaEvolucao]) : null)
+        : engagement;
+
       batchValues.push([
         aluno.id,
         consultorId || 14, // fallback to "Equipe CKM Talents"
@@ -262,6 +268,7 @@ async function main() {
         taskStatus,
         engagement,
         feedback,
+        notaEvolucao,
       ]);
 
       fileSessions++;
@@ -271,10 +278,10 @@ async function main() {
     const batchSize = 50;
     for (let i = 0; i < batchValues.length; i += batchSize) {
       const batch = batchValues.slice(i, i + batchSize);
-      const placeholders = batch.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+      const placeholders = batch.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
       const values = batch.flat();
       await pool.query(
-        `INSERT INTO mentoring_sessions (alunoId, consultorId, turmaId, trilhaId, ciclo, sessionNumber, sessionDate, presence, taskStatus, engagementScore, feedback) VALUES ${placeholders}`,
+        `INSERT INTO mentoring_sessions (alunoId, consultorId, turmaId, trilhaId, ciclo, sessionNumber, sessionDate, presence, taskStatus, engagementScore, feedback, notaEvolucao) VALUES ${placeholders}`,
         values
       );
     }

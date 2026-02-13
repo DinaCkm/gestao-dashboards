@@ -610,7 +610,7 @@ export default function DashboardEmpresa() {
                           <span className="font-bold text-yellow-600">3.</span>
                           <div>
                             <p className="font-medium">Engajamento</p>
-                            <p className="text-xs text-muted-foreground">Presença + Atividades + Nota Mentora (0-5 convertida para %)</p>
+                            <p className="text-xs text-muted-foreground">Média base 100: Presença (100/0) + Tarefa (100/0) + Nota Evolução (nota/10×100)</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg">

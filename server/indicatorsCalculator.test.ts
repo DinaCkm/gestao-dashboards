@@ -214,12 +214,12 @@ describe('Indicador 2 - Atividades Práticas (excluindo Assessment)', () => {
 // Indicador 3 - Engajamento (combinação de 3 componentes)
 // ============================================================
 describe('Indicador 3 - Engajamento (Ind.1 + Ind.2 + Nota Mentora) / 3', () => {
-  it('calcula engajamento como média dos 3 componentes', () => {
+  it('calcula engajamento como média dos 3 componentes (base 10)', () => {
     // aluno1: Ind.1 = 66.67%, Ind.2 = 50%
-    // Nota mentora: (5+4+3)/3 = 4 → (4/5)*100 = 80%
-    // Engajamento = (66.67 + 50 + 80) / 3 = 65.56%
+    // Nota mentora: (5+4+3)/3 = 4 → (4/10)*100 = 40%
+    // Engajamento = (66.67 + 50 + 40) / 3 = 52.22%
     const ind = calcularIndicadoresAluno('aluno1', mockMentorias, [], []);
-    expect(ind.engajamento).toBeCloseTo(65.56, 0);
+    expect(ind.engajamento).toBeCloseTo(52.22, 0);
   });
 
   it('retorna componentes do engajamento para explicação no card', () => {
@@ -227,19 +227,32 @@ describe('Indicador 3 - Engajamento (Ind.1 + Ind.2 + Nota Mentora) / 3', () => {
     expect(ind.engajamentoComponentes).toBeDefined();
     expect(ind.engajamentoComponentes.presenca).toBeCloseTo(66.67, 1);
     expect(ind.engajamentoComponentes.atividades).toBe(50);
-    expect(ind.engajamentoComponentes.notaMentora).toBe(80);
+    expect(ind.engajamentoComponentes.notaMentora).toBe(40); // (4/10)*100 = 40%
   });
 
-  it('converte nota mentora 0-5 para percentual corretamente', () => {
+  it('converte nota mentora 0-10 para percentual corretamente', () => {
     const m0: MentoringRecord[] = [{ idUsuario: 'a', nomeAluno: 'A', empresa: 'E', sessao: 1, presenca: 'presente', engajamento: 0 }];
-    const m1: MentoringRecord[] = [{ idUsuario: 'a', nomeAluno: 'A', empresa: 'E', sessao: 1, presenca: 'presente', engajamento: 1 }];
-    const m3: MentoringRecord[] = [{ idUsuario: 'a', nomeAluno: 'A', empresa: 'E', sessao: 1, presenca: 'presente', engajamento: 3 }];
+    const m2: MentoringRecord[] = [{ idUsuario: 'a', nomeAluno: 'A', empresa: 'E', sessao: 1, presenca: 'presente', engajamento: 2 }];
     const m5: MentoringRecord[] = [{ idUsuario: 'a', nomeAluno: 'A', empresa: 'E', sessao: 1, presenca: 'presente', engajamento: 5 }];
+    const m7: MentoringRecord[] = [{ idUsuario: 'a', nomeAluno: 'A', empresa: 'E', sessao: 1, presenca: 'presente', engajamento: 7 }];
+    const m10: MentoringRecord[] = [{ idUsuario: 'a', nomeAluno: 'A', empresa: 'E', sessao: 1, presenca: 'presente', engajamento: 10 }];
 
-    expect(calcularIndicadoresAluno('a', m0, [], []).engajamentoComponentes.notaMentora).toBe(0);
-    expect(calcularIndicadoresAluno('a', m1, [], []).engajamentoComponentes.notaMentora).toBe(20);
-    expect(calcularIndicadoresAluno('a', m3, [], []).engajamentoComponentes.notaMentora).toBe(60);
-    expect(calcularIndicadoresAluno('a', m5, [], []).engajamentoComponentes.notaMentora).toBe(100);
+    // Escala 0-10: nota/10 * 100
+    expect(calcularIndicadoresAluno('a', m0, [], []).engajamentoComponentes.notaMentora).toBe(0);    // 0/10*100 = 0%
+    expect(calcularIndicadoresAluno('a', m2, [], []).engajamentoComponentes.notaMentora).toBe(20);   // 2/10*100 = 20%
+    expect(calcularIndicadoresAluno('a', m5, [], []).engajamentoComponentes.notaMentora).toBe(50);   // 5/10*100 = 50%
+    expect(calcularIndicadoresAluno('a', m7, [], []).engajamentoComponentes.notaMentora).toBe(70);   // 7/10*100 = 70%
+    expect(calcularIndicadoresAluno('a', m10, [], []).engajamentoComponentes.notaMentora).toBe(100); // 10/10*100 = 100%
+  });
+
+  it('estágios de evolução: Excelência (9-10), Avançado (7-8), Intermediário (5-6), Básico (3-4), Inicial (0-2)', () => {
+    // Nota 9 → Excelência (90%)
+    const m9: MentoringRecord[] = [{ idUsuario: 'a', nomeAluno: 'A', empresa: 'E', sessao: 1, presenca: 'presente', engajamento: 9 }];
+    expect(calcularIndicadoresAluno('a', m9, [], []).engajamentoComponentes.notaMentora).toBe(90);
+    
+    // Nota 3 → Básico (30%)
+    const m3: MentoringRecord[] = [{ idUsuario: 'a', nomeAluno: 'A', empresa: 'E', sessao: 1, presenca: 'presente', engajamento: 3 }];
+    expect(calcularIndicadoresAluno('a', m3, [], []).engajamentoComponentes.notaMentora).toBe(30);
   });
 });
 

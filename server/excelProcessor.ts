@@ -312,7 +312,8 @@ export interface MentoringRecord {
   dataSessao?: Date;
   presenca: 'presente' | 'ausente';
   atividadeEntregue: 'entregue' | 'nao_entregue' | 'sem_tarefa';
-  engajamento?: number; // 1-5
+  engajamento?: number; // 0-10
+  notaEvolucao?: number; // 0-10 (Nota de Evolução da mentora)
   feedback?: string;
   empresa: string;
 }
@@ -492,6 +493,7 @@ export function processMentoringSheet(
     const colPresenca = findColumnIndex(headers, 'mentoria', 'presença', 'presenca', 'presente');
     const colAtividade = findColumnIndex(headers, 'atividade proposta', 'atividade', 'tarefa');
     const colEngajamento = findColumnIndex(headers, 'evolução/engajamento', 'engajamento', 'evolução', 'evolucao');
+    const colNotaEvolucao = findColumnIndex(headers, 'nota de evolução', 'nota evolucao', 'nota evolução');
     const colFeedback = findColumnIndex(headers, 'feedback', 'observação', 'observacao');
 
     result.totalRecords = data.length - 1;
@@ -521,6 +523,9 @@ export function processMentoringSheet(
           presenca: colPresenca >= 0 ? normalizePresence(row[colPresenca]) : 'ausente',
           atividadeEntregue: colAtividade >= 0 ? normalizeTaskStatus(row[colAtividade]) : 'sem_tarefa',
           engajamento: colEngajamento >= 0 ? normalizeEngagement(row[colEngajamento]) : undefined,
+          notaEvolucao: colNotaEvolucao >= 0 
+            ? normalizeEngagement(row[colNotaEvolucao]) 
+            : (colEngajamento >= 0 ? normalizeEngagement(row[colEngajamento]) : undefined),
           feedback: colFeedback >= 0 ? String(row[colFeedback] || '').trim() : undefined,
           empresa
         };

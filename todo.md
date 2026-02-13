@@ -650,3 +650,30 @@
 - [x] BUG: Ao selecionar aluno no filtro, nada acontece - corrigido: Select usava value="" em vez de undefined (RegistroMentoria + DashboardAluno)
 - [x] BUG CRÍTICO: Ao selecionar aluno como mentor, a tela não muda - corrigido: substituído Radix Select por select nativo HTML
 - [x] SOLUÇÃO RADICAL: Substituir Select Radix por select nativo HTML para alunos no RegistroMentoria, Assessment e DashboardAluno
+- [x] Investigar por que a nota de evolução da mentora não aparece nas sessões (campo nota_evolucao vazio no banco, mas dado existe na planilha de mentorias)
+- [x] Copiar engagementScore para notaEvolucao no banco (1.195 sessões atualizadas)
+- [x] Corrigir escala de engajamento de /5 para /10 em RegistroMentoria, DashboardAluno e IndividualDashboard
+- [x] Corrigir script import-mentorias.mjs para incluir notaEvolucao no INSERT
+- [x] Corrigir excelProcessor.ts para mapear coluna Nota de Evolução separadamente
+- [x] Incorporar classificação por estágios de evolução (Excelência 9-10, Avançado 7-8, Intermediário 5-6, Básico 3-4, Inicial 0-2) na exibição das notas
+- [x] Exibir estágio com cor e label nas páginas RegistroMentoria, DashboardAluno e IndividualDashboard
+- [x] Adicionar feedback resumido na visualização de sessões no RegistroMentoria
+
+## Correção Crítica - Fórmula do Indicador 3 (13/02/2026)
+- [x] CRÍTICO: Corrigir fórmula do componente "Nota da Mentora" no Indicador 3 de (Nota/5)*100 para (Nota/10)*100
+- [x] Notas das mentoras são de 0 a 10 (não 0 a 5 como estava sendo calculado)
+- [x] Atualizar explicações nos dashboards para refletir escala 0-10 (5 arquivos corrigidos)
+- [x] Atualizar testes vitest para nova fórmula base 10 - 109 testes passando
+- [x] Verificar impacto na Performance Geral de todos os alunos
+
+## Melhorias na Exibição de Sessões de Mentoria (13/02/2026)
+- [ ] Adicionar botão "Visualizar" ao lado do botão "Editar" em cada sessão
+- [ ] Mostrar pontuação de presença abaixo de cada sessão (Presente=100pts, Ausente=0pts)
+- [ ] Mostrar pontuação de tarefa abaixo de cada sessão (Entregue=100pts, Não Entregue=0pts)
+- [ ] Corrigir escala de Engajamento que ainda mostra /5 (deve ser /10)
+
+## Correção Fórmula Indicador 3 - Engajamento como Média de 3 Componentes (13/02/2026)
+- [x] CRÍTICO: Indicador 3 deve ser a média de 3 componentes na base 100: Presença (100/0) + Tarefa (100/0) + Evolução (nota/10*100) / 3
+- [x] Verificado: indicatorsCalculator.ts já usa a fórmula correta (Ind.1 + Ind.2 + notaMentora%) / 3 com nota/10*100
+- [x] Atualizar explicações nos 5 dashboards para refletir a nova fórmula (VisaoGeral, Aluno, Empresa, MeuPerfil, PlanoIndividual)
+- [x] Atualizar testes vitest para a nova fórmula - 109 testes passando
