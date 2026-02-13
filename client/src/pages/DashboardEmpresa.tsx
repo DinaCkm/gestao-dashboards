@@ -436,7 +436,7 @@ export default function DashboardEmpresa() {
                         <span className="font-bold text-purple-600">4.</span>
                         <div>
                           <p className="font-medium">Performance de Competências</p>
-                          <p className="text-xs text-muted-foreground">% de aulas concluídas (somente ciclos finalizados)</p>
+                          <p className="text-xs text-muted-foreground">% de conteúdos concluídos (aulas, filmes, livros, podcasts, vídeos) - somente ciclos finalizados</p>
                         </div>
                       </div>
                       

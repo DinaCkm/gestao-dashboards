@@ -296,7 +296,7 @@ export default function DashboardAluno() {
                             </div>
                           </div>
                           <Progress value={performanceData.indicadores.performanceCompetencias} className="mt-3 h-2" />
-                          <p className="text-xs text-gray-400 mt-2">% aulas concluídas (ciclos finalizados)</p>
+                          <p className="text-xs text-gray-400 mt-2">% conteúdos concluídos (aulas, filmes, livros, podcasts, vídeos) - ciclos finalizados</p>
                         </CardContent>
                       </Card>
 

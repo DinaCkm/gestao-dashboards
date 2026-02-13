@@ -230,9 +230,10 @@ export default function DashboardVisaoGeral() {
               valor={visaoGeral.mediaPerformanceCompetencias}
               icone={<Award className="h-4 w-4" />}
               cor="#7B1FA2"
-              descricao="% de aulas concluídas por competência"
+              descricao="% de conteúdos concluídos por competência"
               regras={[
-                "Fórmula: (Aulas concluídas / Total de aulas) × 100",
+                "Fórmula: (Conteúdos concluídos / Total de conteúdos) × 100",
+                "Conteúdos incluem: aulas, filmes, livros, podcasts e vídeos",
                 "Somente ciclos com período finalizado entram no cálculo",
                 "Ciclos em andamento são mostrados separadamente",
                 "Competências não liberadas são ignoradas"

@@ -303,7 +303,7 @@ export default function DashboardMeuPerfil() {
             valor={indicadores.competenciasAprovadas} total={indicadores.totalCompetencias}
             percentual={indicadores.performanceCompetencias}
             color="bg-emerald-500/20 text-emerald-400"
-            regras={["% de aulas concluídas por competência", "Somente ciclos finalizados entram", `${ciclosFinalizados.length} ciclo(s) finalizado(s)`]}
+            regras={["% de conteúdos concluídos por competência (aulas, filmes, livros, podcasts, vídeos)", "Somente ciclos finalizados entram", `${ciclosFinalizados.length} ciclo(s) finalizado(s)`]}
           />
           <IndicadorCardAluno
             numero={5} icon={GraduationCap} label="Aprendizado"

@@ -472,3 +472,6 @@
 ## Correções (13/02/2026)
 - [x] Corrigir explicação do Indicador 3 nos cards: nota mentora 0-5 convertida para base 100 (todos indicadores são base 100)
 - [x] Ajustar login admin para aceitar email em vez de openId
+
+## Correção Explicação Indicador 4 (13/02/2026)
+- [x] Atualizar explicação do Indicador 4 em todos os dashboards: aulas incluem filmes, livros, podcasts e vídeos
