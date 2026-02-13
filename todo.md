@@ -677,3 +677,5 @@
 - [x] Verificado: indicatorsCalculator.ts já usa a fórmula correta (Ind.1 + Ind.2 + notaMentora%) / 3 com nota/10*100
 - [x] Atualizar explicações nos 5 dashboards para refletir a nova fórmula (VisaoGeral, Aluno, Empresa, MeuPerfil, PlanoIndividual)
 - [x] Atualizar testes vitest para a nova fórmula - 109 testes passando
+
+- [x] Remover subtítulo "Clique em Editar para registrar a nota de evolução" da seção Sessões de Mentoria no RegistroMentoria

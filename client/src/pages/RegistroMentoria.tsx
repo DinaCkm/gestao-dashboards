@@ -280,9 +280,7 @@ export default function RegistroMentoria() {
                 <Calendar className="h-5 w-5 text-[#1B3A5D]" />
                 Sessões de Mentoria
               </CardTitle>
-              <CardDescription>
-                Clique em "Editar" para registrar a nota de evolução
-              </CardDescription>
+
             </CardHeader>
             <CardContent>
               {sessions.length > 0 ? (
