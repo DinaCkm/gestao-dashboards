@@ -894,7 +894,59 @@ export const appRouter = router({
         const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno);
         const dashboard = gerarDashboardEmpresa(indicadores, input.empresa);
         
-        return dashboard;
+        // Enriquecer alunos com turma, trilha, ciclo, competências
+        const turmasList = await db.getTurmas();
+        const turmaMap = new Map(turmasList.map(t => [t.id, t]));
+        const consultorsList = await db.getConsultors();
+        const consultorMap = new Map(consultorsList.map(c => [c.id, c]));
+        
+        const alunosEnriquecidos = dashboard.alunos.map(ind => {
+          const alunoDb = alunosList.find(a => (a.externalId || String(a.id)) === ind.idUsuario);
+          const turma = alunoDb?.turmaId ? turmaMap.get(alunoDb.turmaId) : null;
+          const mentor = alunoDb?.consultorId ? consultorMap.get(alunoDb.consultorId) : null;
+          
+          // Extrair trilha do nome da turma
+          let trilhaNome = 'Não definida';
+          if (turma) {
+            const pipeMatch = turma.name.match(/\|\s*(.+)$/);
+            if (pipeMatch) trilhaNome = pipeMatch[1].trim();
+            else {
+              const dashMatch = turma.name.match(/- (.+?)(?:\s*\[.*\])?$/);
+              if (dashMatch) trilhaNome = dashMatch[1].trim();
+            }
+          }
+          
+          // Competencias do plano individual
+          const planoItems = allPlanoItems.filter(p => alunoDb && p.alunoId === alunoDb.id);
+          const competencias = planoItems.map(p => ({
+            nome: p.competenciaNome || 'Desconhecida',
+            trilha: p.trilhaNome || 'Não definida',
+            nota: p.notaAtual ? parseFloat(p.notaAtual) : null,
+            meta: p.metaNota ? parseFloat(p.metaNota) : 7,
+            status: p.status || 'pendente',
+          }));
+          
+          // Ciclo atual
+          const cicloAtual = ind.ciclosEmAndamento?.[0]?.nomeCiclo || 
+            (ind.ciclosFinalizados?.length ? `${ind.ciclosFinalizados.length} ciclo(s) finalizado(s)` : 'Nenhum ciclo');
+          
+          return {
+            ...ind,
+            alunoDbId: alunoDb?.id || 0,
+            turmaNome: turma?.name || 'Não definida',
+            trilhaNome,
+            cicloAtual,
+            mentorNome: mentor?.name || 'Não definido',
+            competencias,
+            totalCompetencias: competencias.length,
+            competenciasComNota: competencias.filter(c => c.nota !== null).length,
+          };
+        });
+        
+        return {
+          ...dashboard,
+          alunos: alunosEnriquecidos,
+        };
       }),
     
     // Dashboard por Turma
@@ -1042,6 +1094,24 @@ export const appRouter = router({
         return alunoIndicadores;
       }),
     
+    // Detalhe completo de um aluno (competências, eventos, turma, trilha, ciclo)
+    detalheAluno: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const detalhe = await db.getAlunoDetalheCompleto(input.alunoId);
+        if (!detalhe) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+        }
+        return detalhe;
+      }),
+
+    // Resumo de todos os alunos (turma, trilha, programa, competências)
+    alunosResumo: protectedProcedure
+      .input(z.object({ programId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getAlunosResumo(input?.programId);
+      }),
+
     // Lista de empresas disponíveis
     empresas: protectedProcedure.query(async () => {
       const programs = await db.getPrograms();
@@ -1327,6 +1397,16 @@ export const appRouter = router({
           email: aluno.email,
           programa: programa?.name || 'Não definido',
           turma: turmaAluno?.name || 'Não definida',
+          trilha: (() => {
+            if (turmaAluno) {
+              const pipeMatch = turmaAluno.name.match(/\|\s*(.+)$/);
+              if (pipeMatch) return pipeMatch[1].trim();
+              const dashMatch = turmaAluno.name.match(/- (.+?)(?:\s*\[.*\])?$/);
+              if (dashMatch) return dashMatch[1].trim();
+            }
+            return 'Não definida';
+          })(),
+          cicloAtual: indicadores.ciclosEmAndamento?.[0]?.nomeCiclo || (indicadores.ciclosFinalizados?.length ? `${indicadores.ciclosFinalizados.length + (indicadores.ciclosEmAndamento?.length || 0)} ciclo(s)` : 'Nenhum ciclo'),
           mentor: mentorAluno?.name || 'Não definido',
         },
         indicadores: {

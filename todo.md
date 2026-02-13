@@ -475,3 +475,21 @@
 
 ## Correção Explicação Indicador 4 (13/02/2026)
 - [x] Atualizar explicação do Indicador 4 em todos os dashboards: aulas incluem filmes, livros, podcasts e vídeos
+
+## Correção Explicação Indicador 5 (13/02/2026)
+- [x] Atualizar explicação do Indicador 5 em todos os dashboards: notas de avaliação de cada aula (filmes, vídeos, livros, podcasts, EAD), ciclos em andamento visualizados em separado
+
+## Bug Botão "i" Indicadores 5, 6 e 7 (13/02/2026)
+- [x] Corrigir botão "i" do Indicador 7 na Visão Geral: convertido para IndicadorCard com toggle
+
+## Informações Detalhadas nos Dashboards (13/02/2026)
+- [x] Mostrar competências que cada aluno está fazendo
+- [x] Mostrar webinários/eventos que participaram com datas
+- [x] Mostrar notas obtidas em cada competência
+- [x] Mostrar nome da turma do aluno
+- [x] Mostrar trilha do aluno (Básica, Essencial, Master, Jornada do Futuro)
+- [x] Mostrar ciclo atual do aluno
+- [x] Implementar no Dashboard do Aluno (DashboardAluno.tsx)
+- [x] Implementar no Dashboard Meu Perfil (DashboardMeuPerfil.tsx)
+- [x] Implementar no Dashboard por Empresa (DashboardEmpresa.tsx)
+- [x] Implementar no Dashboard Visão Geral (DashboardVisaoGeral.tsx)

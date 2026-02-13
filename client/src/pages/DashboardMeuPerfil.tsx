@@ -220,6 +220,12 @@ export default function DashboardMeuPerfil() {
                     <Badge variant="outline" className="text-purple-400 border-purple-500/30 bg-purple-500/10">
                       <Users className="h-3 w-3 mr-1" />{aluno.turma}
                     </Badge>
+                    <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
+                      <Target className="h-3 w-3 mr-1" />Trilha: {aluno.trilha}
+                    </Badge>
+                    <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
+                      <Clock className="h-3 w-3 mr-1" />Ciclo: {aluno.cicloAtual}
+                    </Badge>
                     <Badge variant="outline" className="text-cyan-400 border-cyan-500/30 bg-cyan-500/10">
                       <User className="h-3 w-3 mr-1" />Mentor: {aluno.mentor}
                     </Badge>

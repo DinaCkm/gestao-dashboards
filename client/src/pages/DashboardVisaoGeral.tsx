@@ -245,10 +245,11 @@ export default function DashboardVisaoGeral() {
               valor={visaoGeral.mediaPerformanceAprendizado || 0}
               icone={<GraduationCap className="h-4 w-4" />}
               cor="#D32F2F"
-              descricao="Notas das provas por aula/competência"
+              descricao="Notas das avaliações por aula/competência"
               regras={[
-                "Fórmula: Média das notas das provas de cada aula",
+                "Fórmula: Nota obtida na avaliação de cada aula (filmes, vídeos, livros, podcasts, EAD)",
                 "Somente ciclos com período finalizado entram no cálculo",
+                "Ciclos em andamento são visualizados em separado",
                 "Notas são convertidas para percentual (base 100)",
                 "Competências sem nota não entram na média"
               ]}
@@ -267,29 +268,19 @@ export default function DashboardVisaoGeral() {
               ]}
             />
             {/* Indicador 7: Performance Geral (destaque) */}
-            <Card className="border-2 border-primary bg-gradient-to-br from-primary/5 to-primary/10">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Ind. 7: Performance Geral
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-primary">
-                  {(visaoGeral.mediaPerformanceGeral || 0).toFixed(0)}%
-                </div>
-                <Progress value={visaoGeral.mediaPerformanceGeral || 0} className="h-3 mt-2" />
-                <p className="text-xs text-muted-foreground mt-2">
-                  Média dos 6 indicadores acima
-                </p>
-                <div className="mt-3 p-3 bg-muted/50 rounded-lg text-xs space-y-1">
-                  <p className="font-semibold text-muted-foreground">Como é calculado:</p>
-                  <p className="text-muted-foreground">• (Ind.1 + Ind.2 + Ind.3 + Ind.4 + Ind.5 + Ind.6) / 6</p>
-                  <p className="text-muted-foreground">• Todos os indicadores têm peso igual</p>
-                  <p className="text-muted-foreground">• Resultado em percentual (0-100%)</p>
-                </div>
-              </CardContent>
-            </Card>
+            <IndicadorCard
+              numero={7}
+              titulo="Performance Geral"
+              valor={visaoGeral.mediaPerformanceGeral || 0}
+              icone={<Target className="h-4 w-4" />}
+              cor="#1565C0"
+              descricao="Média dos 6 indicadores acima"
+              regras={[
+                "Fórmula: (Ind.1 + Ind.2 + Ind.3 + Ind.4 + Ind.5 + Ind.6) / 6",
+                "Todos os indicadores têm peso igual",
+                "Resultado em percentual (0-100%)"
+              ]}
+            />
           </div>
         </div>
 
@@ -372,6 +363,7 @@ export default function DashboardVisaoGeral() {
                         <div>
                           <p className="font-medium">{aluno.nomeAluno}</p>
                           <p className="text-xs text-muted-foreground">{aluno.empresa}</p>
+                          {aluno.turma && <p className="text-xs text-muted-foreground">Turma: {aluno.turma} {aluno.trilha ? `| ${aluno.trilha}` : ''}</p>}
                         </div>
                       </div>
                       <div className="text-right">
@@ -403,6 +395,7 @@ export default function DashboardVisaoGeral() {
                       <div>
                         <p className="font-medium">{aluno.nomeAluno}</p>
                         <p className="text-xs text-muted-foreground">{aluno.empresa}</p>
+                        {aluno.turma && <p className="text-xs text-muted-foreground">Turma: {aluno.turma} {aluno.trilha ? `| ${aluno.trilha}` : ''}</p>}
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-orange-500">{(aluno.performanceGeral || aluno.notaFinal * 10).toFixed(0)}%</p>

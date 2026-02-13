@@ -1743,10 +1743,14 @@ export async function getAllPlanoIndividual() {
     competenciaId: planoIndividual.competenciaId,
     isObrigatoria: planoIndividual.isObrigatoria,
     notaAtual: planoIndividual.notaAtual,
+    metaNota: planoIndividual.metaNota,
+    status: planoIndividual.status,
     competenciaNome: competencias.nome,
+    trilhaNome: trilhas.name,
   })
   .from(planoIndividual)
-  .leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id));
+  .leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id))
+  .leftJoin(trilhas, eq(competencias.trilhaId, trilhas.id));
   
   return result;
 }
@@ -1939,4 +1943,247 @@ export async function getAllCiclosForCalculator() {
   }
   
   return ciclosPorAluno;
+}
+
+
+// ============ DETALHE COMPLETO DO ALUNO ============
+
+/**
+ * Retorna informações completas de um aluno para exibição nos dashboards:
+ * - Dados pessoais, turma, trilha (extraída do nome da turma), empresa, mentor
+ * - Competências com notas e status (agrupadas por trilha)
+ * - Eventos/webinários com datas e presença
+ * - Ciclos de execução
+ * - Sessões de mentoria
+ */
+export async function getAlunoDetalheCompleto(alunoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // 1. Dados do aluno
+  const alunoResult = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  const aluno = alunoResult[0];
+  if (!aluno) return null;
+
+  // 2. Turma
+  let turmaInfo: { id: number; name: string } | null = null;
+  if (aluno.turmaId) {
+    const turmaResult = await db.select().from(turmas).where(eq(turmas.id, aluno.turmaId)).limit(1);
+    if (turmaResult[0]) turmaInfo = { id: turmaResult[0].id, name: turmaResult[0].name };
+  }
+
+  // 3. Trilha - extrair do nome da turma ou do plano individual
+  let trilhaNome = 'Não definida';
+  if (turmaInfo) {
+    // Extrair trilha do nome da turma (ex: "[2024] Banrisul - B.E.M. | Básicas" -> "Básicas")
+    const pipeMatch = turmaInfo.name.match(/\|\s*(.+)$/);
+    if (pipeMatch) {
+      trilhaNome = pipeMatch[1].trim();
+    } else {
+      // Tentar extrair do nome sem pipe (ex: "[2025] SEBRAE Tocantins - Visão de Futuro [BS2]")
+      const dashMatch = turmaInfo.name.match(/- (.+?)(?:\s*\[.*\])?$/);
+      if (dashMatch) {
+        trilhaNome = dashMatch[1].trim();
+      }
+    }
+  }
+  // Se não encontrou no nome da turma, inferir das competências do plano individual
+  if (trilhaNome === 'Não definida') {
+    const planoItems = await getPlanoIndividualByAluno(alunoId);
+    if (planoItems.length > 0) {
+      // Contar competências por trilha e pegar a mais frequente
+      const trilhaCount = new Map<string, number>();
+      for (const item of planoItems) {
+        const tn = item.trilhaNome || 'Desconhecida';
+        trilhaCount.set(tn, (trilhaCount.get(tn) || 0) + 1);
+      }
+      let maxCount = 0;
+      trilhaCount.forEach((count, name) => {
+        if (count > maxCount) { maxCount = count; trilhaNome = name; }
+      });
+    }
+  }
+
+  // 4. Empresa/Programa
+  let programaInfo: { id: number; name: string; code: string } | null = null;
+  if (aluno.programId) {
+    const progResult = await db.select().from(programs).where(eq(programs.id, aluno.programId)).limit(1);
+    if (progResult[0]) programaInfo = { id: progResult[0].id, name: progResult[0].name, code: progResult[0].code };
+  }
+
+  // 5. Mentor
+  let mentorInfo: { id: number; name: string } | null = null;
+  if (aluno.consultorId) {
+    const mentorResult = await db.select().from(consultors).where(eq(consultors.id, aluno.consultorId)).limit(1);
+    if (mentorResult[0]) mentorInfo = { id: mentorResult[0].id, name: mentorResult[0].name };
+  }
+
+  // 6. Competências com notas (agrupadas por trilha)
+  const planoItems = await getPlanoIndividualByAluno(alunoId);
+  const competenciasPorTrilha = new Map<string, Array<{
+    competenciaId: number;
+    competenciaNome: string;
+    trilhaId: number | null;
+    trilhaNome: string;
+    notaAtual: string | null;
+    metaNota: string | null;
+    status: string;
+    isObrigatoria: number;
+  }>>();
+
+  for (const item of planoItems) {
+    const tn = item.trilhaNome || 'Sem Trilha';
+    if (!competenciasPorTrilha.has(tn)) competenciasPorTrilha.set(tn, []);
+    competenciasPorTrilha.get(tn)!.push({
+      competenciaId: item.competenciaId,
+      competenciaNome: item.competenciaNome || 'Sem nome',
+      trilhaId: item.trilhaId,
+      trilhaNome: tn,
+      notaAtual: item.notaAtual,
+      metaNota: item.metaNota,
+      status: item.status,
+      isObrigatoria: item.isObrigatoria,
+    });
+  }
+
+  // 7. Eventos/Webinários com datas
+  const participacoes = await getEventParticipationByAluno(alunoId);
+  // Buscar detalhes dos eventos
+  const allEventsForProgram = aluno.programId ? await getEventsByProgram(aluno.programId) : [];
+  const eventMap = new Map(allEventsForProgram.map(e => [e.id, e]));
+
+  const eventosDetalhados = participacoes.map(ep => {
+    const evento = eventMap.get(ep.eventId);
+    return {
+      id: ep.id,
+      eventId: ep.eventId,
+      titulo: evento?.title || `Evento #${ep.eventId}`,
+      tipo: evento?.eventType || 'webinar',
+      data: evento?.eventDate || null,
+      status: ep.status,
+    };
+  });
+
+  // 8. Ciclos de execução
+  const ciclos = await getCiclosByAluno(alunoId);
+
+  // 9. Sessões de mentoria
+  const sessoes = await getMentoringSessionsByAluno(alunoId);
+
+  // Montar resultado
+  return {
+    aluno: {
+      id: aluno.id,
+      name: aluno.name,
+      email: aluno.email,
+      externalId: aluno.externalId,
+    },
+    turma: turmaInfo,
+    trilha: trilhaNome,
+    programa: programaInfo,
+    mentor: mentorInfo,
+    competencias: Object.fromEntries(competenciasPorTrilha),
+    totalCompetencias: planoItems.length,
+    competenciasAprovadas: planoItems.filter(p => p.notaAtual && parseFloat(p.notaAtual) >= 7).length,
+    mediaNotas: planoItems.length > 0 
+      ? planoItems.reduce((sum, p) => sum + (p.notaAtual ? parseFloat(p.notaAtual) : 0), 0) / planoItems.filter(p => p.notaAtual).length
+      : 0,
+    eventos: eventosDetalhados,
+    totalEventos: eventosDetalhados.length,
+    eventosPresente: eventosDetalhados.filter(e => e.status === 'presente').length,
+    ciclos: ciclos.map(c => ({
+      id: c.id,
+      nomeCiclo: c.nomeCiclo,
+      dataInicio: c.dataInicio,
+      dataFim: c.dataFim,
+      observacoes: c.observacoes,
+      competencias: c.competencias,
+      status: new Date(c.dataFim) < new Date() ? 'finalizado' : 'em_andamento',
+    })),
+    sessoes: sessoes.map(s => ({
+      id: s.id,
+      sessionNumber: s.sessionNumber,
+      sessionDate: s.sessionDate,
+      presence: s.presence,
+      taskStatus: s.taskStatus,
+      engagementScore: s.engagementScore,
+      notaEvolucao: s.notaEvolucao,
+      feedback: s.feedback,
+      ciclo: s.ciclo,
+    })),
+    totalMentorias: sessoes.length,
+    mentoriasPresente: sessoes.filter(s => s.presence === 'presente').length,
+  };
+}
+
+/**
+ * Retorna lista resumida de todos os alunos com turma, trilha, programa e contagem de competências
+ * Para uso nos dashboards de visão geral e por empresa
+ */
+export async function getAlunosResumo(programId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const alunosList = programId 
+    ? await db.select().from(alunos).where(and(eq(alunos.programId, programId), eq(alunos.isActive, 1)))
+    : await db.select().from(alunos).where(eq(alunos.isActive, 1));
+
+  const turmasList = await getTurmas();
+  const turmaMap = new Map(turmasList.map(t => [t.id, t]));
+  const programsList = await getPrograms();
+  const programMap = new Map(programsList.map(p => [p.id, p]));
+  const consultorsList = await getConsultors();
+  const consultorMap = new Map(consultorsList.map(c => [c.id, c]));
+
+  // Buscar plano individual de todos os alunos em uma query
+  const allPlano = await getAllPlanoIndividual();
+  const planoByAluno = new Map<number, typeof allPlano>();
+  for (const item of allPlano) {
+    if (!planoByAluno.has(item.alunoId)) planoByAluno.set(item.alunoId, []);
+    planoByAluno.get(item.alunoId)!.push(item);
+  }
+
+  return alunosList.map(aluno => {
+    const turma = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
+    const programa = aluno.programId ? programMap.get(aluno.programId) : null;
+    const mentor = aluno.consultorId ? consultorMap.get(aluno.consultorId) : null;
+    const planoItems = planoByAluno.get(aluno.id) || [];
+
+    // Extrair trilha do nome da turma
+    let trilhaNome = 'Não definida';
+    if (turma) {
+      const pipeMatch = turma.name.match(/\|\s*(.+)$/);
+      if (pipeMatch) {
+        trilhaNome = pipeMatch[1].trim();
+      } else {
+        const dashMatch = turma.name.match(/- (.+?)(?:\s*\[.*\])?$/);
+        if (dashMatch) trilhaNome = dashMatch[1].trim();
+      }
+    }
+
+    // Agrupar competências por trilha
+    const compPorTrilha = new Map<string, number>();
+    for (const item of planoItems) {
+      const tn = item.competenciaNome || 'Desconhecida';
+      compPorTrilha.set(tn, (compPorTrilha.get(tn) || 0) + 1);
+    }
+
+    return {
+      id: aluno.id,
+      name: aluno.name,
+      email: aluno.email,
+      externalId: aluno.externalId,
+      turma: turma?.name || 'Não definida',
+      turmaId: aluno.turmaId,
+      trilha: trilhaNome,
+      programa: programa?.name || 'Não definido',
+      programaId: aluno.programId,
+      mentor: mentor?.name || 'Não definido',
+      totalCompetencias: planoItems.length,
+      competenciasAprovadas: planoItems.filter(p => p.notaAtual && parseFloat(p.notaAtual) >= 7).length,
+      mediaNotas: planoItems.filter(p => p.notaAtual).length > 0
+        ? planoItems.reduce((sum, p) => sum + (p.notaAtual ? parseFloat(p.notaAtual) : 0), 0) / planoItems.filter(p => p.notaAtual).length
+        : 0,
+    };
+  });
 }
