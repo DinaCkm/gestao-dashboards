@@ -621,3 +621,11 @@
 - [x] Limpar registros de teste "Primeiro usuário" (alunos) do banco - registros removidos
 - [x] BUG: Alunos na Gestão de Acesso não mostram nome real nem empresa associada - programName via LEFT JOIN
 - [x] Ajustar testes vitest para fazer cleanup dos dados criados - afterAll com cleanup implementado
+
+## Refatoração Aba Gestão de Acesso → Alunos (13/02/2026)
+- [x] Filtrar aba "Gestão de Acesso" para mostrar apenas alunos (role='user')
+- [x] Renomear aba para "Alunos" com ícone GraduationCap 
+- [x] Remover contadores de Administradores/Mentores/Gestores - agora mostra total de alunos + contagem por empresa
+- [x] Ocultar CPF da listagem (LGPD) - mostra apenas ID do aluno, nome, email, empresa, status
+- [x] Limpar registros de teste restantes do banco - 4 registros removidos
+- [x] Botão "Novo usuário" → "Novo Aluno" - formulário simplificado para alunos

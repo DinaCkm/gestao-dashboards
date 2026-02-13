@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power } from "lucide-react";
+import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 
 function formatCpf(value: string): string {
@@ -176,8 +176,8 @@ export default function AdminCadastros() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="acesso" className="flex items-center gap-2">
-              <KeyRound className="h-4 w-4" />
-              Gestão de Acesso
+              <GraduationCap className="h-4 w-4" />
+              Alunos
             </TabsTrigger>
             <TabsTrigger value="empresas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
@@ -193,10 +193,10 @@ export default function AdminCadastros() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Gestão de Acesso Tab */}
+          {/* Alunos Tab */}
           <TabsContent value="acesso">
             <GestaoAcessoTab
-              accessUsers={accessUsers || []}
+              accessUsers={(accessUsers || []).filter((u: any) => u.role === 'user')}
               empresas={empresas || []}
               loading={loadingAccessUsers}
               onCreate={createAccessUser.mutate}
@@ -249,7 +249,7 @@ export default function AdminCadastros() {
   );
 }
 
-// ============ GESTÃO DE ACESSO TAB ============
+// ============ ALUNOS TAB ============
 function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleStatus, onUpdate, isCreating }: {
   accessUsers: any[];
   empresas: any[];
@@ -267,36 +267,22 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
-  const [role, setRole] = useState(""); // "admin" | "manager" | "mentor" | "user"
   const [programId, setProgramId] = useState("");
 
   // Edit form
   const [editNome, setEditNome] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editCpf, setEditCpf] = useState("");
-  const [editRole, setEditRole] = useState("");
   const [editProgramId, setEditProgramId] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const credentialDigits = cpf.replace(/\D/g, '');
-    if (role === 'user') {
-      if (credentialDigits.length === 0) {
-        toast.error("ID deve ser informado");
-        return;
-      }
-    } else {
-      if (credentialDigits.length !== 11) {
-        toast.error("CPF deve conter 11 dígitos");
-        return;
-      }
-    }
-    if (!role) {
-      toast.error("Selecione o perfil do usuário");
+    if (credentialDigits.length === 0) {
+      toast.error("ID do aluno deve ser informado");
       return;
     }
-    const actualRole = role === "mentor" ? "manager" : role;
-    if ((role === "manager" || role === "mentor" || role === "user") && !programId) {
+    if (!programId) {
       toast.error("Selecione a empresa vinculada");
       return;
     }
@@ -304,14 +290,13 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
       name: nome, 
       email, 
       cpf: credentialDigits,
-      role: actualRole as "user" | "admin" | "manager",
-      programId: programId ? parseInt(programId) : null,
-      isMentor: role === "mentor",
+      role: "user" as "user" | "admin" | "manager",
+      programId: parseInt(programId),
+      isMentor: false,
     });
     setNome("");
     setEmail("");
     setCpf("");
-    setRole("");
     setProgramId("");
     setOpen(false);
   };
@@ -320,9 +305,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
     setEditUser(user);
     setEditNome(user.name || "");
     setEditEmail(user.email || "");
-    setEditCpf(displayCpf(user.cpf));
-    // Mapear role para exibição: manager com consultorId = mentor
-    setEditRole(getDisplayRole(user));
+    setEditCpf(user.cpf || "");
     setEditProgramId(user.programId ? user.programId.toString() : "");
     setEditOpen(true);
   };
@@ -331,24 +314,16 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
     e.preventDefault();
     if (!editUser) return;
     const editCredentialDigits = editCpf.replace(/\D/g, '');
-    if (editRole === 'user') {
-      if (editCredentialDigits.length === 0) {
-        toast.error("ID deve ser informado");
-        return;
-      }
-    } else {
-      if (editCredentialDigits.length !== 11) {
-        toast.error("CPF deve conter 11 dígitos");
-        return;
-      }
+    if (editCredentialDigits.length === 0) {
+      toast.error("ID do aluno deve ser informado");
+      return;
     }
-    const actualEditRole = editRole === "mentor" ? "manager" : editRole;
     onUpdate({
       userId: editUser.id,
       name: editNome,
       email: editEmail,
       cpf: editCredentialDigits,
-      role: actualEditRole as "user" | "admin" | "manager",
+      role: "user" as "user" | "admin" | "manager",
       programId: editProgramId ? parseInt(editProgramId) : null,
     });
     setEditOpen(false);
@@ -360,24 +335,23 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5" />
-            Gestão de Acesso
+            <GraduationCap className="h-5 w-5" />
+            Alunos
           </CardTitle>
           <CardDescription>
-            Cadastre e gerencie usuários que acessam a plataforma por Email + CPF ou ID.
-            O sistema detecta automaticamente o perfil (Admin, Gestor ou Aluno) ao fazer login.
+            Cadastro e gerenciamento dos alunos que acessam a plataforma por Email + ID.
           </CardDescription>
         </div>
         <Dialog open={open} onOpenChange={(v) => { if (!v) setOpen(false); else setOpen(true); }}>
           <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Novo Usuário</Button>
+            <Button><Plus className="h-4 w-4 mr-2" /> Novo Aluno</Button>
           </DialogTrigger>
           <DialogContent className="z-50" onPointerDownOutside={(e) => e.preventDefault()}>
             <form onSubmit={handleSubmit}>
               <DialogHeader>
-                <DialogTitle>Cadastrar Novo Usuário</DialogTitle>
+                <DialogTitle>Cadastrar Novo Aluno</DialogTitle>
                 <DialogDescription>
-                  Preencha os dados do usuário. Ele fará login com Email + CPF ou ID.
+                  Preencha os dados do aluno. Ele fará login com Email + ID.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -390,46 +364,30 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                   <Input id="access-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="access-cpf">{role === 'user' ? 'ID *' : 'CPF *'}</Label>
+                  <Label htmlFor="access-cpf">ID do Aluno *</Label>
                   <Input 
                     id="access-cpf" 
                     value={cpf} 
-                    onChange={(e) => role === 'user' ? setCpf(e.target.value.replace(/\D/g, '')) : setCpf(formatCpf(e.target.value))} 
-                    placeholder={role === 'user' ? 'Ex: 667306' : '000.000.000-00'} 
+                    onChange={(e) => setCpf(e.target.value.replace(/\D/g, ''))} 
+                    placeholder="Ex: 667306" 
                     required 
-                    maxLength={role === 'user' ? 10 : 14}
+                    maxLength={10}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="access-role">Perfil de Acesso *</Label>
-                  <Select value={role} onValueChange={setRole}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o perfil" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                      <SelectItem value="mentor">Mentor</SelectItem>
-                      <SelectItem value="manager">Gestor de Empresa</SelectItem>
-                      <SelectItem value="user">Aluno</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="access-empresa">Empresa Vinculada *</Label>
+                  <select
+                    id="access-empresa"
+                    value={programId}
+                    onChange={(e) => setProgramId(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">Selecione a empresa</option>
+                    {empresas.map((emp) => (
+                      <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
+                    ))}
+                  </select>
                 </div>
-                {(role === "manager" || role === "mentor" || role === "user") && (
-                  <div className="space-y-2">
-                    <Label htmlFor="access-empresa">Empresa Vinculada *</Label>
-                    <select
-                      id="access-empresa"
-                      value={programId}
-                      onChange={(e) => setProgramId(e.target.value)}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      <option value="">Selecione a empresa</option>
-                      {empresas.map((emp) => (
-                        <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={isCreating}>
@@ -445,8 +403,8 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
           <DialogContent className="z-50" onPointerDownOutside={(e) => e.preventDefault()}>
             <form onSubmit={handleEditSubmit}>
               <DialogHeader>
-                <DialogTitle>Editar Usuário</DialogTitle>
-                <DialogDescription>Altere os dados do usuário</DialogDescription>
+                <DialogTitle>Editar Aluno</DialogTitle>
+                <DialogDescription>Altere os dados do aluno</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -458,43 +416,27 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                   <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>{editRole === 'user' ? 'ID *' : 'CPF *'}</Label>
+                  <Label>ID do Aluno *</Label>
                   <Input 
                     value={editCpf} 
-                    onChange={(e) => editRole === 'user' ? setEditCpf(e.target.value.replace(/\D/g, '')) : setEditCpf(formatCpf(e.target.value))} 
+                    onChange={(e) => setEditCpf(e.target.value.replace(/\D/g, ''))} 
                     required 
-                    maxLength={editRole === 'user' ? 10 : 14}
+                    maxLength={10}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Perfil de Acesso *</Label>
-                  <Select value={editRole} onValueChange={setEditRole}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o perfil" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                      <SelectItem value="mentor">Mentor</SelectItem>
-                      <SelectItem value="manager">Gestor de Empresa</SelectItem>
-                      <SelectItem value="user">Aluno</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Empresa Vinculada *</Label>
+                  <select
+                    value={editProgramId}
+                    onChange={(e) => setEditProgramId(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">Selecione a empresa</option>
+                    {empresas.map((emp) => (
+                      <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
+                    ))}
+                  </select>
                 </div>
-                {(editRole === "manager" || editRole === "mentor" || editRole === "user") && (
-                  <div className="space-y-2">
-                    <Label>Empresa Vinculada *</Label>
-                    <select
-                      value={editProgramId}
-                      onChange={(e) => setEditProgramId(e.target.value)}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      <option value="">Selecione a empresa</option>
-                      {empresas.map((emp) => (
-                        <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
               </div>
               <DialogFooter>
                 <Button type="submit">Salvar Alterações</Button>
@@ -508,24 +450,22 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
           <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
           <>
-            {/* Summary cards */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
-              <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-                <p className="text-sm text-muted-foreground">Administradores</p>
-                <p className="text-2xl font-bold">{accessUsers.filter(u => u.role === 'admin').length}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                <p className="text-sm text-muted-foreground">Mentores</p>
-                <p className="text-2xl font-bold">{accessUsers.filter(u => u.role === 'manager' && u.consultorId).length}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                <p className="text-sm text-muted-foreground">Gestores</p>
-                <p className="text-2xl font-bold">{accessUsers.filter(u => u.role === 'manager' && !u.consultorId).length}</p>
-              </div>
+            {/* Summary cards - por empresa */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
               <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                <p className="text-sm text-muted-foreground">Alunos</p>
-                <p className="text-2xl font-bold">{accessUsers.filter(u => u.role === 'user').length}</p>
+                <p className="text-sm text-muted-foreground">Total de Alunos</p>
+                <p className="text-2xl font-bold">{accessUsers.length}</p>
               </div>
+              {empresas.map((emp: any) => {
+                const count = accessUsers.filter(u => u.programId === emp.id).length;
+                if (count === 0) return null;
+                return (
+                  <div key={emp.id} className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <p className="text-sm text-muted-foreground">{emp.name}</p>
+                    <p className="text-2xl font-bold">{count}</p>
+                  </div>
+                );
+              })}
             </div>
 
             <Table>
@@ -533,8 +473,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>CPF / ID</TableHead>
-                  <TableHead>Perfil</TableHead>
+                  <TableHead>ID</TableHead>
                   <TableHead>Empresa</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
@@ -545,12 +484,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email || "-"}</TableCell>
-                    <TableCell className="font-mono text-sm">{displayCpf(user.cpf)}</TableCell>
-                    <TableCell>
-                      <Badge className={ROLE_COLORS[getDisplayRole(user)] || "bg-gray-600"}>
-                        {ROLE_LABELS[getDisplayRole(user)] || user.role}
-                      </Badge>
-                    </TableCell>
+                    <TableCell className="font-mono text-sm">{user.cpf || "-"}</TableCell>
                     <TableCell>
 {user.programName || "-"}
                     </TableCell>
@@ -584,8 +518,8 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                 ))}
                 {accessUsers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      Nenhum usuário cadastrado. Clique em "Novo Usuário" para começar.
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      Nenhum aluno cadastrado. Clique em "Novo Aluno" para começar.
                     </TableCell>
                   </TableRow>
                 )}
