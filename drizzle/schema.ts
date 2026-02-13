@@ -10,9 +10,14 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   passwordHash: varchar("passwordHash", { length: 255 }), // Para login tradicional com senha
+  cpf: varchar("cpf", { length: 14 }), // CPF para login universal (formato: 12345678900)
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin", "manager"]).default("user").notNull(),
+  programId: int("programId"), // Empresa vinculada (para gestores e alunos)
+  alunoId: int("alunoId"), // Referência ao aluno (para perfil aluno)
+  consultorId: int("consultorId"), // Referência ao consultor/gerente (para perfil gestor)
   departmentId: int("departmentId"),
+  isActive: int("isActive").default(1).notNull(), // 1 = ativo, 0 = inativo
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

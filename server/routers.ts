@@ -68,6 +68,33 @@ export const appRouter = router({
         return { success: true, user: result.user };
       }),
     
+    // Login universal por Email + CPF
+    emailCpfLogin: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        cpf: z.string().min(11)
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.authenticateByEmailCpf(input.email, input.cpf);
+        
+        if (!result.success) {
+          return { success: false, message: result.message };
+        }
+        
+        // Criar sessão
+        const { sdk } = await import("./_core/sdk");
+        const { ONE_YEAR_MS } = await import("@shared/const");
+        const token = await sdk.createSessionToken(result.user.openId, {
+          name: result.user.name || "",
+          expiresInMs: ONE_YEAR_MS,
+        });
+        
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        
+        return { success: true, user: result.user };
+      }),
+    
     // Login customizado para Alunos, Mentores e Gerentes
     customLogin: publicProcedure
       .input(z.object({
@@ -799,7 +826,7 @@ export const appRouter = router({
     }),
     
     // Dashboard por Empresa
-    porEmpresa: adminProcedure
+    porEmpresa: managerProcedure
       .input(z.object({ empresa: z.string() }))
       .query(async ({ input }) => {
         const mentoringSessions = await db.getAllMentoringSessions();
@@ -1409,6 +1436,44 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         return await db.createAluno(input);
+      }),
+    
+    // Gestão de Acesso (Email + CPF)
+    listAccessUsers: adminProcedure.query(async () => {
+      return await db.getAccessUsers();
+    }),
+    
+    createAccessUser: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        cpf: z.string().min(11),
+        role: z.enum(["user", "admin", "manager"]),
+        programId: z.number().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createAccessUser(input);
+      }),
+    
+    updateAccessUser: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        name: z.string().optional(),
+        email: z.string().email().optional(),
+        cpf: z.string().optional(),
+        role: z.enum(["user", "admin", "manager"]).optional(),
+        programId: z.number().nullable().optional(),
+        isActive: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { userId, ...data } = input;
+        return await db.updateAccessUser(userId, data);
+      }),
+    
+    toggleAccessUserStatus: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.toggleAccessUserStatus(input.userId);
       }),
   }),
 });

@@ -1,4 +1,4 @@
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, not } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -1212,6 +1212,217 @@ export async function deleteUploadedFile(id: number) {
 // ============ ADMIN LOGIN FUNCTIONS ============
 
 // Login para Administradores (username + password)
+// ============ LOGIN UNIVERSAL EMAIL + CPF ============
+
+export async function authenticateByEmailCpf(email: string, cpf: string): Promise<{ success: boolean; user?: any; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+  
+  // Normalizar CPF (remover pontos e traços)
+  const normalizedCpf = cpf.replace(/[.\-]/g, '');
+  
+  const [user] = await db.select()
+    .from(users)
+    .where(and(
+      eq(users.email, email.toLowerCase()),
+      eq(users.cpf, normalizedCpf),
+      eq(users.isActive, 1)
+    ))
+    .limit(1);
+  
+  if (!user) {
+    return { success: false, message: "Email ou CPF incorretos, ou usuário inativo. Verifique suas credenciais." };
+  }
+  
+  // Atualizar último login
+  await db.update(users)
+    .set({ lastSignedIn: new Date() })
+    .where(eq(users.id, user.id));
+  
+  return {
+    success: true,
+    user: {
+      id: user.id,
+      openId: user.openId,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      programId: user.programId,
+      alunoId: user.alunoId,
+      consultorId: user.consultorId
+    }
+  };
+}
+
+// ============ GESTÃO DE ACESSO (ADMIN) ============
+
+export async function createAccessUser(data: {
+  name: string;
+  email: string;
+  cpf: string;
+  role: 'user' | 'admin' | 'manager';
+  programId?: number | null;
+  alunoId?: number | null;
+  consultorId?: number | null;
+}): Promise<{ success: boolean; user?: any; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+  
+  const normalizedCpf = data.cpf.replace(/[.\-]/g, '');
+  
+  // Verificar CPF duplicado
+  const [existing] = await db.select()
+    .from(users)
+    .where(eq(users.cpf, normalizedCpf))
+    .limit(1);
+  
+  if (existing) {
+    return { success: false, message: "Este CPF já está cadastrado no sistema." };
+  }
+  
+  // Verificar email duplicado
+  const [existingEmail] = await db.select()
+    .from(users)
+    .where(eq(users.email, data.email.toLowerCase()))
+    .limit(1);
+  
+  if (existingEmail) {
+    return { success: false, message: "Este email já está cadastrado no sistema." };
+  }
+  
+  const openId = `access_${data.role}_${normalizedCpf}`;
+  
+  await db.insert(users).values({
+    openId,
+    name: data.name,
+    email: data.email.toLowerCase(),
+    cpf: normalizedCpf,
+    role: data.role,
+    programId: data.programId ?? null,
+    alunoId: data.alunoId ?? null,
+    consultorId: data.consultorId ?? null,
+    loginMethod: 'email_cpf',
+    isActive: 1,
+    lastSignedIn: new Date(),
+  });
+  
+  return {
+    success: true,
+    user: { openId, name: data.name, email: data.email, role: data.role }
+  };
+}
+
+export async function updateAccessUser(userId: number, data: {
+  name?: string;
+  email?: string;
+  cpf?: string;
+  role?: 'user' | 'admin' | 'manager';
+  programId?: number | null;
+  isActive?: number;
+}): Promise<{ success: boolean; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+  
+  const updateData: Record<string, unknown> = {};
+  
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.email !== undefined) updateData.email = data.email.toLowerCase();
+  if (data.role !== undefined) updateData.role = data.role;
+  if (data.programId !== undefined) updateData.programId = data.programId;
+  if (data.isActive !== undefined) updateData.isActive = data.isActive;
+  
+  if (data.cpf !== undefined) {
+    const normalizedCpf = data.cpf.replace(/[.\-]/g, '');
+    // Verificar CPF duplicado (excluindo o próprio usuário)
+    const [existing] = await db.select()
+      .from(users)
+      .where(and(
+        eq(users.cpf, normalizedCpf),
+        not(eq(users.id, userId))
+      ))
+      .limit(1);
+    
+    if (existing) {
+      return { success: false, message: "Este CPF já está cadastrado para outro usuário." };
+    }
+    updateData.cpf = normalizedCpf;
+  }
+  
+  if (data.email !== undefined) {
+    // Verificar email duplicado (excluindo o próprio usuário)
+    const [existingEmail] = await db.select()
+      .from(users)
+      .where(and(
+        eq(users.email, data.email.toLowerCase()),
+        not(eq(users.id, userId))
+      ))
+      .limit(1);
+    
+    if (existingEmail) {
+      return { success: false, message: "Este email já está cadastrado para outro usuário." };
+    }
+  }
+  
+  await db.update(users)
+    .set(updateData)
+    .where(eq(users.id, userId));
+  
+  return { success: true };
+}
+
+export async function getAccessUsers(): Promise<any[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const result = await db.select({
+    id: users.id,
+    openId: users.openId,
+    name: users.name,
+    email: users.email,
+    cpf: users.cpf,
+    role: users.role,
+    programId: users.programId,
+    alunoId: users.alunoId,
+    consultorId: users.consultorId,
+    isActive: users.isActive,
+    loginMethod: users.loginMethod,
+    createdAt: users.createdAt,
+    lastSignedIn: users.lastSignedIn,
+  })
+    .from(users)
+    .where(eq(users.loginMethod, 'email_cpf'))
+    .orderBy(desc(users.createdAt));
+  
+  return result;
+}
+
+export async function deleteAccessUser(userId: number): Promise<{ success: boolean; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+  
+  await db.update(users)
+    .set({ isActive: 0 })
+    .where(eq(users.id, userId));
+  
+  return { success: true };
+}
+
+export async function toggleAccessUserStatus(userId: number): Promise<{ success: boolean; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+  
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) return { success: false, message: "Usuário não encontrado" };
+  
+  const newStatus = user.isActive === 1 ? 0 : 1;
+  await db.update(users)
+    .set({ isActive: newStatus })
+    .where(eq(users.id, userId));
+  
+  return { success: true };
+}
+
+
 export async function authenticateAdmin(username: string, passwordHash: string): Promise<{ success: boolean; user?: any; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };

@@ -16,12 +16,29 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
+
+  // Redirect based on role
+  useEffect(() => {
+    if (loading || !user) return;
+    
+    if (user.role === "manager") {
+      setLocation("/dashboard/gestor");
+      return;
+    }
+    
+    if (user.role === "user") {
+      setLocation("/dashboard/aluno");
+      return;
+    }
+    // admin stays on Home
+  }, [user, loading, setLocation]);
+
   const isAdmin = user?.role === "admin";
-  const isManager = user?.role === "manager" || isAdmin;
 
   // Fetch stats for admin
   const { data: stats } = trpc.stats.overview.useQuery(undefined, {
@@ -32,13 +49,13 @@ export default function Home() {
   const { data: latestBatch } = trpc.dashboard.latestBatch.useQuery();
 
   const quickActions = [
-    ...(isManager ? [{ 
+    { 
       icon: Upload, 
       label: "Upload de Planilhas", 
       description: "Carregar novos dados semanais",
       path: "/upload",
       color: "from-primary to-primary/80"
-    }] : []),
+    },
     { 
       icon: BarChart3, 
       label: "Visão Geral", 
@@ -50,17 +67,28 @@ export default function Home() {
       icon: FileText, 
       label: "Relatórios", 
       description: "Gerar e exportar relatórios",
-      path: "/reports",
+      path: "/relatorios",
       color: "from-chart-3 to-chart-3/80"
     },
-    ...(isAdmin ? [{ 
+    { 
       icon: Users, 
-      label: "Gerenciar Usuários", 
-      description: "Administrar permissões",
-      path: "/users",
+      label: "Cadastros", 
+      description: "Gerenciar acessos e cadastros",
+      path: "/cadastros",
       color: "from-chart-4 to-chart-4/80"
-    }] : []),
+    },
   ];
+
+  // If not admin, don't render the admin home (redirect will happen)
+  if (!isAdmin) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="animate-pulse text-muted-foreground">Redirecionando...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -71,16 +99,12 @@ export default function Home() {
             Bem-vindo ao <span className="text-gradient">ECOSSISTEMA DO BEM</span>
           </h1>
           <p className="text-muted-foreground mt-2">
-            {isAdmin 
-              ? "Visão administrativa completa do sistema" 
-              : isManager 
-                ? "Gerencie sua equipe e visualize métricas departamentais"
-                : "Acompanhe suas métricas e evolução pessoal"}
+            Visão administrativa completa do sistema
           </p>
         </div>
 
         {/* Stats Cards - Admin Only */}
-        {isAdmin && stats && (
+        {stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Alunos */}
             <Card className="gradient-card card-hover">
@@ -220,17 +244,9 @@ export default function Home() {
                 <TrendingUp className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold mb-1">
-                  {isAdmin ? "Acesso Administrativo" : 
-                   isManager ? "Acesso Gerencial" : 
-                   "Acesso Individual"}
-                </h3>
+                <h3 className="font-semibold mb-1">Acesso Administrativo</h3>
                 <p className="text-sm text-muted-foreground">
-                  {isAdmin 
-                    ? "Você tem acesso completo: Visão Geral, Mentores, Empresas e Alunos. Gerencie usuários, departamentos e configurações."
-                    : isManager 
-                      ? "Você pode visualizar métricas da sua equipe, fazer upload de planilhas e gerar relatórios departamentais."
-                      : "Você pode acompanhar suas métricas pessoais, histórico de evolução e gerar relatórios individuais."}
+                  Você tem acesso completo: Visão Geral, Mentores, Empresas e Alunos. Gerencie usuários, departamentos e configurações.
                 </p>
               </div>
             </div>

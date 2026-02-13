@@ -25,6 +25,7 @@ import TrilhasCompetencias from "./pages/TrilhasCompetencias";
 import PlanoIndividual from "./pages/PlanoIndividual";
 import DashboardAluno from "./pages/DashboardAluno";
 import RegistroMentoria from "./pages/RegistroMentoria";
+import DashboardGestor from "./pages/DashboardGestor";
 
 function Router() {
   return (
@@ -48,6 +49,7 @@ function Router() {
       <Route path={"/plano-individual"} component={PlanoIndividual} />
       <Route path={"/dashboard/aluno"} component={DashboardAluno} />
       <Route path={"/registro-mentoria"} component={RegistroMentoria} />
+      <Route path={"/dashboard/gestor"} component={DashboardGestor} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

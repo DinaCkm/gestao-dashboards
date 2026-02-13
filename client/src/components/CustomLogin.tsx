@@ -3,30 +3,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
-import { Loader2, User, UserCheck, Building2, AlertCircle, Shield } from "lucide-react";
+import { Loader2, AlertCircle, Shield, LogIn, Mail, Fingerprint } from "lucide-react";
+
+function formatCpf(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
 
 export default function CustomLogin() {
-  const [activeTab, setActiveTab] = useState("aluno");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   
-  // Form states
-  const [alunoId, setAlunoId] = useState("");
-  const [alunoEmail, setAlunoEmail] = useState("");
-  const [mentorId, setMentorId] = useState("");
-  const [mentorEmail, setMentorEmail] = useState("");
-  const [gerenteId, setGerenteId] = useState("");
-  const [gerenteEmail, setGerenteEmail] = useState("");
+  // Email + CPF login states
+  const [email, setEmail] = useState("");
+  const [cpf, setCpf] = useState("");
   
   // Admin login states
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
 
-  const loginMutation = trpc.auth.customLogin.useMutation({
+  const emailCpfLoginMutation = trpc.auth.emailCpfLogin.useMutation({
     onSuccess: (data) => {
       if (data.success) {
         window.location.reload();
@@ -56,36 +58,20 @@ export default function CustomLogin() {
     },
   });
 
-  const handleAlunoLogin = (e: React.FormEvent) => {
+  const handleEmailCpfLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    
+    const cpfDigits = cpf.replace(/\D/g, '');
+    if (cpfDigits.length !== 11) {
+      setError("CPF deve conter 11 dígitos.");
+      return;
+    }
+    
     setLoading(true);
-    loginMutation.mutate({
-      type: "aluno",
-      id: alunoId.trim(),
-      email: alunoEmail.trim().toLowerCase(),
-    });
-  };
-
-  const handleMentorLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    loginMutation.mutate({
-      type: "mentor",
-      id: mentorId.trim(),
-      email: mentorEmail.trim().toLowerCase(),
-    });
-  };
-
-  const handleGerenteLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    loginMutation.mutate({
-      type: "gerente",
-      id: gerenteId.trim(),
-      email: gerenteEmail.trim().toLowerCase(),
+    emailCpfLoginMutation.mutate({
+      email: email.trim().toLowerCase(),
+      cpf: cpfDigits,
     });
   };
 
@@ -198,6 +184,7 @@ export default function CustomLogin() {
     );
   }
 
+  // Main Login Screen - Email + CPF
   return (
     <div className="flex items-center justify-center min-h-screen gradient-bg">
       <div className="flex flex-col items-center gap-6 p-8 max-w-lg w-full">
@@ -222,7 +209,7 @@ export default function CustomLogin() {
           <CardHeader className="text-center pb-2">
             <CardTitle>Acesse sua conta</CardTitle>
             <CardDescription>
-              Selecione seu tipo de acesso e informe suas credenciais
+              Informe seu email e CPF para entrar na plataforma
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -233,142 +220,54 @@ export default function CustomLogin() {
               </Alert>
             )}
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="aluno" className="flex items-center gap-1">
-                  <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">Aluno</span>
-                </TabsTrigger>
-                <TabsTrigger value="mentor" className="flex items-center gap-1">
-                  <UserCheck className="h-4 w-4" />
-                  <span className="hidden sm:inline">Mentor</span>
-                </TabsTrigger>
-                <TabsTrigger value="gerente" className="flex items-center gap-1">
-                  <Building2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Gerente</span>
-                </TabsTrigger>
-              </TabsList>
-
-              {/* Aluno Login */}
-              <TabsContent value="aluno">
-                <form onSubmit={handleAlunoLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="aluno-id">ID do Usuário</Label>
-                    <Input
-                      id="aluno-id"
-                      placeholder="Digite seu ID (ex: 12345)"
-                      value={alunoId}
-                      onChange={(e) => setAlunoId(e.target.value)}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      O ID está na sua planilha de matrícula
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="aluno-email">Email</Label>
-                    <Input
-                      id="aluno-email"
-                      type="email"
-                      placeholder="seu.email@exemplo.com"
-                      value={alunoEmail}
-                      onChange={(e) => setAlunoEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full glow-orange" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Entrando...
-                      </>
-                    ) : (
-                      "Entrar como Aluno"
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              {/* Mentor Login */}
-              <TabsContent value="mentor">
-                <form onSubmit={handleMentorLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="mentor-id">ID do Mentor</Label>
-                    <Input
-                      id="mentor-id"
-                      placeholder="Digite seu ID de mentor"
-                      value={mentorId}
-                      onChange={(e) => setMentorId(e.target.value)}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      ID fornecido pelo administrador
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="mentor-email">Email</Label>
-                    <Input
-                      id="mentor-email"
-                      type="email"
-                      placeholder="seu.email@exemplo.com"
-                      value={mentorEmail}
-                      onChange={(e) => setMentorEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full glow-orange" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Entrando...
-                      </>
-                    ) : (
-                      "Entrar como Mentor"
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              {/* Gerente Login */}
-              <TabsContent value="gerente">
-                <form onSubmit={handleGerenteLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="gerente-id">ID do Gerente</Label>
-                    <Input
-                      id="gerente-id"
-                      placeholder="Digite seu ID de gerente"
-                      value={gerenteId}
-                      onChange={(e) => setGerenteId(e.target.value)}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      ID fornecido pelo administrador
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="gerente-email">Email</Label>
-                    <Input
-                      id="gerente-email"
-                      type="email"
-                      placeholder="seu.email@exemplo.com"
-                      value={gerenteEmail}
-                      onChange={(e) => setGerenteEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full glow-orange" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Entrando...
-                      </>
-                    ) : (
-                      "Entrar como Gerente"
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+            <form onSubmit={handleEmailCpfLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="login-email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  Email
+                </Label>
+                <Input
+                  id="login-email"
+                  type="email"
+                  placeholder="seu.email@exemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="login-cpf" className="flex items-center gap-2">
+                  <Fingerprint className="h-4 w-4 text-muted-foreground" />
+                  CPF
+                </Label>
+                <Input
+                  id="login-cpf"
+                  placeholder="000.000.000-00"
+                  value={cpf}
+                  onChange={(e) => setCpf(formatCpf(e.target.value))}
+                  required
+                  autoComplete="off"
+                  maxLength={14}
+                />
+                <p className="text-xs text-muted-foreground">
+                  O sistema detectará automaticamente seu perfil de acesso
+                </p>
+              </div>
+              <Button type="submit" className="w-full glow-orange" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Entrar
+                  </>
+                )}
+              </Button>
+            </form>
 
             {/* Admin login link */}
             <div className="mt-6 pt-4 border-t border-border">

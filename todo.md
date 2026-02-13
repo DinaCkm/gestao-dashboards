@@ -308,3 +308,40 @@
 - [x] Melhorar ErrorBoundary para resetar automaticamente na mudança de rota
 - [x] Adicionar isAnimationActive={false} nos gráficos Recharts para evitar conflitos de DOM
 - [x] Usar key prop nos containers de gráficos para forçar remontagem limpa
+
+## Sistema de Login Universal Email+CPF e Perfis de Acesso (12/02/2026)
+
+### Backend
+- [x] Adicionar campo CPF na tabela de acesso (users ou nova tabela unificada)
+- [x] Criar endpoint de login por Email+CPF (sem senha)
+- [x] Associar usuário a programId (empresa) para gestores e alunos
+- [x] Criar endpoints de cadastro de usuários pelo admin (nome, email, CPF, perfil, empresa)
+- [x] Validação de CPF único no cadastro
+- [x] Detecção automática de perfil no login (admin/gestor/aluno)
+
+### Frontend - Login
+- [x] Tela de login unificada: Email + CPF
+- [x] Redirecionamento automático por perfil após login
+- [x] Mensagem de erro clara para credenciais inválidas
+
+### Frontend - Cadastro pelo Admin
+- [x] Página de cadastro de usuários (Gestores e Alunos) na área admin
+- [x] Formulário: nome, email, CPF, perfil (admin/gestor/aluno), empresa vinculada
+- [x] Lista de usuários cadastrados com status ativo/inativo
+- [x] Edição e desativação de usuários
+
+### Frontend - Dashboard do Gestor
+- [x] Dashboard filtrado por empresa do gestor (KPIs, gráficos, alunos)
+- [x] Filtro por turma no dashboard do Gestor
+- [x] Filtro por aluno no dashboard do Gestor
+- [x] Navegação simplificada (sem acesso a admin, upload, cadastros)
+- [ ] Visão de mentores da empresa
+
+### Frontend - Dashboard do Aluno
+- [ ] Dashboard individual do aluno (nota, classificação, plano individual)
+- [ ] Navegação mínima (apenas dados próprios)
+
+### Navegação e Perfis
+- [x] Sidebar filtrado por perfil (admin vê tudo, gestor vê empresa, aluno vê próprio)
+- [x] Redirecionamento automático para dashboard correto após login
+- [ ] Testar fluxo completo dos 3 perfis

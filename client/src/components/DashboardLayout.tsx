@@ -65,23 +65,24 @@ const allMenuItems: MenuItem[] = [
   { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria", roles: ["admin", "manager"] },
   
   // === GERENTES DE EMPRESA ===
-  { icon: Building2, label: "Por Empresa", path: "/dashboard/empresa", roles: ["admin", "manager"] },
+  { icon: Building2, label: "Por Empresa", path: "/dashboard/empresa", roles: ["admin"] },
+  { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"] },
   
   // === ALUNO INDIVIDUAL ===
-  { icon: User, label: "Meu Dashboard", path: "/dashboard/individual", roles: ["admin", "manager", "user"] },
+  { icon: User, label: "Meu Dashboard", path: "/", roles: ["user"] },
   { icon: GraduationCap, label: "Dashboard Aluno", path: "/dashboard/aluno", roles: ["admin"] },
   
   // === CADASTROS ===
   { icon: Users, label: "Cadastros", path: "/cadastros", roles: ["admin"] },
   
   // === RELATÓRIOS E GESTÃO ===
-  { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager", "user"] },
+  { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager"] },
   { icon: GraduationCap, label: "Turmas", path: "/turmas", roles: ["admin"] },
   { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias", roles: ["admin"] },
   { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["admin"] },
   { icon: Calculator, label: "Fórmulas", path: "/formulas", roles: ["admin"] },
   { icon: FileSpreadsheet, label: "Histórico", path: "/historico", roles: ["admin", "manager"] },
-  { icon: Settings, label: "Configurações", path: "/configuracoes", roles: ["admin"] },
+  // { icon: Settings, label: "Configurações", path: "/configuracoes", roles: ["admin"] }, // TODO: implementar
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
