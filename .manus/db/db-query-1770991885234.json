@@ -1,0 +1,38 @@
+{
+  "query": "\nSELECT p.id, p.name, p.code, \n  (SELECT COUNT(*) FROM turmas t WHERE t.programId = p.id) as turmas,\n  (SELECT COUNT(*) FROM alunos a WHERE a.programId = p.id) as alunos\nFROM programs p ORDER BY p.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT p.id, p.name, p.code, \n  (SELECT COUNT(*) FROM turmas t WHERE t.programId = p.id) as turmas,\n  (SELECT COUNT(*) FROM alunos a WHERE a.programId = p.id) as alunos\nFROM programs p ORDER BY p.id;\n",
+  "rows": [
+    {
+      "id": "16",
+      "name": "SEBRAE ACRE",
+      "code": "SEBRAE_ACRE",
+      "turmas": "4",
+      "alunos": "33"
+    },
+    {
+      "id": "17",
+      "name": "SEBRAE TO",
+      "code": "SEBRAE_TO",
+      "turmas": "4",
+      "alunos": "50"
+    },
+    {
+      "id": "18",
+      "name": "EMBRAPII",
+      "code": "EMBRAPII",
+      "turmas": "3",
+      "alunos": "16"
+    },
+    {
+      "id": "19",
+      "name": "BANRISUL",
+      "code": "BANRISUL",
+      "turmas": "2",
+      "alunos": "26"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcode\tturmas\talunos\n16\tSEBRAE ACRE\tSEBRAE_ACRE\t4\t33\n17\tSEBRAE TO\tSEBRAE_TO\t4\t50\n18\tEMBRAPII\tEMBRAPII\t3\t16\n19\tBANRISUL\tBANRISUL\t2\t26\n",
+  "stderr": "",
+  "execution_time_ms": 119
+}

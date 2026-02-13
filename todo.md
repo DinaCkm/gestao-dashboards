@@ -533,3 +533,14 @@
 - [x] Backend não precisa mudar (mesmo campo cpf aceita ambos)
 - [x] Coluna CPF adicionada na tabela de mentores (schema + migração)
 - [x] Tabela de listagem de mentores mostra coluna CPF
+
+## Atualização de Dados de Performance (13/02/2026)
+- [x] Analisar diferenças entre dados atuais e nova planilha (100 alunos, 11 turmas, 36 competências)
+- [x] Limpar dados antigos de performance (exceto BANRISUL) do banco
+- [x] Importar novos dados da planilha atualizada (1.464 registros)
+- [x] Atualizar/criar alunos conforme nova planilha
+- [x] Atualizar/criar turmas conforme nova planilha (11 turmas)
+- [x] Importar notas e progresso das competências para plano_individual
+- [x] Manter dados do BANRISUL intactos
+- [x] Verificar dashboards com dados atualizados
+- [x] Atualizar registro de "Último Upload" para data de hoje (13/02/2026) após importação da nova planilha
