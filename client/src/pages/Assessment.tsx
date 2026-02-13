@@ -153,20 +153,19 @@ function AssessmentContent() {
                 <User className="h-3.5 w-3.5 text-muted-foreground" />
                 Aluno
               </Label>
-              <Select
-                value={selectedAlunoId ? String(selectedAlunoId) : "none"}
-                onValueChange={(v) => setSelectedAlunoId(v === "none" ? null : parseInt(v))}
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 appearance-none cursor-pointer"
+                value={selectedAlunoId ? String(selectedAlunoId) : ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedAlunoId(val === "" ? null : parseInt(val));
+                }}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um aluno" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Selecione um aluno</SelectItem>
-                  {alunos.map(a => (
-                    <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">Selecione um aluno</option>
+                {alunos.map(a => (
+                  <option key={a.id} value={String(a.id)}>{a.name}</option>
+                ))}
+              </select>
             </div>
 
             {/* Botão Novo Assessment */}

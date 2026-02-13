@@ -150,22 +150,24 @@ export default function DashboardAluno() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Aluno</label>
-                <Select 
-                  value={selectedAlunoId !== null ? String(selectedAlunoId) : undefined} 
-                  onValueChange={(v) => {
-                    const id = parseInt(v);
-                    if (!isNaN(id)) setSelectedAlunoId(id);
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 appearance-none cursor-pointer"
+                  value={selectedAlunoId !== null ? String(selectedAlunoId) : ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "") {
+                      setSelectedAlunoId(null);
+                    } else {
+                      const id = parseInt(val);
+                      if (!isNaN(id)) setSelectedAlunoId(id);
+                    }
                   }}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um aluno" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {alunos.map(a => (
-                      <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="">Selecione um aluno</option>
+                  {alunos.map(a => (
+                    <option key={a.id} value={String(a.id)}>{a.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </CardContent>

@@ -648,3 +648,5 @@
 - [x] BUG RECORRENTE: Dropdown de empresa não abre para mentora Adriana - resolvido removendo filtro de empresa da área do mentor
 - [x] Remover filtro de empresa da área do mentor (Registro de Mentoria e Assessment/PDI) - mentor vê apenas lista de alunos
 - [x] BUG: Ao selecionar aluno no filtro, nada acontece - corrigido: Select usava value="" em vez de undefined (RegistroMentoria + DashboardAluno)
+- [x] BUG CRÍTICO: Ao selecionar aluno como mentor, a tela não muda - corrigido: substituído Radix Select por select nativo HTML
+- [x] SOLUÇÃO RADICAL: Substituir Select Radix por select nativo HTML para alunos no RegistroMentoria, Assessment e DashboardAluno
