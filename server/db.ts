@@ -1320,28 +1320,102 @@ export async function authenticateByEmailCpf(email: string, cpf: string): Promis
     ))
     .limit(1);
   
-  if (!user) {
-    return { success: false, message: "Email ou CPF/ID incorretos, ou usuário inativo. Verifique suas credenciais." };
+  if (user) {
+    // Atualizar último login
+    await db.update(users)
+      .set({ lastSignedIn: new Date() })
+      .where(eq(users.id, user.id));
+    
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        openId: user.openId,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        programId: user.programId,
+        alunoId: user.alunoId,
+        consultorId: user.consultorId
+      }
+    };
   }
   
-  // Atualizar último login
-  await db.update(users)
-    .set({ lastSignedIn: new Date() })
-    .where(eq(users.id, user.id));
+  // Se não encontrou em users, buscar na tabela consultors (mentores/gerentes)
+  const [consultor] = await db.select()
+    .from(consultors)
+    .where(and(
+      eq(consultors.email, email.toLowerCase()),
+      eq(consultors.cpf, normalizedCredential),
+      eq(consultors.isActive, 1),
+      eq(consultors.canLogin, 1)
+    ))
+    .limit(1);
   
-  return {
-    success: true,
-    user: {
-      id: user.id,
-      openId: user.openId,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      programId: user.programId,
-      alunoId: user.alunoId,
-      consultorId: user.consultorId
+  if (consultor) {
+    // Criar/atualizar registro na tabela users para o consultor
+    const role = consultor.role === 'gerente' ? 'manager' as const : 'manager' as const;
+    const openId = `consultor_${consultor.id}`;
+    
+    const [existingUser] = await db.select()
+      .from(users)
+      .where(eq(users.openId, openId))
+      .limit(1);
+    
+    if (existingUser) {
+      // Atualizar último login
+      await db.update(users)
+        .set({ lastSignedIn: new Date() })
+        .where(eq(users.id, existingUser.id));
+      
+      return {
+        success: true,
+        user: {
+          id: existingUser.id,
+          openId: existingUser.openId,
+          name: existingUser.name,
+          email: existingUser.email,
+          role: existingUser.role,
+          programId: existingUser.programId,
+          consultorId: consultor.id
+        }
+      };
+    } else {
+      // Criar registro em users para o consultor
+      await db.insert(users).values({
+        openId,
+        name: consultor.name,
+        email: consultor.email!.toLowerCase(),
+        cpf: normalizedCredential,
+        role,
+        loginMethod: 'email_cpf',
+        isActive: 1,
+        consultorId: consultor.id,
+        programId: consultor.managedProgramId ?? null,
+        lastSignedIn: new Date(),
+      });
+      
+      const [newUser] = await db.select()
+        .from(users)
+        .where(eq(users.openId, openId))
+        .limit(1);
+      
+      return {
+        success: true,
+        user: {
+          id: newUser?.id,
+          openId,
+          name: consultor.name,
+          email: consultor.email,
+          role,
+          programId: consultor.managedProgramId,
+          consultorId: consultor.id
+        }
+      };
     }
-  };
+  }
+  
+  return { success: false, message: "Email ou CPF/ID incorretos, ou usuário inativo. Verifique suas credenciais." };
 }
 
 // ============ GESTÃO DE ACESSO (ADMIN) ============

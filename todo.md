@@ -633,3 +633,4 @@
 - [x] Adicionar campo de especialidade no cadastro de mentores (schema, backend, frontend) para facilitar busca por habilidades
 - [x] Ordenar listas de alunos, mentores e gerentes: ativos primeiro, inativos no final
 - [x] Limpar registros de teste restantes ("Primeiro usuário 177...") do banco - 6 registros removidos
+- [x] BUG: Login da mentora Adriana não funciona - authenticateByEmailCpf agora busca também na tabela consultors e cria registro em users automaticamente
