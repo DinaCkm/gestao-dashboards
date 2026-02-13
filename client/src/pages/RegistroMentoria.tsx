@@ -170,21 +170,24 @@ export default function RegistroMentoria() {
             )}
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Empresa/Programa</label>
-                <Select value={selectedProgramId} onValueChange={handleProgramChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todas as empresas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as empresas</SelectItem>
-                    {programs.map(p => (
-                      <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2' : ''} gap-4`}>
+              {/* Empresa/Programa - apenas para admin */}
+              {isAdmin && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Empresa/Programa</label>
+                  <Select value={selectedProgramId} onValueChange={handleProgramChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todas as empresas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as empresas</SelectItem>
+                      {programs.map(p => (
+                        <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Aluno</label>
                 <Select 

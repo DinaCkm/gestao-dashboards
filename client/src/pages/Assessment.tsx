@@ -125,25 +125,27 @@ function AssessmentContent() {
       {/* Filters */}
       <Card className="border-border/50">
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Empresa */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-1.5">
-                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                Empresa
-              </Label>
-              <Select value={selectedProgramId} onValueChange={(v) => { setSelectedProgramId(v); setSelectedAlunoId(null); }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as empresas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as empresas</SelectItem>
-                  {programs.map(p => (
-                    <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
+            {/* Empresa - apenas para admin */}
+            {isAdmin && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  Empresa
+                </Label>
+                <Select value={selectedProgramId} onValueChange={(v) => { setSelectedProgramId(v); setSelectedAlunoId(null); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas as empresas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as empresas</SelectItem>
+                    {programs.map(p => (
+                      <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Aluno */}
             <div className="space-y-2">

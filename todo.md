@@ -645,3 +645,5 @@
 - [x] BUG: Filtro de empresa na tela da mentora - código corrigido, precisa publicar
 - [x] Remover 11 sessões de apresentação do sistema da Adriana com alunos SEBRAE TO (não são mentorias reais, manter apenas EMBRAPII) - Adriana agora: 5 alunos, 15 sessões, EMBRAPII
 - [x] BUG: Filtros de Empresa e Aluno nas páginas Registro de Mentoria e Assessment/PDI - código corrigido, precisa publicar para a Adriana ver
+- [x] BUG RECORRENTE: Dropdown de empresa não abre para mentora Adriana - resolvido removendo filtro de empresa da área do mentor
+- [x] Remover filtro de empresa da área do mentor (Registro de Mentoria e Assessment/PDI) - mentor vê apenas lista de alunos
