@@ -339,7 +339,19 @@ export default function RegistroMentoria() {
                 <Calendar className="h-5 w-5 text-[#1B3A5D]" />
                 Sessões de Mentoria
               </CardTitle>
-
+              {sessionProgress && sessionProgress.macroInicio && sessionProgress.macroTermino && (
+                <div className="flex items-center gap-3 mt-1 text-sm text-gray-600">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-[#1B3A5D]" />
+                    <span className="font-medium">Macro-Ciclo:</span>
+                    <span>
+                      {new Date(sessionProgress.macroInicio).toLocaleDateString('pt-BR')}
+                      {' a '}
+                      {new Date(sessionProgress.macroTermino).toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               {sessions.length > 0 ? (
@@ -454,8 +466,12 @@ export default function RegistroMentoria() {
                                 </div>
                                 
                                 <div className="flex items-center gap-3">
-                                  {/* Nível de Engajamento unificado */}
-                                  {session.notaEvolucao !== null && session.notaEvolucao !== undefined ? (() => {
+                                  {/* Nível de Engajamento unificado - NÃO exibir na 1ª sessão (encontro inicial) */}
+                                  {isFirstSession ? (
+                                    <Badge className="bg-gray-100 text-gray-500 border border-gray-200">
+                                      <Star className="h-3 w-3 mr-1" /> Encontro Inicial (sem avaliação)
+                                    </Badge>
+                                  ) : session.notaEvolucao !== null && session.notaEvolucao !== undefined ? (() => {
                                     const stage = getEvolucaoStage(session.notaEvolucao);
                                     return (
                                       <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${stage.bgColor} ${stage.borderColor}`}>
@@ -539,11 +555,13 @@ export default function RegistroMentoria() {
                               
                               <span className="text-gray-300">|</span>
                               
-                              {/* Evolução */}
+                              {/* Evolução - N/A na 1ª sessão */}
                               <div className="flex items-center gap-1.5">
-                                <TrendingUp className={`h-3.5 w-3.5 ${session.notaEvolucao != null ? 'text-blue-600' : 'text-gray-400'}`} />
+                                <TrendingUp className={`h-3.5 w-3.5 ${!isFirstSession && session.notaEvolucao != null ? 'text-blue-600' : 'text-gray-400'}`} />
                                 <span className="text-gray-600">Evolução:</span>
-                                {session.notaEvolucao != null ? (
+                                {isFirstSession ? (
+                                  <span className="text-gray-400 italic">N/A (1ª sessão)</span>
+                                ) : session.notaEvolucao != null ? (
                                   <span className="font-bold text-blue-700">
                                     {Math.round((session.notaEvolucao / 10) * 100)} pts
                                   </span>

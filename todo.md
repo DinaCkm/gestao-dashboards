@@ -722,3 +722,12 @@
 ## Correção de Texto (13/02/2026) - Progresso do Macro-Ciclo
 - [x] Corrigir texto "Faltam X sessões" para "Faltam X sessões para o término do Macro-Ciclo"
 - [x] Aplicado em: DashboardAluno, IndividualDashboard, RegistroMentoria
+
+## Regra de Negócio (13/02/2026) - Desconsiderar notas da 1ª sessão
+- [x] Investigar como a 1ª sessão é tratada no cálculo de indicadores (server-side)
+- [x] Desconsiderar nota de engajamento/evolução da 1ª sessão no cálculo do Indicador 3 (indicatorsCalculator.ts)
+- [x] Não exibir nota de engajamento na 1ª sessão na listagem (RegistroMentoria, DashboardAluno, IndividualDashboard)
+- [x] Atualizar testes para refletir a nova regra (110 testes passando)
+
+## Melhoria UX (13/02/2026) - Datas do Macro-Ciclo na tela de Sessões
+- [x] Exibir data de início e término do Macro-Ciclo na seção "Sessões de Mentoria" do RegistroMentoria

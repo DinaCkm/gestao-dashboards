@@ -753,7 +753,9 @@ export default function DashboardAluno() {
                                 )}
                               </TableCell>
                               <TableCell className="text-center">
-                                {(() => {
+                                {sessao.sessionNumber === 1 ? (
+                                  <span className="text-gray-400 text-xs italic">N/A (1ª sessão)</span>
+                                ) : (() => {
                                   const nota = sessao.notaEvolucao ?? sessao.engagementScore;
                                   if (nota == null) return <span className="text-gray-400">—</span>;
                                   const stageLabel = nota >= 9 ? 'Excelência' : nota >= 7 ? 'Avançado' : nota >= 5 ? 'Intermediário' : nota >= 3 ? 'Básico' : 'Inicial';

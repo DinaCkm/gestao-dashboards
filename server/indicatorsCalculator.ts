@@ -229,8 +229,12 @@ export function calcularIndicadoresAluno(
   // Fórmula: (Ind.1 + Ind.2 + Nota Mentora %) / 3
   // Nota Mentora: média das notas (0-10) convertida para % via (nota/10)*100
   // Estágios: Inicial (0-2), Básico (3-4), Intermediário (5-6), Avançado (7-8), Excelência (9-10)
+  // REGRA: Excluir 1ª sessão do cálculo - é o encontro inicial, não é justo avaliar
   // ============================================================
-  const notasEngajamento = mentoriasAluno
+  const mentoriasSemPrimeiraParaEngajamento = mentoriasOrdenadas.length > 1 
+    ? mentoriasOrdenadas.slice(1) 
+    : mentoriasOrdenadas;
+  const notasEngajamento = mentoriasSemPrimeiraParaEngajamento
     .filter(m => m.engajamento !== undefined && m.engajamento !== null)
     .map(m => m.engajamento!);
   const mediaEngajamentoRaw = notasEngajamento.length > 0

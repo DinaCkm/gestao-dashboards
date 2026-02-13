@@ -315,7 +315,9 @@ export default function IndividualDashboard() {
                         {session.taskStatus === 'entregue' ? 'Tarefa OK' :
                          session.taskStatus === 'nao_entregue' ? 'Pendente' : 'Sem tarefa'}
                       </Badge>
-                      {(() => {
+                      {session.sessionNumber === 1 ? (
+                        <span className="text-xs text-gray-400 italic px-2 py-0.5">Encontro Inicial</span>
+                      ) : (() => {
                         const nota = (session as any).notaEvolucao ?? session.engagementScore;
                         if (nota == null) return null;
                         const stage = getEvolucaoStage(nota);
