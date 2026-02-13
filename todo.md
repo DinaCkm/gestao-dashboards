@@ -512,3 +512,24 @@
 - [x] Vincular mentor ao consultor correspondente no cadastro (cria registro na tabela consultors)
 - [x] Corrigir turmas duplicadas no banco (13 removidas - já feito via SQL)
 - [x] Uniformizar nomenclatura: Consultor → Mentor em todo o sistema (frontend visível)
+
+## Validação de CPF Duplicado (13/02/2026)
+- [ ] Validar CPF duplicado no backend (endpoint createAccessUser) antes de criar o registro
+- [ ] Exibir mensagem de erro clara no frontend quando CPF já está cadastrado
+- [ ] Validar CPF duplicado também na edição de usuário (updateAccessUser)
+
+## Correção SEBRAE PARA → SEBRAE TO (13/02/2026)
+- [x] Corrigir nome da empresa "SEBRAE PARA" para "SEBRAE TO" no banco de dados (tabela programs)
+
+## Campo CPF no Formulário de Novo Mentor (13/02/2026)
+- [x] Adicionar campo CPF no formulário "Cadastrar Novo Mentor" (tab Mentores)
+- [x] Ao cadastrar mentor, criar também o registro de acesso (users) com Email+CPF para login
+- [x] Validar CPF duplicado no cadastro de mentor
+
+## Login Unificado Email + CPF ou ID (13/02/2026)
+- [x] Alterar frontend: tela de login - label "CPF ou ID" no campo de senha
+- [x] Formulário de cadastro de aluno: label "ID" (salva no campo cpf do banco)
+- [x] Formulário de cadastro de mentor/gestor: label "CPF" (mantém como está)
+- [x] Backend não precisa mudar (mesmo campo cpf aceita ambos)
+- [x] Coluna CPF adicionada na tabela de mentores (schema + migração)
+- [x] Tabela de listagem de mentores mostra coluna CPF

@@ -7,12 +7,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
 import { Loader2, AlertCircle, Shield, LogIn, Mail, Fingerprint } from "lucide-react";
 
-function formatCpf(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 11);
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
-  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+function formatCredential(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  // Se tem mais de 6 dígitos, formata como CPF
+  if (digits.length > 6) {
+    const cpfDigits = digits.slice(0, 11);
+    if (cpfDigits.length <= 3) return cpfDigits;
+    if (cpfDigits.length <= 6) return `${cpfDigits.slice(0, 3)}.${cpfDigits.slice(3)}`;
+    if (cpfDigits.length <= 9) return `${cpfDigits.slice(0, 3)}.${cpfDigits.slice(3, 6)}.${cpfDigits.slice(6)}`;
+    return `${cpfDigits.slice(0, 3)}.${cpfDigits.slice(3, 6)}.${cpfDigits.slice(6, 9)}-${cpfDigits.slice(9)}`;
+  }
+  // Se tem 6 ou menos dígitos, mantém como ID (sem formatação)
+  return digits;
 }
 
 export default function CustomLogin() {
@@ -20,9 +26,9 @@ export default function CustomLogin() {
   const [error, setError] = useState<string | null>(null);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   
-  // Email + CPF login states
+  // Email + CPF ou ID login states
   const [email, setEmail] = useState("");
-  const [cpf, setCpf] = useState("");
+  const [credential, setCredential] = useState("");
   
   // Admin login states
   const [adminUsername, setAdminUsername] = useState("");
@@ -62,16 +68,16 @@ export default function CustomLogin() {
     e.preventDefault();
     setError(null);
     
-    const cpfDigits = cpf.replace(/\D/g, '');
-    if (cpfDigits.length !== 11) {
-      setError("CPF deve conter 11 dígitos.");
+    const digits = credential.replace(/\D/g, '');
+    if (digits.length === 0) {
+      setError("Informe seu CPF ou ID.");
       return;
     }
     
     setLoading(true);
     emailCpfLoginMutation.mutate({
       email: email.trim().toLowerCase(),
-      cpf: cpfDigits,
+      cpf: digits,
     });
   };
 
@@ -185,7 +191,7 @@ export default function CustomLogin() {
     );
   }
 
-  // Main Login Screen - Email + CPF
+  // Main Login Screen - Email + CPF ou ID
   return (
     <div className="flex items-center justify-center min-h-screen gradient-bg">
       <div className="flex flex-col items-center gap-6 p-8 max-w-lg w-full">
@@ -210,7 +216,7 @@ export default function CustomLogin() {
           <CardHeader className="text-center pb-2">
             <CardTitle>Acesse sua conta</CardTitle>
             <CardDescription>
-              Informe seu email e CPF para entrar na plataforma
+              Informe seu email e CPF ou ID para entrar na plataforma
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -238,21 +244,21 @@ export default function CustomLogin() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="login-cpf" className="flex items-center gap-2">
+                <Label htmlFor="login-credential" className="flex items-center gap-2">
                   <Fingerprint className="h-4 w-4 text-muted-foreground" />
-                  CPF
+                  CPF ou ID
                 </Label>
                 <Input
-                  id="login-cpf"
-                  placeholder="000.000.000-00"
-                  value={cpf}
-                  onChange={(e) => setCpf(formatCpf(e.target.value))}
+                  id="login-credential"
+                  placeholder="000.000.000-00 ou seu ID"
+                  value={credential}
+                  onChange={(e) => setCredential(formatCredential(e.target.value))}
                   required
                   autoComplete="off"
                   maxLength={14}
                 />
                 <p className="text-xs text-muted-foreground">
-                  O sistema detectará automaticamente seu perfil de acesso
+                  Alunos: use seu ID. Mentores e Gestores: use seu CPF.
                 </p>
               </div>
               <Button type="submit" className="w-full glow-orange" disabled={loading}>

@@ -1034,13 +1034,29 @@ export async function getAllMentores() {
     .orderBy(consultors.name);
 }
 
-export async function createMentor(data: { name: string; email: string; loginId?: string; programId?: number }) {
+export async function createMentor(data: { name: string; email: string; cpf?: string; loginId?: string; programId?: number }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
   
+  // Verificar CPF duplicado se fornecido
+  if (data.cpf) {
+    const normalizedCpf = data.cpf.replace(/\D/g, '');
+    const existingUser = await db.select().from(users).where(eq(users.cpf, normalizedCpf)).limit(1);
+    if (existingUser.length > 0) {
+      return { success: false, message: `Este CPF já está cadastrado para o usuário: ${existingUser[0].name}` };
+    }
+    // Verificar também na tabela consultors por email
+    const existingMentor = await db.select().from(consultors).where(eq(consultors.email, data.email.toLowerCase())).limit(1);
+    if (existingMentor.length > 0) {
+      return { success: false, message: `Já existe um mentor cadastrado com este email: ${existingMentor[0].name}` };
+    }
+  }
+  
+  const normalizedCpf = data.cpf ? data.cpf.replace(/\D/g, '') : null;
   const [result] = await db.insert(consultors).values({
     name: data.name,
     email: data.email.toLowerCase(),
+    cpf: normalizedCpf,
     loginId: data.loginId || null,
     programId: data.programId || null,
     role: 'mentor',
@@ -1048,7 +1064,24 @@ export async function createMentor(data: { name: string; email: string; loginId?
     isActive: 1,
   });
   
-  return { id: result.insertId, ...data };
+  const mentorId = result.insertId;
+  
+  // Se CPF fornecido, criar também o registro de acesso (users) para login com Email+CPF
+  if (data.cpf) {
+    const normalizedCpf = data.cpf.replace(/\D/g, '');
+    const openId = `mentor_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    await db.insert(users).values({
+      openId,
+      name: data.name,
+      email: data.email.toLowerCase(),
+      cpf: normalizedCpf,
+      role: 'manager',
+      consultorId: Number(mentorId),
+      isActive: 1,
+    });
+  }
+  
+  return { success: true, id: mentorId, ...data };
 }
 
 // Gerentes
@@ -1212,26 +1245,27 @@ export async function deleteUploadedFile(id: number) {
 // ============ ADMIN LOGIN FUNCTIONS ============
 
 // Login para Administradores (username + password)
-// ============ LOGIN UNIVERSAL EMAIL + CPF ============
+// ============ LOGIN UNIVERSAL EMAIL + CPF ou ID ============
 
 export async function authenticateByEmailCpf(email: string, cpf: string): Promise<{ success: boolean; user?: any; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
   
-  // Normalizar CPF (remover pontos e traços)
-  const normalizedCpf = cpf.replace(/[.\-]/g, '');
+  // Normalizar credencial (remover pontos e traços)
+  const normalizedCredential = cpf.replace(/[.\-]/g, '');
   
+  // Tentar autenticar com CPF ou ID (ambos ficam no campo cpf)
   const [user] = await db.select()
     .from(users)
     .where(and(
       eq(users.email, email.toLowerCase()),
-      eq(users.cpf, normalizedCpf),
+      eq(users.cpf, normalizedCredential),
       eq(users.isActive, 1)
     ))
     .limit(1);
   
   if (!user) {
-    return { success: false, message: "Email ou CPF incorretos, ou usuário inativo. Verifique suas credenciais." };
+    return { success: false, message: "Email ou CPF/ID incorretos, ou usuário inativo. Verifique suas credenciais." };
   }
   
   // Atualizar último login

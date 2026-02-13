@@ -114,15 +114,14 @@ describe("emailCpfLogin", () => {
     ).rejects.toThrow();
   });
 
-  it("requires minimum CPF length", async () => {
+  it("returns error for invalid credentials", async () => {
     const { ctx } = createPublicContext();
     const caller = appRouter.createCaller(ctx);
-    await expect(
-      caller.auth.emailCpfLogin({
-        email: "test@test.com",
-        cpf: "123",
-      })
-    ).rejects.toThrow();
+    const result = await caller.auth.emailCpfLogin({
+      email: "test@test.com",
+      cpf: "123",
+    });
+    expect(result.success).toBe(false);
   });
 });
 

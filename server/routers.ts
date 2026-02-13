@@ -72,7 +72,7 @@ export const appRouter = router({
     emailCpfLogin: publicProcedure
       .input(z.object({
         email: z.string().email(),
-        cpf: z.string().min(11)
+      cpf: z.string().min(1)
       }))
       .mutation(async ({ input, ctx }) => {
         const result = await db.authenticateByEmailCpf(input.email, input.cpf);
@@ -1553,6 +1553,7 @@ export const appRouter = router({
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
+        cpf: z.string().optional(),
         loginId: z.string().optional(),
         programId: z.number().optional()
       }))
@@ -1634,12 +1635,21 @@ export const appRouter = router({
           const mentorResult = await db.createMentor({
             name: userData.name,
             email: userData.email,
+            cpf: userData.cpf,
             programId: userData.programId ?? undefined,
           });
+          // Se falhou (CPF duplicado, etc.), retornar o erro
+          if ('success' in mentorResult && !mentorResult.success) {
+            return mentorResult;
+          }
           // Vincular o consultorId ao user
+          const mentorId = 'id' in mentorResult ? mentorResult.id as number : undefined;
+          if (!mentorId) {
+            return { success: false, message: 'Erro ao criar mentor' };
+          }
           return await db.createAccessUser({
             ...userData,
-            consultorId: mentorResult.id as number,
+            consultorId: mentorId,
           });
         }
         

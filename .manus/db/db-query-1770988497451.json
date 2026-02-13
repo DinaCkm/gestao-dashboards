@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, name, code FROM programs WHERE name LIKE '%SEBRAE%' OR name LIKE '%PARA%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, code FROM programs WHERE name LIKE '%SEBRAE%' OR name LIKE '%PARA%';",
+  "rows": [
+    {
+      "id": "16",
+      "name": "SEBRAE ACRE",
+      "code": "SEBRAE_ACRE"
+    },
+    {
+      "id": "17",
+      "name": "SEBRAE TO",
+      "code": "SEBRAE_TO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcode\n16\tSEBRAE ACRE\tSEBRAE_ACRE\n17\tSEBRAE TO\tSEBRAE_TO\n",
+  "stderr": "",
+  "execution_time_ms": 111
+}

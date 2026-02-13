@@ -50,6 +50,7 @@ export const consultors = mysqlTable("consultors", {
   loginId: varchar("loginId", { length: 50 }), // ID criado pelo admin para login
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }),
+  cpf: varchar("cpf", { length: 11 }), // CPF do mentor para login
   programId: int("programId"),
   role: mysqlEnum("role", ["mentor", "gerente"]).default("mentor").notNull(),
   managedProgramId: int("managedProgramId"), // Para gerentes: qual empresa gerencia

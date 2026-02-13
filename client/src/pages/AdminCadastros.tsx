@@ -243,10 +243,17 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const cpfDigits = cpf.replace(/\D/g, '');
-    if (cpfDigits.length !== 11) {
-      toast.error("CPF deve conter 11 dígitos");
-      return;
+    const credentialDigits = cpf.replace(/\D/g, '');
+    if (role === 'user') {
+      if (credentialDigits.length === 0) {
+        toast.error("ID deve ser informado");
+        return;
+      }
+    } else {
+      if (credentialDigits.length !== 11) {
+        toast.error("CPF deve conter 11 dígitos");
+        return;
+      }
     }
     if (!role) {
       toast.error("Selecione o perfil do usuário");
@@ -260,7 +267,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
     onCreate({ 
       name: nome, 
       email, 
-      cpf: cpfDigits,
+      cpf: credentialDigits,
       role: actualRole as "user" | "admin" | "manager",
       programId: programId ? parseInt(programId) : null,
       isMentor: role === "mentor",
@@ -287,17 +294,24 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editUser) return;
-    const cpfDigits = editCpf.replace(/\D/g, '');
-    if (cpfDigits.length !== 11) {
-      toast.error("CPF deve conter 11 dígitos");
-      return;
+    const editCredentialDigits = editCpf.replace(/\D/g, '');
+    if (editRole === 'user') {
+      if (editCredentialDigits.length === 0) {
+        toast.error("ID deve ser informado");
+        return;
+      }
+    } else {
+      if (editCredentialDigits.length !== 11) {
+        toast.error("CPF deve conter 11 dígitos");
+        return;
+      }
     }
     const actualEditRole = editRole === "mentor" ? "manager" : editRole;
     onUpdate({
       userId: editUser.id,
       name: editNome,
       email: editEmail,
-      cpf: cpfDigits,
+      cpf: editCredentialDigits,
       role: actualEditRole as "user" | "admin" | "manager",
       programId: editProgramId ? parseInt(editProgramId) : null,
     });
@@ -314,7 +328,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
             Gestão de Acesso
           </CardTitle>
           <CardDescription>
-            Cadastre e gerencie usuários que acessam a plataforma por Email + CPF.
+            Cadastre e gerencie usuários que acessam a plataforma por Email + CPF ou ID.
             O sistema detecta automaticamente o perfil (Admin, Gestor ou Aluno) ao fazer login.
           </CardDescription>
         </div>
@@ -327,7 +341,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
               <DialogHeader>
                 <DialogTitle>Cadastrar Novo Usuário</DialogTitle>
                 <DialogDescription>
-                  Preencha os dados do usuário. Ele fará login com Email + CPF.
+                  Preencha os dados do usuário. Ele fará login com Email + CPF ou ID.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -340,14 +354,14 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                   <Input id="access-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="access-cpf">CPF *</Label>
+                  <Label htmlFor="access-cpf">{role === 'user' ? 'ID *' : 'CPF *'}</Label>
                   <Input 
                     id="access-cpf" 
                     value={cpf} 
-                    onChange={(e) => setCpf(formatCpf(e.target.value))} 
-                    placeholder="000.000.000-00" 
+                    onChange={(e) => role === 'user' ? setCpf(e.target.value.replace(/\D/g, '')) : setCpf(formatCpf(e.target.value))} 
+                    placeholder={role === 'user' ? 'Ex: 667306' : '000.000.000-00'} 
                     required 
-                    maxLength={14}
+                    maxLength={role === 'user' ? 10 : 14}
                   />
                 </div>
                 <div className="space-y-2">
@@ -408,12 +422,12 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                   <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>CPF *</Label>
+                  <Label>{editRole === 'user' ? 'ID *' : 'CPF *'}</Label>
                   <Input 
                     value={editCpf} 
-                    onChange={(e) => setEditCpf(formatCpf(e.target.value))} 
+                    onChange={(e) => editRole === 'user' ? setEditCpf(e.target.value.replace(/\D/g, '')) : setEditCpf(formatCpf(e.target.value))} 
                     required 
-                    maxLength={14}
+                    maxLength={editRole === 'user' ? 10 : 14}
                   />
                 </div>
                 <div className="space-y-2">
@@ -483,7 +497,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>CPF</TableHead>
+                  <TableHead>CPF / ID</TableHead>
                   <TableHead>Perfil</TableHead>
                   <TableHead>Empresa</TableHead>
                   <TableHead>Status</TableHead>
@@ -665,6 +679,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
   const [open, setOpen] = useState(false);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [cpfMentor, setCpfMentor] = useState("");
   const [loginId, setLoginId] = useState("");
   const [programId, setProgramId] = useState("");
 
@@ -673,11 +688,13 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
     onCreate({ 
       name: nome, 
       email, 
+      cpf: cpfMentor.replace(/\D/g, '') || undefined,
       loginId: loginId || undefined,
       programId: programId ? parseInt(programId) : undefined 
     });
     setNome("");
     setEmail("");
+    setCpfMentor("");
     setLoginId("");
     setProgramId("");
     setOpen(false);
@@ -719,6 +736,11 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                   <Input id="email-mentor" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" required />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="cpf-mentor">CPF</Label>
+                  <Input id="cpf-mentor" value={cpfMentor} onChange={(e) => setCpfMentor(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
+                  <p className="text-xs text-muted-foreground">CPF é usado para login do mentor (Email + CPF)</p>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="loginId-mentor">ID de Login (opcional)</Label>
                   <Input id="loginId-mentor" value={loginId} onChange={(e) => setLoginId(e.target.value)} placeholder="Ex: M0001" />
                   <p className="text-xs text-muted-foreground">Se não informado, será gerado automaticamente ao ativar o acesso</p>
@@ -756,6 +778,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                 <TableHead>ID</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>CPF</TableHead>
                 <TableHead>ID Login</TableHead>
                 <TableHead>Acesso</TableHead>
                 <TableHead>Ações</TableHead>
@@ -767,6 +790,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                   <TableCell>{mentor.id}</TableCell>
                   <TableCell className="font-medium">{mentor.name}</TableCell>
                   <TableCell>{mentor.email || "-"}</TableCell>
+                  <TableCell className="font-mono text-sm">{mentor.cpf ? displayCpf(mentor.cpf) : "-"}</TableCell>
                   <TableCell>{mentor.loginId || "-"}</TableCell>
                   <TableCell>
                     {mentor.canLogin ? (
@@ -788,7 +812,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
               ))}
               {mentores.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     Nenhum mentor cadastrado
                   </TableCell>
                 </TableRow>
