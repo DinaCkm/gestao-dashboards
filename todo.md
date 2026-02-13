@@ -679,3 +679,9 @@
 - [x] Atualizar testes vitest para a nova fórmula - 109 testes passando
 
 - [x] Remover subtítulo "Clique em Editar para registrar a nota de evolução" da seção Sessões de Mentoria no RegistroMentoria
+
+## Correção Indicador 2 - Incluir Sessão 1 no cálculo de tarefas (13/02/2026)
+- [x] Esclarecido: Sessão 1 é onde o mentor atribui a tarefa, entrega só a partir da 2ª sessão - exclusão da Sessão 1 está CORRETA
+- [x] Revertido indicatorsCalculator.ts para manter exclusão da 1ª sessão no cálculo de tarefas
+- [x] Corrigida exibição da Sessão 1 no RegistroMentoria: mostra 'Sem tarefa (1ª sessão)' e 'N/A' na pontuação
+- [x] Rodar testes vitest e salvar checkpoint - 109 testes passando

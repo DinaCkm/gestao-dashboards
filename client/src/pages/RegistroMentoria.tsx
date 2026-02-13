@@ -287,7 +287,8 @@ export default function RegistroMentoria() {
                 <div className="space-y-4">
                   {sessions.map((session) => {
                     const presencePoints = getPresencePoints(session.presence);
-                    const taskPoints = getTaskPoints(session.taskStatus);
+                    const isFirstSession = session.sessionNumber === 1;
+                    const taskPoints = isFirstSession ? null : getTaskPoints(session.taskStatus);
                     
                     return (
                       <div 
@@ -375,7 +376,11 @@ export default function RegistroMentoria() {
                                     )}
                                   </Badge>
                                   
-                                  {session.taskStatus && (
+                                  {isFirstSession ? (
+                                    <Badge className="bg-gray-100 text-gray-500 border border-gray-200">
+                                      <ClipboardCheck className="h-3 w-3 mr-1" /> Sem tarefa (1ª sessão)
+                                    </Badge>
+                                  ) : session.taskStatus && (
                                     <Badge className={getTaskColor(session.taskStatus)}>
                                       {session.taskStatus === 'entregue' ? (
                                         <><ClipboardCheck className="h-3 w-3 mr-1" /> Entregue</>
@@ -457,7 +462,9 @@ export default function RegistroMentoria() {
                               <div className="flex items-center gap-1.5">
                                 <ClipboardCheck className={`h-3.5 w-3.5 ${taskPoints === 100 ? 'text-emerald-600' : taskPoints === 0 ? 'text-red-500' : 'text-gray-400'}`} />
                                 <span className="text-gray-600">Tarefa:</span>
-                                {taskPoints !== null ? (
+                                {isFirstSession ? (
+                                  <span className="text-gray-400 italic">N/A (1ª sessão)</span>
+                                ) : taskPoints !== null ? (
                                   <span className={`font-bold ${taskPoints === 100 ? 'text-emerald-700' : 'text-red-600'}`}>
                                     {taskPoints} pts
                                   </span>

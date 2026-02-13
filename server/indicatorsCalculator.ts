@@ -44,7 +44,7 @@ export interface StudentIndicators {
   
   // 6 Indicadores individuais (base 100)
   participacaoMentorias: number;         // Ind.1: % de presença nas mentorias
-  atividadesPraticas: number;            // Ind.2: % de atividades entregues (excluindo Assessment)
+  atividadesPraticas: number;            // Ind.2: % de atividades entregues (excluindo 1ª sessão)
   engajamento: number;                   // Ind.3: Média de (Ind.1 + Ind.2 + Nota Mentora %)
   performanceCompetencias: number;       // Ind.4: % aulas concluídas (ciclos finalizados)
   performanceAprendizado: number;        // Ind.5: Média notas provas (ciclos finalizados)
@@ -57,7 +57,7 @@ export interface StudentIndicators {
   // Dados brutos para detalhamento/explicação nos cards
   totalMentorias: number;
   mentoriasPresente: number;
-  totalAtividades: number;               // Excluindo Assessment
+  totalAtividades: number;               // Excluindo 1ª sessão
   atividadesEntregues: number;
   totalEventos: number;
   eventosPresente: number;
@@ -202,21 +202,22 @@ export function calcularIndicadoresAluno(
   // ============================================================
   // INDICADOR 2: Atividades Práticas
   // Fórmula: (Atividades entregues / Total de atividades previstas) × 100
-  // REGRA: Excluir 1ª mentoria (Assessment) - nunca tem entrega
+  // REGRA: Excluir 1ª sessão - na 1ª sessão o mentor atribui a tarefa,
+  // o mentorado só traz a entrega a partir da 2ª sessão
   // ============================================================
-  // Ordenar mentorias por data/número de sessão para identificar a 1ª (Assessment)
+  // Ordenar mentorias por data/número de sessão para identificar a 1ª
   const mentoriasOrdenadas = [...mentoriasAluno].sort((a, b) => {
     if (a.sessao !== undefined && b.sessao !== undefined) return a.sessao - b.sessao;
     if (a.dataSessao && b.dataSessao) return new Date(a.dataSessao).getTime() - new Date(b.dataSessao).getTime();
     return 0;
   });
   
-  // Excluir a 1ª mentoria (Assessment) do cálculo de atividades
-  const mentoriasSemAssessment = mentoriasOrdenadas.length > 1 
+  // Excluir a 1ª sessão do cálculo de atividades (tarefa só é entregue a partir da 2ª)
+  const mentoriasSemPrimeira = mentoriasOrdenadas.length > 1 
     ? mentoriasOrdenadas.slice(1) 
     : mentoriasOrdenadas; // Se só tem 1, mantém (edge case)
   
-  const atividadesComTarefa = mentoriasSemAssessment.filter(m => m.atividadeEntregue !== 'sem_tarefa');
+  const atividadesComTarefa = mentoriasSemPrimeira.filter(m => m.atividadeEntregue !== 'sem_tarefa');
   const totalAtividades = atividadesComTarefa.length;
   const atividadesEntregues = atividadesComTarefa.filter(m => m.atividadeEntregue === 'entregue').length;
   const atividadesPraticas = totalAtividades > 0 
