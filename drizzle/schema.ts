@@ -218,7 +218,7 @@ export const events = mysqlTable("events", {
   id: int("id").autoincrement().primaryKey(),
   externalId: varchar("externalId", { length: 100 }),
   title: varchar("title", { length: 500 }).notNull(),
-  eventType: mysqlEnum("eventType", ["webinar", "aula", "workshop", "outro"]).default("webinar"),
+  eventType: mysqlEnum("eventType", ["webinar", "aula", "workshop", "curso_online", "outro"]).default("webinar"),
   eventDate: date("eventDate"),
   programId: int("programId"),
   trilhaId: int("trilhaId"),

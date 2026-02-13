@@ -544,3 +544,11 @@
 - [x] Manter dados do BANRISUL intactos
 - [x] Verificar dashboards com dados atualizados
 - [x] Atualizar registro de "Último Upload" para data de hoje (13/02/2026) após importação da nova planilha
+
+## Atualização de Eventos - EMBRAPII, SEBRAE Acre, SEBRAE TO (13/02/2026)
+- [x] Analisar planilha EMBRAPII-Eventos.xlsx (299 registros, 16 alunos, 23 eventos)
+- [x] Analisar planilha SEBRAEACRE-Eventos.xlsx (822 registros, 33 alunos, 25 eventos)
+- [x] Analisar planilha BS2SEBRAETO-Eventos.xlsx (909 registros, 50 alunos, 20 eventos)
+- [x] Limpar eventos antigos (exceto BANRISUL) e importar novos das 3 planilhas
+- [x] 68 eventos + 2.030 participações importadas (BANRISUL preservado com 4.027 participações)
+- [x] Verificar dados nos dashboards - 77 testes passando
