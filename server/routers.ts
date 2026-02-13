@@ -1446,6 +1446,7 @@ export const appRouter = router({
         })),
         eventos: eventosDetalhados,
         planoIndividual: planoItems,
+        assessments: await db.getAssessmentsByAluno(aluno.id),
       };
     }),
   }),
@@ -1543,6 +1544,23 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.createProgram(input);
       }),
+
+    updateEmpresa: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        code: z.string().min(1).optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.updateProgram(input.id, input);
+      }),
+
+    toggleEmpresaStatus: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.toggleProgramStatus(input.id);
+      }),
     
     // Mentores
     listMentores: adminProcedure.query(async () => {
@@ -1580,11 +1598,28 @@ export const appRouter = router({
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
+        cpf: z.string().min(11).optional(),
         loginId: z.string().optional(),
         managedProgramId: z.number()
       }))
       .mutation(async ({ input }) => {
-        return await db.createGerente(input);
+        // Criar registro na tabela consultors
+        const gerenteResult = await db.createGerente(input);
+        
+        // Se tem CPF, criar também registro na tabela users para login
+        if (input.cpf) {
+          const gerenteId = 'id' in gerenteResult ? gerenteResult.id as number : undefined;
+          await db.createAccessUser({
+            name: input.name,
+            email: input.email,
+            cpf: input.cpf,
+            role: 'manager' as const,
+            programId: input.managedProgramId,
+            consultorId: gerenteId ?? null,
+          });
+        }
+        
+        return gerenteResult;
       }),
     
     updateAcessoGerente: adminProcedure
@@ -1595,6 +1630,18 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         return await db.updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, 'gerente');
+      }),
+
+    editGerente: adminProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        name: z.string().optional(),
+        email: z.string().email().optional(),
+        managedProgramId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { consultorId, ...data } = input;
+        return await db.updateConsultor(consultorId, data);
       }),
     
     // Alunos
@@ -1622,7 +1669,7 @@ export const appRouter = router({
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
-        cpf: z.string().min(11),
+        cpf: z.string().min(1),
         role: z.enum(["user", "admin", "manager"]),
         programId: z.number().nullable().optional(),
         isMentor: z.boolean().optional(), // true = Mentor, false/undefined = Gestor de Empresa

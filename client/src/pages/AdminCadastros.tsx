@@ -131,6 +131,30 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro ao atualizar usuário: ${err.message}`),
   });
 
+  const updateEmpresa = trpc.admin.updateEmpresa.useMutation({
+    onSuccess: () => {
+      toast.success("Empresa atualizada com sucesso!");
+      refetchEmpresas();
+    },
+    onError: (err) => toast.error(`Erro ao atualizar empresa: ${err.message}`),
+  });
+
+  const toggleEmpresaStatus = trpc.admin.toggleEmpresaStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Status da empresa atualizado!");
+      refetchEmpresas();
+    },
+    onError: (err) => toast.error(`Erro ao atualizar status: ${err.message}`),
+  });
+
+  const editGerente = trpc.admin.editGerente.useMutation({
+    onSuccess: () => {
+      toast.success("Gerente atualizado com sucesso!");
+      refetchGerentes();
+    },
+    onError: (err) => toast.error(`Erro ao atualizar gerente: ${err.message}`),
+  });
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -181,6 +205,8 @@ export default function AdminCadastros() {
               loading={loadingEmpresas}
               onCreate={createEmpresa.mutate}
               isCreating={createEmpresa.isPending}
+              onUpdate={updateEmpresa.mutate}
+              onToggleStatus={toggleEmpresaStatus.mutate}
             />
           </TabsContent>
 
@@ -205,6 +231,7 @@ export default function AdminCadastros() {
               onCreate={createGerente.mutate}
               onUpdateAcesso={updateAcessoGerente.mutate}
               isCreating={createGerente.isPending}
+              onEdit={editGerente.mutate}
             />
           </TabsContent>
         </Tabs>
@@ -566,16 +593,23 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
 }
 
 // ============ EMPRESAS TAB ============
-function EmpresasTab({ empresas, loading, onCreate, isCreating }: {
+function EmpresasTab({ empresas, loading, onCreate, isCreating, onUpdate, onToggleStatus }: {
   empresas: any[];
   loading: boolean;
   onCreate: (data: any) => void;
   isCreating: boolean;
+  onUpdate: (data: any) => void;
+  onToggleStatus: (data: any) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editEmpresa, setEditEmpresa] = useState<any>(null);
   const [nome, setNome] = useState("");
   const [codigo, setCodigo] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [editNome, setEditNome] = useState("");
+  const [editCodigo, setEditCodigo] = useState("");
+  const [editDescricao, setEditDescricao] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -584,6 +618,22 @@ function EmpresasTab({ empresas, loading, onCreate, isCreating }: {
     setCodigo("");
     setDescricao("");
     setOpen(false);
+  };
+
+  const handleEditOpen = (empresa: any) => {
+    setEditEmpresa(empresa);
+    setEditNome(empresa.name || "");
+    setEditCodigo(empresa.code || "");
+    setEditDescricao(empresa.description || "");
+    setEditOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editEmpresa) return;
+    onUpdate({ id: editEmpresa.id, name: editNome, code: editCodigo, description: editDescricao });
+    setEditOpen(false);
+    setEditEmpresa(null);
   };
 
   return (
@@ -630,37 +680,84 @@ function EmpresasTab({ empresas, loading, onCreate, isCreating }: {
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Código</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {empresas.map((empresa) => (
-                <TableRow key={empresa.id}>
-                  <TableCell>{empresa.id}</TableCell>
-                  <TableCell className="font-medium">{empresa.name}</TableCell>
-                  <TableCell>{empresa.code}</TableCell>
-                  <TableCell>
-                    <Badge variant={empresa.isActive ? "default" : "secondary"}>
-                      {empresa.isActive ? "Ativo" : "Inativo"}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {empresas.length === 0 && (
+          <>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                    Nenhuma empresa cadastrada
-                  </TableCell>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {empresas.map((empresa) => (
+                  <TableRow key={empresa.id}>
+                    <TableCell>{empresa.id}</TableCell>
+                    <TableCell className="font-medium">{empresa.name}</TableCell>
+                    <TableCell>{empresa.code}</TableCell>
+                    <TableCell>
+                      <Badge variant={empresa.isActive ? "default" : "secondary"}>
+                        {empresa.isActive ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEditOpen(empresa)}>
+                          <Pencil className="h-3 w-3 mr-1" /> Editar
+                        </Button>
+                        <Button
+                          variant={empresa.isActive ? "destructive" : "default"}
+                          size="sm"
+                          onClick={() => onToggleStatus({ id: empresa.id })}
+                        >
+                          <Power className="h-3 w-3 mr-1" />
+                          {empresa.isActive ? "Inativar" : "Ativar"}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {empresas.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Nenhuma empresa cadastrada
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+
+            {/* Dialog de Edição */}
+            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogContent>
+                <form onSubmit={handleEditSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Editar Empresa</DialogTitle>
+                    <DialogDescription>Atualize os dados da empresa</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Nome da Empresa</Label>
+                      <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Código</Label>
+                      <Input value={editCodigo} onChange={(e) => setEditCodigo(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Descrição</Label>
+                      <Input value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit">Salvar Alterações</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </>
         )}
       </CardContent>
     </Card>
@@ -826,37 +923,69 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
 }
 
 // ============ GERENTES TAB ============
-function GerentesTab({ gerentes, empresas, loading, onCreate, onUpdateAcesso, isCreating }: {
+function GerentesTab({ gerentes, empresas, loading, onCreate, onUpdateAcesso, isCreating, onEdit }: {
   gerentes: any[];
   empresas: any[];
   loading: boolean;
   onCreate: (data: any) => void;
   onUpdateAcesso: (data: any) => void;
   isCreating: boolean;
+  onEdit: (data: any) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editGerente, setEditGerente] = useState<any>(null);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
-  const [loginId, setLoginId] = useState("");
+  const [cpfGerente, setCpfGerente] = useState("");
   const [managedProgramId, setManagedProgramId] = useState("");
+  const [editNome, setEditNome] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editManagedProgramId, setEditManagedProgramId] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!managedProgramId) {
-      alert("Selecione a empresa que o gerente irá gerenciar");
+      toast.error("Selecione a empresa que o gerente irá gerenciar");
+      return;
+    }
+    const cpfDigits = cpfGerente.replace(/\D/g, '');
+    if (cpfDigits.length > 0 && cpfDigits.length !== 11) {
+      toast.error("CPF deve conter 11 dígitos");
       return;
     }
     onCreate({ 
       name: nome, 
       email, 
-      loginId: loginId || undefined,
+      cpf: cpfDigits || undefined,
       managedProgramId: parseInt(managedProgramId)
     });
     setNome("");
     setEmail("");
-    setLoginId("");
+    setCpfGerente("");
     setManagedProgramId("");
     setOpen(false);
+  };
+
+  const handleEditOpen = (gerente: any) => {
+    setEditGerente(gerente);
+    setEditNome(gerente.name || "");
+    setEditEmail(gerente.email || "");
+    setEditManagedProgramId(gerente.managedProgramId?.toString() || "");
+    setEditOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editGerente) return;
+    onEdit({ 
+      consultorId: editGerente.id, 
+      name: editNome, 
+      email: editEmail,
+      managedProgramId: editManagedProgramId ? parseInt(editManagedProgramId) : undefined,
+    });
+    setEditOpen(false);
+    setEditGerente(null);
   };
 
   const handleToggleAcesso = (gerenteId: number, currentLoginId: string | null) => {
@@ -895,8 +1024,9 @@ function GerentesTab({ gerentes, empresas, loading, onCreate, onUpdateAcesso, is
                   <Input id="email-gerente" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="loginId-gerente">ID de Login (opcional)</Label>
-                  <Input id="loginId-gerente" value={loginId} onChange={(e) => setLoginId(e.target.value)} placeholder="Ex: G0001" />
+                  <Label htmlFor="cpf-gerente">CPF</Label>
+                  <Input id="cpf-gerente" value={cpfGerente} onChange={(e) => setCpfGerente(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
+                  <p className="text-xs text-muted-foreground">CPF é usado para login do gerente (Email + CPF)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="empresa-gerente">Empresa que Gerencia *</Label>
@@ -925,53 +1055,96 @@ function GerentesTab({ gerentes, empresas, loading, onCreate, onUpdateAcesso, is
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Empresa</TableHead>
-                <TableHead>ID Login</TableHead>
-                <TableHead>Acesso</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {gerentes.map((gerente) => (
-                <TableRow key={gerente.id}>
-                  <TableCell>{gerente.id}</TableCell>
-                  <TableCell className="font-medium">{gerente.name}</TableCell>
-                  <TableCell>{gerente.email || "-"}</TableCell>
-                  <TableCell>{empresas.find(e => e.id === gerente.managedProgramId)?.name || "-"}</TableCell>
-                  <TableCell>{gerente.loginId || "-"}</TableCell>
-                  <TableCell>
-                    {gerente.canLogin ? (
-                      <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
-                    ) : (
-                      <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" /> Inativo</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Button 
-                      variant={gerente.canLogin ? "destructive" : "default"} 
-                      size="sm"
-                      onClick={() => handleToggleAcesso(gerente.id, gerente.loginId)}
-                    >
-                      {gerente.canLogin ? "Desativar" : "Ativar Acesso"}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {gerentes.length === 0 && (
+          <>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    Nenhum gerente cadastrado
-                  </TableCell>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Acesso</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {gerentes.map((gerente) => (
+                  <TableRow key={gerente.id}>
+                    <TableCell>{gerente.id}</TableCell>
+                    <TableCell className="font-medium">{gerente.name}</TableCell>
+                    <TableCell>{gerente.email || "-"}</TableCell>
+                    <TableCell>{empresas.find(e => e.id === gerente.managedProgramId)?.name || "-"}</TableCell>
+                    <TableCell>
+                      {gerente.canLogin ? (
+                        <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
+                      ) : (
+                        <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" /> Inativo</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEditOpen(gerente)}>
+                          <Pencil className="h-3 w-3 mr-1" /> Editar
+                        </Button>
+                        <Button 
+                          variant={gerente.canLogin ? "destructive" : "default"} 
+                          size="sm"
+                          onClick={() => handleToggleAcesso(gerente.id, gerente.loginId)}
+                        >
+                          {gerente.canLogin ? "Desativar" : "Ativar Acesso"}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {gerentes.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      Nenhum gerente cadastrado
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+
+            {/* Dialog de Edição */}
+            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogContent>
+                <form onSubmit={handleEditSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Editar Gerente</DialogTitle>
+                    <DialogDescription>Atualize os dados do gerente</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Nome Completo</Label>
+                      <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Empresa que Gerencia</Label>
+                      <Select value={editManagedProgramId} onValueChange={setEditManagedProgramId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a empresa" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {empresas.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit">Salvar Alterações</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </>
         )}
       </CardContent>
     </Card>

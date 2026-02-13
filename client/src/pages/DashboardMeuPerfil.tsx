@@ -197,7 +197,7 @@ export default function DashboardMeuPerfil() {
     );
   }
 
-  const { aluno, indicadores, ranking, sessoes, eventos, planoIndividual } = data;
+  const { aluno, indicadores, ranking, sessoes, eventos, planoIndividual, assessments } = data;
   const performanceGeral = indicadores.performanceGeral ?? (indicadores.notaFinal * 10);
   const ciclosFinalizados = indicadores.ciclosFinalizados || [];
   const ciclosEmAndamento = indicadores.ciclosEmAndamento || [];
@@ -397,6 +397,9 @@ export default function DashboardMeuPerfil() {
             </TabsTrigger>
             <TabsTrigger value="eventos" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
               <Video className="h-4 w-4 mr-1" /> Eventos
+            </TabsTrigger>
+            <TabsTrigger value="pdi" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+              <Award className="h-4 w-4 mr-1" /> PDI
             </TabsTrigger>
           </TabsList>
 
@@ -628,6 +631,100 @@ export default function DashboardMeuPerfil() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* === PDI / ASSESSMENT === */}
+          <TabsContent value="pdi" className="mt-4">
+            {assessments && assessments.length > 0 ? (
+              <div className="space-y-4">
+                {assessments.map((assessment: any) => (
+                  <Card key={assessment.id} className="bg-gray-800/50 border-gray-700">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
+                            <Award className="h-4 w-4 text-amber-400" />
+                            Trilha: {assessment.trilhaNome}
+                          </CardTitle>
+                          <CardDescription className="text-gray-500">
+                            {assessment.consultorNome && `Mentora: ${assessment.consultorNome} • `}
+                            Macro ciclo: {new Date(assessment.macroInicio).toLocaleDateString("pt-BR")} a {new Date(assessment.macroTermino).toLocaleDateString("pt-BR")}
+                          </CardDescription>
+                        </div>
+                        <Badge variant="outline" className={assessment.status === "ativo" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" : "text-gray-400 border-gray-500/30 bg-gray-500/10"}>
+                          {assessment.status === "ativo" ? "Ativo" : "Congelado"}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="mb-3 flex items-center gap-4 text-xs text-gray-400">
+                        <span>{assessment.totalCompetencias} competências</span>
+                        <span>{assessment.obrigatorias} obrigatórias</span>
+                        <span>{assessment.opcionais} opcionais</span>
+                      </div>
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                        {assessment.competencias.map((comp: any) => {
+                          const notaCorte = parseFloat(comp.notaCorte);
+                          const notaAtual = comp.notaAtual;
+                          const atingiu = comp.atingiuMeta;
+                          return (
+                            <div key={comp.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors">
+                              <div className="flex-shrink-0">
+                                {atingiu ? (
+                                  <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                                ) : notaAtual !== null && notaAtual > 0 ? (
+                                  <Clock className="h-5 w-5 text-yellow-400" />
+                                ) : (
+                                  <Target className="h-5 w-5 text-gray-500" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-white font-medium truncate">{comp.competenciaNome}</p>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <Badge variant="outline" className={comp.peso === 'obrigatoria' ? "text-amber-400 border-amber-500/30" : "text-gray-400 border-gray-500/30"}>
+                                    {comp.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
+                                  </Badge>
+                                  {comp.microInicio && comp.microTermino && (
+                                    <span>Micro: {new Date(comp.microInicio).toLocaleDateString("pt-BR")} a {new Date(comp.microTermino).toLocaleDateString("pt-BR")}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                  <p className={`text-sm font-bold ${atingiu ? "text-emerald-400" : notaAtual !== null && notaAtual > 0 ? "text-yellow-400" : "text-gray-500"}`}>
+                                    {notaAtual !== null && notaAtual > 0 ? notaAtual.toFixed(1) : "—"}
+                                  </p>
+                                  <p className="text-xs text-gray-500">Corte: {notaCorte.toFixed(1)}</p>
+                                </div>
+                                <div className="w-16">
+                                  <Progress value={notaAtual !== null ? Math.min((notaAtual / 10) * 100, 100) : 0} className="h-1.5" />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {assessment.observacoes && (
+                        <div className="mt-3 p-3 rounded-lg bg-gray-900/50 text-xs text-gray-400">
+                          <p className="font-semibold mb-1">Observações:</p>
+                          <p>{assessment.observacoes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="bg-gray-800/50 border-gray-700">
+                <CardContent className="py-12">
+                  <div className="text-center text-gray-500">
+                    <Award className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Nenhum PDI/Assessment registrado ainda</p>
+                    <p className="text-xs mt-1">O PDI será criado pela sua mentora durante o assessment</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>

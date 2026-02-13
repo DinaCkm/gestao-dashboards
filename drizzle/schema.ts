@@ -360,7 +360,7 @@ export const assessmentCompetencias = mysqlTable("assessment_competencias", {
   assessmentPdiId: int("assessmentPdiId").notNull(), // FK para assessment_pdi
   competenciaId: int("competenciaId").notNull(), // FK para competencias
   peso: mysqlEnum("peso", ["obrigatoria", "opcional"]).default("obrigatoria").notNull(),
-  notaCorte: decimal("notaCorte", { precision: 5, scale: 2 }).default("80.00").notNull(), // Nota mínima para aprovação
+  notaCorte: decimal("notaCorte", { precision: 5, scale: 2 }).default("8.00").notNull(), // Nota mínima para aprovação (escala 0-10)
   microInicio: date("microInicio"), // Data início do micro ciclo
   microTermino: date("microTermino"), // Data término do micro ciclo (não congela, aluno pode fazer até macro término)
   createdAt: timestamp("createdAt").defaultNow().notNull(),

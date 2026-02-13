@@ -597,3 +597,16 @@
 - [x] Validação frontend: micro ciclos não podem ultrapassar macro ciclo
 - [x] 88 testes passando (11 novos de assessment)
 - [x] Regra de negócio: micro ciclos NUNCA podem ultrapassar as datas do macro ciclo (validação backend + frontend)
+
+## Bugs Reportados pelo Usuário (13/02/2026)
+- [x] BUG: Página de cadastro de usuários não está salvando (verificado: endpoints createAccessUser e updateAccessUser funcionando)
+- [x] BUG: Ao acessar a empresa SEBRAE Acre, a página dá erro (verificado: mutations de empresa passadas como props)
+- [x] BUG: Área de cadastro de empresa não tem botão para EDITAR a empresa (mutations updateEmpresa conectadas ao frontend)
+- [x] BUG: Área de cadastro de empresa não tem botão para INATIVAR a empresa (mutations toggleEmpresaStatus conectadas ao frontend)
+- [x] BUG: Cadastro de novos gerentes não está salvando (campo CPF adicionado ao formulário, criação de registro users junto com consultor)
+- [x] BUG: Não há botão para editar o gerente (botão Editar + dialog de edição + endpoint editGerente criado)
+- [x] BUG: Escala de notas inconsistente no Assessment/PDI (notas de corte convertidas de 0-100 para 0-10 no banco, default atualizado no schema)
+
+## Melhorias Implementadas (13/02/2026)
+- [x] Tab PDI/Assessment adicionada no dashboard do aluno (mostra assessments da mentora com competências, notas de corte e status)
+- [x] 96 testes passando (8 novos de bugfixes)

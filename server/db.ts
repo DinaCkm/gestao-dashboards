@@ -1024,6 +1024,39 @@ export async function createProgram(data: { name: string; code: string; descript
   return { id: result.insertId, ...data };
 }
 
+export async function updateProgram(id: number, data: { name?: string; code?: string; description?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+  
+  const updateData: Record<string, unknown> = {};
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.code !== undefined) updateData.code = data.code;
+  if (data.description !== undefined) updateData.description = data.description;
+  
+  if (Object.keys(updateData).length > 0) {
+    await db.update(programs)
+      .set(updateData)
+      .where(eq(programs.id, id));
+  }
+  
+  return { success: true };
+}
+
+export async function toggleProgramStatus(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+  
+  const [program] = await db.select().from(programs).where(eq(programs.id, id)).limit(1);
+  if (!program) throw new Error("Empresa não encontrada");
+  
+  const newStatus = program.isActive === 1 ? 0 : 1;
+  await db.update(programs)
+    .set({ isActive: newStatus })
+    .where(eq(programs.id, id));
+  
+  return { success: true, isActive: newStatus };
+}
+
 // Mentores
 export async function getAllMentores() {
   const db = await getDb();
@@ -1123,6 +1156,25 @@ export async function updateConsultorAccess(consultorId: number, loginId: string
       role: role
     })
     .where(eq(consultors.id, consultorId));
+  
+  return { success: true };
+}
+
+// Update consultor (gerente/mentor) data
+export async function updateConsultor(consultorId: number, data: { name?: string; email?: string; managedProgramId?: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+  
+  const updateData: Record<string, unknown> = {};
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.email !== undefined) updateData.email = data.email.toLowerCase();
+  if (data.managedProgramId !== undefined) updateData.managedProgramId = data.managedProgramId;
+  
+  if (Object.keys(updateData).length > 0) {
+    await db.update(consultors)
+      .set(updateData)
+      .where(eq(consultors.id, consultorId));
+  }
   
   return { success: true };
 }
