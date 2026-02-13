@@ -1729,6 +1729,105 @@ export const appRouter = router({
         return { success };
       }),
   }),
+
+  // ============ ASSESSMENT PDI ============
+  assessment: router({
+    // Listar assessments de um aluno
+    porAluno: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAssessmentsByAluno(input.alunoId);
+      }),
+
+    // Listar assessments de um programa (admin/mentor)
+    porPrograma: protectedProcedure
+      .input(z.object({ programId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAssessmentsByProgram(input.programId);
+      }),
+
+    // Listar assessments dos alunos de um consultor
+    porConsultor: protectedProcedure
+      .input(z.object({ consultorId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAssessmentsByConsultor(input.consultorId);
+      }),
+
+    // Criar novo assessment PDI
+    criar: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        trilhaId: z.number(),
+        turmaId: z.number().nullable().optional(),
+        programId: z.number().nullable().optional(),
+        consultorId: z.number().nullable().optional(),
+        macroInicio: z.string(),
+        macroTermino: z.string(),
+        competencias: z.array(z.object({
+          competenciaId: z.number(),
+          peso: z.enum(['obrigatoria', 'opcional']),
+          notaCorte: z.string(),
+          microInicio: z.string().nullable().optional(),
+          microTermino: z.string().nullable().optional(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        const { competencias, ...pdiData } = input;
+        
+        // Validate macro dates
+        if (pdiData.macroInicio >= pdiData.macroTermino) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Data de início do macro ciclo deve ser anterior à data de término',
+          });
+        }
+        
+        // Validate micro dates against macro dates
+        for (const comp of competencias) {
+          if (comp.microInicio && comp.microInicio < pdiData.macroInicio) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Micro ciclo início não pode ser anterior ao macro ciclo início (${pdiData.macroInicio})`,
+            });
+          }
+          if (comp.microTermino && comp.microTermino > pdiData.macroTermino) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Micro ciclo término não pode ser posterior ao macro ciclo término (${pdiData.macroTermino})`,
+            });
+          }
+        }
+        
+        const pdiId = await db.createAssessmentPdi(pdiData, competencias);
+        return { success: true, pdiId };
+      }),
+
+    // Congelar assessment PDI
+    congelar: protectedProcedure
+      .input(z.object({
+        pdiId: z.number(),
+        consultorId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.congelarAssessmentPdi(input.pdiId, input.consultorId);
+        return { success: true };
+      }),
+
+    // Atualizar competência do assessment (micro ciclo, peso, nota de corte)
+    atualizarCompetencia: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        peso: z.enum(['obrigatoria', 'opcional']).optional(),
+        notaCorte: z.string().optional(),
+        microInicio: z.string().nullable().optional(),
+        microTermino: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateAssessmentCompetencia(id, data);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

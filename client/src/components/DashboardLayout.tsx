@@ -39,7 +39,8 @@ import {
   GraduationCap,
   BookOpen,
   Target,
-  ClipboardEdit
+  ClipboardEdit,
+  ClipboardCheck
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -69,6 +70,7 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: UserCheck, label: "Dashboard Mentores", path: "/dashboard/mentor", roles: ["admin"] },
   { icon: UserCheck, label: "Meu Dashboard", path: "/dashboard/mentor", roles: ["manager"], requireConsultorId: true },
   { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria", roles: ["admin", "manager"] },
+  { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment", roles: ["admin", "manager"] },
   
   // === GERENTES DE EMPRESA ===
   { icon: Building2, label: "Por Empresa", path: "/dashboard/empresa", roles: ["admin"] },

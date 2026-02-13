@@ -325,6 +325,51 @@ export const reports = mysqlTable("reports", {
 export type Report = typeof reports.$inferSelect;
 export type InsertReport = typeof reports.$inferInsert;
 
+/**
+ * Assessment PDI - Plano de Desenvolvimento Individual do aluno
+ * Criado pela mentora durante o assessment. Define a trilha, macro ciclo e status.
+ * Histórico é sempre mantido. Quando uma trilha encerra, a mentora congela.
+ */
+export const assessmentPdi = mysqlTable("assessment_pdi", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  trilhaId: int("trilhaId").notNull(), // FK para trilhas (Básica, Essencial, Master, Visão de Futuro)
+  turmaId: int("turmaId"), // FK para turmas (BS1, BS2, BS3, etc.)
+  consultorId: int("consultorId"), // FK para consultors (mentora que criou o assessment)
+  programId: int("programId"), // FK para programs
+  macroInicio: date("macroInicio").notNull(), // Data início do macro ciclo (jornada)
+  macroTermino: date("macroTermino").notNull(), // Data término do macro ciclo (jornada)
+  status: mysqlEnum("status", ["ativo", "congelado"]).default("ativo").notNull(),
+  observacoes: text("observacoes"),
+  congeladoEm: timestamp("congeladoEm"), // Data em que a mentora congelou a trilha
+  congeladoPor: int("congeladoPor"), // FK para consultors (quem congelou)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AssessmentPdi = typeof assessmentPdi.$inferSelect;
+export type InsertAssessmentPdi = typeof assessmentPdi.$inferInsert;
+
+/**
+ * Assessment Competências - Competências do PDI com peso, nota de corte e micro ciclo
+ * Cada registro vincula uma competência ao PDI do aluno.
+ * Micro ciclos NUNCA podem ultrapassar as datas do macro ciclo.
+ */
+export const assessmentCompetencias = mysqlTable("assessment_competencias", {
+  id: int("id").autoincrement().primaryKey(),
+  assessmentPdiId: int("assessmentPdiId").notNull(), // FK para assessment_pdi
+  competenciaId: int("competenciaId").notNull(), // FK para competencias
+  peso: mysqlEnum("peso", ["obrigatoria", "opcional"]).default("obrigatoria").notNull(),
+  notaCorte: decimal("notaCorte", { precision: 5, scale: 2 }).default("80.00").notNull(), // Nota mínima para aprovação
+  microInicio: date("microInicio"), // Data início do micro ciclo
+  microTermino: date("microTermino"), // Data término do micro ciclo (não congela, aluno pode fazer até macro término)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AssessmentCompetencia = typeof assessmentCompetencias.$inferSelect;
+export type InsertAssessmentCompetencia = typeof assessmentCompetencias.$inferInsert;
+
 // Legacy tables kept for compatibility
 export const departments = mysqlTable("departments", {
   id: int("id").autoincrement().primaryKey(),

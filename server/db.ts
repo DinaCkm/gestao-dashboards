@@ -2221,3 +2221,297 @@ export async function getAlunosResumo(programId?: number) {
     };
   });
 }
+
+// ============ ASSESSMENT PDI FUNCTIONS ============
+import { 
+  assessmentPdi, InsertAssessmentPdi, AssessmentPdi,
+  assessmentCompetencias, InsertAssessmentCompetencia, AssessmentCompetencia
+} from "../drizzle/schema";
+
+/**
+ * Get all assessments for a specific student
+ */
+export async function getAssessmentsByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const pdis = await db.select().from(assessmentPdi)
+    .where(eq(assessmentPdi.alunoId, alunoId))
+    .orderBy(desc(assessmentPdi.createdAt));
+  
+  if (pdis.length === 0) return [];
+  
+  // Get all competencias for these PDIs
+  const pdiIds = pdis.map(p => p.id);
+  const allComps = await db.select().from(assessmentCompetencias)
+    .where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map(id => sql`${id}`), sql`, `)})`);
+  
+  // Get trilha and competencia names
+  const allTrilhas = await db.select().from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t]));
+  
+  const allCompetencias = await db.select().from(competencias);
+  const compMap = new Map(allCompetencias.map(c => [c.id, c]));
+  
+  // Get turma names
+  const allTurmas = await db.select().from(turmas);
+  const turmaMap = new Map(allTurmas.map(t => [t.id, t]));
+  
+  // Get consultor names
+  const allConsultors = await db.select().from(consultors);
+  const consultorMap = new Map(allConsultors.map(c => [c.id, c]));
+  
+  // Get plano_individual for nota comparison
+  const planoItems = await db.select().from(planoIndividual)
+    .where(eq(planoIndividual.alunoId, alunoId));
+  const notaByComp = new Map(planoItems.map(p => [p.competenciaId, p.notaAtual]));
+  
+  return pdis.map(pdi => {
+    const comps = allComps.filter(c => c.assessmentPdiId === pdi.id);
+    const trilha = trilhaMap.get(pdi.trilhaId);
+    const turma = pdi.turmaId ? turmaMap.get(pdi.turmaId) : null;
+    const consultor = pdi.consultorId ? consultorMap.get(pdi.consultorId) : null;
+    
+    return {
+      ...pdi,
+      trilhaNome: trilha?.name || 'Não definida',
+      turmaNome: turma?.name || null,
+      consultorNome: consultor?.name || null,
+      competencias: comps.map(c => {
+        const comp = compMap.get(c.competenciaId);
+        const notaAtual = notaByComp.get(c.competenciaId);
+        const notaNum = notaAtual ? parseFloat(notaAtual) : null;
+        const notaCorteNum = parseFloat(c.notaCorte);
+        return {
+          ...c,
+          competenciaNome: comp?.nome || 'Desconhecida',
+          notaAtual: notaNum,
+          atingiuMeta: notaNum !== null && notaNum >= notaCorteNum,
+        };
+      }),
+      totalCompetencias: comps.length,
+      obrigatorias: comps.filter(c => c.peso === 'obrigatoria').length,
+      opcionais: comps.filter(c => c.peso === 'opcional').length,
+    };
+  });
+}
+
+/**
+ * Get all assessments for a program (for admin/mentor views)
+ */
+export async function getAssessmentsByProgram(programId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const pdis = await db.select().from(assessmentPdi)
+    .where(eq(assessmentPdi.programId, programId))
+    .orderBy(desc(assessmentPdi.createdAt));
+  
+  if (pdis.length === 0) return [];
+  
+  // Get aluno names
+  const allAlunos = await db.select().from(alunos);
+  const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
+  
+  const allTrilhas = await db.select().from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t]));
+  
+  const allTurmas = await db.select().from(turmas);
+  const turmaMap = new Map(allTurmas.map(t => [t.id, t]));
+  
+  // Get competencia counts per PDI
+  const pdiIds = pdis.map(p => p.id);
+  const allComps = await db.select().from(assessmentCompetencias)
+    .where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map(id => sql`${id}`), sql`, `)})`);
+  
+  const compsByPdi = new Map<number, typeof allComps>();
+  for (const c of allComps) {
+    const arr = compsByPdi.get(c.assessmentPdiId) || [];
+    arr.push(c);
+    compsByPdi.set(c.assessmentPdiId, arr);
+  }
+  
+  return pdis.map(pdi => {
+    const aluno = alunoMap.get(pdi.alunoId);
+    const trilha = trilhaMap.get(pdi.trilhaId);
+    const turma = pdi.turmaId ? turmaMap.get(pdi.turmaId) : null;
+    const comps = compsByPdi.get(pdi.id) || [];
+    
+    return {
+      id: pdi.id,
+      alunoId: pdi.alunoId,
+      alunoNome: aluno?.name || 'Desconhecido',
+      trilhaNome: trilha?.name || 'Não definida',
+      trilhaId: pdi.trilhaId,
+      turmaNome: turma?.name || null,
+      turmaId: pdi.turmaId,
+      macroInicio: pdi.macroInicio,
+      macroTermino: pdi.macroTermino,
+      status: pdi.status,
+      totalCompetencias: comps.length,
+      obrigatorias: comps.filter(c => c.peso === 'obrigatoria').length,
+      opcionais: comps.filter(c => c.peso === 'opcional').length,
+    };
+  });
+}
+
+/**
+ * Create a new assessment PDI with competencias
+ */
+export async function createAssessmentPdi(
+  pdiData: {
+    alunoId: number;
+    trilhaId: number;
+    turmaId?: number | null;
+    consultorId?: number | null;
+    programId?: number | null;
+    macroInicio: string;
+    macroTermino: string;
+    observacoes?: string | null;
+  },
+  competenciasData: Array<{
+    competenciaId: number;
+    peso: 'obrigatoria' | 'opcional';
+    notaCorte: string;
+    microInicio?: string | null;
+    microTermino?: string | null;
+  }>
+) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Validate: micro dates must not exceed macro dates
+  const macroInicio = pdiData.macroInicio;
+  const macroTermino = pdiData.macroTermino;
+  
+  for (const comp of competenciasData) {
+    if (comp.microInicio && comp.microInicio < macroInicio) {
+      throw new Error(`Micro ciclo início (${comp.microInicio}) não pode ser anterior ao macro ciclo início (${macroInicio})`);
+    }
+    if (comp.microTermino && comp.microTermino > macroTermino) {
+      throw new Error(`Micro ciclo término (${comp.microTermino}) não pode ser posterior ao macro ciclo término (${macroTermino})`);
+    }
+  }
+  
+  // Insert PDI - convert string dates to Date objects
+  const result = await db.insert(assessmentPdi).values({
+    alunoId: pdiData.alunoId,
+    trilhaId: pdiData.trilhaId,
+    turmaId: pdiData.turmaId || null,
+    consultorId: pdiData.consultorId || null,
+    programId: pdiData.programId || null,
+    macroInicio: new Date(pdiData.macroInicio + 'T00:00:00'),
+    macroTermino: new Date(pdiData.macroTermino + 'T00:00:00'),
+    observacoes: pdiData.observacoes || null,
+  });
+  const pdiId = result[0].insertId;
+  
+  // Insert competencias - convert string dates to Date objects
+  if (competenciasData.length > 0) {
+    await db.insert(assessmentCompetencias).values(
+      competenciasData.map(c => ({
+        assessmentPdiId: pdiId,
+        competenciaId: c.competenciaId,
+        peso: c.peso,
+        notaCorte: c.notaCorte,
+        microInicio: c.microInicio ? new Date(c.microInicio + 'T00:00:00') : null,
+        microTermino: c.microTermino ? new Date(c.microTermino + 'T00:00:00') : null,
+      }))
+    );
+  }
+  
+  return pdiId;
+}
+
+/**
+ * Freeze (congelar) an assessment PDI
+ */
+export async function congelarAssessmentPdi(pdiId: number, consultorId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(assessmentPdi).set({
+    status: 'congelado',
+    congeladoEm: new Date(),
+    congeladoPor: consultorId,
+  }).where(eq(assessmentPdi.id, pdiId));
+}
+
+/**
+ * Update assessment competencia (micro ciclo dates, peso, nota de corte)
+ */
+export async function updateAssessmentCompetencia(
+  id: number,
+  data: {
+    peso?: 'obrigatoria' | 'opcional';
+    notaCorte?: string;
+    microInicio?: string | null;
+    microTermino?: string | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // If updating micro dates, validate against macro dates
+  if (data.microInicio || data.microTermino) {
+    const [comp] = await db.select().from(assessmentCompetencias)
+      .where(eq(assessmentCompetencias.id, id)).limit(1);
+    if (comp) {
+      const [pdi] = await db.select().from(assessmentPdi)
+        .where(eq(assessmentPdi.id, comp.assessmentPdiId)).limit(1);
+      if (pdi) {
+        const macroInicioStr = pdi.macroInicio instanceof Date ? pdi.macroInicio.toISOString().split('T')[0] : String(pdi.macroInicio);
+        const macroTerminoStr = pdi.macroTermino instanceof Date ? pdi.macroTermino.toISOString().split('T')[0] : String(pdi.macroTermino);
+        if (data.microInicio && data.microInicio < macroInicioStr) {
+          throw new Error('Micro ciclo início não pode ser anterior ao macro ciclo início');
+        }
+        if (data.microTermino && data.microTermino > macroTerminoStr) {
+          throw new Error('Micro ciclo término não pode ser posterior ao macro ciclo término');
+        }
+      }
+    }
+  }
+  
+  // Build update object converting string dates to Date objects
+  const updateData: Record<string, any> = {};
+  if (data.peso !== undefined) updateData.peso = data.peso;
+  if (data.notaCorte !== undefined) updateData.notaCorte = data.notaCorte;
+  if (data.microInicio !== undefined) updateData.microInicio = data.microInicio ? new Date(data.microInicio + 'T00:00:00') : null;
+  if (data.microTermino !== undefined) updateData.microTermino = data.microTermino ? new Date(data.microTermino + 'T00:00:00') : null;
+  
+  await db.update(assessmentCompetencias).set(updateData).where(eq(assessmentCompetencias.id, id));
+}
+
+/**
+ * Get assessment summary for mentor's students
+ */
+export async function getAssessmentsByConsultor(consultorId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Get all mentoring sessions for this consultor to find their students
+  const sessions = await db.select({ alunoId: mentoringSessions.alunoId })
+    .from(mentoringSessions)
+    .where(eq(mentoringSessions.consultorId, consultorId));
+  
+  const uniqueAlunoIds = Array.from(new Set(sessions.map(s => s.alunoId)));
+  if (uniqueAlunoIds.length === 0) return [];
+  
+  // Get PDIs for these students
+  const pdis = await db.select().from(assessmentPdi)
+    .where(sql`${assessmentPdi.alunoId} IN (${sql.join(uniqueAlunoIds.map(id => sql`${id}`), sql`, `)})`);
+  
+  if (pdis.length === 0) return [];
+  
+  const allAlunos = await db.select().from(alunos);
+  const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
+  
+  const allTrilhas = await db.select().from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t]));
+  
+  return pdis.map(pdi => ({
+    ...pdi,
+    alunoNome: alunoMap.get(pdi.alunoId)?.name || 'Desconhecido',
+    trilhaNome: trilhaMap.get(pdi.trilhaId)?.name || 'Não definida',
+  }));
+}

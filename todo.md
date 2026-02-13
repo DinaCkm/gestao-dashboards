@@ -580,3 +580,20 @@
 - [x] Atualizar 125 referências (consultorId) nas mentoring_sessions
 - [x] Verificar integridade: 2.220 sessões, 0 órfãs
 - [x] Gerar documento de-para para correção dos nomes nas planilhas originais
+
+## Estrutura de PDI / Assessment (13/02/2026)
+- [x] Criar tabela assessment_pdi no schema (alunoId, trilhaId, turmaId, consultorId, macroInicio, macroTermino, status ativo/congelado)
+- [x] Criar tabela assessment_competencias (assessmentPdiId, competenciaId, peso obrigatoria/opcional, notaCorte, microInicio, microTermino)
+- [x] Rodar db:push - migração aplicada com sucesso
+- [x] Importar dados da planilha CompetênciasObrigatórias-SEBRAETocantins (50 alunos, 511 registros)
+- [x] BS1: 11 alunos, 158 comps (132 obrig + 26 opc) | BS2: 32 alunos, 297 comps (179 obrig + 118 opc) | BS3: 7 alunos, 56 comps (45 obrig + 11 opc)
+- [x] 0 violações de micro ciclo > macro ciclo
+- [x] Criar endpoints tRPC para CRUD do PDI (listar por aluno/programa/consultor, criar, editar competência, congelar trilha)
+- [x] Criar tela de Assessment na área da mentora (formulário de input do PDI)
+- [x] Tela com tabs: Assessments Existentes + Novo Assessment
+- [x] Formulário: selecionar aluno, trilha, competências (obrigatórias/opcionais), notas de corte, macro/micro ciclos
+- [x] Botão de congelar trilha encerrada
+- [x] Visualização das competências com nota atual vs nota de corte (verde/vermelho)
+- [x] Validação frontend: micro ciclos não podem ultrapassar macro ciclo
+- [x] 88 testes passando (11 novos de assessment)
+- [x] Regra de negócio: micro ciclos NUNCA podem ultrapassar as datas do macro ciclo (validação backend + frontend)
