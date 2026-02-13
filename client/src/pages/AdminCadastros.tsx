@@ -782,10 +782,30 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedEmail = email.trim();
+    const cpfDigits = cpfMentor.replace(/\D/g, '');
+    
+    // Validação obrigatória de email
+    if (!trimmedEmail) {
+      toast.error("Email é obrigatório");
+      return;
+    }
+    // Validação de formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      toast.error("Email inválido. Informe um email válido (ex: nome@empresa.com)");
+      return;
+    }
+    // Validação obrigatória de CPF
+    if (!cpfDigits || cpfDigits.length !== 11) {
+      toast.error("CPF é obrigatório e deve conter 11 dígitos");
+      return;
+    }
+    
     onCreate({ 
       name: nome, 
-      email, 
-      cpf: cpfMentor.replace(/\D/g, '') || undefined,
+      email: trimmedEmail, 
+      cpf: cpfDigits,
       loginId: loginId || undefined,
       programId: programId ? parseInt(programId) : undefined 
     });
@@ -829,13 +849,13 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                   <Input id="nome-mentor" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do mentor" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email-mentor">Email</Label>
+                  <Label htmlFor="email-mentor">Email *</Label>
                   <Input id="email-mentor" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="cpf-mentor">CPF</Label>
-                  <Input id="cpf-mentor" value={cpfMentor} onChange={(e) => setCpfMentor(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
-                  <p className="text-xs text-muted-foreground">CPF é usado para login do mentor (Email + CPF)</p>
+                  <Label htmlFor="cpf-mentor">CPF *</Label>
+                  <Input id="cpf-mentor" value={cpfMentor} onChange={(e) => setCpfMentor(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} required />
+                  <p className="text-xs text-muted-foreground">CPF é obrigatório e usado para login do mentor (Email + CPF)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="loginId-mentor">ID de Login (opcional)</Label>

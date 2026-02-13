@@ -611,3 +611,6 @@
 - [x] Tab PDI/Assessment adicionada no dashboard do aluno (mostra assessments da mentora com competências, notas de corte e status)
 - [x] 96 testes passando (8 novos de bugfixes)
 - [x] Filtro por status (ativo/congelado/todos) na aba PDI/Assessment do dashboard do aluno
+
+## Bugs Reportados pelo Usuário (13/02/2026 - Sessão 2)
+- [x] BUG: Erro "Invalid email address" ao criar novo mentor - email e CPF agora obrigatórios com validação no frontend e backend

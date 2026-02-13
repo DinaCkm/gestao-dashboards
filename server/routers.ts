@@ -1567,11 +1567,11 @@ export const appRouter = router({
       return await db.getAllMentores();
     }),
     
-    createMentor: adminProcedure
+     createMentor: adminProcedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
-        cpf: z.string().optional(),
+        cpf: z.string().min(11, "CPF deve conter 11 dígitos"),
         loginId: z.string().optional(),
         programId: z.number().optional()
       }))
