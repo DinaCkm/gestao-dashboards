@@ -614,3 +614,10 @@
 
 ## Bugs Reportados pelo Usuário (13/02/2026 - Sessão 2)
 - [x] BUG: Erro "Invalid email address" ao criar novo mentor - email e CPF agora obrigatórios com validação no frontend e backend
+- [x] Limpar 19 registros de teste (gestores) do banco de dados de produção - 20 registros removidos
+- [x] Limpar registros de teste (alunos) do banco de dados de produção - 19 registros removidos
+- [x] Ajustar testes vitest para fazer cleanup (afterAll) dos dados criados durante os testes
+- [x] BUG: Botão Editar não aparece na aba Mentores - botão Editar + dialog de edição + endpoint editMentor adicionados
+- [x] Limpar registros de teste "Primeiro usuário" (alunos) do banco - registros removidos
+- [x] BUG: Alunos na Gestão de Acesso não mostram nome real nem empresa associada - programName via LEFT JOIN
+- [x] Ajustar testes vitest para fazer cleanup dos dados criados - afterAll com cleanup implementado

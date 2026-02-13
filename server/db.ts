@@ -1468,6 +1468,7 @@ export async function getAccessUsers(): Promise<any[]> {
     cpf: users.cpf,
     role: users.role,
     programId: users.programId,
+    programName: programs.name,
     alunoId: users.alunoId,
     consultorId: users.consultorId,
     isActive: users.isActive,
@@ -1476,6 +1477,7 @@ export async function getAccessUsers(): Promise<any[]> {
     lastSignedIn: users.lastSignedIn,
   })
     .from(users)
+    .leftJoin(programs, eq(users.programId, programs.id))
     .where(eq(users.loginMethod, 'email_cpf'))
     .orderBy(desc(users.createdAt));
   

@@ -1588,6 +1588,19 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, 'mentor');
       }),
+
+    editMentor: adminProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        name: z.string().optional(),
+        email: z.string().email().optional(),
+        cpf: z.string().optional(),
+        programId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { consultorId, ...data } = input;
+        return await db.updateConsultor(consultorId, data);
+      }),
     
     // Gerentes
     listGerentes: adminProcedure.query(async () => {

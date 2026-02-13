@@ -147,6 +147,14 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro ao atualizar status: ${err.message}`),
   });
 
+  const editMentor = trpc.admin.editMentor.useMutation({
+    onSuccess: () => {
+      toast.success("Mentor atualizado com sucesso!");
+      refetchMentores();
+    },
+    onError: (err) => toast.error(`Erro ao atualizar mentor: ${err.message}`),
+  });
+
   const editGerente = trpc.admin.editGerente.useMutation({
     onSuccess: () => {
       toast.success("Gerente atualizado com sucesso!");
@@ -219,6 +227,7 @@ export default function AdminCadastros() {
               onCreate={createMentor.mutate}
               onUpdateAcesso={updateAcessoMentor.mutate}
               isCreating={createMentor.isPending}
+              onEdit={editMentor.mutate}
             />
           </TabsContent>
 
@@ -543,10 +552,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {user.programId 
-                        ? empresas.find(e => e.id === user.programId)?.name || "-"
-                        : "-"
-                      }
+{user.programName || "-"}
                     </TableCell>
                     <TableCell>
                       {user.isActive ? (
@@ -765,20 +771,27 @@ function EmpresasTab({ empresas, loading, onCreate, isCreating, onUpdate, onTogg
 }
 
 // ============ MENTORES TAB ============
-function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, isCreating }: {
+function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, isCreating, onEdit }: {
   mentores: any[];
   empresas: any[];
   loading: boolean;
   onCreate: (data: any) => void;
   onUpdateAcesso: (data: any) => void;
   isCreating: boolean;
+  onEdit: (data: any) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editMentor, setEditMentor] = useState<any>(null);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpfMentor, setCpfMentor] = useState("");
   const [loginId, setLoginId] = useState("");
   const [programId, setProgramId] = useState("");
+  const [editNome, setEditNome] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editCpf, setEditCpf] = useState("");
+  const [editProgramId, setEditProgramId] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -824,6 +837,29 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
       const newLoginId = `M${mentorId.toString().padStart(4, '0')}`;
       onUpdateAcesso({ consultorId: mentorId, loginId: newLoginId, canLogin: true });
     }
+  };
+
+  const handleEditOpen = (mentor: any) => {
+    setEditMentor(mentor);
+    setEditNome(mentor.name || "");
+    setEditEmail(mentor.email || "");
+    setEditCpf(mentor.cpf ? formatCpf(mentor.cpf) : "");
+    setEditProgramId(mentor.programId?.toString() || "");
+    setEditOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editMentor) return;
+    const cpfDigits = editCpf.replace(/\D/g, '');
+    onEdit({ 
+      consultorId: editMentor.id, 
+      name: editNome, 
+      email: editEmail || undefined,
+      cpf: cpfDigits || undefined,
+      programId: editProgramId ? parseInt(editProgramId) : undefined 
+    });
+    setEditOpen(false);
   };
 
   return (
@@ -917,13 +953,22 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                     )}
                   </TableCell>
                   <TableCell>
-                    <Button 
-                      variant={mentor.canLogin ? "destructive" : "default"} 
-                      size="sm"
-                      onClick={() => handleToggleAcesso(mentor.id, mentor.loginId, mentor.email)}
-                    >
-                      {mentor.canLogin ? "Desativar" : "Ativar Acesso"}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditOpen(mentor)}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" /> Editar
+                      </Button>
+                      <Button 
+                        variant={mentor.canLogin ? "destructive" : "default"} 
+                        size="sm"
+                        onClick={() => handleToggleAcesso(mentor.id, mentor.loginId, mentor.email)}
+                      >
+                        {mentor.canLogin ? "Desativar" : "Ativar Acesso"}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -937,6 +982,49 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
             </TableBody>
           </Table>
         )}
+
+        {/* Dialog de Edição de Mentor */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <form onSubmit={handleEditSubmit}>
+              <DialogHeader>
+                <DialogTitle>Editar Mentor</DialogTitle>
+                <DialogDescription>Atualize os dados do mentor</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-nome-mentor">Nome Completo</Label>
+                  <Input id="edit-nome-mentor" value={editNome} onChange={(e) => setEditNome(e.target.value)} placeholder="Nome do mentor" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email-mentor">Email</Label>
+                  <Input id="edit-email-mentor" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="email@exemplo.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-cpf-mentor">CPF</Label>
+                  <Input id="edit-cpf-mentor" value={editCpf} onChange={(e) => setEditCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-programa-mentor">Empresa/Programa</Label>
+                  <Select value={editProgramId} onValueChange={setEditProgramId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {empresas.map((emp) => (
+                        <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+                <Button type="submit">Salvar Alterações</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
