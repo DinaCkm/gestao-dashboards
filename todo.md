@@ -641,3 +641,7 @@
 - [x] Corrigir números do painel da Adriana Deus: 46 mentorias → 26 válidas, 30 alunos → 16 válidos
 - [x] BUG: Filtro de empresa não seleciona na página Registro de Mentoria do mentor - agora mostra apenas empresas do mentor
 - [x] BUG: Filtro de alunos mostra todos os alunos do sistema - agora filtra por mentor logado (endpoints byConsultor e programsByConsultor)
+- [x] AUDITORIA: Verificar se Adriana realmente tem 16 mentorados - 11 eram sessões de apresentação (removidas), ficou com 5 alunos EMBRAPII
+- [x] BUG: Filtro de empresa na tela da mentora - código corrigido, precisa publicar
+- [x] Remover 11 sessões de apresentação do sistema da Adriana com alunos SEBRAE TO (não são mentorias reais, manter apenas EMBRAPII) - Adriana agora: 5 alunos, 15 sessões, EMBRAPII
+- [x] BUG: Filtros de Empresa e Aluno nas páginas Registro de Mentoria e Assessment/PDI - código corrigido, precisa publicar para a Adriana ver

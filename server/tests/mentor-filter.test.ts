@@ -8,7 +8,7 @@ describe('Mentor filtering - alunos and programs by consultor', () => {
   it('should return only alunos linked to a specific mentor via mentoring sessions', async () => {
     const alunos = await db.getAlunosByConsultor(39); // Adriana Deus
     expect(alunos.length).toBeGreaterThan(0);
-    expect(alunos.length).toBeLessThanOrEqual(20); // Adriana has 16 alunos, not 30+
+    expect(alunos.length).toBe(5); // Adriana has 5 alunos (EMBRAPII only, SEBRAE TO sessions were presentation-only)
     
     // All returned alunos should have valid names
     for (const aluno of alunos) {
@@ -61,10 +61,10 @@ describe('Mentor filtering - alunos and programs by consultor', () => {
     expect(stats).not.toBeNull();
     
     if (stats) {
-      // After cleanup, Adriana should have 26 sessions and 16 alunos
-      expect(stats.totalMentorias).toBe(26);
-      expect(stats.totalAlunos).toBe(16);
-      expect(stats.totalEmpresas).toBe(2); // SEBRAE TO and EMBRAPII
+      // After cleanup, Adriana should have 15 sessions and 5 alunos (EMBRAPII only)
+      expect(stats.totalMentorias).toBe(15);
+      expect(stats.totalAlunos).toBe(5);
+      expect(stats.totalEmpresas).toBe(1); // EMBRAPII only
       
       // All alunos should have valid names (no 'Desconhecido')
       for (const aluno of stats.alunosAtendidos) {
