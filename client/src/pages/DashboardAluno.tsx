@@ -327,7 +327,7 @@ export default function DashboardAluno() {
                                   Falta 1 sessão!
                                 </Badge>
                               ) : (
-                                <p className="text-xs text-gray-500 mt-1">Faltam {sessionProgress.sessoesFaltantes} sessões</p>
+                                <p className="text-xs text-gray-500 mt-1">Faltam {sessionProgress.sessoesFaltantes} sessões para o término do Macro-Ciclo</p>
                               )}
                             </div>
                           </div>

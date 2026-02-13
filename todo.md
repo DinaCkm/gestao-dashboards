@@ -718,3 +718,7 @@
 - [x] Remover frase "Registre a nota de evolução" do subtítulo
 - [x] Aplicar em DashboardAluno (tabela de sessões - unificado em 1 coluna)
 - [x] Aplicar em IndividualDashboard (listagem de sessões do aluno logado)
+
+## Correção de Texto (13/02/2026) - Progresso do Macro-Ciclo
+- [x] Corrigir texto "Faltam X sessões" para "Faltam X sessões para o término do Macro-Ciclo"
+- [x] Aplicado em: DashboardAluno, IndividualDashboard, RegistroMentoria

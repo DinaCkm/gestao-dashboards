@@ -196,7 +196,7 @@ export default function IndividualDashboard() {
                   </Badge>
                 ) : (
                   <span className="text-sm text-gray-500">
-                    Faltam {sessionProgress.sessoesFaltantes} sessões para completar o ciclo
+                    Faltam {sessionProgress.sessoesFaltantes} sessões para o término do Macro-Ciclo
                   </span>
                 )}
               </div>

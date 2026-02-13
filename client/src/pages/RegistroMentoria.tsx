@@ -311,7 +311,7 @@ export default function RegistroMentoria() {
                       </Badge>
                     ) : sessionProgress.sessoesFaltantes > 0 ? (
                       <span className="text-xs text-gray-500">
-                        Faltam {sessionProgress.sessoesFaltantes} sessões
+                        Faltam {sessionProgress.sessoesFaltantes} sessões para o término do Macro-Ciclo
                       </span>
                     ) : null}
                   </div>
