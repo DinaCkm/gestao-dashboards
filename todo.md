@@ -570,3 +570,13 @@
 - [x] Atualizar registro do Bruno (alunoId corrigido de 274 para 30080)
 - [x] 100 alunos com alunoId vinculado (34 SEBRAE Acre + 50 SEBRAE TO + 16 EMBRAPII)
 - [x] 77 testes passando
+
+## Limpeza de Duplicatas na Tabela Consultores (13/02/2026)
+- [x] Analisar duplicatas e dependências (mentoring_sessions) na tabela consultors
+- [x] Unificar "Marcia Rocha" e "Marcia Rocha Fernandes" → "Marcia Rocha Fernandes" (128 sessões)
+- [x] Unificar "Adriana Deus" e "Adriana Deus - Coordenação" → "Adriana Deus" (46 sessões)
+- [x] Unificar "Dina Makiyama" e "Maria Dinamar" → "Dina Makiyama" (22 sessões)
+- [x] Remover 16 registros duplicados (de 27 para 11 consultores)
+- [x] Atualizar 125 referências (consultorId) nas mentoring_sessions
+- [x] Verificar integridade: 2.220 sessões, 0 órfãs
+- [x] Gerar documento de-para para correção dos nomes nas planilhas originais
