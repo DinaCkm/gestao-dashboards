@@ -142,6 +142,52 @@ describe("Bug fixes - Admin endpoints", () => {
   });
 });
 
+describe("Bug fixes - Mentor especialidade field", () => {
+  const ctx = createAdminContext();
+  const caller = appRouter.createCaller(ctx);
+
+  describe("admin.listMentores - especialidade field", () => {
+    it("returns mentores with especialidade field", async () => {
+      const result = await caller.admin.listMentores();
+      expect(Array.isArray(result)).toBe(true);
+      if (result.length > 0) {
+        expect(result[0]).toHaveProperty("id");
+        expect(result[0]).toHaveProperty("name");
+        // especialidade can be null or string
+        expect("especialidade" in result[0]).toBe(true);
+      }
+    });
+  });
+
+  describe("admin.editMentor - update especialidade", () => {
+    it("updates mentor especialidade", async () => {
+      const mentores = await caller.admin.listMentores();
+      if (mentores.length > 0) {
+        const mentor = mentores[0];
+        const originalEspecialidade = mentor.especialidade;
+        
+        // Update especialidade
+        const result = await caller.admin.editMentor({
+          consultorId: mentor.id,
+          especialidade: "Gestão e Liderança",
+        });
+        expect(result).toEqual({ success: true });
+        
+        // Verify update
+        const updated = await caller.admin.listMentores();
+        const updatedMentor = updated.find(m => m.id === mentor.id);
+        expect(updatedMentor?.especialidade).toBe("Gestão e Liderança");
+        
+        // Restore original
+        await caller.admin.editMentor({
+          consultorId: mentor.id,
+          especialidade: originalEspecialidade || undefined,
+        });
+      }
+    });
+  });
+});
+
 describe("Bug fixes - Assessment nota de corte scale", () => {
   const ctx = createAdminContext();
   const caller = appRouter.createCaller(ctx);

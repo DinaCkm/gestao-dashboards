@@ -1067,7 +1067,7 @@ export async function getAllMentores() {
     .orderBy(consultors.name);
 }
 
-export async function createMentor(data: { name: string; email: string; cpf?: string; loginId?: string; programId?: number }) {
+export async function createMentor(data: { name: string; email: string; cpf?: string; especialidade?: string; loginId?: string; programId?: number }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
   
@@ -1090,6 +1090,7 @@ export async function createMentor(data: { name: string; email: string; cpf?: st
     name: data.name,
     email: data.email.toLowerCase(),
     cpf: normalizedCpf,
+    especialidade: data.especialidade || null,
     loginId: data.loginId || null,
     programId: data.programId || null,
     role: 'mentor',
@@ -1161,14 +1162,17 @@ export async function updateConsultorAccess(consultorId: number, loginId: string
 }
 
 // Update consultor (gerente/mentor) data
-export async function updateConsultor(consultorId: number, data: { name?: string; email?: string; managedProgramId?: number }) {
+export async function updateConsultor(consultorId: number, data: { name?: string; email?: string; especialidade?: string; cpf?: string; managedProgramId?: number; programId?: number }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
   
   const updateData: Record<string, unknown> = {};
   if (data.name !== undefined) updateData.name = data.name;
   if (data.email !== undefined) updateData.email = data.email.toLowerCase();
+  if (data.especialidade !== undefined) updateData.especialidade = data.especialidade;
+  if (data.cpf !== undefined) updateData.cpf = data.cpf;
   if (data.managedProgramId !== undefined) updateData.managedProgramId = data.managedProgramId;
+  if (data.programId !== undefined) updateData.programId = data.programId;
   
   if (Object.keys(updateData).length > 0) {
     await db.update(consultors)

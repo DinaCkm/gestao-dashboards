@@ -51,6 +51,7 @@ export const consultors = mysqlTable("consultors", {
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }),
   cpf: varchar("cpf", { length: 11 }), // CPF do mentor para login
+  especialidade: text("especialidade"), // Área de especialidade do mentor (ex: Gestão, Finanças, Marketing)
   programId: int("programId"),
   role: mysqlEnum("role", ["mentor", "gerente"]).default("mentor").notNull(),
   managedProgramId: int("managedProgramId"), // Para gerentes: qual empresa gerencia

@@ -106,6 +106,13 @@
       "when": 1771002524194,
       "tag": "0014_bent_yellowjacket",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "5",
+      "when": 1771011408283,
+      "tag": "0015_open_rictor",
+      "breakpoints": true
     }
   ]
 }

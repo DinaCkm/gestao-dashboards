@@ -721,9 +721,11 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
   const [email, setEmail] = useState("");
   const [cpfMentor, setCpfMentor] = useState("");
   const [loginId, setLoginId] = useState("");
+  const [especialidade, setEspecialidade] = useState("");
   const [editNome, setEditNome] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editCpf, setEditCpf] = useState("");
+  const [editEspecialidade, setEditEspecialidade] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -751,12 +753,14 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
       name: nome, 
       email: trimmedEmail, 
       cpf: cpfDigits,
+      especialidade: especialidade || undefined,
       loginId: loginId || undefined
     });
     setNome("");
     setEmail("");
     setCpfMentor("");
     setLoginId("");
+    setEspecialidade("");
     setOpen(false);
   };
 
@@ -774,6 +778,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
     setEditNome(mentor.name || "");
     setEditEmail(mentor.email || "");
     setEditCpf(mentor.cpf ? formatCpf(mentor.cpf) : "");
+    setEditEspecialidade(mentor.especialidade || "");
     setEditOpen(true);
   };
 
@@ -785,7 +790,8 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
       consultorId: editMentor.id, 
       name: editNome, 
       email: editEmail || undefined,
-      cpf: cpfDigits || undefined
+      cpf: cpfDigits || undefined,
+      especialidade: editEspecialidade || undefined
     });
     setEditOpen(false);
   };
@@ -822,6 +828,11 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                   <p className="text-xs text-muted-foreground">CPF é obrigatório e usado para login do mentor (Email + CPF)</p>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="especialidade-mentor">Especialidade</Label>
+                  <Input id="especialidade-mentor" value={especialidade} onChange={(e) => setEspecialidade(e.target.value)} placeholder="Ex: Gestão, Finanças, Marketing, Liderança" />
+                  <p className="text-xs text-muted-foreground">Área de atuação principal do mentor</p>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="loginId-mentor">ID de Login (opcional)</Label>
                   <Input id="loginId-mentor" value={loginId} onChange={(e) => setLoginId(e.target.value)} placeholder="Ex: M0001" />
                   <p className="text-xs text-muted-foreground">Se não informado, será gerado automaticamente ao ativar o acesso</p>
@@ -845,6 +856,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>Nome</TableHead>
+                <TableHead>Especialidade</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>CPF</TableHead>
                 <TableHead>ID Login</TableHead>
@@ -857,6 +869,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                 <TableRow key={mentor.id}>
                   <TableCell>{mentor.id}</TableCell>
                   <TableCell className="font-medium">{mentor.name}</TableCell>
+                  <TableCell>{mentor.especialidade || <span className="text-muted-foreground italic">Não informada</span>}</TableCell>
                   <TableCell>{mentor.email || "-"}</TableCell>
                   <TableCell className="font-mono text-sm">{mentor.cpf ? displayCpf(mentor.cpf) : "-"}</TableCell>
                   <TableCell>{mentor.loginId || "-"}</TableCell>
@@ -889,7 +902,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
               ))}
               {mentores.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     Nenhum mentor cadastrado
                   </TableCell>
                 </TableRow>
@@ -918,6 +931,10 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                 <div className="space-y-2">
                   <Label htmlFor="edit-cpf-mentor">CPF</Label>
                   <Input id="edit-cpf-mentor" value={editCpf} onChange={(e) => setEditCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-especialidade-mentor">Especialidade</Label>
+                  <Input id="edit-especialidade-mentor" value={editEspecialidade} onChange={(e) => setEditEspecialidade(e.target.value)} placeholder="Ex: Gestão, Finanças, Marketing, Liderança" />
                 </div>
               </div>
               <DialogFooter>

@@ -1572,6 +1572,7 @@ export const appRouter = router({
         name: z.string().min(1),
         email: z.string().email(),
         cpf: z.string().min(11, "CPF deve conter 11 dígitos"),
+        especialidade: z.string().optional(),
         loginId: z.string().optional(),
         programId: z.number().optional()
       }))
@@ -1595,6 +1596,7 @@ export const appRouter = router({
         name: z.string().optional(),
         email: z.string().email().optional(),
         cpf: z.string().optional(),
+        especialidade: z.string().optional(),
         programId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
