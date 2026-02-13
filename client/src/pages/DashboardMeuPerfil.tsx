@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 import {
   User, Target, Calendar, Award, TrendingUp, BookOpen, Users,
   CheckCircle2, XCircle, Clock, GraduationCap, Trophy, Star, Zap,
-  Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper,
+  Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
 } from "lucide-react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -126,6 +126,13 @@ function IndicadorCardAluno({
 
 export default function DashboardMeuPerfil() {
   const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
+  const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
+
+  const filteredAssessments = useMemo(() => {
+    if (!data || !data.found || !data.assessments) return [];
+    if (pdiStatusFilter === "todos") return data.assessments;
+    return data.assessments.filter((a: any) => a.status === pdiStatusFilter);
+  }, [data, pdiStatusFilter]);
 
   const radarData = useMemo(() => {
     if (!data || !data.found) return [];
@@ -637,7 +644,46 @@ export default function DashboardMeuPerfil() {
           <TabsContent value="pdi" className="mt-4">
             {assessments && assessments.length > 0 ? (
               <div className="space-y-4">
-                {assessments.map((assessment: any) => (
+                {/* Filtro por status */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Filter className="h-4 w-4 text-gray-400" />
+                  <span className="text-xs text-gray-400 mr-1">Filtrar:</span>
+                  {(["todos", "ativo", "congelado"] as const).map((status) => {
+                    const count = status === "todos"
+                      ? assessments.length
+                      : assessments.filter((a: any) => a.status === status).length;
+                    const isActive = pdiStatusFilter === status;
+                    const colorMap = {
+                      todos: isActive ? "bg-blue-600 text-white border-blue-500" : "bg-gray-800/50 text-gray-400 border-gray-600 hover:bg-gray-700/50",
+                      ativo: isActive ? "bg-emerald-600 text-white border-emerald-500" : "bg-gray-800/50 text-gray-400 border-gray-600 hover:bg-gray-700/50",
+                      congelado: isActive ? "bg-gray-500 text-white border-gray-400" : "bg-gray-800/50 text-gray-400 border-gray-600 hover:bg-gray-700/50",
+                    };
+                    const labelMap = { todos: "Todos", ativo: "Ativos", congelado: "Congelados" };
+                    return (
+                      <button
+                        key={status}
+                        onClick={() => setPdiStatusFilter(status)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${colorMap[status]}`}
+                      >
+                        {labelMap[status]} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {filteredAssessments.length === 0 ? (
+                  <Card className="bg-gray-800/50 border-gray-700">
+                    <CardContent className="py-8">
+                      <div className="text-center text-gray-500">
+                        <Filter className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                        <p>Nenhum PDI com status "{pdiStatusFilter === "ativo" ? "Ativo" : "Congelado"}"</p>
+                        <button onClick={() => setPdiStatusFilter("todos")} className="text-blue-400 hover:text-blue-300 text-xs mt-2 underline">Ver todos</button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null}
+
+                {filteredAssessments.map((assessment: any) => (
                   <Card key={assessment.id} className="bg-gray-800/50 border-gray-700">
                     <CardHeader>
                       <div className="flex items-center justify-between">
