@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as sem_acesso FROM alunos a LEFT JOIN users u ON u.alunoId = a.id WHERE u.id IS NULL",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as sem_acesso FROM alunos a LEFT JOIN users u ON u.alunoId = a.id WHERE u.id IS NULL",
+  "rows": [
+    {
+      "sem_acesso": "124"
+    }
+  ],
+  "messages": [],
+  "stdout": "sem_acesso\n124\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

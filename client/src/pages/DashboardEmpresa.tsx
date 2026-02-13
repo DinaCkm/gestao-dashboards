@@ -428,7 +428,7 @@ export default function DashboardEmpresa() {
                         <span className="font-bold text-yellow-600">3.</span>
                         <div>
                           <p className="font-medium">Engajamento</p>
-                          <p className="text-xs text-muted-foreground">Fonte: Planilhas de Mentorias (coluna "Evolução/Engajamento" - nota 1 a 5)</p>
+                          <p className="text-xs text-muted-foreground">Combinação de 3 componentes (base 100): Presença + Atividades + Nota Mentora (0-5 convertida: 0=0%, 1=20%, 2=40%, 3=60%, 4=80%, 5=100%)</p>
                         </div>
                       </div>
                       

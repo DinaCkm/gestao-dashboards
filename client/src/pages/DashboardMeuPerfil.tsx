@@ -291,10 +291,10 @@ export default function DashboardMeuPerfil() {
             percentual={indicadores.engajamento}
             color="bg-cyan-500/20 text-cyan-400"
             regras={[
-              "Combinação de 3 componentes:",
+              "Combinação de 3 componentes (todos base 100):",
               `1) Mentorias: ${engComp.presenca?.toFixed(0) || 0}%`,
               `2) Atividades: ${engComp.atividades?.toFixed(0) || 0}%`,
-              `3) Nota Mentora: ${engComp.notaMentora?.toFixed(0) || 0}%`,
+              `3) Nota Mentora (0-5 convertida p/ base 100: 0=0%, 1=20%, 2=40%, 3=60%, 4=80%, 5=100%): ${engComp.notaMentora?.toFixed(0) || 0}%`,
               "Fórmula: (Comp.1 + Comp.2 + Comp.3) / 3"
             ]}
           />

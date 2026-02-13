@@ -1,0 +1,37 @@
+{
+  "query": "SELECT COUNT(*) as total_alunos FROM alunos; SELECT COUNT(*) as alunos_com_acesso FROM users WHERE alunoId IS NOT NULL; SELECT a.id, a.name, a.email, a.programId FROM alunos a LEFT JOIN users u ON u.alunoId = a.id WHERE u.id IS NULL LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total_alunos FROM alunos; SELECT COUNT(*) as alunos_com_acesso FROM users WHERE alunoId IS NOT NULL; SELECT a.id, a.name, a.email, a.programId FROM alunos a LEFT JOIN users u ON u.alunoId = a.id WHERE u.id IS NULL LIMIT 5;",
+  "rows": [
+    {
+      "total_alunos": "125"
+    },
+    {
+      "total_alunos": "alunos_com_acesso"
+    },
+    {
+      "total_alunos": "1"
+    },
+    {
+      "total_alunos": "id\tname\temail\tprogramId"
+    },
+    {
+      "total_alunos": "199\tDANIELA RIVA KELLER\tdaniela_keller@banrisul.com.br\t19"
+    },
+    {
+      "total_alunos": "200\tMARIA DE FATIMA MACIEL PEREIRA\tMaria_Fatima_Pereira@banrisul.com.br\t19"
+    },
+    {
+      "total_alunos": "201\tMARCO AURELIO MARCONATO\tMarco_Marconato@banrisul.com.br\t19"
+    },
+    {
+      "total_alunos": "202\tFABIANA DE BRITO GOMES\tFabiana_Gomes@banrisul.com.br\t19"
+    },
+    {
+      "total_alunos": "203\tMARVIN DE ALMEIDA FONTANA\tMarvin_Fontana@banrisul.com.br\t19"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_alunos\n125\nalunos_com_acesso\n1\nid\tname\temail\tprogramId\n199\tDANIELA RIVA KELLER\tdaniela_keller@banrisul.com.br\t19\n200\tMARIA DE FATIMA MACIEL PEREIRA\tMaria_Fatima_Pereira@banrisul.com.br\t19\n201\tMARCO AURELIO MARCONATO\tMarco_Marconato@banrisul.com.br\t19\n202\tFABIANA DE BRITO GOMES\tFabiana_Gomes@banrisul.com.br\t19\n203\tMARVIN DE ALMEIDA FONTANA\tMarvin_Fontana@banrisul.com.br\t19\n",
+  "stderr": "",
+  "execution_time_ms": 154
+}

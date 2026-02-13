@@ -1074,7 +1074,7 @@ export default function PlanoIndividual() {
                   </div>
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">3. Evolução / Engajamento</span>
+                      <span className="text-sm text-slate-600">3. Engajamento (presença + atividades + nota mentora 0-5 → base 100)</span>
                       <span className="text-sm font-medium">{performanceFiltrada.indicadores.engajamento.toFixed(0)}%</span>
                     </div>
                     <Progress value={performanceFiltrada.indicadores.engajamento} className="h-2" />

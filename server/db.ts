@@ -1,4 +1,4 @@
-import { eq, and, desc, sql, not } from "drizzle-orm";
+import { eq, and, or, desc, sql, not } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -1427,10 +1427,11 @@ export async function authenticateAdmin(username: string, passwordHash: string):
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
   
+  // Buscar por email ou openId
   const [user] = await db.select()
     .from(users)
     .where(and(
-      eq(users.openId, username),
+      or(eq(users.email, username), eq(users.openId, username)),
       eq(users.role, 'admin')
     ))
     .limit(1);

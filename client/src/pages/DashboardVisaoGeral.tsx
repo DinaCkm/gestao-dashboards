@@ -219,7 +219,8 @@ export default function DashboardVisaoGeral() {
                 "Combinação de 3 componentes com peso igual:",
                 "1) Participação nas Mentorias (Ind.1)",
                 "2) Entrega de Atividades (Ind.2)",
-                "3) Nota da Mentora (0 a 5 → convertida para %)",
+                "3) Nota da Mentora (0 a 5, convertida para base 100: 0=0%, 1=20%, 2=40%, 3=60%, 4=80%, 5=100%)",
+                "Todos os indicadores são base 100",
                 "Fórmula: (Comp.1 + Comp.2 + Comp.3) / 3"
               ]}
             />

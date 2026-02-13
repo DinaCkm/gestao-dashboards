@@ -126,10 +126,11 @@ export default function CustomLogin() {
 
               <form onSubmit={handleAdminLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="admin-username">Usuário</Label>
+                  <Label htmlFor="admin-username">E-mail</Label>
                   <Input
                     id="admin-username"
-                    placeholder="Digite seu usuário (ex: adm1)"
+                    type="email"
+                    placeholder="seu.email@exemplo.com"
                     value={adminUsername}
                     onChange={(e) => setAdminUsername(e.target.value)}
                     required

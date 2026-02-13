@@ -279,7 +279,7 @@ export default function DashboardAluno() {
                             </div>
                           </div>
                           <Progress value={performanceData.indicadores.engajamento} className="mt-3 h-2" />
-                          <p className="text-xs text-gray-400 mt-2">Média de: presença + atividades + nota mentora</p>
+                          <p className="text-xs text-gray-400 mt-2">Média de: presença + atividades + nota mentora (0-5 convertida para base 100)</p>
                         </CardContent>
                       </Card>
 

@@ -460,3 +460,15 @@
 ## Ajustes Visuais (12/02/2026)
 - [x] Remover gráfico "Distribuição por Classificação" (pizza) da Visão Geral
 - [x] Remover gráfico radar da Visão Geral
+
+## Importar Alunos para Gestão de Acesso (12/02/2026)
+- [ ] Importar 125 alunos da planilha de Performance para a tabela de acesso (access_users)
+- [ ] Alunos devem aparecer na lista de Gestão de Acesso com nome, email, empresa e perfil "Aluno"
+- [ ] Alunos importados devem poder fazer login com Email + CPF
+
+## Correção Formulário Cadastro (12/02/2026)
+- [ ] Adicionar campo "Empresa" no formulário de novo usuário quando perfil for "Gestor de Empresa"
+
+## Correções (13/02/2026)
+- [x] Corrigir explicação do Indicador 3 nos cards: nota mentora 0-5 convertida para base 100 (todos indicadores são base 100)
+- [x] Ajustar login admin para aceitar email em vez de openId
