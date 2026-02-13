@@ -631,3 +631,5 @@
 - [x] Botão "Novo usuário" → "Novo Aluno" - formulário simplificado para alunos
 - [x] Remover campo "Empresa" do formulário de criação e edição de mentores (mentores são da administração, não pertencem a empresa)
 - [x] Adicionar campo de especialidade no cadastro de mentores (schema, backend, frontend) para facilitar busca por habilidades
+- [x] Ordenar listas de alunos, mentores e gerentes: ativos primeiro, inativos no final
+- [x] Limpar registros de teste restantes ("Primeiro usuário 177...") do banco - 6 registros removidos

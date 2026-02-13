@@ -480,7 +480,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {accessUsers.map((user) => (
+                {[...accessUsers].sort((a, b) => (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0)).map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email || "-"}</TableCell>
@@ -865,7 +865,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mentores.map((mentor) => (
+              {[...mentores].sort((a, b) => (b.canLogin ? 1 : 0) - (a.canLogin ? 1 : 0)).map((mentor) => (
                 <TableRow key={mentor.id}>
                   <TableCell>{mentor.id}</TableCell>
                   <TableCell className="font-medium">{mentor.name}</TableCell>
@@ -1095,7 +1095,7 @@ function GerentesTab({ gerentes, empresas, loading, onCreate, onUpdateAcesso, is
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {gerentes.map((gerente) => (
+                {[...gerentes].sort((a, b) => (b.canLogin ? 1 : 0) - (a.canLogin ? 1 : 0)).map((gerente) => (
                   <TableRow key={gerente.id}>
                     <TableCell>{gerente.id}</TableCell>
                     <TableCell className="font-medium">{gerente.name}</TableCell>
