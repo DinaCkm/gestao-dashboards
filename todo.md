@@ -456,3 +456,7 @@
 - [x] Edição e exclusão de ciclos
 - [x] Indicação visual de cores (verde/vermelho/azul) por status do ciclo
 
+
+## Ajustes Visuais (12/02/2026)
+- [x] Remover gráfico "Distribuição por Classificação" (pizza) da Visão Geral
+- [x] Remover gráfico radar da Visão Geral

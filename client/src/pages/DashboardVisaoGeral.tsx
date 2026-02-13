@@ -3,9 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { Users, Building2, TrendingUp, Award, Target, Calendar, BookOpen, Zap, GraduationCap, PartyPopper, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,14 +11,7 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
-const COLORS = ['#1E3A5F', '#F5A623', '#2E7D32', '#D32F2F', '#7B1FA2'];
-const CLASSIFICATION_COLORS: Record<string, string> = {
-  'Excelência': '#2E7D32',
-  'Avançado': '#1976D2',
-  'Intermediário': '#F5A623',
-  'Básico': '#FF9800',
-  'Inicial': '#D32F2F'
-};
+
 
 function IndicadorCard({ 
   numero, titulo, valor, icone, cor, descricao, regras 
@@ -107,15 +98,7 @@ export default function DashboardVisaoGeral() {
 
   const { visaoGeral, porEmpresa, topAlunos, alunosAtencao } = data;
 
-  // Dados para o gráfico de radar dos 6 indicadores
-  const radarData = [
-    { indicador: 'Mentorias', valor: visaoGeral.mediaParticipacaoMentorias },
-    { indicador: 'Atividades', valor: visaoGeral.mediaAtividadesPraticas },
-    { indicador: 'Engajamento', valor: visaoGeral.mediaEngajamento },
-    { indicador: 'Competências', valor: visaoGeral.mediaPerformanceCompetencias },
-    { indicador: 'Aprendizado', valor: visaoGeral.mediaPerformanceAprendizado || 0 },
-    { indicador: 'Eventos', valor: visaoGeral.mediaParticipacaoEventos },
-  ];
+
 
   // Dados para o gráfico de barras por empresa
   const empresaData = porEmpresa.map(emp => ({
@@ -308,70 +291,7 @@ export default function DashboardVisaoGeral() {
           </div>
         </div>
 
-        {/* Gráficos */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Distribuição por Classificação */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribuição por Classificação</CardTitle>
-              <CardDescription>Quantidade de alunos em cada estágio</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={visaoGeral.distribuicaoClassificacao}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ nome, percentual }) => `${nome}: ${percentual.toFixed(0)}%`}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="quantidade"
-                      nameKey="nome"
-                      isAnimationActive={false}
-                    >
-                      {visaoGeral.distribuicaoClassificacao.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={CLASSIFICATION_COLORS[entry.nome] || COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Radar dos 6 Indicadores */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Radar de Indicadores</CardTitle>
-              <CardDescription>Média geral dos 6 indicadores individuais</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="indicador" tick={{ fontSize: 11 }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                    <Radar
-                      name="Média Geral"
-                      dataKey="valor"
-                      stroke="#1E3A5F"
-                      fill="#1E3A5F"
-                      fillOpacity={0.6}
-                      isAnimationActive={false}
-                    />
-                    <Tooltip formatter={(value: number) => `${value.toFixed(0)}%`} />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Performance por Empresa */}
         <Card>
