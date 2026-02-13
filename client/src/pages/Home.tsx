@@ -27,7 +27,15 @@ export default function Home() {
     if (loading || !user) return;
     
     if (user.role === "manager") {
-      setLocation("/dashboard/gestor");
+      // Diferenciar mentor de gestor de empresa
+      const userAny = user as any;
+      if (userAny.consultorId) {
+        // É um mentor → vai para dashboard do mentor
+        setLocation("/dashboard/mentor");
+      } else {
+        // É um gestor de empresa → vai para dashboard da empresa
+        setLocation("/dashboard/gestor");
+      }
       return;
     }
     

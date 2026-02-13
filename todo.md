@@ -493,3 +493,9 @@
 - [x] Implementar no Dashboard Meu Perfil (DashboardMeuPerfil.tsx)
 - [x] Implementar no Dashboard por Empresa (DashboardEmpresa.tsx)
 - [x] Implementar no Dashboard Visão Geral (DashboardVisaoGeral.tsx)
+
+## Bug Seletor de Mentor e Área Própria do Mentor (13/02/2026)
+- [x] Corrigir dropdown de seleção de mentor na página Visão do Mentor (nada acontece ao clicar)
+- [x] Criar dashboard próprio do mentor logado ("Meu Dashboard" do mentor)
+- [x] Mentor logado vê automaticamente seus próprios dados (alunos, mentorias, empresas)
+- [x] Garantir redirecionamento correto por perfil após login (admin/gestor/mentor/aluno)

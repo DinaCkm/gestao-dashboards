@@ -54,19 +54,25 @@ type MenuItem = {
   roles?: ("admin" | "manager" | "user")[];
 };
 
-const allMenuItems: MenuItem[] = [
+type MenuItemExtended = MenuItem & {
+  requireConsultorId?: boolean; // Só mostra se user tem consultorId (mentor)
+  hideIfConsultorId?: boolean; // Esconde se user tem consultorId (gestor de empresa)
+};
+
+const allMenuItems: MenuItemExtended[] = [
   // === ADMINISTRADOR ===
   { icon: LayoutDashboard, label: "Painel Admin", path: "/", roles: ["admin"] },
   { icon: Upload, label: "Upload de Planilhas", path: "/upload", roles: ["admin"] },
   { icon: BarChart3, label: "Visão Geral", path: "/dashboard/visao-geral", roles: ["admin"] },
   
-  // === MENTORES ===
-  { icon: UserCheck, label: "Visão do Mentor", path: "/dashboard/mentor", roles: ["admin", "manager"] },
+  // === MENTORES (admin vê como "Dashboard Mentores", mentor vê como "Meu Dashboard") ===
+  { icon: UserCheck, label: "Dashboard Mentores", path: "/dashboard/mentor", roles: ["admin"] },
+  { icon: UserCheck, label: "Meu Dashboard", path: "/dashboard/mentor", roles: ["manager"], requireConsultorId: true },
   { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria", roles: ["admin", "manager"] },
   
   // === GERENTES DE EMPRESA ===
   { icon: Building2, label: "Por Empresa", path: "/dashboard/empresa", roles: ["admin"] },
-  { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"] },
+  { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], hideIfConsultorId: true },
   
   // === ALUNO INDIVIDUAL ===
   { icon: User, label: "Meu Dashboard", path: "/meu-dashboard", roles: ["user"] },
@@ -144,13 +150,19 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
-  // Filter menu items based on user role
+  // Filter menu items based on user role and consultorId
   const menuItems = useMemo(() => {
     const userRole = user?.role || "user";
-    return allMenuItems.filter(item => 
-      !item.roles || item.roles.includes(userRole as "admin" | "manager" | "user")
-    );
-  }, [user?.role]);
+    const hasConsultorId = !!(user as any)?.consultorId;
+    return allMenuItems.filter(item => {
+      // Filtrar por role
+      if (item.roles && !item.roles.includes(userRole as "admin" | "manager" | "user")) return false;
+      // Filtrar por consultorId (mentor vs gestor)
+      if (item.requireConsultorId && !hasConsultorId) return false;
+      if (item.hideIfConsultorId && hasConsultorId) return false;
+      return true;
+    });
+  }, [user?.role, (user as any)?.consultorId]);
 
   const activeMenuItem = menuItems.find(item => item.path === location);
 
