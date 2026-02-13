@@ -15,7 +15,7 @@ import Reports from "./pages/Reports";
 import Users from "./pages/Users";
 import Turmas from "./pages/Turmas";
 import Formulas from "./pages/Formulas";
-import History from "./pages/History";
+// History page merged into Upload
 import DashboardVisaoGeral from "./pages/DashboardVisaoGeral";
 import DashboardEmpresa from "./pages/DashboardEmpresa";
 import DashboardMentor from "./pages/DashboardMentor";
@@ -40,7 +40,7 @@ function Router() {
       <Route path={"/usuarios"} component={Users} />
       <Route path={"/turmas"} component={Turmas} />
       <Route path={"/formulas"} component={Formulas} />
-      <Route path={"/historico"} component={History} />
+      {/* Histórico agora está dentro da página de Upload */}
       <Route path={"/dashboard/visao-geral"} component={DashboardVisaoGeral} />
       <Route path={"/dashboard/empresa"} component={PorEmpresa} />
       <Route path={"/dashboard/empresa/:codigo"} component={DashboardEmpresa} />

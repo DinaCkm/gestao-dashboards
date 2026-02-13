@@ -62,7 +62,7 @@ type MenuItemExtended = MenuItem & {
 const allMenuItems: MenuItemExtended[] = [
   // === ADMINISTRADOR ===
   { icon: LayoutDashboard, label: "Painel Admin", path: "/", roles: ["admin"] },
-  { icon: Upload, label: "Upload de Planilhas", path: "/upload", roles: ["admin"] },
+  { icon: Upload, label: "Gestão de Planilhas", path: "/upload", roles: ["admin"] },
   { icon: BarChart3, label: "Visão Geral", path: "/dashboard/visao-geral", roles: ["admin"] },
   
   // === MENTORES (admin vê como "Dashboard Mentores", mentor vê como "Meu Dashboard") ===
@@ -86,7 +86,7 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias", roles: ["admin"] },
   { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["admin"] },
   { icon: Calculator, label: "Fórmulas", path: "/formulas", roles: ["admin"] },
-  { icon: FileSpreadsheet, label: "Histórico", path: "/historico", roles: ["admin", "manager"] },
+  // Histórico agora está dentro de Gestão de Planilhas
   // { icon: Settings, label: "Configurações", path: "/configuracoes", roles: ["admin"] }, // TODO: implementar
 ];
 

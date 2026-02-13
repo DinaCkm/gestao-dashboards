@@ -552,3 +552,13 @@
 - [x] Limpar eventos antigos (exceto BANRISUL) e importar novos das 3 planilhas
 - [x] 68 eventos + 2.030 participações importadas (BANRISUL preservado com 4.027 participações)
 - [x] Verificar dados nos dashboards - 77 testes passando
+
+## Atualização de Mentorias - EMBRAPII, SEBRAE Acre, SEBRAE TO (13/02/2026)
+- [x] Analisar planilha SEBRAEACRE-Mentorias.xlsx (524 sessões, 33 alunos)
+- [x] Analisar planilha BS2SEBRAETO-Tutorias(respostas).xlsx (406 sessões, 50 alunos)
+- [x] Analisar planilha EMBRAPII-Mentorias.xlsx (146 sessões, 16 alunos)
+- [x] Importar mentorias: 1.076 sessões (BANRISUL preservado com 1.144 sessões)
+- [x] Verificar dados nos dashboards
+- [x] Registrar lotes de upload no Histórico para os eventos importados (3 planilhas de eventos)
+- [x] Registrar lotes de upload no Histórico para as mentorias importadas (3 planilhas de mentorias)
+- [x] Unificar páginas "Upload de Planilhas" e "Histórico de Uploads" em uma única página (agora "Gestão de Planilhas" com tabs Upload/Histórico)
