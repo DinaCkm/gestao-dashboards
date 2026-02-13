@@ -24,8 +24,12 @@ import {
   Eye,
   ClipboardCheck,
   BookOpen,
-  Target
+  Target,
+  AlertTriangle,
+  Trophy,
+  Clock
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 export default function RegistroMentoria() {
   const { user } = useAuth();
@@ -67,6 +71,12 @@ export default function RegistroMentoria() {
 
   // Buscar sessões de mentoria do aluno
   const { data: sessions = [], refetch: refetchSessions } = trpc.mentor.sessionsByAluno.useQuery(
+    { alunoId: selectedAlunoId! },
+    { enabled: !!selectedAlunoId }
+  );
+
+  // Buscar progresso de sessões do aluno (baseado no Assessment PDI macro ciclo)
+  const { data: sessionProgress } = trpc.mentor.sessionProgress.useQuery(
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
   );
@@ -187,7 +197,7 @@ export default function RegistroMentoria() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Registro de Mentoria</h1>
-            <p className="text-gray-500">Registre a nota de evolução (0-10) e feedback das sessões de mentoria</p>
+            <p className="text-gray-500">Acompanhe as sessões de mentoria e o nível de engajamento dos alunos</p>
           </div>
         </div>
 
@@ -239,7 +249,7 @@ export default function RegistroMentoria() {
                   }}
                 >
                   <option value="">Selecione um aluno</option>
-                  {alunos.map(a => (
+                  {[...alunos].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(a => (
                     <option key={a.id} value={String(a.id)}>{a.name}</option>
                   ))}
                 </select>
@@ -268,6 +278,55 @@ export default function RegistroMentoria() {
                   </div>
                 </div>
               </div>
+
+              {/* Progresso do Ciclo Macro */}
+              {sessionProgress && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-[#1B3A5D]" />
+                      <span className="text-sm font-medium text-gray-700">Progresso do Ciclo Macro</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-[#1B3A5D]">
+                        {sessionProgress.sessoesRealizadas}/{sessionProgress.totalSessoesEsperadas} sessões
+                      </span>
+                      <span className="text-xs text-gray-500">({sessionProgress.percentualProgresso}%)</span>
+                    </div>
+                  </div>
+                  <Progress value={sessionProgress.percentualProgresso} className="h-2" />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-gray-500">
+                      {sessionProgress.macroInicio ? new Date(sessionProgress.macroInicio).toLocaleDateString('pt-BR') : ''}
+                      {' → '}
+                      {sessionProgress.macroTermino ? new Date(sessionProgress.macroTermino).toLocaleDateString('pt-BR') : ''}
+                    </span>
+                    {sessionProgress.cicloCompleto ? (
+                      <Badge className="bg-emerald-100 text-emerald-800 border-0">
+                        <Trophy className="h-3 w-3 mr-1" /> Ciclo Completo
+                      </Badge>
+                    ) : sessionProgress.faltaUmaSessao ? (
+                      <Badge className="bg-amber-100 text-amber-800 border-0 animate-pulse">
+                        <AlertTriangle className="h-3 w-3 mr-1" /> Falta 1 sessão para fechar o ciclo!
+                      </Badge>
+                    ) : sessionProgress.sessoesFaltantes > 0 ? (
+                      <span className="text-xs text-gray-500">
+                        Faltam {sessionProgress.sessoesFaltantes} sessões
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+
+              {/* Alerta quando não tem Assessment PDI */}
+              {!sessionProgress && selectedAlunoId && sessions.length > 0 && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex items-center gap-2 text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm">Assessment PDI não cadastrado — não é possível calcular o progresso do ciclo macro.</span>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -392,22 +451,27 @@ export default function RegistroMentoria() {
                                     </Badge>
                                   )}
                                   
-                                  {session.engagementScore != null && (
-                                    <div className="flex items-center gap-1 text-amber-600">
-                                      <Star className="h-4 w-4 fill-current" />
-                                      <span className="font-medium">{session.engagementScore}/10</span>
-                                      <span className="text-sm text-gray-500">Engajamento</span>
-                                    </div>
-                                  )}
                                 </div>
                                 
                                 <div className="flex items-center gap-3">
+                                  {/* Nível de Engajamento unificado */}
                                   {session.notaEvolucao !== null && session.notaEvolucao !== undefined ? (() => {
                                     const stage = getEvolucaoStage(session.notaEvolucao);
                                     return (
-                                      <div className={`flex items-center gap-2 px-3 py-1 rounded-lg border ${stage.bgColor} ${stage.borderColor}`}>
-                                        <TrendingUp className={`h-4 w-4 ${stage.textColor}`} />
+                                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${stage.bgColor} ${stage.borderColor}`}>
+                                        <Star className={`h-4 w-4 ${stage.textColor} fill-current`} />
                                         <span className={`font-bold ${stage.textColor}`}>{session.notaEvolucao}/10</span>
+                                        <span className="text-xs text-gray-500">Nível de Engajamento</span>
+                                        <Badge className={`text-xs ${stage.badgeBg} ${stage.badgeText} border-0`}>{stage.label}</Badge>
+                                      </div>
+                                    );
+                                  })() : session.engagementScore != null ? (() => {
+                                    const stage = getEvolucaoStage(session.engagementScore);
+                                    return (
+                                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${stage.bgColor} ${stage.borderColor}`}>
+                                        <Star className={`h-4 w-4 ${stage.textColor} fill-current`} />
+                                        <span className={`font-bold ${stage.textColor}`}>{session.engagementScore}/10</span>
+                                        <span className="text-xs text-gray-500">Nível de Engajamento</span>
                                         <Badge className={`text-xs ${stage.badgeBg} ${stage.badgeText} border-0`}>{stage.label}</Badge>
                                       </div>
                                     );
@@ -588,46 +652,31 @@ export default function RegistroMentoria() {
                   </div>
                 </div>
                 
-                {/* Engajamento e Evolução */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                    <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                      <Star className="h-3 w-3" /> Engajamento
-                    </p>
-                    <div className="flex items-center gap-2">
-                      {viewedSession.engagementScore != null ? (
-                        <>
-                          <span className="font-bold text-2xl text-amber-700">{viewedSession.engagementScore}</span>
-                          <span className="text-amber-600">/10</span>
-                        </>
-                      ) : (
-                        <span className="text-gray-400 italic">Não informado</span>
-                      )}
+                {/* Nível de Engajamento unificado */}
+                {(() => {
+                  const nota = viewedSession.notaEvolucao ?? viewedSession.engagementScore;
+                  if (nota == null) return (
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                        <Star className="h-3 w-3" /> Nível de Engajamento
+                      </p>
+                      <span className="text-gray-400 italic">Não informado</span>
                     </div>
-                  </div>
-                  
-                  <div className={`rounded-lg p-3 border ${
-                    viewedSession.notaEvolucao != null 
-                      ? `${getEvolucaoStage(viewedSession.notaEvolucao).bgColor} ${getEvolucaoStage(viewedSession.notaEvolucao).borderColor}`
-                      : 'bg-gray-50 border-gray-200'
-                  }`}>
-                    <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" /> Evolução
-                    </p>
-                    {viewedSession.notaEvolucao != null ? (() => {
-                      const stage = getEvolucaoStage(viewedSession.notaEvolucao!);
-                      return (
-                        <div className="flex items-center gap-2">
-                          <span className={`font-bold text-2xl ${stage.textColor}`}>{viewedSession.notaEvolucao}</span>
-                          <span className={stage.textColor}>/10</span>
-                          <Badge className={`text-xs ${stage.badgeBg} ${stage.badgeText} border-0`}>{stage.label}</Badge>
-                        </div>
-                      );
-                    })() : (
-                      <span className="text-gray-400 italic">Não informada</span>
-                    )}
-                  </div>
-                </div>
+                  );
+                  const stage = getEvolucaoStage(nota);
+                  return (
+                    <div className={`rounded-lg p-4 border ${stage.bgColor} ${stage.borderColor}`}>
+                      <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                        <Star className="h-3 w-3" /> Nível de Engajamento
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <span className={`font-bold text-3xl ${stage.textColor}`}>{nota}</span>
+                        <span className={`text-lg ${stage.textColor}`}>/10</span>
+                        <Badge className={`text-sm px-3 py-1 ${stage.badgeBg} ${stage.badgeText} border-0`}>{stage.label}</Badge>
+                      </div>
+                    </div>
+                  );
+                })()}
                 
                 {/* Pontuação convertida */}
                 <div className="bg-[#1B3A5D]/5 rounded-lg p-3 border border-[#1B3A5D]/10">

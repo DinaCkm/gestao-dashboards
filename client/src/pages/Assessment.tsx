@@ -162,7 +162,7 @@ function AssessmentContent() {
                 }}
               >
                 <option value="">Selecione um aluno</option>
-                {alunos.map(a => (
+                {[...alunos].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(a => (
                   <option key={a.id} value={String(a.id)}>{a.name}</option>
                 ))}
               </select>

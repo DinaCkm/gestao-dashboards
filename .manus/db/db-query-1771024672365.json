@@ -1,0 +1,17 @@
+{
+  "query": "SELECT a.id as alunoId, a.name, p.name as programa, \n  (SELECT COUNT(*) FROM mentoring_sessions ms WHERE ms.alunoId = a.id) as totalSessions,\n  (SELECT GROUP_CONCAT(ms.sessionNumber) FROM mentoring_sessions ms WHERE ms.alunoId = a.id) as sessionNumbers\nFROM alunos a \nLEFT JOIN programs p ON p.id = a.programId\nWHERE a.name LIKE '%Amaggeldo%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id as alunoId, a.name, p.name as programa, \n  (SELECT COUNT(*) FROM mentoring_sessions ms WHERE ms.alunoId = a.id) as totalSessions,\n  (SELECT GROUP_CONCAT(ms.sessionNumber) FROM mentoring_sessions ms WHERE ms.alunoId = a.id) as sessionNumbers\nFROM alunos a \nLEFT JOIN programs p ON p.id = a.programId\nWHERE a.name LIKE '%Amaggeldo%'",
+  "rows": [
+    {
+      "alunoId": "30051",
+      "name": "Amaggeldo Barbosa",
+      "programa": "SEBRAE TO",
+      "totalSessions": "7",
+      "sessionNumbers": "1,2,3,4,5,6,7"
+    }
+  ],
+  "messages": [],
+  "stdout": "alunoId\tname\tprograma\ttotalSessions\tsessionNumbers\n30051\tAmaggeldo Barbosa\tSEBRAE TO\t7\t1,2,3,4,5,6,7\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

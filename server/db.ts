@@ -2695,3 +2695,136 @@ export async function getAssessmentsByConsultor(consultorId: number) {
     trilhaNome: trilhaMap.get(pdi.trilhaId)?.name || 'Não definida',
   }));
 }
+
+
+// ============ SESSION PROGRESS FUNCTIONS ============
+
+/**
+ * Get session progress for a student based on their Assessment PDI macro cycle.
+ * Total sessions = months between macroInicio and macroTermino (1 session per month).
+ * Returns progress info including sessions completed, total expected, and alert flags.
+ */
+export async function getSessionProgressByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get active assessment PDI for this student
+  const pdis = await db.select().from(assessmentPdi)
+    .where(and(
+      eq(assessmentPdi.alunoId, alunoId),
+      eq(assessmentPdi.status, 'ativo')
+    ))
+    .orderBy(desc(assessmentPdi.createdAt))
+    .limit(1);
+
+  if (pdis.length === 0) {
+    // No assessment PDI - return null (can't calculate progress)
+    return null;
+  }
+
+  const pdi = pdis[0];
+  
+  // Calculate total expected sessions from macro cycle duration
+  const macroInicio = new Date(pdi.macroInicio);
+  const macroTermino = new Date(pdi.macroTermino);
+  
+  // Calculate months difference
+  const totalMeses = (macroTermino.getFullYear() - macroInicio.getFullYear()) * 12 
+    + (macroTermino.getMonth() - macroInicio.getMonth());
+  const totalSessoesEsperadas = Math.max(1, totalMeses); // At least 1 session
+
+  // Count sessions completed for this student
+  const sessions = await db.select().from(mentoringSessions)
+    .where(eq(mentoringSessions.alunoId, alunoId));
+  
+  const sessoesRealizadas = sessions.length;
+  const sessoesFaltantes = Math.max(0, totalSessoesEsperadas - sessoesRealizadas);
+  const faltaUmaSessao = sessoesFaltantes === 1;
+  const cicloCompleto = sessoesRealizadas >= totalSessoesEsperadas;
+  const percentualProgresso = Math.min(100, Math.round((sessoesRealizadas / totalSessoesEsperadas) * 100));
+
+  return {
+    alunoId,
+    macroInicio: pdi.macroInicio,
+    macroTermino: pdi.macroTermino,
+    totalSessoesEsperadas,
+    sessoesRealizadas,
+    sessoesFaltantes,
+    faltaUmaSessao,
+    cicloCompleto,
+    percentualProgresso,
+    assessmentPdiId: pdi.id,
+    trilhaId: pdi.trilhaId,
+  };
+}
+
+/**
+ * Get session progress for all students (for admin/manager views).
+ * Returns array of progress info for students that have an active Assessment PDI.
+ */
+export async function getAllStudentsSessionProgress() {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Get all active assessment PDIs
+  const pdis = await db.select().from(assessmentPdi)
+    .where(eq(assessmentPdi.status, 'ativo'));
+
+  if (pdis.length === 0) return [];
+
+  // Get all mentoring sessions
+  const allSessions = await db.select().from(mentoringSessions);
+  
+  // Group sessions by aluno
+  const sessionsByAluno = new Map<number, number>();
+  for (const s of allSessions) {
+    sessionsByAluno.set(s.alunoId, (sessionsByAluno.get(s.alunoId) || 0) + 1);
+  }
+
+  // Get aluno names
+  const allAlunos = await db.select().from(alunos);
+  const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
+
+  // Get consultor names
+  const allConsultors = await db.select().from(consultors);
+  const consultorMap = new Map(allConsultors.map(c => [c.id, c]));
+
+  // Get program names
+  const allPrograms = await db.select().from(programs);
+  const programMap = new Map(allPrograms.map(p => [p.id, p]));
+
+  return pdis.map(pdi => {
+    const macroInicio = new Date(pdi.macroInicio);
+    const macroTermino = new Date(pdi.macroTermino);
+    const totalMeses = (macroTermino.getFullYear() - macroInicio.getFullYear()) * 12 
+      + (macroTermino.getMonth() - macroInicio.getMonth());
+    const totalSessoesEsperadas = Math.max(1, totalMeses);
+    const sessoesRealizadas = sessionsByAluno.get(pdi.alunoId) || 0;
+    const sessoesFaltantes = Math.max(0, totalSessoesEsperadas - sessoesRealizadas);
+    const faltaUmaSessao = sessoesFaltantes === 1;
+    const cicloCompleto = sessoesRealizadas >= totalSessoesEsperadas;
+    const percentualProgresso = Math.min(100, Math.round((sessoesRealizadas / totalSessoesEsperadas) * 100));
+    
+    const aluno = alunoMap.get(pdi.alunoId);
+    const consultor = pdi.consultorId ? consultorMap.get(pdi.consultorId) : null;
+    const program = pdi.programId ? programMap.get(pdi.programId) : null;
+
+    return {
+      alunoId: pdi.alunoId,
+      alunoNome: aluno?.name || 'Desconhecido',
+      consultorId: pdi.consultorId,
+      consultorNome: consultor?.name || null,
+      programId: pdi.programId,
+      programaNome: program?.name || null,
+      macroInicio: pdi.macroInicio,
+      macroTermino: pdi.macroTermino,
+      totalSessoesEsperadas,
+      sessoesRealizadas,
+      sessoesFaltantes,
+      faltaUmaSessao,
+      cicloCompleto,
+      percentualProgresso,
+      assessmentPdiId: pdi.id,
+    };
+  });
+}

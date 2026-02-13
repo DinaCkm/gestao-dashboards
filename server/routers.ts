@@ -1461,6 +1461,7 @@ export const appRouter = router({
         eventos: eventosDetalhados,
         planoIndividual: planoItems,
         assessments: await db.getAssessmentsByAluno(aluno.id),
+        sessionProgress: await db.getSessionProgressByAluno(aluno.id),
       };
     }),
   }),
@@ -1501,6 +1502,54 @@ export const appRouter = router({
         return await db.getMentoringSessionsByAluno(input.alunoId);
       }),
     
+    // Progresso de sessões por aluno (baseado no Assessment PDI macro ciclo)
+    sessionProgress: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getSessionProgressByAluno(input.alunoId);
+      }),
+
+    // Progresso de sessões de todos os alunos (para admin/gerente)
+    allSessionProgress: managerProcedure.query(async () => {
+      return await db.getAllStudentsSessionProgress();
+    }),
+
+    // Enviar notificação ao admin sobre alunos a 1 sessão de fechar o ciclo
+    notificarCicloQuaseFechando: managerProcedure.mutation(async () => {
+      const allProgress = await db.getAllStudentsSessionProgress();
+      const alunosFalta1 = allProgress.filter(p => p.faltaUmaSessao);
+      const alunosCicloCompleto = allProgress.filter(p => p.cicloCompleto);
+      
+      if (alunosFalta1.length === 0 && alunosCicloCompleto.length === 0) {
+        return { sent: false, message: 'Nenhum aluno a 1 sessão de fechar o ciclo ou com ciclo completo.' };
+      }
+
+      let content = '';
+      
+      if (alunosFalta1.length > 0) {
+        content += `⚠️ ALUNOS A 1 SESSÃO DE FECHAR O CICLO MACRO (${alunosFalta1.length}):\n\n`;
+        alunosFalta1.forEach(p => {
+          content += `• ${p.alunoNome} - ${p.programaNome || 'Sem programa'} (${p.sessoesRealizadas}/${p.totalSessoesEsperadas} sessões)`;
+          if (p.consultorNome) content += ` | Mentor: ${p.consultorNome}`;
+          content += '\n';
+        });
+      }
+      
+      if (alunosCicloCompleto.length > 0) {
+        content += `\n✅ ALUNOS COM CICLO COMPLETO (${alunosCicloCompleto.length}):\n\n`;
+        alunosCicloCompleto.forEach(p => {
+          content += `• ${p.alunoNome} - ${p.programaNome || 'Sem programa'} (${p.sessoesRealizadas}/${p.totalSessoesEsperadas} sessões)\n`;
+        });
+      }
+
+      const sent = await notifyOwner({
+        title: `Progresso Ciclo Macro: ${alunosFalta1.length} aluno(s) a 1 sessão de fechar`,
+        content
+      });
+
+      return { sent, alunosFalta1: alunosFalta1.length, alunosCicloCompleto: alunosCicloCompleto.length };
+    }),
+
     // Atualizar sessão de mentoria (nota de evolução e feedback)
     updateSession: protectedProcedure
       .input(z.object({

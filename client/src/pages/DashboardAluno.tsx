@@ -64,6 +64,12 @@ export default function DashboardAluno() {
     { enabled: !!selectedAlunoId }
   );
 
+  // Buscar progresso de sessões do aluno (baseado no Assessment PDI macro ciclo)
+  const { data: sessionProgress } = trpc.mentor.sessionProgress.useQuery(
+    { alunoId: selectedAlunoId! },
+    { enabled: !!selectedAlunoId }
+  );
+
   // Aluno selecionado
   const selectedAluno = useMemo(() => {
     return alunos.find(a => a.id === selectedAlunoId);
@@ -164,7 +170,7 @@ export default function DashboardAluno() {
                   }}
                 >
                   <option value="">Selecione um aluno</option>
-                  {alunos.map(a => (
+                  {[...alunos].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(a => (
                     <option key={a.id} value={String(a.id)}>{a.name}</option>
                   ))}
                 </select>
@@ -293,6 +299,50 @@ export default function DashboardAluno() {
                         <p className="text-xs text-gray-400 mt-2">Média dos 6 indicadores abaixo (peso igual)</p>
                       </CardContent>
                     </Card>
+
+                    {/* Progresso do Ciclo Macro */}
+                    {sessionProgress && (
+                      <Card className="border border-[#1B3A5D]/20 bg-gradient-to-r from-[#1B3A5D]/5 to-transparent">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-lg bg-[#1B3A5D]/10 flex items-center justify-center">
+                                <Clock className="h-5 w-5 text-[#1B3A5D]" />
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-500">Progresso do Ciclo Macro</p>
+                                <p className="text-xl font-bold text-[#1B3A5D]">
+                                  {sessionProgress.sessoesRealizadas}/{sessionProgress.totalSessoesEsperadas} sessões
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-bold text-[#1B3A5D]">{sessionProgress.percentualProgresso}%</p>
+                              {sessionProgress.cicloCompleto ? (
+                                <Badge className="bg-emerald-100 text-emerald-800 border-0 mt-1">
+                                  <Award className="h-3 w-3 mr-1" /> Ciclo Completo
+                                </Badge>
+                              ) : sessionProgress.faltaUmaSessao ? (
+                                <Badge className="bg-amber-100 text-amber-800 border-0 mt-1 animate-pulse">
+                                  Falta 1 sessão!
+                                </Badge>
+                              ) : (
+                                <p className="text-xs text-gray-500 mt-1">Faltam {sessionProgress.sessoesFaltantes} sessões</p>
+                              )}
+                            </div>
+                          </div>
+                          <Progress value={sessionProgress.percentualProgresso} className="h-2" />
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs text-gray-500">
+                              {sessionProgress.macroInicio ? new Date(sessionProgress.macroInicio).toLocaleDateString('pt-BR') : ''}
+                              {' → '}
+                              {sessionProgress.macroTermino ? new Date(sessionProgress.macroTermino).toLocaleDateString('pt-BR') : ''}
+                            </span>
+                            <span className="text-xs text-gray-400">Sessões mensais</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
 
                     {/* 6 Indicadores individuais */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -677,8 +727,7 @@ export default function DashboardAluno() {
                             <TableHead className="w-28">Data</TableHead>
                             <TableHead className="w-24 text-center">Presença</TableHead>
                             <TableHead className="w-28 text-center">Atividade</TableHead>
-                            <TableHead className="w-24 text-center">Engajamento</TableHead>
-                            <TableHead className="w-24 text-center">Nota Evolução</TableHead>
+                            <TableHead className="w-32 text-center">Nível de Engajamento</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -703,11 +752,19 @@ export default function DashboardAluno() {
                                   <span className="text-gray-400">—</span>
                                 )}
                               </TableCell>
-                              <TableCell className="text-center font-medium">
-                                {sessao.engagementScore != null ? `${sessao.engagementScore}/10` : '—'}
-                              </TableCell>
-                              <TableCell className="text-center font-medium">
-                                {sessao.notaEvolucao != null ? `${sessao.notaEvolucao}/10` : '—'}
+                              <TableCell className="text-center">
+                                {(() => {
+                                  const nota = sessao.notaEvolucao ?? sessao.engagementScore;
+                                  if (nota == null) return <span className="text-gray-400">—</span>;
+                                  const stageLabel = nota >= 9 ? 'Excelência' : nota >= 7 ? 'Avançado' : nota >= 5 ? 'Intermediário' : nota >= 3 ? 'Básico' : 'Inicial';
+                                  const stageColor = nota >= 9 ? 'bg-emerald-100 text-emerald-800' : nota >= 7 ? 'bg-blue-100 text-blue-800' : nota >= 5 ? 'bg-amber-100 text-amber-800' : nota >= 3 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800';
+                                  return (
+                                    <div className="flex flex-col items-center gap-0.5">
+                                      <span className="font-bold">{nota}/10</span>
+                                      <Badge className={`text-xs ${stageColor}`}>{stageLabel}</Badge>
+                                    </div>
+                                  );
+                                })()}
                               </TableCell>
                             </TableRow>
                           ))}

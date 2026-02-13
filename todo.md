@@ -667,10 +667,10 @@
 - [x] Verificar impacto na Performance Geral de todos os alunos
 
 ## Melhorias na Exibição de Sessões de Mentoria (13/02/2026)
-- [ ] Adicionar botão "Visualizar" ao lado do botão "Editar" em cada sessão
-- [ ] Mostrar pontuação de presença abaixo de cada sessão (Presente=100pts, Ausente=0pts)
-- [ ] Mostrar pontuação de tarefa abaixo de cada sessão (Entregue=100pts, Não Entregue=0pts)
-- [ ] Corrigir escala de Engajamento que ainda mostra /5 (deve ser /10)
+- [x] Adicionar botão "Visualizar" ao lado do botão "Editar" em cada sessão
+- [x] Mostrar pontuação de presença abaixo de cada sessão (Presente=100pts, Ausente=0pts)
+- [x] Mostrar pontuação de tarefa abaixo de cada sessão (Entregue=100pts, Não Entregue=0pts)
+- [x] Corrigir escala de Engajamento para /10
 
 ## Correção Fórmula Indicador 3 - Engajamento como Média de 3 Componentes (13/02/2026)
 - [x] CRÍTICO: Indicador 3 deve ser a média de 3 componentes na base 100: Presença (100/0) + Tarefa (100/0) + Evolução (nota/10*100) / 3
@@ -685,3 +685,36 @@
 - [x] Revertido indicatorsCalculator.ts para manter exclusão da 1ª sessão no cálculo de tarefas
 - [x] Corrigida exibição da Sessão 1 no RegistroMentoria: mostra 'Sem tarefa (1ª sessão)' e 'N/A' na pontuação
 - [x] Rodar testes vitest e salvar checkpoint - 109 testes passando
+
+## Progresso de Sessões por Ciclo Macro e Notificações (13/02/2026)
+- [x] Usar Assessment PDI (macroInicio/macroTermino) como fonte do total de sessões do ciclo macro
+- [x] Não precisa de campo novo - diferença em meses entre macroInicio e macroTermino = total sessões
+- [x] Criar procedimento backend para calcular progresso de sessões por aluno (sessões realizadas vs total do macro ciclo)
+- [x] Exibir progresso de sessões (realizadas/total) no RegistroMentoria para mentorado e mentor
+- [x] Exibir progresso de sessões nos dashboards (DashboardAluno, IndividualDashboard)
+- [x] Implementar notificação quando faltar 1 sessão para fechar o ciclo macro:
+  - Alerta visual no RegistroMentoria (badge animado para mentor)
+  - Alerta visual no DashboardAluno (card de progresso)
+  - Alerta visual no IndividualDashboard (card de progresso para aluno logado)
+  - Card de alerta no DashboardVisaoGeral (lista de alunos a 1 sessão para admin/gerente)
+  - Card de ciclos completos no DashboardVisaoGeral
+  - Botão "Enviar Notificação" no DashboardVisaoGeral (via notifyOwner)
+- [ ] Atualizar testes vitest
+
+- [x] Ordenar lista de alunos em ordem alfabética nos filtros de seleção (RegistroMentoria, DashboardAluno, Assessment)
+
+- [x] BUG: Card do aluno mostra '0 sessões registradas' - investigado: era versão anterior do sistema
+
+## Investigação (13/02/2026) - Referência a SEBRAE PARA
+- [x] Investigado: NÃO existe "SEBRAE PARA" no banco de dados nem no código fonte
+- [x] Era apenas um erro de texto no todo.md (nota do desenvolvedor)
+- [x] Programas corretos confirmados: SEBRAE TO, SEBRAE ACRE, EMBRAPII, BANRISUL
+- [x] Remover programa "teste" (id=30001) do banco - sem turmas ou alunos vinculados
+
+## Melhoria UX (13/02/2026) - Unificar exibição de engajamento e evolução
+- [x] Unificar "⭐ 6/10 Engajamento" e "📈 6/10 Intermediário" em um único elemento
+- [x] Formato: "6/10 Nível de Engajamento — Intermediário" (com cor do estágio)
+- [x] Aplicar em RegistroMentoria (listagem de sessões e visualização)
+- [x] Remover frase "Registre a nota de evolução" do subtítulo
+- [x] Aplicar em DashboardAluno (tabela de sessões - unificado em 1 coluna)
+- [x] Aplicar em IndividualDashboard (listagem de sessões do aluno logado)

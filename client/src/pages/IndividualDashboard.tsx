@@ -17,6 +17,8 @@ import {
   XCircle,
   Users,
   AlertCircle,
+  AlertTriangle,
+  Trophy,
   Loader2
 } from "lucide-react";
 import {
@@ -75,7 +77,7 @@ export default function IndividualDashboard() {
     );
   }
 
-  const { aluno, indicadores, sessoes, planoIndividual } = dashboardData;
+  const { aluno, indicadores, sessoes, planoIndividual, sessionProgress } = dashboardData as any;
   const stage = getPerformanceStage(indicadores.notaFinal);
 
   const performanceRadar = [
@@ -155,6 +157,53 @@ export default function IndividualDashboard() {
           </div>
         </Card>
 
+        {/* Progresso do Ciclo Macro */}
+        {sessionProgress && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-[#1B3A5D]/10">
+                  <Target className="h-5 w-5 text-[#1B3A5D]" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Progresso do Ciclo Macro</h3>
+                  <p className="text-sm text-gray-500">
+                    {sessionProgress.macroInicio ? new Date(sessionProgress.macroInicio).toLocaleDateString('pt-BR') : ''}
+                    {' → '}
+                    {sessionProgress.macroTermino ? new Date(sessionProgress.macroTermino).toLocaleDateString('pt-BR') : ''}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 mb-3">
+                <div className="flex-1">
+                  <Progress 
+                    value={(sessionProgress.sessoesRealizadas / sessionProgress.totalSessoesEsperadas) * 100} 
+                    className="h-3" 
+                  />
+                </div>
+                <span className="text-lg font-bold text-[#1B3A5D] whitespace-nowrap">
+                  {sessionProgress.sessoesRealizadas}/{sessionProgress.totalSessoesEsperadas}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                {sessionProgress.cicloCompleto ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 border-0">
+                    <Trophy className="h-3 w-3 mr-1" /> Ciclo Completo
+                  </Badge>
+                ) : sessionProgress.faltaUmaSessao ? (
+                  <Badge className="bg-amber-100 text-amber-800 border-0 animate-pulse">
+                    <AlertCircle className="h-3 w-3 mr-1" /> Falta 1 sessão para fechar o ciclo!
+                  </Badge>
+                ) : (
+                  <span className="text-sm text-gray-500">
+                    Faltam {sessionProgress.sessoesFaltantes} sessões para completar o ciclo
+                  </span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Charts and Details Row */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Radar Chart */}
@@ -233,7 +282,7 @@ export default function IndividualDashboard() {
           <CardContent>
             {sessoes.length > 0 ? (
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {sessoes.map((session) => (
+                {sessoes.map((session: any) => (
                   <div 
                     key={session.id}
                     className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-100"
@@ -266,14 +315,13 @@ export default function IndividualDashboard() {
                         {session.taskStatus === 'entregue' ? 'Tarefa OK' :
                          session.taskStatus === 'nao_entregue' ? 'Pendente' : 'Sem tarefa'}
                       </Badge>
-                      {session.engagementScore != null && (
-                        <span className="text-xs text-gray-500">Eng: {session.engagementScore}/10</span>
-                      )}
-                      {(session as any).notaEvolucao != null && (() => {
-                        const stage = getEvolucaoStage((session as any).notaEvolucao);
+                      {(() => {
+                        const nota = (session as any).notaEvolucao ?? session.engagementScore;
+                        if (nota == null) return null;
+                        const stage = getEvolucaoStage(nota);
                         return (
-                          <span className={`text-xs font-medium ${stage.textColor}`}>
-                            Evolução: {(session as any).notaEvolucao}/10 ({stage.label})
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded ${stage.bgColor} ${stage.textColor} ${stage.borderColor} border`}>
+                            ⭐ {nota}/10 — {stage.label}
                           </span>
                         );
                       })()}
@@ -304,7 +352,7 @@ export default function IndividualDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {planoIndividual.map((item) => (
+                {planoIndividual.map((item: any) => (
                   <div 
                     key={item.id} 
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"

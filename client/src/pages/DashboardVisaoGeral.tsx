@@ -5,11 +5,14 @@ import { trpc } from "@/lib/trpc";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
-import { Users, Building2, TrendingUp, Award, Target, Calendar, BookOpen, Zap, GraduationCap, PartyPopper, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Users, Building2, TrendingUp, Award, Target, Calendar, BookOpen, Zap, GraduationCap, PartyPopper, ChevronDown, ChevronUp, Info, AlertTriangle, Clock, Trophy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { Bell } from "lucide-react";
 
 
 
@@ -59,6 +62,26 @@ function IndicadorCard({
 export default function DashboardVisaoGeral() {
   const { data, isLoading, error } = trpc.indicadores.visaoGeral.useQuery();
   const { data: empresas } = trpc.indicadores.empresas.useQuery();
+  const { data: allProgress = [] } = trpc.mentor.allSessionProgress.useQuery();
+  const notificarMutation = trpc.mentor.notificarCicloQuaseFechando.useMutation();
+
+  // Alunos que faltam 1 sessão para fechar o ciclo
+  const alunosFalta1 = allProgress.filter((p: any) => p.faltaUmaSessao);
+  // Alunos com ciclo completo
+  const alunosCicloCompleto = allProgress.filter((p: any) => p.cicloCompleto);
+
+  const handleEnviarNotificacao = async () => {
+    try {
+      const result = await notificarMutation.mutateAsync();
+      if (result.sent) {
+        toast.success(`Notificação enviada: ${result.alunosFalta1} aluno(s) a 1 sessão, ${result.alunosCicloCompleto} com ciclo completo.`);
+      } else {
+        toast.info(result.message || "Não há alunos para notificar.");
+      }
+    } catch (error) {
+      toast.error("Erro ao enviar notificação. Tente novamente mais tarde.");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -119,6 +142,70 @@ export default function DashboardVisaoGeral() {
             Consolidado de performance de todas as empresas do ECOSSISTEMA DO BEM
           </p>
         </div>
+
+        {/* Alerta: Alunos a 1 sessão de fechar o ciclo */}
+        {alunosFalta1.length > 0 && (
+          <Card className="border-amber-300 bg-amber-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2 text-amber-800">
+                <AlertTriangle className="h-5 w-5" />
+                Atenção: {alunosFalta1.length} aluno{alunosFalta1.length !== 1 ? 's' : ''} a 1 sessão de fechar o ciclo macro
+              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-amber-700">
+                  Estes alunos precisam de apenas mais 1 sessão de mentoria para completar o ciclo
+                </CardDescription>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="border-amber-400 text-amber-800 hover:bg-amber-100"
+                  onClick={handleEnviarNotificacao}
+                  disabled={notificarMutation.isPending}
+                >
+                  <Bell className="h-4 w-4 mr-1" />
+                  {notificarMutation.isPending ? 'Enviando...' : 'Enviar Notificação'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                {alunosFalta1.map((p: any) => (
+                  <div key={p.alunoId} className="flex items-center justify-between p-3 bg-white rounded-lg border border-amber-200">
+                    <div>
+                      <p className="font-medium text-gray-900 text-sm">{p.alunoNome}</p>
+                      <p className="text-xs text-gray-500">{p.programaNome || 'Sem programa'}</p>
+                      {p.consultorNome && <p className="text-xs text-gray-400">Mentor: {p.consultorNome}</p>}
+                    </div>
+                    <Badge className="bg-amber-100 text-amber-800 border-0 whitespace-nowrap">
+                      {p.sessoesRealizadas}/{p.totalSessoesEsperadas}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Alunos com ciclo completo */}
+        {alunosCicloCompleto.length > 0 && (
+          <Card className="border-emerald-300 bg-emerald-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2 text-emerald-800">
+                <Trophy className="h-5 w-5" />
+                {alunosCicloCompleto.length} aluno{alunosCicloCompleto.length !== 1 ? 's' : ''} completaram o ciclo macro
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {alunosCicloCompleto.map((p: any) => (
+                  <Badge key={p.alunoId} className="bg-emerald-100 text-emerald-800 border-0">
+                    {p.alunoNome} ({p.sessoesRealizadas}/{p.totalSessoesEsperadas})
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Cards de resumo */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
