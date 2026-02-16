@@ -439,8 +439,34 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     <option value="">Selecione a empresa</option>
-                    {empresas.map((emp) => (
+                    {empresas?.map((emp) => (
                       <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Mentor/Consultor</Label>
+                  <select
+                    value={editConsultorId}
+                    onChange={(e) => setEditConsultorId(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">Selecione um mentor (opcional)</option>
+                    {mentores?.map((mentor) => (
+                      <option key={mentor.id} value={mentor.id.toString()}>{mentor.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Turma</Label>
+                  <select
+                    value={editTurmaId}
+                    onChange={(e) => setEditTurmaId(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">Selecione uma turma (opcional)</option>
+                    {turmas?.map((turma) => (
+                      <option key={turma.id} value={turma.id.toString()}>{turma.name}</option>
                     ))}
                   </select>
                 </div>
