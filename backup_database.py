@@ -8,20 +8,17 @@ import sys
 import json
 from datetime import datetime
 
-# Adicionar o diretório server ao path
+# Configurar ambiente
+os.chdir('/app/server')
 sys.path.insert(0, '/app/server')
+os.environ.setdefault('PYTHONPATH', '/app/server')
 
 # Importar as funções do banco
 try:
-    from db import (
-        getAlunos, getAllMentores, getConsultors, 
-        getTurmas, getEmpresas, getEventos,
-        getMentoringSessionsByAluno, getPlanoIndividualByAluno,
-        getCompetenciasObrigatoriasAluno
-    )
-    print("✅ Módulos importados com sucesso")
+    import db
+    print("✅ Módulo db importado com sucesso")
 except Exception as e:
-    print(f"❌ Erro ao importar módulos: {e}")
+    print(f"❌ Erro ao importar db: {e}")
     sys.exit(1)
 
 async def fazer_backup():
