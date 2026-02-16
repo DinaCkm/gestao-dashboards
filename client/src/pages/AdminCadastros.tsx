@@ -359,7 +359,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" /> Novo Aluno</Button>
           </DialogTrigger>
-          <DialogContent className="z-50" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogContent className="z-50 max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()}>
             <form onSubmit={handleSubmit}>
               <DialogHeader>
                 <DialogTitle>Cadastrar Novo Aluno</DialogTitle>
