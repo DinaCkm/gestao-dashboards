@@ -441,7 +441,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
 
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent className="z-50" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogContent className="z-50 max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()}>
             <form onSubmit={handleEditSubmit}>
               <DialogHeader>
                 <DialogTitle>Editar Aluno</DialogTitle>
