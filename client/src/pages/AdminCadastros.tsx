@@ -329,6 +329,8 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
       cpf: editCredentialDigits,
       role: "user" as "user" | "admin" | "manager",
       programId: editProgramId ? parseInt(editProgramId) : null,
+      consultorId: editConsultorId ? parseInt(editConsultorId) : null,
+      turmaId: editTurmaId ? parseInt(editTurmaId) : null,
     });
     setEditOpen(false);
     setEditUser(null);
