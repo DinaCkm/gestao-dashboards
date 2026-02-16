@@ -1391,8 +1391,11 @@ export const appRouter = router({
       
       // Buscar mentor através das sessões de mentoria (não de aluno.consultorId)
       const sessoesAluno = await db.getMentoringSessionsByAluno(aluno.id);
+      console.log(`[DEBUG] Aluno ${aluno.id} tem ${sessoesAluno.length} sessões de mentoria`);
       const consultorIds = [...new Set(sessoesAluno.map(s => s.consultorId).filter(Boolean))];
+      console.log(`[DEBUG] ConsultorIds encontrados:`, consultorIds);
       const mentorAluno = consultorIds.length > 0 ? await db.getConsultorById(consultorIds[0]) : null;
+      console.log(`[DEBUG] Mentor encontrado:`, mentorAluno?.name || 'Nenhum');
 
       // Calcular ranking na empresa (posição entre colegas da mesma empresa)
       let ranking = { posicao: 0, totalAlunos: 0 };
