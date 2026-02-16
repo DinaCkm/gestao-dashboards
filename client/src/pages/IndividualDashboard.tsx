@@ -342,58 +342,66 @@ export default function IndividualDashboard() {
 
         {/* Sessions History */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+          <CardHeader className="border-b border-gray-100">
+            <CardTitle className="text-lg flex items-center gap-2 text-gray-900">
               <Calendar className="h-5 w-5 text-[#1B3A5D]" />
               Histórico de Sessões
             </CardTitle>
-            <CardDescription>Registro de presenças e entregas de tarefas</CardDescription>
+            <CardDescription className="text-gray-600">Registro de presenças e entregas de tarefas</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {sessoes.length > 0 ? (
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {sessoes.map((session: any) => (
                   <div 
                     key={session.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-100"
+                    className="flex items-center justify-between p-4 rounded-lg bg-white border-2 border-gray-100 hover:border-[#1B3A5D]/20 hover:shadow-md transition-all"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        session.presence === 'presente' ? 'bg-emerald-100' : 'bg-red-100'
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                        session.presence === 'presente' 
+                          ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-200' 
+                          : 'bg-red-100 text-red-700 border-2 border-red-200'
                       }`}>
-                        <span className="font-bold text-sm text-gray-700">{session.sessionNumber || '-'}</span>
+                        {session.sessionNumber || '-'}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">Sessão {session.sessionNumber || '-'}</p>
-                        <p className="text-xs text-gray-500">
-                          {session.sessionDate ? new Date(session.sessionDate).toLocaleDateString('pt-BR') : 'Data não informada'}
+                        <p className="font-semibold text-gray-900">Sessão {session.sessionNumber || '-'}</p>
+                        <p className="text-xs text-gray-600 font-medium">
+                          {session.sessionDate ? new Date(session.sessionDate).toLocaleDateString('pt-BR', {
+                            day: '2-digit', month: 'short'
+                          }) : 'Data não informada'}
                         </p>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                      <Badge variant={session.presence === 'presente' ? "default" : "destructive"} className="text-xs">
+                      <Badge 
+                        className={session.presence === 'presente' 
+                          ? "bg-emerald-100 text-emerald-700 border-emerald-300" 
+                          : "bg-red-100 text-red-700 border-red-300"}
+                      >
                         {session.presence === 'presente' ? 'Presente' : 'Ausente'}
                       </Badge>
                       <Badge 
                         variant="outline" 
-                        className={`text-xs ${
-                          session.taskStatus === 'entregue' ? 'border-emerald-500 text-emerald-600' :
-                          session.taskStatus === 'nao_entregue' ? 'border-red-500 text-red-600' :
-                          'border-gray-300 text-gray-500'
+                        className={`text-xs font-medium ${
+                          session.taskStatus === 'entregue' ? 'border-emerald-400 text-emerald-700 bg-emerald-50' :
+                          session.taskStatus === 'nao_entregue' ? 'border-red-400 text-red-700 bg-red-50' :
+                          'border-gray-300 text-gray-600 bg-gray-50'
                         }`}
                       >
-                        {session.taskStatus === 'entregue' ? 'Tarefa OK' :
-                         session.taskStatus === 'nao_entregue' ? 'Pendente' : 'Sem tarefa'}
+                        {session.taskStatus === 'entregue' ? '✓ Tarefa OK' :
+                         session.taskStatus === 'nao_entregue' ? '✗ Pendente' : 'Sem tarefa'}
                       </Badge>
                       {session.sessionNumber === 1 ? (
-                        <span className="text-xs text-gray-400 italic px-2 py-0.5">Encontro Inicial</span>
+                        <span className="text-xs text-amber-600 font-medium italic px-2 py-0.5 bg-amber-50 rounded">Encontro Inicial</span>
                       ) : (() => {
                         const nota = (session as any).notaEvolucao ?? session.engagementScore;
                         if (nota == null) return null;
                         const stage = getEvolucaoStage(nota);
                         return (
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded ${stage.bgColor} ${stage.textColor} ${stage.borderColor} border`}>
-                            ⭐ {nota}/10 — {stage.label}
+                          <span className={`text-xs font-semibold px-2 py-1 rounded ${stage.bgColor} ${stage.textColor} ${stage.borderColor} border-2`}>
+                            ⭐ {nota}/10
                           </span>
                         );
                       })()}
@@ -404,7 +412,7 @@ export default function IndividualDashboard() {
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <Clock className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p>Nenhuma sessão de mentoria registrada ainda.</p>
+                <p className="font-medium">Nenhuma sessão de mentoria registrada ainda.</p>
               </div>
             )}
           </CardContent>
