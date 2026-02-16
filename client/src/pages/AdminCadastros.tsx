@@ -274,6 +274,8 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
   const [editEmail, setEditEmail] = useState("");
   const [editCpf, setEditCpf] = useState("");
   const [editProgramId, setEditProgramId] = useState("");
+  const [editConsultorId, setEditConsultorId] = useState("");
+  const [editTurmaId, setEditTurmaId] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
