@@ -264,30 +264,42 @@ export default function IndividualDashboard() {
         {/* Charts and Details Row */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Radar Chart */}
-          <Card>
+          <Card className="bg-white">
             <CardHeader>
-              <CardTitle className="text-lg">Perfil de Performance</CardTitle>
-              <CardDescription>Visualização dos 5 indicadores</CardDescription>
+              <CardTitle className="text-lg text-gray-900">Perfil de Performance</CardTitle>
+              <CardDescription className="text-gray-600">Visualização dos 6 indicadores</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="bg-white">
               <ResponsiveContainer width="100%" height={300}>
                 <RadarChart data={performanceRadar}>
-                  <PolarGrid stroke="#e5e7eb" />
-                  <PolarAngleAxis dataKey="indicator" tick={{ fill: '#6b7280', fontSize: 11 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#9ca3af' }} />
+                  <PolarGrid stroke="#cbd5e1" strokeWidth={1.5} />
+                  <PolarAngleAxis 
+                    dataKey="indicator" 
+                    tick={{ fill: '#1e293b', fontSize: 12, fontWeight: 500 }} 
+                  />
+                  <PolarRadiusAxis 
+                    angle={30} 
+                    domain={[0, 100]} 
+                    tick={{ fill: '#475569', fontSize: 11 }} 
+                    stroke="#cbd5e1"
+                  />
                   <Radar
                     name="Performance"
                     dataKey="value"
                     stroke="#1B3A5D"
-                    fill="#1B3A5D"
-                    fillOpacity={0.2}
+                    strokeWidth={3}
+                    fill="#3b82f6"
+                    fillOpacity={0.4}
                   />
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px'
-                    }} 
+                      backgroundColor: '#ffffff', 
+                      border: '2px solid #1B3A5D',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }}
+                    labelStyle={{ color: '#1e293b', fontWeight: 600 }}
+                    itemStyle={{ color: '#1B3A5D' }}
                   />
                 </RadarChart>
               </ResponsiveContainer>
