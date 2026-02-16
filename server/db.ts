@@ -1476,6 +1476,7 @@ export async function createAccessUser(data: {
   programId?: number | null;
   alunoId?: number | null;
   consultorId?: number | null;
+  turmaId?: number | null;
 }): Promise<{ success: boolean; user?: any; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
@@ -1504,6 +1505,21 @@ export async function createAccessUser(data: {
   
   const openId = `access_${data.role}_${normalizedCpf}`;
   
+  // Se for aluno (role = user), criar também na tabela alunos
+  let alunoId = data.alunoId;
+  if (data.role === 'user' && !alunoId) {
+    const [newAluno] = await db.insert(alunos).values({
+      name: data.name,
+      email: data.email.toLowerCase(),
+      cpf: normalizedCpf,
+      programId: data.programId ?? null,
+      consultorId: data.consultorId ?? null,
+      turmaId: data.turmaId ?? null,
+      isActive: 1,
+    }).$returningId();
+    alunoId = newAluno.id;
+  }
+  
   await db.insert(users).values({
     openId,
     name: data.name,
@@ -1511,7 +1527,7 @@ export async function createAccessUser(data: {
     cpf: normalizedCpf,
     role: data.role,
     programId: data.programId ?? null,
-    alunoId: data.alunoId ?? null,
+    alunoId: alunoId ?? null,
     consultorId: data.consultorId ?? null,
     loginMethod: 'email_cpf',
     isActive: 1,
