@@ -1530,6 +1530,8 @@ export async function updateAccessUser(userId: number, data: {
   cpf?: string;
   role?: 'user' | 'admin' | 'manager';
   programId?: number | null;
+  consultorId?: number | null;
+  turmaId?: number | null;
   isActive?: number;
 }): Promise<{ success: boolean; message?: string }> {
   const db = await getDb();
@@ -1575,9 +1577,28 @@ export async function updateAccessUser(userId: number, data: {
     }
   }
   
+  // Atualizar tabela users
   await db.update(users)
     .set(updateData)
     .where(eq(users.id, userId));
+  
+  // Se tem alunoId, atualizar também na tabela alunos (consultorId e turmaId)
+  const [user] = await db.select({ alunoId: users.alunoId })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  
+  if (user && user.alunoId) {
+    const alunoUpdateData: Record<string, unknown> = {};
+    if (data.consultorId !== undefined) alunoUpdateData.consultorId = data.consultorId;
+    if (data.turmaId !== undefined) alunoUpdateData.turmaId = data.turmaId;
+    
+    if (Object.keys(alunoUpdateData).length > 0) {
+      await db.update(alunos)
+        .set(alunoUpdateData)
+        .where(eq(alunos.id, user.alunoId));
+    }
+  }
   
   return { success: true };
 }
