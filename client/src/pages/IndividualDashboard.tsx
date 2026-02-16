@@ -85,6 +85,7 @@ export default function IndividualDashboard() {
     { indicator: 'Atividades', value: indicadores.atividadesPraticas, fullMark: 100 },
     { indicator: 'Engajamento', value: indicadores.engajamento, fullMark: 100 },
     { indicator: 'Competências', value: indicadores.performanceCompetencias, fullMark: 100 },
+    { indicator: 'Aprendizado', value: indicadores.performanceAprendizado || 0, fullMark: 100 },
     { indicator: 'Eventos', value: indicadores.participacaoEventos, fullMark: 100 },
   ];
 
