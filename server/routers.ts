@@ -1781,6 +1781,8 @@ export const appRouter = router({
         cpf: z.string().min(1),
         role: z.enum(["user", "admin", "manager"]),
         programId: z.number().nullable().optional(),
+        consultorId: z.number().nullable().optional(),
+        turmaId: z.number().nullable().optional(),
         isMentor: z.boolean().optional(), // true = Mentor, false/undefined = Gestor de Empresa
       }))
       .mutation(async ({ input }) => {
