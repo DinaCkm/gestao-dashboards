@@ -32,25 +32,25 @@ async def fazer_backup():
     try:
         # 1. Empresas/Programas
         print("📦 Exportando empresas...")
-        empresas = await getEmpresas()
+        empresas = await db.getEmpresas()
         backup_data["tables"]["empresas"] = [dict(e) for e in empresas] if empresas else []
         print(f"   ✅ {len(backup_data['tables']['empresas'])} empresas exportadas")
         
         # 2. Turmas
         print("📦 Exportando turmas...")
-        turmas = await getTurmas()
+        turmas = await db.getTurmas()
         backup_data["tables"]["turmas"] = [dict(t) for t in turmas] if turmas else []
         print(f"   ✅ {len(backup_data['tables']['turmas'])} turmas exportadas")
         
         # 3. Mentores/Consultores
         print("📦 Exportando mentores...")
-        mentores = await getConsultors()
+        mentores = await db.getConsultors()
         backup_data["tables"]["mentores"] = [dict(m) for m in mentores] if mentores else []
         print(f"   ✅ {len(backup_data['tables']['mentores'])} mentores exportados")
         
         # 4. Alunos
         print("📦 Exportando alunos...")
-        alunos = await getAlunos()
+        alunos = await db.getAlunos()
         backup_data["tables"]["alunos"] = []
         
         for aluno in alunos:
@@ -58,21 +58,21 @@ async def fazer_backup():
             
             # Exportar sessões de mentoria do aluno
             try:
-                sessoes = await getMentoringSessionsByAluno(aluno.id)
+                sessoes = await db.getMentoringSessionsByAluno(aluno.id)
                 aluno_dict["sessoes_mentoria"] = [dict(s) for s in sessoes] if sessoes else []
             except:
                 aluno_dict["sessoes_mentoria"] = []
             
             # Exportar plano individual
             try:
-                plano = await getPlanoIndividualByAluno(aluno.id)
+                plano = await db.getPlanoIndividualByAluno(aluno.id)
                 aluno_dict["plano_individual"] = [dict(p) for p in plano] if plano else []
             except:
                 aluno_dict["plano_individual"] = []
             
             # Exportar competências obrigatórias
             try:
-                competencias = await getCompetenciasObrigatoriasAluno(aluno.id)
+                competencias = await db.getCompetenciasObrigatoriasAluno(aluno.id)
                 aluno_dict["competencias_obrigatorias"] = [dict(c) for c in competencias] if competencias else []
             except:
                 aluno_dict["competencias_obrigatorias"] = []
@@ -83,7 +83,7 @@ async def fazer_backup():
         
         # 5. Eventos
         print("📦 Exportando eventos...")
-        eventos = await getEventos()
+        eventos = await db.getEventos()
         backup_data["tables"]["eventos"] = [dict(e) for e in eventos] if eventos else []
         print(f"   ✅ {len(backup_data['tables']['eventos'])} eventos exportados")
         
