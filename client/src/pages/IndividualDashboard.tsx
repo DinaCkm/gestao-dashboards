@@ -267,7 +267,7 @@ export default function IndividualDashboard() {
           {/* Radar Chart */}
           <Card className="bg-white">
             <CardHeader>
-              <CardTitle className="text-lg text-gray-900">Perfil de Performance</CardTitle>
+              <CardTitle className="text-lg text-gray-900">RADAR DE DESEMPENHO</CardTitle>
               <CardDescription className="text-gray-600">Visualização dos 6 indicadores</CardDescription>
             </CardHeader>
             <CardContent className="bg-white">
