@@ -1657,6 +1657,10 @@ export const appRouter = router({
       return await db.getAllMentores();
     }),
     
+    listTurmas: adminProcedure.query(async () => {
+      return await db.getTurmas();
+    }),
+    
      createMentor: adminProcedure
       .input(z.object({
         name: z.string().min(1),
