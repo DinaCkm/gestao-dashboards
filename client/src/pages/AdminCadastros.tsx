@@ -309,6 +309,8 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
     setEditEmail(user.email || "");
     setEditCpf(user.cpf || "");
     setEditProgramId(user.programId ? user.programId.toString() : "");
+    setEditConsultorId(user.consultorId ? user.consultorId.toString() : "");
+    setEditTurmaId(user.turmaId ? user.turmaId.toString() : "");
     setEditOpen(true);
   };
 
