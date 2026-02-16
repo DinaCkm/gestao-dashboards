@@ -1389,8 +1389,7 @@ export const appRouter = router({
       const programa = aluno.programId ? programMap.get(aluno.programId) : null;
       const turmaAluno = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
       
-      // Buscar mentor através das sessões de mentoria (não de aluno.consultorId)
-      const sessoesAluno = await db.getMentoringSessionsByAluno(aluno.id);
+      // Buscar mentor através das sessões de mentoria (usando sessoesAluno já buscado na linha 1369)
       console.log(`[DEBUG] Aluno ${aluno.id} tem ${sessoesAluno.length} sessões de mentoria`);
       const consultorIds = [...new Set(sessoesAluno.map(s => s.consultorId).filter(Boolean))];
       console.log(`[DEBUG] ConsultorIds encontrados:`, consultorIds);
