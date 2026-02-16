@@ -310,30 +310,30 @@ export default function IndividualDashboard() {
           {/* Quick Stats */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Resumo</CardTitle>
-              <CardDescription>Seus números no programa</CardDescription>
+              <CardTitle className="text-lg text-gray-900">Resumo</CardTitle>
+              <CardDescription className="text-gray-600">Seus números no programa</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-blue-50 rounded-lg text-center">
+                <div className="p-4 bg-blue-50 rounded-lg text-center border border-blue-100">
                   <Calendar className="h-6 w-6 text-blue-600 mx-auto mb-2" />
                   <p className="text-2xl font-bold text-gray-900">{indicadores.totalMentorias}</p>
-                  <p className="text-sm text-gray-500">Sessões de Mentoria</p>
+                  <p className="text-sm text-gray-600 font-medium">Sessões de Mentoria</p>
                 </div>
-                <div className="p-4 bg-emerald-50 rounded-lg text-center">
+                <div className="p-4 bg-emerald-50 rounded-lg text-center border border-emerald-100">
                   <CheckCircle2 className="h-6 w-6 text-emerald-600 mx-auto mb-2" />
                   <p className="text-2xl font-bold text-gray-900">{indicadores.mentoriasPresente}</p>
-                  <p className="text-sm text-gray-500">Presenças</p>
+                  <p className="text-sm text-gray-600 font-medium">Presenças</p>
                 </div>
-                <div className="p-4 bg-rose-50 rounded-lg text-center">
+                <div className="p-4 bg-rose-50 rounded-lg text-center border border-rose-100">
                   <Users className="h-6 w-6 text-rose-600 mx-auto mb-2" />
                   <p className="text-2xl font-bold text-gray-900">{indicadores.totalEventos}</p>
-                  <p className="text-sm text-gray-500">Eventos</p>
+                  <p className="text-sm text-gray-600 font-medium">Eventos</p>
                 </div>
-                <div className="p-4 bg-amber-50 rounded-lg text-center">
+                <div className="p-4 bg-amber-50 rounded-lg text-center border border-amber-100">
                   <Target className="h-6 w-6 text-amber-600 mx-auto mb-2" />
                   <p className="text-2xl font-bold text-gray-900">{planoIndividual.length}</p>
-                  <p className="text-sm text-gray-500">Competências no Plano</p>
+                  <p className="text-sm text-gray-600 font-medium">Competências</p>
                 </div>
               </div>
             </CardContent>
