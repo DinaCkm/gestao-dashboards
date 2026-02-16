@@ -99,47 +99,104 @@ export default function IndividualDashboard() {
               Acompanhe sua evolução no programa de mentoria
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="px-3 py-1 border-[#1B3A5D] text-[#1B3A5D]">
-              <BookOpen className="h-4 w-4 mr-2" />
-              {aluno.programa}
-            </Badge>
-          </div>
         </div>
+
+        {/* Informações do Aluno */}
+        <Card className="bg-gradient-to-br from-[#1B3A5D] to-[#2D5A87]">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-white mb-3">{aluno.name}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="flex items-center gap-2 text-white/90">
+                    <BookOpen className="h-4 w-4 text-blue-300" />
+                    <div>
+                      <p className="text-xs text-white/60">Empresa</p>
+                      <p className="text-sm font-medium">{aluno.programa}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-white/90">
+                    <Users className="h-4 w-4 text-purple-300" />
+                    <div>
+                      <p className="text-xs text-white/60">Turma</p>
+                      <p className="text-sm font-medium">{aluno.turma}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-white/90">
+                    <Target className="h-4 w-4 text-emerald-300" />
+                    <div>
+                      <p className="text-xs text-white/60">Trilha</p>
+                      <p className="text-sm font-medium">{aluno.trilha}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-white/90">
+                    <Clock className="h-4 w-4 text-amber-300" />
+                    <div>
+                      <p className="text-xs text-white/60">Ciclo Atual</p>
+                      <p className="text-sm font-medium">{aluno.cicloAtual}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-white/90">
+                    <User className="h-4 w-4 text-rose-300" />
+                    <div>
+                      <p className="text-xs text-white/60">Mentor(a)</p>
+                      <p className="text-sm font-medium">{aluno.mentor}</p>
+                    </div>
+                  </div>
+                  {ranking && ranking.posicao > 0 && (
+                    <div className="flex items-center gap-2 text-white/90">
+                      <Trophy className="h-4 w-4 text-yellow-300" />
+                      <div>
+                        <p className="text-xs text-white/60">Ranking</p>
+                        <p className="text-sm font-medium">{ranking.posicao}º de {ranking.totalAlunos}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="text-right shrink-0 ml-4">
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${stage.color} text-white mb-2`}>
+                  <Award className="h-5 w-5" />
+                  <span className="font-semibold">{stage.label}</span>
+                </div>
+                <p className="text-3xl font-bold text-white">{indicadores.notaFinal.toFixed(1)}</p>
+                <p className="text-xs text-white/70">Performance Geral</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Performance Overview Card */}
         <Card>
-          <div className="grid md:grid-cols-3">
+          <div className="grid md:grid-cols-3 gap-6">
             {/* Score Section */}
             <div className="p-6 border-r border-gray-200">
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 rounded-xl bg-[#1B3A5D]/10">
-                  <Award className="h-8 w-8 text-[#1B3A5D]" />
+                  <Target className="h-8 w-8 text-[#1B3A5D]" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Nota Final</p>
-                  <p className="text-4xl font-bold text-gray-900">{indicadores.notaFinal.toFixed(1)}</p>
+                  <p className="text-sm text-gray-500">Indicador 7</p>
+                  <p className="text-4xl font-bold text-gray-900">{(indicadores.performanceGeral || 0).toFixed(0)}%</p>
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Estágio</span>
-                  <Badge className={`${stage.color} text-white`}>{stage.label}</Badge>
-                </div>
-                <p className="text-xs text-gray-500">{stage.description}</p>
+                <Progress value={indicadores.performanceGeral || 0} className="h-3" />
+                <p className="text-xs text-gray-500 mt-2">Média dos 6 indicadores individuais</p>
               </div>
             </div>
 
             {/* Indicators Progress */}
             <div className="p-6 col-span-2">
-              <h3 className="font-semibold text-gray-900 mb-4">5 Indicadores de Performance</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">6 Indicadores de Performance</h3>
               <div className="space-y-3">
                 {[
-                  { label: 'Presença Mentorias', value: indicadores.participacaoMentorias, icon: Calendar, color: 'text-blue-600' },
-                  { label: 'Atividades Práticas', value: indicadores.atividadesPraticas, icon: CheckCircle2, color: 'text-emerald-600' },
-                  { label: 'Engajamento', value: indicadores.engajamento, icon: TrendingUp, color: 'text-amber-600' },
-                  { label: 'Competências', value: indicadores.performanceCompetencias, icon: BookOpen, color: 'text-purple-600' },
-                  { label: 'Eventos', value: indicadores.participacaoEventos, icon: Users, color: 'text-rose-600' },
+                  { label: 'Ind. 1: Presença Mentorias', value: indicadores.participacaoMentorias, icon: Calendar, color: 'text-blue-600' },
+                  { label: 'Ind. 2: Atividades Práticas', value: indicadores.atividadesPraticas, icon: CheckCircle2, color: 'text-emerald-600' },
+                  { label: 'Ind. 3: Engajamento', value: indicadores.engajamento, icon: TrendingUp, color: 'text-amber-600' },
+                  { label: 'Ind. 4: Competências', value: indicadores.performanceCompetencias, icon: BookOpen, color: 'text-purple-600' },
+                  { label: 'Ind. 5: Aprendizado', value: indicadores.performanceAprendizado || 0, icon: GraduationCap, color: 'text-red-600' },
+                  { label: 'Ind. 6: Eventos', value: indicadores.participacaoEventos, icon: Users, color: 'text-rose-600' },
                 ].map((item) => (
                   <div key={item.label} className="space-y-1">
                     <div className="flex justify-between text-sm">
