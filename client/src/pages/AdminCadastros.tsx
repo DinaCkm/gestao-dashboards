@@ -55,6 +55,7 @@ export default function AdminCadastros() {
   // Queries
   const { data: empresas, refetch: refetchEmpresas, isLoading: loadingEmpresas } = trpc.admin.listEmpresas.useQuery();
   const { data: mentores, refetch: refetchMentores, isLoading: loadingMentores } = trpc.admin.listMentores.useQuery();
+  const { data: turmas, refetch: refetchTurmas, isLoading: loadingTurmas } = trpc.admin.listTurmas.useQuery();
   const { data: gerentes, refetch: refetchGerentes, isLoading: loadingGerentes } = trpc.admin.listGerentes.useQuery();
   const { data: accessUsers, refetch: refetchAccessUsers, isLoading: loadingAccessUsers } = trpc.admin.listAccessUsers.useQuery();
 
