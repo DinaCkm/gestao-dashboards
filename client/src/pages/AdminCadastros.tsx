@@ -269,6 +269,8 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
   const [programId, setProgramId] = useState("");
+  const [consultorId, setConsultorId] = useState("");
+  const [turmaId, setTurmaId] = useState("");
 
   // Edit form
   const [editNome, setEditNome] = useState("");
