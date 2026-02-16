@@ -1596,7 +1596,8 @@ export async function getAccessUsers(): Promise<any[]> {
     programId: users.programId,
     programName: programs.name,
     alunoId: users.alunoId,
-    consultorId: users.consultorId,
+    consultorId: sql`COALESCE(${users.consultorId}, ${alunos.consultorId})`.as('consultorId'),
+    turmaId: alunos.turmaId,
     isActive: users.isActive,
     loginMethod: users.loginMethod,
     createdAt: users.createdAt,
@@ -1604,6 +1605,7 @@ export async function getAccessUsers(): Promise<any[]> {
   })
     .from(users)
     .leftJoin(programs, eq(users.programId, programs.id))
+    .leftJoin(alunos, eq(users.alunoId, alunos.id))
     .where(eq(users.loginMethod, 'email_cpf'))
     .orderBy(desc(users.createdAt));
   
