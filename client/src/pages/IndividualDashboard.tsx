@@ -421,49 +421,50 @@ export default function IndividualDashboard() {
         {/* Plano Individual */}
         {planoIndividual.length > 0 && (
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="text-lg flex items-center gap-2 text-gray-900">
                 <Target className="h-5 w-5 text-[#E87722]" />
                 Meu Plano de Competências
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-gray-600">
                 {planoIndividual.length} competências obrigatórias definidas no seu plano individual
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="space-y-3">
                 {planoIndividual.map((item: any) => (
                   <div 
                     key={item.id} 
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-4 bg-white border-2 border-gray-100 rounded-lg hover:border-[#E87722]/30 hover:shadow-md transition-all"
                   >
                     <div className="flex items-center gap-3">
                       {item.status === 'concluida' ? (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                        <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                       ) : item.status === 'em_progresso' ? (
-                        <Clock className="h-5 w-5 text-blue-500" />
+                        <Clock className="h-6 w-6 text-blue-500" />
                       ) : (
-                        <XCircle className="h-5 w-5 text-gray-400" />
+                        <XCircle className="h-6 w-6 text-gray-400" />
                       )}
                       <div>
-                        <p className="font-medium text-gray-900">{item.competenciaNome}</p>
-                        <p className="text-sm text-gray-500">{item.trilhaNome}</p>
+                        <p className="font-semibold text-gray-900">{item.competenciaNome}</p>
+                        <p className="text-sm text-gray-600 font-medium">{item.trilhaNome}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <Badge className={
-                        item.status === 'concluida' ? 'bg-emerald-100 text-emerald-800' :
-                        item.status === 'em_progresso' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
+                        item.status === 'concluida' ? 'bg-emerald-100 text-emerald-800 border-emerald-200 font-semibold' :
+                        item.status === 'em_progresso' ? 'bg-blue-100 text-blue-800 border-blue-200 font-semibold' :
+                        'bg-gray-100 text-gray-800 border-gray-200 font-semibold'
                       }>
-                        {item.status === 'concluida' ? 'Concluída' :
-                         item.status === 'em_progresso' ? 'Em Progresso' : 'Pendente'}
+                        {item.status === 'concluida' ? '✓ Concluída' :
+                         item.status === 'em_progresso' ? '◷ Em Progresso' : '○ Pendente'}
                       </Badge>
                       {item.notaAtual && (
-                        <div className="text-right">
-                          <p className={`text-lg font-bold ${parseFloat(item.notaAtual) >= 7 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        <div className="text-right min-w-[60px]">
+                          <p className={`text-xl font-bold ${parseFloat(item.notaAtual) >= 7 ? 'text-emerald-600' : 'text-amber-600'}`}>
                             {parseFloat(item.notaAtual).toFixed(1)}
                           </p>
+                          <p className="text-xs text-gray-500 font-medium">de 10</p>
                         </div>
                       )}
                     </div>
