@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, name, code FROM programs ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, code FROM programs ORDER BY id;",
+  "rows": [
+    {
+      "id": "16",
+      "name": "SEBRAE ACRE",
+      "code": "SEBRAE_ACRE"
+    },
+    {
+      "id": "17",
+      "name": "SEBRAE TO",
+      "code": "SEBRAE_TO"
+    },
+    {
+      "id": "18",
+      "name": "EMBRAPII",
+      "code": "EMBRAPII"
+    },
+    {
+      "id": "19",
+      "name": "BANRISUL",
+      "code": "BANRISUL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcode\n16\tSEBRAE ACRE\tSEBRAE_ACRE\n17\tSEBRAE TO\tSEBRAE_TO\n18\tEMBRAPII\tEMBRAPII\n19\tBANRISUL\tBANRISUL\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}

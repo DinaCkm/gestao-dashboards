@@ -1,0 +1,70 @@
+{
+  "query": "SELECT * FROM upload_batches ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT * FROM upload_batches ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "5",
+      "weekNumber": "4",
+      "year": "2026",
+      "uploadedBy": "1",
+      "status": "completed",
+      "notes": "NULL",
+      "createdAt": "2026-01-28 01:11:32",
+      "updatedAt": "2026-01-28 01:11:34",
+      "programId": "NULL",
+      "totalRecords": "NULL"
+    },
+    {
+      "id": "4",
+      "weekNumber": "4",
+      "year": "2026",
+      "uploadedBy": "1",
+      "status": "completed",
+      "notes": "NULL",
+      "createdAt": "2026-01-28 00:41:14",
+      "updatedAt": "2026-01-28 00:41:15",
+      "programId": "NULL",
+      "totalRecords": "NULL"
+    },
+    {
+      "id": "3",
+      "weekNumber": "4",
+      "year": "2026",
+      "uploadedBy": "1",
+      "status": "pending",
+      "notes": "NULL",
+      "createdAt": "2026-01-28 00:30:48",
+      "updatedAt": "2026-01-28 00:30:48",
+      "programId": "NULL",
+      "totalRecords": "NULL"
+    },
+    {
+      "id": "2",
+      "weekNumber": "4",
+      "year": "2026",
+      "uploadedBy": "1",
+      "status": "completed",
+      "notes": "NULL",
+      "createdAt": "2026-01-28 00:26:49",
+      "updatedAt": "2026-01-28 00:26:51",
+      "programId": "NULL",
+      "totalRecords": "NULL"
+    },
+    {
+      "id": "1",
+      "weekNumber": "4",
+      "year": "2026",
+      "uploadedBy": "1",
+      "status": "completed",
+      "notes": "NULL",
+      "createdAt": "2026-01-28 00:26:14",
+      "updatedAt": "2026-01-28 00:26:16",
+      "programId": "NULL",
+      "totalRecords": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tweekNumber\tyear\tuploadedBy\tstatus\tnotes\tcreatedAt\tupdatedAt\tprogramId\ttotalRecords\n5\t4\t2026\t1\tcompleted\tNULL\t2026-01-28 01:11:32\t2026-01-28 01:11:34\tNULL\tNULL\n4\t4\t2026\t1\tcompleted\tNULL\t2026-01-28 00:41:14\t2026-01-28 00:41:15\tNULL\tNULL\n3\t4\t2026\t1\tpending\tNULL\t2026-01-28 00:30:48\t2026-01-28 00:30:48\tNULL\tNULL\n2\t4\t2026\t1\tcompleted\tNULL\t2026-01-28 00:26:49\t2026-01-28 00:26:51\tNULL\tNULL\n1\t4\t2026\t1\tcompleted\tNULL\t2026-01-28 00:26:14\t2026-01-28 00:26:16\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

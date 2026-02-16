@@ -1,0 +1,66 @@
+{
+  "query": "SELECT 'alunos' as tabela, COUNT(*) as total FROM alunos UNION ALL SELECT 'consultors', COUNT(*) FROM consultors UNION ALL SELECT 'turmas', COUNT(*) FROM turmas UNION ALL SELECT 'programs', COUNT(*) FROM programs UNION ALL SELECT 'trilhas', COUNT(*) FROM trilhas UNION ALL SELECT 'competencias', COUNT(*) FROM competencias UNION ALL SELECT 'mentoring_sessions', COUNT(*) FROM mentoring_sessions UNION ALL SELECT 'events', COUNT(*) FROM events UNION ALL SELECT 'event_participation', COUNT(*) FROM event_participation UNION ALL SELECT 'plano_individual', COUNT(*) FROM plano_individual UNION ALL SELECT 'upload_batches', COUNT(*) FROM upload_batches UNION ALL SELECT 'uploaded_files', COUNT(*) FROM uploaded_files UNION ALL SELECT 'reports', COUNT(*) FROM reports UNION ALL SELECT 'users', COUNT(*) FROM users",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT 'alunos' as tabela, COUNT(*) as total FROM alunos UNION ALL SELECT 'consultors', COUNT(*) FROM consultors UNION ALL SELECT 'turmas', COUNT(*) FROM turmas UNION ALL SELECT 'programs', COUNT(*) FROM programs UNION ALL SELECT 'trilhas', COUNT(*) FROM trilhas UNION ALL SELECT 'competencias', COUNT(*) FROM competencias UNION ALL SELECT 'mentoring_sessions', COUNT(*) FROM mentoring_sessions UNION ALL SELECT 'events', COUNT(*) FROM events UNION ALL SELECT 'event_participation', COUNT(*) FROM event_participation UNION ALL SELECT 'plano_individual', COUNT(*) FROM plano_individual UNION ALL SELECT 'upload_batches', COUNT(*) FROM upload_batches UNION ALL SELECT 'uploaded_files', COUNT(*) FROM uploaded_files UNION ALL SELECT 'reports', COUNT(*) FROM reports UNION ALL SELECT 'users', COUNT(*) FROM users",
+  "rows": [
+    {
+      "tabela": "programs",
+      "total": "4"
+    },
+    {
+      "tabela": "trilhas",
+      "total": "4"
+    },
+    {
+      "tabela": "alunos",
+      "total": "125"
+    },
+    {
+      "tabela": "turmas",
+      "total": "26"
+    },
+    {
+      "tabela": "consultors",
+      "total": "26"
+    },
+    {
+      "tabela": "competencias",
+      "total": "36"
+    },
+    {
+      "tabela": "events",
+      "total": "0"
+    },
+    {
+      "tabela": "plano_individual",
+      "total": "506"
+    },
+    {
+      "tabela": "mentoring_sessions",
+      "total": "1014"
+    },
+    {
+      "tabela": "upload_batches",
+      "total": "5"
+    },
+    {
+      "tabela": "uploaded_files",
+      "total": "4"
+    },
+    {
+      "tabela": "reports",
+      "total": "0"
+    },
+    {
+      "tabela": "users",
+      "total": "3"
+    },
+    {
+      "tabela": "event_participation",
+      "total": "4027"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\ttotal\nprograms\t4\ntrilhas\t4\nalunos\t125\nturmas\t26\nconsultors\t26\ncompetencias\t36\nevents\t0\nplano_individual\t506\nmentoring_sessions\t1014\nupload_batches\t5\nuploaded_files\t4\nreports\t0\nusers\t3\nevent_participation\t4027\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

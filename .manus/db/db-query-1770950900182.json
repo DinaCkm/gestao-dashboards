@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE users SET passwordHash = '9c9f57efe04f8f5a65b699db1c777238d5876b44cef240654c749dd09e1790ef', cpf = '00000000000' WHERE email = 'relacionamento@ckmtalents.net' AND role = 'admin'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute UPDATE users SET passwordHash = '9c9f57efe04f8f5a65b699db1c777238d5876b44cef240654c749dd09e1790ef', cpf = '00000000000' WHERE email = 'relacionamento@ckmtalents.net' AND role = 'admin'",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 61
+}

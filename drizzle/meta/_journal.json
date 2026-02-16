@@ -1,0 +1,118 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1769540186099,
+      "tag": "0000_quiet_blink",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1769540351007,
+      "tag": "0001_hard_redwing",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1769541330229,
+      "tag": "0002_cheerful_rattler",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1769543769095,
+      "tag": "0003_little_leper_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1769552252357,
+      "tag": "0004_glossy_shinobi_shaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1769563306003,
+      "tag": "0005_familiar_zaladane",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1769790945321,
+      "tag": "0006_youthful_boomer",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1769791637975,
+      "tag": "0007_burly_smasher",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1769803519091,
+      "tag": "0008_pink_kate_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1770941178196,
+      "tag": "0009_amused_sabretooth",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1770947843141,
+      "tag": "0010_round_cardiac",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1770989388952,
+      "tag": "0011_massive_adam_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1770992611827,
+      "tag": "0012_supreme_dazzler",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1771000311562,
+      "tag": "0013_damp_menace",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1771002524194,
+      "tag": "0014_bent_yellowjacket",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "5",
+      "when": 1771011408283,
+      "tag": "0015_open_rictor",
+      "breakpoints": true
+    }
+  ]
+}

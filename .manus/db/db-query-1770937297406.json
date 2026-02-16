@@ -1,0 +1,55 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'mentoring_sessions' ORDER BY ORDINAL_POSITION",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'mentoring_sessions' ORDER BY ORDINAL_POSITION",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "alunoId"
+    },
+    {
+      "COLUMN_NAME": "consultorId"
+    },
+    {
+      "COLUMN_NAME": "turmaId"
+    },
+    {
+      "COLUMN_NAME": "trilhaId"
+    },
+    {
+      "COLUMN_NAME": "ciclo"
+    },
+    {
+      "COLUMN_NAME": "sessionNumber"
+    },
+    {
+      "COLUMN_NAME": "sessionDate"
+    },
+    {
+      "COLUMN_NAME": "presence"
+    },
+    {
+      "COLUMN_NAME": "taskStatus"
+    },
+    {
+      "COLUMN_NAME": "engagementScore"
+    },
+    {
+      "COLUMN_NAME": "feedback"
+    },
+    {
+      "COLUMN_NAME": "batchId"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "notaEvolucao"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nalunoId\nconsultorId\nturmaId\ntrilhaId\nciclo\nsessionNumber\nsessionDate\npresence\ntaskStatus\nengagementScore\nfeedback\nbatchId\ncreatedAt\nnotaEvolucao\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

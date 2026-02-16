@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO upload_batches (weekNumber, year, uploadedBy, status, notes, totalRecords, createdAt, updatedAt) VALUES (7, 2026, 1, 'completed', 'Importação planilha de performance atualizada - 1464 registros, 100 alunos, 11 turmas', 1464, NOW(), NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute INSERT INTO upload_batches (weekNumber, year, uploadedBy, status, notes, totalRecords, createdAt, updatedAt) VALUES (7, 2026, 1, 'completed', 'Importação planilha de performance atualizada - 1464 registros, 100 alunos, 11 turmas', 1464, NOW(), NOW());",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 76
+}

@@ -1,0 +1,13 @@
+{
+  "query": "SELECT 'Total alunos cadastrados' as metrica, CAST(COUNT(*) AS CHAR) as valor FROM alunos\nUNION ALL\nSELECT 'Alunos com mentoria', CAST(COUNT(DISTINCT alunoId) AS CHAR) FROM mentoring_sessions\nUNION ALL\nSELECT 'Alunos sem mentoria', CAST(COUNT(*) AS CHAR) FROM alunos WHERE id NOT IN (SELECT DISTINCT alunoId FROM mentoring_sessions)\nUNION ALL\nSELECT 'Alunos por empresa', '' FROM dual;\nSELECT p.nome as empresa, COUNT(a.id) as total_alunos FROM alunos a LEFT JOIN turmas t ON a.turma_id = t.id LEFT JOIN programas p ON t.programa_id = p.id GROUP BY p.nome",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT 'Total alunos cadastrados' as metrica, CAST(COUNT(*) AS CHAR) as valor FROM alunos\nUNION ALL\nSELECT 'Alunos com mentoria', CAST(COUNT(DISTINCT alunoId) AS CHAR) FROM mentoring_sessions\nUNION ALL\nSELECT 'Alunos sem mentoria', CAST(COUNT(*) AS CHAR) FROM alunos WHERE id NOT IN (SELECT DISTINCT alunoId FROM mentoring_sessions)\nUNION ALL\nSELECT 'Alunos por empresa', '' FROM dual;\nSELECT p.nome as empresa, COUNT(a.id) as total_alunos FROM alunos a LEFT JOIN turmas t ON a.turma_id = t.id LEFT JOIN programas p ON t.programa_id = p.id GROUP BY p.nome",
+  "returncode": 1,
+  "logs": [
+    "metrica\tvalor",
+    "Alunos por empresa\t",
+    "Total alunos cadastrados\t125",
+    "Alunos sem mentoria\t26",
+    "Alunos com mentoria\t99",
+    "ERROR 1146 (42S02) at line 8: Table '5n7arrgnhjndofcmzygxcy.programas' doesn't exist"
+  ]
+}

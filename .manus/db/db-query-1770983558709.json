@@ -1,0 +1,50 @@
+{
+  "query": "\nSELECT 'alunos' as tabela, COUNT(*) as total FROM alunos\nUNION ALL SELECT 'plano_individual', COUNT(*) FROM plano_individual\nUNION ALL SELECT 'competencias', COUNT(*) FROM competencias\nUNION ALL SELECT 'trilhas', COUNT(*) FROM trilhas\nUNION ALL SELECT 'turmas', COUNT(*) FROM turmas\nUNION ALL SELECT 'events', COUNT(*) FROM events\nUNION ALL SELECT 'event_participation', COUNT(*) FROM event_participation\nUNION ALL SELECT 'ciclos_execucao', COUNT(*) FROM ciclos_execucao\nUNION ALL SELECT 'ciclo_competencias', COUNT(*) FROM ciclo_competencias\nUNION ALL SELECT 'mentoring_sessions', COUNT(*) FROM mentoring_sessions\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT 'alunos' as tabela, COUNT(*) as total FROM alunos\nUNION ALL SELECT 'plano_individual', COUNT(*) FROM plano_individual\nUNION ALL SELECT 'competencias', COUNT(*) FROM competencias\nUNION ALL SELECT 'trilhas', COUNT(*) FROM trilhas\nUNION ALL SELECT 'turmas', COUNT(*) FROM turmas\nUNION ALL SELECT 'events', COUNT(*) FROM events\nUNION ALL SELECT 'event_participation', COUNT(*) FROM event_participation\nUNION ALL SELECT 'ciclos_execucao', COUNT(*) FROM ciclos_execucao\nUNION ALL SELECT 'ciclo_competencias', COUNT(*) FROM ciclo_competencias\nUNION ALL SELECT 'mentoring_sessions', COUNT(*) FROM mentoring_sessions\n",
+  "rows": [
+    {
+      "tabela": "turmas",
+      "total": "26"
+    },
+    {
+      "tabela": "competencias",
+      "total": "36"
+    },
+    {
+      "tabela": "alunos",
+      "total": "125"
+    },
+    {
+      "tabela": "plano_individual",
+      "total": "506"
+    },
+    {
+      "tabela": "trilhas",
+      "total": "4"
+    },
+    {
+      "tabela": "events",
+      "total": "0"
+    },
+    {
+      "tabela": "ciclo_competencias",
+      "total": "0"
+    },
+    {
+      "tabela": "ciclos_execucao",
+      "total": "0"
+    },
+    {
+      "tabela": "mentoring_sessions",
+      "total": "1144"
+    },
+    {
+      "tabela": "event_participation",
+      "total": "4027"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\ttotal\nturmas\t26\ncompetencias\t36\nalunos\t125\nplano_individual\t506\ntrilhas\t4\nevents\t0\nciclo_competencias\t0\nciclos_execucao\t0\nmentoring_sessions\t1144\nevent_participation\t4027\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

@@ -1,0 +1,50 @@
+{
+  "query": "SELECT externalId, name FROM alunos LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT externalId, name FROM alunos LIMIT 10;",
+  "rows": [
+    {
+      "externalId": "605198",
+      "name": "DANIELA RIVA KELLER"
+    },
+    {
+      "externalId": "605199",
+      "name": "MARIA DE FATIMA MACIEL PEREIRA"
+    },
+    {
+      "externalId": "605200",
+      "name": "MARCO AURELIO MARCONATO"
+    },
+    {
+      "externalId": "605201",
+      "name": "FABIANA DE BRITO GOMES"
+    },
+    {
+      "externalId": "605202",
+      "name": "MARVIN DE ALMEIDA FONTANA"
+    },
+    {
+      "externalId": "605203",
+      "name": "DANIELE FERNANDES OLIVEIRA"
+    },
+    {
+      "externalId": "605204",
+      "name": "MARCIO PETTINE SANTOS"
+    },
+    {
+      "externalId": "605205",
+      "name": "GABRIEL BASSO DAMO"
+    },
+    {
+      "externalId": "605206",
+      "name": "CATIA CARGNIN"
+    },
+    {
+      "externalId": "605207",
+      "name": "JOSIANE CLAIRE SCHNEIDER LEMOS"
+    }
+  ],
+  "messages": [],
+  "stdout": "externalId\tname\n605198\tDANIELA RIVA KELLER\n605199\tMARIA DE FATIMA MACIEL PEREIRA\n605200\tMARCO AURELIO MARCONATO\n605201\tFABIANA DE BRITO GOMES\n605202\tMARVIN DE ALMEIDA FONTANA\n605203\tDANIELE FERNANDES OLIVEIRA\n605204\tMARCIO PETTINE SANTOS\n605205\tGABRIEL BASSO DAMO\n605206\tCATIA CARGNIN\n605207\tJOSIANE CLAIRE SCHNEIDER LEMOS\n",
+  "stderr": "",
+  "execution_time_ms": 408
+}
