@@ -297,12 +297,16 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
       cpf: credentialDigits,
       role: "user" as "user" | "admin" | "manager",
       programId: parseInt(programId),
+      consultorId: consultorId ? parseInt(consultorId) : null,
+      turmaId: turmaId ? parseInt(turmaId) : null,
       isMentor: false,
     });
     setNome("");
     setEmail("");
     setCpf("");
     setProgramId("");
+    setConsultorId("");
+    setTurmaId("");
     setOpen(false);
   };
 
