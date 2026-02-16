@@ -29,6 +29,33 @@ const managerProcedure = protectedProcedure.use(({ ctx, next }) => {
 export const appRouter = router({
   system: systemRouter,
   
+  // DEBUG: Endpoint temporário para verificar e corrigir dados da Vera
+  debugVera: publicProcedure.query(async () => {
+    const alunos = await db.getAlunos();
+    const vera = alunos.find(a => a.email === 'vera.braga@to.sebrae.com.br');
+    
+    if (!vera) {
+      return { error: 'Aluno não encontrado' };
+    }
+    
+    const mentores = await db.getConsultors();
+    const ciclos = await db.getCiclosForCalculator(vera.id);
+    const assessments = await db.getAssessmentsByAluno(vera.id);
+    
+    return {
+      vera: {
+        id: vera.id,
+        name: vera.name,
+        consultorId: vera.consultorId,
+        turmaId: vera.turmaId,
+        programId: vera.programId
+      },
+      mentores: mentores.map(m => ({ id: m.id, name: m.name })),
+      ciclos: ciclos.length,
+      assessments: assessments.length
+    };
+  }),
+  
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
