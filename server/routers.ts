@@ -1388,7 +1388,11 @@ export const appRouter = router({
       // Buscar programa, turma e mentor do aluno
       const programa = aluno.programId ? programMap.get(aluno.programId) : null;
       const turmaAluno = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
-      const mentorAluno = aluno.consultorId ? await db.getConsultorById(aluno.consultorId) : null;
+      
+      // Buscar mentor através das sessões de mentoria (não de aluno.consultorId)
+      const sessoesAluno = await db.getMentoringSessionsByAluno(aluno.id);
+      const consultorIds = [...new Set(sessoesAluno.map(s => s.consultorId).filter(Boolean))];
+      const mentorAluno = consultorIds.length > 0 ? await db.getConsultorById(consultorIds[0]) : null;
 
       // Calcular ranking na empresa (posição entre colegas da mesma empresa)
       let ranking = { posicao: 0, totalAlunos: 0 };
