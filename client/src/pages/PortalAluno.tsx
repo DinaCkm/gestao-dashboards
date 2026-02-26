@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -107,7 +108,23 @@ function OnboardingStepper({ currentStep, onStepClick }: { currentStep: number; 
 // ============================================================
 
 function EtapaCadastro({ onComplete }: { onComplete: () => void }) {
+  const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
+  const alunoReal = dashData?.found ? dashData.aluno : null;
+
   const [perfil, setPerfil] = useState(ALUNO_PERFIL_FAKE);
+  const [initialized, setInitialized] = useState(false);
+
+  // Quando os dados reais chegam, sobrescrever os dados fake
+  if (alunoReal && !initialized) {
+    setPerfil(prev => ({
+      ...prev,
+      nome: alunoReal.name || prev.nome,
+      email: alunoReal.email || prev.email,
+      programa: alunoReal.programa || prev.programa,
+      turma: alunoReal.turma || prev.turma,
+    }));
+    setInitialized(true);
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -1309,7 +1326,11 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
 
 export default function PortalAluno() {
   const { user } = useAuth();
-  const firstName = user?.name?.split(" ")[0] || "Aluno";
+  const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
+  const alunoReal = dashData?.found ? dashData.aluno : null;
+  // Usar nome real do aluno do banco, ou fallback para o user do auth
+  const displayName = alunoReal?.name || user?.name || "Aluno";
+  const firstName = displayName.split(" ")[0];
 
   // Para demonstração, começamos na fase de onboarding
   // Em produção, o estado viria do backend
@@ -1333,12 +1354,12 @@ export default function PortalAluno() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">
-                Bem-vindo(a), {firstName}! <Sparkles className="inline h-6 w-6 text-[#E87722]" />
+                Bem-vinda ao Programa de Mentoria <Sparkles className="inline h-6 w-6 text-[#E87722]" />
               </h1>
               <p className="mt-1 text-white/80">
                 {fase === "onboarding"
-                  ? "Complete as etapas abaixo para iniciar sua jornada no programa de mentoria."
-                  : "Acompanhe seu progresso no programa de desenvolvimento."
+                  ? "Conclua as etapas abaixo para iniciar sua jornada"
+                  : `${firstName}, acompanhe seu progresso no programa de desenvolvimento.`
                 }
               </p>
             </div>

@@ -833,3 +833,7 @@
 - [x] Mensagem "Bem-vindo" com nome do aluno no Portal
 - [x] Criar página de Tutoriais com vídeos explicativos da plataforma (cards com links, sem gerar vídeos)
 - [x] Registrar rota /tutoriais no App.tsx
+
+## Dados Reais do Aluno no Portal (26/02/2026)
+- [x] Formulário de cadastro do Portal do Aluno deve puxar dados reais do aluno logado (nome, email, telefone, empresa, cargo)
+- [x] Mensagem Bem-vindo deve usar o nome real do aluno logado

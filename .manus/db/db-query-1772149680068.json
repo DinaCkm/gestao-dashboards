@@ -1,0 +1,22 @@
+{
+  "query": "SELECT a.id, a.externalId, a.name, a.email, a.turmaId, a.trilhaId, a.consultorId, a.programId, t.name as turmaName, p.name as programName FROM alunos a LEFT JOIN turmas t ON a.turmaId = t.id LEFT JOIN programs p ON a.programId = p.id WHERE a.name LIKE '%Valci%' OR a.email LIKE '%valci%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.externalId, a.name, a.email, a.turmaId, a.trilhaId, a.consultorId, a.programId, t.name as turmaName, p.name as programName FROM alunos a LEFT JOIN turmas t ON a.turmaId = t.id LEFT JOIN programs p ON a.programId = p.id WHERE a.name LIKE '%Valci%' OR a.email LIKE '%valci%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "30077",
+      "externalId": "667304",
+      "name": "Valci Pereira Da Silva Junior",
+      "email": "valci.junior@to.sebrae.com.br",
+      "turmaId": "30003",
+      "trilhaId": "4",
+      "consultorId": "NULL",
+      "programId": "17",
+      "turmaName": "[2025] SEBRAE Tocantins - Visão de Futuro [BS2]",
+      "programName": "SEBRAE TO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\texternalId\tname\temail\tturmaId\ttrilhaId\tconsultorId\tprogramId\tturmaName\tprogramName\n30077\t667304\tValci Pereira Da Silva Junior\tvalci.junior@to.sebrae.com.br\t30003\t4\tNULL\t17\t[2025] SEBRAE Tocantins - Visão de Futuro [BS2]\tSEBRAE TO\n",
+  "stderr": "",
+  "execution_time_ms": 344
+}
