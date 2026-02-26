@@ -205,6 +205,10 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   engagementScore: int("engagementScore"),
   notaEvolucao: int("notaEvolucao"), // Nota da mentora (0-10) - BLOCO 8
   feedback: text("feedback"),
+  mensagemAluno: text("mensagemAluno"),
+  taskId: int("taskId"),
+  taskDeadline: date("taskDeadline"),
+  relatoAluno: text("relatoAluno"),
   batchId: int("batchId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -415,3 +419,17 @@ export const processedData = mysqlTable("processed_data", {
 
 export type ProcessedData = typeof processedData.$inferSelect;
 export type InsertProcessedData = typeof processedData.$inferInsert;
+
+export const taskLibrary = mysqlTable("task_library", {
+  id: int("id").autoincrement().primaryKey(),
+  competencia: varchar("competencia", { length: 255 }).notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  resumo: text("resumo"),
+  oQueFazer: text("oQueFazer"),
+  oQueGanha: text("oQueGanha"),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskLibrary = typeof taskLibrary.$inferSelect;
+export type InsertTaskLibrary = typeof taskLibrary.$inferInsert;

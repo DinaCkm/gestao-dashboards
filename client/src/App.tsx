@@ -28,6 +28,7 @@ import RegistroMentoria from "./pages/RegistroMentoria";
 import DashboardGestor from "./pages/DashboardGestor";
 import DashboardMeuPerfil from "./pages/DashboardMeuPerfil";
 import Assessment from "./pages/Assessment";
+import PortalAluno from "./pages/PortalAluno";
 
 function Router() {
   return (
@@ -54,6 +55,7 @@ function Router() {
       <Route path={"/registro-mentoria"} component={RegistroMentoria} />
       <Route path={"/dashboard/gestor"} component={DashboardGestor} />
       <Route path={"/assessment"} component={Assessment} />
+      <Route path={"/portal-aluno"} component={PortalAluno} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

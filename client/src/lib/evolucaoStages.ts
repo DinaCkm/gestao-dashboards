@@ -97,3 +97,85 @@ export function getEvolucaoColor(nota: number): string {
   if (nota >= 3) return '#f97316'; // orange-500
   return '#ef4444'; // red-500
 }
+
+/**
+ * Array de estágios para uso em seletores visuais
+ * Nota atribuída: sempre o valor mais alto da faixa
+ */
+export const EVOLUCAO_STAGES = [
+  {
+    level: 1,
+    label: 'Excelência',
+    range: '9-10',
+    nota: 10,
+    description: 'Alto nível de engajamento com a plataforma, webinars, tarefas da mentoria, aplicação dos aprendizados e evidente evolução das competências indicadas para o desenvolvimento no Diagnóstico.',
+    bgColor: 'bg-emerald-50',
+    textColor: 'text-emerald-700',
+    borderColor: 'border-emerald-300',
+    badgeBg: 'bg-emerald-100',
+    badgeText: 'text-emerald-800',
+  },
+  {
+    level: 2,
+    label: 'Avançado',
+    range: '7-8',
+    nota: 8,
+    description: 'Bom nível de engajamento com a plataforma, webinars, tarefas da mentoria, aplicação dos aprendizados e evidente evolução das competências indicadas para o desenvolvimento no Diagnóstico Inicial.',
+    bgColor: 'bg-blue-50',
+    textColor: 'text-blue-700',
+    borderColor: 'border-blue-300',
+    badgeBg: 'bg-blue-100',
+    badgeText: 'text-blue-800',
+  },
+  {
+    level: 3,
+    label: 'Intermediário',
+    range: '5-6',
+    nota: 6,
+    description: 'Comprometimento adequado, com pouco equilíbrio na realização entre as ferramentas disponibilizas como a plataforma, webinars, tarefas da mentoria, aplicação dos aprendizados e com uma evolução regular das competências indicadas para o desenvolvimento no Diagnóstico Inicial.',
+    bgColor: 'bg-amber-50',
+    textColor: 'text-amber-700',
+    borderColor: 'border-amber-300',
+    badgeBg: 'bg-amber-100',
+    badgeText: 'text-amber-800',
+  },
+  {
+    level: 4,
+    label: 'Básico',
+    range: '3-4',
+    nota: 4,
+    description: 'Participação irregular, progresso limitado.',
+    bgColor: 'bg-orange-50',
+    textColor: 'text-orange-700',
+    borderColor: 'border-orange-300',
+    badgeBg: 'bg-orange-100',
+    badgeText: 'text-orange-800',
+  },
+  {
+    level: 5,
+    label: 'Inicial',
+    range: '0-2',
+    nota: 2,
+    description: 'Baixo engajamento, pouca evolução.',
+    bgColor: 'bg-red-50',
+    textColor: 'text-red-700',
+    borderColor: 'border-red-300',
+    badgeBg: 'bg-red-100',
+    badgeText: 'text-red-800',
+  },
+] as const;
+
+/**
+ * Retorna a nota numérica (valor mais alto da faixa) a partir do nível do estágio
+ */
+export function getNotaFromStage(level: number): number {
+  const stage = EVOLUCAO_STAGES.find(s => s.level === level);
+  return stage?.nota ?? 0;
+}
+
+/**
+ * Retorna o estágio a partir do nível
+ */
+export function getStageByLevel(level: number) {
+  return EVOLUCAO_STAGES.find(s => s.level === level);
+}

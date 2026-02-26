@@ -18,7 +18,8 @@ import {
   mentoringSessions, InsertMentoringSession, MentoringSession,
   events, InsertEvent, Event,
   eventParticipation, InsertEventParticipation, EventParticipation,
-  planoIndividual, InsertPlanoIndividual, PlanoIndividual
+  planoIndividual, InsertPlanoIndividual, PlanoIndividual,
+  taskLibrary, TaskLibrary, InsertTaskLibrary
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -614,6 +615,13 @@ export async function getAlunoByEmail(email: string): Promise<Aluno | undefined>
   return result[0];
 }
 
+export async function getAlunoById(alunoId: number): Promise<Aluno | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  return result[0];
+}
+
 export async function getAlunosByTurma(turmaId: number): Promise<Aluno[]> {
   const db = await getDb();
   if (!db) return [];
@@ -639,13 +647,30 @@ export async function getMentoringSessionsByAluno(alunoId: number): Promise<Ment
   return await db.select().from(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
 }
 
-export async function updateMentoringSession(sessionId: number, data: { notaEvolucao?: number; feedback?: string }): Promise<boolean> {
+export async function updateMentoringSession(sessionId: number, data: {
+  notaEvolucao?: number;
+  feedback?: string;
+  engagementScore?: number;
+  mensagemAluno?: string;
+  taskId?: number | null;
+  taskDeadline?: string | null;
+  taskStatus?: "entregue" | "nao_entregue" | "sem_tarefa";
+  relatoAluno?: string;
+  presence?: "presente" | "ausente";
+}): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
   
   const updateData: Record<string, unknown> = {};
   if (data.notaEvolucao !== undefined) updateData.notaEvolucao = data.notaEvolucao;
+  if (data.engagementScore !== undefined) updateData.engagementScore = data.engagementScore;
   if (data.feedback !== undefined) updateData.feedback = data.feedback;
+  if (data.mensagemAluno !== undefined) updateData.mensagemAluno = data.mensagemAluno;
+  if (data.taskId !== undefined) updateData.taskId = data.taskId;
+  if (data.taskDeadline !== undefined) updateData.taskDeadline = data.taskDeadline;
+  if (data.taskStatus !== undefined) updateData.taskStatus = data.taskStatus;
+  if (data.relatoAluno !== undefined) updateData.relatoAluno = data.relatoAluno;
+  if (data.presence !== undefined) updateData.presence = data.presence;
   
   if (Object.keys(updateData).length === 0) return true;
   
@@ -653,6 +678,58 @@ export async function updateMentoringSession(sessionId: number, data: { notaEvol
     .set(updateData)
     .where(eq(mentoringSessions.id, sessionId));
   return true;
+}
+
+export async function createMentoringSession(data: {
+  alunoId: number;
+  consultorId: number;
+  turmaId?: number | null;
+  trilhaId?: number | null;
+  sessionNumber: number;
+  sessionDate: string;
+  presence: "presente" | "ausente";
+  taskStatus?: "entregue" | "nao_entregue" | "sem_tarefa";
+  engagementScore?: number | null;
+  notaEvolucao?: number | null;
+  feedback?: string;
+  mensagemAluno?: string;
+  taskId?: number | null;
+  taskDeadline?: string | null;
+}): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(mentoringSessions).values({
+    alunoId: data.alunoId,
+    consultorId: data.consultorId,
+    turmaId: data.turmaId ?? null,
+    trilhaId: data.trilhaId ?? null,
+    sessionNumber: data.sessionNumber,
+    sessionDate: data.sessionDate as any,
+    presence: data.presence,
+    taskStatus: data.taskStatus ?? "sem_tarefa",
+    engagementScore: data.engagementScore ?? null,
+    notaEvolucao: data.notaEvolucao ?? null,
+    feedback: data.feedback ?? null,
+    mensagemAluno: data.mensagemAluno ?? null,
+    taskId: data.taskId ?? null,
+    taskDeadline: data.taskDeadline as any,
+  });
+  return result[0].insertId;
+}
+
+// ============ TASK LIBRARY FUNCTIONS ============
+export async function getAllTaskLibrary(): Promise<TaskLibrary[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(taskLibrary).where(eq(taskLibrary.isActive, 1));
+}
+
+export async function getTaskLibraryById(id: number): Promise<TaskLibrary | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(taskLibrary).where(eq(taskLibrary.id, id)).limit(1);
+  return result[0];
 }
 
 export async function getAllMentoringSessions(): Promise<MentoringSession[]> {

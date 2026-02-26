@@ -1456,6 +1456,10 @@ export const appRouter = router({
           engagementScore: s.engagementScore,
           notaEvolucao: s.notaEvolucao,
           feedback: s.feedback,
+          mensagemAluno: s.mensagemAluno,
+          taskId: s.taskId,
+          taskDeadline: s.taskDeadline,
+          relatoAluno: s.relatoAluno,
           ciclo: s.ciclo,
         })),
         eventos: eventosDetalhados,
@@ -1550,17 +1554,103 @@ export const appRouter = router({
       return { sent, alunosFalta1: alunosFalta1.length, alunosCicloCompleto: alunosCicloCompleto.length };
     }),
 
-    // Atualizar sessão de mentoria (nota de evolução e feedback)
+    // Atualizar sessão de mentoria
     updateSession: protectedProcedure
       .input(z.object({
         sessionId: z.number(),
         notaEvolucao: z.number().min(0).max(10).optional(),
-        feedback: z.string().optional()
+        engagementScore: z.number().min(0).max(10).optional(),
+        feedback: z.string().optional(),
+        mensagemAluno: z.string().optional(),
+        taskId: z.number().nullable().optional(),
+        taskDeadline: z.string().nullable().optional(),
+        taskStatus: z.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
+        presence: z.enum(["presente", "ausente"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { sessionId, ...data } = input;
+        const success = await db.updateMentoringSession(sessionId, data);
+        return { success };
+      }),
+
+    // Criar nova sessão de mentoria
+    createSession: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        sessionDate: z.string(),
+        presence: z.enum(["presente", "ausente"]),
+        taskStatus: z.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
+        engagementScore: z.number().min(0).max(10).nullable().optional(),
+        notaEvolucao: z.number().min(0).max(10).nullable().optional(),
+        feedback: z.string().optional(),
+        mensagemAluno: z.string().optional(),
+        taskId: z.number().nullable().optional(),
+        taskDeadline: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Buscar consultor vinculado ao usuário logado
+        const consultors = await db.getConsultors();
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        
+        // Se não é consultor, verificar se é admin
+        let consultorId = consultor?.id;
+        if (!consultorId && ctx.user.role === 'admin') {
+          // Admin pode criar sessão - buscar o consultor do aluno
+          const sessions = await db.getMentoringSessionsByAluno(input.alunoId);
+          if (sessions.length > 0) {
+            consultorId = sessions[0].consultorId;
+          }
+        }
+        if (!consultorId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Você não está vinculado como mentor' });
+        }
+
+        // Buscar dados do aluno para turma e trilha
+        const aluno = await db.getAlunoById(input.alunoId);
+        if (!aluno) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+        }
+
+        // Calcular próximo número de sessão
+        const sessions = await db.getMentoringSessionsByAluno(input.alunoId);
+        const nextSessionNumber = sessions.length > 0 
+          ? Math.max(...sessions.map(s => s.sessionNumber ?? 0)) + 1 
+          : 1;
+
+        const sessionId = await db.createMentoringSession({
+          alunoId: input.alunoId,
+          consultorId,
+          turmaId: aluno.turmaId,
+          trilhaId: aluno.trilhaId,
+          sessionNumber: nextSessionNumber,
+          sessionDate: input.sessionDate,
+          presence: input.presence,
+          taskStatus: input.taskStatus ?? "sem_tarefa",
+          engagementScore: input.engagementScore ?? null,
+          notaEvolucao: input.notaEvolucao ?? null,
+          feedback: input.feedback,
+          mensagemAluno: input.mensagemAluno,
+          taskId: input.taskId ?? null,
+          taskDeadline: input.taskDeadline ?? null,
+        });
+
+        return { success: true, sessionId, sessionNumber: nextSessionNumber };
+      }),
+
+    // Biblioteca de tarefas
+    getTaskLibrary: protectedProcedure.query(async () => {
+      return await db.getAllTaskLibrary();
+    }),
+
+    // Aluno envia relato da tarefa
+    submitRelato: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        relatoAluno: z.string().min(1),
       }))
       .mutation(async ({ input }) => {
         const success = await db.updateMentoringSession(input.sessionId, {
-          notaEvolucao: input.notaEvolucao,
-          feedback: input.feedback
+          relatoAluno: input.relatoAluno,
         });
         return { success };
       }),

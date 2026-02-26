@@ -731,3 +731,98 @@
 
 ## Melhoria UX (13/02/2026) - Datas do Macro-Ciclo na tela de Sessões
 - [x] Exibir data de início e término do Macro-Ciclo na seção "Sessões de Mentoria" do RegistroMentoria
+
+## Portal do Aluno - Redesign Completo (UI-First) - 13/02/2026
+
+### Estrutura de Navegação
+- [ ] Criar navegação por abas/seções no Portal do Aluno
+- [ ] Substituir IndividualDashboard por portal completo com múltiplas seções
+
+### 1. Meu Perfil / Cadastro
+- [ ] Dados pessoais (nome, e-mail, telefone)
+- [ ] Currículo profissional (formação, experiência, habilidades)
+- [ ] Foto do aluno
+- [ ] Botão "Editar Perfil" (funcionalidade futura)
+
+### 2. Assessment
+- [ ] Link externo para realização do teste (configurável)
+- [ ] Status: pendente, em andamento, concluído
+- [ ] Botão para acessar o teste (link externo)
+
+### 3. Relatório de Perfil
+- [ ] Resultado do assessment (upload feito pela mentora - futuro)
+- [ ] Parecer da mentora (futuro)
+- [ ] Placeholder com mensagem "Aguardando relatório"
+
+### 4. Minha Mentora
+- [ ] Perfil da mentora com foto, bio, especialidades
+- [ ] Escolher mentora (funcionalidade futura)
+- [ ] Visualização do perfil da mentora atribuída
+
+### 5. Agenda / Agendamento
+- [ ] Área de agendamento de sessões com a mentora (interno)
+- [ ] Próximas sessões agendadas
+- [ ] Histórico de sessões
+
+### 6. Plataforma de Cursos
+- [ ] Link externo para plataforma de cursos (configurável)
+- [ ] Botão de acesso à plataforma
+
+### 7. Webinars
+- [ ] Próximos webinars (data, tema)
+- [ ] Webinars passados com link YouTube para rever gravação
+- [ ] Botão para registrar presença
+
+### 8. Tarefas / Ações da Mentora
+- [ ] Atividades definidas pela mentora (da biblioteca de tarefas)
+- [ ] Campo de relato do aluno (como executou a tarefa)
+- [ ] Upload de documentos comprobatórios (futuro)
+- [ ] Aviso: enviar arquivos por e-mail para relacionamento@ckmtalents.net
+- [ ] Status de cada tarefa (pendente, entregue, avaliada)
+- [ ] Nota de performance nas tarefas práticas
+
+### 9. Minha Performance
+- [ ] Performance nos cursos
+- [ ] Performance nos webinars
+- [ ] Performance nas mentorias
+- [ ] Performance nas tarefas práticas
+- [ ] Performance Geral (consolidada com 5 indicadores)
+
+### 10. Minha Trilha
+- [ ] Competências definidas pela mentora após assessment
+- [ ] Cursos vinculados a cada competência
+- [ ] Visualização como caminho/jornada
+- [ ] Ciclos/períodos com datas de início e conclusão
+- [ ] Performance por ciclo
+- [ ] Status por ciclo: pendente, em andamento, concluído
+- [ ] Progresso geral na trilha
+
+## Portal do Aluno — Jornada Completa (UI-first com dados fake para apresentação)
+
+### Fase 1 — Onboarding (Stepper guiado)
+- [x] Stepper visual horizontal com 5 etapas e bloqueio sequencial
+- [x] Etapa 1: Cadastro/Perfil — formulário com dados pessoais e profissionais, foto placeholder
+- [x] Etapa 2: Assessment — link externo, status (Pendente/Em andamento/Concluído), mentora marca conclusão
+- [x] Etapa 3: Escolha da Mentora — galeria com cards (foto, mini-CV), clique para CV completo, botão "Escolher", mensagem "sem disponibilidade" se sem slots em 10 dias
+- [x] Etapa 4: Agendamento 1º Encontro — slots de data/hora cadastrados pela mentora + link Google Meet
+- [x] Etapa 5: 1º Encontro — participação via link, mentora registra presença/nota/1ª tarefa
+
+### Fase 2 — Pós-Encontro Inicial
+- [x] Resultado do Assessment disponibilizado pela mentora
+- [x] Trilha de competências definida pela mentora
+- [x] Transição automática do stepper para portal completo
+
+### Fase 3 — Programa de Desenvolvimento (Portal com abas)
+- [x] Aba Cursos/Módulos — link externo para plataforma de cursos
+- [x] Aba Webinars — próximos, gravações YouTube, registro de presença
+- [x] Aba Mentorias Mensais — agendamento com mentora escolhida, slots, link Meet
+- [x] Aba Tarefas/Ações — tarefas da biblioteca, relato texto, aviso email para arquivos
+- [x] Aba Performance — 5 indicadores, nota geral, radar, evolução
+- [x] Aba Minha Trilha — competências por ciclo, progresso, notas, timeline visual
+
+### Dados Fake para Apresentação
+- [x] Dados fake realistas em todas as seções para demonstração
+- [x] Fotos placeholder profissionais para mentoras
+- [x] Slots de agenda fake com datas e links Google Meet
+- [x] Webinars fake com títulos e datas realistas
+- [x] Tarefas fake da biblioteca com prazos e status variados
