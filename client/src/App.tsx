@@ -29,6 +29,7 @@ import DashboardGestor from "./pages/DashboardGestor";
 import DashboardMeuPerfil from "./pages/DashboardMeuPerfil";
 import Assessment from "./pages/Assessment";
 import PortalAluno from "./pages/PortalAluno";
+import Tutoriais from "./pages/Tutoriais";
 
 function Router() {
   return (
@@ -56,6 +57,7 @@ function Router() {
       <Route path={"/dashboard/gestor"} component={DashboardGestor} />
       <Route path={"/assessment"} component={Assessment} />
       <Route path={"/portal-aluno"} component={PortalAluno} />
+      <Route path={"/tutoriais"} component={Tutoriais} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

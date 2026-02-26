@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1307,14 +1308,14 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
 // ============================================================
 
 export default function PortalAluno() {
+  const { user } = useAuth();
+  const firstName = user?.name?.split(" ")[0] || "Aluno";
+
   // Para demonstração, começamos na fase de onboarding
   // Em produção, o estado viria do backend
   const [fase, setFase] = useState<"onboarding" | "desenvolvimento">("onboarding");
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
-
-  // Para demonstração: botão para alternar entre fases
-  const [demoMode, setDemoMode] = useState(false);
 
   const handleStepComplete = () => {
     if (currentStep < 5) {
@@ -1327,33 +1328,38 @@ export default function PortalAluno() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Demo Toggle */}
-        <div className="flex items-center justify-between">
-          <div>
-            {fase === "onboarding" ? (
-              <>
-                <h1 className="text-2xl font-bold text-gray-900">Bem-vinda ao Programa de Mentoria</h1>
-                <p className="text-gray-500 mt-1">Complete as etapas abaixo para iniciar sua jornada</p>
-              </>
-            ) : null}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
-              onClick={() => {
-                if (fase === "onboarding") {
-                  setFase("desenvolvimento");
-                  setSelectedMentora(MENTORAS_FAKE[0]);
-                } else {
-                  setFase("onboarding");
-                  setCurrentStep(1);
+        {/* Mensagem de Bem-vindo */}
+        <div className="rounded-xl bg-gradient-to-r from-[#1B3A5D] to-[#2a5a8a] p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">
+                Bem-vindo(a), {firstName}! <Sparkles className="inline h-6 w-6 text-[#E87722]" />
+              </h1>
+              <p className="mt-1 text-white/80">
+                {fase === "onboarding"
+                  ? "Complete as etapas abaixo para iniciar sua jornada no programa de mentoria."
+                  : "Acompanhe seu progresso no programa de desenvolvimento."
                 }
-              }}
-            >
-              {fase === "onboarding" ? "Ver Portal Completo →" : "← Ver Onboarding"}
-            </Button>
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs border-white/30 text-white hover:bg-white/10 hover:text-white"
+                onClick={() => {
+                  if (fase === "onboarding") {
+                    setFase("desenvolvimento");
+                    setSelectedMentora(MENTORAS_FAKE[0]);
+                  } else {
+                    setFase("onboarding");
+                    setCurrentStep(1);
+                  }
+                }}
+              >
+                {fase === "onboarding" ? "Ver Portal Completo →" : "← Ver Onboarding"}
+              </Button>
+            </div>
           </div>
         </div>
 

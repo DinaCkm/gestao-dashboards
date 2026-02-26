@@ -1,0 +1,50 @@
+{
+  "query": "SELECT a.id, a.externalId, a.name, a.email, a.programId, p.name as programName FROM alunos a LEFT JOIN programs p ON a.programId = p.id LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.externalId, a.name, a.email, a.programId, p.name as programName FROM alunos a LEFT JOIN programs p ON a.programId = p.id LIMIT 5;",
+  "rows": [
+    {
+      "id": "199",
+      "externalId": "605198",
+      "name": "DANIELA RIVA KELLER",
+      "email": "daniela_keller@banrisul.com.br",
+      "programId": "19",
+      "programName": "BANRISUL"
+    },
+    {
+      "id": "200",
+      "externalId": "605199",
+      "name": "MARIA DE FATIMA MACIEL PEREIRA",
+      "email": "Maria_Fatima_Pereira@banrisul.com.br",
+      "programId": "19",
+      "programName": "BANRISUL"
+    },
+    {
+      "id": "201",
+      "externalId": "605200",
+      "name": "MARCO AURELIO MARCONATO",
+      "email": "Marco_Marconato@banrisul.com.br",
+      "programId": "19",
+      "programName": "BANRISUL"
+    },
+    {
+      "id": "202",
+      "externalId": "605201",
+      "name": "FABIANA DE BRITO GOMES",
+      "email": "Fabiana_Gomes@banrisul.com.br",
+      "programId": "19",
+      "programName": "BANRISUL"
+    },
+    {
+      "id": "203",
+      "externalId": "605202",
+      "name": "MARVIN DE ALMEIDA FONTANA",
+      "email": "Marvin_Fontana@banrisul.com.br",
+      "programId": "19",
+      "programName": "BANRISUL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\texternalId\tname\temail\tprogramId\tprogramName\n199\t605198\tDANIELA RIVA KELLER\tdaniela_keller@banrisul.com.br\t19\tBANRISUL\n200\t605199\tMARIA DE FATIMA MACIEL PEREIRA\tMaria_Fatima_Pereira@banrisul.com.br\t19\tBANRISUL\n201\t605200\tMARCO AURELIO MARCONATO\tMarco_Marconato@banrisul.com.br\t19\tBANRISUL\n202\t605201\tFABIANA DE BRITO GOMES\tFabiana_Gomes@banrisul.com.br\t19\tBANRISUL\n203\t605202\tMARVIN DE ALMEIDA FONTANA\tMarvin_Fontana@banrisul.com.br\t19\tBANRISUL\n",
+  "stderr": "",
+  "execution_time_ms": 366
+}

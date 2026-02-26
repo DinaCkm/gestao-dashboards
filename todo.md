@@ -826,3 +826,10 @@
 - [x] Slots de agenda fake com datas e links Google Meet
 - [x] Webinars fake com títulos e datas realistas
 - [x] Tarefas fake da biblioteca com prazos e status variados
+
+## Ajustes Portal do Aluno (26/02/2026)
+- [x] Redirecionar aluno (role user) para /portal-aluno após login
+- [x] Menu lateral do aluno: Portal do Aluno, Meu Painel, Tutoriais
+- [x] Mensagem "Bem-vindo" com nome do aluno no Portal
+- [x] Criar página de Tutoriais com vídeos explicativos da plataforma (cards com links, sem gerar vídeos)
+- [x] Registrar rota /tutoriais no App.tsx

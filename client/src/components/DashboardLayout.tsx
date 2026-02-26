@@ -40,7 +40,9 @@ import {
   BookOpen,
   Target,
   ClipboardEdit,
-  ClipboardCheck
+  ClipboardCheck,
+  PlayCircle,
+  Compass
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -77,8 +79,9 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], hideIfConsultorId: true },
   
   // === ALUNO INDIVIDUAL ===
-  { icon: User, label: "Meu Dashboard", path: "/meu-dashboard", roles: ["user"] },
-  { icon: GraduationCap, label: "Portal do Aluno", path: "/portal-aluno", roles: ["user", "admin"] },
+  { icon: Compass, label: "Portal do Aluno", path: "/portal-aluno", roles: ["user"] },
+  { icon: User, label: "Meu Painel", path: "/meu-dashboard", roles: ["user"] },
+  { icon: PlayCircle, label: "Tutoriais", path: "/tutoriais", roles: ["user"] },
   
   // === CADASTROS ===
   { icon: Users, label: "Cadastros", path: "/cadastros", roles: ["admin"] },

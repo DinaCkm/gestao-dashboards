@@ -40,7 +40,7 @@ export default function Home() {
     }
     
     if (user.role === "user") {
-      setLocation("/meu-dashboard");
+      setLocation("/portal-aluno");
       return;
     }
     // admin stays on Home
