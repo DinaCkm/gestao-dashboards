@@ -7,10 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import {
   Video, Calendar, Clock, ExternalLink, Youtube, Megaphone,
   BookOpen, Sparkles, Bell, ArrowRight, Users, Globe,
   GraduationCap, Zap, ChevronRight, PlayCircle, Info,
-  CalendarDays, MapPin, Star, Loader2
+  CalendarDays, MapPin, Star, Loader2, CheckCircle2,
+  AlertTriangle, MessageSquareText, Send, HandHeart
 } from "lucide-react";
 
 // ============================================================
@@ -56,6 +62,231 @@ const TYPE_CONFIG: Record<string, { label: string; icon: any; color: string; bgC
   notice: { label: "Aviso", icon: Bell, color: "text-amber-700", bgColor: "bg-amber-50 border-amber-200" },
   news: { label: "Novidade", icon: Sparkles, color: "text-rose-700", bgColor: "bg-rose-50 border-rose-200" },
 };
+
+// ============================================================
+// ATTENDANCE BANNER - Aviso para marcar presença
+// ============================================================
+
+function AttendanceBanner({ pendingCount, onOpenModal }: { pendingCount: number; onOpenModal: () => void }) {
+  if (pendingCount === 0) return null;
+
+  return (
+    <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200 shadow-sm">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/30 rounded-full blur-2xl -translate-y-1/2 translate-x-1/4" />
+      <div className="relative flex items-center gap-4 p-4 sm:p-5">
+        <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 ring-4 ring-amber-200/50">
+          <HandHeart className="h-6 w-6 text-amber-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-amber-900 text-sm sm:text-base">
+            Não deixe de marcar sua presença!
+          </h3>
+          <p className="text-xs sm:text-sm text-amber-700/80 mt-0.5">
+            Você tem <strong>{pendingCount} evento{pendingCount > 1 ? "s" : ""}</strong> pendente{pendingCount > 1 ? "s" : ""} de confirmação de presença.
+          </p>
+        </div>
+        <Button
+          onClick={onOpenModal}
+          className="bg-amber-600 hover:bg-amber-700 text-white shadow-md flex-shrink-0"
+          size="sm"
+        >
+          <MessageSquareText className="h-4 w-4 mr-1.5" />
+          Clique aqui
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// ATTENDANCE MODAL - Marcar presença com reflexão
+// ============================================================
+
+function AttendanceModal({
+  open,
+  onOpenChange,
+  pendingWebinars,
+  onMarkPresence,
+  isSubmitting,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  pendingWebinars: any[];
+  onMarkPresence: (eventId: number, reflexao: string) => void;
+  isSubmitting: boolean;
+}) {
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [reflexao, setReflexao] = useState("");
+  const [step, setStep] = useState<"list" | "reflexao">("list");
+
+  const handleSelectEvent = (eventId: number) => {
+    setSelectedEventId(eventId);
+    setReflexao("");
+    setStep("reflexao");
+  };
+
+  const handleBack = () => {
+    setStep("list");
+    setSelectedEventId(null);
+    setReflexao("");
+  };
+
+  const handleSubmit = () => {
+    if (!selectedEventId || reflexao.trim().length < 20) {
+      toast.error("A reflexão deve ter pelo menos 20 caracteres.");
+      return;
+    }
+    onMarkPresence(selectedEventId, reflexao.trim());
+  };
+
+  const selectedEvent = pendingWebinars.find(w => w.eventId === selectedEventId);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setStep("list"); setSelectedEventId(null); setReflexao(""); } }}>
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-[#1B3A5D]">
+            <CheckCircle2 className="h-5 w-5 text-[#E87722]" />
+            {step === "list" ? "Confirmar Presença em Eventos" : "Registrar Presença e Reflexão"}
+          </DialogTitle>
+          <DialogDescription className="text-left">
+            {step === "list"
+              ? "Selecione o evento para registrar sua presença e compartilhar sua reflexão."
+              : `Evento: ${selectedEvent?.eventName || ""}`
+            }
+          </DialogDescription>
+        </DialogHeader>
+
+        {step === "list" && (
+          <div className="space-y-3 mt-2">
+            {/* Alerta educativo */}
+            <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+              <div className="flex gap-3">
+                <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs sm:text-sm text-blue-800 leading-relaxed">
+                  Antes de registrar sua presença, compartilhe conosco suas percepções e insights sobre o evento.
+                  Lembre-se: a participação nos webinars é uma oportunidade valiosa para o seu desenvolvimento
+                  profissional e pessoal — o verdadeiro ganho está no aprendizado, não apenas no registro de presença.
+                  Registrar presença sem ter participado de fato significa abrir mão de uma oportunidade real de
+                  crescimento. <strong>O maior beneficiado — ou prejudicado — por essa escolha é você.</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* Lista de eventos pendentes */}
+            {pendingWebinars.length === 0 ? (
+              <div className="text-center py-8">
+                <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                <p className="text-sm font-medium text-gray-900">Tudo em dia!</p>
+                <p className="text-xs text-gray-500 mt-1">Você não tem eventos pendentes de confirmação.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {pendingWebinars.map((w: any) => (
+                  <button
+                    key={w.eventId}
+                    onClick={() => handleSelectEvent(w.eventId)}
+                    className="w-full text-left rounded-lg border border-gray-200 hover:border-[#E87722] hover:bg-orange-50/50 p-3 transition-all group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 group-hover:text-[#1B3A5D] truncate">
+                          {w.eventName}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                          <Calendar className="h-3 w-3" />
+                          {formatDate(w.eventDate)}
+                          {w.hasParticipation && w.status === "presente" && (
+                            <Badge className="bg-green-50 text-green-700 border-green-200 text-[10px]">
+                              Presença registrada (planilha)
+                            </Badge>
+                          )}
+                          {w.hasParticipation && w.status === "ausente" && (
+                            <Badge className="bg-red-50 text-red-600 border-red-200 text-[10px]">
+                              Ausente (planilha)
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E87722] flex-shrink-0" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === "reflexao" && selectedEvent && (
+          <div className="space-y-4 mt-2">
+            {/* Info do evento selecionado */}
+            <div className="rounded-lg bg-gray-50 border p-3">
+              <div className="flex items-center gap-2">
+                <Video className="h-4 w-4 text-[#1B3A5D]" />
+                <span className="text-sm font-medium text-gray-900">{selectedEvent.eventName}</span>
+              </div>
+              <span className="text-xs text-gray-500 ml-6">{formatDate(selectedEvent.eventDate)}</span>
+            </div>
+
+            {/* Alerta educativo compacto */}
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <div className="flex gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Compartilhe suas percepções e insights sobre o evento. O verdadeiro ganho está no aprendizado.
+                  <strong> O maior beneficiado — ou prejudicado — por essa escolha é você.</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* Campo de reflexão */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Sua reflexão sobre o evento <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                value={reflexao}
+                onChange={(e) => setReflexao(e.target.value)}
+                placeholder="Compartilhe o que você aprendeu, quais insights levou deste evento e como pretende aplicar esse conhecimento no seu dia a dia..."
+                className="min-h-[140px] resize-y"
+                maxLength={2000}
+              />
+              <div className="flex justify-between mt-1.5">
+                <span className={`text-xs ${reflexao.length < 20 ? "text-red-500" : "text-gray-400"}`}>
+                  {reflexao.length < 20 ? `Mínimo 20 caracteres (faltam ${20 - reflexao.length})` : ""}
+                </span>
+                <span className="text-xs text-gray-400">{reflexao.length}/2000</span>
+              </div>
+            </div>
+
+            <DialogFooter className="flex gap-2 sm:gap-2">
+              <Button variant="outline" onClick={handleBack} disabled={isSubmitting}>
+                Voltar
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={isSubmitting || reflexao.trim().length < 20}
+                className="bg-[#1B3A5D] hover:bg-[#1B3A5D]/90 text-white"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Registrando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Confirmar Presença
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // ============================================================
 // HERO BANNER - Próximo Webinar em Destaque
@@ -169,10 +400,18 @@ function HeroBanner({ webinar }: { webinar: any }) {
 }
 
 // ============================================================
-// WEBINAR CARD (para lista)
+// WEBINAR CARD (para lista) - com badge de presença
 // ============================================================
 
-function WebinarCard({ webinar, variant = "upcoming" }: { webinar: any; variant?: "upcoming" | "past" }) {
+function WebinarCard({
+  webinar,
+  variant = "upcoming",
+  attendanceStatus,
+}: {
+  webinar: any;
+  variant?: "upcoming" | "past";
+  attendanceStatus?: "confirmed" | "pending" | null;
+}) {
   const isPast = variant === "past";
 
   return (
@@ -201,17 +440,33 @@ function WebinarCard({ webinar, variant = "upcoming" }: { webinar: any; variant?
                 <span className="text-xs text-gray-500">{webinar.theme}</span>
               )}
             </div>
-            {isPast && webinar.youtubeLink && (
-              <Badge className="bg-red-50 text-red-600 border-red-200 text-xs flex-shrink-0">
-                <PlayCircle className="h-3 w-3 mr-1" />
-                Gravação
-              </Badge>
-            )}
-            {!isPast && (
-              <Badge className="bg-green-50 text-green-700 border-green-200 text-xs flex-shrink-0">
-                Próximo
-              </Badge>
-            )}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {/* Badge de presença */}
+              {attendanceStatus === "confirmed" && (
+                <Badge className="bg-green-50 text-green-700 border-green-200 text-[10px]">
+                  <CheckCircle2 className="h-3 w-3 mr-0.5" />
+                  Presença confirmada
+                </Badge>
+              )}
+              {attendanceStatus === "pending" && isPast && (
+                <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] animate-pulse">
+                  <AlertTriangle className="h-3 w-3 mr-0.5" />
+                  Pendente
+                </Badge>
+              )}
+              {/* Badge de status do evento */}
+              {isPast && webinar.youtubeLink && !attendanceStatus && (
+                <Badge className="bg-red-50 text-red-600 border-red-200 text-xs">
+                  <PlayCircle className="h-3 w-3 mr-1" />
+                  Gravação
+                </Badge>
+              )}
+              {!isPast && (
+                <Badge className="bg-green-50 text-green-700 border-green-200 text-xs">
+                  Próximo
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-3">
@@ -362,13 +617,36 @@ function EmptyState({ icon: Icon, title, description }: { icon: any; title: stri
 export default function MuralAluno() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("todos");
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
 
   // Hooks - todos declarados no topo
   const { data: upcomingWebinars, isLoading: loadingUpcoming } = trpc.webinars.upcoming.useQuery({ limit: 20 });
   const { data: pastWebinars, isLoading: loadingPast } = trpc.webinars.past.useQuery({ limit: 20 });
   const { data: activeAnnouncements, isLoading: loadingAnnouncements } = trpc.announcements.active.useQuery();
+  const { data: pendingAttendance, isLoading: loadingPending, refetch: refetchPending } = trpc.attendance.pending.useQuery();
+  const { data: myAttendance, refetch: refetchMyAttendance } = trpc.attendance.myAttendance.useQuery();
+
+  const utils = trpc.useUtils();
+
+  const markPresenceMutation = trpc.attendance.markPresence.useMutation({
+    onSuccess: () => {
+      toast.success("Presença registrada com sucesso! Obrigado pela sua reflexão.");
+      setAttendanceModalOpen(false);
+      refetchPending();
+      refetchMyAttendance();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erro ao registrar presença. Tente novamente.");
+    },
+  });
 
   const isLoading = loadingUpcoming || loadingPast || loadingAnnouncements;
+
+  // Map de eventIds confirmados pelo aluno
+  const confirmedEventIds = useMemo(() => {
+    if (!myAttendance) return new Set<number>();
+    return new Set(myAttendance.map((a: any) => a.eventId));
+  }, [myAttendance]);
 
   // Separar announcements por tipo
   const announcementsByType = useMemo(() => {
@@ -402,7 +680,6 @@ export default function MuralAluno() {
       }));
     }
 
-    // Sort: upcoming webinars first (by date asc), then announcements (by priority desc, date desc)
     return items.sort((a, b) => {
       if (a.type === "upcoming_webinar" && b.type !== "upcoming_webinar") return -1;
       if (a.type !== "upcoming_webinar" && b.type === "upcoming_webinar") return 1;
@@ -414,6 +691,14 @@ export default function MuralAluno() {
   }, [upcomingWebinars, activeAnnouncements]);
 
   const firstName = user?.name?.split(" ")[0] || "Aluno";
+  const pendingCount = pendingAttendance?.length || 0;
+
+  // Determinar status de presença de um webinar
+  const getAttendanceStatus = (webinarId: number): "confirmed" | "pending" | null => {
+    if (confirmedEventIds.has(webinarId)) return "confirmed";
+    if (pendingAttendance?.some((p: any) => p.eventId === webinarId)) return "pending";
+    return null;
+  };
 
   // Early return para loading
   if (isLoading) {
@@ -430,7 +715,6 @@ export default function MuralAluno() {
   }
 
   const nextWebinar = upcomingWebinars && upcomingWebinars.length > 0 ? upcomingWebinars[0] : null;
-  const remainingUpcoming = upcomingWebinars ? upcomingWebinars.slice(1) : [];
 
   return (
     <AlunoLayout>
@@ -450,6 +734,21 @@ export default function MuralAluno() {
             {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </div>
         </div>
+
+        {/* Banner de Presença Pendente */}
+        <AttendanceBanner
+          pendingCount={pendingCount}
+          onOpenModal={() => setAttendanceModalOpen(true)}
+        />
+
+        {/* Modal de Presença/Reflexão */}
+        <AttendanceModal
+          open={attendanceModalOpen}
+          onOpenChange={setAttendanceModalOpen}
+          pendingWebinars={pendingAttendance || []}
+          onMarkPresence={(eventId, reflexao) => markPresenceMutation.mutate({ eventId, reflexao })}
+          isSubmitting={markPresenceMutation.isPending}
+        />
 
         {/* Hero Banner - Próximo Webinar */}
         {nextWebinar && <HeroBanner webinar={nextWebinar} />}
@@ -624,7 +923,12 @@ export default function MuralAluno() {
             {pastWebinars && pastWebinars.length > 0 ? (
               <div className="space-y-3">
                 {pastWebinars.map((w: any) => (
-                  <WebinarCard key={w.id} webinar={w} variant="past" />
+                  <WebinarCard
+                    key={w.id}
+                    webinar={w}
+                    variant="past"
+                    attendanceStatus={getAttendanceStatus(w.id)}
+                  />
                 ))}
               </div>
             ) : (

@@ -3158,3 +3158,133 @@ export async function getStudentEmailsByProgram(programId?: number): Promise<{em
       isNotNull(users.email)
     ));
 }
+
+
+// ============ WEBINAR ATTENDANCE (Self-reported) ============
+
+/**
+ * Marcar presença do aluno em um evento com reflexão
+ * Se já existe registro (importado da planilha), atualiza com reflexão e selfReportedAt
+ * Se não existe, cria novo registro com status "presente"
+ */
+export async function markWebinarAttendance(
+  alunoId: number,
+  eventId: number,
+  reflexao: string
+): Promise<{ updated: boolean; created: boolean }> {
+  const db = await getDb();
+  if (!db) return { updated: false, created: false };
+
+  // Verificar se já existe registro de participação
+  const existing = await db.select()
+    .from(eventParticipation)
+    .where(and(
+      eq(eventParticipation.alunoId, alunoId),
+      eq(eventParticipation.eventId, eventId)
+    ))
+    .limit(1);
+
+  if (existing.length > 0) {
+    // Atualizar registro existente com reflexão e marcar como presente
+    await db.update(eventParticipation)
+      .set({
+        status: "presente",
+        reflexao,
+        selfReportedAt: new Date(),
+      })
+      .where(eq(eventParticipation.id, existing[0].id));
+    return { updated: true, created: false };
+  } else {
+    // Criar novo registro
+    await db.insert(eventParticipation).values({
+      alunoId,
+      eventId,
+      status: "presente",
+      reflexao,
+      selfReportedAt: new Date(),
+    });
+    return { updated: false, created: true };
+  }
+}
+
+/**
+ * Buscar webinars pendentes de presença para um aluno
+ * Retorna eventos do programa do aluno onde ele ainda não marcou presença (selfReportedAt é null)
+ */
+export async function getWebinarsPendingAttendance(alunoId: number): Promise<{
+  eventId: number;
+  eventName: string;
+  eventDate: Date | null;
+  hasParticipation: boolean;
+  status: string | null;
+}[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Buscar aluno para saber o programId
+  const aluno = await getAlunoById(alunoId);
+  if (!aluno) return [];
+
+  // Buscar todos os eventos do programa do aluno
+  const allEvents = aluno.programId
+    ? await db.select().from(events).where(eq(events.programId, aluno.programId))
+    : await db.select().from(events);
+
+  // Buscar participações do aluno
+  const participations = await db.select()
+    .from(eventParticipation)
+    .where(eq(eventParticipation.alunoId, alunoId));
+
+  const participationMap = new Map(participations.map(p => [p.eventId, p]));
+
+  // Retornar eventos onde selfReportedAt é null (não marcou presença pelo sistema)
+  return allEvents.map(evt => {
+    const part = participationMap.get(evt.id);
+    return {
+      eventId: evt.id,
+      eventName: evt.title,
+      eventDate: evt.eventDate,
+      hasParticipation: !!part,
+      status: part?.status || null,
+      selfReported: !!part?.selfReportedAt,
+      reflexao: part?.reflexao || null,
+    };
+  }).filter(e => !participationMap.get(e.eventId)?.selfReportedAt);
+}
+
+/**
+ * Buscar todas as reflexões dos alunos (para admin)
+ */
+export async function getWebinarReflections(eventId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [isNotNull(eventParticipation.reflexao)];
+  if (eventId) {
+    conditions.push(eq(eventParticipation.eventId, eventId));
+  }
+
+  const results = await db.select({
+    id: eventParticipation.id,
+    eventId: eventParticipation.eventId,
+    alunoId: eventParticipation.alunoId,
+    reflexao: eventParticipation.reflexao,
+    selfReportedAt: eventParticipation.selfReportedAt,
+    status: eventParticipation.status,
+  })
+    .from(eventParticipation)
+    .where(and(...conditions))
+    .orderBy(desc(eventParticipation.selfReportedAt));
+
+  // Enriquecer com nomes
+  const alunosList = await getAlunos();
+  const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+  const eventsList = await db.select().from(events);
+  const eventMap = new Map(eventsList.map(e => [e.id, e]));
+
+  return results.map(r => ({
+    ...r,
+    alunoName: alunoMap.get(r.alunoId)?.name || 'Desconhecido',
+    eventName: eventMap.get(r.eventId)?.title || 'Evento desconhecido',
+  }));
+}

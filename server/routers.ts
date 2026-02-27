@@ -2497,6 +2497,54 @@ export const appRouter = router({
         return await db.listActiveAnnouncementsForStudent();
       }),
   }),
+
+  // ==================== ATTENDANCE (Presença + Reflexão) ====================
+  attendance: router({
+    // Aluno marca presença e envia reflexão
+    markPresence: protectedProcedure
+      .input(z.object({
+        eventId: z.number(),
+        reflexao: z.string().min(20, 'A reflexão deve ter pelo menos 20 caracteres'),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Buscar alunoId pelo userId logado
+        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        if (!aluno) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+        }
+        const result = await db.markWebinarAttendance(aluno.id, input.eventId, input.reflexao);
+        return { success: true, ...result };
+      }),
+
+    // Listar webinars pendentes de presença do aluno
+    pending: protectedProcedure
+      .query(async ({ ctx }) => {
+        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        if (!aluno) return [];
+        return await db.getWebinarsPendingAttendance(aluno.id);
+      }),
+
+    // Listar webinars já confirmados pelo aluno (com reflexão)
+    myAttendance: protectedProcedure
+      .query(async ({ ctx }) => {
+        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        if (!aluno) return [];
+        const participations = await db.getEventParticipationByAluno(aluno.id);
+        return participations.filter(p => p.selfReportedAt !== null).map(p => ({
+          eventId: p.eventId,
+          reflexao: p.reflexao,
+          selfReportedAt: p.selfReportedAt,
+          status: p.status,
+        }));
+      }),
+
+    // Admin: visualizar reflexões dos alunos
+    reflections: adminProcedure
+      .input(z.object({ eventId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getWebinarReflections(input?.eventId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

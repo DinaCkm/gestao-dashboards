@@ -935,3 +935,26 @@
 - [x] Integrar com endpoints existentes (webinars.upcoming, webinars.past, announcements.active)
 - [x] Adicionar menu "Mural" no sidebar do aluno como primeira opção
 - [x] Design responsivo e visualmente atrativo (hero banner, quick stats, tabs)
+
+## Presença e Reflexão em Webinars - Aluno (26/02/2026)
+- [ ] Criar tabela webinar_attendance (presença + reflexão do aluno por webinar)
+- [ ] Migrar tabela no banco de dados
+- [ ] Criar endpoints tRPC para marcar presença e enviar reflexão
+- [ ] Criar endpoint para listar presenças do aluno
+- [ ] Criar interface no Mural do Aluno para marcar presença e escrever reflexão
+- [ ] Integrar presença via reflexão com cálculo da nota de participação em eventos
+- [ ] Admin pode visualizar reflexões e presenças dos alunos
+- [ ] Testes vitest para os novos endpoints
+
+## Presença e Reflexão em Webinars - Simplificado (26/02/2026)
+- [x] Adicionar coluna `reflexao` (text) e `selfReportedAt` (timestamp) na tabela event_participation
+- [x] Criar endpoint tRPC para aluno marcar presença com reflexão
+- [x] Criar endpoint tRPC para listar webinars pendentes de presença do aluno
+- [x] Criar banner de aviso no Mural do Aluno ("Não deixe de marcar sua presença!")
+- [x] Criar modal/painel para marcar presença e escrever reflexão
+- [x] Badges nos cards: "Presença confirmada" (verde) / "Pendente" (laranja)
+- [x] Presença registrada na mesma tabela event_participation (integra com Indicador 6)
+- [x] Admin pode visualizar reflexões dos alunos (endpoint attendance.reflections)
+- [x] Testes vitest (9 testes passando, 154 total)
+- [ ] Incluir alerta educativo: "Registre presença somente após deixar sua percepção e insights. A participação é para seu desenvolvimento, não para marcar ponto."
+- [x] Incluir alerta educativo aprovado no modal de presença

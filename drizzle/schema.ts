@@ -241,6 +241,8 @@ export const eventParticipation = mysqlTable("event_participation", {
   eventId: int("eventId").notNull(),
   alunoId: int("alunoId").notNull(),
   status: mysqlEnum("status", ["presente", "ausente"]).notNull(),
+  reflexao: text("reflexao"), // Reflexão do aluno após assistir o webinar
+  selfReportedAt: timestamp("selfReportedAt"), // Data/hora que o aluno marcou presença
   batchId: int("batchId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
