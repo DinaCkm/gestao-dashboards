@@ -691,7 +691,10 @@ export default function WebinarsAdmin() {
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Video className="h-5 w-5" />
@@ -718,7 +721,10 @@ export default function WebinarsAdmin() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingWebinar} onOpenChange={(open) => !open && setTimeout(() => setEditingWebinar(null), 100)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5" />

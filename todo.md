@@ -1170,3 +1170,7 @@
 
 ## Bug - Select de Trilha fecha o Dialog de Novo Assessment (27/02/2026 - sessão 3)
 - [x] Corrigir Select de Trilha dentro do Dialog de criação de Assessment - adicionado onPointerDownOutside e onInteractOutside com preventDefault no DialogContent
+
+## Bugs Webinar - Formulário fecha ao digitar e dificuldade para salvar (27/02/2026 - sessão 3)
+- [x] Corrigido: tela de edição de webinar fechava ao interagir com Select (Portal) - adicionado onPointerDownOutside/onInteractOutside preventDefault nos DialogContent de criar e editar
+- [x] Corrigido: campos difíceis de salvar - mesmo problema do dialog fechando prematuramente, resolvido com a mesma correção
