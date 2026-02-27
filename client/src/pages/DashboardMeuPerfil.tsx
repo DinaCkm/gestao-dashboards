@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import DashboardLayout from "@/components/DashboardLayout";
+import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -182,17 +182,17 @@ export default function DashboardMeuPerfil() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
+      <AlunoLayout>
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
-      </DashboardLayout>
+      </AlunoLayout>
     );
   }
 
   if (!data || !data.found) {
     return (
-      <DashboardLayout>
+      <AlunoLayout>
         <div className="flex flex-col items-center justify-center h-96 gap-4">
           <User className="h-16 w-16 text-gray-500" />
           <h2 className="text-xl font-semibold text-gray-300">Perfil não encontrado</h2>
@@ -200,7 +200,7 @@ export default function DashboardMeuPerfil() {
             {data && !data.found ? data.message : "Não foi possível carregar seus dados. Entre em contato com o administrador."}
           </p>
         </div>
-      </DashboardLayout>
+      </AlunoLayout>
     );
   }
 
@@ -211,7 +211,7 @@ export default function DashboardMeuPerfil() {
   const engComp = indicadores.engajamentoComponentes || { presenca: indicadores.participacaoMentorias, atividades: indicadores.atividadesPraticas, notaMentora: indicadores.engajamento };
 
   return (
-    <DashboardLayout>
+    <AlunoLayout>
       <div className="space-y-6">
         {/* Header com informações do aluno */}
         <div className="flex flex-col lg:flex-row gap-6">
@@ -774,6 +774,6 @@ export default function DashboardMeuPerfil() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
+    </AlunoLayout>
   );
 }

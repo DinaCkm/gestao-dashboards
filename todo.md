@@ -837,3 +837,10 @@
 ## Dados Reais do Aluno no Portal (26/02/2026)
 - [x] Formulário de cadastro do Portal do Aluno deve puxar dados reais do aluno logado (nome, email, telefone, empresa, cargo)
 - [x] Mensagem Bem-vindo deve usar o nome real do aluno logado
+
+## Layout Exclusivo do Aluno - Navegação Horizontal (26/02/2026)
+- [x] Criar componente AlunoLayout com header + navegação horizontal no topo (sem sidebar)
+- [x] Atualizar PortalAluno para usar AlunoLayout em vez de DashboardLayout
+- [x] Atualizar DashboardMeuPerfil para usar AlunoLayout quando role=user
+- [x] Atualizar Tutoriais para usar AlunoLayout quando role=user
+- [x] Layout responsivo para mobile

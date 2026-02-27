@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import DashboardLayout from "@/components/DashboardLayout";
+import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -1347,7 +1347,7 @@ export default function PortalAluno() {
   };
 
   return (
-    <DashboardLayout>
+    <AlunoLayout>
       <div className="space-y-6">
         {/* Mensagem de Bem-vindo */}
         <div className="rounded-xl bg-gradient-to-r from-[#1B3A5D] to-[#2a5a8a] p-6 text-white shadow-lg">
@@ -1403,6 +1403,6 @@ export default function PortalAluno() {
           <PortalDesenvolvimento mentora={selectedMentora || MENTORAS_FAKE[0]} />
         )}
       </div>
-    </DashboardLayout>
+    </AlunoLayout>
   );
 }
