@@ -1166,7 +1166,7 @@
 - [x] Ajustar layout da página de Gestão de Webinários - envolvida com DashboardLayout para padding e sidebar corretos
 
 ## Mover Plano Individual do admin para mentora (27/02/2026 - sessão 3)
-- [ ] Remover "Plano Individual" do menu sidebar do admin e manter apenas para mentora (manager)
+- [x] Mover "Plano Individual" do menu sidebar do admin para o menu da mentora (manager)
 
 ## Bug - Select de Trilha fecha o Dialog de Novo Assessment (27/02/2026 - sessão 3)
 - [x] Corrigir Select de Trilha dentro do Dialog de criação de Assessment - adicionado onPointerDownOutside e onInteractOutside com preventDefault no DialogContent

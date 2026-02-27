@@ -92,7 +92,7 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager"] },
   { icon: GraduationCap, label: "Turmas", path: "/turmas", roles: ["admin"] },
   { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias", roles: ["admin"] },
-  { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["admin"] },
+  { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["manager"] },
   { icon: Video, label: "Webinars", path: "/webinars", roles: ["admin"] },
   { icon: Megaphone, label: "Avisos e Comunicados", path: "/avisos", roles: ["admin"] },
   { icon: Calculator, label: "Fórmulas", path: "/formulas", roles: ["admin"] },
