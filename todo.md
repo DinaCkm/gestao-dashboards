@@ -1118,3 +1118,37 @@
 
 ## Mostrar nome do webinar na aba Eventos do Portal do Aluno (27/02/2026)
 - [x] Corrigir query para trazer o nome real do evento/webinar em vez de "Evento #ID"
+
+## MVP Reestruturação Trilhas/Ciclos/Contratos (27/02/2026)
+- [x] Criar tabela contratos_aluno no schema
+- [x] Adicionar campo isAssessment em mentoring_sessions
+- [x] Adicionar campos nivelAtual, metaFinal, justificativa em assessment_competencias
+- [x] Criar tabela historico_nivel_competencia
+- [x] Migrar dados: marcar sessionNumber=1 como isAssessment=1
+- [x] Criar queries e rotas tRPC para CRUD de contratos
+- [x] Criar rota tRPC para cálculo de saldo de sessões
+- [x] Criar rota tRPC para atualizar nível de competência
+- [ ] Seção Definições Contratuais no cadastro do aluno (admin)
+- [ ] Card de contrato na área da mentora (somente leitura)
+- [x] Campos de nível no formulário de Assessment (substituir nota de corte)
+- [x] Unificar abas Trilha+PDI em "Minha Jornada" no Portal do Aluno
+- [x] Card "Meu Contrato" no Portal do Aluno
+- [x] Card de metas de desenvolvimento detalhado no Mural do Aluno
+- [x] Renomear Ciclo→Jornada e Corte→Meta na tela de Assessment
+
+## Ajustes solicitados pelo cliente (27/02/2026 - sessão 2)
+- [x] Adicionar campos metaCiclo1 e metaCiclo2 no schema assessment_competencias
+- [x] Formulário de competências na área da mentora: nível atual, meta ciclo 1, meta ciclo 2, meta final, justificativa
+- [x] Barras de progresso coloridas (vermelho/amarelo/verde) por faixa de percentual
+- [x] Botão "Salvar e liberar trilha" no formulário da mentora
+- [x] Portal do Aluno: aba Minha Jornada unificada com barras de progresso
+- [x] Mural do Aluno: card de metas de desenvolvimento detalhado
+- [x] Gatilho de reavaliação automática a cada 3 encontros de mentoria
+- [x] Histórico de reavaliação: novo percentual, comentário de evolução, evidência prática
+
+## Correções de bugs (27/02/2026 - sessão 3)
+- [x] Fix: checkReavaliacaoPendente usava `created_at` ao invés de `createdAt` (coluna camelCase)
+- [x] Fix: updateAssessmentCompetenciaFields usava nomes de coluna snake_case ao invés de camelCase
+- [x] Fix: SQL raw sem backtick escaping para colunas camelCase
+- [x] Fix: updateNivelCompetencia usava assessmentPdiId diretamente como alunoId (deveria buscar do PDI)
+- [x] Fix: 5 registros de migração faltando na tabela __drizzle_migrations (0018-0022)

@@ -1,0 +1,16 @@
+{
+  "query": "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME IN ('contratos_aluno', 'historico_nivel_competencia') AND TABLE_SCHEMA = DATABASE();",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_NAME IN ('contratos_aluno', 'historico_nivel_competencia') AND TABLE_SCHEMA = DATABASE();",
+  "rows": [
+    {
+      "TABLE_NAME": "contratos_aluno"
+    },
+    {
+      "TABLE_NAME": "historico_nivel_competencia"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\ncontratos_aluno\nhistorico_nivel_competencia\n",
+  "stderr": "",
+  "execution_time_ms": 370
+}

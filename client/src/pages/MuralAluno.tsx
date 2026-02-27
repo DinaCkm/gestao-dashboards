@@ -15,8 +15,9 @@ import {
   Sparkles, GraduationCap, Zap, ChevronRight,
   Info, CalendarDays, Users, Star, Loader2,
   CheckCircle2, AlertTriangle, MessageSquareText, HandHeart,
-  ArrowLeft, Send, BookOpen
+  ArrowLeft, Send, BookOpen, Target, Award, TrendingUp
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 // ============================================================
 // HELPERS
@@ -712,6 +713,7 @@ export default function MuralAluno() {
   const { data: activeAnnouncements, isLoading: loadingAnnouncements } = trpc.announcements.active.useQuery();
   const { data: pendingAttendance, refetch: refetchPending } = trpc.attendance.pending.useQuery();
   const { data: myAttendance, refetch: refetchMyAttendance } = trpc.attendance.myAttendance.useQuery();
+  const { data: jornadaData } = trpc.jornada.minha.useQuery();
 
   const markPresenceMutation = trpc.attendance.markPresence.useMutation({
     onSuccess: () => {
@@ -807,12 +809,6 @@ export default function MuralAluno() {
             </div>
           </div>
 
-          {/* Attendance Banner */}
-          <AttendanceBanner
-            pendingCount={pendingCount}
-            onOpenModal={() => setAttendanceModalOpen(true)}
-          />
-
           {/* Attendance Modal */}
           <AttendanceModal
             open={attendanceModalOpen}
@@ -820,6 +816,133 @@ export default function MuralAluno() {
             pendingWebinars={pendingAttendance || []}
             onMarkPresence={(eventId, reflexao) => markPresenceMutation.mutate({ eventId, reflexao })}
             isSubmitting={markPresenceMutation.isPending}
+          />
+
+          {/* ====== CARD DESTAQUE: Minha Jornada de Desenvolvimento ====== */}
+          {jornadaData && jornadaData.macroJornadas && jornadaData.macroJornadas.length > 0 && (
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0A1E3E] via-[#0A1E3E] to-[#061529] text-white shadow-xl">
+              {/* Background decoration */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-[#F5991F] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
+              </div>
+
+              <div className="relative p-6 lg:p-8">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#F5991F]/20 flex items-center justify-center">
+                      <Target className="h-5 w-5 text-[#F5991F]" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold">Minha Jornada de Desenvolvimento</h2>
+                      <p className="text-white/60 text-xs">Acompanhe suas metas e evolução</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/80 hover:text-white hover:bg-white/10 text-xs h-8 border border-white/20"
+                    onClick={() => window.location.href = '/portal-aluno'}
+                  >
+                    Ver detalhes <ChevronRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </div>
+
+                {(() => {
+                  const allComps = jornadaData.macroJornadas.flatMap((mj: any) => mj.microJornadas || []);
+                  const totalComps = allComps.length;
+                  const compsComNivel = allComps.filter((c: any) => c.nivelAtual && c.nivelAtual > 0);
+                  const avgNivel = compsComNivel.length > 0
+                    ? compsComNivel.reduce((sum: number, c: any) => sum + (c.nivelAtual || 0), 0) / compsComNivel.length
+                    : 0;
+                  const avgMeta = compsComNivel.length > 0
+                    ? compsComNivel.reduce((sum: number, c: any) => sum + (c.metaFinal || 0), 0) / compsComNivel.length
+                    : 0;
+                  const atingiramMeta = allComps.filter((c: any) => c.nivelAtual && c.metaFinal && c.nivelAtual >= c.metaFinal).length;
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Stats row - glass cards */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="text-center p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+                          <p className="text-3xl font-bold text-white">{totalComps}</p>
+                          <p className="text-xs text-white/60 mt-1">Competências</p>
+                        </div>
+                        <div className="text-center p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+                          <p className="text-3xl font-bold text-[#F5991F]">{avgNivel.toFixed(0)}%</p>
+                          <p className="text-xs text-white/60 mt-1">Nível Médio</p>
+                        </div>
+                        <div className="text-center p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+                          <p className="text-3xl font-bold text-blue-300">{avgMeta.toFixed(0)}%</p>
+                          <p className="text-xs text-white/60 mt-1">Meta Média</p>
+                        </div>
+                        <div className="text-center p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+                          <div className="flex items-center justify-center gap-1">
+                            <Award className="h-5 w-5 text-emerald-400" />
+                            <p className="text-3xl font-bold text-emerald-400">{atingiramMeta}</p>
+                            <span className="text-white/40 text-lg">/{totalComps}</span>
+                          </div>
+                          <p className="text-xs text-white/60 mt-1">Metas Atingidas</p>
+                        </div>
+                      </div>
+
+                      {/* Competências com barras */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Suas Competências</p>
+                          <div className="flex items-center gap-3 text-[10px] text-white/40">
+                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span> Atingiu meta</span>
+                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400 inline-block"></span> Bom</span>
+                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> Em progresso</span>
+                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block"></span> Atenção</span>
+                          </div>
+                        </div>
+                        {allComps.slice(0, 6).map((comp: any, idx: number) => {
+                          const nivel = comp.nivelAtual || 0;
+                          const meta = comp.metaFinal || 0;
+                          const barColor = nivel >= meta && meta > 0 ? "bg-emerald-400" : nivel >= 60 ? "bg-blue-400" : nivel >= 40 ? "bg-amber-400" : "bg-red-400";
+                          const textColor = nivel >= meta && meta > 0 ? "text-emerald-400" : nivel >= 60 ? "text-blue-300" : nivel >= 40 ? "text-amber-400" : "text-red-400";
+                          return (
+                            <div key={idx} className="group">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <p className="text-sm font-medium text-white/90 truncate">{comp.competenciaNome}</p>
+                                <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                                  <span className={`text-sm font-bold ${textColor}`}>{nivel.toFixed(0)}%</span>
+                                  {meta > 0 && (
+                                    <span className="text-xs text-white/30">meta {meta.toFixed(0)}%</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="relative h-2.5 bg-white/10 rounded-full overflow-hidden">
+                                <div className={`absolute inset-y-0 left-0 rounded-full transition-all duration-700 ${barColor}`} style={{ width: `${Math.min(nivel, 100)}%` }} />
+                                {meta > 0 && (
+                                  <div className="absolute top-0 bottom-0 w-0.5 bg-white/40" style={{ left: `${Math.min(meta, 100)}%` }} title={`Meta: ${meta}%`} />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {allComps.length > 6 && (
+                          <button
+                            onClick={() => window.location.href = '/portal-aluno'}
+                            className="w-full text-center text-xs text-[#F5991F] hover:text-[#F5991F]/80 font-medium py-2 mt-1"
+                          >
+                            Ver todas as {allComps.length} competências →
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* Attendance Banner */}
+          <AttendanceBanner
+            pendingCount={pendingCount}
+            onOpenModal={() => setAttendanceModalOpen(true)}
           />
 
           {/* Next Webinar Highlight */}

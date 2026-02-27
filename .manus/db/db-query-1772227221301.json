@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS historico_nivel_competencia (\n  id int AUTO_INCREMENT NOT NULL,\n  assessmentCompetenciaId int NOT NULL,\n  alunoId int NOT NULL,\n  nivelAnterior decimal(5,2) DEFAULT NULL,\n  nivelNovo decimal(5,2) NOT NULL,\n  atualizadoPor int DEFAULT NULL,\n  sessaoReferencia int DEFAULT NULL,\n  observacao text DEFAULT NULL,\n  createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT historico_nivel_competencia_id PRIMARY KEY(id)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute CREATE TABLE IF NOT EXISTS historico_nivel_competencia (\n  id int AUTO_INCREMENT NOT NULL,\n  assessmentCompetenciaId int NOT NULL,\n  alunoId int NOT NULL,\n  nivelAnterior decimal(5,2) DEFAULT NULL,\n  nivelNovo decimal(5,2) NOT NULL,\n  atualizadoPor int DEFAULT NULL,\n  sessaoReferencia int DEFAULT NULL,\n  observacao text DEFAULT NULL,\n  createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  CONSTRAINT historico_nivel_competencia_id PRIMARY KEY(id)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 551
+}

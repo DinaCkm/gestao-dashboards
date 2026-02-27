@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS contratos_aluno (\n  id int AUTO_INCREMENT NOT NULL,\n  alunoId int NOT NULL,\n  programId int NOT NULL,\n  turmaId int DEFAULT NULL,\n  periodoInicio date NOT NULL,\n  periodoTermino date NOT NULL,\n  totalSessoesContratadas int NOT NULL,\n  observacoes text DEFAULT NULL,\n  criadoPor int DEFAULT NULL,\n  isActive int NOT NULL DEFAULT 1,\n  createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updatedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT contratos_aluno_id PRIMARY KEY(id)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute CREATE TABLE IF NOT EXISTS contratos_aluno (\n  id int AUTO_INCREMENT NOT NULL,\n  alunoId int NOT NULL,\n  programId int NOT NULL,\n  turmaId int DEFAULT NULL,\n  periodoInicio date NOT NULL,\n  periodoTermino date NOT NULL,\n  totalSessoesContratadas int NOT NULL,\n  observacoes text DEFAULT NULL,\n  criadoPor int DEFAULT NULL,\n  isActive int NOT NULL DEFAULT 1,\n  createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updatedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT contratos_aluno_id PRIMARY KEY(id)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 503
+}

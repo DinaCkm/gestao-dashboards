@@ -11,7 +11,7 @@ import {
   User, Target, Calendar, Award, TrendingUp, BookOpen, Users,
   CheckCircle2, XCircle, Clock, GraduationCap, Trophy, Star, Zap,
   Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
-  ClipboardCheck, Play, ExternalLink, FileText, Send,
+  ClipboardCheck, Play, ExternalLink, FileText, Send, Route, FileBarChart,
 } from "lucide-react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -121,6 +121,7 @@ function IndicadorCardAluno({
 
 export default function DashboardMeuPerfil() {
   const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
+  const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
 
   // Queries para as novas abas
@@ -158,12 +159,6 @@ export default function DashboardMeuPerfil() {
   const confirmedEventIds = useMemo(() => {
     return new Set((myAttendance || []).map((a: any) => a.eventId));
   }, [myAttendance]);
-
-  const filteredAssessments = useMemo(() => {
-    if (!data || !data.found || !data.assessments) return [];
-    if (pdiStatusFilter === "todos") return data.assessments;
-    return data.assessments.filter((a: any) => a.status === pdiStatusFilter);
-  }, [data, pdiStatusFilter]);
 
   const radarData = useMemo(() => {
     if (!data || !data.found) return [];
@@ -422,13 +417,10 @@ export default function DashboardMeuPerfil() {
         )}
 
         {/* Tabs com seções detalhadas */}
-        <Tabs defaultValue="trilha" className="w-full">
+        <Tabs defaultValue="jornada" className="w-full">
           <TabsList className="bg-gray-100 border border-gray-200 w-full flex flex-wrap h-auto gap-1 p-1 rounded-xl">
-            <TabsTrigger value="trilha" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <Target className="h-4 w-4 mr-1" /> Trilha
-            </TabsTrigger>
-            <TabsTrigger value="competencias" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <BookOpen className="h-4 w-4 mr-1" /> Competências
+            <TabsTrigger value="jornada" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
+              <Route className="h-4 w-4 mr-1" /> Minha Jornada
             </TabsTrigger>
             <TabsTrigger value="mentorias" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <MessageSquare className="h-4 w-4 mr-1" /> Mentorias
@@ -436,9 +428,7 @@ export default function DashboardMeuPerfil() {
             <TabsTrigger value="eventos" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <Video className="h-4 w-4 mr-1" /> Eventos
             </TabsTrigger>
-            <TabsTrigger value="pdi" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <Award className="h-4 w-4 mr-1" /> PDI
-            </TabsTrigger>
+
             <TabsTrigger value="tarefas" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <ClipboardCheck className="h-4 w-4 mr-1" /> Tarefas
             </TabsTrigger>
@@ -450,125 +440,222 @@ export default function DashboardMeuPerfil() {
             </TabsTrigger>
           </TabsList>
 
-          {/* === TRILHA DE DESENVOLVIMENTO === */}
-          <TabsContent value="trilha" className="mt-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <Card className="bg-white border border-gray-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-sm text-gray-700">Progresso da Trilha</CardTitle>
-                  <CardDescription className="text-gray-500">{trilhaStats.total} competências no plano</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-center mb-4">
-                    <ResponsiveContainer width={180} height={180}>
-                      <PieChart>
-                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="value" isAnimationActive={false}>
-                          {pieData.map((entry, index) => (<Cell key={index} fill={entry.color} />))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-gray-600"><span className="w-3 h-3 rounded-full bg-emerald-500"></span>Concluídas</span>
-                      <span className="text-gray-900 font-semibold">{trilhaStats.concluidas}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-gray-600"><span className="w-3 h-3 rounded-full bg-blue-500"></span>Em Progresso</span>
-                      <span className="text-gray-900 font-semibold">{trilhaStats.emProgresso}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-gray-600"><span className="w-3 h-3 rounded-full bg-gray-300"></span>Pendentes</span>
-                      <span className="text-gray-900 font-semibold">{trilhaStats.pendentes}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border border-gray-200 shadow-sm lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="text-sm text-gray-700">Competências do Plano Individual</CardTitle>
-                  <CardDescription className="text-gray-500">Competências definidas para sua jornada de desenvolvimento</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                    {planoIndividual && planoIndividual.length > 0 ? (
-                      planoIndividual.map((item: any, idx: number) => {
-                        const nota = item.notaAtual ? parseFloat(item.notaAtual) : 0;
-                        const meta = item.metaNota ? parseFloat(item.metaNota) : 7;
-                        const aprovado = nota >= meta;
-                        const statusColor = item.status === "concluida" ? "text-emerald-600" : item.status === "em_progresso" ? "text-blue-600" : "text-gray-500";
-                        const statusLabel = item.status === "concluida" ? "Concluída" : item.status === "em_progresso" ? "Em Progresso" : "Pendente";
-                        return (
-                          <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
-                            <div className="flex-shrink-0">
-                              {item.status === "concluida" ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> :
-                                item.status === "em_progresso" ? <Clock className="h-5 w-5 text-blue-500" /> :
-                                <Target className="h-5 w-5 text-gray-400" />}
+          {/* === MINHA JORNADA (unificada: Trilha + PDI + Competências) === */}
+          <TabsContent value="jornada" className="mt-4">
+            {jornadaData && jornadaData.macroJornadas && jornadaData.macroJornadas.length > 0 ? (
+              <div className="space-y-6">
+                {/* Card de Contrato */}
+                {jornadaData.contrato && (
+                  <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-blue-100">
+                            <FileBarChart className="h-5 w-5 text-blue-700" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">Contrato Ativo</p>
+                            <p className="text-xs text-gray-600">
+                              {new Date(jornadaData.contrato.periodoInicio).toLocaleDateString("pt-BR")} a {new Date(jornadaData.contrato.periodoTermino).toLocaleDateString("pt-BR")}
+                            </p>
+                          </div>
+                        </div>
+                        {jornadaData.saldo && (
+                          <div className="flex items-center gap-4">
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-gray-900">{jornadaData.saldo.sessoesRealizadas}</p>
+                              <p className="text-xs text-gray-500">Realizadas</p>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-gray-900 font-medium truncate">{item.competenciaNome}</p>
-                              <p className="text-xs text-gray-500">{item.trilhaNome || "Trilha não definida"}</p>
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-blue-700">{jornadaData.saldo.saldoRestante}</p>
+                              <p className="text-xs text-gray-500">Restantes</p>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <div className="text-right">
-                                <p className={`text-sm font-bold ${aprovado ? "text-emerald-600" : nota > 0 ? "text-amber-600" : "text-gray-400"}`}>
-                                  {nota > 0 ? nota.toFixed(1) : "—"}
-                                </p>
-                                <p className="text-xs text-gray-500">Meta: {meta.toFixed(0)}</p>
-                              </div>
-                              <Badge variant="outline" className={`text-xs ${statusColor} border-current/30`}>{statusLabel}</Badge>
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-gray-600">{jornadaData.saldo.totalContratadas}</p>
+                              <p className="text-xs text-gray-500">Total</p>
+                            </div>
+                            <div className="w-24">
+                              <Progress value={jornadaData.saldo.percentualUsado} className="h-2" />
+                              <p className="text-xs text-gray-500 text-center mt-1">{jornadaData.saldo.percentualUsado}% usado</p>
                             </div>
                           </div>
-                        );
-                      })
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                        <p>Nenhuma competência definida no plano individual</p>
+                        )}
                       </div>
-                    )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Filtro por status */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Filter className="h-4 w-4 text-gray-500" />
+                  <span className="text-xs text-gray-500 mr-1">Filtrar:</span>
+                  {(["todos", "ativo", "congelado"] as const).map((status) => {
+                    const count = status === "todos"
+                      ? jornadaData.macroJornadas.length
+                      : jornadaData.macroJornadas.filter((a: any) => a.status === status).length;
+                    const isActive = pdiStatusFilter === status;
+                    const colorMap = {
+                      todos: isActive ? "bg-[#0A1E3E] text-white border-[#0A1E3E]" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
+                      ativo: isActive ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
+                      congelado: isActive ? "bg-gray-500 text-white border-gray-500" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
+                    };
+                    const labelMap = { todos: "Todos", ativo: "Ativos", congelado: "Congelados" };
+                    return (
+                      <button
+                        key={status}
+                        onClick={() => setPdiStatusFilter(status)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${colorMap[status]}`}
+                      >
+                        {labelMap[status]} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Macro Jornadas (por trilha) */}
+                {jornadaData.macroJornadas
+                  .filter((mj: any) => pdiStatusFilter === "todos" || mj.status === pdiStatusFilter)
+                  .map((macroJornada: any) => (
+                  <Card key={macroJornada.id} className="bg-white border border-gray-200 shadow-sm">
+                    <CardHeader>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                          <CardTitle className="text-base text-gray-900 flex items-center gap-2">
+                            <Route className="h-5 w-5 text-[#F5991F]" />
+                            Trilha: {macroJornada.trilhaNome}
+                          </CardTitle>
+                          <CardDescription className="text-gray-500 mt-1">
+                            Macro Jornada: {new Date(macroJornada.macroInicio).toLocaleDateString("pt-BR")} a {new Date(macroJornada.macroTermino).toLocaleDateString("pt-BR")}
+                            {" "}• {macroJornada.totalCompetencias} competências ({macroJornada.obrigatorias} obrigatórias, {macroJornada.opcionais} opcionais)
+                          </CardDescription>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {macroJornada.nivelGeralAtual !== null && (
+                            <div className="text-right">
+                              <p className="text-xs text-gray-500">Nível Geral</p>
+                              <p className="text-lg font-bold text-gray-900">{macroJornada.nivelGeralAtual.toFixed(0)}%</p>
+                            </div>
+                          )}
+                          {macroJornada.metaGeralFinal !== null && (
+                            <div className="text-right">
+                              <p className="text-xs text-gray-500">Meta Final</p>
+                              <p className="text-lg font-bold text-blue-700">{macroJornada.metaGeralFinal.toFixed(0)}%</p>
+                            </div>
+                          )}
+                          <Badge variant="outline" className={macroJornada.status === "ativo" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
+                            {macroJornada.status === "ativo" ? "Ativo" : "Congelado"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Micro Jornadas (competências) */}
+                      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                        {macroJornada.microJornadas.map((micro: any) => {
+                          const nivel = micro.nivelAtual ?? 0;
+                          const meta = micro.metaFinal ?? 100;
+                          const progressPercent = meta > 0 ? Math.min((nivel / meta) * 100, 100) : 0;
+                          const barColor = nivel >= meta ? "bg-emerald-500" : nivel >= meta * 0.7 ? "bg-amber-500" : nivel > 0 ? "bg-red-500" : "bg-gray-300";
+                          const statusIcon = nivel >= meta ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> :
+                            nivel > 0 ? <TrendingUp className="h-5 w-5 text-amber-500" /> :
+                            <Target className="h-5 w-5 text-gray-400" />;
+
+                          return (
+                            <div key={micro.id} className="p-4 rounded-xl bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
+                              <div className="flex items-start gap-3 mb-3">
+                                <div className="flex-shrink-0 mt-0.5">{statusIcon}</div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <p className="text-sm text-gray-900 font-semibold">{micro.competenciaNome}</p>
+                                    <Badge variant="outline" className={micro.peso === 'obrigatoria' ? "bg-amber-50 text-amber-700 border-amber-300 text-xs" : "bg-gray-100 text-gray-600 border-gray-300 text-xs"}>
+                                      {micro.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
+                                    </Badge>
+                                  </div>
+                                  {micro.microInicio && micro.microTermino && (
+                                    <p className="text-xs text-gray-500 mb-2">
+                                      <Calendar className="h-3 w-3 inline mr-1" />
+                                      Micro Jornada: {new Date(micro.microInicio).toLocaleDateString("pt-BR")} a {new Date(micro.microTermino).toLocaleDateString("pt-BR")}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Barra de progresso com níveis */}
+                              <div className="ml-8">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden relative">
+                                    <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${progressPercent}%` }} />
+                                    {/* Marcadores de metas */}
+                                    {micro.metaCiclo1 && (
+                                      <div className="absolute top-0 h-full w-0.5 bg-blue-400" style={{ left: `${Math.min((micro.metaCiclo1 / (meta || 100)) * 100, 100)}%` }} title={`Meta Ciclo 1: ${micro.metaCiclo1}%`} />
+                                    )}
+                                    {micro.metaCiclo2 && (
+                                      <div className="absolute top-0 h-full w-0.5 bg-purple-400" style={{ left: `${Math.min((micro.metaCiclo2 / (meta || 100)) * 100, 100)}%` }} title={`Meta Ciclo 2: ${micro.metaCiclo2}%`} />
+                                    )}
+                                  </div>
+                                  <span className={`text-sm font-bold min-w-[45px] text-right ${nivel >= meta ? "text-emerald-600" : nivel > 0 ? "text-amber-600" : "text-gray-400"}`}>
+                                    {nivel > 0 ? `${nivel.toFixed(0)}%` : "—"}
+                                  </span>
+                                </div>
+
+                                {/* Legenda de metas */}
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                                  <span className="flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                                    Nível Atual: <strong className="text-gray-700">{nivel > 0 ? `${nivel.toFixed(0)}%` : "—"}</strong>
+                                  </span>
+                                  {micro.metaCiclo1 !== null && (
+                                    <span className="flex items-center gap-1">
+                                      <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                                      Meta C1: <strong className="text-gray-700">{micro.metaCiclo1.toFixed(0)}%</strong>
+                                    </span>
+                                  )}
+                                  {micro.metaCiclo2 !== null && (
+                                    <span className="flex items-center gap-1">
+                                      <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+                                      Meta C2: <strong className="text-gray-700">{micro.metaCiclo2.toFixed(0)}%</strong>
+                                    </span>
+                                  )}
+                                  <span className="flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    Meta Final: <strong className="text-gray-700">{meta > 0 ? `${meta.toFixed(0)}%` : "—"}</strong>
+                                  </span>
+                                </div>
+
+                                {/* Justificativa */}
+                                {micro.justificativa && (
+                                  <div className="mt-2 p-2 rounded-lg bg-blue-50 border border-blue-100 text-xs text-gray-700">
+                                    <span className="font-semibold">Justificativa:</span> {micro.justificativa}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Observações do assessment */}
+                      {macroJornada.observacoes && (
+                        <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-100 text-xs text-gray-700">
+                          <p className="font-semibold mb-1 text-gray-800">Observações da Mentora:</p>
+                          <p>{macroJornada.observacoes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="bg-white border border-gray-200 shadow-sm">
+                <CardContent className="py-12">
+                  <div className="text-center text-gray-500">
+                    <Route className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Nenhuma jornada de desenvolvimento definida ainda</p>
+                    <p className="text-xs mt-1">Sua mentora definirá suas trilhas e competências após o assessment</p>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </TabsContent>
-
-          {/* === JORNADA DE COMPETÊNCIAS === */}
-          <TabsContent value="competencias" className="mt-4">
-            <Card className="bg-white border border-gray-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-sm text-gray-700">Notas por Competência</CardTitle>
-                <CardDescription className="text-gray-500">Desempenho em cada competência cursada na jornada</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {competenciasChart.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={Math.max(300, competenciasChart.length * 40)}>
-                    <BarChart data={competenciasChart} layout="vertical" margin={{ left: 20, right: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis type="number" domain={[0, 10]} tick={{ fill: "#374151", fontSize: 11 }} />
-                      <YAxis type="category" dataKey="nome" width={150} tick={{ fill: "#374151", fontSize: 11 }} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 8 }}
-                        labelStyle={{ color: "#111" }}
-                        formatter={(value: number, name: string) => [value.toFixed(1), name === "nota" ? "Nota" : "Meta"]}
-                        labelFormatter={(label: string, payload: any[]) => payload?.[0]?.payload?.nomeCompleto || label}
-                      />
-                      <Bar dataKey="nota" name="Nota" radius={[0, 4, 4, 0]} isAnimationActive={false}>
-                        {competenciasChart.map((entry: any, index: number) => (
-                          <Cell key={index} fill={entry.aprovado ? "#10b981" : "#f59e0b"} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Nenhuma nota de competência registrada ainda</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            )}
           </TabsContent>
 
           {/* === HISTÓRICO DE MENTORIAS === */}
@@ -680,138 +767,6 @@ export default function DashboardMeuPerfil() {
             </Card>
           </TabsContent>
 
-          {/* === PDI / ASSESSMENT === */}
-          <TabsContent value="pdi" className="mt-4">
-            {assessments && assessments.length > 0 ? (
-              <div className="space-y-4">
-                {/* Filtro por status */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Filter className="h-4 w-4 text-gray-500" />
-                  <span className="text-xs text-gray-500 mr-1">Filtrar:</span>
-                  {(["todos", "ativo", "congelado"] as const).map((status) => {
-                    const count = status === "todos"
-                      ? assessments.length
-                      : assessments.filter((a: any) => a.status === status).length;
-                    const isActive = pdiStatusFilter === status;
-                    const colorMap = {
-                      todos: isActive ? "bg-[#0A1E3E] text-white border-[#0A1E3E]" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
-                      ativo: isActive ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
-                      congelado: isActive ? "bg-gray-500 text-white border-gray-500" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
-                    };
-                    const labelMap = { todos: "Todos", ativo: "Ativos", congelado: "Congelados" };
-                    return (
-                      <button
-                        key={status}
-                        onClick={() => setPdiStatusFilter(status)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${colorMap[status]}`}
-                      >
-                        {labelMap[status]} ({count})
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {filteredAssessments.length === 0 ? (
-                  <Card className="bg-white border border-gray-200 shadow-sm">
-                    <CardContent className="py-8">
-                      <div className="text-center text-gray-500">
-                        <Filter className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                        <p>Nenhum PDI com status "{pdiStatusFilter === "ativo" ? "Ativo" : "Congelado"}"</p>
-                        <button onClick={() => setPdiStatusFilter("todos")} className="text-blue-600 hover:text-blue-700 text-xs mt-2 underline">Ver todos</button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : null}
-
-                {filteredAssessments.map((assessment: any) => (
-                  <Card key={assessment.id} className="bg-white border border-gray-200 shadow-sm">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
-                            <Award className="h-4 w-4 text-[#F5991F]" />
-                            Trilha: {assessment.trilhaNome}
-                          </CardTitle>
-                          <CardDescription className="text-gray-500">
-                            {assessment.consultorNome && `Mentora: ${assessment.consultorNome} • `}
-                            Macro ciclo: {new Date(assessment.macroInicio).toLocaleDateString("pt-BR")} a {new Date(assessment.macroTermino).toLocaleDateString("pt-BR")}
-                          </CardDescription>
-                        </div>
-                        <Badge variant="outline" className={assessment.status === "ativo" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
-                          {assessment.status === "ativo" ? "Ativo" : "Congelado"}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-3 flex items-center gap-4 text-xs text-gray-500">
-                        <span>{assessment.totalCompetencias} competências</span>
-                        <span>{assessment.obrigatorias} obrigatórias</span>
-                        <span>{assessment.opcionais} opcionais</span>
-                      </div>
-                      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                        {assessment.competencias.map((comp: any) => {
-                          const notaCorte = parseFloat(comp.notaCorte);
-                          const notaAtual = comp.notaAtual;
-                          const atingiu = comp.atingiuMeta;
-                          return (
-                            <div key={comp.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
-                              <div className="flex-shrink-0">
-                                {atingiu ? (
-                                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                                ) : notaAtual !== null && notaAtual > 0 ? (
-                                  <Clock className="h-5 w-5 text-amber-500" />
-                                ) : (
-                                  <Target className="h-5 w-5 text-gray-400" />
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-900 font-medium truncate">{comp.competenciaNome}</p>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <Badge variant="outline" className={comp.peso === 'obrigatoria' ? "bg-amber-50 text-amber-700 border-amber-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
-                                    {comp.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
-                                  </Badge>
-                                  {comp.microInicio && comp.microTermino && (
-                                    <span>Micro: {new Date(comp.microInicio).toLocaleDateString("pt-BR")} a {new Date(comp.microTermino).toLocaleDateString("pt-BR")}</span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="text-right">
-                                  <p className={`text-sm font-bold ${atingiu ? "text-emerald-600" : notaAtual !== null && notaAtual > 0 ? "text-amber-600" : "text-gray-400"}`}>
-                                    {notaAtual !== null && notaAtual > 0 ? notaAtual.toFixed(1) : "—"}
-                                  </p>
-                                  <p className="text-xs text-gray-500">Corte: {notaCorte.toFixed(1)}</p>
-                                </div>
-                                <div className="w-16">
-                                  <Progress value={notaAtual !== null ? Math.min((notaAtual / 10) * 100, 100) : 0} className="h-1.5" />
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {assessment.observacoes && (
-                        <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-100 text-xs text-gray-700">
-                          <p className="font-semibold mb-1 text-gray-800">Observações:</p>
-                          <p>{assessment.observacoes}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card className="bg-white border border-gray-200 shadow-sm">
-                <CardContent className="py-12">
-                  <div className="text-center text-gray-500">
-                    <Award className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Nenhum PDI/Assessment registrado ainda</p>
-                    <p className="text-xs mt-1">O PDI será criado pela sua mentora durante o assessment</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
 
           {/* === TAREFAS PRÁTICAS === */}
           <TabsContent value="tarefas" className="mt-4">

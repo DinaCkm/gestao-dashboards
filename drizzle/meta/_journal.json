@@ -148,6 +148,20 @@
       "when": 1772161447645,
       "tag": "0020_supreme_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1772227035763,
+      "tag": "0021_regular_eddie_brock",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1772229369968,
+      "tag": "0022_thin_shooting_star",
+      "breakpoints": true
     }
   ]
 }

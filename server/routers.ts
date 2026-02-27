@@ -2658,6 +2658,165 @@ export const appRouter = router({
         return await db.getWebinarReflections(input?.eventId);
       }),
   }),
+
+  // ============ CONTRATOS DO ALUNO ============
+  contratos: router({
+    // Listar contratos de um aluno
+    byAluno: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getContratosByAluno(input.alunoId);
+      }),
+
+    // Obter contrato por ID
+    byId: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getContratoById(input.id);
+      }),
+
+    // Criar contrato (admin)
+    create: adminProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        programId: z.number(),
+        turmaId: z.number().optional(),
+        periodoInicio: z.string(),
+        periodoTermino: z.string(),
+        totalSessoesContratadas: z.number().min(1),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createContrato({
+          ...input,
+          periodoInicio: new Date(input.periodoInicio),
+          periodoTermino: new Date(input.periodoTermino),
+          criadoPor: ctx.user.id,
+        } as any);
+        return { id, success: true };
+      }),
+
+    // Atualizar contrato (admin)
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        programId: z.number().optional(),
+        turmaId: z.number().optional(),
+        periodoInicio: z.string().optional(),
+        periodoTermino: z.string().optional(),
+        totalSessoesContratadas: z.number().min(1).optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const updateData: any = { ...data };
+        if (data.periodoInicio) updateData.periodoInicio = new Date(data.periodoInicio);
+        if (data.periodoTermino) updateData.periodoTermino = new Date(data.periodoTermino);
+        await db.updateContrato(id, updateData);
+        return { success: true };
+      }),
+
+    // Excluir contrato (soft delete - admin)
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteContrato(input.id);
+        return { success: true };
+      }),
+
+    // Saldo de sessões do aluno
+    saldo: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getSaldoSessoes(input.alunoId);
+      }),
+  }),
+
+  // ============ JORNADA DO ALUNO ============
+  jornada: router({
+    // Jornada completa (Contrato + Macro Jornadas + Micro Jornadas)
+    completa: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getJornadaCompleta(input.alunoId);
+      }),
+
+    // Jornada do aluno logado (para o Portal do Aluno)
+    minha: protectedProcedure
+      .query(async ({ ctx }) => {
+        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        if (!aluno) return null;
+        return await db.getJornadaCompleta(aluno.id);
+      }),
+
+    // Atualizar nível e metas de competência (mentora)
+    updateNivel: protectedProcedure
+      .input(z.object({
+        assessmentCompetenciaId: z.number(),
+        nivelAtual: z.number().min(0).max(100).optional(),
+        metaCiclo1: z.number().min(0).max(100).optional(),
+        metaCiclo2: z.number().min(0).max(100).optional(),
+        metaFinal: z.number().min(0).max(100).optional(),
+        justificativa: z.string().optional(),
+        sessaoReferencia: z.number().optional(),
+        observacao: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Update all provided fields directly on assessment_competencias
+        const updates: Record<string, any> = {};
+        if (input.nivelAtual !== undefined) updates.nivelAtual = String(input.nivelAtual);
+        if (input.metaCiclo1 !== undefined) updates.metaCiclo1 = String(input.metaCiclo1);
+        if (input.metaCiclo2 !== undefined) updates.metaCiclo2 = String(input.metaCiclo2);
+        if (input.metaFinal !== undefined) updates.metaFinal = String(input.metaFinal);
+        if (input.justificativa !== undefined) updates.justificativa = input.justificativa;
+        
+        if (Object.keys(updates).length > 0) {
+          await db.updateAssessmentCompetenciaFields(input.assessmentCompetenciaId, updates);
+        }
+        
+        // Also log to history if nivelAtual changed
+        if (input.nivelAtual !== undefined) {
+          await db.updateNivelCompetencia(
+            input.assessmentCompetenciaId,
+            input.nivelAtual,
+            ctx.user.id,
+            input.sessaoReferencia,
+            input.observacao
+          );
+        }
+        return { success: true };
+      }),
+
+    // Definir meta final de competência (mentora - no assessment)
+    setMeta: protectedProcedure
+      .input(z.object({
+        assessmentCompetenciaId: z.number(),
+        metaFinal: z.number().min(0).max(100),
+        justificativa: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.setMetaFinalCompetencia(
+          input.assessmentCompetenciaId,
+          input.metaFinal,
+          input.justificativa
+        );
+        return { success: true };
+      }),
+
+    // Histórico de evolução de uma competência
+    historico: protectedProcedure
+      .input(z.object({ assessmentCompetenciaId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getHistoricoNivel(input.assessmentCompetenciaId);
+      }),
+
+    // Verificar se precisa reavaliar (gatilho a cada 3 sessões)
+    checkReavaliacao: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.checkReavaliacaoPendente(input.alunoId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

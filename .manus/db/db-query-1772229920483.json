@@ -1,0 +1,50 @@
+{
+  "query": "SHOW COLUMNS FROM assessment_competencias WHERE Field IN ('nivel_atual', 'nivelAtual', 'meta_ciclo1', 'metaCiclo1', 'meta_ciclo2', 'metaCiclo2', 'meta_final', 'metaFinal', 'justificativa');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SHOW COLUMNS FROM assessment_competencias WHERE Field IN ('nivel_atual', 'nivelAtual', 'meta_ciclo1', 'metaCiclo1', 'meta_ciclo2', 'metaCiclo2', 'meta_final', 'metaFinal', 'justificativa');",
+  "rows": [
+    {
+      "Field": "nivelAtual",
+      "Type": "decimal(5,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "metaFinal",
+      "Type": "decimal(5,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "justificativa",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "metaCiclo1",
+      "Type": "decimal(5,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "metaCiclo2",
+      "Type": "decimal(5,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nnivelAtual\tdecimal(5,2)\tYES\t\tNULL\t\nmetaFinal\tdecimal(5,2)\tYES\t\tNULL\t\njustificativa\ttext\tYES\t\tNULL\t\nmetaCiclo1\tdecimal(5,2)\tYES\t\tNULL\t\nmetaCiclo2\tdecimal(5,2)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 375
+}

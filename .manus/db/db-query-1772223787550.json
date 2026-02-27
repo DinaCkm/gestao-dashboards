@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, name, codigo, ordem FROM trilhas WHERE isActive = 1 ORDER BY ordem",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, codigo, ordem FROM trilhas WHERE isActive = 1 ORDER BY ordem",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Básica",
+      "codigo": "BASICA",
+      "ordem": "1"
+    },
+    {
+      "id": "2",
+      "name": "Essencial",
+      "codigo": "ESSENCIAL",
+      "ordem": "2"
+    },
+    {
+      "id": "3",
+      "name": "Master",
+      "codigo": "MASTER",
+      "ordem": "3"
+    },
+    {
+      "id": "4",
+      "name": "Visão de Futuro",
+      "codigo": "VISAO_FUTURO",
+      "ordem": "4"
+    },
+    {
+      "id": "30001",
+      "name": "Jornada do Futuro I.A",
+      "codigo": "JORNADA_FUTURO_IA",
+      "ordem": "5"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcodigo\tordem\n1\tBásica\tBASICA\t1\n2\tEssencial\tESSENCIAL\t2\n3\tMaster\tMASTER\t3\n4\tVisão de Futuro\tVISAO_FUTURO\t4\n30001\tJornada do Futuro I.A\tJORNADA_FUTURO_IA\t5\n",
+  "stderr": "",
+  "execution_time_ms": 394
+}

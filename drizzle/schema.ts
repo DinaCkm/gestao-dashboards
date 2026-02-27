@@ -200,6 +200,7 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   ciclo: mysqlEnum("ciclo", ["I", "II", "III", "IV"]),
   sessionNumber: int("sessionNumber"),
   sessionDate: date("sessionDate"),
+  isAssessment: int("isAssessment").default(0).notNull(), // 1 = sessão de assessment (não conta no saldo), 0 = sessão normal
   presence: mysqlEnum("presence", ["presente", "ausente"]).notNull(),
   taskStatus: mysqlEnum("taskStatus", ["entregue", "nao_entregue", "sem_tarefa"]),
   engagementScore: int("engagementScore"),
@@ -334,7 +335,8 @@ export type InsertReport = typeof reports.$inferInsert;
 
 /**
  * Assessment PDI - Plano de Desenvolvimento Individual do aluno
- * Criado pela mentora durante o assessment. Define a trilha, macro ciclo e status.
+ * Criado pela mentora durante o assessment. Define a trilha, Macro Jornada e status.
+ * Hierarquia: Contrato (período total) → Macro Jornada (duração da trilha) → Micro Jornada (duração da competência)
  * Histórico é sempre mantido. Quando uma trilha encerra, a mentora congela.
  */
 export const assessmentPdi = mysqlTable("assessment_pdi", {
@@ -358,18 +360,23 @@ export type AssessmentPdi = typeof assessmentPdi.$inferSelect;
 export type InsertAssessmentPdi = typeof assessmentPdi.$inferInsert;
 
 /**
- * Assessment Competências - Competências do PDI com peso, nota de corte e micro ciclo
+ * Assessment Competências - Competências do PDI com peso, nível e Micro Jornada
  * Cada registro vincula uma competência ao PDI do aluno.
- * Micro ciclos NUNCA podem ultrapassar as datas do macro ciclo.
+ * Micro Jornadas NUNCA podem ultrapassar as datas da Macro Jornada.
  */
 export const assessmentCompetencias = mysqlTable("assessment_competencias", {
   id: int("id").autoincrement().primaryKey(),
   assessmentPdiId: int("assessmentPdiId").notNull(), // FK para assessment_pdi
   competenciaId: int("competenciaId").notNull(), // FK para competencias
   peso: mysqlEnum("peso", ["obrigatoria", "opcional"]).default("obrigatoria").notNull(),
-  notaCorte: decimal("notaCorte", { precision: 5, scale: 2 }).default("8.00").notNull(), // Nota mínima para aprovação (escala 0-10)
-  microInicio: date("microInicio"), // Data início do micro ciclo
-  microTermino: date("microTermino"), // Data término do micro ciclo (não congela, aluno pode fazer até macro término)
+  notaCorte: decimal("notaCorte", { precision: 5, scale: 2 }).default("8.00").notNull(), // DEPRECADO - mantido para compatibilidade. Usar nivelAtual/metaFinal
+  nivelAtual: decimal("nivelAtual", { precision: 5, scale: 2 }), // Nível atual do aluno na competência (0-100%)
+  metaFinal: decimal("metaFinal", { precision: 5, scale: 2 }), // Meta final da competência (0-100%)
+  metaCiclo1: decimal("metaCiclo1", { precision: 5, scale: 2 }), // Meta para o ciclo 1 (0-100%)
+  metaCiclo2: decimal("metaCiclo2", { precision: 5, scale: 2 }), // Meta para o ciclo 2 (0-100%)
+  justificativa: text("justificativa"), // Justificativa da mentora para a meta definida
+  microInicio: date("microInicio"), // Data início da Micro Jornada
+  microTermino: date("microTermino"), // Data término da Micro Jornada
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -569,3 +576,45 @@ export const announcements = mysqlTable("announcements", {
 
 export type Announcement = typeof announcements.$inferSelect;
 export type InsertAnnouncement = typeof announcements.$inferInsert;
+
+/**
+ * Contratos do Aluno - Definições contratuais definidas pelo Administrador
+ * Centraliza: empresa, período do contrato e nº total de sessões contratadas
+ * Hierarquia: Contrato (Admin) → Macro Jornada/Trilha (Mentora) → Micro Jornada/Competência (Mentora)
+ */
+export const contratosAluno = mysqlTable("contratos_aluno", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  programId: int("programId").notNull(), // FK para programs (empresa)
+  turmaId: int("turmaId"), // FK para turmas
+  periodoInicio: date("periodoInicio").notNull(), // Data de início do contrato
+  periodoTermino: date("periodoTermino").notNull(), // Data de término do contrato
+  totalSessoesContratadas: int("totalSessoesContratadas").notNull(), // Nº total de sessões de mentoria
+  observacoes: text("observacoes"), // Observações do administrador
+  criadoPor: int("criadoPor"), // FK para users (admin que criou)
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ContratoAluno = typeof contratosAluno.$inferSelect;
+export type InsertContratoAluno = typeof contratosAluno.$inferInsert;
+
+/**
+ * Histórico de Nível de Competência - Registra a evolução do nível do aluno
+ * A mentora atualiza o nível atual a cada 3 sessões de mentoria
+ */
+export const historicoNivelCompetencia = mysqlTable("historico_nivel_competencia", {
+  id: int("id").autoincrement().primaryKey(),
+  assessmentCompetenciaId: int("assessmentCompetenciaId").notNull(), // FK para assessment_competencias
+  alunoId: int("alunoId").notNull(), // FK para alunos (desnormalizado para queries rápidas)
+  nivelAnterior: decimal("nivelAnterior", { precision: 5, scale: 2 }), // Nível antes da atualização (0-100%)
+  nivelNovo: decimal("nivelNovo", { precision: 5, scale: 2 }).notNull(), // Nível após atualização (0-100%)
+  atualizadoPor: int("atualizadoPor"), // FK para consultors (mentora)
+  sessaoReferencia: int("sessaoReferencia"), // Número da sessão de referência
+  observacao: text("observacao"), // Observação da mentora
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type HistoricoNivelCompetencia = typeof historicoNivelCompetencia.$inferSelect;
+export type InsertHistoricoNivelCompetencia = typeof historicoNivelCompetencia.$inferInsert;

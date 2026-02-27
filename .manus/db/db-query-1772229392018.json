@@ -1,0 +1,64 @@
+{
+  "query": "SHOW TABLES LIKE 'contratos_aluno'; SHOW TABLES LIKE 'historico_nivel_competencia'; DESCRIBE assessment_competencias;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SHOW TABLES LIKE 'contratos_aluno'; SHOW TABLES LIKE 'historico_nivel_competencia'; DESCRIBE assessment_competencias;",
+  "rows": [
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "contratos_aluno"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "Tables_in_5n7arrGNHjNdoFCMzyGXcY (historico_nivel_competencia)"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "historico_nivel_competencia"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "Field\tType\tNull\tKey\tDefault\tExtra"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "id\tint(11)\tNO\tPRI\tNULL\tauto_increment"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "assessmentPdiId\tint(11)\tNO\t\tNULL\t"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "competenciaId\tint(11)\tNO\t\tNULL\t"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "peso\tenum('obrigatoria','opcional')\tNO\t\tobrigatoria\t"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "notaCorte\tdecimal(5,2)\tNO\t\t8.00\t"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "microInicio\tdate\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "microTermino\tdate\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "createdAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "updatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "nivelAtual\tdecimal(5,2)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "metaFinal\tdecimal(5,2)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "justificativa\ttext\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "metaCiclo1\tdecimal(5,2)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)": "metaCiclo2\tdecimal(5,2)\tYES\t\tNULL\t"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_5n7arrGNHjNdoFCMzyGXcY (contratos_aluno)\ncontratos_aluno\nTables_in_5n7arrGNHjNdoFCMzyGXcY (historico_nivel_competencia)\nhistorico_nivel_competencia\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint(11)\tNO\tPRI\tNULL\tauto_increment\nassessmentPdiId\tint(11)\tNO\t\tNULL\t\ncompetenciaId\tint(11)\tNO\t\tNULL\t\npeso\tenum('obrigatoria','opcional')\tNO\t\tobrigatoria\t\nnotaCorte\tdecimal(5,2)\tNO\t\t8.00\t\nmicroInicio\tdate\tYES\t\tNULL\t\nmicroTermino\tdate\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nnivelAtual\tdecimal(5,2)\tYES\t\tNULL\t\nmetaFinal\tdecimal(5,2)\tYES\t\tNULL\t\njustificativa\ttext\tYES\t\tNULL\t\nmetaCiclo1\tdecimal(5,2)\tYES\t\tNULL\t\nmetaCiclo2\tdecimal(5,2)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 529
+}

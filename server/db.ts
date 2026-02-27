@@ -23,7 +23,9 @@ import {
   performanceUploads, InsertPerformanceUpload, PerformanceUpload,
   studentPerformance, InsertStudentPerformance, StudentPerformance,
   scheduledWebinars, InsertScheduledWebinar, ScheduledWebinar,
-  announcements, InsertAnnouncement, Announcement
+  announcements, InsertAnnouncement, Announcement,
+  contratosAluno, InsertContratoAluno, ContratoAluno,
+  historicoNivelCompetencia, InsertHistoricoNivelCompetencia, HistoricoNivelCompetencia
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -3320,4 +3322,345 @@ export async function getEventById(eventId: number): Promise<Event | null> {
   if (!db) return null;
   const result = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
   return result[0] || null;
+}
+
+
+// ============ CONTRATOS DO ALUNO ============
+
+export async function createContrato(data: InsertContratoAluno) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(contratosAluno).values(data);
+  return result.insertId;
+}
+
+export async function getContratosByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(contratosAluno)
+    .where(and(eq(contratosAluno.alunoId, alunoId), eq(contratosAluno.isActive, 1)))
+    .orderBy(desc(contratosAluno.createdAt));
+}
+
+export async function getContratoById(contratoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(contratosAluno).where(eq(contratosAluno.id, contratoId)).limit(1);
+  return result[0] || null;
+}
+
+export async function updateContrato(contratoId: number, data: Partial<InsertContratoAluno>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(contratosAluno).set(data).where(eq(contratosAluno.id, contratoId));
+}
+
+export async function deleteContrato(contratoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(contratosAluno).set({ isActive: 0 }).where(eq(contratosAluno.id, contratoId));
+}
+
+// ============ SALDO DE SESSÕES ============
+
+export async function getSaldoSessoes(alunoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Buscar contrato ativo do aluno
+  const contratos = await db.select().from(contratosAluno)
+    .where(and(eq(contratosAluno.alunoId, alunoId), eq(contratosAluno.isActive, 1)))
+    .orderBy(desc(contratosAluno.createdAt))
+    .limit(1);
+  
+  if (contratos.length === 0) return null;
+  const contrato = contratos[0];
+  
+  // Contar sessões realizadas (excluindo assessment)
+  const sessoes = await db.select({ count: sql<number>`COUNT(*)` })
+    .from(mentoringSessions)
+    .where(and(
+      eq(mentoringSessions.alunoId, alunoId),
+      eq(mentoringSessions.isAssessment, 0),
+      eq(mentoringSessions.presence, "presente")
+    ));
+  
+  const sessoesRealizadas = sessoes[0]?.count || 0;
+  const totalContratadas = contrato.totalSessoesContratadas;
+  const saldoRestante = totalContratadas - sessoesRealizadas;
+  
+  return {
+    contrato,
+    totalContratadas,
+    sessoesRealizadas,
+    saldoRestante,
+    percentualUsado: totalContratadas > 0 ? Math.round((sessoesRealizadas / totalContratadas) * 100) : 0
+  };
+}
+
+// ============ ATUALIZAÇÃO DE NÍVEL DE COMPETÊNCIA ============
+
+export async function updateNivelCompetencia(
+  assessmentCompetenciaId: number,
+  nivelNovo: number,
+  atualizadoPor: number,
+  sessaoReferencia?: number,
+  observacao?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Buscar nível atual para registrar no histórico
+  const [comp] = await db.select().from(assessmentCompetencias)
+    .where(eq(assessmentCompetencias.id, assessmentCompetenciaId))
+    .limit(1);
+  
+  if (!comp) throw new Error("Competência não encontrada");
+  
+  const nivelAnterior = comp.nivelAtual ? parseFloat(comp.nivelAtual) : null;
+  
+  // Atualizar nível atual na competência
+  await db.update(assessmentCompetencias)
+    .set({ nivelAtual: String(nivelNovo) })
+    .where(eq(assessmentCompetencias.id, assessmentCompetenciaId));
+  
+  // Buscar alunoId do PDI associado
+  const [pdi] = await db.select({ alunoId: assessmentPdi.alunoId })
+    .from(assessmentPdi)
+    .where(eq(assessmentPdi.id, comp.assessmentPdiId))
+    .limit(1);
+  
+  const alunoId = pdi?.alunoId || 0;
+  
+  // Registrar no histórico
+  await db.insert(historicoNivelCompetencia).values({
+    assessmentCompetenciaId,
+    alunoId,
+    nivelAnterior: nivelAnterior !== null ? String(nivelAnterior) : null,
+    nivelNovo: String(nivelNovo),
+    atualizadoPor,
+    sessaoReferencia: sessaoReferencia || null,
+    observacao: observacao || null,
+  });
+}
+
+export async function setMetaFinalCompetencia(
+  assessmentCompetenciaId: number,
+  metaFinal: number,
+  justificativa?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const updateData: any = { metaFinal: String(metaFinal) };
+  if (justificativa !== undefined) {
+    updateData.justificativa = justificativa;
+  }
+  
+  await db.update(assessmentCompetencias)
+    .set(updateData)
+    .where(eq(assessmentCompetencias.id, assessmentCompetenciaId));
+}
+
+export async function getHistoricoNivel(assessmentCompetenciaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(historicoNivelCompetencia)
+    .where(eq(historicoNivelCompetencia.assessmentCompetenciaId, assessmentCompetenciaId))
+    .orderBy(historicoNivelCompetencia.createdAt);
+}
+
+export async function getHistoricoNivelByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(historicoNivelCompetencia)
+    .where(eq(historicoNivelCompetencia.alunoId, alunoId))
+    .orderBy(desc(historicoNivelCompetencia.createdAt));
+}
+
+// ============ JORNADA COMPLETA DO ALUNO (Contrato + Macro + Micro) ============
+
+export async function getJornadaCompleta(alunoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // 1. Buscar contrato ativo
+  const contratos = await db.select().from(contratosAluno)
+    .where(and(eq(contratosAluno.alunoId, alunoId), eq(contratosAluno.isActive, 1)))
+    .orderBy(desc(contratosAluno.createdAt))
+    .limit(1);
+  
+  const contrato = contratos[0] || null;
+  
+  // 2. Buscar PDIs (Macro Jornadas) do aluno
+  const pdis = await db.select().from(assessmentPdi)
+    .where(eq(assessmentPdi.alunoId, alunoId))
+    .orderBy(desc(assessmentPdi.createdAt));
+  
+  if (pdis.length === 0) {
+    return { contrato, macroJornadas: [], saldo: null };
+  }
+  
+  // 3. Buscar competências (Micro Jornadas) de todos os PDIs
+  const pdiIds = pdis.map(p => p.id);
+  const allComps = await db.select().from(assessmentCompetencias)
+    .where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map(id => sql`${id}`), sql`, `)})`);
+  
+  // 4. Buscar nomes das trilhas
+  const trilhaIds = Array.from(new Set(pdis.map(p => p.trilhaId).filter(Boolean))) as number[];
+  let trilhaMap: Record<number, string> = {};
+  if (trilhaIds.length > 0) {
+    const trilhasList = await db.select().from(trilhas)
+      .where(sql`${trilhas.id} IN (${sql.join(trilhaIds.map(id => sql`${id}`), sql`, `)})`);
+    trilhaMap = Object.fromEntries(trilhasList.map(t => [t.id, t.name]));
+  }
+  
+  // 5. Buscar nomes das competências
+  const compIds = Array.from(new Set(allComps.map(c => c.competenciaId))) as number[];
+  let compMap: Record<number, { nome: string; trilhaId: number | null }> = {};
+  if (compIds.length > 0) {
+    const compsList = await db.select().from(competencias)
+      .where(sql`${competencias.id} IN (${sql.join(compIds.map(id => sql`${id}`), sql`, `)})`);
+    compMap = Object.fromEntries(compsList.map(c => [c.id, { nome: c.nome, trilhaId: c.trilhaId }]));
+  }
+  
+  // 6. Buscar saldo de sessões
+  let saldo = null;
+  if (contrato) {
+    const sessoes = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(mentoringSessions)
+      .where(and(
+        eq(mentoringSessions.alunoId, alunoId),
+        eq(mentoringSessions.isAssessment, 0),
+        eq(mentoringSessions.presence, "presente")
+      ));
+    
+    const sessoesRealizadas = sessoes[0]?.count || 0;
+    saldo = {
+      totalContratadas: contrato.totalSessoesContratadas,
+      sessoesRealizadas,
+      saldoRestante: contrato.totalSessoesContratadas - sessoesRealizadas,
+      percentualUsado: contrato.totalSessoesContratadas > 0 
+        ? Math.round((sessoesRealizadas / contrato.totalSessoesContratadas) * 100) : 0
+    };
+  }
+  
+  // 7. Montar estrutura hierárquica
+  const macroJornadas = pdis.map(pdi => {
+    const comps = allComps.filter(c => c.assessmentPdiId === pdi.id);
+    const microJornadas = comps.map(comp => ({
+      id: comp.id,
+      competenciaId: comp.competenciaId,
+      competenciaNome: compMap[comp.competenciaId]?.nome || `Competência #${comp.competenciaId}`,
+      peso: comp.peso,
+      nivelAtual: comp.nivelAtual ? parseFloat(comp.nivelAtual) : null,
+      metaCiclo1: comp.metaCiclo1 ? parseFloat(comp.metaCiclo1) : null,
+      metaCiclo2: comp.metaCiclo2 ? parseFloat(comp.metaCiclo2) : null,
+      metaFinal: comp.metaFinal ? parseFloat(comp.metaFinal) : null,
+      notaCorte: comp.notaCorte ? parseFloat(comp.notaCorte) : null,
+      justificativa: comp.justificativa,
+      microInicio: comp.microInicio,
+      microTermino: comp.microTermino,
+      createdAt: comp.createdAt,
+    }));
+    
+    return {
+      id: pdi.id,
+      trilhaId: pdi.trilhaId,
+      trilhaNome: pdi.trilhaId ? (trilhaMap[pdi.trilhaId] || `Trilha #${pdi.trilhaId}`) : "Sem trilha",
+      status: pdi.status,
+      macroInicio: pdi.macroInicio,
+      macroTermino: pdi.macroTermino,
+      observacoes: pdi.observacoes,
+      createdAt: pdi.createdAt,
+      microJornadas,
+      totalCompetencias: microJornadas.length,
+      obrigatorias: microJornadas.filter(m => m.peso === "obrigatoria").length,
+      opcionais: microJornadas.filter(m => m.peso === "opcional").length,
+      nivelGeralAtual: microJornadas.filter(m => m.nivelAtual !== null).length > 0
+        ? microJornadas.filter(m => m.nivelAtual !== null).reduce((sum, m) => sum + (m.nivelAtual || 0), 0) / microJornadas.filter(m => m.nivelAtual !== null).length
+        : null,
+      metaGeralFinal: microJornadas.filter(m => m.metaFinal !== null).length > 0
+        ? microJornadas.filter(m => m.metaFinal !== null).reduce((sum, m) => sum + (m.metaFinal || 0), 0) / microJornadas.filter(m => m.metaFinal !== null).length
+        : null,
+    };
+  });
+  
+  return { contrato, macroJornadas, saldo };
+}
+
+// Update multiple fields on assessment_competencias
+export async function updateAssessmentCompetenciaFields(
+  assessmentCompetenciaId: number,
+  updates: Record<string, any>
+) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const setClauses = Object.entries(updates)
+    .map(([key, value]) => {
+      const colMap: Record<string, string> = {
+        nivelAtual: 'nivelAtual',
+        metaCiclo1: 'metaCiclo1',
+        metaCiclo2: 'metaCiclo2',
+        metaFinal: 'metaFinal',
+        justificativa: 'justificativa',
+      };
+      const col = colMap[key] || key;
+      return `\`${col}\` = '${String(value).replace(/'/g, "''")}'`;
+    })
+    .join(', ');
+  
+  if (setClauses) {
+    await db.execute(
+      sql.raw(`UPDATE \`assessment_competencias\` SET ${setClauses} WHERE \`id\` = ${assessmentCompetenciaId}`)
+    );
+  }
+}
+
+
+// ============ GATILHO DE REAVALIAÇÃO A CADA 3 SESSÕES ============
+
+export async function checkReavaliacaoPendente(alunoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  // Buscar a data da última atualização de nível (do histórico)
+  const ultimaAtualizacao = await db.select({
+    maxDate: sql<string>`MAX(${historicoNivelCompetencia.createdAt})`
+  }).from(historicoNivelCompetencia)
+    .where(eq(historicoNivelCompetencia.alunoId, alunoId));
+  
+  const ultimaData = ultimaAtualizacao[0]?.maxDate ? new Date(ultimaAtualizacao[0].maxDate) : null;
+  
+  // Contar sessões de mentoria realizadas APÓS a última atualização de nível
+  // Se nunca houve atualização, contar todas as sessões (excluindo assessment)
+  let sessoesDesdeUltimaAtualizacao: number;
+  
+  if (ultimaData) {
+    const result = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(mentoringSessions)
+      .where(and(
+        eq(mentoringSessions.alunoId, alunoId),
+        eq(mentoringSessions.isAssessment, 0),
+        eq(mentoringSessions.presence, "presente"),
+        sql`${mentoringSessions.sessionDate} > ${ultimaData.toISOString().slice(0, 10)}`
+      ));
+    sessoesDesdeUltimaAtualizacao = result[0]?.count || 0;
+  } else {
+    // Nunca houve atualização — contar todas as sessões excluindo assessment
+    const result = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(mentoringSessions)
+      .where(and(
+        eq(mentoringSessions.alunoId, alunoId),
+        eq(mentoringSessions.isAssessment, 0),
+        eq(mentoringSessions.presence, "presente")
+      ));
+    sessoesDesdeUltimaAtualizacao = result[0]?.count || 0;
+  }
+  
+  return {
+    sessoesDesdeUltimaAtualizacao,
+    precisaReavaliar: sessoesDesdeUltimaAtualizacao >= 3,
+    ultimaAtualizacao: ultimaData,
+  };
 }
