@@ -1040,3 +1040,7 @@
 - [x] Incluir logo B.E.M. na página inicial do Mural do Aluno
 - [x] Incluir logo B.E.M. no DashboardLayout sidebar (admin/mentor)
 - [x] Aplicar cores da marca (#0A1E3E navy, #F5991F orange) consistentemente
+
+## Bug Reportado (27/02/2026) - Aba "0s" no Portal do Aluno
+- [x] Corrigir aba que mostra "0s" em vez de "Tarefas Práticas" no Portal do Aluno
+- [ ] Verificar "SEBRAE PARA" que aparece na imagem (deveria ser SEBRAE ACRE ou SEBRAE TO)

@@ -811,7 +811,7 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
       <Tabs defaultValue="performance" className="w-full">
         <TabsList className="bg-gray-100 w-full flex flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="performance" className="flex-1 min-w-[100px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-xs sm:text-sm">
-            <TrendingUp className="h-4 w-4 mr-1" /> Performance
+            <TrendingUp className="h-4 w-4 mr-1" /> Desempenho
           </TabsTrigger>
           <TabsTrigger value="trilha" className="flex-1 min-w-[100px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-xs sm:text-sm">
             <Target className="h-4 w-4 mr-1" /> Minha Trilha
@@ -820,13 +820,13 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
             <MessageSquare className="h-4 w-4 mr-1" /> Mentorias
           </TabsTrigger>
           <TabsTrigger value="tarefas" className="flex-1 min-w-[100px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-xs sm:text-sm">
-            <Zap className="h-4 w-4 mr-1" /> Tarefas
+            <Zap className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Tarefas Práticas</span><span className="sm:hidden">Tarefas</span>
           </TabsTrigger>
           <TabsTrigger value="cursos" className="flex-1 min-w-[100px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-xs sm:text-sm">
             <BookOpen className="h-4 w-4 mr-1" /> Cursos
           </TabsTrigger>
           <TabsTrigger value="webinars" className="flex-1 min-w-[100px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-xs sm:text-sm">
-            <Youtube className="h-4 w-4 mr-1" /> Webinars
+            <Youtube className="h-4 w-4 mr-1" /> Webinários
           </TabsTrigger>
         </TabsList>
 
