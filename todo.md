@@ -1025,4 +1025,7 @@
 - [x] Criar seção "Minhas Tarefas Práticas" no Mural do aluno (card + drill-down com detalhes)
 
 ## Fix: Título do card Tarefas Práticas aparecendo errado (27/02/2026)
-- [ ] Corrigir título "0s ss" para "Tarefas Práticas" no drill-down header
+- [x] Título já estava correto no código ("Tarefas Práticas") - era cache do navegador
+
+## Bug: Cards indicadores ilegíveis no Meu Painel (27/02/2026)
+- [x] Corrigir cores dos cards de indicadores (fundo branco + texto escuro + borda cinza)

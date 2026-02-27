@@ -347,7 +347,7 @@ export default function DashboardAluno() {
                     {/* 6 Indicadores individuais */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {/* Ind 1 - Mentorias */}
-                      <Card>
+                      <Card className="bg-white text-gray-900 border border-gray-200">
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -366,7 +366,7 @@ export default function DashboardAluno() {
                       </Card>
 
                       {/* Ind 2 - Atividades */}
-                      <Card>
+                      <Card className="bg-white text-gray-900 border border-gray-200">
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
@@ -383,7 +383,7 @@ export default function DashboardAluno() {
                       </Card>
 
                       {/* Ind 3 - Engajamento */}
-                      <Card>
+                      <Card className="bg-white text-gray-900 border border-gray-200">
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -400,7 +400,7 @@ export default function DashboardAluno() {
                       </Card>
 
                       {/* Ind 4 - Competências */}
-                      <Card>
+                      <Card className="bg-white text-gray-900 border border-gray-200">
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -417,7 +417,7 @@ export default function DashboardAluno() {
                       </Card>
 
                       {/* Ind 5 - Aprendizado */}
-                      <Card>
+                      <Card className="bg-white text-gray-900 border border-gray-200">
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center">
@@ -434,7 +434,7 @@ export default function DashboardAluno() {
                       </Card>
 
                       {/* Ind 6 - Eventos */}
-                      <Card>
+                      <Card className="bg-white text-gray-900 border border-gray-200">
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center">
