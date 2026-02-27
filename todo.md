@@ -1018,3 +1018,8 @@
 - [x] Causa: events tinham programId=NULL, filtro por programa retornava 0 resultados
 - [x] Corrigir: buscar events pelos IDs das participacoes do aluno (sem filtrar por programa)
 - [x] Validado via script: 20 presentes, 20 mapeados para scheduled_webinars
+
+## Tarefas Práticas da Mentoria (27/02/2026)
+- [x] Seletor de tarefa da biblioteca já existe no registro de sessão de mentoria
+- [x] Criar endpoint myTasks para retornar tarefas atribuídas ao aluno
+- [x] Criar seção "Minhas Tarefas Práticas" no Mural do aluno (card + drill-down com detalhes)
