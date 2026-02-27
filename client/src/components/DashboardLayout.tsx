@@ -68,13 +68,13 @@ const allMenuItems: MenuItemExtended[] = [
   // === ADMINISTRADOR ===
   { icon: LayoutDashboard, label: "Painel Admin", path: "/", roles: ["admin"] },
   { icon: Upload, label: "Gestão de Planilhas", path: "/upload", roles: ["admin"] },
-  { icon: FileSpreadsheet, label: "Relatório de Performance", path: "/performance-upload", roles: ["admin"] },
+  // Relatório de Performance removido do admin a pedido do usuário
   { icon: BarChart3, label: "Visão Geral", path: "/dashboard/visao-geral", roles: ["admin"] },
   
   // === MENTORES (admin vê como "Dashboard Mentores", mentor vê como "Meu Dashboard") ===
-  { icon: UserCheck, label: "Dashboard Mentores", path: "/dashboard/mentor", roles: ["admin"] },
+  { icon: UserCheck, label: "Painel de controle Mentores", path: "/dashboard/mentor", roles: ["admin"] },
   { icon: UserCheck, label: "Meu Dashboard", path: "/dashboard/mentor", roles: ["manager"], requireConsultorId: true },
-  { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria", roles: ["admin", "manager"] },
+  { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria", roles: ["manager"] },
   { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment", roles: ["admin", "manager"] },
   
   // === GERENTES DE EMPRESA ===

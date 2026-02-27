@@ -279,14 +279,16 @@ export default function WebinarsAdmin() {
     };
   }, [webinars]);
 
-  const WebinarFormFields = () => (
+  // webinarFormFields is a JSX variable (not a component function) to prevent
+  // React from remounting the DOM on every re-render, which was causing input focus loss.
+  const webinarFormFields = (
     <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
       <div className="grid gap-2">
         <Label htmlFor="title">Título *</Label>
         <Input
           id="title"
           value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
           placeholder="Ex: 2026/05 - Liderança com João Silva"
         />
       </div>
@@ -300,11 +302,11 @@ export default function WebinarsAdmin() {
             value={form.startDate}
             onChange={(e) => {
               const startDate = e.target.value;
-              setForm({ 
-                ...form, 
+              setForm((prev) => ({ 
+                ...prev, 
                 startDate,
-                eventDate: startDate || form.eventDate, // eventDate = startDate por padrão
-              });
+                eventDate: startDate || prev.eventDate,
+              }));
             }}
           />
         </div>
@@ -314,7 +316,7 @@ export default function WebinarsAdmin() {
             id="endDate"
             type="datetime-local"
             value={form.endDate}
-            onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, endDate: e.target.value }))}
           />
           <p className="text-[10px] text-amber-600">A presença só será liberada após este horário</p>
         </div>
@@ -327,7 +329,7 @@ export default function WebinarsAdmin() {
             id="eventDate"
             type="datetime-local"
             value={form.eventDate}
-            onChange={(e) => setForm({ ...form, eventDate: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, eventDate: e.target.value }))}
           />
           <p className="text-[10px] text-gray-400">Preenchido automaticamente com a data de início</p>
         </div>
@@ -337,7 +339,7 @@ export default function WebinarsAdmin() {
             id="duration"
             type="number"
             value={form.duration}
-            onChange={(e) => setForm({ ...form, duration: parseInt(e.target.value) || 60 })}
+            onChange={(e) => setForm((prev) => ({ ...prev, duration: parseInt(e.target.value) || 60 }))}
           />
         </div>
       </div>
@@ -348,7 +350,7 @@ export default function WebinarsAdmin() {
           <Input
             id="speaker"
             value={form.speaker}
-            onChange={(e) => setForm({ ...form, speaker: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, speaker: e.target.value }))}
             placeholder="Nome do palestrante"
           />
         </div>
@@ -357,7 +359,7 @@ export default function WebinarsAdmin() {
           <Input
             id="theme"
             value={form.theme}
-            onChange={(e) => setForm({ ...form, theme: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, theme: e.target.value }))}
             placeholder="Ex: Liderança, IA, Gestão"
           />
         </div>
@@ -368,7 +370,7 @@ export default function WebinarsAdmin() {
         <Textarea
           id="description"
           value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
           placeholder="Descrição do webinar..."
           rows={3}
         />
@@ -379,7 +381,7 @@ export default function WebinarsAdmin() {
         <Textarea
           id="speakerBio"
           value={form.speakerBio}
-          onChange={(e) => setForm({ ...form, speakerBio: e.target.value })}
+          onChange={(e) => setForm((prev) => ({ ...prev, speakerBio: e.target.value }))}
           placeholder="Breve biografia do palestrante..."
           rows={2}
         />
@@ -391,7 +393,7 @@ export default function WebinarsAdmin() {
           <Input
             id="meetingLink"
             value={form.meetingLink}
-            onChange={(e) => setForm({ ...form, meetingLink: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, meetingLink: e.target.value }))}
             placeholder="https://zoom.us/j/..."
           />
         </div>
@@ -400,7 +402,7 @@ export default function WebinarsAdmin() {
           <Input
             id="youtubeLink"
             value={form.youtubeLink}
-            onChange={(e) => setForm({ ...form, youtubeLink: e.target.value })}
+            onChange={(e) => setForm((prev) => ({ ...prev, youtubeLink: e.target.value }))}
             placeholder="https://youtube.com/watch?v=..."
           />
         </div>
@@ -411,7 +413,7 @@ export default function WebinarsAdmin() {
           <Label>Público-alvo</Label>
           <Select
             value={form.targetAudience}
-            onValueChange={(v) => setForm({ ...form, targetAudience: v as TargetAudience })}
+            onValueChange={(v) => setForm((prev) => ({ ...prev, targetAudience: v as TargetAudience }))}
           >
             <SelectTrigger>
               <SelectValue />
@@ -429,7 +431,7 @@ export default function WebinarsAdmin() {
           <Label>Status</Label>
           <Select
             value={form.status}
-            onValueChange={(v) => setForm({ ...form, status: v as WebinarStatus })}
+            onValueChange={(v) => setForm((prev) => ({ ...prev, status: v as WebinarStatus }))}
           >
             <SelectTrigger>
               <SelectValue />
@@ -697,7 +699,7 @@ export default function WebinarsAdmin() {
               Preencha os dados do novo webinar. Campos com * são obrigatórios.
             </DialogDescription>
           </DialogHeader>
-          <WebinarFormFields />
+          {webinarFormFields}
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
               Cancelar
@@ -724,7 +726,7 @@ export default function WebinarsAdmin() {
               Atualize os dados do webinar. Você pode incluir links de gravação para webinars passados.
             </DialogDescription>
           </DialogHeader>
-          <WebinarFormFields />
+          {webinarFormFields}
 
           {/* Card upload section */}
           {editingWebinar && (

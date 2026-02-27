@@ -1152,3 +1152,12 @@
 - [x] Fix: SQL raw sem backtick escaping para colunas camelCase
 - [x] Fix: updateNivelCompetencia usava assessmentPdiId diretamente como alunoId (deveria buscar do PDI)
 - [x] Fix: 5 registros de migração faltando na tabela __drizzle_migrations (0018-0022)
+## Remoção de página (27/02/2026 - sessão 3)
+- [x] Remover página "Registro de Mentoria" do menu sidebar do admin (mantida para mentores)
+- [x] Rota /registro-mentoria mantida no App.tsx (mentores ainda precisam acessar)
+- [x] Remover página "Relatório de Performance" do menu sidebar do admin
+- [ ] Confirmar remoção de "Registro de Mentoria" do admin (ainda aparece na versão publicada)
+- [ ] Confirmar remoção de "Relatório de Desempenho" do admin (ainda aparece na versão publicada)
+
+## Bug Crítico - Formulário Novo Webinar perde foco ao digitar (27/02/2026 - sessão 3)
+- [x] Investigar e corrigir perda de foco nos campos do formulário de criação de Novo Webinar (Gestão de Webinários) - causa: WebinarFormFields era arrow function dentro do render, recriando o DOM a cada keystroke. Corrigido para variável JSX.
