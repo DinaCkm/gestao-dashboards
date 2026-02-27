@@ -1006,3 +1006,9 @@
 - [x] myAttendance filtra selfReportedAt != null, excluindo presenças importadas via planilha
 - [x] Corrigir: cruzar events com scheduled_webinars pelo título e retornar scheduledWebinarId
 - [x] Incluir presenças importadas (selfReportedAt = null) no status de presença
+
+## Bug: Aluno com status "presente" no banco ainda vê botão Marcar Presença (27/02/2026)
+- [x] Se status="presente" na event_participation, tratar como "confirmed" no frontend
+- [x] Esconder botão "Marcar Presença" e mostrar badge verde
+- [x] myAttendance agora filtra apenas status="presente" e mapeia para scheduledWebinarId
+- [x] Confirmado: Valci tem 8 webinars mapeados corretamente (sw IDs: 2,3,4,5,7,9,10,18)

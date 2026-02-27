@@ -2566,17 +2566,21 @@ export const appRouter = router({
         const eventMap = new Map(allEvents.map(e => [e.id, e]));
         const scheduledByTitle = new Map(allScheduled.map(sw => [sw.title?.toLowerCase().trim(), sw]));
 
-        return participations.map(p => {
-          const evt = eventMap.get(p.eventId);
-          const matchedWebinar = evt ? scheduledByTitle.get(evt.title?.toLowerCase().trim() || '') : null;
-          return {
-            eventId: p.eventId,
-            scheduledWebinarId: matchedWebinar?.id || null,
-            reflexao: p.reflexao,
-            selfReportedAt: p.selfReportedAt,
-            status: p.status,
-          };
-        });
+        // Filtrar apenas presenças confirmadas (status="presente")
+        // Alunos com status "ausente" podem marcar presença depois
+        return participations
+          .filter(p => p.status === 'presente')
+          .map(p => {
+            const evt = eventMap.get(p.eventId);
+            const matchedWebinar = evt ? scheduledByTitle.get(evt.title?.toLowerCase().trim() || '') : null;
+            return {
+              eventId: p.eventId,
+              scheduledWebinarId: matchedWebinar?.id || null,
+              reflexao: p.reflexao,
+              selfReportedAt: p.selfReportedAt,
+              status: p.status,
+            };
+          });
       }),
 
     // Admin: visualizar reflexões dos alunos
