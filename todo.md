@@ -1023,3 +1023,6 @@
 - [x] Seletor de tarefa da biblioteca já existe no registro de sessão de mentoria
 - [x] Criar endpoint myTasks para retornar tarefas atribuídas ao aluno
 - [x] Criar seção "Minhas Tarefas Práticas" no Mural do aluno (card + drill-down com detalhes)
+
+## Fix: Título do card Tarefas Práticas aparecendo errado (27/02/2026)
+- [ ] Corrigir título "0s ss" para "Tarefas Práticas" no drill-down header
