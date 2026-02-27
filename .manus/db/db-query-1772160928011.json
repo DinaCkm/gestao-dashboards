@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE scheduled_webinars ADD COLUMN startDate TIMESTAMP NULL AFTER eventDate; ALTER TABLE scheduled_webinars ADD COLUMN endDate TIMESTAMP NULL AFTER startDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute ALTER TABLE scheduled_webinars ADD COLUMN startDate TIMESTAMP NULL AFTER eventDate; ALTER TABLE scheduled_webinars ADD COLUMN endDate TIMESTAMP NULL AFTER startDate;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1317
+}

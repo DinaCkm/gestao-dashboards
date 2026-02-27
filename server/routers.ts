@@ -2313,6 +2313,8 @@ export const appRouter = router({
         speaker: z.string().optional(),
         speakerBio: z.string().optional(),
         eventDate: z.string(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
         duration: z.number().optional(),
         meetingLink: z.string().optional(),
         youtubeLink: z.string().optional(),
@@ -2320,9 +2322,14 @@ export const appRouter = router({
         status: z.enum(['draft', 'published', 'completed', 'cancelled']).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        const eventDate = new Date(input.eventDate);
+        const startDate = input.startDate ? new Date(input.startDate) : eventDate;
+        const endDate = input.endDate ? new Date(input.endDate) : new Date(eventDate.getTime() + (input.duration || 60) * 60000);
         const id = await db.createWebinar({
           ...input,
-          eventDate: new Date(input.eventDate),
+          eventDate,
+          startDate,
+          endDate,
           createdBy: ctx.user.id,
         });
         return { id, success: true };
@@ -2337,6 +2344,8 @@ export const appRouter = router({
         speaker: z.string().optional(),
         speakerBio: z.string().optional(),
         eventDate: z.string().optional(),
+        startDate: z.string().optional().nullable(),
+        endDate: z.string().optional().nullable(),
         duration: z.number().optional(),
         meetingLink: z.string().optional(),
         youtubeLink: z.string().optional(),
@@ -2347,6 +2356,8 @@ export const appRouter = router({
         const { id, ...data } = input;
         const updateData: any = { ...data };
         if (data.eventDate) updateData.eventDate = new Date(data.eventDate);
+        if (data.startDate) updateData.startDate = new Date(data.startDate);
+        if (data.endDate) updateData.endDate = new Date(data.endDate);
         await db.updateWebinar(id, updateData);
         return { success: true };
       }),
@@ -2500,7 +2511,7 @@ export const appRouter = router({
 
   // ==================== ATTENDANCE (Presença + Reflexão) ====================
   attendance: router({
-    // Aluno marca presença e envia reflexão
+    // Aluno marca presença e envia reflexão (só após término do evento)
     markPresence: protectedProcedure
       .input(z.object({
         eventId: z.number(),
@@ -2512,6 +2523,23 @@ export const appRouter = router({
         if (!aluno) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
         }
+
+        // Verificar se o evento já terminou
+        // Buscar o evento na tabela events para pegar o título
+        const eventRecord = await db.getEventById(input.eventId);
+        if (!eventRecord) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Evento não encontrado.' });
+        }
+        // Buscar o webinar agendado correspondente pelo título para verificar endDate
+        const allWebinars = await db.listWebinars();
+        const matchingWebinar = allWebinars.find((w: any) => 
+          w.title?.toLowerCase().trim() === eventRecord.title?.toLowerCase().trim()
+        );
+        const endDate = matchingWebinar?.endDate || matchingWebinar?.eventDate || eventRecord.eventDate;
+        if (endDate && new Date(endDate) > new Date()) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'A marcação de presença só é liberada após o término do evento.' });
+        }
+
         const result = await db.markWebinarAttendance(aluno.id, input.eventId, input.reflexao);
         return { success: true, ...result };
       }),

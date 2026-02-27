@@ -521,7 +521,9 @@ export const scheduledWebinars = mysqlTable("scheduled_webinars", {
   theme: varchar("theme", { length: 255 }), // Tema do webinar
   speaker: varchar("speaker", { length: 255 }), // Palestrante/apresentador
   speakerBio: text("speakerBio"), // Mini-bio do palestrante
-  eventDate: timestamp("eventDate").notNull(), // Data e hora do evento
+  eventDate: timestamp("eventDate").notNull(), // Data e hora do evento (legado, manter para compatibilidade)
+  startDate: timestamp("startDate"), // Data e hora de início do evento
+  endDate: timestamp("endDate"), // Data e hora de término (libera marcação de presença)
   duration: int("duration").default(60), // Duração em minutos
   meetingLink: varchar("meetingLink", { length: 500 }), // Link Google Meet/Zoom
   youtubeLink: varchar("youtubeLink", { length: 500 }), // Link YouTube (gravação)

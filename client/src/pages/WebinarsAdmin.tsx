@@ -72,6 +72,8 @@ interface WebinarForm {
   speaker: string;
   speakerBio: string;
   eventDate: string;
+  startDate: string;
+  endDate: string;
   duration: number;
   meetingLink: string;
   youtubeLink: string;
@@ -86,6 +88,8 @@ const emptyForm: WebinarForm = {
   speaker: "",
   speakerBio: "",
   eventDate: "",
+  startDate: "",
+  endDate: "",
   duration: 60,
   meetingLink: "",
   youtubeLink: "",
@@ -179,6 +183,12 @@ export default function WebinarsAdmin() {
       eventDate: webinar.eventDate
         ? new Date(webinar.eventDate).toISOString().slice(0, 16)
         : "",
+      startDate: webinar.startDate
+        ? new Date(webinar.startDate).toISOString().slice(0, 16)
+        : "",
+      endDate: webinar.endDate
+        ? new Date(webinar.endDate).toISOString().slice(0, 16)
+        : "",
       duration: webinar.duration || 60,
       meetingLink: webinar.meetingLink || "",
       youtubeLink: webinar.youtubeLink || "",
@@ -189,8 +199,8 @@ export default function WebinarsAdmin() {
   };
 
   const handleSubmitCreate = () => {
-    if (!form.title || !form.eventDate) {
-      toast.error("Preencha título e data");
+    if (!form.title || (!form.startDate && !form.eventDate)) {
+      toast.error("Preencha título e data de início");
       return;
     }
     createMutation.mutate({
@@ -200,6 +210,8 @@ export default function WebinarsAdmin() {
       speaker: form.speaker || undefined,
       speakerBio: form.speakerBio || undefined,
       eventDate: new Date(form.eventDate).toISOString(),
+      startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
+      endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
       duration: form.duration || undefined,
       meetingLink: form.meetingLink || undefined,
       youtubeLink: form.youtubeLink || undefined,
@@ -218,6 +230,8 @@ export default function WebinarsAdmin() {
       speaker: form.speaker || undefined,
       speakerBio: form.speakerBio || undefined,
       eventDate: form.eventDate ? new Date(form.eventDate).toISOString() : undefined,
+      startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
+      endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
       duration: form.duration || undefined,
       meetingLink: form.meetingLink || undefined,
       youtubeLink: form.youtubeLink || undefined,
@@ -279,13 +293,43 @@ export default function WebinarsAdmin() {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="eventDate">Data e Hora *</Label>
+          <Label htmlFor="startDate">Data/Hora Início *</Label>
+          <Input
+            id="startDate"
+            type="datetime-local"
+            value={form.startDate}
+            onChange={(e) => {
+              const startDate = e.target.value;
+              setForm({ 
+                ...form, 
+                startDate,
+                eventDate: startDate || form.eventDate, // eventDate = startDate por padrão
+              });
+            }}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="endDate">Data/Hora Término *</Label>
+          <Input
+            id="endDate"
+            type="datetime-local"
+            value={form.endDate}
+            onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+          />
+          <p className="text-[10px] text-amber-600">A presença só será liberada após este horário</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="eventDate">Data de Referência</Label>
           <Input
             id="eventDate"
             type="datetime-local"
             value={form.eventDate}
             onChange={(e) => setForm({ ...form, eventDate: e.target.value })}
           />
+          <p className="text-[10px] text-gray-400">Preenchido automaticamente com a data de início</p>
         </div>
         <div className="grid gap-2">
           <Label htmlFor="duration">Duração (min)</Label>

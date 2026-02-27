@@ -407,12 +407,17 @@ function WebinarCard({
   webinar,
   variant = "upcoming",
   attendanceStatus,
+  onMarkPresence,
 }: {
   webinar: any;
   variant?: "upcoming" | "past";
   attendanceStatus?: "confirmed" | "pending" | null;
+  onMarkPresence?: () => void;
 }) {
   const isPast = variant === "past";
+  // Verificar se o evento já terminou (endDate ou eventDate)
+  const eventEndDate = webinar.endDate || webinar.eventDate;
+  const hasEnded = eventEndDate ? new Date(eventEndDate) < new Date() : isPast;
 
   return (
     <Card className={`group hover:shadow-lg transition-all duration-300 overflow-hidden ${
@@ -461,9 +466,14 @@ function WebinarCard({
                   Gravação
                 </Badge>
               )}
-              {!isPast && (
+              {!isPast && !hasEnded && (
                 <Badge className="bg-green-50 text-green-700 border-green-200 text-xs">
                   Próximo
+                </Badge>
+              )}
+              {!isPast && hasEnded && (
+                <Badge className="bg-gray-50 text-gray-600 border-gray-200 text-xs">
+                  Em andamento
                 </Badge>
               )}
             </div>
@@ -501,6 +511,16 @@ function WebinarCard({
               >
                 <ExternalLink className="h-3 w-3 mr-1" />
                 Acessar
+              </Button>
+            )}
+            {isPast && hasEnded && attendanceStatus === "pending" && onMarkPresence && (
+              <Button
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-8"
+                onClick={onMarkPresence}
+              >
+                <MessageSquareText className="h-3 w-3 mr-1" />
+                Marcar Presença
               </Button>
             )}
             {isPast && webinar.youtubeLink && (
@@ -928,6 +948,7 @@ export default function MuralAluno() {
                     webinar={w}
                     variant="past"
                     attendanceStatus={getAttendanceStatus(w.id)}
+                    onMarkPresence={() => setAttendanceModalOpen(true)}
                   />
                 ))}
               </div>

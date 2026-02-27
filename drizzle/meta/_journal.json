@@ -141,6 +141,13 @@
       "when": 1772160397056,
       "tag": "0019_colossal_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1772161447645,
+      "tag": "0020_supreme_blade",
+      "breakpoints": true
     }
   ]
 }

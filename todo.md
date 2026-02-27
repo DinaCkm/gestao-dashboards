@@ -958,3 +958,13 @@
 - [x] Testes vitest (9 testes passando, 154 total)
 - [ ] Incluir alerta educativo: "Registre presença somente após deixar sua percepção e insights. A participação é para seu desenvolvimento, não para marcar ponto."
 - [x] Incluir alerta educativo aprovado no modal de presença
+
+## Controle de Presença por Data/Hora do Evento (27/02/2026)
+- [x] Adicionar campos startDate e endDate na tabela scheduled_webinars
+- [x] Atualizar formulário admin de webinars com data/hora início e fim (endpoints create/update)
+- [x] Condicionar marcação de presença: só liberar após endDate do evento (validação backend + frontend)
+- [x] Aba Gravações: botão "Assistir" (YouTube) + botão "Marcar Presença" (se já terminou e não confirmou)
+- [x] Banner de presença pendente: só exibir eventos que já terminaram (filtro por endDate no db.ts)
+- [x] Eventos futuros: apenas botão "Participar" (link reunião), sem opção de presença
+- [x] Badge "Presença confirmada" para eventos já confirmados
+- [x] Testes vitest atualizados (163 testes passando, 14 arquivos)

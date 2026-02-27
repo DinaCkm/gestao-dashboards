@@ -3237,9 +3237,20 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<{
 
   const participationMap = new Map(participations.map(p => [p.eventId, p]));
 
+  // Buscar webinars agendados para verificar endDate
+  const allScheduledWebinars = await db.select().from(scheduledWebinars);
+  const webinarByTitle = new Map(allScheduledWebinars.map(w => [w.title?.toLowerCase().trim(), w]));
+  const now = new Date();
+
   // Retornar eventos onde selfReportedAt é null (não marcou presença pelo sistema)
+  // E que já terminaram (endDate < agora)
   return allEvents.map(evt => {
     const part = participationMap.get(evt.id);
+    // Tentar encontrar o webinar agendado correspondente para verificar endDate
+    const matchedWebinar = webinarByTitle.get(evt.title?.toLowerCase().trim() || '');
+    const endDate = matchedWebinar?.endDate || matchedWebinar?.eventDate || evt.eventDate;
+    const hasEnded = endDate ? new Date(endDate) < now : true; // Se não tem data, assume que já passou
+
     return {
       eventId: evt.id,
       eventName: evt.title,
@@ -3248,8 +3259,11 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<{
       status: part?.status || null,
       selfReported: !!part?.selfReportedAt,
       reflexao: part?.reflexao || null,
+      hasEnded,
+      endDate: endDate || null,
+      youtubeLink: matchedWebinar?.youtubeLink || null,
     };
-  }).filter(e => !participationMap.get(e.eventId)?.selfReportedAt);
+  }).filter(e => !participationMap.get(e.eventId)?.selfReportedAt && e.hasEnded);
 }
 
 /**
@@ -3287,4 +3301,15 @@ export async function getWebinarReflections(eventId?: number) {
     alunoName: alunoMap.get(r.alunoId)?.name || 'Desconhecido',
     eventName: eventMap.get(r.eventId)?.title || 'Evento desconhecido',
   }));
+}
+
+
+/**
+ * Buscar evento por ID
+ */
+export async function getEventById(eventId: number): Promise<Event | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
+  return result[0] || null;
 }
