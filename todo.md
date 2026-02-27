@@ -1012,3 +1012,9 @@
 - [x] Esconder botão "Marcar Presença" e mostrar badge verde
 - [x] myAttendance agora filtra apenas status="presente" e mapeia para scheduledWebinarId
 - [x] Confirmado: Valci tem 8 webinars mapeados corretamente (sw IDs: 2,3,4,5,7,9,10,18)
+
+## Bug: Badge verde não aparece para Joseane com 20 presenças (27/02/2026)
+- [x] Investigar por que myAttendance não retorna dados para Joseane logada
+- [x] Causa: events tinham programId=NULL, filtro por programa retornava 0 resultados
+- [x] Corrigir: buscar events pelos IDs das participacoes do aluno (sem filtrar por programa)
+- [x] Validado via script: 20 presentes, 20 mapeados para scheduled_webinars

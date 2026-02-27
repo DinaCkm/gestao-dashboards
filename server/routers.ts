@@ -2558,12 +2558,12 @@ export const appRouter = router({
         const aluno = await db.getAlunoByEmail(ctx.user.email || '');
         if (!aluno) return [];
         const participations = await db.getEventParticipationByAluno(aluno.id);
-        // Buscar events do programa do aluno e scheduled_webinars para mapear por título
-        const allEvents = aluno.programId
-          ? await db.getEventsByProgram(aluno.programId)
-          : [];
+        // Buscar events pelos IDs das participacoes (sem filtrar por programa)
+        const eventIds = participations.map(p => p.eventId);
+        const eventsArr = await Promise.all(eventIds.map(id => db.getEventById(id)));
         const allScheduled = await db.listWebinars();
-        const eventMap = new Map(allEvents.map(e => [e.id, e]));
+        const eventMap = new Map<number, NonNullable<Awaited<ReturnType<typeof db.getEventById>>>>();
+        for (const e of eventsArr) { if (e) eventMap.set(e.id, e); }
         const scheduledByTitle = new Map(allScheduled.map(sw => [sw.title?.toLowerCase().trim(), sw]));
 
         // Filtrar apenas presenças confirmadas (status="presente")
