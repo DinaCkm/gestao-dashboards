@@ -687,7 +687,16 @@ export default function MuralAluno() {
     if (upcomingWebinars) {
       upcomingWebinars.forEach((w: any) => items.push({
         type: "upcoming_webinar",
-        date: new Date(w.eventDate),
+        date: new Date(w.eventDate || w.startDate),
+        data: w,
+      }));
+    }
+
+    // Incluir gravações recentes (webinars passados) na aba Todos
+    if (pastWebinars) {
+      pastWebinars.slice(0, 10).forEach((w: any) => items.push({
+        type: "past_webinar",
+        date: new Date(w.eventDate || w.startDate),
         data: w,
       }));
     }
@@ -708,7 +717,7 @@ export default function MuralAluno() {
       }
       return b.date.getTime() - a.date.getTime();
     });
-  }, [upcomingWebinars, activeAnnouncements]);
+  }, [upcomingWebinars, pastWebinars, activeAnnouncements]);
 
   const firstName = user?.name?.split(" ")[0] || "Aluno";
   const pendingCount = pendingAttendance?.length || 0;
@@ -774,8 +783,8 @@ export default function MuralAluno() {
         {nextWebinar && <HeroBanner webinar={nextWebinar} />}
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("webinars")}>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                 <Video className="h-5 w-5 text-blue-600" />
@@ -786,7 +795,18 @@ export default function MuralAluno() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100">
+          <Card className="bg-gradient-to-br from-red-50 to-white border-red-100 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("gravacoes")}>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                <Youtube className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-red-700">{(pastWebinars?.length || 0)}</p>
+                <p className="text-[10px] text-red-600/70 font-medium">Gravações Disponíveis</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("cursos")}>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                 <GraduationCap className="h-5 w-5 text-purple-600" />
@@ -797,7 +817,7 @@ export default function MuralAluno() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100">
+          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("atividades")}>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
                 <Zap className="h-5 w-5 text-emerald-600" />
@@ -808,7 +828,7 @@ export default function MuralAluno() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-100">
+          <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-100 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("avisos")}>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
                 <Bell className="h-5 w-5 text-amber-600" />
@@ -862,6 +882,14 @@ export default function MuralAluno() {
               allItems.map((item, idx) => (
                 item.type === "upcoming_webinar" ? (
                   <WebinarCard key={`uw-${item.data.id}`} webinar={item.data} variant="upcoming" />
+                ) : item.type === "past_webinar" ? (
+                  <WebinarCard
+                    key={`pw-${item.data.id}`}
+                    webinar={item.data}
+                    variant="past"
+                    attendanceStatus={getAttendanceStatus(item.data.id)}
+                    onMarkPresence={() => setAttendanceModalOpen(true)}
+                  />
                 ) : (
                   <AnnouncementCard key={`ann-${item.data.id}`} announcement={item.data} />
                 )

@@ -3056,7 +3056,7 @@ export async function listUpcomingWebinars(limit: number = 10): Promise<Schedule
   if (!db) return [];
   return await db.select().from(scheduledWebinars)
     .where(and(
-      eq(scheduledWebinars.status, "published"),
+      inArray(scheduledWebinars.status, ["published", "completed"]),
       gte(scheduledWebinars.eventDate, new Date())
     ))
     .orderBy(asc(scheduledWebinars.eventDate))

@@ -968,3 +968,7 @@
 - [x] Eventos futuros: apenas botão "Participar" (link reunião), sem opção de presença
 - [x] Badge "Presença confirmada" para eventos já confirmados
 - [x] Testes vitest atualizados (163 testes passando, 14 arquivos)
+
+## Bug: Mural do Aluno mostra 0 webinars (27/02/2026)
+- [x] Investigar por que webinars não aparecem (causa: todos eram passados, aba Todos só mostrava upcoming)
+- [x] Corrigir: adicionado card "Gravações Disponíveis" (20), aba Todos agora inclui webinars passados, cards clicáveis
