@@ -48,7 +48,7 @@ function OnboardingStepper({ currentStep, onStepClick }: { currentStep: number; 
         {/* Linha de conexão */}
         <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-200 z-0" />
         <div
-          className="absolute top-6 left-0 h-0.5 bg-gradient-to-r from-[#1B3A5D] to-[#E87722] z-0 transition-all duration-700"
+          className="absolute top-6 left-0 h-0.5 bg-gradient-to-r from-[#0A1E3E] to-[#F5991F] z-0 transition-all duration-700"
           style={{ width: `${((currentStep - 1) / (ONBOARDING_STEPS.length - 1)) * 100}%` }}
         />
 
@@ -70,9 +70,9 @@ function OnboardingStepper({ currentStep, onStepClick }: { currentStep: number; 
               <div className={`
                 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2
                 ${isCompleted
-                  ? "bg-[#1B3A5D] border-[#1B3A5D] text-white shadow-lg shadow-[#1B3A5D]/30"
+                  ? "bg-[#0A1E3E] border-[#0A1E3E] text-white shadow-lg shadow-[#0A1E3E]/30"
                   : isCurrent
-                    ? "bg-white border-[#E87722] text-[#E87722] shadow-lg shadow-[#E87722]/30 ring-4 ring-[#E87722]/20"
+                    ? "bg-white border-[#F5991F] text-[#F5991F] shadow-lg shadow-[#F5991F]/30 ring-4 ring-[#F5991F]/20"
                     : "bg-gray-100 border-gray-300 text-gray-400"
                 }
                 ${!isLocked ? "group-hover:scale-110" : ""}
@@ -86,12 +86,12 @@ function OnboardingStepper({ currentStep, onStepClick }: { currentStep: number; 
                 )}
               </div>
               <span className={`mt-2 text-xs font-medium text-center ${
-                isCompleted ? "text-[#1B3A5D]" : isCurrent ? "text-[#E87722]" : "text-gray-400"
+                isCompleted ? "text-[#0A1E3E]" : isCurrent ? "text-[#F5991F]" : "text-gray-400"
               }`}>
                 {step.label}
               </span>
               <span className={`text-[10px] text-center ${
-                isCurrent ? "text-[#E87722]/70" : "text-gray-400"
+                isCurrent ? "text-[#F5991F]/70" : "text-gray-400"
               }`}>
                 {step.description}
               </span>
@@ -138,18 +138,18 @@ function EtapaCadastro({ onComplete }: { onComplete: () => void }) {
         <Card className="lg:row-span-2">
           <CardContent className="pt-6 flex flex-col items-center">
             <div className="relative mb-4">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#1B3A5D]/20 to-[#E87722]/20 flex items-center justify-center border-4 border-white shadow-lg">
-                <User className="h-16 w-16 text-[#1B3A5D]/50" />
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#0A1E3E]/20 to-[#F5991F]/20 flex items-center justify-center border-4 border-white shadow-lg">
+                <User className="h-16 w-16 text-[#0A1E3E]/50" />
               </div>
               <button
-                className="absolute bottom-0 right-0 w-10 h-10 bg-[#E87722] rounded-full flex items-center justify-center text-white shadow-lg hover:bg-[#E87722]/90 transition-colors"
+                className="absolute bottom-0 right-0 w-10 h-10 bg-[#F5991F] rounded-full flex items-center justify-center text-white shadow-lg hover:bg-[#F5991F]/90 transition-colors"
                 onClick={() => toast.info("Upload de foto será implementado em breve")}
               >
                 <Camera className="h-5 w-5" />
               </button>
             </div>
             <h3 className="font-semibold text-gray-900">{perfil.nome}</h3>
-            <Badge className="mt-2 bg-[#1B3A5D]/10 text-[#1B3A5D] border-0">
+            <Badge className="mt-2 bg-[#0A1E3E]/10 text-[#0A1E3E] border-0">
               <GraduationCap className="h-3 w-3 mr-1" />{perfil.programa}
             </Badge>
             <Badge variant="outline" className="mt-1 text-gray-500">
@@ -162,7 +162,7 @@ function EtapaCadastro({ onComplete }: { onComplete: () => void }) {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4 text-[#1B3A5D]" />
+              <User className="h-4 w-4 text-[#0A1E3E]" />
               Dados Pessoais
             </CardTitle>
           </CardHeader>
@@ -192,7 +192,7 @@ function EtapaCadastro({ onComplete }: { onComplete: () => void }) {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-[#E87722]" />
+              <Briefcase className="h-4 w-4 text-[#F5991F]" />
               Dados Profissionais
             </CardTitle>
           </CardHeader>
@@ -222,7 +222,7 @@ function EtapaCadastro({ onComplete }: { onComplete: () => void }) {
 
       <div className="flex justify-end">
         <Button
-          className="bg-[#1B3A5D] hover:bg-[#1B3A5D]/90 text-white px-8 py-3 text-base"
+          className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
           onClick={() => {
             toast.success("Cadastro salvo com sucesso!");
             onComplete();
@@ -252,8 +252,8 @@ function EtapaAssessment({ onComplete }: { onComplete: () => void }) {
       <Card className="max-w-2xl mx-auto">
         <CardContent className="pt-8 pb-8">
           <div className="text-center space-y-6">
-            <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-[#1B3A5D]/10 to-[#E87722]/10 flex items-center justify-center">
-              <ClipboardCheck className="h-10 w-10 text-[#1B3A5D]" />
+            <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-[#0A1E3E]/10 to-[#F5991F]/10 flex items-center justify-center">
+              <ClipboardCheck className="h-10 w-10 text-[#0A1E3E]" />
             </div>
 
             <div>
@@ -285,7 +285,7 @@ function EtapaAssessment({ onComplete }: { onComplete: () => void }) {
 
             {status !== "concluido" && (
               <Button
-                className="bg-[#E87722] hover:bg-[#E87722]/90 text-white px-8 py-3"
+                className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white px-8 py-3"
                 onClick={() => toast.info("Você será redirecionado para a plataforma de assessment")}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
@@ -305,7 +305,7 @@ function EtapaAssessment({ onComplete }: { onComplete: () => void }) {
 
       <div className="flex justify-end">
         <Button
-          className="bg-[#1B3A5D] hover:bg-[#1B3A5D]/90 text-white px-8 py-3 text-base"
+          className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
           onClick={() => {
             toast.success("Assessment registrado! Avançando para escolha da mentora.");
             onComplete();
@@ -339,7 +339,7 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
             key={mentora.id}
             className={`overflow-hidden transition-all duration-300 hover:shadow-lg cursor-pointer group ${
               selectedMentora?.id === mentora.id
-                ? "ring-2 ring-[#E87722] shadow-lg shadow-[#E87722]/10"
+                ? "ring-2 ring-[#F5991F] shadow-lg shadow-[#F5991F]/10"
                 : "hover:shadow-md"
             } ${!mentora.disponivel ? "opacity-60" : ""}`}
           >
@@ -365,7 +365,7 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
                 )}
                 {selectedMentora?.id === mentora.id && (
                   <div className="absolute top-3 right-3">
-                    <div className="w-8 h-8 bg-[#E87722] rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-[#F5991F] rounded-full flex items-center justify-center">
                       <CheckCircle2 className="h-5 w-5 text-white" />
                     </div>
                   </div>
@@ -378,7 +378,7 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
 
                 <div className="flex flex-wrap gap-1">
                   {mentora.areasAtuacao.slice(0, 3).map((area) => (
-                    <Badge key={area} variant="outline" className="text-xs bg-[#1B3A5D]/5 text-[#1B3A5D] border-[#1B3A5D]/20">
+                    <Badge key={area} variant="outline" className="text-xs bg-[#0A1E3E]/5 text-[#0A1E3E] border-[#0A1E3E]/20">
                       {area}
                     </Badge>
                   ))}
@@ -401,8 +401,8 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
                       size="sm"
                       className={`flex-1 text-xs ${
                         selectedMentora?.id === mentora.id
-                          ? "bg-[#E87722] hover:bg-[#E87722]/90"
-                          : "bg-[#1B3A5D] hover:bg-[#1B3A5D]/90"
+                          ? "bg-[#F5991F] hover:bg-[#F5991F]/90"
+                          : "bg-[#0A1E3E] hover:bg-[#0A1E3E]/90"
                       }`}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -437,11 +437,11 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
                   <img
                     src={detailMentora.foto}
                     alt={detailMentora.nome}
-                    className="w-20 h-20 rounded-full object-cover object-top border-2 border-[#1B3A5D]/20"
+                    className="w-20 h-20 rounded-full object-cover object-top border-2 border-[#0A1E3E]/20"
                   />
                   <div>
                     <DialogTitle className="text-xl">{detailMentora.nome}</DialogTitle>
-                    <DialogDescription className="text-[#E87722] font-medium">
+                    <DialogDescription className="text-[#F5991F] font-medium">
                       {detailMentora.especialidade}
                     </DialogDescription>
                   </div>
@@ -451,28 +451,28 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
               <div className="space-y-5 mt-4">
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <User className="h-4 w-4 text-[#1B3A5D]" /> Sobre
+                    <User className="h-4 w-4 text-[#0A1E3E]" /> Sobre
                   </h4>
                   <p className="text-sm text-gray-600 leading-relaxed">{detailMentora.curriculoCompleto}</p>
                 </div>
 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4 text-[#1B3A5D]" /> Formação
+                    <GraduationCap className="h-4 w-4 text-[#0A1E3E]" /> Formação
                   </h4>
                   <p className="text-sm text-gray-600">{detailMentora.formacao}</p>
                 </div>
 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-[#1B3A5D]" /> Experiência
+                    <Briefcase className="h-4 w-4 text-[#0A1E3E]" /> Experiência
                   </h4>
                   <p className="text-sm text-gray-600">{detailMentora.experiencia}</p>
                 </div>
 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <Award className="h-4 w-4 text-[#E87722]" /> Certificações
+                    <Award className="h-4 w-4 text-[#F5991F]" /> Certificações
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {detailMentora.certificacoes.map((cert) => (
@@ -485,11 +485,11 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <Target className="h-4 w-4 text-[#1B3A5D]" /> Áreas de Atuação
+                    <Target className="h-4 w-4 text-[#0A1E3E]" /> Áreas de Atuação
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {detailMentora.areasAtuacao.map((area) => (
-                      <Badge key={area} className="bg-[#1B3A5D]/10 text-[#1B3A5D] border-0">
+                      <Badge key={area} className="bg-[#0A1E3E]/10 text-[#0A1E3E] border-0">
                         {area}
                       </Badge>
                     ))}
@@ -498,7 +498,7 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
 
                 {detailMentora.disponivel ? (
                   <Button
-                    className="w-full bg-[#E87722] hover:bg-[#E87722]/90 text-white py-3"
+                    className="w-full bg-[#F5991F] hover:bg-[#F5991F]/90 text-white py-3"
                     onClick={() => {
                       setSelectedMentora(detailMentora);
                       setDetailMentora(null);
@@ -523,7 +523,7 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
       {selectedMentora && (
         <div className="flex justify-end">
           <Button
-            className="bg-[#1B3A5D] hover:bg-[#1B3A5D]/90 text-white px-8 py-3 text-base"
+            className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
             onClick={() => {
               onSelectMentora(selectedMentora);
               toast.success(`${selectedMentora.nome} selecionada como sua mentora!`);
@@ -576,10 +576,10 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
               <img
                 src={mentora.foto}
                 alt={mentora.nome}
-                className="w-24 h-24 rounded-full object-cover object-top border-3 border-[#E87722]/30 mb-3"
+                className="w-24 h-24 rounded-full object-cover object-top border-3 border-[#F5991F]/30 mb-3"
               />
               <h3 className="font-semibold text-gray-900">{mentora.nome}</h3>
-              <p className="text-sm text-[#E87722]">{mentora.especialidade}</p>
+              <p className="text-sm text-[#F5991F]">{mentora.especialidade}</p>
               <Badge className="mt-2 bg-emerald-100 text-emerald-700 border-0">
                 <CheckCircle2 className="h-3 w-3 mr-1" /> Sua Mentora
               </Badge>
@@ -591,7 +591,7 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-[#1B3A5D]" />
+              <Calendar className="h-4 w-4 text-[#0A1E3E]" />
               Horários Disponíveis
             </CardTitle>
             <CardDescription>Selecione a data e horário para o Encontro Inicial</CardDescription>
@@ -602,7 +602,7 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
                 {Object.entries(slotsByDate).map(([data, slots]) => (
                   <div key={data}>
                     <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4 text-[#1B3A5D]" />
+                      <CalendarDays className="h-4 w-4 text-[#0A1E3E]" />
                       {new Date(data + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
                     </h4>
                     <div className="flex flex-wrap gap-2">
@@ -612,8 +612,8 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
                           onClick={() => setSelectedSlot(slot)}
                           className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
                             selectedSlot?.id === slot.id
-                              ? "bg-[#E87722] text-white border-[#E87722] shadow-md"
-                              : "bg-white text-gray-700 border-gray-200 hover:border-[#E87722] hover:text-[#E87722]"
+                              ? "bg-[#F5991F] text-white border-[#F5991F] shadow-md"
+                              : "bg-white text-gray-700 border-gray-200 hover:border-[#F5991F] hover:text-[#F5991F]"
                           }`}
                         >
                           <Clock className="h-3 w-3 inline mr-1" />
@@ -632,7 +632,7 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
             )}
 
             {selectedSlot && (
-              <div className="mt-6 p-4 bg-[#1B3A5D]/5 rounded-lg border border-[#1B3A5D]/10">
+              <div className="mt-6 p-4 bg-[#0A1E3E]/5 rounded-lg border border-[#0A1E3E]/10">
                 <h4 className="font-medium text-gray-900 mb-2">Resumo do Agendamento</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <span className="text-gray-500">Data:</span>
@@ -642,7 +642,7 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
                   <span className="text-gray-500">Duração:</span>
                   <span className="font-medium">{selectedSlot.duracao} minutos</span>
                   <span className="text-gray-500">Link da Reunião:</span>
-                  <a href={selectedSlot.linkMeet} target="_blank" rel="noopener noreferrer" className="font-medium text-[#1B3A5D] hover:underline flex items-center gap-1">
+                  <a href={selectedSlot.linkMeet} target="_blank" rel="noopener noreferrer" className="font-medium text-[#0A1E3E] hover:underline flex items-center gap-1">
                     Google Meet <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
@@ -655,7 +655,7 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
       {selectedSlot && (
         <div className="flex justify-end">
           <Button
-            className="bg-[#1B3A5D] hover:bg-[#1B3A5D]/90 text-white px-8 py-3 text-base"
+            className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
             onClick={() => {
               toast.success("Encontro Inicial agendado com sucesso!");
               onComplete();
@@ -699,7 +699,7 @@ function EtapaPrimeiroEncontro({ mentora, slot, onComplete }: { mentora: Mentora
                   </p>
                 </div>
 
-                <div className="bg-[#1B3A5D]/5 rounded-lg p-4 text-left space-y-3">
+                <div className="bg-[#0A1E3E]/5 rounded-lg p-4 text-left space-y-3">
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-emerald-500" />
                     <span className="text-sm text-gray-700">Presença registrada</span>
@@ -736,7 +736,7 @@ function EtapaPrimeiroEncontro({ mentora, slot, onComplete }: { mentora: Mentora
                     Acesse o link abaixo no horário agendado para participar da reunião.
                   </p>
                 </div>
-                <Button className="bg-[#E87722] hover:bg-[#E87722]/90 text-white px-8 py-3">
+                <Button className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white px-8 py-3">
                   <Play className="h-4 w-4 mr-2" />
                   Entrar na Reunião (Google Meet)
                 </Button>
@@ -752,7 +752,7 @@ function EtapaPrimeiroEncontro({ mentora, slot, onComplete }: { mentora: Mentora
       {encontroRealizado && (
         <div className="flex justify-center">
           <Button
-            className="bg-gradient-to-r from-[#1B3A5D] to-[#E87722] hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg"
+            className="bg-gradient-to-r from-[#0A1E3E] to-[#F5991F] hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg"
             onClick={() => {
               toast.success("Bem-vinda ao Programa de Desenvolvimento!");
               onComplete();
@@ -793,7 +793,7 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
         </div>
         <div className="flex items-center gap-3">
           {mentora && (
-            <div className="flex items-center gap-2 bg-[#1B3A5D]/5 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 bg-[#0A1E3E]/5 rounded-lg px-3 py-2">
               <img src={mentora.foto} alt={mentora.nome} className="w-8 h-8 rounded-full object-cover object-top" />
               <div>
                 <p className="text-xs text-gray-500">Sua Mentora</p>
@@ -801,7 +801,7 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
               </div>
             </div>
           )}
-          <Badge className="bg-[#1B3A5D]/10 text-[#1B3A5D] border-0 px-3 py-1">
+          <Badge className="bg-[#0A1E3E]/10 text-[#0A1E3E] border-0 px-3 py-1">
             <GraduationCap className="h-3 w-3 mr-1" /> SEBRAE TO
           </Badge>
         </div>
@@ -810,22 +810,22 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
       {/* Tabs do Portal */}
       <Tabs defaultValue="performance" className="w-full">
         <TabsList className="bg-gray-100 w-full flex flex-wrap h-auto gap-1 p-1">
-          <TabsTrigger value="performance" className="flex-1 min-w-[100px] data-[state=active]:bg-[#1B3A5D] data-[state=active]:text-white text-xs sm:text-sm">
+          <TabsTrigger value="performance" className="flex-1 min-w-[100px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-xs sm:text-sm">
             <TrendingUp className="h-4 w-4 mr-1" /> Performance
           </TabsTrigger>
-          <TabsTrigger value="trilha" className="flex-1 min-w-[100px] data-[state=active]:bg-[#1B3A5D] data-[state=active]:text-white text-xs sm:text-sm">
+          <TabsTrigger value="trilha" className="flex-1 min-w-[100px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-xs sm:text-sm">
             <Target className="h-4 w-4 mr-1" /> Minha Trilha
           </TabsTrigger>
-          <TabsTrigger value="mentorias" className="flex-1 min-w-[100px] data-[state=active]:bg-[#1B3A5D] data-[state=active]:text-white text-xs sm:text-sm">
+          <TabsTrigger value="mentorias" className="flex-1 min-w-[100px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-xs sm:text-sm">
             <MessageSquare className="h-4 w-4 mr-1" /> Mentorias
           </TabsTrigger>
-          <TabsTrigger value="tarefas" className="flex-1 min-w-[100px] data-[state=active]:bg-[#1B3A5D] data-[state=active]:text-white text-xs sm:text-sm">
+          <TabsTrigger value="tarefas" className="flex-1 min-w-[100px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-xs sm:text-sm">
             <Zap className="h-4 w-4 mr-1" /> Tarefas
           </TabsTrigger>
-          <TabsTrigger value="cursos" className="flex-1 min-w-[100px] data-[state=active]:bg-[#1B3A5D] data-[state=active]:text-white text-xs sm:text-sm">
+          <TabsTrigger value="cursos" className="flex-1 min-w-[100px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-xs sm:text-sm">
             <BookOpen className="h-4 w-4 mr-1" /> Cursos
           </TabsTrigger>
-          <TabsTrigger value="webinars" className="flex-1 min-w-[100px] data-[state=active]:bg-[#1B3A5D] data-[state=active]:text-white text-xs sm:text-sm">
+          <TabsTrigger value="webinars" className="flex-1 min-w-[100px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-xs sm:text-sm">
             <Youtube className="h-4 w-4 mr-1" /> Webinars
           </TabsTrigger>
         </TabsList>
@@ -860,8 +860,8 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
-                    <div className="p-4 rounded-xl bg-gradient-to-br from-[#1B3A5D]/10 to-[#E87722]/10">
-                      <Trophy className="h-10 w-10 text-[#E87722]" />
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-[#0A1E3E]/10 to-[#F5991F]/10">
+                      <Trophy className="h-10 w-10 text-[#F5991F]" />
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Nota Final</p>
@@ -886,7 +886,7 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
                       <PolarGrid stroke="#e5e7eb" />
                       <PolarAngleAxis dataKey="indicator" tick={{ fill: "#6b7280", fontSize: 11 }} />
                       <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
-                      <Radar dataKey="value" stroke="#1B3A5D" fill="#1B3A5D" fillOpacity={0.2} />
+                      <Radar dataKey="value" stroke="#0A1E3E" fill="#0A1E3E" fillOpacity={0.2} />
                       <Tooltip />
                     </RadarChart>
                   </ResponsiveContainer>
@@ -902,7 +902,7 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Target className="h-5 w-5 text-[#E87722]" />
+                  <Target className="h-5 w-5 text-[#F5991F]" />
                   Trilha de Desenvolvimento
                 </CardTitle>
                 <CardDescription>Competências organizadas por ciclos com datas e progresso</CardDescription>
@@ -1002,7 +1002,7 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
                 <p className="text-sm text-gray-500">Histórico e próximas sessões com {mentora?.nome || "sua mentora"}</p>
               </div>
               <Button
-                className="bg-[#E87722] hover:bg-[#E87722]/90 text-white"
+                className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
                 onClick={() => toast.info("Sistema de agendamento será implementado em breve")}
               >
                 <CalendarDays className="h-4 w-4 mr-2" /> Agendar Sessão
@@ -1059,7 +1059,7 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
                     )}
                     {sessao.tarefaAtribuida && (
                       <div className="mt-2 ml-16 flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-[#E87722]" />
+                        <Zap className="h-4 w-4 text-[#F5991F]" />
                         <span className="text-sm text-gray-600">Tarefa: <strong>{sessao.tarefaAtribuida}</strong></span>
                       </div>
                     )}
@@ -1140,7 +1140,7 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
                         </div>
 
                         {tarefa.relatoAluno && (
-                          <div className="p-4 bg-[#1B3A5D]/5 rounded-lg">
+                          <div className="p-4 bg-[#0A1E3E]/5 rounded-lg">
                             <h4 className="text-sm font-semibold text-gray-800 mb-2">Seu Relato</h4>
                             <p className="text-sm text-gray-600">{tarefa.relatoAluno}</p>
                           </div>
@@ -1170,7 +1170,7 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
                               </p>
                             </div>
                             <Button
-                              className="bg-[#1B3A5D] hover:bg-[#1B3A5D]/90 text-white"
+                              className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
                               onClick={() => toast.success("Relato enviado com sucesso!")}
                             >
                               <Send className="h-4 w-4 mr-2" /> Enviar Relato
@@ -1195,7 +1195,7 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
                 <p className="text-sm text-gray-500">Acompanhe seu progresso nos módulos do programa</p>
               </div>
               <Button
-                className="bg-[#E87722] hover:bg-[#E87722]/90 text-white"
+                className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
                 onClick={() => toast.info("Você será redirecionado para a plataforma de cursos")}
               >
                 <ExternalLink className="h-4 w-4 mr-2" /> Acessar Plataforma
@@ -1350,11 +1350,11 @@ export default function PortalAluno() {
     <AlunoLayout>
       <div className="space-y-6">
         {/* Mensagem de Bem-vindo */}
-        <div className="rounded-xl bg-gradient-to-r from-[#1B3A5D] to-[#2a5a8a] p-6 text-white shadow-lg">
+        <div className="rounded-xl bg-gradient-to-r from-[#0A1E3E] to-[#2a5a8a] p-6 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">
-                Bem-vinda ao Programa de Mentoria <Sparkles className="inline h-6 w-6 text-[#E87722]" />
+                Bem-vinda ao Programa de Mentoria <Sparkles className="inline h-6 w-6 text-[#F5991F]" />
               </h1>
               <p className="mt-1 text-white/80">
                 {fase === "onboarding"

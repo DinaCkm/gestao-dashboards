@@ -191,11 +191,11 @@ export default function Tutoriais() {
     <AlunoLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="rounded-xl bg-gradient-to-r from-[#1B3A5D] to-[#2a5a8a] p-6 text-white shadow-lg">
+        <div className="rounded-xl bg-gradient-to-r from-[#0A1E3E] to-[#2a5a8a] p-6 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <BookOpen className="h-7 w-7 text-[#E87722]" />
+                <BookOpen className="h-7 w-7 text-[#F5991F]" />
                 Tutoriais da Plataforma
               </h1>
               <p className="mt-1 text-white/80">
@@ -203,14 +203,14 @@ export default function Tutoriais() {
               </p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-[#E87722]">{progressoPercent}%</div>
+              <div className="text-3xl font-bold text-[#F5991F]">{progressoPercent}%</div>
               <div className="text-sm text-white/70">{totalAssistidos}/{totalTutoriais} assistidos</div>
             </div>
           </div>
           {/* Barra de progresso */}
           <div className="mt-4 h-2 rounded-full bg-white/20 overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#E87722] to-[#f59e0b] transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-[#F5991F] to-[#f59e0b] transition-all duration-500"
               style={{ width: `${progressoPercent}%` }}
             />
           </div>
@@ -234,8 +234,8 @@ export default function Tutoriais() {
                 variant={categoriaAtiva === cat ? "default" : "outline"}
                 size="sm"
                 className={categoriaAtiva === cat
-                  ? "bg-[#1B3A5D] hover:bg-[#1B3A5D]/90 text-white"
-                  : "text-gray-600 hover:text-[#1B3A5D]"
+                  ? "bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
+                  : "text-gray-600 hover:text-[#0A1E3E]"
                 }
                 onClick={() => setCategoriaAtiva(cat)}
               >
@@ -247,10 +247,10 @@ export default function Tutoriais() {
 
         {/* Jornada Recomendada */}
         {categoriaAtiva === "Todos" && !searchTerm && (
-          <Card className="border-[#E87722]/20 bg-gradient-to-r from-orange-50 to-amber-50">
+          <Card className="border-[#F5991F]/20 bg-gradient-to-r from-orange-50 to-amber-50">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-[#E87722]" />
+                <Sparkles className="h-5 w-5 text-[#F5991F]" />
                 Jornada Recomendada
               </CardTitle>
               <CardDescription>
@@ -347,7 +347,7 @@ export default function Tutoriais() {
                         size="sm"
                         className={isAssistido
                           ? "bg-green-600 hover:bg-green-700 text-white text-xs h-7"
-                          : "bg-[#E87722] hover:bg-[#d06a1e] text-white text-xs h-7"
+                          : "bg-[#F5991F] hover:bg-[#d06a1e] text-white text-xs h-7"
                         }
                         onClick={() => handleAssistir(tutorial)}
                       >

@@ -100,9 +100,11 @@ export default function CustomLogin() {
           <div className="absolute bottom-20 right-20 w-24 h-24 border border-primary/20 rotate-12" />
           
           <div className="flex flex-col items-center gap-4 relative z-10">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
-              <Shield className="w-10 h-10 text-white" />
-            </div>
+            <img
+              src="/logo-bem-full.d3b12449.png"
+              alt="B.E.M. - Competências do B.E.M."
+              className="h-20 object-contain"
+            />
             <h1 className="text-2xl font-bold tracking-tight text-center text-gradient">
               LOGIN ADMINISTRATIVO
             </h1>
@@ -200,9 +202,11 @@ export default function CustomLogin() {
         <div className="absolute bottom-20 right-20 w-24 h-24 border border-primary/20 rotate-12" />
         
         <div className="flex flex-col items-center gap-4 relative z-10">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
-            <span className="text-3xl font-bold text-white">B.E.M</span>
-          </div>
+          <img
+            src="/logo-bem-full.d3b12449.png"
+            alt="B.E.M. - Competências do B.E.M."
+            className="h-20 object-contain"
+          />
           <h1 className="text-2xl font-bold tracking-tight text-center text-gradient">
             BEM VINDO AO
           </h1>

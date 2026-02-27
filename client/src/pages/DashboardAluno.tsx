@@ -134,7 +134,7 @@ export default function DashboardAluno() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <User className="h-5 w-5 text-[#1B3A5D]" />
+              <User className="h-5 w-5 text-[#0A1E3E]" />
               Selecionar Aluno
             </CardTitle>
           </CardHeader>
@@ -186,7 +186,7 @@ export default function DashboardAluno() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex flex-col md:flex-row md:items-start gap-4">
-                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#1B3A5D] to-[#2D5A87] flex items-center justify-center shrink-0">
+                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#0A1E3E] to-[#2D5A87] flex items-center justify-center shrink-0">
                     <GraduationCap className="h-8 w-8 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -279,16 +279,16 @@ export default function DashboardAluno() {
                 ) : performanceData ? (
                   <>
                     {/* Card Performance Geral (destaque) */}
-                    <Card className="border-2 border-[#1B3A5D]">
+                    <Card className="border-2 border-[#0A1E3E]">
                       <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-lg bg-[#1B3A5D] flex items-center justify-center">
+                            <div className="h-12 w-12 rounded-lg bg-[#0A1E3E] flex items-center justify-center">
                               <Target className="h-6 w-6 text-white" />
                             </div>
                             <div>
                               <p className="text-sm text-gray-500">Ind. 7: Performance Geral</p>
-                              <p className="text-3xl font-bold text-[#1B3A5D]">{(performanceData.indicadores.performanceGeral || 0).toFixed(0)}%</p>
+                              <p className="text-3xl font-bold text-[#0A1E3E]">{(performanceData.indicadores.performanceGeral || 0).toFixed(0)}%</p>
                             </div>
                           </div>
                           <div className={`px-4 py-2 rounded-full ${getEstagioColor(performanceData.indicadores.classificacao)} text-white font-semibold`}>
@@ -302,22 +302,22 @@ export default function DashboardAluno() {
 
                     {/* Progresso do Ciclo Macro */}
                     {sessionProgress && (
-                      <Card className="border border-[#1B3A5D]/20 bg-gradient-to-r from-[#1B3A5D]/5 to-transparent">
+                      <Card className="border border-[#0A1E3E]/20 bg-gradient-to-r from-[#0A1E3E]/5 to-transparent">
                         <CardContent className="pt-6">
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-lg bg-[#1B3A5D]/10 flex items-center justify-center">
-                                <Clock className="h-5 w-5 text-[#1B3A5D]" />
+                              <div className="h-10 w-10 rounded-lg bg-[#0A1E3E]/10 flex items-center justify-center">
+                                <Clock className="h-5 w-5 text-[#0A1E3E]" />
                               </div>
                               <div>
                                 <p className="text-sm text-gray-500">Progresso do Ciclo Macro</p>
-                                <p className="text-xl font-bold text-[#1B3A5D]">
+                                <p className="text-xl font-bold text-[#0A1E3E]">
                                   {sessionProgress.sessoesRealizadas}/{sessionProgress.totalSessoesEsperadas} sessões
                                 </p>
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-2xl font-bold text-[#1B3A5D]">{sessionProgress.percentualProgresso}%</p>
+                              <p className="text-2xl font-bold text-[#0A1E3E]">{sessionProgress.percentualProgresso}%</p>
                               {sessionProgress.cicloCompleto ? (
                                 <Badge className="bg-emerald-100 text-emerald-800 border-0 mt-1">
                                   <Award className="h-3 w-3 mr-1" /> Ciclo Completo
@@ -476,7 +476,7 @@ export default function DashboardAluno() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <Card>
                         <CardContent className="pt-6 text-center">
-                          <p className="text-3xl font-bold text-[#1B3A5D]">{detalheAluno.totalCompetencias}</p>
+                          <p className="text-3xl font-bold text-[#0A1E3E]">{detalheAluno.totalCompetencias}</p>
                           <p className="text-sm text-gray-500">Total de Competências</p>
                         </CardContent>
                       </Card>
@@ -499,7 +499,7 @@ export default function DashboardAluno() {
                       <Card key={trilhaNome}>
                         <CardHeader>
                           <CardTitle className="flex items-center gap-2 text-base">
-                            <Route className="h-4 w-4 text-[#1B3A5D]" />
+                            <Route className="h-4 w-4 text-[#0A1E3E]" />
                             Trilha: {trilhaNome}
                             <Badge variant="outline" className="ml-2">{(comps as any[]).length} competências</Badge>
                           </CardTitle>
@@ -578,7 +578,7 @@ export default function DashboardAluno() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <Card>
                         <CardContent className="pt-6 text-center">
-                          <p className="text-3xl font-bold text-[#1B3A5D]">{detalheAluno.totalEventos}</p>
+                          <p className="text-3xl font-bold text-[#0A1E3E]">{detalheAluno.totalEventos}</p>
                           <p className="text-sm text-gray-500">Total de Eventos</p>
                         </CardContent>
                       </Card>
@@ -604,7 +604,7 @@ export default function DashboardAluno() {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                          <Video className="h-5 w-5 text-[#1B3A5D]" />
+                          <Video className="h-5 w-5 text-[#0A1E3E]" />
                           Eventos e Webinários
                         </CardTitle>
                       </CardHeader>
@@ -711,7 +711,7 @@ export default function DashboardAluno() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-[#1B3A5D]" />
+                        <Calendar className="h-5 w-5 text-[#0A1E3E]" />
                         Sessões de Mentoria
                       </CardTitle>
                       <CardDescription>

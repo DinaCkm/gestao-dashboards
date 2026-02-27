@@ -243,17 +243,21 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-secondary to-secondary/80 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-bold text-white">BEM</span>
-                  </div>
+                  <img
+                    src="/logo-bem-icon.d3b12449.png"
+                    alt="B.E.M."
+                    className="h-7 object-contain shrink-0"
+                  />
                   <span className="font-bold tracking-tight text-sidebar-foreground text-sm whitespace-nowrap">
                     ECOSSISTEMA DO BEM
                   </span>
                 </div>
               ) : (
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-secondary to-secondary/80 flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">BEM</span>
-                </div>
+                <img
+                  src="/logo-bem-icon.d3b12449.png"
+                  alt="B.E.M."
+                  className="h-7 object-contain"
+                />
               )}
             </div>
           </SidebarHeader>

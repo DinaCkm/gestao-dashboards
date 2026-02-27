@@ -32,14 +32,16 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-[#1B3A5D] text-white shadow-lg sticky top-0 z-50">
+      <header className="bg-[#0A1E3E] text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[#E87722] flex items-center justify-center font-bold text-sm text-white shadow">
-                BEM
-              </div>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setLocation("/mural")}>
+              <img
+                src="/logo-bem-icon-white.d3b12449.png"
+                alt="B.E.M."
+                className="h-8 object-contain"
+              />
               <span className="font-semibold text-sm sm:text-base hidden sm:block">ECOSSISTEMA DO BEM</span>
             </div>
 
@@ -72,7 +74,7 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 hover:bg-white/10 rounded-lg px-3 py-1.5 transition-colors">
                   <Avatar className="h-8 w-8 border-2 border-white/30">
-                    <AvatarFallback className="bg-[#E87722] text-white text-xs font-bold">
+                    <AvatarFallback className="bg-[#F5991F] text-white text-xs font-bold">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
@@ -111,8 +113,8 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
                   className={`
                     flex items-center gap-1.5 px-4 py-3 text-xs font-medium whitespace-nowrap transition-all
                     ${isActive
-                      ? "text-[#E87722] border-b-2 border-[#E87722] bg-white/5"
-                      : "text-white/60 hover:text-white border-b-2 border-transparent"
+                        ? "text-[#F5991F] border-b-2 border-[#F5991F] bg-white/5"
+                        : "text-white/60 hover:text-white border-b-2 border-transparent"
                     }
                   `}
                 >
@@ -130,9 +132,14 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      {/* Footer simples */}
-      <footer className="bg-[#1B3A5D]/5 border-t py-4 text-center text-xs text-gray-400">
-        Ecossistema do BEM &copy; {new Date().getFullYear()} — Programa de Mentoria e Desenvolvimento
+      {/* Footer */}
+      <footer className="bg-[#0A1E3E] border-t border-[#0A1E3E] py-5 text-center">
+        <div className="flex flex-col items-center gap-2">
+          <img src="/logo-bem-icon-white.d3b12449.png" alt="B.E.M." className="h-6 opacity-70" />
+          <p className="text-xs text-white/50">
+            Ecossistema do BEM &copy; {new Date().getFullYear()} — Programa de Mentoria e Desenvolvimento
+          </p>
+        </div>
       </footer>
     </div>
   );

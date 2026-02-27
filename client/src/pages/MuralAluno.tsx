@@ -181,8 +181,8 @@ function AttendanceModal({
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setStep("list"); setSelectedEventId(null); setReflexao(""); } }}>
       <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-[#1B3A5D]">
-            <CheckCircle2 className="h-5 w-5 text-[#E87722]" />
+          <DialogTitle className="flex items-center gap-2 text-[#0A1E3E]">
+            <CheckCircle2 className="h-5 w-5 text-[#F5991F]" />
             {step === "list" ? "Confirmar Presença em Eventos" : "Registrar Presença e Reflexão"}
           </DialogTitle>
           <DialogDescription className="text-left">
@@ -220,11 +220,11 @@ function AttendanceModal({
                   <button
                     key={w.eventId}
                     onClick={() => handleSelectEvent(w.eventId)}
-                    className="w-full text-left rounded-lg border border-gray-200 hover:border-[#E87722] hover:bg-orange-50/50 p-3 transition-all group"
+                    className="w-full text-left rounded-lg border border-gray-200 hover:border-[#F5991F] hover:bg-orange-50/50 p-3 transition-all group"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 group-hover:text-[#1B3A5D] truncate">
+                        <h4 className="text-sm font-medium text-gray-900 group-hover:text-[#0A1E3E] truncate">
                           {w.eventName}
                         </h4>
                         <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
@@ -232,7 +232,7 @@ function AttendanceModal({
                           {formatDate(w.eventDate)}
                         </div>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E87722] flex-shrink-0" />
+                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#F5991F] flex-shrink-0" />
                     </div>
                   </button>
                 ))}
@@ -245,7 +245,7 @@ function AttendanceModal({
           <div className="space-y-4 mt-2">
             <div className="rounded-lg bg-gray-50 border p-3">
               <div className="flex items-center gap-2">
-                <Video className="h-4 w-4 text-[#1B3A5D]" />
+                <Video className="h-4 w-4 text-[#0A1E3E]" />
                 <span className="text-sm font-medium text-gray-900">{selectedEvent.eventName}</span>
               </div>
               <span className="text-xs text-gray-500 ml-6">{formatDate(selectedEvent.eventDate)}</span>
@@ -286,7 +286,7 @@ function AttendanceModal({
               <Button
                 onClick={handleSubmit}
                 disabled={reflexao.trim().length < 20 || isSubmitting}
-                className="flex-1 sm:flex-none bg-[#E87722] hover:bg-[#E87722]/90 text-white"
+                className="flex-1 sm:flex-none bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
               >
                 {isSubmitting ? (
                   <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Enviando...</>
@@ -372,7 +372,7 @@ function WebinarListItem({
 
   return (
     <div className={`rounded-xl border bg-white hover:shadow-md transition-all duration-200 overflow-hidden ${
-      !isPast ? "border-l-4 border-l-[#E87722]" : ""
+      !isPast ? "border-l-4 border-l-[#F5991F]" : ""
     }`}>
       <div className="flex flex-col sm:flex-row">
         {webinar.cardImageUrl && (
@@ -429,18 +429,18 @@ function WebinarListItem({
           {/* Meta info */}
           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-4">
             <span className="flex items-center gap-1">
-              <CalendarDays className="h-3.5 w-3.5 text-[#1B3A5D]" />
+              <CalendarDays className="h-3.5 w-3.5 text-[#0A1E3E]" />
               {formatDateTime(webinar.eventDate)}
             </span>
             {webinar.speaker && (
               <span className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-[#1B3A5D]" />
+                <Users className="h-3.5 w-3.5 text-[#0A1E3E]" />
                 {webinar.speaker}
               </span>
             )}
             {webinar.duration && (
               <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5 text-[#1B3A5D]" />
+                <Clock className="h-3.5 w-3.5 text-[#0A1E3E]" />
                 {webinar.duration}min
               </span>
             )}
@@ -451,7 +451,7 @@ function WebinarListItem({
             {!isPast && webinar.meetingLink && (
               <Button
                 size="sm"
-                className="bg-[#1B3A5D] hover:bg-[#1B3A5D]/90 text-white h-9 px-4"
+                className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white h-9 px-4"
                 onClick={() => window.open(webinar.meetingLink, "_blank")}
               >
                 <Video className="h-4 w-4 mr-1.5" />
@@ -484,7 +484,7 @@ function WebinarListItem({
             {isPast && hasEnded && onMarkPresence && attendanceStatus !== "confirmed" && (
               <Button
                 size="sm"
-                className="bg-[#E87722] hover:bg-[#E87722]/90 text-white h-9 px-4"
+                className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white h-9 px-4"
                 onClick={onMarkPresence}
               >
                 <MessageSquareText className="h-4 w-4 mr-1.5" />
@@ -544,7 +544,7 @@ function AnnouncementListItem({ announcement }: { announcement: any }) {
               <Button
                 size="sm"
                 variant="ghost"
-                className="text-xs h-7 text-[#1B3A5D] hover:text-[#E87722]"
+                className="text-xs h-7 text-[#0A1E3E] hover:text-[#F5991F]"
                 onClick={() => window.open(announcement.actionUrl, "_blank")}
               >
                 {announcement.actionLabel || "Saiba mais"}
@@ -592,9 +592,9 @@ function NextWebinarHighlight({ webinar }: { webinar: any }) {
   const days = daysUntil(webinar.eventDate);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1B3A5D] via-[#1B3A5D] to-[#0D2240] text-white shadow-xl">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0A1E3E] via-[#0A1E3E] to-[#061529] text-white shadow-xl">
       <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#E87722] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#F5991F] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
       </div>
 
@@ -615,7 +615,7 @@ function NextWebinarHighlight({ webinar }: { webinar: any }) {
 
         <div className="flex-1 space-y-3">
           <div className="flex items-center gap-3 flex-wrap">
-            <Badge className="bg-[#E87722] text-white border-0 px-3 py-1 text-xs font-semibold">
+            <Badge className="bg-[#F5991F] text-white border-0 px-3 py-1 text-xs font-semibold">
               PRÓXIMO EVENTO
             </Badge>
             {days > 0 && days <= 7 && (
@@ -638,16 +638,16 @@ function NextWebinarHighlight({ webinar }: { webinar: any }) {
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-white/80">
             <span className="flex items-center gap-1.5">
-              <CalendarDays className="h-4 w-4 text-[#E87722]" />
+              <CalendarDays className="h-4 w-4 text-[#F5991F]" />
               {formatDate(webinar.eventDate)}
             </span>
             <span className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4 text-[#E87722]" />
+              <Clock className="h-4 w-4 text-[#F5991F]" />
               {formatTimeOnly(webinar.eventDate)}
             </span>
             {webinar.speaker && (
               <span className="flex items-center gap-1.5">
-                <Users className="h-4 w-4 text-[#E87722]" />
+                <Users className="h-4 w-4 text-[#F5991F]" />
                 {webinar.speaker}
               </span>
             )}
@@ -656,7 +656,7 @@ function NextWebinarHighlight({ webinar }: { webinar: any }) {
           <div className="flex gap-3 pt-1">
             {webinar.meetingLink && (
               <Button
-                className="bg-[#E87722] hover:bg-[#E87722]/90 text-white shadow-lg"
+                className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white shadow-lg"
                 onClick={() => window.open(webinar.meetingLink, "_blank")}
               >
                 <Video className="h-4 w-4 mr-2" />
@@ -692,14 +692,14 @@ function DrillDownHeader({
         variant="ghost"
         size="sm"
         onClick={onBack}
-        className="h-9 px-3 text-gray-600 hover:text-[#1B3A5D] hover:bg-[#1B3A5D]/5"
+        className="h-9 px-3 text-gray-600 hover:text-[#0A1E3E] hover:bg-[#0A1E3E]/5"
       >
         <ArrowLeft className="h-4 w-4 mr-1" />
         Voltar
       </Button>
       <div className="h-6 w-px bg-gray-200" />
       <div className="flex items-center gap-2">
-        <Icon className="h-5 w-5 text-[#1B3A5D]" />
+        <Icon className="h-5 w-5 text-[#0A1E3E]" />
         <h2 className="text-lg font-bold text-gray-900">{config.title}</h2>
         <Badge variant="outline" className="text-xs">{count}</Badge>
       </div>
@@ -776,7 +776,7 @@ export default function MuralAluno() {
       <AlunoLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-[#1B3A5D] mx-auto mb-4" />
+            <Loader2 className="h-8 w-8 animate-spin text-[#0A1E3E] mx-auto mb-4" />
             <p className="text-gray-500 text-sm">Carregando novidades...</p>
           </div>
         </div>
@@ -794,15 +794,23 @@ export default function MuralAluno() {
     return (
       <AlunoLayout>
         <div className="space-y-6 animate-in fade-in duration-500">
-          {/* Header */}
+          {/* Logo + Header */}
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Olá, <span className="text-[#E87722]">{firstName}</span>!
-              </h1>
-              <p className="text-gray-500 text-sm mt-1">
-                Confira as novidades, webinars e atividades do seu programa
-              </p>
+            <div className="flex items-center gap-4">
+              <img
+                src="/logo-bem-full.d3b12449.png"
+                alt="B.E.M. - Competências do B.E.M."
+                className="h-14 object-contain hidden sm:block"
+              />
+              <div className="hidden sm:block w-px h-10 bg-gray-200" />
+              <div>
+                <h1 className="text-2xl font-bold text-[#0A1E3E]">
+                  Olá, <span className="text-[#F5991F]">{firstName}</span>!
+                </h1>
+                <p className="text-gray-500 text-sm mt-1">
+                  Confira as novidades, webinars e atividades do seu programa
+                </p>
+              </div>
             </div>
             <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
               <CalendarDays className="h-4 w-4" />
@@ -944,7 +952,7 @@ export default function MuralAluno() {
                       )}
                       <Button
                         size="sm"
-                        className="h-8 text-xs bg-[#E87722] hover:bg-[#E87722]/90 text-white"
+                        className="h-8 text-xs bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
                         onClick={() => setAttendanceModalOpen(true)}
                       >
                         <MessageSquareText className="h-3.5 w-3.5 mr-1" />
@@ -956,7 +964,7 @@ export default function MuralAluno() {
                 {pendingAttendance.length > 3 && (
                   <button
                     onClick={() => setAttendanceModalOpen(true)}
-                    className="w-full text-center text-sm text-[#E87722] hover:text-[#E87722]/80 font-medium py-2"
+                    className="w-full text-center text-sm text-[#F5991F] hover:text-[#F5991F]/80 font-medium py-2"
                   >
                     Ver todos os {pendingAttendance.length} eventos pendentes
                   </button>

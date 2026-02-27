@@ -1029,3 +1029,14 @@
 
 ## Bug: Cards indicadores ilegíveis no Meu Painel (27/02/2026)
 - [x] Corrigir cores dos cards de indicadores (fundo branco + texto escuro + borda cinza)
+
+## Identidade Visual B.E.M. (27/02/2026)
+- [ ] Extrair cores exatas da marca (azul marinho + laranja âmbar)
+- [ ] Atualizar CSS global (index.css) com paleta B.E.M.
+- [ ] Aplicar cores nos componentes: sidebar admin, navbar aluno, cards, botões
+
+## Logo e Identidade Visual (27/02/2026)
+- [x] Incluir logo B.E.M. no header do AlunoLayout (todas as páginas do aluno)
+- [x] Incluir logo B.E.M. na página inicial do Mural do Aluno
+- [x] Incluir logo B.E.M. no DashboardLayout sidebar (admin/mentor)
+- [x] Aplicar cores da marca (#0A1E3E navy, #F5991F orange) consistentemente

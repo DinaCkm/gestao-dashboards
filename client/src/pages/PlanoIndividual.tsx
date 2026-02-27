@@ -311,7 +311,7 @@ export default function PlanoIndividual() {
           </div>
           <Dialog open={isLoteDialogOpen} onOpenChange={setIsLoteDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#E87722] hover:bg-[#d06a1e]">
+              <Button className="bg-[#F5991F] hover:bg-[#d06a1e]">
                 <Users className="w-4 h-4 mr-2" />
                 Atribuir em Lote
               </Button>
@@ -388,7 +388,7 @@ export default function PlanoIndividual() {
                 <Button 
                   onClick={handleAddToTurma}
                   disabled={addToTurmaMutation.isPending || !selectedTurma || selectedCompetenciasLote.length === 0}
-                  className="bg-[#E87722] hover:bg-[#d06a1e]"
+                  className="bg-[#F5991F] hover:bg-[#d06a1e]"
                 >
                   {addToTurmaMutation.isPending ? "Atribuindo..." : "Atribuir Competências"}
                 </Button>
@@ -715,7 +715,7 @@ export default function PlanoIndividual() {
                             setIsCicloDialogOpen(true);
                           }}
                           disabled={!planoAluno || planoAluno.length === 0}
-                          className="bg-[#E87722] hover:bg-[#d06a1e]"
+                          className="bg-[#F5991F] hover:bg-[#d06a1e]"
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Novo Ciclo
@@ -974,7 +974,7 @@ export default function PlanoIndividual() {
               <Button
                 onClick={handleSaveCiclo}
                 disabled={criarCicloMutation.isPending || atualizarCicloMutation.isPending || !cicloNome || !cicloDataInicio || !cicloDataFim || cicloCompetenciasSelecionadas.length === 0}
-                className="bg-[#E87722] hover:bg-[#d06a1e]"
+                className="bg-[#F5991F] hover:bg-[#d06a1e]"
               >
                 {criarCicloMutation.isPending || atualizarCicloMutation.isPending
                   ? "Salvando..."

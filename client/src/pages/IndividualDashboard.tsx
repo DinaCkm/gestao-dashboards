@@ -47,7 +47,7 @@ export default function IndividualDashboard() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-[#1B3A5D]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#0A1E3E]" />
           <span className="ml-3 text-gray-500">Carregando seu dashboard...</span>
         </div>
       </DashboardLayout>
@@ -100,7 +100,7 @@ export default function IndividualDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="px-3 py-1 border-[#1B3A5D] text-[#1B3A5D]">
+            <Badge variant="outline" className="px-3 py-1 border-[#0A1E3E] text-[#0A1E3E]">
               <BookOpen className="h-4 w-4 mr-2" />
               {aluno.programa}
             </Badge>
@@ -113,8 +113,8 @@ export default function IndividualDashboard() {
             {/* Score Section */}
             <div className="p-6 border-r border-gray-200">
               <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 rounded-xl bg-[#1B3A5D]/10">
-                  <Award className="h-8 w-8 text-[#1B3A5D]" />
+                <div className="p-3 rounded-xl bg-[#0A1E3E]/10">
+                  <Award className="h-8 w-8 text-[#0A1E3E]" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Nota Final</p>
@@ -162,8 +162,8 @@ export default function IndividualDashboard() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-[#1B3A5D]/10">
-                  <Target className="h-5 w-5 text-[#1B3A5D]" />
+                <div className="p-2 rounded-lg bg-[#0A1E3E]/10">
+                  <Target className="h-5 w-5 text-[#0A1E3E]" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Progresso do Ciclo Macro</h3>
@@ -181,7 +181,7 @@ export default function IndividualDashboard() {
                     className="h-3" 
                   />
                 </div>
-                <span className="text-lg font-bold text-[#1B3A5D] whitespace-nowrap">
+                <span className="text-lg font-bold text-[#0A1E3E] whitespace-nowrap">
                   {sessionProgress.sessoesRealizadas}/{sessionProgress.totalSessoesEsperadas}
                 </span>
               </div>
@@ -221,8 +221,8 @@ export default function IndividualDashboard() {
                   <Radar
                     name="Performance"
                     dataKey="value"
-                    stroke="#1B3A5D"
-                    fill="#1B3A5D"
+                    stroke="#0A1E3E"
+                    fill="#0A1E3E"
                     fillOpacity={0.2}
                   />
                   <Tooltip 
@@ -274,7 +274,7 @@ export default function IndividualDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-[#1B3A5D]" />
+              <Calendar className="h-5 w-5 text-[#0A1E3E]" />
               Histórico de Sessões
             </CardTitle>
             <CardDescription>Registro de presenças e entregas de tarefas</CardDescription>
@@ -345,7 +345,7 @@ export default function IndividualDashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Target className="h-5 w-5 text-[#E87722]" />
+                <Target className="h-5 w-5 text-[#F5991F]" />
                 Meu Plano de Competências
               </CardTitle>
               <CardDescription>

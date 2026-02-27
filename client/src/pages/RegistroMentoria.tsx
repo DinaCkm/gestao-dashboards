@@ -278,7 +278,7 @@ export default function RegistroMentoria() {
     return (
       <div className="space-y-3">
         <Label className="flex items-center gap-2">
-          <BookOpen className="h-4 w-4 text-[#1B3A5D]" />
+          <BookOpen className="h-4 w-4 text-[#0A1E3E]" />
           Tarefa da Biblioteca
         </Label>
         <div className="relative">
@@ -305,7 +305,7 @@ export default function RegistroMentoria() {
               onClick={() => onChange(task.id)}
               className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${value === task.id ? 'bg-blue-50 font-medium' : ''}`}
             >
-              <span className="font-medium text-[#1B3A5D]">{task.competencia}</span>
+              <span className="font-medium text-[#0A1E3E]">{task.competencia}</span>
               <span className="text-gray-400 mx-1">—</span>
               <span>{task.nome}</span>
             </button>
@@ -313,7 +313,7 @@ export default function RegistroMentoria() {
         </div>
         {selectedTask && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
-            <p className="font-medium text-sm text-[#1B3A5D]">{selectedTask.competencia}: {selectedTask.nome}</p>
+            <p className="font-medium text-sm text-[#0A1E3E]">{selectedTask.competencia}: {selectedTask.nome}</p>
             <p className="text-xs text-gray-600"><strong>Resumo:</strong> {selectedTask.resumo}</p>
             <p className="text-xs text-gray-600"><strong>O que fazer:</strong> {selectedTask.oQueFazer}</p>
             <p className="text-xs text-gray-600"><strong>O que o aluno ganha:</strong> {selectedTask.oQueGanha}</p>
@@ -344,7 +344,7 @@ export default function RegistroMentoria() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <User className="h-5 w-5 text-[#1B3A5D]" />
+              <User className="h-5 w-5 text-[#0A1E3E]" />
               {!isAdmin ? mentorName : "Selecionar Aluno"}
             </CardTitle>
             {!isAdmin && (
@@ -399,14 +399,14 @@ export default function RegistroMentoria() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#1B3A5D] to-[#2D5A87] flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#0A1E3E] to-[#2D5A87] flex items-center justify-center">
                   <User className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">{selectedAluno.name}</h2>
                   <div className="flex items-center gap-2">
                     {alunoProgram && (
-                      <Badge variant="outline" className="text-[#1B3A5D] border-[#1B3A5D]">{alunoProgram.name}</Badge>
+                      <Badge variant="outline" className="text-[#0A1E3E] border-[#0A1E3E]">{alunoProgram.name}</Badge>
                     )}
                     <span className="text-sm text-gray-500">{sessions.length} sessões registradas</span>
                   </div>
@@ -418,11 +418,11 @@ export default function RegistroMentoria() {
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-[#1B3A5D]" />
+                      <Clock className="h-4 w-4 text-[#0A1E3E]" />
                       <span className="text-sm font-medium text-gray-700">Progresso do Ciclo Macro</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-[#1B3A5D]">
+                      <span className="text-sm font-bold text-[#0A1E3E]">
                         {sessionProgress.sessoesRealizadas}/{sessionProgress.totalSessoesEsperadas} sessões
                       </span>
                       <span className="text-xs text-gray-500">({sessionProgress.percentualProgresso}%)</span>
@@ -465,13 +465,13 @@ export default function RegistroMentoria() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-[#1B3A5D]" />
+                    <Calendar className="h-5 w-5 text-[#0A1E3E]" />
                     Sessões de Mentoria
                   </CardTitle>
                   {sessionProgress && sessionProgress.macroInicio && sessionProgress.macroTermino && (
                     <div className="flex items-center gap-3 mt-1 text-sm text-gray-600">
                       <div className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-[#1B3A5D]" />
+                        <Clock className="h-3.5 w-3.5 text-[#0A1E3E]" />
                         <span className="font-medium">Macro-Ciclo:</span>
                         <span>
                           {new Date(sessionProgress.macroInicio).toLocaleDateString('pt-BR')}
@@ -485,7 +485,7 @@ export default function RegistroMentoria() {
                 {(isAdmin || userConsultorId) && (
                   <Button 
                     onClick={() => setShowNewSession(!showNewSession)}
-                    className={showNewSession ? "bg-red-500 hover:bg-red-600" : "bg-[#1B3A5D] hover:bg-[#2D5A87]"}
+                    className={showNewSession ? "bg-red-500 hover:bg-red-600" : "bg-[#0A1E3E] hover:bg-[#2D5A87]"}
                   >
                     {showNewSession ? <><X className="h-4 w-4 mr-1" /> Cancelar</> : <><Plus className="h-4 w-4 mr-1" /> Nova Sessão</>}
                   </Button>
@@ -495,11 +495,11 @@ export default function RegistroMentoria() {
             <CardContent>
               {/* Formulário de Nova Sessão */}
               {showNewSession && (
-                <div className="mb-6 border-2 border-[#1B3A5D]/20 rounded-xl p-6 bg-[#1B3A5D]/5 space-y-6">
-                  <h3 className="text-lg font-bold text-[#1B3A5D] flex items-center gap-2">
+                <div className="mb-6 border-2 border-[#0A1E3E]/20 rounded-xl p-6 bg-[#0A1E3E]/5 space-y-6">
+                  <h3 className="text-lg font-bold text-[#0A1E3E] flex items-center gap-2">
                     <Plus className="h-5 w-5" />
                     Nova Sessão de Mentoria
-                    <Badge className="bg-[#1B3A5D] text-white border-0">
+                    <Badge className="bg-[#0A1E3E] text-white border-0">
                       Sessão {sessions.length > 0 ? Math.max(...sessions.map(s => s.sessionNumber ?? 0)) + 1 : 1}
                     </Badge>
                   </h3>
@@ -507,7 +507,7 @@ export default function RegistroMentoria() {
                   {/* Seção 1: Data */}
                   <div>
                     <Label className="flex items-center gap-2 mb-2">
-                      <Calendar className="h-4 w-4 text-[#1B3A5D]" />
+                      <Calendar className="h-4 w-4 text-[#0A1E3E]" />
                       Data da Sessão *
                     </Label>
                     <Input type="date" value={newSessionDate} onChange={(e) => setNewSessionDate(e.target.value)} className="max-w-xs" />
@@ -516,7 +516,7 @@ export default function RegistroMentoria() {
                   {/* Seção 2: Presença */}
                   <div>
                     <Label className="flex items-center gap-2 mb-2">
-                      <CheckCircle2 className="h-4 w-4 text-[#1B3A5D]" />
+                      <CheckCircle2 className="h-4 w-4 text-[#0A1E3E]" />
                       Presença *
                     </Label>
                     <div className="flex gap-3">
@@ -544,7 +544,7 @@ export default function RegistroMentoria() {
                   {/* Seção 3: Tarefa */}
                   <div>
                     <Label className="flex items-center gap-2 mb-2">
-                      <ClipboardCheck className="h-4 w-4 text-[#1B3A5D]" />
+                      <ClipboardCheck className="h-4 w-4 text-[#0A1E3E]" />
                       Status da Tarefa
                     </Label>
                     <div className="flex gap-3 mb-3">
@@ -581,7 +581,7 @@ export default function RegistroMentoria() {
                   {/* Seção 5: Feedback ao Aluno */}
                   <div>
                     <Label className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-[#1B3A5D]" />
+                      <BookOpen className="h-4 w-4 text-[#0A1E3E]" />
                       Feedback ao Aluno
                     </Label>
                     <p className="text-xs text-gray-500 mb-2">Esta mensagem será visível ao aluno no dashboard dele</p>
@@ -610,7 +610,7 @@ export default function RegistroMentoria() {
                     <Button 
                       onClick={handleCreateSession}
                       disabled={createSession.isPending || !newSessionDate}
-                      className="bg-[#1B3A5D] hover:bg-[#2D5A87]"
+                      className="bg-[#0A1E3E] hover:bg-[#2D5A87]"
                     >
                       <Save className="h-4 w-4 mr-1" />
                       {createSession.isPending ? "Salvando..." : "Registrar Sessão"}
@@ -641,7 +641,7 @@ export default function RegistroMentoria() {
                               </div>
                               <div className="flex gap-2">
                                 <Button size="sm" variant="outline" onClick={handleCancel}>Cancelar</Button>
-                                <Button size="sm" onClick={handleSave} disabled={updateSession.isPending} className="bg-[#1B3A5D] hover:bg-[#2D5A87]">
+                                <Button size="sm" onClick={handleSave} disabled={updateSession.isPending} className="bg-[#0A1E3E] hover:bg-[#2D5A87]">
                                   <Save className="h-4 w-4 mr-1" /> Salvar
                                 </Button>
                               </div>
@@ -690,7 +690,7 @@ export default function RegistroMentoria() {
                             {/* Feedback ao Aluno */}
                             <div>
                               <Label className="flex items-center gap-2">
-                                <BookOpen className="h-4 w-4 text-[#1B3A5D]" />
+                                <BookOpen className="h-4 w-4 text-[#0A1E3E]" />
                                 Feedback ao Aluno (visível ao aluno)
                               </Label>
                               <Textarea value={mensagemAluno} onChange={(e) => setMensagemAluno(e.target.value)} placeholder="Mensagem para o aluno..." className="mt-1" rows={2} />
@@ -750,7 +750,7 @@ export default function RegistroMentoria() {
                                   })() : (
                                     <span className="text-sm text-gray-400 italic">Sem nota</span>
                                   )}
-                                  <Button size="sm" variant="outline" onClick={() => setViewingSession(session.id)} className="text-[#1B3A5D] border-[#1B3A5D]/30 hover:bg-[#1B3A5D]/5">
+                                  <Button size="sm" variant="outline" onClick={() => setViewingSession(session.id)} className="text-[#0A1E3E] border-[#0A1E3E]/30 hover:bg-[#0A1E3E]/5">
                                     <Eye className="h-4 w-4 mr-1" /> Visualizar
                                   </Button>
                                   <Button size="sm" variant="outline" onClick={() => handleEdit(session)}>
@@ -832,7 +832,7 @@ export default function RegistroMentoria() {
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-[#1B3A5D]" />
+                <BookOpen className="h-5 w-5 text-[#0A1E3E]" />
                 Detalhes da Sessão {viewedSession?.sessionNumber || ''}
               </DialogTitle>
               <DialogDescription>
@@ -898,8 +898,8 @@ export default function RegistroMentoria() {
                 })()}
                 
                 {/* Pontuação convertida */}
-                <div className="bg-[#1B3A5D]/5 rounded-lg p-3 border border-[#1B3A5D]/10">
-                  <p className="text-xs text-[#1B3A5D] font-medium mb-2">Pontuação Convertida (base 100)</p>
+                <div className="bg-[#0A1E3E]/5 rounded-lg p-3 border border-[#0A1E3E]/10">
+                  <p className="text-xs text-[#0A1E3E] font-medium mb-2">Pontuação Convertida (base 100)</p>
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div>
                       <p className="text-xs text-gray-500">Presença</p>
