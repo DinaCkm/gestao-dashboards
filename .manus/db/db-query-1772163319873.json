@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, title, youtubeLink, meetingLink FROM scheduled_webinars LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, title, youtubeLink, meetingLink FROM scheduled_webinars LIMIT 5",
+  "rows": [
+    {
+      "id": "1",
+      "title": "2025/06 - Liderança Tóxica com Emerson Dias",
+      "youtubeLink": "NULL",
+      "meetingLink": "NULL"
+    },
+    {
+      "id": "2",
+      "title": "2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio",
+      "youtubeLink": "NULL",
+      "meetingLink": "NULL"
+    },
+    {
+      "id": "3",
+      "title": "2025/08 - LinkedIn e Carreira com Gislaine",
+      "youtubeLink": "NULL",
+      "meetingLink": "NULL"
+    },
+    {
+      "id": "4",
+      "title": "2025/09 - Foco x Procrastinação com Emerson Dias",
+      "youtubeLink": "NULL",
+      "meetingLink": "NULL"
+    },
+    {
+      "id": "5",
+      "title": "2025/10 - Do Talento ao Resultado com Fabio Barbosa",
+      "youtubeLink": "NULL",
+      "meetingLink": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tyoutubeLink\tmeetingLink\n1\t2025/06 - Liderança Tóxica com Emerson Dias\tNULL\tNULL\n2\t2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio\tNULL\tNULL\n3\t2025/08 - LinkedIn e Carreira com Gislaine\tNULL\tNULL\n4\t2025/09 - Foco x Procrastinação com Emerson Dias\tNULL\tNULL\n5\t2025/10 - Do Talento ao Resultado com Fabio Barbosa\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 349
+}

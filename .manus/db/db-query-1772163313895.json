@@ -1,0 +1,15 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(CASE WHEN youtubeLink IS NOT NULL AND youtubeLink != '' THEN 1 ELSE 0 END) as with_youtube, SUM(CASE WHEN meetingLink IS NOT NULL AND meetingLink != '' THEN 1 ELSE 0 END) as with_meeting FROM scheduled_webinars",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total, SUM(CASE WHEN youtubeLink IS NOT NULL AND youtubeLink != '' THEN 1 ELSE 0 END) as with_youtube, SUM(CASE WHEN meetingLink IS NOT NULL AND meetingLink != '' THEN 1 ELSE 0 END) as with_meeting FROM scheduled_webinars",
+  "rows": [
+    {
+      "total": "32",
+      "with_youtube": "0",
+      "with_meeting": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\twith_youtube\twith_meeting\n32\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 378
+}

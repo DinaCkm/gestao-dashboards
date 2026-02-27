@@ -95,6 +95,7 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias", roles: ["admin"] },
   { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["admin"] },
   { icon: Video, label: "Webinars", path: "/webinars", roles: ["admin"] },
+  { icon: Megaphone, label: "Avisos e Comunicados", path: "/avisos", roles: ["admin"] },
   { icon: Calculator, label: "Fórmulas", path: "/formulas", roles: ["admin"] },
   // Histórico agora está dentro de Gestão de Planilhas
   // { icon: Settings, label: "Configurações", path: "/configuracoes", roles: ["admin"] }, // TODO: implementar

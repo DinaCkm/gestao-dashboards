@@ -2,21 +2,20 @@ import { useState, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  Video, Calendar, Clock, ExternalLink, Youtube, Megaphone,
-  BookOpen, Sparkles, Bell, ArrowRight, Users, Globe,
-  GraduationCap, Zap, ChevronRight, PlayCircle, Info,
-  CalendarDays, MapPin, Star, Loader2, CheckCircle2,
-  AlertTriangle, MessageSquareText, Send, HandHeart
+  Video, Calendar, Clock, ExternalLink, Youtube, Bell,
+  Sparkles, GraduationCap, Zap, ChevronRight,
+  Info, CalendarDays, Users, Star, Loader2,
+  CheckCircle2, AlertTriangle, MessageSquareText, HandHeart,
+  ArrowLeft, Send
 } from "lucide-react";
 
 // ============================================================
@@ -44,27 +43,58 @@ function formatTimeOnly(dateStr: string | Date | null | undefined): string {
   return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
-function isUpcoming(dateStr: string | Date | null | undefined): boolean {
-  if (!dateStr) return false;
-  return new Date(dateStr) > new Date();
-}
-
 function daysUntil(dateStr: string | Date | null | undefined): number {
   if (!dateStr) return 0;
   const diff = new Date(dateStr).getTime() - new Date().getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
-const TYPE_CONFIG: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
-  webinar: { label: "Webinar", icon: Video, color: "text-blue-700", bgColor: "bg-blue-50 border-blue-200" },
-  course: { label: "Curso", icon: GraduationCap, color: "text-purple-700", bgColor: "bg-purple-50 border-purple-200" },
-  activity: { label: "Atividade Extra", icon: Zap, color: "text-emerald-700", bgColor: "bg-emerald-50 border-emerald-200" },
-  notice: { label: "Aviso", icon: Bell, color: "text-amber-700", bgColor: "bg-amber-50 border-amber-200" },
-  news: { label: "Novidade", icon: Sparkles, color: "text-rose-700", bgColor: "bg-rose-50 border-rose-200" },
+// ============================================================
+// VIEW TYPES
+// ============================================================
+
+type ViewType = "home" | "webinars" | "gravacoes" | "cursos" | "atividades" | "avisos";
+
+const VIEW_CONFIG: Record<Exclude<ViewType, "home">, {
+  title: string;
+  icon: any;
+  emptyTitle: string;
+  emptyDesc: string;
+}> = {
+  webinars: {
+    title: "Próximos Webinars",
+    icon: Video,
+    emptyTitle: "Nenhum webinar agendado",
+    emptyDesc: "Novos webinars serão publicados em breve.",
+  },
+  gravacoes: {
+    title: "Gravações Disponíveis",
+    icon: Youtube,
+    emptyTitle: "Nenhuma gravação disponível",
+    emptyDesc: "As gravações dos webinars realizados aparecerão aqui.",
+  },
+  cursos: {
+    title: "Cursos Disponíveis",
+    icon: GraduationCap,
+    emptyTitle: "Nenhum curso disponível",
+    emptyDesc: "Novos cursos serão divulgados aqui quando disponíveis.",
+  },
+  atividades: {
+    title: "Atividades Extras",
+    icon: Zap,
+    emptyTitle: "Nenhuma atividade extra",
+    emptyDesc: "Atividades extras serão publicadas aqui quando disponíveis.",
+  },
+  avisos: {
+    title: "Avisos e Novidades",
+    icon: Bell,
+    emptyTitle: "Nenhum aviso",
+    emptyDesc: "Avisos e comunicados aparecerão aqui.",
+  },
 };
 
 // ============================================================
-// ATTENDANCE BANNER - Aviso para marcar presença
+// ATTENDANCE BANNER
 // ============================================================
 
 function AttendanceBanner({ pendingCount, onOpenModal }: { pendingCount: number; onOpenModal: () => void }) {
@@ -82,7 +112,7 @@ function AttendanceBanner({ pendingCount, onOpenModal }: { pendingCount: number;
             Não deixe de marcar sua presença!
           </h3>
           <p className="text-xs sm:text-sm text-amber-700/80 mt-0.5">
-            Você tem <strong>{pendingCount} evento{pendingCount > 1 ? "s" : ""}</strong> pendente{pendingCount > 1 ? "s" : ""} de confirmação de presença.
+            Você tem <strong>{pendingCount} evento{pendingCount > 1 ? "s" : ""}</strong> pendente{pendingCount > 1 ? "s" : ""} de confirmação.
           </p>
         </div>
         <Button
@@ -91,7 +121,7 @@ function AttendanceBanner({ pendingCount, onOpenModal }: { pendingCount: number;
           size="sm"
         >
           <MessageSquareText className="h-4 w-4 mr-1.5" />
-          Clique aqui
+          Marcar Presença
         </Button>
       </div>
     </div>
@@ -99,7 +129,7 @@ function AttendanceBanner({ pendingCount, onOpenModal }: { pendingCount: number;
 }
 
 // ============================================================
-// ATTENDANCE MODAL - Marcar presença com reflexão
+// ATTENDANCE MODAL
 // ============================================================
 
 function AttendanceModal({
@@ -139,7 +169,7 @@ function AttendanceModal({
     onMarkPresence(selectedEventId, reflexao.trim());
   };
 
-  const selectedEvent = pendingWebinars.find(w => w.eventId === selectedEventId);
+  const selectedEvent = pendingWebinars.find((w: any) => w.eventId === selectedEventId);
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setStep("list"); setSelectedEventId(null); setReflexao(""); } }}>
@@ -159,7 +189,6 @@ function AttendanceModal({
 
         {step === "list" && (
           <div className="space-y-3 mt-2">
-            {/* Alerta educativo */}
             <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
               <div className="flex gap-3">
                 <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -173,7 +202,6 @@ function AttendanceModal({
               </div>
             </div>
 
-            {/* Lista de eventos pendentes */}
             {pendingWebinars.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
@@ -196,16 +224,6 @@ function AttendanceModal({
                         <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
                           <Calendar className="h-3 w-3" />
                           {formatDate(w.eventDate)}
-                          {w.hasParticipation && w.status === "presente" && (
-                            <Badge className="bg-green-50 text-green-700 border-green-200 text-[10px]">
-                              Presença registrada (planilha)
-                            </Badge>
-                          )}
-                          {w.hasParticipation && w.status === "ausente" && (
-                            <Badge className="bg-red-50 text-red-600 border-red-200 text-[10px]">
-                              Ausente (planilha)
-                            </Badge>
-                          )}
                         </div>
                       </div>
                       <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#E87722] flex-shrink-0" />
@@ -219,7 +237,6 @@ function AttendanceModal({
 
         {step === "reflexao" && selectedEvent && (
           <div className="space-y-4 mt-2">
-            {/* Info do evento selecionado */}
             <div className="rounded-lg bg-gray-50 border p-3">
               <div className="flex items-center gap-2">
                 <Video className="h-4 w-4 text-[#1B3A5D]" />
@@ -228,56 +245,47 @@ function AttendanceModal({
               <span className="text-xs text-gray-500 ml-6">{formatDate(selectedEvent.eventDate)}</span>
             </div>
 
-            {/* Alerta educativo compacto */}
             <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
               <div className="flex gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-800 leading-relaxed">
-                  Compartilhe suas percepções e insights sobre o evento. O verdadeiro ganho está no aprendizado.
-                  <strong> O maior beneficiado — ou prejudicado — por essa escolha é você.</strong>
+                <p className="text-xs text-amber-800">
+                  Compartilhe o que aprendeu, o que mais chamou sua atenção e como pretende aplicar no seu dia a dia.
                 </p>
               </div>
             </div>
 
-            {/* Campo de reflexão */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
                 Sua reflexão sobre o evento <span className="text-red-500">*</span>
               </label>
               <Textarea
                 value={reflexao}
                 onChange={(e) => setReflexao(e.target.value)}
-                placeholder="Compartilhe o que você aprendeu, quais insights levou deste evento e como pretende aplicar esse conhecimento no seu dia a dia..."
-                className="min-h-[140px] resize-y"
+                placeholder="Escreva aqui suas percepções, insights e aprendizados do evento..."
+                className="min-h-[120px] resize-none"
                 maxLength={2000}
               />
-              <div className="flex justify-between mt-1.5">
-                <span className={`text-xs ${reflexao.length < 20 ? "text-red-500" : "text-gray-400"}`}>
-                  {reflexao.length < 20 ? `Mínimo 20 caracteres (faltam ${20 - reflexao.length})` : ""}
+              <div className="flex justify-between mt-1">
+                <span className={`text-xs ${reflexao.length < 20 ? "text-red-500" : "text-green-600"}`}>
+                  {reflexao.length < 20 ? `Mínimo 20 caracteres (${reflexao.length}/20)` : `${reflexao.length}/2000 caracteres`}
                 </span>
-                <span className="text-xs text-gray-400">{reflexao.length}/2000</span>
               </div>
             </div>
 
             <DialogFooter className="flex gap-2 sm:gap-2">
-              <Button variant="outline" onClick={handleBack} disabled={isSubmitting}>
+              <Button variant="outline" onClick={handleBack} className="flex-1 sm:flex-none">
+                <ArrowLeft className="h-4 w-4 mr-1" />
                 Voltar
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={isSubmitting || reflexao.trim().length < 20}
-                className="bg-[#1B3A5D] hover:bg-[#1B3A5D]/90 text-white"
+                disabled={reflexao.trim().length < 20 || isSubmitting}
+                className="flex-1 sm:flex-none bg-[#E87722] hover:bg-[#E87722]/90 text-white"
               >
                 {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Registrando...
-                  </>
+                  <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Enviando...</>
                 ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Confirmar Presença
-                  </>
+                  <><Send className="h-4 w-4 mr-1" /> Confirmar Presença</>
                 )}
               </Button>
             </DialogFooter>
@@ -289,38 +297,318 @@ function AttendanceModal({
 }
 
 // ============================================================
-// HERO BANNER - Próximo Webinar em Destaque
+// STAT CARD (clickable)
 // ============================================================
 
-function HeroBanner({ webinar }: { webinar: any }) {
+function StatCard({
+  icon: Icon,
+  count,
+  label,
+  gradientFrom,
+  gradientBorder,
+  iconBg,
+  iconColor,
+  countColor,
+  labelColor,
+  onClick,
+}: {
+  icon: any;
+  count: number;
+  label: string;
+  gradientFrom: string;
+  gradientBorder: string;
+  iconBg: string;
+  iconColor: string;
+  countColor: string;
+  labelColor: string;
+  onClick: () => void;
+}) {
+  return (
+    <Card
+      className={`bg-gradient-to-br ${gradientFrom} to-white ${gradientBorder} cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200 group`}
+      onClick={onClick}
+    >
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex items-center gap-3">
+          <div className={`w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}>
+            <Icon className={`h-5 w-5 ${iconColor}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-2xl font-bold ${countColor}`}>{count}</p>
+            <p className={`text-[11px] ${labelColor} font-medium leading-tight`}>{label}</p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============================================================
+// WEBINAR LIST ITEM (for drill-down views)
+// ============================================================
+
+function WebinarListItem({
+  webinar,
+  variant,
+  attendanceStatus,
+  onMarkPresence,
+}: {
+  webinar: any;
+  variant: "upcoming" | "past";
+  attendanceStatus?: "confirmed" | "pending" | null;
+  onMarkPresence?: () => void;
+}) {
+  const isPast = variant === "past";
+  const eventEndDate = webinar.endDate || webinar.eventDate;
+  const hasEnded = eventEndDate ? new Date(eventEndDate) < new Date() : isPast;
+  const days = daysUntil(webinar.eventDate);
+
+  return (
+    <div className={`rounded-xl border bg-white hover:shadow-md transition-all duration-200 overflow-hidden ${
+      !isPast ? "border-l-4 border-l-[#E87722]" : ""
+    }`}>
+      <div className="flex flex-col sm:flex-row">
+        {webinar.cardImageUrl && (
+          <div className="sm:w-44 h-36 sm:h-auto flex-shrink-0">
+            <img
+              src={webinar.cardImageUrl}
+              alt={webinar.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
+        <div className="flex-1 p-4 sm:p-5">
+          {/* Header row */}
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 text-base line-clamp-1">
+                {webinar.title}
+              </h3>
+              {webinar.theme && (
+                <span className="text-xs text-gray-500">{webinar.theme}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {attendanceStatus === "confirmed" && (
+                <Badge className="bg-green-50 text-green-700 border-green-200 text-[10px]">
+                  <CheckCircle2 className="h-3 w-3 mr-0.5" />
+                  Presença confirmada
+                </Badge>
+              )}
+              {attendanceStatus === "pending" && isPast && hasEnded && (
+                <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] animate-pulse">
+                  <AlertTriangle className="h-3 w-3 mr-0.5" />
+                  Presença pendente
+                </Badge>
+              )}
+              {!isPast && days >= 0 && days <= 3 && (
+                <Badge className="bg-red-50 text-red-600 border-red-200 text-xs animate-pulse">
+                  {days === 0 ? "Hoje!" : `Em ${days} dia${days > 1 ? "s" : ""}`}
+                </Badge>
+              )}
+              {!isPast && days > 3 && (
+                <Badge className="bg-green-50 text-green-700 border-green-200 text-xs">
+                  Próximo
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {webinar.description && (
+            <p className="text-xs text-gray-600 line-clamp-2 mb-3">{webinar.description}</p>
+          )}
+
+          {/* Meta info */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-4">
+            <span className="flex items-center gap-1">
+              <CalendarDays className="h-3.5 w-3.5 text-[#1B3A5D]" />
+              {formatDateTime(webinar.eventDate)}
+            </span>
+            {webinar.speaker && (
+              <span className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5 text-[#1B3A5D]" />
+                {webinar.speaker}
+              </span>
+            )}
+            {webinar.duration && (
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5 text-[#1B3A5D]" />
+                {webinar.duration}min
+              </span>
+            )}
+          </div>
+
+          {/* ACTION BUTTONS */}
+          <div className="flex flex-wrap gap-2">
+            {!isPast && webinar.meetingLink && (
+              <Button
+                size="sm"
+                className="bg-[#1B3A5D] hover:bg-[#1B3A5D]/90 text-white h-9 px-4"
+                onClick={() => window.open(webinar.meetingLink, "_blank")}
+              >
+                <Video className="h-4 w-4 mr-1.5" />
+                Participar ao Vivo
+              </Button>
+            )}
+
+            {isPast && webinar.youtubeLink && (
+              <Button
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white h-9 px-4"
+                onClick={() => window.open(webinar.youtubeLink, "_blank")}
+              >
+                <Youtube className="h-4 w-4 mr-1.5" />
+                Assistir Gravação
+              </Button>
+            )}
+
+            {isPast && !webinar.youtubeLink && webinar.meetingLink && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-9 px-4"
+                onClick={() => window.open(webinar.meetingLink, "_blank")}
+              >
+                <ExternalLink className="h-4 w-4 mr-1.5" />
+                Link do Evento
+              </Button>
+            )}
+
+            {isPast && hasEnded && attendanceStatus === "pending" && onMarkPresence && (
+              <Button
+                size="sm"
+                className="bg-[#E87722] hover:bg-[#E87722]/90 text-white h-9 px-4"
+                onClick={onMarkPresence}
+              >
+                <MessageSquareText className="h-4 w-4 mr-1.5" />
+                Marcar Presença
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// ANNOUNCEMENT LIST ITEM
+// ============================================================
+
+const TYPE_CONFIG: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
+  webinar: { label: "Webinar", icon: Video, color: "text-blue-700", bgColor: "bg-blue-50 border-blue-200" },
+  course: { label: "Curso", icon: GraduationCap, color: "text-purple-700", bgColor: "bg-purple-50 border-purple-200" },
+  activity: { label: "Atividade Extra", icon: Zap, color: "text-emerald-700", bgColor: "bg-emerald-50 border-emerald-200" },
+  notice: { label: "Aviso", icon: Bell, color: "text-amber-700", bgColor: "bg-amber-50 border-amber-200" },
+  news: { label: "Novidade", icon: Sparkles, color: "text-rose-700", bgColor: "bg-rose-50 border-rose-200" },
+};
+
+function AnnouncementListItem({ announcement }: { announcement: any }) {
+  const config = TYPE_CONFIG[announcement.type] || TYPE_CONFIG.notice;
+  const Icon = config.icon;
+
+  return (
+    <div className={`rounded-xl border bg-white hover:shadow-md transition-all duration-200 overflow-hidden ${config.bgColor}`}>
+      <div className="flex items-start gap-4 p-4 sm:p-5">
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-white shadow-sm">
+          <Icon className={`h-5 w-5 ${config.color}`} />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="outline" className={`text-[10px] ${config.color} border-current`}>
+              {config.label}
+            </Badge>
+            {announcement.priority > 5 && (
+              <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+            )}
+          </div>
+          <h3 className="font-semibold text-gray-900 text-sm line-clamp-1">
+            {announcement.title}
+          </h3>
+          {announcement.content && (
+            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{announcement.content}</p>
+          )}
+          <div className="flex items-center justify-between mt-3">
+            <span className="text-[10px] text-gray-400">
+              {formatDate(announcement.publishAt || announcement.createdAt)}
+            </span>
+            {announcement.actionUrl && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-xs h-7 text-[#1B3A5D] hover:text-[#E87722]"
+                onClick={() => window.open(announcement.actionUrl, "_blank")}
+              >
+                {announcement.actionLabel || "Saiba mais"}
+                <ChevronRight className="h-3 w-3 ml-1" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {announcement.imageUrl && (
+          <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden">
+            <img
+              src={announcement.imageUrl}
+              alt={announcement.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// EMPTY STATE
+// ============================================================
+
+function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
+  return (
+    <div className="text-center py-16">
+      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+        <Icon className="h-8 w-8 text-gray-400" />
+      </div>
+      <h3 className="text-sm font-medium text-gray-900 mb-1">{title}</h3>
+      <p className="text-xs text-gray-500">{description}</p>
+    </div>
+  );
+}
+
+// ============================================================
+// NEXT WEBINAR HIGHLIGHT (compact, for home view)
+// ============================================================
+
+function NextWebinarHighlight({ webinar }: { webinar: any }) {
   const days = daysUntil(webinar.eventDate);
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1B3A5D] via-[#1B3A5D] to-[#0D2240] text-white shadow-xl">
-      {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#E87722] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
       </div>
 
       <div className="relative flex flex-col lg:flex-row items-center gap-6 p-6 lg:p-8">
-        {/* Card Image */}
         {webinar.cardImageUrl ? (
-          <div className="w-full lg:w-80 flex-shrink-0">
+          <div className="w-full lg:w-72 flex-shrink-0">
             <img
               src={webinar.cardImageUrl}
               alt={webinar.title}
-              className="w-full h-48 lg:h-56 object-cover rounded-xl shadow-lg"
+              className="w-full h-44 lg:h-48 object-cover rounded-xl shadow-lg"
             />
           </div>
         ) : (
-          <div className="w-full lg:w-80 h-48 lg:h-56 flex-shrink-0 rounded-xl bg-white/10 flex items-center justify-center">
+          <div className="w-full lg:w-72 h-44 lg:h-48 flex-shrink-0 rounded-xl bg-white/10 flex items-center justify-center">
             <Video className="h-16 w-16 text-white/30" />
           </div>
         )}
 
-        {/* Content */}
-        <div className="flex-1 space-y-4">
+        <div className="flex-1 space-y-3">
           <div className="flex items-center gap-3 flex-wrap">
             <Badge className="bg-[#E87722] text-white border-0 px-3 py-1 text-xs font-semibold">
               PRÓXIMO EVENTO
@@ -340,7 +628,7 @@ function HeroBanner({ webinar }: { webinar: any }) {
           <h2 className="text-xl lg:text-2xl font-bold leading-tight">{webinar.title}</h2>
 
           {webinar.description && (
-            <p className="text-white/70 text-sm lg:text-base line-clamp-2">{webinar.description}</p>
+            <p className="text-white/70 text-sm line-clamp-2">{webinar.description}</p>
           )}
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-white/80">
@@ -352,12 +640,6 @@ function HeroBanner({ webinar }: { webinar: any }) {
               <Clock className="h-4 w-4 text-[#E87722]" />
               {formatTimeOnly(webinar.eventDate)}
             </span>
-            {webinar.duration && (
-              <span className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-[#E87722]" />
-                {webinar.duration} min
-              </span>
-            )}
             {webinar.speaker && (
               <span className="flex items-center gap-1.5">
                 <Users className="h-4 w-4 text-[#E87722]" />
@@ -366,13 +648,7 @@ function HeroBanner({ webinar }: { webinar: any }) {
             )}
           </div>
 
-          {webinar.theme && (
-            <Badge variant="outline" className="text-white/80 border-white/30 text-xs">
-              {webinar.theme}
-            </Badge>
-          )}
-
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-1">
             {webinar.meetingLink && (
               <Button
                 className="bg-[#E87722] hover:bg-[#E87722]/90 text-white shadow-lg"
@@ -380,16 +656,6 @@ function HeroBanner({ webinar }: { webinar: any }) {
               >
                 <Video className="h-4 w-4 mr-2" />
                 Participar
-              </Button>
-            )}
-            {webinar.youtubeLink && (
-              <Button
-                variant="outline"
-                className="border-white/30 text-white hover:bg-white/10 bg-transparent"
-                onClick={() => window.open(webinar.youtubeLink, "_blank")}
-              >
-                <Youtube className="h-4 w-4 mr-2" />
-                Assistir Gravação
               </Button>
             )}
           </div>
@@ -400,232 +666,38 @@ function HeroBanner({ webinar }: { webinar: any }) {
 }
 
 // ============================================================
-// WEBINAR CARD (para lista) - com badge de presença
+// DRILL-DOWN VIEW HEADER
 // ============================================================
 
-function WebinarCard({
-  webinar,
-  variant = "upcoming",
-  attendanceStatus,
-  onMarkPresence,
+function DrillDownHeader({
+  viewType,
+  onBack,
+  count,
 }: {
-  webinar: any;
-  variant?: "upcoming" | "past";
-  attendanceStatus?: "confirmed" | "pending" | null;
-  onMarkPresence?: () => void;
+  viewType: Exclude<ViewType, "home">;
+  onBack: () => void;
+  count: number;
 }) {
-  const isPast = variant === "past";
-  // Verificar se o evento já terminou (endDate ou eventDate)
-  const eventEndDate = webinar.endDate || webinar.eventDate;
-  const hasEnded = eventEndDate ? new Date(eventEndDate) < new Date() : isPast;
-
-  return (
-    <Card className={`group hover:shadow-lg transition-all duration-300 overflow-hidden ${
-      isPast ? "opacity-80 hover:opacity-100" : "border-l-4 border-l-[#E87722]"
-    }`}>
-      <div className="flex flex-col sm:flex-row">
-        {/* Image */}
-        {webinar.cardImageUrl ? (
-          <div className="sm:w-40 h-32 sm:h-auto flex-shrink-0">
-            <img
-              src={webinar.cardImageUrl}
-              alt={webinar.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : null}
-
-        <div className="flex-1 p-4">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div>
-              <h3 className="font-semibold text-gray-900 group-hover:text-[#1B3A5D] transition-colors line-clamp-1">
-                {webinar.title}
-              </h3>
-              {webinar.theme && (
-                <span className="text-xs text-gray-500">{webinar.theme}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              {/* Badge de presença */}
-              {attendanceStatus === "confirmed" && (
-                <Badge className="bg-green-50 text-green-700 border-green-200 text-[10px]">
-                  <CheckCircle2 className="h-3 w-3 mr-0.5" />
-                  Presença confirmada
-                </Badge>
-              )}
-              {attendanceStatus === "pending" && isPast && (
-                <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] animate-pulse">
-                  <AlertTriangle className="h-3 w-3 mr-0.5" />
-                  Pendente
-                </Badge>
-              )}
-              {/* Badge de status do evento */}
-              {isPast && webinar.youtubeLink && !attendanceStatus && (
-                <Badge className="bg-red-50 text-red-600 border-red-200 text-xs">
-                  <PlayCircle className="h-3 w-3 mr-1" />
-                  Gravação
-                </Badge>
-              )}
-              {!isPast && !hasEnded && (
-                <Badge className="bg-green-50 text-green-700 border-green-200 text-xs">
-                  Próximo
-                </Badge>
-              )}
-              {!isPast && hasEnded && (
-                <Badge className="bg-gray-50 text-gray-600 border-gray-200 text-xs">
-                  Em andamento
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-3">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
-              {formatDateTime(webinar.eventDate)}
-            </span>
-            {webinar.speaker && (
-              <span className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5" />
-                {webinar.speaker}
-              </span>
-            )}
-            {webinar.duration && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
-                {webinar.duration}min
-              </span>
-            )}
-          </div>
-
-          {webinar.description && (
-            <p className="text-xs text-gray-600 line-clamp-2 mb-3">{webinar.description}</p>
-          )}
-
-          <div className="flex gap-2">
-            {!isPast && webinar.meetingLink && (
-              <Button
-                size="sm"
-                className="bg-[#1B3A5D] hover:bg-[#1B3A5D]/90 text-white text-xs h-8"
-                onClick={() => window.open(webinar.meetingLink, "_blank")}
-              >
-                <ExternalLink className="h-3 w-3 mr-1" />
-                Acessar
-              </Button>
-            )}
-            {isPast && hasEnded && attendanceStatus === "pending" && onMarkPresence && (
-              <Button
-                size="sm"
-                className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-8"
-                onClick={onMarkPresence}
-              >
-                <MessageSquareText className="h-3 w-3 mr-1" />
-                Marcar Presença
-              </Button>
-            )}
-            {isPast && webinar.youtubeLink && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-red-600 border-red-200 hover:bg-red-50 text-xs h-8"
-                onClick={() => window.open(webinar.youtubeLink, "_blank")}
-              >
-                <Youtube className="h-3 w-3 mr-1" />
-                Assistir
-              </Button>
-            )}
-            {isPast && webinar.meetingLink && !webinar.youtubeLink && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-gray-500 border-gray-200 text-xs h-8"
-                onClick={() => window.open(webinar.meetingLink, "_blank")}
-              >
-                <ExternalLink className="h-3 w-3 mr-1" />
-                Link do Evento
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-// ============================================================
-// ANNOUNCEMENT CARD
-// ============================================================
-
-function AnnouncementCard({ announcement }: { announcement: any }) {
-  const config = TYPE_CONFIG[announcement.type] || TYPE_CONFIG.notice;
+  const config = VIEW_CONFIG[viewType];
   const Icon = config.icon;
 
   return (
-    <Card className={`group hover:shadow-lg transition-all duration-300 border ${config.bgColor}`}>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-white shadow-sm`}>
-            <Icon className={`h-5 w-5 ${config.color}`} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <Badge variant="outline" className={`text-[10px] ${config.color} border-current`}>
-                {config.label}
-              </Badge>
-              {announcement.priority > 5 && (
-                <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-              )}
-            </div>
-            <h3 className="font-semibold text-gray-900 text-sm line-clamp-1 group-hover:text-[#1B3A5D] transition-colors">
-              {announcement.title}
-            </h3>
-            {announcement.content && (
-              <p className="text-xs text-gray-600 mt-1 line-clamp-2">{announcement.content}</p>
-            )}
-            <div className="flex items-center justify-between mt-3">
-              <span className="text-[10px] text-gray-400">
-                {formatDate(announcement.publishAt || announcement.createdAt)}
-              </span>
-              {announcement.actionUrl && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-xs h-7 text-[#1B3A5D] hover:text-[#E87722]"
-                  onClick={() => window.open(announcement.actionUrl, "_blank")}
-                >
-                  {announcement.actionLabel || "Saiba mais"}
-                  <ChevronRight className="h-3 w-3 ml-1" />
-                </Button>
-              )}
-            </div>
-          </div>
-          {announcement.imageUrl && (
-            <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden">
-              <img
-                src={announcement.imageUrl}
-                alt={announcement.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============================================================
-// EMPTY STATE
-// ============================================================
-
-function EmptyState({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
-  return (
-    <div className="text-center py-12">
-      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-        <Icon className="h-8 w-8 text-gray-400" />
+    <div className="flex items-center gap-3 mb-6">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onBack}
+        className="h-9 px-3 text-gray-600 hover:text-[#1B3A5D] hover:bg-[#1B3A5D]/5"
+      >
+        <ArrowLeft className="h-4 w-4 mr-1" />
+        Voltar
+      </Button>
+      <div className="h-6 w-px bg-gray-200" />
+      <div className="flex items-center gap-2">
+        <Icon className="h-5 w-5 text-[#1B3A5D]" />
+        <h2 className="text-lg font-bold text-gray-900">{config.title}</h2>
+        <Badge variant="outline" className="text-xs">{count}</Badge>
       </div>
-      <h3 className="text-sm font-medium text-gray-900 mb-1">{title}</h3>
-      <p className="text-xs text-gray-500">{description}</p>
     </div>
   );
 }
@@ -636,17 +708,15 @@ function EmptyState({ icon: Icon, title, description }: { icon: any; title: stri
 
 export default function MuralAluno() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("todos");
+  const [currentView, setCurrentView] = useState<ViewType>("home");
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
 
-  // Hooks - todos declarados no topo
+  // Data hooks
   const { data: upcomingWebinars, isLoading: loadingUpcoming } = trpc.webinars.upcoming.useQuery({ limit: 20 });
-  const { data: pastWebinars, isLoading: loadingPast } = trpc.webinars.past.useQuery({ limit: 20 });
+  const { data: pastWebinars, isLoading: loadingPast } = trpc.webinars.past.useQuery({ limit: 50 });
   const { data: activeAnnouncements, isLoading: loadingAnnouncements } = trpc.announcements.active.useQuery();
-  const { data: pendingAttendance, isLoading: loadingPending, refetch: refetchPending } = trpc.attendance.pending.useQuery();
+  const { data: pendingAttendance, refetch: refetchPending } = trpc.attendance.pending.useQuery();
   const { data: myAttendance, refetch: refetchMyAttendance } = trpc.attendance.myAttendance.useQuery();
-
-  const utils = trpc.useUtils();
 
   const markPresenceMutation = trpc.attendance.markPresence.useMutation({
     onSuccess: () => {
@@ -655,81 +725,40 @@ export default function MuralAluno() {
       refetchPending();
       refetchMyAttendance();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Erro ao registrar presença. Tente novamente.");
     },
   });
 
   const isLoading = loadingUpcoming || loadingPast || loadingAnnouncements;
 
-  // Map de eventIds confirmados pelo aluno
+  // Confirmed event IDs
   const confirmedEventIds = useMemo(() => {
     if (!myAttendance) return new Set<number>();
     return new Set(myAttendance.map((a: any) => a.eventId));
   }, [myAttendance]);
 
-  // Separar announcements por tipo
+  // Announcements by type
   const announcementsByType = useMemo(() => {
-    if (!activeAnnouncements) return { courses: [], activities: [], notices: [], news: [], webinars: [] };
+    if (!activeAnnouncements) return { courses: [], activities: [], notices: [], news: [] };
     return {
       courses: activeAnnouncements.filter((a: any) => a.type === "course"),
       activities: activeAnnouncements.filter((a: any) => a.type === "activity"),
       notices: activeAnnouncements.filter((a: any) => a.type === "notice"),
       news: activeAnnouncements.filter((a: any) => a.type === "news"),
-      webinars: activeAnnouncements.filter((a: any) => a.type === "webinar"),
     };
   }, [activeAnnouncements]);
-
-  // Todos os itens para a aba "Todos"
-  const allItems = useMemo(() => {
-    const items: { type: string; date: Date; data: any }[] = [];
-
-    if (upcomingWebinars) {
-      upcomingWebinars.forEach((w: any) => items.push({
-        type: "upcoming_webinar",
-        date: new Date(w.eventDate || w.startDate),
-        data: w,
-      }));
-    }
-
-    // Incluir gravações recentes (webinars passados) na aba Todos
-    if (pastWebinars) {
-      pastWebinars.slice(0, 10).forEach((w: any) => items.push({
-        type: "past_webinar",
-        date: new Date(w.eventDate || w.startDate),
-        data: w,
-      }));
-    }
-
-    if (activeAnnouncements) {
-      activeAnnouncements.forEach((a: any) => items.push({
-        type: "announcement",
-        date: new Date(a.publishAt || a.createdAt),
-        data: a,
-      }));
-    }
-
-    return items.sort((a, b) => {
-      if (a.type === "upcoming_webinar" && b.type !== "upcoming_webinar") return -1;
-      if (a.type !== "upcoming_webinar" && b.type === "upcoming_webinar") return 1;
-      if (a.type === "upcoming_webinar" && b.type === "upcoming_webinar") {
-        return a.date.getTime() - b.date.getTime();
-      }
-      return b.date.getTime() - a.date.getTime();
-    });
-  }, [upcomingWebinars, pastWebinars, activeAnnouncements]);
 
   const firstName = user?.name?.split(" ")[0] || "Aluno";
   const pendingCount = pendingAttendance?.length || 0;
 
-  // Determinar status de presença de um webinar
   const getAttendanceStatus = (webinarId: number): "confirmed" | "pending" | null => {
     if (confirmedEventIds.has(webinarId)) return "confirmed";
     if (pendingAttendance?.some((p: any) => p.eventId === webinarId)) return "pending";
     return null;
   };
 
-  // Early return para loading
+  // Loading state
   if (isLoading) {
     return (
       <AlunoLayout>
@@ -745,233 +774,207 @@ export default function MuralAluno() {
 
   const nextWebinar = upcomingWebinars && upcomingWebinars.length > 0 ? upcomingWebinars[0] : null;
 
-  return (
-    <AlunoLayout>
-      <div className="space-y-6 animate-in fade-in duration-500">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Olá, <span className="text-[#E87722]">{firstName}</span>!
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">
-              Confira as novidades, webinars e atividades do seu programa
-            </p>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
-            <CalendarDays className="h-4 w-4" />
-            {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-          </div>
-        </div>
+  // ============================================================
+  // HOME VIEW - Cards + Banner + Next Webinar
+  // ============================================================
 
-        {/* Banner de Presença Pendente */}
-        <AttendanceBanner
-          pendingCount={pendingCount}
-          onOpenModal={() => setAttendanceModalOpen(true)}
-        />
-
-        {/* Modal de Presença/Reflexão */}
-        <AttendanceModal
-          open={attendanceModalOpen}
-          onOpenChange={setAttendanceModalOpen}
-          pendingWebinars={pendingAttendance || []}
-          onMarkPresence={(eventId, reflexao) => markPresenceMutation.mutate({ eventId, reflexao })}
-          isSubmitting={markPresenceMutation.isPending}
-        />
-
-        {/* Hero Banner - Próximo Webinar */}
-        {nextWebinar && <HeroBanner webinar={nextWebinar} />}
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("webinars")}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Video className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-blue-700">{(upcomingWebinars?.length || 0)}</p>
-                <p className="text-[10px] text-blue-600/70 font-medium">Webinars Próximos</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-red-50 to-white border-red-100 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("gravacoes")}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-                <Youtube className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-red-700">{(pastWebinars?.length || 0)}</p>
-                <p className="text-[10px] text-red-600/70 font-medium">Gravações Disponíveis</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("cursos")}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                <GraduationCap className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-purple-700">{announcementsByType.courses.length}</p>
-                <p className="text-[10px] text-purple-600/70 font-medium">Cursos Disponíveis</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("atividades")}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <Zap className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-emerald-700">{announcementsByType.activities.length}</p>
-                <p className="text-[10px] text-emerald-600/70 font-medium">Atividades Extras</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-amber-50 to-white border-amber-100 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveTab("avisos")}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                <Bell className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-amber-700">{announcementsByType.notices.length + announcementsByType.news.length}</p>
-                <p className="text-[10px] text-amber-600/70 font-medium">Avisos e Novidades</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs de Conteúdo */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-gray-100 p-1 h-auto flex-wrap">
-            <TabsTrigger value="todos" className="text-xs data-[state=active]:bg-white">
-              <Globe className="h-3.5 w-3.5 mr-1.5" />
-              Todos
-            </TabsTrigger>
-            <TabsTrigger value="webinars" className="text-xs data-[state=active]:bg-white">
-              <Video className="h-3.5 w-3.5 mr-1.5" />
-              Webinars
-            </TabsTrigger>
-            <TabsTrigger value="cursos" className="text-xs data-[state=active]:bg-white">
-              <GraduationCap className="h-3.5 w-3.5 mr-1.5" />
-              Cursos
-            </TabsTrigger>
-            <TabsTrigger value="atividades" className="text-xs data-[state=active]:bg-white">
-              <Zap className="h-3.5 w-3.5 mr-1.5" />
-              Atividades
-            </TabsTrigger>
-            <TabsTrigger value="avisos" className="text-xs data-[state=active]:bg-white">
-              <Bell className="h-3.5 w-3.5 mr-1.5" />
-              Avisos
-            </TabsTrigger>
-            <TabsTrigger value="gravacoes" className="text-xs data-[state=active]:bg-white">
-              <Youtube className="h-3.5 w-3.5 mr-1.5" />
-              Gravações
-            </TabsTrigger>
-          </TabsList>
-
-          {/* TAB: TODOS */}
-          <TabsContent value="todos" className="mt-4 space-y-3">
-            {allItems.length === 0 ? (
-              <EmptyState
-                icon={Sparkles}
-                title="Nenhuma novidade no momento"
-                description="Fique atento! Em breve teremos novos conteúdos e eventos para você."
-              />
-            ) : (
-              allItems.map((item, idx) => (
-                item.type === "upcoming_webinar" ? (
-                  <WebinarCard key={`uw-${item.data.id}`} webinar={item.data} variant="upcoming" />
-                ) : item.type === "past_webinar" ? (
-                  <WebinarCard
-                    key={`pw-${item.data.id}`}
-                    webinar={item.data}
-                    variant="past"
-                    attendanceStatus={getAttendanceStatus(item.data.id)}
-                    onMarkPresence={() => setAttendanceModalOpen(true)}
-                  />
-                ) : (
-                  <AnnouncementCard key={`ann-${item.data.id}`} announcement={item.data} />
-                )
-              ))
-            )}
-          </TabsContent>
-
-          {/* TAB: WEBINARS */}
-          <TabsContent value="webinars" className="mt-4 space-y-6">
-            {/* Próximos */}
+  if (currentView === "home") {
+    return (
+      <AlunoLayout>
+        <div className="space-y-6 animate-in fade-in duration-500">
+          {/* Header */}
+          <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                Próximos Webinars
-              </h3>
-              {upcomingWebinars && upcomingWebinars.length > 0 ? (
-                <div className="space-y-3">
-                  {upcomingWebinars.map((w: any) => (
-                    <WebinarCard key={w.id} webinar={w} variant="upcoming" />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  icon={Video}
-                  title="Nenhum webinar agendado"
-                  description="Novos webinars serão publicados em breve."
-                />
-              )}
+              <h1 className="text-2xl font-bold text-gray-900">
+                Olá, <span className="text-[#E87722]">{firstName}</span>!
+              </h1>
+              <p className="text-gray-500 text-sm mt-1">
+                Confira as novidades, webinars e atividades do seu programa
+              </p>
             </div>
-          </TabsContent>
+            <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
+              <CalendarDays className="h-4 w-4" />
+              {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </div>
+          </div>
 
-          {/* TAB: CURSOS */}
-          <TabsContent value="cursos" className="mt-4 space-y-3">
-            {announcementsByType.courses.length > 0 ? (
-              announcementsByType.courses.map((a: any) => (
-                <AnnouncementCard key={a.id} announcement={a} />
-              ))
-            ) : (
-              <EmptyState
+          {/* Attendance Banner */}
+          <AttendanceBanner
+            pendingCount={pendingCount}
+            onOpenModal={() => setAttendanceModalOpen(true)}
+          />
+
+          {/* Attendance Modal */}
+          <AttendanceModal
+            open={attendanceModalOpen}
+            onOpenChange={setAttendanceModalOpen}
+            pendingWebinars={pendingAttendance || []}
+            onMarkPresence={(eventId, reflexao) => markPresenceMutation.mutate({ eventId, reflexao })}
+            isSubmitting={markPresenceMutation.isPending}
+          />
+
+          {/* Next Webinar Highlight */}
+          {nextWebinar && <NextWebinarHighlight webinar={nextWebinar} />}
+
+          {/* Stat Cards - Click to drill down */}
+          <div>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              Explore por Categoria
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <StatCard
+                icon={Video}
+                count={upcomingWebinars?.length || 0}
+                label="Webinars Próximos"
+                gradientFrom="from-blue-50"
+                gradientBorder="border-blue-100"
+                iconBg="bg-blue-100"
+                iconColor="text-blue-600"
+                countColor="text-blue-700"
+                labelColor="text-blue-600/70"
+                onClick={() => setCurrentView("webinars")}
+              />
+              <StatCard
+                icon={Youtube}
+                count={pastWebinars?.length || 0}
+                label="Gravações Disponíveis"
+                gradientFrom="from-red-50"
+                gradientBorder="border-red-100"
+                iconBg="bg-red-100"
+                iconColor="text-red-600"
+                countColor="text-red-700"
+                labelColor="text-red-600/70"
+                onClick={() => setCurrentView("gravacoes")}
+              />
+              <StatCard
                 icon={GraduationCap}
-                title="Nenhum curso disponível"
-                description="Novos cursos serão divulgados aqui quando disponíveis."
+                count={announcementsByType.courses.length}
+                label="Cursos Disponíveis"
+                gradientFrom="from-purple-50"
+                gradientBorder="border-purple-100"
+                iconBg="bg-purple-100"
+                iconColor="text-purple-600"
+                countColor="text-purple-700"
+                labelColor="text-purple-600/70"
+                onClick={() => setCurrentView("cursos")}
               />
-            )}
-          </TabsContent>
-
-          {/* TAB: ATIVIDADES */}
-          <TabsContent value="atividades" className="mt-4 space-y-3">
-            {announcementsByType.activities.length > 0 ? (
-              announcementsByType.activities.map((a: any) => (
-                <AnnouncementCard key={a.id} announcement={a} />
-              ))
-            ) : (
-              <EmptyState
+              <StatCard
                 icon={Zap}
-                title="Nenhuma atividade extra"
-                description="Atividades extras serão publicadas aqui quando disponíveis."
+                count={announcementsByType.activities.length}
+                label="Atividades Extras"
+                gradientFrom="from-emerald-50"
+                gradientBorder="border-emerald-100"
+                iconBg="bg-emerald-100"
+                iconColor="text-emerald-600"
+                countColor="text-emerald-700"
+                labelColor="text-emerald-600/70"
+                onClick={() => setCurrentView("atividades")}
               />
-            )}
-          </TabsContent>
-
-          {/* TAB: AVISOS */}
-          <TabsContent value="avisos" className="mt-4 space-y-3">
-            {(announcementsByType.notices.length + announcementsByType.news.length) > 0 ? (
-              [...announcementsByType.notices, ...announcementsByType.news].map((a: any) => (
-                <AnnouncementCard key={a.id} announcement={a} />
-              ))
-            ) : (
-              <EmptyState
+              <StatCard
                 icon={Bell}
-                title="Nenhum aviso"
-                description="Avisos e comunicados aparecerão aqui."
+                count={announcementsByType.notices.length + announcementsByType.news.length}
+                label="Avisos e Novidades"
+                gradientFrom="from-amber-50"
+                gradientBorder="border-amber-100"
+                iconBg="bg-amber-100"
+                iconColor="text-amber-600"
+                countColor="text-amber-700"
+                labelColor="text-amber-600/70"
+                onClick={() => setCurrentView("avisos")}
               />
-            )}
-          </TabsContent>
+            </div>
+          </div>
 
-          {/* TAB: GRAVAÇÕES */}
-          <TabsContent value="gravacoes" className="mt-4 space-y-3">
+          {/* Quick preview: recent recordings with pending attendance */}
+          {pendingCount > 0 && pendingAttendance && pendingAttendance.length > 0 && (
+            <div>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Pendentes de Presença
+              </h2>
+              <div className="space-y-3">
+                {pendingAttendance.slice(0, 3).map((w: any) => (
+                  <div
+                    key={w.eventId}
+                    className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/50 p-4 hover:shadow-sm transition-shadow"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <Video className="h-4 w-4 text-amber-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 truncate">{w.eventName}</h4>
+                        <span className="text-xs text-gray-500">{formatDate(w.eventDate)}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0 ml-3">
+                      {w.youtubeLink && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                          onClick={() => window.open(w.youtubeLink, "_blank")}
+                        >
+                          <Youtube className="h-3.5 w-3.5 mr-1" />
+                          Assistir
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs bg-[#E87722] hover:bg-[#E87722]/90 text-white"
+                        onClick={() => setAttendanceModalOpen(true)}
+                      >
+                        <MessageSquareText className="h-3.5 w-3.5 mr-1" />
+                        Presença
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {pendingAttendance.length > 3 && (
+                  <button
+                    onClick={() => setAttendanceModalOpen(true)}
+                    className="w-full text-center text-sm text-[#E87722] hover:text-[#E87722]/80 font-medium py-2"
+                  >
+                    Ver todos os {pendingAttendance.length} eventos pendentes
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </AlunoLayout>
+    );
+  }
+
+  // ============================================================
+  // DRILL-DOWN VIEWS
+  // ============================================================
+
+  const renderDrillDownContent = () => {
+    switch (currentView) {
+      case "webinars":
+        return (
+          <>
+            <DrillDownHeader viewType="webinars" onBack={() => setCurrentView("home")} count={upcomingWebinars?.length || 0} />
+            {upcomingWebinars && upcomingWebinars.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingWebinars.map((w: any) => (
+                  <WebinarListItem key={w.id} webinar={w} variant="upcoming" />
+                ))}
+              </div>
+            ) : (
+              <EmptyState icon={Video} title={VIEW_CONFIG.webinars.emptyTitle} description={VIEW_CONFIG.webinars.emptyDesc} />
+            )}
+          </>
+        );
+
+      case "gravacoes":
+        return (
+          <>
+            <DrillDownHeader viewType="gravacoes" onBack={() => setCurrentView("home")} count={pastWebinars?.length || 0} />
             {pastWebinars && pastWebinars.length > 0 ? (
               <div className="space-y-3">
                 {pastWebinars.map((w: any) => (
-                  <WebinarCard
+                  <WebinarListItem
                     key={w.id}
                     webinar={w}
                     variant="past"
@@ -981,14 +984,79 @@ export default function MuralAluno() {
                 ))}
               </div>
             ) : (
-              <EmptyState
-                icon={Youtube}
-                title="Nenhuma gravação disponível"
-                description="As gravações dos webinars realizados aparecerão aqui."
-              />
+              <EmptyState icon={Youtube} title={VIEW_CONFIG.gravacoes.emptyTitle} description={VIEW_CONFIG.gravacoes.emptyDesc} />
             )}
-          </TabsContent>
-        </Tabs>
+          </>
+        );
+
+      case "cursos":
+        return (
+          <>
+            <DrillDownHeader viewType="cursos" onBack={() => setCurrentView("home")} count={announcementsByType.courses.length} />
+            {announcementsByType.courses.length > 0 ? (
+              <div className="space-y-3">
+                {announcementsByType.courses.map((a: any) => (
+                  <AnnouncementListItem key={a.id} announcement={a} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState icon={GraduationCap} title={VIEW_CONFIG.cursos.emptyTitle} description={VIEW_CONFIG.cursos.emptyDesc} />
+            )}
+          </>
+        );
+
+      case "atividades":
+        return (
+          <>
+            <DrillDownHeader viewType="atividades" onBack={() => setCurrentView("home")} count={announcementsByType.activities.length} />
+            {announcementsByType.activities.length > 0 ? (
+              <div className="space-y-3">
+                {announcementsByType.activities.map((a: any) => (
+                  <AnnouncementListItem key={a.id} announcement={a} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState icon={Zap} title={VIEW_CONFIG.atividades.emptyTitle} description={VIEW_CONFIG.atividades.emptyDesc} />
+            )}
+          </>
+        );
+
+      case "avisos": {
+        const allNotices = [...announcementsByType.notices, ...announcementsByType.news];
+        return (
+          <>
+            <DrillDownHeader viewType="avisos" onBack={() => setCurrentView("home")} count={allNotices.length} />
+            {allNotices.length > 0 ? (
+              <div className="space-y-3">
+                {allNotices.map((a: any) => (
+                  <AnnouncementListItem key={a.id} announcement={a} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState icon={Bell} title={VIEW_CONFIG.avisos.emptyTitle} description={VIEW_CONFIG.avisos.emptyDesc} />
+            )}
+          </>
+        );
+      }
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <AlunoLayout>
+      <div className="animate-in fade-in duration-300">
+        {/* Attendance Modal (always available) */}
+        <AttendanceModal
+          open={attendanceModalOpen}
+          onOpenChange={setAttendanceModalOpen}
+          pendingWebinars={pendingAttendance || []}
+          onMarkPresence={(eventId, reflexao) => markPresenceMutation.mutate({ eventId, reflexao })}
+          isSubmitting={markPresenceMutation.isPending}
+        />
+
+        {renderDrillDownContent()}
       </div>
     </AlunoLayout>
   );

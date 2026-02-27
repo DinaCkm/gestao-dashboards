@@ -972,3 +972,24 @@
 ## Bug: Mural do Aluno mostra 0 webinars (27/02/2026)
 - [x] Investigar por que webinars não aparecem (causa: todos eram passados, aba Todos só mostrava upcoming)
 - [x] Corrigir: adicionado card "Gravações Disponíveis" (20), aba Todos agora inclui webinars passados, cards clicáveis
+
+## Página de Gestão de Avisos - Admin (27/02/2026)
+- [x] Criar página AvisosAdmin.tsx com CRUD completo
+- [x] Formulário para criar avisos (título, conteúdo, tipo: curso/atividade/aviso/novidade, imagem)
+- [x] Listar avisos com filtros por tipo e status (ativo/inativo)
+- [x] Editar e excluir avisos existentes
+- [x] Toggle ativo/inativo para controlar visibilidade no mural do aluno
+- [x] Upload de imagem de capa do aviso para S3
+- [x] Adicionar menu "Avisos e Comunicados" no sidebar admin
+- [x] Testes vitest (mural-ux.test.ts criado com 23 testes)
+
+## Reorganização do Mural do Aluno (27/02/2026)
+- [x] Tela inicial limpa: só cards numéricos + banner de presença pendente
+- [x] Ao clicar no card: abre lista de itens daquele tipo
+- [x] Cada webinar/gravação: botão claro "Assistir" (YouTube) e "Marcar Presença" (reflexão)
+- [x] Remover abas/tabs da tela inicial (só aparecem ao clicar no card)
+- [x] Simplificar fluxo: menos confusão visual
+- [x] Botão "Voltar" para retornar à tela de cards
+- [x] Seção "Pendentes de Presença" com preview rápido na home
+- [x] Testes vitest para nova UX (mural-ux.test.ts - 23 testes passando)
+- [ ] NOTA: Botões "Assistir Gravação" e "Marcar Presença" só aparecem quando youtubeLink/meetingLink estão preenchidos no banco. Atualmente os webinars não têm esses links cadastrados.
