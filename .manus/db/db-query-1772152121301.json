@@ -1,0 +1,30 @@
+{
+  "query": "SELECT ms.consultorId, c.name as mentor_name FROM mentoring_sessions ms JOIN consultors c ON ms.consultorId = c.id WHERE ms.alunoId = (SELECT id FROM alunos WHERE name LIKE '%Valci%') LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ms.consultorId, c.name as mentor_name FROM mentoring_sessions ms JOIN consultors c ON ms.consultorId = c.id WHERE ms.alunoId = (SELECT id FROM alunos WHERE name LIKE '%Valci%') LIMIT 5;",
+  "rows": [
+    {
+      "consultorId": "31",
+      "mentor_name": "Deborah Franco"
+    },
+    {
+      "consultorId": "31",
+      "mentor_name": "Deborah Franco"
+    },
+    {
+      "consultorId": "31",
+      "mentor_name": "Deborah Franco"
+    },
+    {
+      "consultorId": "31",
+      "mentor_name": "Deborah Franco"
+    },
+    {
+      "consultorId": "31",
+      "mentor_name": "Deborah Franco"
+    }
+  ],
+  "messages": [],
+  "stdout": "consultorId\tmentor_name\n31\tDeborah Franco\n31\tDeborah Franco\n31\tDeborah Franco\n31\tDeborah Franco\n31\tDeborah Franco\n",
+  "stderr": "",
+  "execution_time_ms": 368
+}

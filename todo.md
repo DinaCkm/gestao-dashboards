@@ -850,3 +850,18 @@
 
 ## Mentora Real no Portal do Aluno (26/02/2026)
 - [x] Exibir nome da mentora real do aluno apenas no Meu Painel (já existia como badge)
+
+## Correção Mentor no Meu Painel (26/02/2026)
+- [ ] Buscar mentor pelas sessões de mentoria quando consultorId do aluno for NULL
+
+## Importação Planilha SEBRAE TO (26/02/2026)
+- [ ] Analisar todas as abas da planilha (Respostas, Codigo_nome, ID TURMAS, ID TRILHA, Extrutura)
+- [ ] Extrair relação mentor-aluno da planilha
+- [ ] Atualizar consultorId dos alunos no banco com base na planilha
+- [ ] Atualizar demais dados relevantes (turmas, trilhas, estrutura)
+
+## Mentor Atual + Histórico por Sessão (26/02/2026)
+- [x] Mapear 8 mentores da planilha com consultores no banco (Dina Makyiama = Dina Makiyama, grafia diferente)
+- [x] Atualizar consultorId dos 50 alunos com o mentor mais recente
+- [ ] Meu Painel: mostrar mentor atual (sessão mais recente) — já funciona via consultorId
+- [ ] Histórico de mentorias: cada sessão mostra o mentor que acompanhou

@@ -1,0 +1,18 @@
+{
+  "query": "SELECT a.id, a.externalId, a.name, a.email, a.canLogin, p.name as programa FROM alunos a LEFT JOIN programs p ON a.programId = p.id WHERE a.name LIKE '%Joseane%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.externalId, a.name, a.email, a.canLogin, p.name as programa FROM alunos a LEFT JOIN programs p ON a.programId = p.id WHERE a.name LIKE '%Joseane%';",
+  "rows": [
+    {
+      "id": "30066",
+      "externalId": "667285",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "canLogin": "1",
+      "programa": "SEBRAE TO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\texternalId\tname\temail\tcanLogin\tprograma\n30066\t667285\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\t1\tSEBRAE TO\n",
+  "stderr": "",
+  "execution_time_ms": 451
+}

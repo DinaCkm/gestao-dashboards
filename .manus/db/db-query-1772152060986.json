@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, name, email, consultorId FROM alunos WHERE name LIKE '%Valci%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, consultorId FROM alunos WHERE name LIKE '%Valci%';",
+  "rows": [
+    {
+      "id": "30077",
+      "name": "Valci Pereira Da Silva Junior",
+      "email": "valci.junior@to.sebrae.com.br",
+      "consultorId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tconsultorId\n30077\tValci Pereira Da Silva Junior\tvalci.junior@to.sebrae.com.br\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 376
+}

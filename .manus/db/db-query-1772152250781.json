@@ -1,0 +1,22 @@
+{
+  "query": "SELECT ms.sessionDate, c.name as mentor FROM mentoring_sessions ms JOIN consultors c ON ms.consultorId = c.id WHERE ms.alunoId = (SELECT id FROM alunos WHERE name LIKE '%Joseane%') ORDER BY ms.sessionDate DESC LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ms.sessionDate, c.name as mentor FROM mentoring_sessions ms JOIN consultors c ON ms.consultorId = c.id WHERE ms.alunoId = (SELECT id FROM alunos WHERE name LIKE '%Joseane%') ORDER BY ms.sessionDate DESC LIMIT 3;",
+  "rows": [
+    {
+      "sessionDate": "2026-02-02",
+      "mentor": "Andressa Santos"
+    },
+    {
+      "sessionDate": "2025-12-10",
+      "mentor": "Andressa Santos"
+    },
+    {
+      "sessionDate": "2025-11-04",
+      "mentor": "Andressa Santos"
+    }
+  ],
+  "messages": [],
+  "stdout": "sessionDate\tmentor\n2026-02-02\tAndressa Santos\n2025-12-10\tAndressa Santos\n2025-11-04\tAndressa Santos\n",
+  "stderr": "",
+  "execution_time_ms": 349
+}

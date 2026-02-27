@@ -1361,7 +1361,15 @@ export const appRouter = router({
       // Buscar programa, turma e mentor do aluno
       const programa = aluno.programId ? programMap.get(aluno.programId) : null;
       const turmaAluno = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
-      const mentorAluno = aluno.consultorId ? await db.getConsultorById(aluno.consultorId) : null;
+      // Buscar mentor: primeiro pelo consultorId do aluno, senão pela sessão de mentoria mais recente
+      let mentorAluno = aluno.consultorId ? await db.getConsultorById(aluno.consultorId) : null;
+      if (!mentorAluno && sessoesAluno.length > 0) {
+        // Buscar o consultor da sessão mais recente
+        const sessaoComConsultor = [...sessoesAluno].reverse().find(s => s.consultorId);
+        if (sessaoComConsultor?.consultorId) {
+          mentorAluno = await db.getConsultorById(sessaoComConsultor.consultorId);
+        }
+      }
 
       // Calcular ranking na empresa (posição entre colegas da mesma empresa)
       let ranking = { posicao: 0, totalAlunos: 0 };

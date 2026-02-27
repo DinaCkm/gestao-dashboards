@@ -1,0 +1,15 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(CASE WHEN consultorId IS NULL THEN 1 ELSE 0 END) as sem_mentor, SUM(CASE WHEN consultorId IS NOT NULL THEN 1 ELSE 0 END) as com_mentor FROM alunos;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total, SUM(CASE WHEN consultorId IS NULL THEN 1 ELSE 0 END) as sem_mentor, SUM(CASE WHEN consultorId IS NOT NULL THEN 1 ELSE 0 END) as com_mentor FROM alunos;",
+  "rows": [
+    {
+      "total": "126",
+      "sem_mentor": "126",
+      "com_mentor": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tsem_mentor\tcom_mentor\n126\t126\t0\n",
+  "stderr": "",
+  "execution_time_ms": 353
+}
