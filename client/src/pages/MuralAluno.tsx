@@ -440,7 +440,7 @@ function WebinarListItem({
             )}
           </div>
 
-          {/* ACTION BUTTONS */}
+          {/* ACTION BUTTONS - sempre visíveis para gravações */}
           <div className="flex flex-wrap gap-2">
             {!isPast && webinar.meetingLink && (
               <Button
@@ -453,30 +453,22 @@ function WebinarListItem({
               </Button>
             )}
 
-            {isPast && webinar.youtubeLink && (
+            {isPast && (
               <Button
                 size="sm"
-                className="bg-red-600 hover:bg-red-700 text-white h-9 px-4"
-                onClick={() => window.open(webinar.youtubeLink, "_blank")}
+                className={webinar.youtubeLink
+                  ? "bg-red-600 hover:bg-red-700 text-white h-9 px-4"
+                  : "bg-gray-300 text-gray-500 h-9 px-4 cursor-not-allowed"
+                }
+                disabled={!webinar.youtubeLink}
+                onClick={() => webinar.youtubeLink && window.open(webinar.youtubeLink, "_blank")}
               >
                 <Youtube className="h-4 w-4 mr-1.5" />
-                Assistir Gravação
+                {webinar.youtubeLink ? "Assistir Gravação" : "Link em breve"}
               </Button>
             )}
 
-            {isPast && !webinar.youtubeLink && webinar.meetingLink && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-9 px-4"
-                onClick={() => window.open(webinar.meetingLink, "_blank")}
-              >
-                <ExternalLink className="h-4 w-4 mr-1.5" />
-                Link do Evento
-              </Button>
-            )}
-
-            {isPast && hasEnded && attendanceStatus === "pending" && onMarkPresence && (
+            {isPast && hasEnded && onMarkPresence && attendanceStatus !== "confirmed" && (
               <Button
                 size="sm"
                 className="bg-[#E87722] hover:bg-[#E87722]/90 text-white h-9 px-4"

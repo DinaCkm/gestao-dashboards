@@ -993,3 +993,6 @@
 - [x] Seção "Pendentes de Presença" com preview rápido na home
 - [x] Testes vitest para nova UX (mural-ux.test.ts - 23 testes passando)
 - [ ] NOTA: Botões "Assistir Gravação" e "Marcar Presença" só aparecem quando youtubeLink/meetingLink estão preenchidos no banco. Atualmente os webinars não têm esses links cadastrados.
+
+## Fix: Botões sempre visíveis nas gravações (27/02/2026)
+- [x] Mostrar botões "Assistir" e "Marcar Presença" sempre em cada webinar da lista de gravações
