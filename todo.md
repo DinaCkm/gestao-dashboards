@@ -1091,3 +1091,13 @@
 - [x] Atualizar rota de /meu-dashboard para /portal no App.tsx (mantido /meu-dashboard com redirect)
 - [x] Remover PortalAluno.tsx e portalAlunoData.ts
 - [x] Remover rota antiga /portal do App.tsx
+
+## Redesign Portal do Aluno - Visual Claro e Legível (27/02/2026)
+- [x] Trocar fundo cinza escuro (bg-gray-800/900) por fundo branco/claro em todos os cards
+- [x] Trocar textos cinza claro (text-gray-300/400) por textos escuros (text-gray-800/900)
+- [x] Trocar badges escuros por badges coloridos com fundo suave (como no Mural)
+- [x] Manter gráficos legíveis com cores contrastantes em fundo claro
+- [x] Redesenhar header do aluno com fundo claro e badges coloridos
+- [x] Redesenhar indicadores com cards brancos e bordas coloridas
+- [x] Redesenhar abas com estilo consistente com o Mural
+- [x] Adicionar rota /portal-aluno no App.tsx

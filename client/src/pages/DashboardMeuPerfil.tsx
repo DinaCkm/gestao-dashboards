@@ -21,43 +21,43 @@ import {
 
 function getClassificacaoColor(classificacao: string): string {
   switch (classificacao) {
-    case "Excelência": return "text-emerald-400";
-    case "Avançado": return "text-blue-400";
-    case "Intermediário": return "text-yellow-400";
-    case "Básico": return "text-orange-400";
-    case "Inicial": return "text-red-400";
-    default: return "text-gray-400";
+    case "Excelência": return "text-emerald-600";
+    case "Avançado": return "text-blue-600";
+    case "Intermediário": return "text-yellow-600";
+    case "Básico": return "text-orange-600";
+    case "Inicial": return "text-red-600";
+    default: return "text-gray-600";
   }
 }
 
 function getClassificacaoBadge(classificacao: string): string {
   switch (classificacao) {
-    case "Excelência": return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
-    case "Avançado": return "bg-blue-500/20 text-blue-400 border-blue-500/30";
-    case "Intermediário": return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-    case "Básico": return "bg-orange-500/20 text-orange-400 border-orange-500/30";
-    case "Inicial": return "bg-red-500/20 text-red-400 border-red-500/30";
-    default: return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+    case "Excelência": return "bg-emerald-100 text-emerald-700 border-emerald-300";
+    case "Avançado": return "bg-blue-100 text-blue-700 border-blue-300";
+    case "Intermediário": return "bg-yellow-100 text-yellow-700 border-yellow-300";
+    case "Básico": return "bg-orange-100 text-orange-700 border-orange-300";
+    case "Inicial": return "bg-red-100 text-red-700 border-red-300";
+    default: return "bg-gray-100 text-gray-700 border-gray-300";
   }
 }
 
 function getPresencaIcon(presenca: string) {
-  if (presenca === "presente") return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
-  return <XCircle className="h-4 w-4 text-red-400" />;
+  if (presenca === "presente") return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
+  return <XCircle className="h-4 w-4 text-red-500" />;
 }
 
 function getTaskIcon(task: string) {
-  if (task === "entregue") return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
-  if (task === "nao_entregue") return <XCircle className="h-4 w-4 text-red-400" />;
-  return <Minus className="h-4 w-4 text-gray-500" />;
+  if (task === "entregue") return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
+  if (task === "nao_entregue") return <XCircle className="h-4 w-4 text-red-500" />;
+  return <Minus className="h-4 w-4 text-gray-400" />;
 }
 
 function getEngajamentoStars(score: number | null) {
-  if (!score) return <span className="text-gray-500 text-xs">—</span>;
+  if (!score) return <span className="text-gray-400 text-xs">—</span>;
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
-        <Star key={i} className={`h-3.5 w-3.5 ${i <= score ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}`} />
+        <Star key={i} className={`h-3.5 w-3.5 ${i <= score ? "text-amber-500 fill-amber-500" : "text-gray-300"}`} />
       ))}
     </div>
   );
@@ -65,11 +65,11 @@ function getEngajamentoStars(score: number | null) {
 
 function getCicloStatusColor(status: string) {
   switch (status) {
-    case "finalizado": return { bg: "bg-emerald-500", text: "text-emerald-400", badge: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" };
-    case "em_andamento": return { bg: "bg-blue-500", text: "text-blue-400", badge: "bg-blue-500/20 text-blue-400 border-blue-500/30" };
-    case "atrasado": return { bg: "bg-red-500", text: "text-red-400", badge: "bg-red-500/20 text-red-400 border-red-500/30" };
-    case "futuro": return { bg: "bg-gray-500", text: "text-gray-400", badge: "bg-gray-500/20 text-gray-400 border-gray-500/30" };
-    default: return { bg: "bg-gray-500", text: "text-gray-400", badge: "bg-gray-500/20 text-gray-400 border-gray-500/30" };
+    case "finalizado": return { bg: "bg-emerald-500", text: "text-emerald-600", badge: "bg-emerald-100 text-emerald-700 border-emerald-300" };
+    case "em_andamento": return { bg: "bg-blue-500", text: "text-blue-600", badge: "bg-blue-100 text-blue-700 border-blue-300" };
+    case "atrasado": return { bg: "bg-red-500", text: "text-red-600", badge: "bg-red-100 text-red-700 border-red-300" };
+    case "futuro": return { bg: "bg-gray-400", text: "text-gray-500", badge: "bg-gray-100 text-gray-600 border-gray-300" };
+    default: return { bg: "bg-gray-400", text: "text-gray-500", badge: "bg-gray-100 text-gray-600 border-gray-300" };
   }
 }
 
@@ -83,42 +83,34 @@ function getCicloStatusLabel(status: string) {
   }
 }
 
-// Competência visual no caminho - verde/vermelho/azul
-function getCompetenciaCaminhoColor(concluida: boolean, cicloStatus: string) {
-  if (concluida && cicloStatus === "em_andamento") return { cor: "#3b82f6", label: "Adiantado" }; // Azul - Excelência
-  if (concluida) return { cor: "#10b981", label: "No prazo" }; // Verde
-  if (cicloStatus === "finalizado" || cicloStatus === "atrasado") return { cor: "#ef4444", label: "Atrasado" }; // Vermelho
-  return { cor: "#6b7280", label: "Pendente" }; // Cinza - futuro/em andamento
-}
-
 function IndicadorCardAluno({ 
-  numero, icon: Icon, label, valor, total, percentual, color, regras 
+  numero, icon: Icon, label, valor, total, percentual, color, borderColor, regras 
 }: {
   numero: number; icon: React.ElementType; label: string;
   valor: number | string; total: number | string; percentual: number;
-  color: string; regras: string[];
+  color: string; borderColor: string; regras: string[];
 }) {
   const [expanded, setExpanded] = useState(false);
   return (
-    <Card className="bg-gray-800/50 border-gray-700">
+    <Card className={`bg-white border ${borderColor} shadow-sm hover:shadow-md transition-shadow`}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <div className={`p-2 rounded-lg ${color}`}>
               <Icon className="h-4 w-4" />
             </div>
-            <p className="text-xs text-gray-400">Ind. {numero}: {label}</p>
+            <p className="text-xs text-gray-500 font-medium">Ind. {numero}: {label}</p>
           </div>
-          <button onClick={() => setExpanded(!expanded)} className="text-gray-500 hover:text-gray-300 transition-colors" title="Ver explicação">
+          <button onClick={() => setExpanded(!expanded)} className="text-gray-400 hover:text-gray-600 transition-colors" title="Ver explicação">
             <Info className="h-3.5 w-3.5" />
           </button>
         </div>
-        <p className="text-lg font-bold text-white">{percentual.toFixed(0)}%</p>
+        <p className="text-lg font-bold text-gray-900">{percentual.toFixed(0)}%</p>
         <Progress value={percentual} className="h-1.5 mb-1" />
         <p className="text-xs text-gray-500">{valor} de {total}</p>
         {expanded && (
-          <div className="mt-2 p-2 bg-gray-900/50 rounded text-xs space-y-0.5">
-            <p className="font-semibold text-gray-400">Como é calculado:</p>
+          <div className="mt-2 p-2 bg-gray-50 rounded border border-gray-100 text-xs space-y-0.5">
+            <p className="font-semibold text-gray-600">Como é calculado:</p>
             {regras.map((r, i) => <p key={i} className="text-gray-500">• {r}</p>)}
           </div>
         )}
@@ -215,7 +207,7 @@ export default function DashboardMeuPerfil() {
     return [
       { name: "Concluídas", value: trilhaStats.concluidas, color: "#10b981" },
       { name: "Em Progresso", value: trilhaStats.emProgresso, color: "#3b82f6" },
-      { name: "Pendentes", value: trilhaStats.pendentes, color: "#6b7280" },
+      { name: "Pendentes", value: trilhaStats.pendentes, color: "#d1d5db" },
     ].filter(d => d.value > 0);
   }, [trilhaStats]);
 
@@ -223,7 +215,7 @@ export default function DashboardMeuPerfil() {
     return (
       <AlunoLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0A1E3E]"></div>
         </div>
       </AlunoLayout>
     );
@@ -233,10 +225,10 @@ export default function DashboardMeuPerfil() {
     return (
       <AlunoLayout>
         <div className="flex flex-col items-center justify-center h-96 gap-4">
-          <User className="h-16 w-16 text-gray-500" />
-          <h2 className="text-xl font-semibold text-gray-300">Perfil não encontrado</h2>
+          <User className="h-16 w-16 text-gray-400" />
+          <h2 className="text-xl font-semibold text-gray-700">Perfil não encontrado</h2>
           <p className="text-gray-500 text-center max-w-md">
-            {data && !data.found ? data.message : "Não foi possível carregar seus dados. Entre em contato com o administrador."}
+            {data && !data.found ? data.message : "Nenhum perfil de aluno vinculado a esta conta."}
           </p>
         </div>
       </AlunoLayout>
@@ -254,32 +246,32 @@ export default function DashboardMeuPerfil() {
       <div className="space-y-6">
         {/* Header com informações do aluno */}
         <div className="flex flex-col lg:flex-row gap-6">
-          <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 flex-1">
+          <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white flex-1 shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-white">{aluno.name}</h1>
+                  <h1 className="text-2xl font-bold">{aluno.name}</h1>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    <Badge variant="outline" className="text-blue-400 border-blue-500/30 bg-blue-500/10">
+                    <Badge className="bg-white/20 text-white border-white/30">
                       <GraduationCap className="h-3 w-3 mr-1" />{aluno.programa}
                     </Badge>
-                    <Badge variant="outline" className="text-purple-400 border-purple-500/30 bg-purple-500/10">
+                    <Badge className="bg-white/20 text-white border-white/30">
                       <Users className="h-3 w-3 mr-1" />{aluno.turma}
                     </Badge>
-                    <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
+                    <Badge className="bg-white/20 text-white border-white/30">
                       <Target className="h-3 w-3 mr-1" />Trilha: {aluno.trilha}
                     </Badge>
-                    <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
+                    <Badge className="bg-white/20 text-white border-white/30">
                       <Clock className="h-3 w-3 mr-1" />Ciclo: {aluno.cicloAtual}
                     </Badge>
-                    <Badge variant="outline" className="text-cyan-400 border-cyan-500/30 bg-cyan-500/10">
+                    <Badge className="bg-white/20 text-white border-white/30">
                       <User className="h-3 w-3 mr-1" />Mentor: {aluno.mentor}
                     </Badge>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-400 mb-1">Performance Geral</p>
-                  <div className={`text-4xl font-black ${getClassificacaoColor(indicadores.classificacao)}`}>
+                  <p className="text-xs text-white/70 mb-1">Performance Geral</p>
+                  <div className="text-4xl font-black text-[#F5991F]">
                     {performanceGeral.toFixed(0)}%
                   </div>
                   <Badge className={`mt-1 ${getClassificacaoBadge(indicadores.classificacao)}`}>
@@ -288,65 +280,65 @@ export default function DashboardMeuPerfil() {
                 </div>
               </div>
               {ranking && ranking.posicao > 0 && (
-                <div className="flex items-center gap-3 mt-4 p-3 rounded-lg bg-gray-700/50">
-                  <Trophy className="h-5 w-5 text-yellow-400" />
+                <div className="flex items-center gap-3 mt-4 p-3 rounded-lg bg-white/10">
+                  <Trophy className="h-5 w-5 text-[#F5991F]" />
                   <div>
                     <span className="text-white font-semibold">{ranking.posicao}º lugar</span>
-                    <span className="text-gray-400 text-sm ml-2">de {ranking.totalAlunos} alunos na empresa</span>
+                    <span className="text-white/70 text-sm ml-2">de {ranking.totalAlunos} alunos na empresa</span>
                   </div>
                 </div>
               )}
               {/* Explicação da Performance Geral */}
-              <div className="mt-3 p-3 rounded-lg bg-gray-700/30 text-xs text-gray-400">
-                <p className="font-semibold mb-1">Ind. 7 — Performance Geral:</p>
-                <p>Média dos 6 indicadores: ({indicadores.participacaoMentorias.toFixed(0)} + {indicadores.atividadesPraticas.toFixed(0)} + {indicadores.engajamento.toFixed(0)} + {indicadores.performanceCompetencias.toFixed(0)} + {(indicadores.performanceAprendizado || 0).toFixed(0)} + {indicadores.participacaoEventos.toFixed(0)}) / 6 = <span className="text-white font-bold">{performanceGeral.toFixed(0)}%</span></p>
+              <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
+                <p className="font-semibold mb-1 text-white/90">Ind. 7 — Performance Geral:</p>
+                <p>Média dos 6 indicadores: ({indicadores.participacaoMentorias.toFixed(0)} + {indicadores.atividadesPraticas.toFixed(0)} + {indicadores.engajamento.toFixed(0)} + {indicadores.performanceCompetencias.toFixed(0)} + {(indicadores.performanceAprendizado || 0).toFixed(0)} + {indicadores.participacaoEventos.toFixed(0)}) / 6 = <span className="text-[#F5991F] font-bold">{performanceGeral.toFixed(0)}%</span></p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800/50 border-gray-700 w-full lg:w-80">
+          <Card className="bg-white border border-gray-200 shadow-sm w-full lg:w-80">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-gray-400">Radar de Performance (6 Indicadores)</CardTitle>
+              <CardTitle className="text-sm text-gray-600">Radar de Performance</CardTitle>
             </CardHeader>
             <CardContent className="p-2">
               <ResponsiveContainer width="100%" height={220}>
                 <RadarChart data={radarData}>
-                  <PolarGrid stroke="#374151" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: "#9ca3af", fontSize: 10 }} />
+                  <PolarGrid stroke="#e5e7eb" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: "#374151", fontSize: 10 }} />
                   <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-                  <Radar dataKey="value" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} isAnimationActive={false} />
+                  <Radar dataKey="value" stroke="#0A1E3E" fill="#0A1E3E" fillOpacity={0.2} isAnimationActive={false} />
                 </RadarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
 
-        {/* 6 Indicadores individuais com explicações */}
+        {/* 6 Indicadores individuais */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <IndicadorCardAluno
             numero={1} icon={MessageSquare} label="Mentorias"
             valor={indicadores.mentoriasPresente} total={indicadores.totalMentorias}
             percentual={indicadores.participacaoMentorias}
-            color="bg-blue-500/20 text-blue-400"
+            color="bg-blue-100 text-blue-600" borderColor="border-blue-200"
             regras={["(Sessões presentes / Total sessões) × 100", "Presente = 100%, Ausente = 0%"]}
           />
           <IndicadorCardAluno
             numero={2} icon={Zap} label="Atividades"
             valor={indicadores.atividadesEntregues} total={indicadores.totalAtividades}
             percentual={indicadores.atividadesPraticas}
-            color="bg-purple-500/20 text-purple-400"
+            color="bg-purple-100 text-purple-600" borderColor="border-purple-200"
             regras={["(Atividades entregues / Total) × 100", "1ª mentoria (Assessment) excluída", "Sessões sem tarefa não contam"]}
           />
           <IndicadorCardAluno
             numero={3} icon={Activity} label="Engajamento"
             valor={`${indicadores.engajamento.toFixed(0)}%`} total="100%"
             percentual={indicadores.engajamento}
-            color="bg-cyan-500/20 text-cyan-400"
+            color="bg-cyan-100 text-cyan-600" borderColor="border-cyan-200"
             regras={[
               "Média de 3 componentes, todos convertidos para base 100:",
-              `1) Presença nas Mentorias: ${engComp.presenca?.toFixed(0) || 0}% (presente=100, ausente=0)`,
-              `2) Entrega de Tarefas: ${engComp.atividades?.toFixed(0) || 0}% (entregue=100, não entregue=0)`,
-              `3) Nota Evolução da Mentora (0-10 → nota/10 × 100): ${engComp.notaMentora?.toFixed(0) || 0}%`,
+              `1) Presença nas Mentorias: ${engComp.presenca?.toFixed(0) || 0}%`,
+              `2) Entrega de Tarefas: ${engComp.atividades?.toFixed(0) || 0}%`,
+              `3) Nota Evolução da Mentora: ${engComp.notaMentora?.toFixed(0) || 0}%`,
               "Fórmula: (Comp.1 + Comp.2 + Comp.3) / 3"
             ]}
           />
@@ -354,35 +346,35 @@ export default function DashboardMeuPerfil() {
             numero={4} icon={BookOpen} label="Competências"
             valor={indicadores.competenciasAprovadas} total={indicadores.totalCompetencias}
             percentual={indicadores.performanceCompetencias}
-            color="bg-emerald-500/20 text-emerald-400"
-            regras={["% de conteúdos concluídos por competência (aulas, filmes, livros, podcasts, vídeos)", "Somente ciclos finalizados entram", `${ciclosFinalizados.length} ciclo(s) finalizado(s)`]}
+            color="bg-emerald-100 text-emerald-600" borderColor="border-emerald-200"
+            regras={["% de conteúdos concluídos por competência", "Somente ciclos finalizados entram", `${ciclosFinalizados.length} ciclo(s) finalizado(s)`]}
           />
           <IndicadorCardAluno
             numero={5} icon={GraduationCap} label="Aprendizado"
             valor={`${(indicadores.performanceAprendizado || 0).toFixed(0)}%`} total="100%"
             percentual={indicadores.performanceAprendizado || 0}
-            color="bg-red-500/20 text-red-400"
+            color="bg-red-100 text-red-600" borderColor="border-red-200"
             regras={["Média das notas das provas por aula", "Somente ciclos finalizados entram", "Notas convertidas para % (base 100)"]}
           />
           <IndicadorCardAluno
             numero={6} icon={Video} label="Eventos"
             valor={indicadores.eventosPresente} total={indicadores.totalEventos}
             percentual={indicadores.participacaoEventos}
-            color="bg-orange-500/20 text-orange-400"
+            color="bg-orange-100 text-orange-600" borderColor="border-orange-200"
             regras={["(Eventos presentes / Total eventos) × 100", "Inclui webinários e encontros coletivos"]}
           />
         </div>
 
-        {/* Visualização de Ciclos (se existirem) */}
+        {/* Visualização de Ciclos */}
         {(ciclosFinalizados.length > 0 || ciclosEmAndamento.length > 0) && (
-          <Card className="bg-gray-800/50 border-gray-700">
+          <Card className="bg-white border border-gray-200 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
-                <Target className="h-4 w-4" />
+              <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                <Target className="h-4 w-4 text-[#0A1E3E]" />
                 Caminho de Realização das Competências
               </CardTitle>
               <CardDescription className="text-gray-500">
-                Progresso nos ciclos de competências • <span className="text-emerald-400">Verde = No prazo</span> • <span className="text-red-400">Vermelho = Atrasado</span> • <span className="text-blue-400">Azul = Adiantado</span>
+                Progresso nos ciclos • <span className="text-emerald-600">Verde = No prazo</span> • <span className="text-red-600">Vermelho = Atrasado</span> • <span className="text-blue-600">Azul = Adiantado</span>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -390,14 +382,14 @@ export default function DashboardMeuPerfil() {
                 {[...ciclosFinalizados, ...ciclosEmAndamento].map((ciclo: any, idx: number) => {
                   const statusColors = getCicloStatusColor(ciclo.status);
                   return (
-                    <div key={ciclo.cicloId || idx} className="p-4 rounded-lg bg-gray-700/30">
+                    <div key={ciclo.cicloId || idx} className="p-4 rounded-lg bg-gray-50 border border-gray-100">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <div className={`w-3 h-3 rounded-full ${statusColors.bg}`} />
-                          <span className="text-white font-medium text-sm">{ciclo.nomeCiclo}</span>
+                          <span className="text-gray-900 font-medium text-sm">{ciclo.nomeCiclo}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-500">
                             {new Date(ciclo.dataInicio).toLocaleDateString("pt-BR")} — {new Date(ciclo.dataFim).toLocaleDateString("pt-BR")}
                           </span>
                           <Badge variant="outline" className={statusColors.badge}>
@@ -407,7 +399,7 @@ export default function DashboardMeuPerfil() {
                       </div>
                       <div className="flex items-center gap-2 mb-2">
                         <Progress value={ciclo.percentualConclusao} className="h-2 flex-1" />
-                        <span className="text-xs text-gray-300 font-semibold w-12 text-right">{ciclo.percentualConclusao.toFixed(0)}%</span>
+                        <span className="text-xs text-gray-700 font-semibold w-12 text-right">{ciclo.percentualConclusao.toFixed(0)}%</span>
                       </div>
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <span>{ciclo.competenciasConcluidas} de {ciclo.totalCompetencias} competências concluídas</span>
@@ -416,10 +408,10 @@ export default function DashboardMeuPerfil() {
                         )}
                       </div>
                       {ciclo.status === "finalizado" && (
-                        <p className="text-xs text-emerald-500 mt-1">Este ciclo entra no cálculo da Performance Geral</p>
+                        <p className="text-xs text-emerald-600 mt-1">Este ciclo entra no cálculo da Performance Geral</p>
                       )}
                       {ciclo.status === "em_andamento" && (
-                        <p className="text-xs text-blue-500 mt-1">Ciclo em andamento — não entra na Performance Geral ainda</p>
+                        <p className="text-xs text-blue-600 mt-1">Ciclo em andamento — não entra na Performance Geral ainda</p>
                       )}
                     </div>
                   );
@@ -431,29 +423,29 @@ export default function DashboardMeuPerfil() {
 
         {/* Tabs com seções detalhadas */}
         <Tabs defaultValue="trilha" className="w-full">
-          <TabsList className="bg-gray-800 border-gray-700 w-full flex flex-wrap h-auto gap-1 p-1">
-            <TabsTrigger value="trilha" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+          <TabsList className="bg-gray-100 border border-gray-200 w-full flex flex-wrap h-auto gap-1 p-1 rounded-xl">
+            <TabsTrigger value="trilha" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <Target className="h-4 w-4 mr-1" /> Trilha
             </TabsTrigger>
-            <TabsTrigger value="competencias" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+            <TabsTrigger value="competencias" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <BookOpen className="h-4 w-4 mr-1" /> Competências
             </TabsTrigger>
-            <TabsTrigger value="mentorias" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+            <TabsTrigger value="mentorias" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <MessageSquare className="h-4 w-4 mr-1" /> Mentorias
             </TabsTrigger>
-            <TabsTrigger value="eventos" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+            <TabsTrigger value="eventos" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <Video className="h-4 w-4 mr-1" /> Eventos
             </TabsTrigger>
-            <TabsTrigger value="pdi" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+            <TabsTrigger value="pdi" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <Award className="h-4 w-4 mr-1" /> PDI
             </TabsTrigger>
-            <TabsTrigger value="tarefas" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+            <TabsTrigger value="tarefas" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <ClipboardCheck className="h-4 w-4 mr-1" /> Tarefas
             </TabsTrigger>
-            <TabsTrigger value="webinarios" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+            <TabsTrigger value="webinarios" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <Play className="h-4 w-4 mr-1" /> Webinários
             </TabsTrigger>
-            <TabsTrigger value="cursos" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+            <TabsTrigger value="cursos" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <GraduationCap className="h-4 w-4 mr-1" /> Cursos
             </TabsTrigger>
           </TabsList>
@@ -461,9 +453,9 @@ export default function DashboardMeuPerfil() {
           {/* === TRILHA DE DESENVOLVIMENTO === */}
           <TabsContent value="trilha" className="mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-white border border-gray-200 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-sm text-gray-300">Progresso da Trilha</CardTitle>
+                  <CardTitle className="text-sm text-gray-700">Progresso da Trilha</CardTitle>
                   <CardDescription className="text-gray-500">{trilhaStats.total} competências no plano</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -478,24 +470,24 @@ export default function DashboardMeuPerfil() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-emerald-500"></span>Concluídas</span>
-                      <span className="text-white font-semibold">{trilhaStats.concluidas}</span>
+                      <span className="flex items-center gap-2 text-gray-600"><span className="w-3 h-3 rounded-full bg-emerald-500"></span>Concluídas</span>
+                      <span className="text-gray-900 font-semibold">{trilhaStats.concluidas}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-500"></span>Em Progresso</span>
-                      <span className="text-white font-semibold">{trilhaStats.emProgresso}</span>
+                      <span className="flex items-center gap-2 text-gray-600"><span className="w-3 h-3 rounded-full bg-blue-500"></span>Em Progresso</span>
+                      <span className="text-gray-900 font-semibold">{trilhaStats.emProgresso}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-gray-500"></span>Pendentes</span>
-                      <span className="text-white font-semibold">{trilhaStats.pendentes}</span>
+                      <span className="flex items-center gap-2 text-gray-600"><span className="w-3 h-3 rounded-full bg-gray-300"></span>Pendentes</span>
+                      <span className="text-gray-900 font-semibold">{trilhaStats.pendentes}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-800/50 border-gray-700 lg:col-span-2">
+              <Card className="bg-white border border-gray-200 shadow-sm lg:col-span-2">
                 <CardHeader>
-                  <CardTitle className="text-sm text-gray-300">Competências do Plano Individual</CardTitle>
+                  <CardTitle className="text-sm text-gray-700">Competências do Plano Individual</CardTitle>
                   <CardDescription className="text-gray-500">Competências definidas para sua jornada de desenvolvimento</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -505,22 +497,22 @@ export default function DashboardMeuPerfil() {
                         const nota = item.notaAtual ? parseFloat(item.notaAtual) : 0;
                         const meta = item.metaNota ? parseFloat(item.metaNota) : 7;
                         const aprovado = nota >= meta;
-                        const statusColor = item.status === "concluida" ? "text-emerald-400" : item.status === "em_progresso" ? "text-blue-400" : "text-gray-500";
+                        const statusColor = item.status === "concluida" ? "text-emerald-600" : item.status === "em_progresso" ? "text-blue-600" : "text-gray-500";
                         const statusLabel = item.status === "concluida" ? "Concluída" : item.status === "em_progresso" ? "Em Progresso" : "Pendente";
                         return (
-                          <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors">
+                          <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
                             <div className="flex-shrink-0">
-                              {item.status === "concluida" ? <CheckCircle2 className="h-5 w-5 text-emerald-400" /> :
-                                item.status === "em_progresso" ? <Clock className="h-5 w-5 text-blue-400" /> :
-                                <Target className="h-5 w-5 text-gray-500" />}
+                              {item.status === "concluida" ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> :
+                                item.status === "em_progresso" ? <Clock className="h-5 w-5 text-blue-500" /> :
+                                <Target className="h-5 w-5 text-gray-400" />}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm text-white font-medium truncate">{item.competenciaNome}</p>
+                              <p className="text-sm text-gray-900 font-medium truncate">{item.competenciaNome}</p>
                               <p className="text-xs text-gray-500">{item.trilhaNome || "Trilha não definida"}</p>
                             </div>
                             <div className="flex items-center gap-3">
                               <div className="text-right">
-                                <p className={`text-sm font-bold ${aprovado ? "text-emerald-400" : nota > 0 ? "text-yellow-400" : "text-gray-500"}`}>
+                                <p className={`text-sm font-bold ${aprovado ? "text-emerald-600" : nota > 0 ? "text-amber-600" : "text-gray-400"}`}>
                                   {nota > 0 ? nota.toFixed(1) : "—"}
                                 </p>
                                 <p className="text-xs text-gray-500">Meta: {meta.toFixed(0)}</p>
@@ -544,21 +536,21 @@ export default function DashboardMeuPerfil() {
 
           {/* === JORNADA DE COMPETÊNCIAS === */}
           <TabsContent value="competencias" className="mt-4">
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-sm text-gray-300">Notas por Competência</CardTitle>
+                <CardTitle className="text-sm text-gray-700">Notas por Competência</CardTitle>
                 <CardDescription className="text-gray-500">Desempenho em cada competência cursada na jornada</CardDescription>
               </CardHeader>
               <CardContent>
                 {competenciasChart.length > 0 ? (
                   <ResponsiveContainer width="100%" height={Math.max(300, competenciasChart.length * 40)}>
                     <BarChart data={competenciasChart} layout="vertical" margin={{ left: 20, right: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis type="number" domain={[0, 10]} tick={{ fill: "#9ca3af", fontSize: 11 }} />
-                      <YAxis type="category" dataKey="nome" width={150} tick={{ fill: "#9ca3af", fontSize: 11 }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis type="number" domain={[0, 10]} tick={{ fill: "#374151", fontSize: 11 }} />
+                      <YAxis type="category" dataKey="nome" width={150} tick={{ fill: "#374151", fontSize: 11 }} />
                       <Tooltip
-                        contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: 8 }}
-                        labelStyle={{ color: "#fff" }}
+                        contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: 8 }}
+                        labelStyle={{ color: "#111" }}
                         formatter={(value: number, name: string) => [value.toFixed(1), name === "nota" ? "Nota" : "Meta"]}
                         labelFormatter={(label: string, payload: any[]) => payload?.[0]?.payload?.nomeCompleto || label}
                       />
@@ -581,9 +573,9 @@ export default function DashboardMeuPerfil() {
 
           {/* === HISTÓRICO DE MENTORIAS === */}
           <TabsContent value="mentorias" className="mt-4">
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-sm text-gray-300">Histórico de Sessões de Mentoria</CardTitle>
+                <CardTitle className="text-sm text-gray-700">Histórico de Sessões de Mentoria</CardTitle>
                 <CardDescription className="text-gray-500">
                   {sessoes.length} sessões registradas • {indicadores.mentoriasPresente} presenças • {indicadores.atividadesEntregues} atividades entregues
                 </CardDescription>
@@ -592,16 +584,16 @@ export default function DashboardMeuPerfil() {
                 {sessoes && sessoes.length > 0 ? (
                   <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
                     {sessoes.map((sessao: any, idx: number) => (
-                      <div key={sessao.id || idx} className="p-3 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors">
+                      <div key={sessao.id || idx} className="p-3 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 text-sm font-bold">
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-bold">
                               {sessao.sessionNumber || idx + 1}
                             </div>
                             <div>
-                              <p className="text-sm text-white font-medium">
+                              <p className="text-sm text-gray-900 font-medium">
                                 Sessão {sessao.sessionNumber || idx + 1}
-                                {sessao.sessionNumber === 1 && <Badge variant="outline" className="ml-2 text-xs text-yellow-400 border-yellow-500/30">Assessment</Badge>}
+                                {sessao.sessionNumber === 1 && <Badge className="ml-2 text-xs bg-amber-100 text-amber-700 border-amber-300">Assessment</Badge>}
                                 {sessao.ciclo && <span className="text-gray-500 ml-2">• Ciclo {sessao.ciclo}</span>}
                               </p>
                               <p className="text-xs text-gray-500">
@@ -612,14 +604,14 @@ export default function DashboardMeuPerfil() {
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1.5" title="Presença">
                               {getPresencaIcon(sessao.presence)}
-                              <span className="text-xs text-gray-400">{sessao.presence === "presente" ? "Presente" : "Ausente"}</span>
+                              <span className="text-xs text-gray-600">{sessao.presence === "presente" ? "Presente" : "Ausente"}</span>
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-6 ml-11 text-xs">
                           <div className="flex items-center gap-1.5" title="Atividade">
                             {getTaskIcon(sessao.taskStatus)}
-                            <span className="text-gray-400">
+                            <span className="text-gray-600">
                               {sessao.sessionNumber === 1 ? "Assessment (sem tarefa)" :
                                 sessao.taskStatus === "entregue" ? "Atividade entregue" :
                                 sessao.taskStatus === "nao_entregue" ? "Atividade não entregue" : "Sem tarefa"}
@@ -629,13 +621,13 @@ export default function DashboardMeuPerfil() {
                             {getEngajamentoStars(sessao.engagementScore)}
                           </div>
                           {sessao.notaEvolucao && (
-                            <div className="flex items-center gap-1 text-gray-400">
+                            <div className="flex items-center gap-1 text-gray-600">
                               <TrendingUp className="h-3.5 w-3.5" />Evolução: {sessao.notaEvolucao}
                             </div>
                           )}
                         </div>
                         {sessao.feedback && (
-                          <div className="mt-2 ml-11 p-2 rounded bg-gray-800/50 text-xs text-gray-400 italic">"{sessao.feedback}"</div>
+                          <div className="mt-2 ml-11 p-2 rounded bg-blue-50 border border-blue-100 text-xs text-gray-700 italic">"{sessao.feedback}"</div>
                         )}
                       </div>
                     ))}
@@ -652,27 +644,27 @@ export default function DashboardMeuPerfil() {
 
           {/* === PARTICIPAÇÃO EM EVENTOS === */}
           <TabsContent value="eventos" className="mt-4">
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-sm text-gray-300">Participação em Eventos e Webinars</CardTitle>
+                <CardTitle className="text-sm text-gray-700">Participação em Eventos e Webinars</CardTitle>
                 <CardDescription className="text-gray-500">{indicadores.eventosPresente} presenças de {indicadores.totalEventos} eventos</CardDescription>
               </CardHeader>
               <CardContent>
                 {eventos && eventos.length > 0 ? (
                   <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
                     {eventos.map((evento: any, idx: number) => (
-                      <div key={evento.id || idx} className="flex items-center gap-3 p-3 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors">
+                      <div key={evento.id || idx} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
                         <div className="flex-shrink-0">
-                          <Video className={`h-5 w-5 ${evento.status === "presente" ? "text-emerald-400" : "text-red-400"}`} />
+                          <Video className={`h-5 w-5 ${evento.status === "presente" ? "text-emerald-600" : "text-red-500"}`} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white font-medium">{evento.titulo}</p>
+                          <p className="text-sm text-gray-900 font-medium">{evento.titulo}</p>
                           <p className="text-xs text-gray-500">
                             {evento.tipo === "webinar" ? "Webinar" : evento.tipo === "workshop" ? "Workshop" : "Evento"}
                             {evento.data && (<> • {new Date(evento.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</>)}
                           </p>
                         </div>
-                        <Badge variant="outline" className={evento.status === "presente" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" : "text-red-400 border-red-500/30 bg-red-500/10"}>
+                        <Badge variant="outline" className={evento.status === "presente" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-red-50 text-red-700 border-red-300"}>
                           {evento.status === "presente" ? "Presente" : "Ausente"}
                         </Badge>
                       </div>
@@ -694,17 +686,17 @@ export default function DashboardMeuPerfil() {
               <div className="space-y-4">
                 {/* Filtro por status */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Filter className="h-4 w-4 text-gray-400" />
-                  <span className="text-xs text-gray-400 mr-1">Filtrar:</span>
+                  <Filter className="h-4 w-4 text-gray-500" />
+                  <span className="text-xs text-gray-500 mr-1">Filtrar:</span>
                   {(["todos", "ativo", "congelado"] as const).map((status) => {
                     const count = status === "todos"
                       ? assessments.length
                       : assessments.filter((a: any) => a.status === status).length;
                     const isActive = pdiStatusFilter === status;
                     const colorMap = {
-                      todos: isActive ? "bg-blue-600 text-white border-blue-500" : "bg-gray-800/50 text-gray-400 border-gray-600 hover:bg-gray-700/50",
-                      ativo: isActive ? "bg-emerald-600 text-white border-emerald-500" : "bg-gray-800/50 text-gray-400 border-gray-600 hover:bg-gray-700/50",
-                      congelado: isActive ? "bg-gray-500 text-white border-gray-400" : "bg-gray-800/50 text-gray-400 border-gray-600 hover:bg-gray-700/50",
+                      todos: isActive ? "bg-[#0A1E3E] text-white border-[#0A1E3E]" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
+                      ativo: isActive ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
+                      congelado: isActive ? "bg-gray-500 text-white border-gray-500" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
                     };
                     const labelMap = { todos: "Todos", ativo: "Ativos", congelado: "Congelados" };
                     return (
@@ -720,24 +712,24 @@ export default function DashboardMeuPerfil() {
                 </div>
 
                 {filteredAssessments.length === 0 ? (
-                  <Card className="bg-gray-800/50 border-gray-700">
+                  <Card className="bg-white border border-gray-200 shadow-sm">
                     <CardContent className="py-8">
                       <div className="text-center text-gray-500">
                         <Filter className="h-10 w-10 mx-auto mb-2 opacity-50" />
                         <p>Nenhum PDI com status "{pdiStatusFilter === "ativo" ? "Ativo" : "Congelado"}"</p>
-                        <button onClick={() => setPdiStatusFilter("todos")} className="text-blue-400 hover:text-blue-300 text-xs mt-2 underline">Ver todos</button>
+                        <button onClick={() => setPdiStatusFilter("todos")} className="text-blue-600 hover:text-blue-700 text-xs mt-2 underline">Ver todos</button>
                       </div>
                     </CardContent>
                   </Card>
                 ) : null}
 
                 {filteredAssessments.map((assessment: any) => (
-                  <Card key={assessment.id} className="bg-gray-800/50 border-gray-700">
+                  <Card key={assessment.id} className="bg-white border border-gray-200 shadow-sm">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
-                          <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
-                            <Award className="h-4 w-4 text-amber-400" />
+                          <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                            <Award className="h-4 w-4 text-[#F5991F]" />
                             Trilha: {assessment.trilhaNome}
                           </CardTitle>
                           <CardDescription className="text-gray-500">
@@ -745,13 +737,13 @@ export default function DashboardMeuPerfil() {
                             Macro ciclo: {new Date(assessment.macroInicio).toLocaleDateString("pt-BR")} a {new Date(assessment.macroTermino).toLocaleDateString("pt-BR")}
                           </CardDescription>
                         </div>
-                        <Badge variant="outline" className={assessment.status === "ativo" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" : "text-gray-400 border-gray-500/30 bg-gray-500/10"}>
+                        <Badge variant="outline" className={assessment.status === "ativo" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
                           {assessment.status === "ativo" ? "Ativo" : "Congelado"}
                         </Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="mb-3 flex items-center gap-4 text-xs text-gray-400">
+                      <div className="mb-3 flex items-center gap-4 text-xs text-gray-500">
                         <span>{assessment.totalCompetencias} competências</span>
                         <span>{assessment.obrigatorias} obrigatórias</span>
                         <span>{assessment.opcionais} opcionais</span>
@@ -762,20 +754,20 @@ export default function DashboardMeuPerfil() {
                           const notaAtual = comp.notaAtual;
                           const atingiu = comp.atingiuMeta;
                           return (
-                            <div key={comp.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors">
+                            <div key={comp.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
                               <div className="flex-shrink-0">
                                 {atingiu ? (
-                                  <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                                 ) : notaAtual !== null && notaAtual > 0 ? (
-                                  <Clock className="h-5 w-5 text-yellow-400" />
+                                  <Clock className="h-5 w-5 text-amber-500" />
                                 ) : (
-                                  <Target className="h-5 w-5 text-gray-500" />
+                                  <Target className="h-5 w-5 text-gray-400" />
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-white font-medium truncate">{comp.competenciaNome}</p>
+                                <p className="text-sm text-gray-900 font-medium truncate">{comp.competenciaNome}</p>
                                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <Badge variant="outline" className={comp.peso === 'obrigatoria' ? "text-amber-400 border-amber-500/30" : "text-gray-400 border-gray-500/30"}>
+                                  <Badge variant="outline" className={comp.peso === 'obrigatoria' ? "bg-amber-50 text-amber-700 border-amber-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
                                     {comp.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
                                   </Badge>
                                   {comp.microInicio && comp.microTermino && (
@@ -785,7 +777,7 @@ export default function DashboardMeuPerfil() {
                               </div>
                               <div className="flex items-center gap-3">
                                 <div className="text-right">
-                                  <p className={`text-sm font-bold ${atingiu ? "text-emerald-400" : notaAtual !== null && notaAtual > 0 ? "text-yellow-400" : "text-gray-500"}`}>
+                                  <p className={`text-sm font-bold ${atingiu ? "text-emerald-600" : notaAtual !== null && notaAtual > 0 ? "text-amber-600" : "text-gray-400"}`}>
                                     {notaAtual !== null && notaAtual > 0 ? notaAtual.toFixed(1) : "—"}
                                   </p>
                                   <p className="text-xs text-gray-500">Corte: {notaCorte.toFixed(1)}</p>
@@ -799,8 +791,8 @@ export default function DashboardMeuPerfil() {
                         })}
                       </div>
                       {assessment.observacoes && (
-                        <div className="mt-3 p-3 rounded-lg bg-gray-900/50 text-xs text-gray-400">
-                          <p className="font-semibold mb-1">Observações:</p>
+                        <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-100 text-xs text-gray-700">
+                          <p className="font-semibold mb-1 text-gray-800">Observações:</p>
                           <p>{assessment.observacoes}</p>
                         </div>
                       )}
@@ -809,7 +801,7 @@ export default function DashboardMeuPerfil() {
                 ))}
               </div>
             ) : (
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-white border border-gray-200 shadow-sm">
                 <CardContent className="py-12">
                   <div className="text-center text-gray-500">
                     <Award className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -823,10 +815,10 @@ export default function DashboardMeuPerfil() {
 
           {/* === TAREFAS PRÁTICAS === */}
           <TabsContent value="tarefas" className="mt-4">
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4 text-amber-400" />
+                <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4 text-[#F5991F]" />
                   Tarefas Práticas
                 </CardTitle>
                 <CardDescription className="text-gray-500">
@@ -837,17 +829,17 @@ export default function DashboardMeuPerfil() {
                 {myTasks && myTasks.length > 0 ? (
                   <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                     {myTasks.map((task: any) => (
-                      <div key={task.sessionId} className="p-4 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors">
+                      <div key={task.sessionId} className="p-4 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-medium text-white">{task.taskName}</span>
-                              <Badge variant="outline" className={task.taskStatus === "entregue" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" : task.taskStatus === "nao_entregue" ? "text-red-400 border-red-500/30 bg-red-500/10" : "text-gray-400 border-gray-500/30 bg-gray-500/10"}>
+                              <span className="text-sm font-medium text-gray-900">{task.taskName}</span>
+                              <Badge variant="outline" className={task.taskStatus === "entregue" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : task.taskStatus === "nao_entregue" ? "bg-red-50 text-red-700 border-red-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
                                 {task.taskStatus === "entregue" ? "Entregue" : task.taskStatus === "nao_entregue" ? "Não Entregue" : "Pendente"}
                               </Badge>
                             </div>
                             {task.taskCompetencia && (
-                              <p className="text-xs text-blue-400 mb-1">Competência: {task.taskCompetencia}</p>
+                              <p className="text-xs text-blue-600 mb-1">Competência: {task.taskCompetencia}</p>
                             )}
                             <p className="text-xs text-gray-500">
                               Sessão {task.sessionNumber} • {task.sessionDate ? new Date(task.sessionDate).toLocaleDateString("pt-BR") : ""}
@@ -858,7 +850,7 @@ export default function DashboardMeuPerfil() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setExpandedTask(expandedTask === task.sessionId ? null : task.sessionId)}
-                            className="text-gray-400 hover:text-white"
+                            className="text-gray-500 hover:text-gray-900"
                           >
                             {expandedTask === task.sessionId ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                           </Button>
@@ -866,43 +858,43 @@ export default function DashboardMeuPerfil() {
                         {expandedTask === task.sessionId && (
                           <div className="mt-3 space-y-3">
                             {task.taskResumo && (
-                              <div className="p-3 rounded bg-gray-800/50">
-                                <p className="text-xs font-semibold text-gray-400 mb-1">Resumo:</p>
-                                <p className="text-xs text-gray-300">{task.taskResumo}</p>
+                              <div className="p-3 rounded bg-blue-50 border border-blue-100">
+                                <p className="text-xs font-semibold text-gray-700 mb-1">Resumo:</p>
+                                <p className="text-xs text-gray-600">{task.taskResumo}</p>
                               </div>
                             )}
                             {task.taskOQueFazer && (
-                              <div className="p-3 rounded bg-gray-800/50">
-                                <p className="text-xs font-semibold text-gray-400 mb-1">O que fazer:</p>
-                                <p className="text-xs text-gray-300">{task.taskOQueFazer}</p>
+                              <div className="p-3 rounded bg-blue-50 border border-blue-100">
+                                <p className="text-xs font-semibold text-gray-700 mb-1">O que fazer:</p>
+                                <p className="text-xs text-gray-600">{task.taskOQueFazer}</p>
                               </div>
                             )}
                             {task.taskOQueGanha && (
-                              <div className="p-3 rounded bg-gray-800/50">
-                                <p className="text-xs font-semibold text-gray-400 mb-1">O que você ganha:</p>
-                                <p className="text-xs text-gray-300">{task.taskOQueGanha}</p>
+                              <div className="p-3 rounded bg-emerald-50 border border-emerald-100">
+                                <p className="text-xs font-semibold text-gray-700 mb-1">O que você ganha:</p>
+                                <p className="text-xs text-gray-600">{task.taskOQueGanha}</p>
                               </div>
                             )}
                             {task.taskStatus !== "entregue" && (
                               <div className="space-y-2">
-                                <p className="text-xs font-semibold text-gray-400">Seu relato:</p>
+                                <p className="text-xs font-semibold text-gray-700">Seu relato:</p>
                                 <Textarea
                                   placeholder="Descreva como foi a realização desta tarefa..."
                                   value={relatoText[task.sessionId] || ""}
                                   onChange={(e) => setRelatoText(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
-                                  className="bg-gray-800 border-gray-600 text-white text-sm min-h-[80px]"
+                                  className="border-gray-300 text-gray-900 text-sm min-h-[80px]"
                                 />
                                 <Button
                                   size="sm"
                                   onClick={() => submitRelato.mutate({ sessionId: task.sessionId, relatoAluno: relatoText[task.sessionId] || "" })}
                                   disabled={!relatoText[task.sessionId] || submitRelato.isPending}
-                                  className="bg-blue-600 hover:bg-blue-700"
+                                  className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
                                 >
                                   <Send className="h-3 w-3 mr-1" />
                                   {submitRelato.isPending ? "Enviando..." : "Enviar Relato"}
                                 </Button>
                                 {submitRelato.isError && (
-                                  <p className="text-xs text-red-400">{submitRelato.error?.message || "Erro ao enviar relato"}</p>
+                                  <p className="text-xs text-red-600">{submitRelato.error?.message || "Erro ao enviar relato"}</p>
                                 )}
                               </div>
                             )}
@@ -926,10 +918,10 @@ export default function DashboardMeuPerfil() {
           <TabsContent value="webinarios" className="mt-4">
             <div className="space-y-6">
               {/* Próximos Webinários */}
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-white border border-gray-200 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
-                    <Play className="h-4 w-4 text-blue-400" />
+                  <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                    <Play className="h-4 w-4 text-blue-600" />
                     Próximos Webinários
                   </CardTitle>
                   <CardDescription className="text-gray-500">Webinários agendados para o seu programa</CardDescription>
@@ -938,12 +930,12 @@ export default function DashboardMeuPerfil() {
                   {upcomingWebinars && upcomingWebinars.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {upcomingWebinars.map((w: any) => (
-                        <div key={w.id} className="p-4 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors">
+                        <div key={w.id} className="p-4 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
                           {w.cardImageUrl && (
                             <img src={w.cardImageUrl} alt={w.title} className="w-full h-32 object-cover rounded-lg mb-3" />
                           )}
-                          <h4 className="text-sm font-medium text-white mb-1">{w.title}</h4>
-                          {w.description && <p className="text-xs text-gray-400 mb-2 line-clamp-2">{w.description}</p>}
+                          <h4 className="text-sm font-medium text-gray-900 mb-1">{w.title}</h4>
+                          {w.description && <p className="text-xs text-gray-600 mb-2 line-clamp-2">{w.description}</p>}
                           <div className="flex items-center gap-4 text-xs text-gray-500">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
@@ -961,7 +953,7 @@ export default function DashboardMeuPerfil() {
                             )}
                           </div>
                           {w.meetingLink && (
-                            <a href={w.meetingLink} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300">
+                            <a href={w.meetingLink} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700">
                               <ExternalLink className="h-3 w-3" /> Acessar reunião
                             </a>
                           )}
@@ -979,9 +971,9 @@ export default function DashboardMeuPerfil() {
 
               {/* Webinários Pendentes de Presença */}
               {pendingWebinars && pendingWebinars.length > 0 && (
-                <Card className="bg-gray-800/50 border-amber-700/50">
+                <Card className="bg-white border-2 border-amber-300 shadow-sm">
                   <CardHeader>
-                    <CardTitle className="text-sm text-amber-400 flex items-center gap-2">
+                    <CardTitle className="text-sm text-amber-700 flex items-center gap-2">
                       <Clock className="h-4 w-4" />
                       Pendentes de Presença ({pendingWebinars.length})
                     </CardTitle>
@@ -990,10 +982,10 @@ export default function DashboardMeuPerfil() {
                   <CardContent>
                     <div className="space-y-3">
                       {pendingWebinars.map((w: any) => (
-                        <div key={w.eventId} className="p-4 rounded-lg bg-gray-700/30">
+                        <div key={w.eventId} className="p-4 rounded-lg bg-amber-50 border border-amber-200">
                           <div className="flex items-start justify-between mb-2">
                             <div>
-                              <h4 className="text-sm font-medium text-white">{w.title}</h4>
+                              <h4 className="text-sm font-medium text-gray-900">{w.title}</h4>
                               <p className="text-xs text-gray-500">
                                 {w.eventDate ? new Date(w.eventDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : ""}
                               </p>
@@ -1002,31 +994,31 @@ export default function DashboardMeuPerfil() {
                               variant="ghost"
                               size="sm"
                               onClick={() => setExpandedWebinar(expandedWebinar === w.eventId ? null : w.eventId)}
-                              className="text-amber-400 hover:text-amber-300"
+                              className="text-amber-700 hover:text-amber-900"
                             >
                               {expandedWebinar === w.eventId ? "Fechar" : "Marcar Presença"}
                             </Button>
                           </div>
                           {expandedWebinar === w.eventId && (
                             <div className="mt-3 space-y-2">
-                              <p className="text-xs text-gray-400">Escreva uma reflexão sobre o webinário (mínimo 20 caracteres):</p>
+                              <p className="text-xs text-gray-600">Escreva uma reflexão sobre o webinário (mínimo 20 caracteres):</p>
                               <Textarea
                                 placeholder="O que você aprendeu neste webinário? Como pretende aplicar no seu dia a dia?"
                                 value={reflexaoText[w.eventId] || ""}
                                 onChange={(e) => setReflexaoText(prev => ({ ...prev, [w.eventId]: e.target.value }))}
-                                className="bg-gray-800 border-gray-600 text-white text-sm min-h-[80px]"
+                                className="border-gray-300 text-gray-900 text-sm min-h-[80px]"
                               />
                               <Button
                                 size="sm"
                                 onClick={() => markPresence.mutate({ eventId: w.eventId, reflexao: reflexaoText[w.eventId] || "" })}
                                 disabled={!reflexaoText[w.eventId] || reflexaoText[w.eventId].length < 20 || markPresence.isPending}
-                                className="bg-amber-600 hover:bg-amber-700"
+                                className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
                               >
                                 <Send className="h-3 w-3 mr-1" />
                                 {markPresence.isPending ? "Enviando..." : "Confirmar Presença"}
                               </Button>
                               {markPresence.isError && (
-                                <p className="text-xs text-red-400">{markPresence.error?.message || "Erro ao marcar presença"}</p>
+                                <p className="text-xs text-red-600">{markPresence.error?.message || "Erro ao marcar presença"}</p>
                               )}
                             </div>
                           )}
@@ -1038,10 +1030,10 @@ export default function DashboardMeuPerfil() {
               )}
 
               {/* Webinários Passados com Gravação */}
-              <Card className="bg-gray-800/50 border-gray-700">
+              <Card className="bg-white border border-gray-200 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
-                    <Video className="h-4 w-4 text-purple-400" />
+                  <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                    <Video className="h-4 w-4 text-purple-600" />
                     Webinários Realizados
                   </CardTitle>
                   <CardDescription className="text-gray-500">Histórico de webinários com gravações disponíveis</CardDescription>
@@ -1052,16 +1044,16 @@ export default function DashboardMeuPerfil() {
                       {pastWebinars.map((w: any) => {
                         const isConfirmed = confirmedEventIds.has(w.id);
                         return (
-                          <div key={w.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors">
+                          <div key={w.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
                             <div className="flex-shrink-0">
                               {isConfirmed ? (
-                                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                               ) : (
-                                <XCircle className="h-5 w-5 text-gray-500" />
+                                <XCircle className="h-5 w-5 text-gray-400" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm text-white font-medium">{w.title}</p>
+                              <p className="text-sm text-gray-900 font-medium">{w.title}</p>
                               <p className="text-xs text-gray-500">
                                 {new Date(w.eventDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
                                 {w.speaker && ` • ${w.speaker}`}
@@ -1069,10 +1061,10 @@ export default function DashboardMeuPerfil() {
                             </div>
                             <div className="flex items-center gap-2">
                               {isConfirmed && (
-                                <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 bg-emerald-500/10 text-xs">Presente</Badge>
+                                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-xs">Presente</Badge>
                               )}
                               {w.youtubeLink && (
-                                <a href={w.youtubeLink} target="_blank" rel="noopener noreferrer" className="text-red-400 hover:text-red-300">
+                                <a href={w.youtubeLink} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-700">
                                   <Play className="h-4 w-4" />
                                 </a>
                               )}
@@ -1094,10 +1086,10 @@ export default function DashboardMeuPerfil() {
 
           {/* === CURSOS === */}
           <TabsContent value="cursos" className="mt-4">
-            <Card className="bg-gray-800/50 border-gray-700">
+            <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
-                  <GraduationCap className="h-4 w-4 text-purple-400" />
+                <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-purple-600" />
                   Cursos Disponíveis
                 </CardTitle>
                 <CardDescription className="text-gray-500">Cursos complementares para sua jornada de desenvolvimento</CardDescription>

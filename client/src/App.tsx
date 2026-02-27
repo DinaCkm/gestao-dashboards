@@ -58,10 +58,10 @@ function Router() {
       <Route path={"/plano-individual"} component={PlanoIndividual} />
       <Route path={"/dashboard/aluno"} component={DashboardAluno} />
       <Route path={"/meu-dashboard"} component={DashboardMeuPerfil} />
+      <Route path={"/portal-aluno"} component={DashboardMeuPerfil} />
       <Route path={"/registro-mentoria"} component={RegistroMentoria} />
       <Route path={"/dashboard/gestor"} component={DashboardGestor} />
       <Route path={"/assessment"} component={Assessment} />
-      {/* portal-aluno redirecionado para meu-dashboard */}
       <Route path={"/tutoriais"} component={Tutoriais} />
       <Route path={"/performance-upload"} component={PerformanceUpload} />
       <Route path={"/webinars"} component={WebinarsAdmin} />
