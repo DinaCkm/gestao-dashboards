@@ -1101,3 +1101,20 @@
 - [x] Redesenhar indicadores com cards brancos e bordas coloridas
 - [x] Redesenhar abas com estilo consistente com o Mural
 - [x] Adicionar rota /portal-aluno no App.tsx
+
+## Bug Crítico - Tema Escuro Ilegível no Portal do Aluno (27/02/2026)
+- [ ] Identificar e corrigir CSS/componente que força tema escuro no Portal do Aluno
+- [ ] Garantir que AlunoLayout use fundo claro (bg-white ou bg-gray-50)
+- [ ] Garantir que todos os cards, abas e textos sejam legíveis em fundo claro
+- [ ] Testar visualmente com perfil de aluno real (não admin)
+
+## Bug Crítico - Tema Escuro Ilegível + Abas Cortadas no Portal do Aluno (27/02/2026)
+- [ ] Corrigir fundo escuro (bg-gray-800/900) para fundo claro em AlunoLayout
+- [ ] Corrigir cards dos indicadores: fundo cinza ilegível → fundo branco com bordas coloridas
+- [ ] Corrigir abas (Trilha, Competências, etc.): fundo escuro → fundo claro legível
+- [ ] Corrigir textos cinza claro ilegíveis → textos escuros
+- [ ] Corrigir gráfico radar: labels ilegíveis em fundo escuro
+- [ ] Testar visualmente com perfil de aluno real
+
+## Mostrar nome do webinar na aba Eventos do Portal do Aluno (27/02/2026)
+- [x] Corrigir query para trazer o nome real do evento/webinar em vez de "Evento #ID"

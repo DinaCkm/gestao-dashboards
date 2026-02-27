@@ -1,0 +1,80 @@
+{
+  "query": "SELECT id, title, eventType, eventDate, programId FROM events LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, title, eventType, eventDate, programId FROM events LIMIT 10;",
+  "rows": [
+    {
+      "id": "30001",
+      "title": "2025/06 - Liderança Tóxica com Emerson Dias",
+      "eventType": "webinar",
+      "eventDate": "2025-04-02",
+      "programId": "NULL"
+    },
+    {
+      "id": "30002",
+      "title": "2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio",
+      "eventType": "webinar",
+      "eventDate": "2025-04-23",
+      "programId": "NULL"
+    },
+    {
+      "id": "30003",
+      "title": "2025/08 - LinkedIn e Carreira com Gislaine",
+      "eventType": "webinar",
+      "eventDate": "2025-05-15",
+      "programId": "NULL"
+    },
+    {
+      "id": "30004",
+      "title": "2025/09 - Foco x Procrastinação com Emerson Dias",
+      "eventType": "webinar",
+      "eventDate": "2025-05-30",
+      "programId": "NULL"
+    },
+    {
+      "id": "30005",
+      "title": "2025/10 - Do Talento ao Resultado com Fabio Barbosa",
+      "eventType": "webinar",
+      "eventDate": "2025-06-11",
+      "programId": "NULL"
+    },
+    {
+      "id": "30006",
+      "title": "2025/11 - A Conexão das Gerações com Cíntia Gandarely",
+      "eventType": "webinar",
+      "eventDate": "2025-06-25",
+      "programId": "NULL"
+    },
+    {
+      "id": "30007",
+      "title": "2025/12 - Feedback - com Sandra Pitman",
+      "eventType": "webinar",
+      "eventDate": "2025-07-08",
+      "programId": "NULL"
+    },
+    {
+      "id": "30008",
+      "title": "2025/13 - Saúde Mental, Estresse e Burnout com Otácia Azevedo",
+      "eventType": "webinar",
+      "eventDate": "2025-07-23",
+      "programId": "NULL"
+    },
+    {
+      "id": "30009",
+      "title": "2025/14 - Liderança colaborativa com Sergio David",
+      "eventType": "webinar",
+      "eventDate": "2025-08-07",
+      "programId": "NULL"
+    },
+    {
+      "id": "30010",
+      "title": "2025/15 - Mindfulness para o Gestor Com Otácia",
+      "eventType": "webinar",
+      "eventDate": "2025-08-20",
+      "programId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\teventType\teventDate\tprogramId\n30001\t2025/06 - Liderança Tóxica com Emerson Dias\twebinar\t2025-04-02\tNULL\n30002\t2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio\twebinar\t2025-04-23\tNULL\n30003\t2025/08 - LinkedIn e Carreira com Gislaine\twebinar\t2025-05-15\tNULL\n30004\t2025/09 - Foco x Procrastinação com Emerson Dias\twebinar\t2025-05-30\tNULL\n30005\t2025/10 - Do Talento ao Resultado com Fabio Barbosa\twebinar\t2025-06-11\tNULL\n30006\t2025/11 - A Conexão das Gerações com Cíntia Gandarely\twebinar\t2025-06-25\tNULL\n30007\t2025/12 - Feedback - com Sandra Pitman\twebinar\t2025-07-08\tNULL\n30008\t2025/13 - Saúde Mental, Estresse e Burnout com Otácia Azevedo\twebinar\t2025-07-23\tNULL\n30009\t2025/14 - Liderança colaborativa com Sergio David\twebinar\t2025-08-07\tNULL\n30010\t2025/15 - Mindfulness para o Gestor Com Otácia\twebinar\t2025-08-20\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 412
+}

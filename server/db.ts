@@ -2343,9 +2343,16 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
 
   // 7. Eventos/Webinários com datas
   const participacoes = await getEventParticipationByAluno(alunoId);
-  // Buscar detalhes dos eventos
-  const allEventsForProgram = aluno.programId ? await getEventsByProgram(aluno.programId) : [];
-  const eventMap = new Map(allEventsForProgram.map(e => [e.id, e]));
+  // Buscar detalhes dos eventos diretamente pelos IDs das participações
+  const eventIds = Array.from(new Set(participacoes.map(ep => ep.eventId)));
+  let allRelevantEvents: Event[] = [];
+  if (eventIds.length > 0) {
+    const db2 = await getDb();
+    if (db2) {
+      allRelevantEvents = await db2.select().from(events).where(inArray(events.id, eventIds));
+    }
+  }
+  const eventMap = new Map(allRelevantEvents.map(e => [e.id, e]));
 
   const eventosDetalhados = participacoes.map(ep => {
     const evento = eventMap.get(ep.eventId);
