@@ -908,7 +908,7 @@
 - [x] Criar página de gestão de webinars na área admin (cadastro, edição, upload de cartão)
 - [ ] Criar página de gestão de avisos/divulgações na área admin
 - [x] Botão de envio de notificação/lembrete por webinar
-- [ ] Criar tela de abertura/mural do aluno com divulgações (webinars, cursos, atividades extras, avisos)
+- [x] Criar tela de abertura/mural do aluno com divulgações (webinars, cursos, atividades extras, avisos)
 - [x] Adicionar menu Webinars no sidebar admin
 
 ## Atualização de Eventos - 3 Planilhas (26/02/2026)
@@ -925,3 +925,13 @@
 - [x] Upload de cartão de divulgação por webinar (S3)
 - [x] Botão de envio de notificação/lembrete por webinar
 - [x] Webinars antigos importados das planilhas aparecem na lista para edição
+
+## Tela de Abertura / Mural do Aluno (26/02/2026)
+- [x] Criar página MuralAluno com layout atrativo
+- [x] Seção de próximos webinars (com cartão de divulgação, data, tema)
+- [x] Seção de avisos/comunicados do programa
+- [x] Seção de cursos e atividades extras disponíveis
+- [x] Seção de webinars gravados (com link YouTube)
+- [x] Integrar com endpoints existentes (webinars.upcoming, webinars.past, announcements.active)
+- [x] Adicionar menu "Mural" no sidebar do aluno como primeira opção
+- [x] Design responsivo e visualmente atrativo (hero banner, quick stats, tabs)
