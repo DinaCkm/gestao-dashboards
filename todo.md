@@ -1044,3 +1044,8 @@
 ## Bug Reportado (27/02/2026) - Aba "0s" no Portal do Aluno
 - [x] Corrigir aba que mostra "0s" em vez de "Tarefas Práticas" no Portal do Aluno
 - [x] Verificar "SEBRAE PARA" que aparece na imagem - corrigido: removido texto hardcoded "SEBRAE TO", agora busca programa real do banco via meuDashboard
+
+## Reorganização Mural vs Portal do Aluno (27/02/2026)
+- [x] Remover card "0s ss" (Tarefas Práticas) do Mural - já consta no Portal do Aluno
+- [x] Mural: manter webinários apenas como "Próximos" e "Gravações Disponíveis" (sem histórico de presença)
+- [x] Portal do Aluno (aba Webinários): concentrar histórico completo com marcação de presença (já estava implementado)

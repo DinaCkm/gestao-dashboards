@@ -15,7 +15,7 @@ import {
   Sparkles, GraduationCap, Zap, ChevronRight,
   Info, CalendarDays, Users, Star, Loader2,
   CheckCircle2, AlertTriangle, MessageSquareText, HandHeart,
-  ArrowLeft, Send, BookOpen, ClipboardCheck
+  ArrowLeft, Send, BookOpen
 } from "lucide-react";
 
 // ============================================================
@@ -53,7 +53,7 @@ function daysUntil(dateStr: string | Date | null | undefined): number {
 // VIEW TYPES
 // ============================================================
 
-type ViewType = "home" | "webinars" | "gravacoes" | "cursos" | "atividades" | "avisos" | "tarefas";
+type ViewType = "home" | "webinars" | "gravacoes" | "cursos" | "atividades" | "avisos";
 
 const VIEW_CONFIG: Record<Exclude<ViewType, "home">, {
   title: string;
@@ -91,12 +91,7 @@ const VIEW_CONFIG: Record<Exclude<ViewType, "home">, {
     emptyTitle: "Nenhum aviso",
     emptyDesc: "Avisos e comunicados aparecerão aqui.",
   },
-  tarefas: {
-    title: "Tarefas Práticas",
-    icon: ClipboardCheck,
-    emptyTitle: "Nenhuma tarefa atribuída",
-    emptyDesc: "Quando seu mentor atribuir uma tarefa prática, ela aparecerá aqui.",
-  },
+
 };
 
 // ============================================================
@@ -722,7 +717,6 @@ export default function MuralAluno() {
   const { data: activeAnnouncements, isLoading: loadingAnnouncements } = trpc.announcements.active.useQuery();
   const { data: pendingAttendance, refetch: refetchPending } = trpc.attendance.pending.useQuery();
   const { data: myAttendance, refetch: refetchMyAttendance } = trpc.attendance.myAttendance.useQuery();
-  const { data: myTasks } = trpc.attendance.myTasks.useQuery();
 
   const markPresenceMutation = trpc.attendance.markPresence.useMutation({
     onSuccess: () => {
@@ -902,18 +896,7 @@ export default function MuralAluno() {
                 labelColor="text-amber-600/70"
                 onClick={() => setCurrentView("avisos")}
               />
-              <StatCard
-                icon={ClipboardCheck}
-                count={myTasks?.length || 0}
-                label="Tarefas Práticas"
-                gradientFrom="from-teal-50"
-                gradientBorder="border-teal-100"
-                iconBg="bg-teal-100"
-                iconColor="text-teal-600"
-                countColor="text-teal-700"
-                labelColor="text-teal-600/70"
-                onClick={() => setCurrentView("tarefas")}
-              />
+
             </div>
           </div>
 
@@ -1070,70 +1053,6 @@ export default function MuralAluno() {
           </>
         );
       }
-
-      case "tarefas":
-        return (
-          <>
-            <DrillDownHeader viewType="tarefas" onBack={() => setCurrentView("home")} count={myTasks?.length || 0} />
-            {myTasks && myTasks.length > 0 ? (
-              <div className="space-y-3">
-                {myTasks.map((t: any) => (
-                  <Card key={t.sessionId} className="border hover:shadow-sm transition-shadow">
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <BookOpen className="h-4 w-4 text-teal-600 flex-shrink-0" />
-                            <h3 className="font-semibold text-gray-900 text-sm">{t.taskName}</h3>
-                          </div>
-                          <p className="text-xs text-gray-500">Competência: {t.taskCompetencia}</p>
-                          {t.sessionDate && (
-                            <p className="text-xs text-gray-400 mt-1">Atribuída na sessão de {formatDate(t.sessionDate)}</p>
-                          )}
-                        </div>
-                        <div className="flex-shrink-0">
-                          {t.taskStatus === "entregue" ? (
-                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-                              <CheckCircle2 className="h-3 w-3 mr-1" /> Entregue
-                            </Badge>
-                          ) : t.taskStatus === "nao_entregue" ? (
-                            <Badge className="bg-red-100 text-red-700 border-red-200">
-                              <AlertTriangle className="h-3 w-3 mr-1" /> Não Entregue
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-amber-100 text-amber-700 border-amber-200">
-                              <Clock className="h-3 w-3 mr-1" /> Pendente
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      {t.taskDeadline && (
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>Prazo: {formatDate(t.taskDeadline)}</span>
-                        </div>
-                      )}
-                      {t.taskOQueFazer && (
-                        <div className="bg-teal-50 border border-teal-100 rounded-lg p-3">
-                          <p className="text-xs font-medium text-teal-800 mb-1">O que fazer:</p>
-                          <p className="text-xs text-teal-700">{t.taskOQueFazer}</p>
-                        </div>
-                      )}
-                      {t.taskOQueGanha && (
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                          <p className="text-xs font-medium text-blue-800 mb-1">O que você ganha:</p>
-                          <p className="text-xs text-blue-700">{t.taskOQueGanha}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <EmptyState icon={ClipboardCheck} title={VIEW_CONFIG.tarefas.emptyTitle} description={VIEW_CONFIG.tarefas.emptyDesc} />
-            )}
-          </>
-        );
 
       default:
         return null;
