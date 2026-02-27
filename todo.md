@@ -1043,4 +1043,4 @@
 
 ## Bug Reportado (27/02/2026) - Aba "0s" no Portal do Aluno
 - [x] Corrigir aba que mostra "0s" em vez de "Tarefas Práticas" no Portal do Aluno
-- [ ] Verificar "SEBRAE PARA" que aparece na imagem (deveria ser SEBRAE ACRE ou SEBRAE TO)
+- [x] Verificar "SEBRAE PARA" que aparece na imagem - corrigido: removido texto hardcoded "SEBRAE TO", agora busca programa real do banco via meuDashboard

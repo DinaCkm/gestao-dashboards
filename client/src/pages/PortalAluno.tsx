@@ -773,6 +773,8 @@ function EtapaPrimeiroEncontro({ mentora, slot, onComplete }: { mentora: Mentora
 // ============================================================
 
 function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
+  const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
+  const programaReal = dashData?.found ? dashData.aluno.programa : null;
   const [expandedTarefa, setExpandedTarefa] = useState<number | null>(null);
 
   const performanceRadar = [
@@ -801,9 +803,11 @@ function PortalDesenvolvimento({ mentora }: { mentora: Mentora | null }) {
               </div>
             </div>
           )}
-          <Badge className="bg-[#0A1E3E]/10 text-[#0A1E3E] border-0 px-3 py-1">
-            <GraduationCap className="h-3 w-3 mr-1" /> SEBRAE TO
-          </Badge>
+          {programaReal && programaReal !== 'Não definido' && (
+            <Badge className="bg-[#0A1E3E]/10 text-[#0A1E3E] border-0 px-3 py-1">
+              <GraduationCap className="h-3 w-3 mr-1" /> {programaReal}
+            </Badge>
+          )}
         </div>
       </div>
 
