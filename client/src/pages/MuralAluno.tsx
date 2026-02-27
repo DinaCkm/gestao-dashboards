@@ -468,6 +468,13 @@ function WebinarListItem({
               </Button>
             )}
 
+            {isPast && hasEnded && attendanceStatus === "confirmed" && (
+              <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded-md h-9 px-4">
+                <CheckCircle2 className="h-4 w-4" />
+                Presença já confirmada
+              </span>
+            )}
+
             {isPast && hasEnded && onMarkPresence && attendanceStatus !== "confirmed" && (
               <Button
                 size="sm"

@@ -996,3 +996,7 @@
 
 ## Fix: Botões sempre visíveis nas gravações (27/02/2026)
 - [x] Mostrar botões "Assistir" e "Marcar Presença" sempre em cada webinar da lista de gravações
+
+## Fix: Presença já confirmada nas gravações (27/02/2026)
+- [x] Se aluno já tem presença confirmada: esconder "Marcar Presença", mostrar badge verde "Presença confirmada"
+- [x] Botão "Assistir" continua disponível independente do status de presença
