@@ -1049,3 +1049,9 @@
 - [x] Remover card "0s ss" (Tarefas Práticas) do Mural - já consta no Portal do Aluno
 - [x] Mural: manter webinários apenas como "Próximos" e "Gravações Disponíveis" (sem histórico de presença)
 - [x] Portal do Aluno (aba Webinários): concentrar histórico completo com marcação de presença (já estava implementado)
+
+## Separar Onboarding do Portal do Aluno (27/02/2026)
+- [x] Criar rota /onboarding separada para o fluxo de 5 etapas (Cadastro, Avaliação, Mentora, Agendamento, 1º Encontro)
+- [x] Portal do Aluno (/portal) deve ir direto para o Portal Completo (abas Desempenho, Trilha, Mentorias, etc.)
+- [x] Adicionar "Onboarding" como item no menu de navegação do AlunoLayout
+- [x] Remover a lógica de fase onboarding/desenvolvimento do PortalAluno.tsx

@@ -34,6 +34,7 @@ import PerformanceUpload from "./pages/PerformanceUpload";
 import WebinarsAdmin from "./pages/WebinarsAdmin";
 import MuralAluno from "./pages/MuralAluno";
 import AvisosAdmin from "./pages/AvisosAdmin";
+import OnboardingAluno from "./pages/OnboardingAluno";
 
 function Router() {
   return (
@@ -65,6 +66,7 @@ function Router() {
       <Route path={"/performance-upload"} component={PerformanceUpload} />
       <Route path={"/webinars"} component={WebinarsAdmin} />
       <Route path={"/mural"} component={MuralAluno} />
+      <Route path={"/onboarding"} component={OnboardingAluno} />
       <Route path={"/avisos"} component={AvisosAdmin} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
