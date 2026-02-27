@@ -1,0 +1,76 @@
+{
+  "query": "SELECT id, name, email, role FROM consultors;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, role FROM consultors;",
+  "rows": [
+    {
+      "id": "14",
+      "name": "Equipe CKM Talents",
+      "email": "NULL",
+      "role": "mentor"
+    },
+    {
+      "id": "28",
+      "name": "Ana Carolina Cardoso Viana Rocha",
+      "email": "anaccvrocha@gmail.com",
+      "role": "mentor"
+    },
+    {
+      "id": "29",
+      "name": "Marcia Rocha Fernandes",
+      "email": "NULL",
+      "role": "mentor"
+    },
+    {
+      "id": "30",
+      "name": "Giovanna Braga Schmitz",
+      "email": "NULL",
+      "role": "mentor"
+    },
+    {
+      "id": "31",
+      "name": "Deborah Franco",
+      "email": "NULL",
+      "role": "mentor"
+    },
+    {
+      "id": "32",
+      "name": "Luciana Pereira Figueiredo da Silva",
+      "email": "NULL",
+      "role": "mentor"
+    },
+    {
+      "id": "35",
+      "name": "Andressa Santos",
+      "email": "andressa@ckmtalents.net",
+      "role": "mentor"
+    },
+    {
+      "id": "36",
+      "name": "Gislaine Fabiola Marques Righi Cassemiro",
+      "email": "NULL",
+      "role": "mentor"
+    },
+    {
+      "id": "37",
+      "name": "Dina Makiyama",
+      "email": "NULL",
+      "role": "mentor"
+    },
+    {
+      "id": "39",
+      "name": "Adriana Deus",
+      "email": "adriana@ckmtalents.net",
+      "role": "mentor"
+    },
+    {
+      "id": "30001",
+      "name": "Joseane",
+      "email": "joseane@to.sebrae.com.br",
+      "role": "gerente"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\n14\tEquipe CKM Talents\tNULL\tmentor\n28\tAna Carolina Cardoso Viana Rocha\tanaccvrocha@gmail.com\tmentor\n29\tMarcia Rocha Fernandes\tNULL\tmentor\n30\tGiovanna Braga Schmitz\tNULL\tmentor\n31\tDeborah Franco\tNULL\tmentor\n32\tLuciana Pereira Figueiredo da Silva\tNULL\tmentor\n35\tAndressa Santos\tandressa@ckmtalents.net\tmentor\n36\tGislaine Fabiola Marques Righi Cassemiro\tNULL\tmentor\n37\tDina Makiyama\tNULL\tmentor\n39\tAdriana Deus\tadriana@ckmtalents.net\tmentor\n30001\tJoseane\tjoseane@to.sebrae.com.br\tgerente\n",
+  "stderr": "",
+  "execution_time_ms": 362
+}

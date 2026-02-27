@@ -870,3 +870,10 @@
 - [x] Baixar e analisar planilha SEBRAE ACRE (864 registros, 33 alunos, 2 mentores)
 - [x] Mapear mentores: Equipe CKM Talents + Ana Carolina = Ana Carolina Cardoso Viana Rocha (ID 28)
 - [x] Atualizar consultorId dos 33 alunos SEBRAE ACRE -> Ana Carolina (33/33 atualizados)
+
+## Importação Planilha EMBRAPII (26/02/2026)
+- [x] Baixar e analisar planilha EMBRAPII (156 registros de sessões, 16 alunos, 8 mentores)
+- [x] Mapear 8 consultores da planilha com consultores no banco (todos já existiam)
+- [x] Identificar mentor mais recente de cada aluno baseado na data da sessão
+- [x] Atualizar consultorId dos 16 alunos EMBRAPII (16/16 atualizados com sucesso)
+- [x] Distribuição: Ana Carolina (11 alunos), Andressa Santos (2), Adriana Deus (2), Luciana Pereira (1)
