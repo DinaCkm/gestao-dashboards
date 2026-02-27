@@ -844,3 +844,6 @@
 - [x] Atualizar DashboardMeuPerfil para usar AlunoLayout quando role=user
 - [x] Atualizar Tutoriais para usar AlunoLayout quando role=user
 - [x] Layout responsivo para mobile
+
+## Campos do Cadastro em Branco (26/02/2026)
+- [x] Deixar campos sem dados do banco em branco (telefone, empresa, cargo, área, experiência) sem placeholder

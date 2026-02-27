@@ -335,15 +335,15 @@ export const TRILHA_FAKE: TrilhaCicloFake[] = [
 
 // Perfil fake do aluno para demonstração
 export const ALUNO_PERFIL_FAKE = {
-  nome: "Maria Clara Souza",
-  email: "maria.clara@empresa.com.br",
-  telefone: "(63) 99876-5432",
-  empresa: "TechSolutions Ltda",
-  cargo: "Coordenadora de Projetos",
-  areaAtuacao: "Tecnologia da Informação",
-  experiencia: "8 anos de experiência em gestão de projetos de TI, com foco em metodologias ágeis e transformação digital. Liderou equipes de até 15 pessoas em projetos de implementação de ERP e migração para cloud.",
-  programa: "SEBRAE TO",
-  turma: "Turma 2026.1",
+  nome: "",
+  email: "",
+  telefone: "",
+  empresa: "",
+  cargo: "",
+  areaAtuacao: "",
+  experiencia: "",
+  programa: "",
+  turma: "",
   foto: null as string | null,
 };
 
