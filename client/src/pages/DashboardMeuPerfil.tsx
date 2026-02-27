@@ -5,10 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   User, Target, Calendar, Award, TrendingUp, BookOpen, Users,
   CheckCircle2, XCircle, Clock, GraduationCap, Trophy, Star, Zap,
   Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
+  ClipboardCheck, Play, ExternalLink, FileText, Send,
 } from "lucide-react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -127,6 +130,42 @@ function IndicadorCardAluno({
 export default function DashboardMeuPerfil() {
   const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
+
+  // Queries para as novas abas
+  const { data: myTasks } = trpc.attendance.myTasks.useQuery();
+  const { data: upcomingWebinars } = trpc.webinars.upcoming.useQuery();
+  const { data: pastWebinars } = trpc.webinars.past.useQuery();
+  const { data: myAttendance } = trpc.attendance.myAttendance.useQuery();
+  const { data: pendingWebinars } = trpc.attendance.pending.useQuery();
+
+  // State para relato de tarefa
+  const [relatoText, setRelatoText] = useState<Record<number, string>>({});
+  const [expandedTask, setExpandedTask] = useState<number | null>(null);
+
+  // State para reflexão de webinar
+  const [reflexaoText, setReflexaoText] = useState<Record<number, string>>({});
+  const [expandedWebinar, setExpandedWebinar] = useState<number | null>(null);
+
+  // Mutations
+  const utils = trpc.useUtils();
+  const submitRelato = trpc.mentor.submitRelato.useMutation({
+    onSuccess: () => {
+      utils.attendance.myTasks.invalidate();
+      setExpandedTask(null);
+    },
+  });
+  const markPresence = trpc.attendance.markPresence.useMutation({
+    onSuccess: () => {
+      utils.attendance.myAttendance.invalidate();
+      utils.attendance.pending.invalidate();
+      setExpandedWebinar(null);
+    },
+  });
+
+  // Set de eventIds já confirmados
+  const confirmedEventIds = useMemo(() => {
+    return new Set((myAttendance || []).map((a: any) => a.eventId));
+  }, [myAttendance]);
 
   const filteredAssessments = useMemo(() => {
     if (!data || !data.found || !data.assessments) return [];
@@ -407,6 +446,15 @@ export default function DashboardMeuPerfil() {
             </TabsTrigger>
             <TabsTrigger value="pdi" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
               <Award className="h-4 w-4 mr-1" /> PDI
+            </TabsTrigger>
+            <TabsTrigger value="tarefas" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+              <ClipboardCheck className="h-4 w-4 mr-1" /> Tarefas
+            </TabsTrigger>
+            <TabsTrigger value="webinarios" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+              <Play className="h-4 w-4 mr-1" /> Webinários
+            </TabsTrigger>
+            <TabsTrigger value="cursos" className="flex-1 min-w-[120px] data-[state=active]:bg-blue-600">
+              <GraduationCap className="h-4 w-4 mr-1" /> Cursos
             </TabsTrigger>
           </TabsList>
 
@@ -771,6 +819,297 @@ export default function DashboardMeuPerfil() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* === TAREFAS PRÁTICAS === */}
+          <TabsContent value="tarefas" className="mt-4">
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4 text-amber-400" />
+                  Tarefas Práticas
+                </CardTitle>
+                <CardDescription className="text-gray-500">
+                  Atividades atribuídas pela sua mentora durante as sessões de mentoria
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {myTasks && myTasks.length > 0 ? (
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                    {myTasks.map((task: any) => (
+                      <div key={task.sessionId} className="p-4 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium text-white">{task.taskName}</span>
+                              <Badge variant="outline" className={task.taskStatus === "entregue" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" : task.taskStatus === "nao_entregue" ? "text-red-400 border-red-500/30 bg-red-500/10" : "text-gray-400 border-gray-500/30 bg-gray-500/10"}>
+                                {task.taskStatus === "entregue" ? "Entregue" : task.taskStatus === "nao_entregue" ? "Não Entregue" : "Pendente"}
+                              </Badge>
+                            </div>
+                            {task.taskCompetencia && (
+                              <p className="text-xs text-blue-400 mb-1">Competência: {task.taskCompetencia}</p>
+                            )}
+                            <p className="text-xs text-gray-500">
+                              Sessão {task.sessionNumber} • {task.sessionDate ? new Date(task.sessionDate).toLocaleDateString("pt-BR") : ""}
+                              {task.taskDeadline && (<> • Prazo: {new Date(task.taskDeadline).toLocaleDateString("pt-BR")}</>)}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setExpandedTask(expandedTask === task.sessionId ? null : task.sessionId)}
+                            className="text-gray-400 hover:text-white"
+                          >
+                            {expandedTask === task.sessionId ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        {expandedTask === task.sessionId && (
+                          <div className="mt-3 space-y-3">
+                            {task.taskResumo && (
+                              <div className="p-3 rounded bg-gray-800/50">
+                                <p className="text-xs font-semibold text-gray-400 mb-1">Resumo:</p>
+                                <p className="text-xs text-gray-300">{task.taskResumo}</p>
+                              </div>
+                            )}
+                            {task.taskOQueFazer && (
+                              <div className="p-3 rounded bg-gray-800/50">
+                                <p className="text-xs font-semibold text-gray-400 mb-1">O que fazer:</p>
+                                <p className="text-xs text-gray-300">{task.taskOQueFazer}</p>
+                              </div>
+                            )}
+                            {task.taskOQueGanha && (
+                              <div className="p-3 rounded bg-gray-800/50">
+                                <p className="text-xs font-semibold text-gray-400 mb-1">O que você ganha:</p>
+                                <p className="text-xs text-gray-300">{task.taskOQueGanha}</p>
+                              </div>
+                            )}
+                            {task.taskStatus !== "entregue" && (
+                              <div className="space-y-2">
+                                <p className="text-xs font-semibold text-gray-400">Seu relato:</p>
+                                <Textarea
+                                  placeholder="Descreva como foi a realização desta tarefa..."
+                                  value={relatoText[task.sessionId] || ""}
+                                  onChange={(e) => setRelatoText(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
+                                  className="bg-gray-800 border-gray-600 text-white text-sm min-h-[80px]"
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => submitRelato.mutate({ sessionId: task.sessionId, relatoAluno: relatoText[task.sessionId] || "" })}
+                                  disabled={!relatoText[task.sessionId] || submitRelato.isPending}
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                  <Send className="h-3 w-3 mr-1" />
+                                  {submitRelato.isPending ? "Enviando..." : "Enviar Relato"}
+                                </Button>
+                                {submitRelato.isError && (
+                                  <p className="text-xs text-red-400">{submitRelato.error?.message || "Erro ao enviar relato"}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <ClipboardCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Nenhuma tarefa prática atribuída ainda</p>
+                    <p className="text-xs mt-1">As tarefas serão atribuídas pela sua mentora durante as sessões</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* === WEBINÁRIOS === */}
+          <TabsContent value="webinarios" className="mt-4">
+            <div className="space-y-6">
+              {/* Próximos Webinários */}
+              <Card className="bg-gray-800/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
+                    <Play className="h-4 w-4 text-blue-400" />
+                    Próximos Webinários
+                  </CardTitle>
+                  <CardDescription className="text-gray-500">Webinários agendados para o seu programa</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {upcomingWebinars && upcomingWebinars.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {upcomingWebinars.map((w: any) => (
+                        <div key={w.id} className="p-4 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors">
+                          {w.cardImageUrl && (
+                            <img src={w.cardImageUrl} alt={w.title} className="w-full h-32 object-cover rounded-lg mb-3" />
+                          )}
+                          <h4 className="text-sm font-medium text-white mb-1">{w.title}</h4>
+                          {w.description && <p className="text-xs text-gray-400 mb-2 line-clamp-2">{w.description}</p>}
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(w.eventDate).toLocaleDateString("pt-BR")}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(w.eventDate).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                            {w.speaker && (
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {w.speaker}
+                              </span>
+                            )}
+                          </div>
+                          {w.meetingLink && (
+                            <a href={w.meetingLink} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300">
+                              <ExternalLink className="h-3 w-3" /> Acessar reunião
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Play className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                      <p>Nenhum webinário agendado no momento</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Webinários Pendentes de Presença */}
+              {pendingWebinars && pendingWebinars.length > 0 && (
+                <Card className="bg-gray-800/50 border-amber-700/50">
+                  <CardHeader>
+                    <CardTitle className="text-sm text-amber-400 flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Pendentes de Presença ({pendingWebinars.length})
+                    </CardTitle>
+                    <CardDescription className="text-gray-500">Marque sua presença e envie uma reflexão</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {pendingWebinars.map((w: any) => (
+                        <div key={w.eventId} className="p-4 rounded-lg bg-gray-700/30">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h4 className="text-sm font-medium text-white">{w.title}</h4>
+                              <p className="text-xs text-gray-500">
+                                {w.eventDate ? new Date(w.eventDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : ""}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setExpandedWebinar(expandedWebinar === w.eventId ? null : w.eventId)}
+                              className="text-amber-400 hover:text-amber-300"
+                            >
+                              {expandedWebinar === w.eventId ? "Fechar" : "Marcar Presença"}
+                            </Button>
+                          </div>
+                          {expandedWebinar === w.eventId && (
+                            <div className="mt-3 space-y-2">
+                              <p className="text-xs text-gray-400">Escreva uma reflexão sobre o webinário (mínimo 20 caracteres):</p>
+                              <Textarea
+                                placeholder="O que você aprendeu neste webinário? Como pretende aplicar no seu dia a dia?"
+                                value={reflexaoText[w.eventId] || ""}
+                                onChange={(e) => setReflexaoText(prev => ({ ...prev, [w.eventId]: e.target.value }))}
+                                className="bg-gray-800 border-gray-600 text-white text-sm min-h-[80px]"
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => markPresence.mutate({ eventId: w.eventId, reflexao: reflexaoText[w.eventId] || "" })}
+                                disabled={!reflexaoText[w.eventId] || reflexaoText[w.eventId].length < 20 || markPresence.isPending}
+                                className="bg-amber-600 hover:bg-amber-700"
+                              >
+                                <Send className="h-3 w-3 mr-1" />
+                                {markPresence.isPending ? "Enviando..." : "Confirmar Presença"}
+                              </Button>
+                              {markPresence.isError && (
+                                <p className="text-xs text-red-400">{markPresence.error?.message || "Erro ao marcar presença"}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Webinários Passados com Gravação */}
+              <Card className="bg-gray-800/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
+                    <Video className="h-4 w-4 text-purple-400" />
+                    Webinários Realizados
+                  </CardTitle>
+                  <CardDescription className="text-gray-500">Histórico de webinários com gravações disponíveis</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {pastWebinars && pastWebinars.length > 0 ? (
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                      {pastWebinars.map((w: any) => {
+                        const isConfirmed = confirmedEventIds.has(w.id);
+                        return (
+                          <div key={w.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 transition-colors">
+                            <div className="flex-shrink-0">
+                              {isConfirmed ? (
+                                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                              ) : (
+                                <XCircle className="h-5 w-5 text-gray-500" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-white font-medium">{w.title}</p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(w.eventDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                                {w.speaker && ` • ${w.speaker}`}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {isConfirmed && (
+                                <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 bg-emerald-500/10 text-xs">Presente</Badge>
+                              )}
+                              {w.youtubeLink && (
+                                <a href={w.youtubeLink} target="_blank" rel="noopener noreferrer" className="text-red-400 hover:text-red-300">
+                                  <Play className="h-4 w-4" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Video className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                      <p>Nenhum webinário realizado ainda</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* === CURSOS === */}
+          <TabsContent value="cursos" className="mt-4">
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-sm text-gray-300 flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-purple-400" />
+                  Cursos Disponíveis
+                </CardTitle>
+                <CardDescription className="text-gray-500">Cursos complementares para sua jornada de desenvolvimento</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12 text-gray-500">
+                  <GraduationCap className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Em breve</p>
+                  <p className="text-xs mt-1">Os cursos complementares serão disponibilizados em breve pelo administrador do programa</p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -28,7 +28,7 @@ import RegistroMentoria from "./pages/RegistroMentoria";
 import DashboardGestor from "./pages/DashboardGestor";
 import DashboardMeuPerfil from "./pages/DashboardMeuPerfil";
 import Assessment from "./pages/Assessment";
-import PortalAluno from "./pages/PortalAluno";
+// PortalAluno removido - unificado com DashboardMeuPerfil
 import Tutoriais from "./pages/Tutoriais";
 import PerformanceUpload from "./pages/PerformanceUpload";
 import WebinarsAdmin from "./pages/WebinarsAdmin";
@@ -61,7 +61,7 @@ function Router() {
       <Route path={"/registro-mentoria"} component={RegistroMentoria} />
       <Route path={"/dashboard/gestor"} component={DashboardGestor} />
       <Route path={"/assessment"} component={Assessment} />
-      <Route path={"/portal-aluno"} component={PortalAluno} />
+      {/* portal-aluno redirecionado para meu-dashboard */}
       <Route path={"/tutoriais"} component={Tutoriais} />
       <Route path={"/performance-upload"} component={PerformanceUpload} />
       <Route path={"/webinars"} component={WebinarsAdmin} />

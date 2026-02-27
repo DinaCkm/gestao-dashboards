@@ -11,9 +11,8 @@ import { Compass, User, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardLis
 
 const NAV_ITEMS = [
   { label: "Mural", path: "/mural", icon: Megaphone },
-  { label: "Portal do Aluno", path: "/portal-aluno", icon: Compass },
-  { label: "Onboarding", path: "/onboarding", icon: ClipboardList },
-  { label: "Meu Painel", path: "/meu-dashboard", icon: User },
+  { label: "Portal do Aluno", path: "/meu-dashboard", icon: Compass },
+  { label: "Integração", path: "/onboarding", icon: ClipboardList },
   { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle },
 ];
 

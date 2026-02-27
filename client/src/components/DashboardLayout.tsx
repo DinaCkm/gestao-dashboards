@@ -82,8 +82,7 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], hideIfConsultorId: true },
   
   // === ALUNO INDIVIDUAL ===
-  { icon: Compass, label: "Portal do Aluno", path: "/portal-aluno", roles: ["user"] },
-  { icon: User, label: "Meu Painel", path: "/meu-dashboard", roles: ["user"] },
+  { icon: Compass, label: "Portal do Aluno", path: "/meu-dashboard", roles: ["user"] },
   { icon: PlayCircle, label: "Tutoriais", path: "/tutoriais", roles: ["user"] },
   
   // === CADASTROS ===

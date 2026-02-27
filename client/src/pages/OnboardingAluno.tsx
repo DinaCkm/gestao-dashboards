@@ -15,10 +15,29 @@ import {
   GraduationCap, Clock, Calendar, Target, Award,
   Play, ArrowRight, Sparkles, Heart, Eye, AlertCircle, CheckCircle
 } from "lucide-react";
-import {
-  MENTORAS_FAKE, SLOTS_AGENDA_FAKE, ALUNO_PERFIL_FAKE,
-  type Mentora, type SlotAgenda
-} from "@/lib/portalAlunoData";
+// Tipos locais (dados agora vêm do banco real)
+type Mentora = {
+  id: number;
+  nome: string;
+  foto?: string;
+  especialidade: string;
+  miniCurriculo: string;
+  curriculoCompleto?: string;
+  formacao?: string;
+  experiencia?: string;
+  certificacoes?: string[];
+  areasAtuacao: string[];
+  disponivel: boolean;
+};
+type SlotAgenda = {
+  id: number;
+  mentoraId: number;
+  data: string;
+  horario: string;
+  duracao: number;
+  linkMeet: string;
+  disponivel: boolean;
+};
 import { useLocation } from "wouter";
 
 // ============================================================
@@ -103,7 +122,10 @@ function EtapaCadastro({ onComplete }: { onComplete: () => void }) {
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
   const alunoReal = dashData?.found ? dashData.aluno : null;
 
-  const [perfil, setPerfil] = useState(ALUNO_PERFIL_FAKE);
+  const [perfil, setPerfil] = useState({
+    nome: "", email: "", telefone: "", empresa: "", cargo: "",
+    areaAtuacao: "", experiencia: "", programa: "", turma: "", foto: null as string | null,
+  });
   const [initialized, setInitialized] = useState(false);
 
   if (alunoReal && !initialized) {
@@ -314,8 +336,23 @@ function EtapaAssessment({ onComplete }: { onComplete: () => void }) {
 // ============================================================
 
 function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void; onSelectMentora: (m: Mentora) => void }) {
+  const { data: mentoresData } = trpc.mentor.list.useQuery();
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
   const [detailMentora, setDetailMentora] = useState<Mentora | null>(null);
+
+  // Converter consultores do banco para o formato Mentora
+  const mentoras: Mentora[] = useMemo(() => {
+    if (!mentoresData) return [];
+    return mentoresData.map((c: any) => ({
+      id: c.id,
+      nome: c.name,
+      foto: undefined,
+      especialidade: c.especialidade || "Mentoria e Desenvolvimento",
+      miniCurriculo: c.especialidade ? `Especialista em ${c.especialidade}` : "Mentora do programa B.E.M.",
+      areasAtuacao: c.especialidade ? c.especialidade.split(",").map((a: string) => a.trim()) : ["Mentoria"],
+      disponivel: c.isActive === 1,
+    }));
+  }, [mentoresData]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -325,7 +362,7 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {MENTORAS_FAKE.map((mentora) => (
+        {mentoras.map((mentora) => (
           <Card
             key={mentora.id}
             className={`overflow-hidden transition-all duration-300 hover:shadow-lg cursor-pointer group ${
@@ -464,7 +501,7 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
                     <Award className="h-4 w-4 text-[#F5991F]" /> Certificações
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {detailMentora.certificacoes.map((cert) => (
+                    {(detailMentora.certificacoes || []).map((cert) => (
                       <Badge key={cert} variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
                         {cert}
                       </Badge>
@@ -536,7 +573,20 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
 
   const slotsDisponiveis = useMemo(() => {
     if (!mentora) return [];
-    return SLOTS_AGENDA_FAKE.filter(s => s.mentoraId === mentora.id && s.disponivel);
+    // Slots de agenda serão implementados quando houver tabela de agenda no banco
+    // Por enquanto, gerar slots genéricos para a mentora selecionada
+    const baseDate = new Date();
+    const slots: SlotAgenda[] = [];
+    for (let d = 1; d <= 5; d++) {
+      const date = new Date(baseDate);
+      date.setDate(date.getDate() + d + (d <= 2 ? 0 : 1)); // pular fim de semana
+      if (date.getDay() === 0) date.setDate(date.getDate() + 1);
+      if (date.getDay() === 6) date.setDate(date.getDate() + 2);
+      const dateStr = date.toISOString().split('T')[0];
+      slots.push({ id: d * 2 - 1, mentoraId: mentora.id, data: dateStr, horario: "09:00", duracao: 60, linkMeet: "https://meet.google.com/", disponivel: true });
+      slots.push({ id: d * 2, mentoraId: mentora.id, data: dateStr, horario: "14:00", duracao: 60, linkMeet: "https://meet.google.com/", disponivel: true });
+    }
+    return slots;
   }, [mentora]);
 
   const slotsByDate = useMemo(() => {
@@ -771,7 +821,7 @@ export default function OnboardingAluno() {
     } else {
       // Onboarding completo, redirecionar para o Portal do Aluno
       toast.success("Onboarding concluído! Redirecionando para o Portal do Aluno...");
-      setLocation("/portal-aluno");
+      setLocation("/meu-dashboard");
     }
   };
 
@@ -793,7 +843,7 @@ export default function OnboardingAluno() {
               variant="outline"
               size="sm"
               className="text-xs border-white/30 text-white hover:bg-white/10 hover:text-white"
-              onClick={() => setLocation("/portal-aluno")}
+              onClick={() => setLocation("/meu-dashboard")}
             >
               Ver Portal Completo →
             </Button>

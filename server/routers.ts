@@ -1669,6 +1669,8 @@ export const appRouter = router({
           })(),
           cicloAtual: indicadores.ciclosEmAndamento?.[0]?.nomeCiclo || (indicadores.ciclosFinalizados?.length ? `${indicadores.ciclosFinalizados.length + (indicadores.ciclosEmAndamento?.length || 0)} ciclo(s)` : 'Nenhum ciclo'),
           mentor: mentorAluno?.name || 'Não definido',
+          mentorEspecialidade: mentorAluno?.especialidade || null,
+          mentorId: mentorAluno?.id || null,
         },
         indicadores: {
           participacaoMentorias: indicadores.participacaoMentorias,
@@ -1713,6 +1715,36 @@ export const appRouter = router({
         planoIndividual: planoItems,
         assessments: await db.getAssessmentsByAluno(aluno.id),
         sessionProgress: await db.getSessionProgressByAluno(aluno.id),
+        // Ciclos detalhados com competências e notas
+        ciclosDetalhados: await (async () => {
+          const ciclos = await db.getCiclosByAluno(aluno!.id);
+          return ciclos.map(c => {
+            const today = new Date();
+            const inicio = new Date(c.dataInicio);
+            const fim = new Date(c.dataFim);
+            let status: 'finalizado' | 'em_andamento' | 'futuro' = 'futuro';
+            if (today > fim) status = 'finalizado';
+            else if (today >= inicio && today <= fim) status = 'em_andamento';
+            return {
+              id: c.id,
+              nomeCiclo: c.nomeCiclo,
+              dataInicio: typeof c.dataInicio === 'string' ? c.dataInicio : new Date(c.dataInicio).toISOString().split('T')[0],
+              dataFim: typeof c.dataFim === 'string' ? c.dataFim : new Date(c.dataFim).toISOString().split('T')[0],
+              status,
+              competencias: c.competencias.map(comp => {
+                const planoItem = planoItems.find(p => p.competenciaId === comp.competenciaId);
+                return {
+                  id: comp.competenciaId,
+                  nome: comp.competenciaNome || 'Competência',
+                  nota: planoItem?.notaAtual ? parseFloat(planoItem.notaAtual) : null,
+                  meta: planoItem?.metaNota ? parseFloat(planoItem.metaNota) : 7,
+                  status: planoItem?.notaAtual && parseFloat(planoItem.notaAtual) >= (planoItem?.metaNota ? parseFloat(planoItem.metaNota) : 7) ? 'concluida' as const :
+                         planoItem?.notaAtual ? 'em_progresso' as const : 'pendente' as const,
+                };
+              }),
+            };
+          });
+        })(),
       };
     }),
   }),
@@ -2435,6 +2467,12 @@ export const appRouter = router({
 
   // ==================== ANNOUNCEMENTS ====================
   announcements: router({
+    // Avisos ativos para alunos (filtrado por programa)
+    activeForStudent: protectedProcedure
+      .query(async ({ ctx }) => {
+        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        return await db.listActiveAnnouncementsForStudent(aluno?.programId || undefined);
+      }),
     list: adminProcedure
       .input(z.object({ activeOnly: z.boolean().optional() }).optional())
       .query(async ({ input }) => {

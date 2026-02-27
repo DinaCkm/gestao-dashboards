@@ -1055,3 +1055,39 @@
 - [x] Portal do Aluno (/portal) deve ir direto para o Portal Completo (abas Desempenho, Trilha, Mentorias, etc.)
 - [x] Adicionar "Onboarding" como item no menu de navegação do AlunoLayout
 - [x] Remover a lógica de fase onboarding/desenvolvimento do PortalAluno.tsx
+
+## Conectar Onboarding e Portal do Aluno ao Banco de Dados (27/02/2026)
+- [ ] Criar tabelas no schema para progresso do onboarding (etapa atual, dados de cadastro, mentora selecionada, agendamento)
+- [ ] Criar procedures tRPC para salvar/buscar progresso do onboarding
+- [ ] Conectar OnboardingAluno.tsx ao banco (substituir dados fake)
+- [ ] Conectar PortalAluno.tsx ao banco (substituir dados fake por dados reais)
+- [ ] Substituir webinários fake por dados reais do banco
+- [ ] Substituir tarefas fake por dados reais do banco
+- [ ] Substituir cursos fake por dados reais do banco
+- [ ] Substituir sessões de mentoria fake por dados reais do banco
+- [ ] Substituir trilha/competências fake por dados reais do banco
+
+## Remoção de Dados Fake - Prioridade (27/02/2026)
+- [ ] Retirar dados fake de webinários do PortalAluno (usar dados reais do banco - scheduledWebinars + eventParticipation)
+- [ ] Retirar dados fake de tarefas práticas do PortalAluno (usar dados reais - mentoringSessions.taskId)
+- [ ] Retirar dados fake de cursos do PortalAluno (usar dados reais - studentPerformance)
+- [ ] Retirar dados fake de sessões de mentoria do PortalAluno (usar dados reais - mentoringSessions)
+- [ ] Retirar dados fake de trilha/competências do PortalAluno (usar dados reais - assessmentPdi + assessmentCompetencias)
+- [ ] Retirar dados fake de mentoras do OnboardingAluno (usar dados reais - consultors)
+- [ ] Criar procedures tRPC para portal do aluno com dados reais
+- [ ] Mostrar estados vazios quando não houver dados
+- [ ] Remover card "Gravações Disponíveis" do Mural do Aluno
+
+## 3 Tarefas Prioritárias (27/02/2026)
+- [x] TAREFA 1: Remover card "Gravações Disponíveis" do Mural do Aluno
+- [x] TAREFA 2: Retirar dados fake do Portal do Aluno e conectar ao banco real (unificado com Meu Painel)
+- [x] TAREFA 3: Retirar dados fake do Onboarding e conectar ao banco real (mentoras do banco + slots gerados)
+
+## Unificação Portal do Aluno + Meu Painel (27/02/2026)
+- [x] Adicionar aba Tarefas Práticas ao DashboardMeuPerfil com dados reais (trpc.attendance.myTasks)
+- [x] Adicionar aba Webinários ao DashboardMeuPerfil com dados reais (trpc.webinars.upcoming/past + attendance)
+- [x] Adicionar aba Cursos ao DashboardMeuPerfil (placeholder até ter dados reais)
+- [x] Renomear "Meu Painel" para "Portal do Aluno" no menu (AlunoLayout)
+- [x] Atualizar rota de /meu-dashboard para /portal no App.tsx (mantido /meu-dashboard com redirect)
+- [x] Remover PortalAluno.tsx e portalAlunoData.ts
+- [x] Remover rota antiga /portal do App.tsx

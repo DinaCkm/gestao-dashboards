@@ -53,7 +53,7 @@ function daysUntil(dateStr: string | Date | null | undefined): number {
 // VIEW TYPES
 // ============================================================
 
-type ViewType = "home" | "webinars" | "gravacoes" | "cursos" | "atividades" | "avisos";
+type ViewType = "home" | "webinars" | "cursos" | "atividades" | "avisos";
 
 const VIEW_CONFIG: Record<Exclude<ViewType, "home">, {
   title: string;
@@ -67,12 +67,7 @@ const VIEW_CONFIG: Record<Exclude<ViewType, "home">, {
     emptyTitle: "Nenhum webinar agendado",
     emptyDesc: "Novos webinars serão publicados em breve.",
   },
-  gravacoes: {
-    title: "Gravações Disponíveis",
-    icon: Youtube,
-    emptyTitle: "Nenhuma gravação disponível",
-    emptyDesc: "As gravações dos webinars realizados aparecerão aqui.",
-  },
+
   cursos: {
     title: "Cursos Disponíveis",
     icon: GraduationCap,
@@ -848,18 +843,7 @@ export default function MuralAluno() {
                 labelColor="text-blue-600/70"
                 onClick={() => setCurrentView("webinars")}
               />
-              <StatCard
-                icon={Youtube}
-                count={pastWebinars?.length || 0}
-                label="Gravações Disponíveis"
-                gradientFrom="from-red-50"
-                gradientBorder="border-red-100"
-                iconBg="bg-red-100"
-                iconColor="text-red-600"
-                countColor="text-red-700"
-                labelColor="text-red-600/70"
-                onClick={() => setCurrentView("gravacoes")}
-              />
+
               <StatCard
                 icon={GraduationCap}
                 count={announcementsByType.courses.length}
@@ -982,27 +966,7 @@ export default function MuralAluno() {
           </>
         );
 
-      case "gravacoes":
-        return (
-          <>
-            <DrillDownHeader viewType="gravacoes" onBack={() => setCurrentView("home")} count={pastWebinars?.length || 0} />
-            {pastWebinars && pastWebinars.length > 0 ? (
-              <div className="space-y-3">
-                {pastWebinars.map((w: any) => (
-                  <WebinarListItem
-                    key={w.id}
-                    webinar={w}
-                    variant="past"
-                    attendanceStatus={getAttendanceStatus(w.id)}
-                    onMarkPresence={() => setAttendanceModalOpen(true)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyState icon={Youtube} title={VIEW_CONFIG.gravacoes.emptyTitle} description={VIEW_CONFIG.gravacoes.emptyDesc} />
-            )}
-          </>
-        );
+
 
       case "cursos":
         return (
