@@ -865,3 +865,8 @@
 - [x] Atualizar consultorId dos 50 alunos com o mentor mais recente
 - [ ] Meu Painel: mostrar mentor atual (sessão mais recente) — já funciona via consultorId
 - [ ] Histórico de mentorias: cada sessão mostra o mentor que acompanhou
+
+## Importação Planilha SEBRAE ACRE (26/02/2026)
+- [x] Baixar e analisar planilha SEBRAE ACRE (864 registros, 33 alunos, 2 mentores)
+- [x] Mapear mentores: Equipe CKM Talents + Ana Carolina = Ana Carolina Cardoso Viana Rocha (ID 28)
+- [x] Atualizar consultorId dos 33 alunos SEBRAE ACRE -> Ana Carolina (33/33 atualizados)

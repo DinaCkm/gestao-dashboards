@@ -1,0 +1,18 @@
+{
+  "query": "SHOW COLUMNS FROM alunos WHERE Field LIKE '%consul%' OR Field LIKE '%mentor%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SHOW COLUMNS FROM alunos WHERE Field LIKE '%consul%' OR Field LIKE '%mentor%';",
+  "rows": [
+    {
+      "Field": "consultorId",
+      "Type": "int(11)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nconsultorId\tint(11)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 420
+}
