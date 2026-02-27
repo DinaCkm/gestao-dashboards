@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO trilhas (name, codigo, ordem, programId, isActive) VALUES ('Jornada do Futuro I.A', 'JORNADA_FUTURO_IA', 5, NULL, 1);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute INSERT INTO trilhas (name, codigo, ordem, programId, isActive) VALUES ('Jornada do Futuro I.A', 'JORNADA_FUTURO_IA', 5, NULL, 1);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 526
+}

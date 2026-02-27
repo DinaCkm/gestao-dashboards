@@ -30,6 +30,7 @@ import DashboardMeuPerfil from "./pages/DashboardMeuPerfil";
 import Assessment from "./pages/Assessment";
 import PortalAluno from "./pages/PortalAluno";
 import Tutoriais from "./pages/Tutoriais";
+import PerformanceUpload from "./pages/PerformanceUpload";
 
 function Router() {
   return (
@@ -58,6 +59,7 @@ function Router() {
       <Route path={"/assessment"} component={Assessment} />
       <Route path={"/portal-aluno"} component={PortalAluno} />
       <Route path={"/tutoriais"} component={Tutoriais} />
+      <Route path={"/performance-upload"} component={PerformanceUpload} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

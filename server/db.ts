@@ -19,7 +19,9 @@ import {
   events, InsertEvent, Event,
   eventParticipation, InsertEventParticipation, EventParticipation,
   planoIndividual, InsertPlanoIndividual, PlanoIndividual,
-  taskLibrary, TaskLibrary, InsertTaskLibrary
+  taskLibrary, TaskLibrary, InsertTaskLibrary,
+  performanceUploads, InsertPerformanceUpload, PerformanceUpload,
+  studentPerformance, InsertStudentPerformance, StudentPerformance
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -2904,4 +2906,106 @@ export async function getAllStudentsSessionProgress() {
       assessmentPdiId: pdi.id,
     };
   });
+}
+
+// ============ PERFORMANCE UPLOAD FUNCTIONS ============
+
+export async function createPerformanceUpload(data: InsertPerformanceUpload): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(performanceUploads).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updatePerformanceUpload(id: number, data: Partial<InsertPerformanceUpload>): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(performanceUploads).set(data).where(eq(performanceUploads.id, id));
+}
+
+export async function getPerformanceUploads(limit: number = 20): Promise<PerformanceUpload[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(performanceUploads).orderBy(desc(performanceUploads.createdAt)).limit(limit);
+}
+
+export async function getPerformanceUploadById(id: number): Promise<PerformanceUpload | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const results = await db.select().from(performanceUploads).where(eq(performanceUploads.id, id));
+  return results[0];
+}
+
+// ============ STUDENT PERFORMANCE FUNCTIONS ============
+
+export async function deleteAllStudentPerformance(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.delete(studentPerformance);
+  return Number(result[0].affectedRows);
+}
+
+export async function deleteStudentPerformanceByUploadId(uploadId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.delete(studentPerformance).where(eq(studentPerformance.uploadId, uploadId));
+  return Number(result[0].affectedRows);
+}
+
+export async function insertStudentPerformanceBatch(records: InsertStudentPerformance[]): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  if (records.length === 0) return 0;
+  
+  // Insert in batches of 100 to avoid query size limits
+  let inserted = 0;
+  for (let i = 0; i < records.length; i += 100) {
+    const batch = records.slice(i, i + 100);
+    await db.insert(studentPerformance).values(batch);
+    inserted += batch.length;
+  }
+  return inserted;
+}
+
+export async function getStudentPerformanceByAluno(alunoId: number): Promise<StudentPerformance[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(studentPerformance).where(eq(studentPerformance.alunoId, alunoId));
+}
+
+export async function getStudentPerformanceByExternalUserId(externalUserId: string): Promise<StudentPerformance[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(studentPerformance).where(eq(studentPerformance.externalUserId, externalUserId));
+}
+
+export async function getStudentPerformanceSummary(): Promise<{
+  totalRecords: number;
+  uniqueStudents: number;
+  uniqueCompetencias: number;
+  uniqueTurmas: number;
+  lastUploadId: number | null;
+}> {
+  const db = await getDb();
+  if (!db) return { totalRecords: 0, uniqueStudents: 0, uniqueCompetencias: 0, uniqueTurmas: 0, lastUploadId: null };
+  
+  const [countResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(studentPerformance);
+  const [studentsResult] = await db.select({ count: sql<number>`COUNT(DISTINCT ${studentPerformance.externalUserId})` }).from(studentPerformance);
+  const [compResult] = await db.select({ count: sql<number>`COUNT(DISTINCT ${studentPerformance.externalCompetenciaId})` }).from(studentPerformance);
+  const [turmaResult] = await db.select({ count: sql<number>`COUNT(DISTINCT ${studentPerformance.externalTurmaId})` }).from(studentPerformance);
+  const [lastUpload] = await db.select({ id: performanceUploads.id }).from(performanceUploads).orderBy(desc(performanceUploads.createdAt)).limit(1);
+  
+  return {
+    totalRecords: Number(countResult?.count || 0),
+    uniqueStudents: Number(studentsResult?.count || 0),
+    uniqueCompetencias: Number(compResult?.count || 0),
+    uniqueTurmas: Number(turmaResult?.count || 0),
+    lastUploadId: lastUpload?.id || null,
+  };
+}
+
+export async function getAllStudentPerformance(): Promise<StudentPerformance[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(studentPerformance).orderBy(studentPerformance.userName, studentPerformance.competenciaName);
 }

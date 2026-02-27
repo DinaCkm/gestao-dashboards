@@ -877,3 +877,23 @@
 - [x] Identificar mentor mais recente de cada aluno baseado na data da sessão
 - [x] Atualizar consultorId dos 16 alunos EMBRAPII (16/16 atualizados com sucesso)
 - [x] Distribuição: Ana Carolina (11 alunos), Andressa Santos (2), Adriana Deus (2), Luciana Pereira (1)
+
+## Estrutura de Jornadas (26/02/2026)
+- [x] Criar 5ª trilha "Jornada do Futuro I.A" (ID 30001, código JORNADA_FUTURO_IA, ordem 5) — "Visão de Futuro" mantida inalterada
+- [ ] Definir competências da nova trilha (aguardar orientação do usuário)
+
+## Importação Relatório de Performance (26/02/2026)
+- [x] Analisar estrutura do CSV de performance (34 colunas, 1464 registros, 100 alunos, 11 turmas, 36 competências)
+- [x] Mapear colunas do CSV com tabelas do banco
+- [x] Substituir dados de performance no banco de dados (1464 registros importados)
+- [x] Verificar resultados da importação (0 erros, 0 alunos não vinculados)
+
+## Upload Relatório de Performance - Admin (26/02/2026)
+- [x] Criar tabela student_performance no schema
+- [x] Criar tabela performance_uploads para histórico de uploads
+- [x] Migrar schema para o banco
+- [x] Criar endpoint tRPC para upload e processamento do CSV
+- [x] Criar página de upload na área admin (menu "Relatório de Performance")
+- [x] Processar CSV: mapear alunos, competências e turmas (100% match)
+- [x] Exibir histórico de uploads e resumo dos dados
+- [x] Testar fluxo completo de upload (1464 registros, 13 testes vitest passando)

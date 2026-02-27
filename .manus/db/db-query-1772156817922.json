@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `performance_uploads` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `uploadedBy` int NOT NULL,\n  `fileName` varchar(255) NOT NULL,\n  `fileKey` varchar(512),\n  `fileUrl` text,\n  `totalRecords` int NOT NULL DEFAULT 0,\n  `processedRecords` int NOT NULL DEFAULT 0,\n  `skippedRecords` int NOT NULL DEFAULT 0,\n  `newAlunos` int NOT NULL DEFAULT 0,\n  `updatedRecords` int NOT NULL DEFAULT 0,\n  `status` enum('processing','completed','error') NOT NULL DEFAULT 'processing',\n  `errorMessage` text,\n  `summary` json,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `performance_uploads_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute CREATE TABLE IF NOT EXISTS `performance_uploads` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `uploadedBy` int NOT NULL,\n  `fileName` varchar(255) NOT NULL,\n  `fileKey` varchar(512),\n  `fileUrl` text,\n  `totalRecords` int NOT NULL DEFAULT 0,\n  `processedRecords` int NOT NULL DEFAULT 0,\n  `skippedRecords` int NOT NULL DEFAULT 0,\n  `newAlunos` int NOT NULL DEFAULT 0,\n  `updatedRecords` int NOT NULL DEFAULT 0,\n  `status` enum('processing','completed','error') NOT NULL DEFAULT 'processing',\n  `errorMessage` text,\n  `summary` json,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `performance_uploads_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 759
+}

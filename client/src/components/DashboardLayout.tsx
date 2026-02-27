@@ -66,6 +66,7 @@ const allMenuItems: MenuItemExtended[] = [
   // === ADMINISTRADOR ===
   { icon: LayoutDashboard, label: "Painel Admin", path: "/", roles: ["admin"] },
   { icon: Upload, label: "Gestão de Planilhas", path: "/upload", roles: ["admin"] },
+  { icon: FileSpreadsheet, label: "Relatório de Performance", path: "/performance-upload", roles: ["admin"] },
   { icon: BarChart3, label: "Visão Geral", path: "/dashboard/visao-geral", roles: ["admin"] },
   
   // === MENTORES (admin vê como "Dashboard Mentores", mentor vê como "Meu Dashboard") ===

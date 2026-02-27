@@ -367,6 +367,244 @@ export const appRouter = router({
       }),
   }),
 
+  // Performance Report Upload
+  performanceReport: router({
+    // Upload e processar CSV de performance
+    upload: adminProcedure
+      .input(z.object({
+        fileName: z.string(),
+        fileData: z.string(), // Base64 encoded CSV
+        replaceAll: z.boolean().default(true), // Substituir todos os dados existentes
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Criar registro de upload
+        const uploadId = await db.createPerformanceUpload({
+          uploadedBy: ctx.user.id,
+          fileName: input.fileName,
+          status: 'processing',
+        });
+
+        try {
+          // Decode CSV from base64
+          const csvBuffer = Buffer.from(input.fileData, 'base64');
+          const csvText = csvBuffer.toString('utf-8').replace(/^\uFEFF/, ''); // Remove BOM
+          
+          // Parse CSV
+          const lines = csvText.split('\n');
+          const headers = parseCSVLine(lines[0]);
+          
+          // Map column indices
+          const colMap: Record<string, number> = {};
+          headers.forEach((h, i) => {
+            colMap[h.trim()] = i;
+          });
+          
+          // Get existing alunos for matching
+          const alunosList = await db.getAlunos();
+          const alunoByName = new Map<string, number>();
+          const alunoByEmail = new Map<string, number>();
+          for (const a of alunosList) {
+            if (a.name) alunoByName.set(a.name.toLowerCase().trim(), a.id);
+            if (a.email) alunoByEmail.set(a.email.toLowerCase().trim(), a.id);
+          }
+          
+          // Get existing turmas for matching
+          const turmasList = await db.getTurmas();
+          const turmaByName = new Map<string, number>();
+          for (const t of turmasList) {
+            if (t.name) turmaByName.set(t.name.toLowerCase().trim(), t.id);
+          }
+          
+          // Get existing competencias for matching
+          const compList = await db.getAllCompetencias();
+          const compByName = new Map<string, number>();
+          for (const c of compList) {
+            if (c.nome) compByName.set(c.nome.toLowerCase().trim(), c.id);
+          }
+          
+          // If replaceAll, delete existing data
+          if (input.replaceAll) {
+            await db.deleteAllStudentPerformance();
+          }
+          
+          // Process each row
+          const records: any[] = [];
+          let skipped = 0;
+          let totalRows = 0;
+          const unmatchedStudents = new Set<string>();
+          const unmatchedTurmas = new Set<string>();
+          
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            totalRows++;
+            
+            const values = parseCSVLine(line);
+            
+            const externalUserId = getVal(values, colMap, 'Id Usu\u00e1rio');
+            const userName = getVal(values, colMap, 'Nome Usu\u00e1rio');
+            
+            if (!externalUserId || !userName) {
+              skipped++;
+              continue;
+            }
+            
+            const userEmail = getVal(values, colMap, 'E-mail');
+            const turmaName = getVal(values, colMap, 'Turma (agrupador 1)');
+            const compName = getVal(values, colMap, 'Compet\u00eancia (agrupador 2)');
+            
+            // Try to match aluno
+            let alunoId: number | null = null;
+            if (userEmail) {
+              alunoId = alunoByEmail.get(userEmail.toLowerCase().trim()) || null;
+            }
+            if (!alunoId && userName) {
+              alunoId = alunoByName.get(userName.toLowerCase().trim()) || null;
+            }
+            if (!alunoId) unmatchedStudents.add(userName);
+            
+            // Try to match turma
+            let turmaId: number | null = null;
+            if (turmaName) {
+              turmaId = turmaByName.get(turmaName.toLowerCase().trim()) || null;
+              if (!turmaId) unmatchedTurmas.add(turmaName);
+            }
+            
+            // Try to match competencia
+            let competenciaId: number | null = null;
+            if (compName) {
+              // Try exact match first, then partial
+              competenciaId = compByName.get(compName.toLowerCase().trim()) || null;
+              if (!competenciaId) {
+                // Try matching without the suffix like " - Master", " - Essencial"
+                const baseName = compName.replace(/\s*-\s*(Master|Essencial|B\u00e1sica|Vis\u00e3o de Futuro|Jornada.*)$/i, '').trim();
+                competenciaId = compByName.get(baseName.toLowerCase()) || null;
+              }
+            }
+            
+            const parseIntSafe = (val: string | undefined): number => {
+              if (!val || val === '-') return 0;
+              const n = parseInt(val, 10);
+              return isNaN(n) ? 0 : n;
+            };
+            
+            const parseDecimalSafe = (val: string | undefined): string | null => {
+              if (!val || val === '-' || val.includes('Sem avalia')) return null;
+              const n = parseFloat(val.replace(',', '.'));
+              return isNaN(n) ? null : n.toFixed(2);
+            };
+            
+            records.push({
+              alunoId,
+              externalUserId,
+              userName,
+              userEmail: userEmail || null,
+              lastAccess: getVal(values, colMap, '\u00daltimo acesso') || null,
+              turmaId,
+              externalTurmaId: getVal(values, colMap, 'Id Turma (agrupador 1)') || null,
+              turmaName: turmaName || null,
+              competenciaId,
+              externalCompetenciaId: getVal(values, colMap, 'Id Compet\u00eancia (agrupador 2)') || null,
+              competenciaName: compName || null,
+              dataInicio: getVal(values, colMap, 'Data de in\u00edcio') || null,
+              dataConclusao: getVal(values, colMap, 'Data de conclus\u00e3o') || null,
+              totalAulas: parseIntSafe(getVal(values, colMap, 'Total de aulas')),
+              aulasDisponiveis: parseIntSafe(getVal(values, colMap, 'Aulas dispon\u00edveis')),
+              aulasConcluidas: parseIntSafe(getVal(values, colMap, 'Aulas conclu\u00eddas')),
+              aulasEmAndamento: parseIntSafe(getVal(values, colMap, 'Aulas em andamento')),
+              aulasNaoIniciadas: parseIntSafe(getVal(values, colMap, 'Aulas n\u00e3o iniciadas')),
+              aulasAgendadas: parseIntSafe(getVal(values, colMap, 'Aulas agendadas')),
+              progressoTotal: parseIntSafe(getVal(values, colMap, 'Progresso Total')),
+              cargaHorariaTotal: getVal(values, colMap, 'Carga hor\u00e1ria total') || null,
+              cargaHorariaConcluida: getVal(values, colMap, 'Carga hor\u00e1ria conclu\u00edda') || null,
+              progressoAulasDisponiveis: parseIntSafe(getVal(values, colMap, 'Progresso em aulas dispon\u00edveis')),
+              avaliacoesDiagnostico: parseIntSafe(getVal(values, colMap, 'Avalia\u00e7\u00f5es de diagn\u00f3stico')),
+              mediaAvaliacoesDiagnostico: parseDecimalSafe(getVal(values, colMap, 'M\u00e9dia das avalia\u00e7\u00f5es de diagn\u00f3stico')),
+              avaliacoesFinais: parseIntSafe(getVal(values, colMap, 'Avalia\u00e7\u00f5es finais')),
+              mediaAvaliacoesFinais: parseDecimalSafe(getVal(values, colMap, 'M\u00e9dia das avalia\u00e7\u00f5es finais')),
+              avaliacoesDisponiveis: parseIntSafe(getVal(values, colMap, 'Avalia\u00e7\u00f5es dispon\u00edveis')),
+              avaliacoesRespondidas: parseIntSafe(getVal(values, colMap, 'Avalia\u00e7\u00f5es respondidas')),
+              avaliacoesPendentes: parseIntSafe(getVal(values, colMap, 'Avalia\u00e7\u00f5es pendentes')),
+              avaliacoesAgendadas: parseIntSafe(getVal(values, colMap, 'Avalia\u00e7\u00f5es agendadas')),
+              mediaAvaliacoesDisponiveis: parseDecimalSafe(getVal(values, colMap, 'M\u00e9dia em avalia\u00e7\u00f5es dispon\u00edveis')),
+              mediaAvaliacoesRespondidas: parseDecimalSafe(getVal(values, colMap, 'M\u00e9dia em avalia\u00e7\u00f5es respondidas')),
+              concluidoDentroPrazo: getVal(values, colMap, 'Conclu\u00eddo dentro do prazo (%)') || null,
+              concluidoEmAtraso: getVal(values, colMap, 'Conclu\u00eddo em atraso (%)') || null,
+              naoConcluidoDentroPrazo: getVal(values, colMap, 'N\u00e3o Conclu\u00eddo e dentro do prazo (%)') || null,
+              naoConcluidoEmAtraso: getVal(values, colMap, 'N\u00e3o Conclu\u00eddo e em atraso (%)') || null,
+              uploadId,
+            });
+          }
+          
+          // Insert all records
+          const inserted = await db.insertStudentPerformanceBatch(records);
+          
+          // Update upload record
+          const summary = {
+            unmatchedStudents: Array.from(unmatchedStudents),
+            unmatchedTurmas: Array.from(unmatchedTurmas),
+            headers: headers,
+            totalColumns: headers.length,
+          };
+          
+          await db.updatePerformanceUpload(uploadId, {
+            totalRecords: totalRows,
+            processedRecords: inserted,
+            skippedRecords: skipped,
+            newAlunos: unmatchedStudents.size,
+            updatedRecords: inserted,
+            status: 'completed',
+            summary: summary as any,
+          });
+          
+          return {
+            success: true,
+            uploadId,
+            totalRows,
+            processedRecords: inserted,
+            skippedRecords: skipped,
+            unmatchedStudents: Array.from(unmatchedStudents),
+            unmatchedTurmas: Array.from(unmatchedTurmas),
+          };
+        } catch (error) {
+          await db.updatePerformanceUpload(uploadId, {
+            status: 'error',
+            errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
+          });
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `Erro ao processar CSV: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+          });
+        }
+      }),
+    
+    // Listar histórico de uploads de performance
+    listUploads: adminProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getPerformanceUploads(input?.limit || 20);
+      }),
+    
+    // Obter resumo dos dados de performance
+    summary: adminProcedure.query(async () => {
+      return await db.getStudentPerformanceSummary();
+    }),
+    
+    // Obter detalhes de um upload específico
+    getUpload: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPerformanceUploadById(input.id);
+      }),
+    
+    // Obter performance de um aluno específico
+    byAluno: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getStudentPerformanceByAluno(input.alunoId);
+      }),
+  }),
+
   // Formulas management
   formulas: router({
     list: adminProcedure.query(async () => {
@@ -2054,3 +2292,46 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+
+// ============ CSV HELPER FUNCTIONS ============
+
+/**
+ * Parse a CSV line respecting quoted fields
+ */
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+        current += '"';
+        i++; // Skip next quote
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  result.push(current.trim());
+  return result;
+}
+
+/**
+ * Get value from parsed CSV row by column name
+ */
+function getVal(values: string[], colMap: Record<string, number>, colName: string): string | undefined {
+  const idx = colMap[colName];
+  if (idx === undefined || idx >= values.length) return undefined;
+  const val = values[idx]?.trim();
+  if (!val || val === '-') return undefined;
+  return val;
+}

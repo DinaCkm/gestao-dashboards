@@ -375,6 +375,81 @@ export const assessmentCompetencias = mysqlTable("assessment_competencias", {
 export type AssessmentCompetencia = typeof assessmentCompetencias.$inferSelect;
 export type InsertAssessmentCompetencia = typeof assessmentCompetencias.$inferInsert;
 
+/**
+ * Performance Uploads - Histórico de uploads do relatório de performance
+ */
+export const performanceUploads = mysqlTable("performance_uploads", {
+  id: int("id").autoincrement().primaryKey(),
+  uploadedBy: int("uploadedBy").notNull(), // FK para users
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileKey: varchar("fileKey", { length: 512 }),
+  fileUrl: text("fileUrl"),
+  totalRecords: int("totalRecords").default(0).notNull(),
+  processedRecords: int("processedRecords").default(0).notNull(),
+  skippedRecords: int("skippedRecords").default(0).notNull(),
+  newAlunos: int("newAlunos").default(0).notNull(), // Alunos novos encontrados
+  updatedRecords: int("updatedRecords").default(0).notNull(), // Registros atualizados
+  status: mysqlEnum("status", ["processing", "completed", "error"]).default("processing").notNull(),
+  errorMessage: text("errorMessage"),
+  summary: json("summary"), // JSON com resumo detalhado
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PerformanceUpload = typeof performanceUploads.$inferSelect;
+export type InsertPerformanceUpload = typeof performanceUploads.$inferInsert;
+
+/**
+ * Student Performance - Dados de performance por aluno/competência/turma
+ * Atualizado via upload do relatório de performance CSV
+ * Cada registro = 1 aluno x 1 competência x 1 turma
+ */
+export const studentPerformance = mysqlTable("student_performance", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId"), // FK para alunos (null se aluno não encontrado)
+  externalUserId: varchar("externalUserId", { length: 100 }).notNull(), // Id Usuário da planilha
+  userName: varchar("userName", { length: 255 }).notNull(), // Nome do usuário
+  userEmail: varchar("userEmail", { length: 320 }), // Email
+  lastAccess: varchar("lastAccess", { length: 100 }), // Último acesso (texto original)
+  turmaId: int("turmaId"), // FK para turmas
+  externalTurmaId: varchar("externalTurmaId", { length: 100 }), // Id Turma da planilha
+  turmaName: varchar("turmaName", { length: 255 }), // Nome da turma
+  competenciaId: int("competenciaId"), // FK para competencias
+  externalCompetenciaId: varchar("externalCompetenciaId", { length: 100 }), // Id Competência da planilha
+  competenciaName: varchar("competenciaName", { length: 255 }), // Nome da competência
+  dataInicio: varchar("dataInicio", { length: 100 }), // Data de início (texto original)
+  dataConclusao: varchar("dataConclusao", { length: 100 }), // Data de conclusão (texto original)
+  totalAulas: int("totalAulas").default(0),
+  aulasDisponiveis: int("aulasDisponiveis").default(0),
+  aulasConcluidas: int("aulasConcluidas").default(0),
+  aulasEmAndamento: int("aulasEmAndamento").default(0),
+  aulasNaoIniciadas: int("aulasNaoIniciadas").default(0),
+  aulasAgendadas: int("aulasAgendadas").default(0),
+  progressoTotal: int("progressoTotal").default(0), // Percentual 0-100
+  cargaHorariaTotal: varchar("cargaHorariaTotal", { length: 20 }), // Ex: "01:30:00"
+  cargaHorariaConcluida: varchar("cargaHorariaConcluida", { length: 20 }),
+  progressoAulasDisponiveis: int("progressoAulasDisponiveis").default(0),
+  avaliacoesDiagnostico: int("avaliacoesDiagnostico").default(0),
+  mediaAvaliacoesDiagnostico: decimal("mediaAvaliacoesDiagnostico", { precision: 5, scale: 2 }),
+  avaliacoesFinais: int("avaliacoesFinais").default(0),
+  mediaAvaliacoesFinais: decimal("mediaAvaliacoesFinais", { precision: 5, scale: 2 }),
+  avaliacoesDisponiveis: int("avaliacoesDisponiveis").default(0),
+  avaliacoesRespondidas: int("avaliacoesRespondidas").default(0),
+  avaliacoesPendentes: int("avaliacoesPendentes").default(0),
+  avaliacoesAgendadas: int("avaliacoesAgendadas").default(0),
+  mediaAvaliacoesDisponiveis: decimal("mediaAvaliacoesDisponiveis", { precision: 5, scale: 2 }),
+  mediaAvaliacoesRespondidas: decimal("mediaAvaliacoesRespondidas", { precision: 5, scale: 2 }),
+  concluidoDentroPrazo: varchar("concluidoDentroPrazo", { length: 100 }),
+  concluidoEmAtraso: varchar("concluidoEmAtraso", { length: 100 }),
+  naoConcluidoDentroPrazo: varchar("naoConcluidoDentroPrazo", { length: 100 }),
+  naoConcluidoEmAtraso: varchar("naoConcluidoEmAtraso", { length: 100 }),
+  uploadId: int("uploadId"), // FK para performance_uploads
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StudentPerformance = typeof studentPerformance.$inferSelect;
+export type InsertStudentPerformance = typeof studentPerformance.$inferInsert;
+
 // Legacy tables kept for compatibility
 export const departments = mysqlTable("departments", {
   id: int("id").autoincrement().primaryKey(),
