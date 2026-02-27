@@ -731,10 +731,14 @@ export default function MuralAluno() {
 
   const isLoading = loadingUpcoming || loadingPast || loadingAnnouncements;
 
-  // Confirmed event IDs
-  const confirmedEventIds = useMemo(() => {
+  // Confirmed scheduled webinar IDs (mapeados de events -> scheduled_webinars)
+  const confirmedWebinarIds = useMemo(() => {
     if (!myAttendance) return new Set<number>();
-    return new Set(myAttendance.map((a: any) => a.eventId));
+    return new Set(
+      myAttendance
+        .filter((a: any) => a.scheduledWebinarId != null)
+        .map((a: any) => a.scheduledWebinarId)
+    );
   }, [myAttendance]);
 
   // Announcements by type
@@ -752,8 +756,10 @@ export default function MuralAluno() {
   const pendingCount = pendingAttendance?.length || 0;
 
   const getAttendanceStatus = (webinarId: number): "confirmed" | "pending" | null => {
-    if (confirmedEventIds.has(webinarId)) return "confirmed";
-    if (pendingAttendance?.some((p: any) => p.eventId === webinarId)) return "pending";
+    // Comparar com scheduledWebinarId (mapeado de events -> scheduled_webinars)
+    if (confirmedWebinarIds.has(webinarId)) return "confirmed";
+    // pending também retorna scheduledWebinarId agora
+    if (pendingAttendance?.some((p: any) => p.scheduledWebinarId === webinarId)) return "pending";
     return null;
   };
 

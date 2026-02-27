@@ -3253,6 +3253,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<{
 
     return {
       eventId: evt.id,
+      scheduledWebinarId: matchedWebinar?.id || null,
       eventName: evt.title,
       eventDate: evt.eventDate,
       hasParticipation: !!part,

@@ -1000,3 +1000,9 @@
 ## Fix: Presença já confirmada nas gravações (27/02/2026)
 - [x] Se aluno já tem presença confirmada: esconder "Marcar Presença", mostrar badge verde "Presença confirmada"
 - [x] Botão "Assistir" continua disponível independente do status de presença
+
+## Bug: Mapeamento events->scheduled_webinars no Mural (27/02/2026)
+- [x] myAttendance retorna eventId da tabela events, mas frontend compara com scheduled_webinars.id
+- [x] myAttendance filtra selfReportedAt != null, excluindo presenças importadas via planilha
+- [x] Corrigir: cruzar events com scheduled_webinars pelo título e retornar scheduledWebinarId
+- [x] Incluir presenças importadas (selfReportedAt = null) no status de presença

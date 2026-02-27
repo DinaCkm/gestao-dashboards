@@ -1,0 +1,8 @@
+{
+  "query": "SELECT u.id, u.name, u.email, ep.eventId, ep.status, ep.reflection, sw.title as webinar_title FROM users u LEFT JOIN event_participation ep ON u.id = ep.userId LEFT JOIN scheduled_webinars sw ON ep.eventId = sw.id WHERE u.name LIKE '%Valci%' LIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, ep.eventId, ep.status, ep.reflection, sw.title as webinar_title FROM users u LEFT JOIN event_participation ep ON u.id = ep.userId LEFT JOIN scheduled_webinars sw ON ep.eventId = sw.id WHERE u.name LIKE '%Valci%' LIMIT 20",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'ep.userid' in 'on clause'"
+  ]
+}

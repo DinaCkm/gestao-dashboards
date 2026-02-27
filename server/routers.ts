@@ -2558,12 +2558,25 @@ export const appRouter = router({
         const aluno = await db.getAlunoByEmail(ctx.user.email || '');
         if (!aluno) return [];
         const participations = await db.getEventParticipationByAluno(aluno.id);
-        return participations.filter(p => p.selfReportedAt !== null).map(p => ({
-          eventId: p.eventId,
-          reflexao: p.reflexao,
-          selfReportedAt: p.selfReportedAt,
-          status: p.status,
-        }));
+        // Buscar events do programa do aluno e scheduled_webinars para mapear por título
+        const allEvents = aluno.programId
+          ? await db.getEventsByProgram(aluno.programId)
+          : [];
+        const allScheduled = await db.listWebinars();
+        const eventMap = new Map(allEvents.map(e => [e.id, e]));
+        const scheduledByTitle = new Map(allScheduled.map(sw => [sw.title?.toLowerCase().trim(), sw]));
+
+        return participations.map(p => {
+          const evt = eventMap.get(p.eventId);
+          const matchedWebinar = evt ? scheduledByTitle.get(evt.title?.toLowerCase().trim() || '') : null;
+          return {
+            eventId: p.eventId,
+            scheduledWebinarId: matchedWebinar?.id || null,
+            reflexao: p.reflexao,
+            selfReportedAt: p.selfReportedAt,
+            status: p.status,
+          };
+        });
       }),
 
     // Admin: visualizar reflexões dos alunos
