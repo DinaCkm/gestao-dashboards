@@ -1161,3 +1161,6 @@
 
 ## Bug Crítico - Formulário Novo Webinar perde foco ao digitar (27/02/2026 - sessão 3)
 - [x] Investigar e corrigir perda de foco nos campos do formulário de criação de Novo Webinar (Gestão de Webinários) - causa: WebinarFormFields era arrow function dentro do render, recriando o DOM a cada keystroke. Corrigido para variável JSX.
+
+## Layout estourado - Página de Webinars (27/02/2026 - sessão 3)
+- [x] Ajustar layout da página de Gestão de Webinários - envolvida com DashboardLayout para padding e sidebar corretos
