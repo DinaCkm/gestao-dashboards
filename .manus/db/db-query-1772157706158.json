@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `announcements` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `title` varchar(500) NOT NULL,\n  `content` text,\n  `type` enum('webinar','course','activity','notice','news') NOT NULL DEFAULT 'notice',\n  `imageUrl` text,\n  `imageKey` varchar(512),\n  `actionUrl` varchar(500),\n  `actionLabel` varchar(100),\n  `programId` int,\n  `targetAudience` enum('all','sebrae_to','sebrae_acre','embrapii','banrisul') DEFAULT 'all',\n  `priority` int NOT NULL DEFAULT 0,\n  `publishAt` timestamp NULL,\n  `expiresAt` timestamp NULL,\n  `isActive` int NOT NULL DEFAULT 1,\n  `webinarId` int,\n  `createdBy` int NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute CREATE TABLE IF NOT EXISTS `announcements` (\n  `id` int AUTO_INCREMENT PRIMARY KEY,\n  `title` varchar(500) NOT NULL,\n  `content` text,\n  `type` enum('webinar','course','activity','notice','news') NOT NULL DEFAULT 'notice',\n  `imageUrl` text,\n  `imageKey` varchar(512),\n  `actionUrl` varchar(500),\n  `actionLabel` varchar(100),\n  `programId` int,\n  `targetAudience` enum('all','sebrae_to','sebrae_acre','embrapii','banrisul') DEFAULT 'all',\n  `priority` int NOT NULL DEFAULT 0,\n  `publishAt` timestamp NULL,\n  `expiresAt` timestamp NULL,\n  `isActive` int NOT NULL DEFAULT 1,\n  `webinarId` int,\n  `createdBy` int NOT NULL,\n  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 516
+}

@@ -1,4 +1,4 @@
-import { eq, and, or, desc, sql, not } from "drizzle-orm";
+import { eq, and, or, desc, asc, sql, not, gte, lt, inArray, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -21,7 +21,9 @@ import {
   planoIndividual, InsertPlanoIndividual, PlanoIndividual,
   taskLibrary, TaskLibrary, InsertTaskLibrary,
   performanceUploads, InsertPerformanceUpload, PerformanceUpload,
-  studentPerformance, InsertStudentPerformance, StudentPerformance
+  studentPerformance, InsertStudentPerformance, StudentPerformance,
+  scheduledWebinars, InsertScheduledWebinar, ScheduledWebinar,
+  announcements, InsertAnnouncement, Announcement
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -3008,4 +3010,151 @@ export async function getAllStudentPerformance(): Promise<StudentPerformance[]> 
   const db = await getDb();
   if (!db) return [];
   return await db.select().from(studentPerformance).orderBy(studentPerformance.userName, studentPerformance.competenciaName);
+}
+
+// ==================== SCHEDULED WEBINARS ====================
+
+export async function createWebinar(data: InsertScheduledWebinar): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(scheduledWebinars).values(data);
+  return result[0].insertId;
+}
+
+export async function updateWebinar(id: number, data: Partial<InsertScheduledWebinar>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(scheduledWebinars).set(data).where(eq(scheduledWebinars.id, id));
+}
+
+export async function deleteWebinar(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(scheduledWebinars).where(eq(scheduledWebinars.id, id));
+}
+
+export async function getWebinarById(id: number): Promise<ScheduledWebinar | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(scheduledWebinars).where(eq(scheduledWebinars.id, id));
+  return rows[0];
+}
+
+export async function listWebinars(statusFilter?: string): Promise<ScheduledWebinar[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (statusFilter && statusFilter !== "all") {
+    return await db.select().from(scheduledWebinars)
+      .where(eq(scheduledWebinars.status, statusFilter as any))
+      .orderBy(desc(scheduledWebinars.eventDate));
+  }
+  return await db.select().from(scheduledWebinars).orderBy(desc(scheduledWebinars.eventDate));
+}
+
+export async function listUpcomingWebinars(limit: number = 10): Promise<ScheduledWebinar[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(scheduledWebinars)
+    .where(and(
+      eq(scheduledWebinars.status, "published"),
+      gte(scheduledWebinars.eventDate, new Date())
+    ))
+    .orderBy(asc(scheduledWebinars.eventDate))
+    .limit(limit);
+}
+
+export async function listPastWebinars(limit: number = 10): Promise<ScheduledWebinar[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(scheduledWebinars)
+    .where(and(
+      inArray(scheduledWebinars.status, ["published", "completed"]),
+      lt(scheduledWebinars.eventDate, new Date())
+    ))
+    .orderBy(desc(scheduledWebinars.eventDate))
+    .limit(limit);
+}
+
+// ==================== ANNOUNCEMENTS ====================
+
+export async function createAnnouncement(data: InsertAnnouncement): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(announcements).values(data);
+  return result[0].insertId;
+}
+
+export async function updateAnnouncement(id: number, data: Partial<InsertAnnouncement>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(announcements).set(data).where(eq(announcements.id, id));
+}
+
+export async function deleteAnnouncement(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(announcements).where(eq(announcements.id, id));
+}
+
+export async function getAnnouncementById(id: number): Promise<Announcement | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(announcements).where(eq(announcements.id, id));
+  return rows[0];
+}
+
+export async function listAnnouncements(activeOnly: boolean = false): Promise<Announcement[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (activeOnly) {
+    return await db.select().from(announcements)
+      .where(eq(announcements.isActive, 1))
+      .orderBy(desc(announcements.priority), desc(announcements.createdAt));
+  }
+  return await db.select().from(announcements).orderBy(desc(announcements.priority), desc(announcements.createdAt));
+}
+
+export async function listActiveAnnouncementsForStudent(programId?: number): Promise<Announcement[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const now = new Date();
+  const conditions = [
+    eq(announcements.isActive, 1),
+  ];
+  
+  const rows = await db.select().from(announcements)
+    .where(and(...conditions))
+    .orderBy(desc(announcements.priority), desc(announcements.createdAt));
+  
+  // Filter in JS for more complex logic (publishAt, expiresAt, targetAudience)
+  return rows.filter(a => {
+    if (a.publishAt && new Date(a.publishAt) > now) return false;
+    if (a.expiresAt && new Date(a.expiresAt) < now) return false;
+    if (a.targetAudience === "all") return true;
+    if (!programId) return true;
+    // Match by programId if targetAudience is specific
+    return true; // For now allow all, can refine later
+  });
+}
+
+export async function getStudentEmailsByProgram(programId?: number): Promise<{email: string | null; name: string | null}[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (programId) {
+    return await db.select({ email: users.email, name: users.name })
+      .from(users)
+      .where(and(
+        eq(users.role, "user"),
+        eq(users.isActive, 1),
+        eq(users.programId, programId),
+        isNotNull(users.email)
+      ));
+  }
+  return await db.select({ email: users.email, name: users.name })
+    .from(users)
+    .where(and(
+      eq(users.role, "user"),
+      eq(users.isActive, 1),
+      isNotNull(users.email)
+    ));
 }

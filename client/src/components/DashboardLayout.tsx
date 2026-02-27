@@ -42,7 +42,9 @@ import {
   ClipboardEdit,
   ClipboardCheck,
   PlayCircle,
-  Compass
+  Compass,
+  Video,
+  Megaphone
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -92,6 +94,7 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: GraduationCap, label: "Turmas", path: "/turmas", roles: ["admin"] },
   { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias", roles: ["admin"] },
   { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["admin"] },
+  { icon: Video, label: "Webinars", path: "/webinars", roles: ["admin"] },
   { icon: Calculator, label: "Fórmulas", path: "/formulas", roles: ["admin"] },
   // Histórico agora está dentro de Gestão de Planilhas
   // { icon: Settings, label: "Configurações", path: "/configuracoes", roles: ["admin"] }, // TODO: implementar

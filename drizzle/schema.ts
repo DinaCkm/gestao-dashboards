@@ -508,3 +508,60 @@ export const taskLibrary = mysqlTable("task_library", {
 
 export type TaskLibrary = typeof taskLibrary.$inferSelect;
 export type InsertTaskLibrary = typeof taskLibrary.$inferInsert;
+
+/**
+ * Scheduled Webinars - Webinars cadastrados pelo admin para divulgação e gestão
+ */
+export const scheduledWebinars = mysqlTable("scheduled_webinars", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  theme: varchar("theme", { length: 255 }), // Tema do webinar
+  speaker: varchar("speaker", { length: 255 }), // Palestrante/apresentador
+  speakerBio: text("speakerBio"), // Mini-bio do palestrante
+  eventDate: timestamp("eventDate").notNull(), // Data e hora do evento
+  duration: int("duration").default(60), // Duração em minutos
+  meetingLink: varchar("meetingLink", { length: 500 }), // Link Google Meet/Zoom
+  youtubeLink: varchar("youtubeLink", { length: 500 }), // Link YouTube (gravação)
+  cardImageUrl: text("cardImageUrl"), // URL da imagem do cartão de divulgação (S3)
+  cardImageKey: varchar("cardImageKey", { length: 512 }), // Key no S3
+  programId: int("programId"), // Empresa específica ou null para todos
+  targetAudience: mysqlEnum("targetAudience", ["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).default("all"),
+  status: mysqlEnum("status", ["draft", "published", "completed", "cancelled"]).default("draft").notNull(),
+  reminderSent: int("reminderSent").default(0).notNull(), // 0 = não enviado, 1 = enviado
+  reminderSentAt: timestamp("reminderSentAt"),
+  createdBy: int("createdBy").notNull(), // FK para users
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ScheduledWebinar = typeof scheduledWebinars.$inferSelect;
+export type InsertScheduledWebinar = typeof scheduledWebinars.$inferInsert;
+
+/**
+ * Announcements - Avisos, divulgações de cursos, atividades extras
+ * Aparece no mural do aluno
+ */
+export const announcements = mysqlTable("announcements", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 500 }).notNull(),
+  content: text("content"), // Conteúdo do aviso (pode ser HTML/markdown)
+  type: mysqlEnum("type", ["webinar", "course", "activity", "notice", "news"]).default("notice").notNull(),
+  imageUrl: text("imageUrl"), // URL da imagem de divulgação (S3)
+  imageKey: varchar("imageKey", { length: 512 }), // Key no S3
+  actionUrl: varchar("actionUrl", { length: 500 }), // Link externo (inscrição, plataforma, etc)
+  actionLabel: varchar("actionLabel", { length: 100 }), // Texto do botão (ex: "Inscreva-se", "Acessar")
+  programId: int("programId"), // Empresa específica ou null para todos
+  targetAudience: mysqlEnum("targetAudience", ["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).default("all"),
+  priority: int("priority").default(0).notNull(), // Maior = mais destaque
+  publishAt: timestamp("publishAt"), // Data de publicação (agendamento)
+  expiresAt: timestamp("expiresAt"), // Data de expiração
+  isActive: int("isActive").default(1).notNull(),
+  webinarId: int("webinarId"), // FK para scheduled_webinars (se for divulgação de webinar)
+  createdBy: int("createdBy").notNull(), // FK para users
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Announcement = typeof announcements.$inferSelect;
+export type InsertAnnouncement = typeof announcements.$inferInsert;

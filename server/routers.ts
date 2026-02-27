@@ -9,6 +9,7 @@ import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, valida
 import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicators, calcularIndicadoresAlunoFiltrado, calcularPerformanceFiltrada, CompetenciaObrigatoria, CicloExecucaoData } from './indicatorsCalculator';
 import { notifyOwner } from "./_core/notification";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
+import { storagePut } from "./storage";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -2287,6 +2288,213 @@ export const appRouter = router({
         const { id, ...data } = input;
         await db.updateAssessmentCompetencia(id, data);
         return { success: true };
+      }),
+  }),
+
+  // ==================== WEBINARS MANAGEMENT ====================
+  webinars: router({
+    list: adminProcedure
+      .input(z.object({ status: z.string().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.listWebinars(input?.status);
+      }),
+
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getWebinarById(input.id);
+      }),
+
+    create: adminProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        description: z.string().optional(),
+        theme: z.string().optional(),
+        speaker: z.string().optional(),
+        speakerBio: z.string().optional(),
+        eventDate: z.string(),
+        duration: z.number().optional(),
+        meetingLink: z.string().optional(),
+        youtubeLink: z.string().optional(),
+        targetAudience: z.enum(['all', 'sebrae_to', 'sebrae_acre', 'embrapii', 'banrisul']).optional(),
+        status: z.enum(['draft', 'published', 'completed', 'cancelled']).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createWebinar({
+          ...input,
+          eventDate: new Date(input.eventDate),
+          createdBy: ctx.user.id,
+        });
+        return { id, success: true };
+      }),
+
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        theme: z.string().optional(),
+        speaker: z.string().optional(),
+        speakerBio: z.string().optional(),
+        eventDate: z.string().optional(),
+        duration: z.number().optional(),
+        meetingLink: z.string().optional(),
+        youtubeLink: z.string().optional(),
+        targetAudience: z.enum(['all', 'sebrae_to', 'sebrae_acre', 'embrapii', 'banrisul']).optional(),
+        status: z.enum(['draft', 'published', 'completed', 'cancelled']).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const updateData: any = { ...data };
+        if (data.eventDate) updateData.eventDate = new Date(data.eventDate);
+        await db.updateWebinar(id, updateData);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteWebinar(input.id);
+        return { success: true };
+      }),
+
+    uploadCard: adminProcedure
+      .input(z.object({
+        webinarId: z.number(),
+        fileBase64: z.string(),
+        fileName: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.fileBase64, 'base64');
+        const ext = input.fileName.split('.').pop() || 'png';
+        const randomSuffix = Math.random().toString(36).substring(2, 10);
+        const fileKey = `webinar-cards/webinar-${input.webinarId}-${randomSuffix}.${ext}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        await db.updateWebinar(input.webinarId, {
+          cardImageUrl: url,
+          cardImageKey: fileKey,
+        });
+        return { url, success: true };
+      }),
+
+    sendReminder: adminProcedure
+      .input(z.object({ webinarId: z.number() }))
+      .mutation(async ({ input }) => {
+        const webinar = await db.getWebinarById(input.webinarId);
+        if (!webinar) throw new TRPCError({ code: 'NOT_FOUND', message: 'Webinar não encontrado' });
+        
+        // Get all active student emails
+        const students = await db.getStudentEmailsByProgram();
+        const validEmails = students.filter(s => s.email).map(s => ({ email: s.email!, name: s.name || 'Aluno' }));
+        
+        if (validEmails.length === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Nenhum aluno com email cadastrado encontrado' });
+        }
+        
+        // Send notification to owner about the reminder
+        const eventDateStr = webinar.eventDate ? new Date(webinar.eventDate).toLocaleDateString('pt-BR') : 'Data não definida';
+        await notifyOwner({
+          title: `Lembrete de Webinar Enviado`,
+          content: `Lembrete do webinar "${webinar.title}" (${eventDateStr}) enviado para ${validEmails.length} alunos.`,
+        });
+        
+        // Update reminder status
+        await db.updateWebinar(input.webinarId, {
+          reminderSent: 1,
+          reminderSentAt: new Date(),
+        });
+        
+        return { success: true, emailsSent: validEmails.length };
+      }),
+
+    // Public endpoint for students to see upcoming webinars
+    upcoming: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.listUpcomingWebinars(input?.limit || 10);
+      }),
+
+    past: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.listPastWebinars(input?.limit || 10);
+      }),
+  }),
+
+  // ==================== ANNOUNCEMENTS ====================
+  announcements: router({
+    list: adminProcedure
+      .input(z.object({ activeOnly: z.boolean().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.listAnnouncements(input?.activeOnly);
+      }),
+
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAnnouncementById(input.id);
+      }),
+
+    create: adminProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        content: z.string().optional(),
+        type: z.enum(['webinar', 'course', 'activity', 'notice', 'news']),
+        imageUrl: z.string().optional(),
+        actionUrl: z.string().optional(),
+        actionLabel: z.string().optional(),
+        targetAudience: z.enum(['all', 'sebrae_to', 'sebrae_acre', 'embrapii', 'banrisul']).optional(),
+        priority: z.number().optional(),
+        publishAt: z.string().optional(),
+        expiresAt: z.string().optional(),
+        isActive: z.number().optional(),
+        webinarId: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const data: any = { ...input, createdBy: ctx.user.id };
+        if (input.publishAt) data.publishAt = new Date(input.publishAt);
+        if (input.expiresAt) data.expiresAt = new Date(input.expiresAt);
+        const id = await db.createAnnouncement(data);
+        return { id, success: true };
+      }),
+
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        content: z.string().optional(),
+        type: z.enum(['webinar', 'course', 'activity', 'notice', 'news']).optional(),
+        imageUrl: z.string().optional(),
+        actionUrl: z.string().optional(),
+        actionLabel: z.string().optional(),
+        targetAudience: z.enum(['all', 'sebrae_to', 'sebrae_acre', 'embrapii', 'banrisul']).optional(),
+        priority: z.number().optional(),
+        publishAt: z.string().optional(),
+        expiresAt: z.string().optional(),
+        isActive: z.number().optional(),
+        webinarId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const updateData: any = { ...data };
+        if (data.publishAt) updateData.publishAt = new Date(data.publishAt);
+        if (data.expiresAt) updateData.expiresAt = new Date(data.expiresAt);
+        await db.updateAnnouncement(id, updateData);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteAnnouncement(input.id);
+        return { success: true };
+      }),
+
+    // Public endpoint for students
+    active: protectedProcedure
+      .query(async () => {
+        return await db.listActiveAnnouncementsForStudent();
       }),
   }),
 });

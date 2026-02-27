@@ -897,3 +897,31 @@
 - [x] Processar CSV: mapear alunos, competências e turmas (100% match)
 - [x] Exibir histórico de uploads e resumo dos dados
 - [x] Testar fluxo completo de upload (1464 registros, 13 testes vitest passando)
+
+## Módulo de Gestão de Webinars - Admin (26/02/2026)
+- [x] Criar tabela scheduled_webinars no schema (título, tema, data, horário, link, descrição, imagem do cartão, status)
+- [x] Criar tabela announcements/avisos no schema (título, conteúdo, tipo, imagem, data publicação, ativo)
+- [x] Migrar schema para o banco
+- [x] Criar endpoints tRPC para CRUD de webinars (listar, criar, editar, excluir)
+- [x] Criar endpoints tRPC para CRUD de avisos/divulgações
+- [x] Criar endpoint para envio de notificação/lembrete sobre webinars
+- [x] Criar página de gestão de webinars na área admin (cadastro, edição, upload de cartão)
+- [ ] Criar página de gestão de avisos/divulgações na área admin
+- [x] Botão de envio de notificação/lembrete por webinar
+- [ ] Criar tela de abertura/mural do aluno com divulgações (webinars, cursos, atividades extras, avisos)
+- [x] Adicionar menu Webinars no sidebar admin
+
+## Atualização de Eventos - 3 Planilhas (26/02/2026)
+- [x] Importar eventos SEBRAE TO (1009 registros, 50 alunos, 22 eventos)
+- [x] Importar eventos EMBRAPII (331 registros, 16 alunos, 25 eventos)
+- [x] Importar eventos SEBRAE ACRE (888 registros, 33 alunos, 27 eventos)
+- [x] Limpar eventos antigos e substituir pelos novos (2228 participações, 32 eventos, 0 erros)
+- [x] Verificar dados nos dashboards (32 eventos + 32 scheduled_webinars criados)
+
+## Gestão de Webinars - Admin (26/02/2026)
+- [x] Criar formulário para admin cadastrar novos webinars (título, tema, data, palestrante, link, cartão)
+- [x] Permitir editar webinars existentes (incluir link de gravação nos antigos)
+- [x] Listar webinars com filtros (por status e busca textual)
+- [x] Upload de cartão de divulgação por webinar (S3)
+- [x] Botão de envio de notificação/lembrete por webinar
+- [x] Webinars antigos importados das planilhas aparecem na lista para edição

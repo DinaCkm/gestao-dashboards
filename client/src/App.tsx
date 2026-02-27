@@ -31,6 +31,7 @@ import Assessment from "./pages/Assessment";
 import PortalAluno from "./pages/PortalAluno";
 import Tutoriais from "./pages/Tutoriais";
 import PerformanceUpload from "./pages/PerformanceUpload";
+import WebinarsAdmin from "./pages/WebinarsAdmin";
 
 function Router() {
   return (
@@ -60,6 +61,7 @@ function Router() {
       <Route path={"/portal-aluno"} component={PortalAluno} />
       <Route path={"/tutoriais"} component={Tutoriais} />
       <Route path={"/performance-upload"} component={PerformanceUpload} />
+      <Route path={"/webinars"} component={WebinarsAdmin} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
