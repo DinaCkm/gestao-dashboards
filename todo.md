@@ -1174,3 +1174,6 @@
 ## Bugs Webinar - Formulário fecha ao digitar e dificuldade para salvar (27/02/2026 - sessão 3)
 - [x] Corrigido: tela de edição de webinar fechava ao interagir com Select (Portal) - adicionado onPointerDownOutside/onInteractOutside preventDefault nos DialogContent de criar e editar
 - [x] Corrigido: campos difíceis de salvar - mesmo problema do dialog fechando prematuramente, resolvido com a mesma correção
+
+## Bug Persistente - Dialog Novo Assessment fecha ao selecionar trilha (27/02/2026 - sessão 3)
+- [x] Correção definitiva aplicada: criado SelectContentNoPortal (renderiza dropdown dentro do DOM do Dialog, sem Portal) em Assessment, Webinars e AdminCadastros

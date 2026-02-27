@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
@@ -1061,11 +1061,11 @@ function GerentesTab({ gerentes, empresas, loading, onCreate, onUpdateAcesso, is
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a empresa" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContentNoPortal>
                       {empresas.map((emp) => (
                         <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
                       ))}
-                    </SelectContent>
+                    </SelectContentNoPortal>
                   </Select>
                 </div>
               </div>
@@ -1157,11 +1157,11 @@ function GerentesTab({ gerentes, empresas, loading, onCreate, onUpdateAcesso, is
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione a empresa" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContentNoPortal>
                           {empresas.map((emp) => (
                             <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
                           ))}
-                        </SelectContent>
+                        </SelectContentNoPortal>
                       </Select>
                     </div>
                   </div>

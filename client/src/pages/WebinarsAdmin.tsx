@@ -17,6 +17,7 @@ import {
 import {
   Select,
   SelectContent,
+  SelectContentNoPortal,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -419,13 +420,13 @@ export default function WebinarsAdmin() {
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContentNoPortal>
               {Object.entries(AUDIENCE_LABELS).map(([key, label]) => (
                 <SelectItem key={key} value={key}>
                   {label}
                 </SelectItem>
               ))}
-            </SelectContent>
+            </SelectContentNoPortal>
           </Select>
         </div>
         <div className="grid gap-2">
@@ -437,13 +438,13 @@ export default function WebinarsAdmin() {
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContentNoPortal>
               {Object.entries(STATUS_LABELS).map(([key, label]) => (
                 <SelectItem key={key} value={key}>
                   {label}
                 </SelectItem>
               ))}
-            </SelectContent>
+            </SelectContentNoPortal>
           </Select>
         </div>
       </div>

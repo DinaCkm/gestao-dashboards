@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -814,11 +814,11 @@ function CreateAssessmentDialog({
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a trilha" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContentNoPortal>
                   {trilhas.map(t => (
                     <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
                   ))}
-                </SelectContent>
+                </SelectContentNoPortal>
               </Select>
             </div>
 
@@ -828,11 +828,11 @@ function CreateAssessmentDialog({
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a mentora" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContentNoPortal>
                   {mentores.map(m => (
                     <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>
                   ))}
-                </SelectContent>
+                </SelectContentNoPortal>
               </Select>
             </div>
 
