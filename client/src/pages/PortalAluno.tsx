@@ -1362,6 +1362,7 @@ export default function PortalAluno() {
                   : `${firstName}, acompanhe seu progresso no programa de desenvolvimento.`
                 }
               </p>
+
             </div>
             <div className="flex gap-2">
               <Button

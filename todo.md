@@ -847,3 +847,6 @@
 
 ## Campos do Cadastro em Branco (26/02/2026)
 - [x] Deixar campos sem dados do banco em branco (telefone, empresa, cargo, área, experiência) sem placeholder
+
+## Mentora Real no Portal do Aluno (26/02/2026)
+- [x] Exibir nome da mentora real do aluno apenas no Meu Painel (já existia como badge)
