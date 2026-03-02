@@ -1177,3 +1177,17 @@
 
 ## Bug Persistente - Dialog Novo Assessment fecha ao selecionar trilha (27/02/2026 - sessão 3)
 - [x] Correção definitiva aplicada: criado SelectContentNoPortal (renderiza dropdown dentro do DOM do Dialog, sem Portal) em Assessment, Webinars e AdminCadastros
+
+## Análise e respostas para o usuário (27/02/2026 - sessão 3)
+- [ ] Analisar: onde a mentora vê em que sessão o mentorado está (controle de sessões)
+- [ ] Analisar: onde a mentora define qual trabalho prático o aluno vai fazer
+- [ ] Analisar: existe trabalho prático como indicador? onde é atribuído?
+- [ ] Analisar: onde a mentora seleciona na biblioteca de trabalhos práticos
+- [ ] Analisar: onde a mentora define a meta com o aluno
+- [ ] Bug persistente: formulário de Novo Assessment ainda fecha ao selecionar trilha (corrigir definitivamente)
+
+## Importação de dados da planilha COMPETENCIAS-JORNADAS (02/03/2026)
+- [x] Verificar correspondência entre planilha e banco (alunos, competências, trilhas)
+- [x] Inserir dados no banco: Assessments/PDI com Macro Ciclos e Micro Ciclos por competência
+- [x] Implementar visualização da jornada na área do aluno (programa, macro ciclos, micro ciclos, obrigatórias/opcionais)
+- [ ] Performance geral calculada apenas sobre competências obrigatórias

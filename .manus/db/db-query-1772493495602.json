@@ -1,0 +1,892 @@
+{
+  "query": "SELECT id, name, externalId, programId, turmaId FROM alunos ORDER BY name LIMIT 200;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, externalId, programId, turmaId FROM alunos ORDER BY name LIMIT 200;",
+  "rows": [
+    {
+      "id": "30047",
+      "name": "Admary Monteiro Barbosa",
+      "externalId": "667257",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30033",
+      "name": "Adonay Fares Custódio Dos Santos",
+      "externalId": "616662",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30012",
+      "name": "Adriana Elizabete De Souza Dantas",
+      "externalId": "605365",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30020",
+      "name": "Adrielle De Araújo Santos Bessa",
+      "externalId": "615723",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30021",
+      "name": "Aldemar Dos Santos Maciel",
+      "externalId": "615724",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30048",
+      "name": "Aldeni Batista Torres",
+      "externalId": "667258",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30049",
+      "name": "Alencar Hubner Borelli",
+      "externalId": "667261",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30100",
+      "name": "Alexandre Crepory Abbott de Oliveira",
+      "externalId": "716197",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30034",
+      "name": "Allan Kassio De Oliveira Santos Ribeiro  ",
+      "externalId": "651876",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30050",
+      "name": "Alorran de Freitas Barbosa",
+      "externalId": "667262",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30051",
+      "name": "Amaggeldo Barbosa",
+      "externalId": "667265",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30093",
+      "name": "Ana Cássia de Oliveira Costa",
+      "externalId": "696499",
+      "programId": "17",
+      "turmaId": "30008"
+    },
+    {
+      "id": "30022",
+      "name": "Ana Claudia Silva De Oliveira",
+      "externalId": "615725",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30052",
+      "name": "Ana Paula Alves Santos",
+      "externalId": "667266",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30053",
+      "name": "Andre Silva Gomes",
+      "externalId": "667267",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30054",
+      "name": "Andreia Rodrigues Facundes",
+      "externalId": "667269",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30055",
+      "name": "Antonio Louça Curcino",
+      "externalId": "667270",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30092",
+      "name": "Antonio Luis Ferreira dos Anjos Filho",
+      "externalId": "696498",
+      "programId": "17",
+      "turmaId": "30008"
+    },
+    {
+      "id": "30035",
+      "name": "Brenno Soffredi Passoni",
+      "externalId": "651877",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30080",
+      "name": "BRUNO DE JESUS RODRIGUES",
+      "externalId": "676283",
+      "programId": "17",
+      "turmaId": "30005"
+    },
+    {
+      "id": "30056",
+      "name": "Bruno Henrique Vila Verde",
+      "externalId": "667271",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30057",
+      "name": "Bruno Martins Vieira",
+      "externalId": "667272",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "215",
+      "name": "CARINE DONGENSKI",
+      "externalId": "605214",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30036",
+      "name": "Carolina Borges Moreira",
+      "externalId": "651878",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "207",
+      "name": "CATIA CARGNIN",
+      "externalId": "605206",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30058",
+      "name": "Cesar Augusto De Sa Moreira",
+      "externalId": "667275",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30023",
+      "name": "Cezarinete Alves Izel Mansour",
+      "externalId": "615726",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30011",
+      "name": "Claudia Maia Da Silva",
+      "externalId": "605363",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30013",
+      "name": "Claudia Veras Baima",
+      "externalId": "606311",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "211",
+      "name": "CRISTIANE HENN",
+      "externalId": "605210",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "199",
+      "name": "DANIELA RIVA KELLER",
+      "externalId": "605198",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "204",
+      "name": "DANIELE FERNANDES OLIVEIRA",
+      "externalId": "605203",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30086",
+      "name": "DENISE DA SILVA NUNES",
+      "externalId": "676289",
+      "programId": "17",
+      "turmaId": "30005"
+    },
+    {
+      "id": "30019",
+      "name": "Diego Biondi De Faria",
+      "externalId": "612269",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "209",
+      "name": "DIEGO E SILVA DIAS",
+      "externalId": "605208",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30037",
+      "name": "Diego Renyer de Miranda Araújo",
+      "externalId": "651879",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30059",
+      "name": "Edvaldo Pereira Lima Junior",
+      "externalId": "667277",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30060",
+      "name": "Eligeneth Resplandes Pimentel Gomes",
+      "externalId": "667278",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30061",
+      "name": "Eliwania Dos Santos Silva",
+      "externalId": "667279",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30088",
+      "name": "EMERSON MONTENEGRO LIMA",
+      "externalId": "676291",
+      "programId": "17",
+      "turmaId": "30005"
+    },
+    {
+      "id": "30038",
+      "name": "Etienne Lopes Ribeiro de Arruda",
+      "externalId": "651880",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "202",
+      "name": "FABIANA DE BRITO GOMES",
+      "externalId": "605201",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "220",
+      "name": "FABIANO ROHSLER",
+      "externalId": "605221",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30039",
+      "name": "Fabio Maya Cavalcante",
+      "externalId": "651881",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30001",
+      "name": "Fabio Silva De Oliveira",
+      "externalId": "605349",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "217",
+      "name": "FATIMA CORBELLINI",
+      "externalId": "605218",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "221",
+      "name": "FERNANDA DA SILVA",
+      "externalId": "605222",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "219",
+      "name": "FERNANDA TORZECKI COPETTI",
+      "externalId": "605220",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "214",
+      "name": "FERNANDO BECKER ALVES",
+      "externalId": "605213",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "216",
+      "name": "FERNANDO STRICK CAIEL",
+      "externalId": "605215",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30040",
+      "name": "Flavia Pereira Balieiro Salgado",
+      "externalId": "651882",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30017",
+      "name": "Flávia Vanessa Huck Oliveira",
+      "externalId": "607908",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30006",
+      "name": "Francimir Do Nascimento Franca",
+      "externalId": "605355",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30024",
+      "name": "Francinei Do Socorro Lima Dos Santos",
+      "externalId": "615728",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30085",
+      "name": "FRANCISCO DE ASSIS DIAS RAMOS",
+      "externalId": "676288",
+      "programId": "17",
+      "turmaId": "30005"
+    },
+    {
+      "id": "206",
+      "name": "GABRIEL BASSO DAMO",
+      "externalId": "605205",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30025",
+      "name": "Gabriel Botelho Da Silva",
+      "externalId": "615729",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30062",
+      "name": "Gabriela Tomasi",
+      "externalId": "667280",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30063",
+      "name": "Gilzane Pereira Amaral",
+      "externalId": "667282",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30003",
+      "name": "Hellen Kelma Araújo Chaves",
+      "externalId": "605351",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30064",
+      "name": "Hide Senna De Sousa Soares",
+      "externalId": "667283",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30041",
+      "name": "Ilda Bisinotti ",
+      "externalId": "651883",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30042",
+      "name": "Ingrid de Sousa Pereira",
+      "externalId": "651884",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30008",
+      "name": "Izabel Cristina De Oliveira Barros",
+      "externalId": "605359",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30065",
+      "name": "Jacirley Pereira Do Nascimento",
+      "externalId": "667284",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30084",
+      "name": "JACKELINE DE SOUZA LIMA",
+      "externalId": "676287",
+      "programId": "17",
+      "turmaId": "30005"
+    },
+    {
+      "id": "30018",
+      "name": "Jailson Barbosa De Araújo",
+      "externalId": "610384",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30014",
+      "name": "Janaina Feitosa",
+      "externalId": "607024",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30026",
+      "name": "Jersey James Da Costa",
+      "externalId": "615730",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30004",
+      "name": "Joelma Da Silva Mourão",
+      "externalId": "605353",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30066",
+      "name": "Joseane Rodrigues Leite",
+      "externalId": "667285",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "208",
+      "name": "JOSIANE CLAIRE SCHNEIDER LEMOS",
+      "externalId": "605207",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30010",
+      "name": "Julciléia Da Silva Ferreira",
+      "externalId": "605362",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30082",
+      "name": "JULIANA MASSON PREDIGER",
+      "externalId": "676285",
+      "programId": "17",
+      "turmaId": "30005"
+    },
+    {
+      "id": "30015",
+      "name": "Katiele Siqueira Maia",
+      "externalId": "607211",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30027",
+      "name": "Laiz Maria Montenegro Mappes",
+      "externalId": "615731",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30067",
+      "name": "Layala Cardoso Da Silva Istofel",
+      "externalId": "667286",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30068",
+      "name": "Leonardo Campelo Leite Guedes",
+      "externalId": "667288",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "223",
+      "name": "LISIANE DAMBROS",
+      "externalId": "605224",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30028",
+      "name": "Livia Nunes De Freitas Maia",
+      "externalId": "615732",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30043",
+      "name": "Luan Saldanha Oliveira",
+      "externalId": "651885",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30098",
+      "name": "Luciana Carvalho de Aguiar",
+      "externalId": "702807",
+      "programId": "17",
+      "turmaId": "30008"
+    },
+    {
+      "id": "30044",
+      "name": "Luciano Cunha de Sousa",
+      "externalId": "651886",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30029",
+      "name": "Marcelo Castro Macedo",
+      "externalId": "615733",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "205",
+      "name": "MARCIO PETTINE SANTOS",
+      "externalId": "605204",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "201",
+      "name": "MARCO AURELIO MARCONATO",
+      "externalId": "605200",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30002",
+      "name": "Marcos Paulo Maciente",
+      "externalId": "605350",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "210",
+      "name": "MARCOS PESCE PINTO",
+      "externalId": "605209",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30069",
+      "name": "Marcus Vinicius Vieira Queiroz",
+      "externalId": "667289",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "200",
+      "name": "MARIA DE FATIMA MACIEL PEREIRA",
+      "externalId": "605199",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "213",
+      "name": "MARIA EULALIA GOMES BRUNI",
+      "externalId": "605212",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30030",
+      "name": "Marinete Lourdes Araujo De Queiroz",
+      "externalId": "615734",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "203",
+      "name": "MARVIN DE ALMEIDA FONTANA",
+      "externalId": "605202",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30090",
+      "name": "Mayara Rodrigues de Freitas",
+      "externalId": "694318",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30070",
+      "name": "Millena Pereira Lima Rodrigues",
+      "externalId": "667292",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30094",
+      "name": "Mirelle Soares Milhomens",
+      "externalId": "696500",
+      "programId": "17",
+      "turmaId": "30008"
+    },
+    {
+      "id": "30005",
+      "name": "Miriam Nazareth Cardenas Moreno",
+      "externalId": "605354",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30007",
+      "name": "Natana Dourado Sousa",
+      "externalId": "605357",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30071",
+      "name": "Nemias Gomes",
+      "externalId": "667293",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30081",
+      "name": "ODILO JUNIOR OLIVEIRA CARVALHO",
+      "externalId": "676284",
+      "programId": "17",
+      "turmaId": "30005"
+    },
+    {
+      "id": "30072",
+      "name": "Paula Dos Reis Coelho Alencar Sousa",
+      "externalId": "667295",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30046",
+      "name": "Paulo Borges",
+      "externalId": "653477",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30089",
+      "name": "PEDRO EMILIO RODRIGUES ALVES DE ARAUJO",
+      "externalId": "676292",
+      "programId": "17",
+      "turmaId": "30005"
+    },
+    {
+      "id": "30073",
+      "name": "Pedro Junior Da Rocha Silva",
+      "externalId": "667297",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "224",
+      "name": "RAFAEL CARVALHO DE SOUZA",
+      "externalId": "605225",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30074",
+      "name": "Renata Moura Alves Simas",
+      "externalId": "667298",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30009",
+      "name": "Ruama Araujo Dos Santos Demir",
+      "externalId": "605361",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "212",
+      "name": "SANDRA REGINA KOCHEM CAVALHEIRO",
+      "externalId": "605211",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30016",
+      "name": "Sônia Caroline Suárez da Costa Pinheiro",
+      "externalId": "607212",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "222",
+      "name": "THAÍS BAGNARA",
+      "externalId": "605223",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30075",
+      "name": "Thais Neres Vieira",
+      "externalId": "667300",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "218",
+      "name": "THAIS ROSALIA TEIXEIRA DA SILVA",
+      "externalId": "605219",
+      "programId": "19",
+      "turmaId": "36"
+    },
+    {
+      "id": "30045",
+      "name": "Thiago Bizerra Fideles",
+      "externalId": "651887",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30076",
+      "name": "Thiago Dias Da Silva",
+      "externalId": "667303",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30079",
+      "name": "THIAGO MILHOMEM SOARES",
+      "externalId": "676282",
+      "programId": "17",
+      "turmaId": "30005"
+    },
+    {
+      "id": "30096",
+      "name": "Usuário Teste",
+      "externalId": "696504",
+      "programId": "16",
+      "turmaId": "30010"
+    },
+    {
+      "id": "30077",
+      "name": "Valci Pereira Da Silva Junior",
+      "externalId": "667304",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30099",
+      "name": "Vanessa Bertholdo Vargas",
+      "externalId": "709682",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30031",
+      "name": "Vanessa Melo França",
+      "externalId": "615735",
+      "programId": "16",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30078",
+      "name": "Vera Lucia Teodoro Braga",
+      "externalId": "667306",
+      "programId": "17",
+      "turmaId": "30003"
+    },
+    {
+      "id": "30095",
+      "name": "Vivian Nascimento Reis",
+      "externalId": "696501",
+      "programId": "17",
+      "turmaId": "30008"
+    },
+    {
+      "id": "30091",
+      "name": "Walbenia Lemos da Silva Torres",
+      "externalId": "696497",
+      "programId": "17",
+      "turmaId": "30008"
+    },
+    {
+      "id": "30097",
+      "name": "Wandemberg Pereira Rodrigues",
+      "externalId": "702806",
+      "programId": "17",
+      "turmaId": "30008"
+    },
+    {
+      "id": "30087",
+      "name": "WANESSA SOBREIRA DOS SANTOS MARTINS",
+      "externalId": "676290",
+      "programId": "17",
+      "turmaId": "30005"
+    },
+    {
+      "id": "30083",
+      "name": "WESLEY CARDOSO BATISTA",
+      "externalId": "676286",
+      "programId": "17",
+      "turmaId": "30005"
+    },
+    {
+      "id": "30032",
+      "name": "Yuri Willian De Jesus Lima",
+      "externalId": "615736",
+      "programId": "16",
+      "turmaId": "30001"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\texternalId\tprogramId\tturmaId\n30047\tAdmary Monteiro Barbosa\t667257\t17\t30003\n30033\tAdonay Fares Custódio Dos Santos\t616662\t16\t30001\n30012\tAdriana Elizabete De Souza Dantas\t605365\t16\t30001\n30020\tAdrielle De Araújo Santos Bessa\t615723\t16\t30001\n30021\tAldemar Dos Santos Maciel\t615724\t16\t30001\n30048\tAldeni Batista Torres\t667258\t17\t30003\n30049\tAlencar Hubner Borelli\t667261\t17\t30003\n30100\tAlexandre Crepory Abbott de Oliveira\t716197\t18\t30002\n30034\tAllan Kassio De Oliveira Santos Ribeiro  \t651876\t18\t30002\n30050\tAlorran de Freitas Barbosa\t667262\t17\t30003\n30051\tAmaggeldo Barbosa\t667265\t17\t30003\n30093\tAna Cássia de Oliveira Costa\t696499\t17\t30008\n30022\tAna Claudia Silva De Oliveira\t615725\t16\t30001\n30052\tAna Paula Alves Santos\t667266\t17\t30003\n30053\tAndre Silva Gomes\t667267\t17\t30003\n30054\tAndreia Rodrigues Facundes\t667269\t17\t30003\n30055\tAntonio Louça Curcino\t667270\t17\t30003\n30092\tAntonio Luis Ferreira dos Anjos Filho\t696498\t17\t30008\n30035\tBrenno Soffredi Passoni\t651877\t18\t30002\n30080\tBRUNO DE JESUS RODRIGUES\t676283\t17\t30005\n30056\tBruno Henrique Vila Verde\t667271\t17\t30003\n30057\tBruno Martins Vieira\t667272\t17\t30003\n215\tCARINE DONGENSKI\t605214\t19\t36\n30036\tCarolina Borges Moreira\t651878\t18\t30002\n207\tCATIA CARGNIN\t605206\t19\t36\n30058\tCesar Augusto De Sa Moreira\t667275\t17\t30003\n30023\tCezarinete Alves Izel Mansour\t615726\t16\t30001\n30011\tClaudia Maia Da Silva\t605363\t16\t30001\n30013\tClaudia Veras Baima\t606311\t16\t30001\n211\tCRISTIANE HENN\t605210\t19\t36\n199\tDANIELA RIVA KELLER\t605198\t19\t36\n204\tDANIELE FERNANDES OLIVEIRA\t605203\t19\t36\n30086\tDENISE DA SILVA NUNES\t676289\t17\t30005\n30019\tDiego Biondi De Faria\t612269\t16\t30001\n209\tDIEGO E SILVA DIAS\t605208\t19\t36\n30037\tDiego Renyer de Miranda Araújo\t651879\t18\t30002\n30059\tEdvaldo Pereira Lima Junior\t667277\t17\t30003\n30060\tEligeneth Resplandes Pimentel Gomes\t667278\t17\t30003\n30061\tEliwania Dos Santos Silva\t667279\t17\t30003\n30088\tEMERSON MONTENEGRO LIMA\t676291\t17\t30005\n30038\tEtienne Lopes Ribeiro de Arruda\t651880\t18\t30002\n202\tFABIANA DE BRITO GOMES\t605201\t19\t36\n220\tFABIANO ROHSLER\t605221\t19\t36\n30039\tFabio Maya Cavalcante\t651881\t18\t30002\n30001\tFabio Silva De Oliveira\t605349\t16\t30001\n217\tFATIMA CORBELLINI\t605218\t19\t36\n221\tFERNANDA DA SILVA\t605222\t19\t36\n219\tFERNANDA TORZECKI COPETTI\t605220\t19\t36\n214\tFERNANDO BECKER ALVES\t605213\t19\t36\n216\tFERNANDO STRICK CAIEL\t605215\t19\t36\n30040\tFlavia Pereira Balieiro Salgado\t651882\t18\t30002\n30017\tFlávia Vanessa Huck Oliveira\t607908\t16\t30001\n30006\tFrancimir Do Nascimento Franca\t605355\t16\t30001\n30024\tFrancinei Do Socorro Lima Dos Santos\t615728\t16\t30001\n30085\tFRANCISCO DE ASSIS DIAS RAMOS\t676288\t17\t30005\n206\tGABRIEL BASSO DAMO\t605205\t19\t36\n30025\tGabriel Botelho Da Silva\t615729\t16\t30001\n30062\tGabriela Tomasi\t667280\t17\t30003\n30063\tGilzane Pereira Amaral\t667282\t17\t30003\n30003\tHellen Kelma Araújo Chaves\t605351\t16\t30001\n30064\tHide Senna De Sousa Soares\t667283\t17\t30003\n30041\tIlda Bisinotti \t651883\t18\t30002\n30042\tIngrid de Sousa Pereira\t651884\t18\t30002\n30008\tIzabel Cristina De Oliveira Barros\t605359\t16\t30001\n30065\tJacirley Pereira Do Nascimento\t667284\t17\t30003\n30084\tJACKELINE DE SOUZA LIMA\t676287\t17\t30005\n30018\tJailson Barbosa De Araújo\t610384\t16\t30001\n30014\tJanaina Feitosa\t607024\t16\t30001\n30026\tJersey James Da Costa\t615730\t16\t30001\n30004\tJoelma Da Silva Mourão\t605353\t16\t30001\n30066\tJoseane Rodrigues Leite\t667285\t17\t30003\n208\tJOSIANE CLAIRE SCHNEIDER LEMOS\t605207\t19\t36\n30010\tJulciléia Da Silva Ferreira\t605362\t16\t30001\n30082\tJULIANA MASSON PREDIGER\t676285\t17\t30005\n30015\tKatiele Siqueira Maia\t607211\t16\t30001\n30027\tLaiz Maria Montenegro Mappes\t615731\t16\t30001\n30067\tLayala Cardoso Da Silva Istofel\t667286\t17\t30003\n30068\tLeonardo Campelo Leite Guedes\t667288\t17\t30003\n223\tLISIANE DAMBROS\t605224\t19\t36\n30028\tLivia Nunes De Freitas Maia\t615732\t16\t30001\n30043\tLuan Saldanha Oliveira\t651885\t18\t30002\n30098\tLuciana Carvalho de Aguiar\t702807\t17\t30008\n30044\tLuciano Cunha de Sousa\t651886\t18\t30002\n30029\tMarcelo Castro Macedo\t615733\t16\t30001\n205\tMARCIO PETTINE SANTOS\t605204\t19\t36\n201\tMARCO AURELIO MARCONATO\t605200\t19\t36\n30002\tMarcos Paulo Maciente\t605350\t16\t30001\n210\tMARCOS PESCE PINTO\t605209\t19\t36\n30069\tMarcus Vinicius Vieira Queiroz\t667289\t17\t30003\n200\tMARIA DE FATIMA MACIEL PEREIRA\t605199\t19\t36\n213\tMARIA EULALIA GOMES BRUNI\t605212\t19\t36\n30030\tMarinete Lourdes Araujo De Queiroz\t615734\t16\t30001\n203\tMARVIN DE ALMEIDA FONTANA\t605202\t19\t36\n30090\tMayara Rodrigues de Freitas\t694318\t18\t30002\n30070\tMillena Pereira Lima Rodrigues\t667292\t17\t30003\n30094\tMirelle Soares Milhomens\t696500\t17\t30008\n30005\tMiriam Nazareth Cardenas Moreno\t605354\t16\t30001\n30007\tNatana Dourado Sousa\t605357\t16\t30001\n30071\tNemias Gomes\t667293\t17\t30003\n30081\tODILO JUNIOR OLIVEIRA CARVALHO\t676284\t17\t30005\n30072\tPaula Dos Reis Coelho Alencar Sousa\t667295\t17\t30003\n30046\tPaulo Borges\t653477\t18\t30002\n30089\tPEDRO EMILIO RODRIGUES ALVES DE ARAUJO\t676292\t17\t30005\n30073\tPedro Junior Da Rocha Silva\t667297\t17\t30003\n224\tRAFAEL CARVALHO DE SOUZA\t605225\t19\t36\n30074\tRenata Moura Alves Simas\t667298\t17\t30003\n30009\tRuama Araujo Dos Santos Demir\t605361\t16\t30001\n212\tSANDRA REGINA KOCHEM CAVALHEIRO\t605211\t19\t36\n30016\tSônia Caroline Suárez da Costa Pinheiro\t607212\t16\t30001\n222\tTHAÍS BAGNARA\t605223\t19\t36\n30075\tThais Neres Vieira\t667300\t17\t30003\n218\tTHAIS ROSALIA TEIXEIRA DA SILVA\t605219\t19\t36\n30045\tThiago Bizerra Fideles\t651887\t18\t30002\n30076\tThiago Dias Da Silva\t667303\t17\t30003\n30079\tTHIAGO MILHOMEM SOARES\t676282\t17\t30005\n30096\tUsuário Teste\t696504\t16\t30010\n30077\tValci Pereira Da Silva Junior\t667304\t17\t30003\n30099\tVanessa Bertholdo Vargas\t709682\t18\t30002\n30031\tVanessa Melo França\t615735\t16\t30001\n30078\tVera Lucia Teodoro Braga\t667306\t17\t30003\n30095\tVivian Nascimento Reis\t696501\t17\t30008\n30091\tWalbenia Lemos da Silva Torres\t696497\t17\t30008\n30097\tWandemberg Pereira Rodrigues\t702806\t17\t30008\n30087\tWANESSA SOBREIRA DOS SANTOS MARTINS\t676290\t17\t30005\n30083\tWESLEY CARDOSO BATISTA\t676286\t17\t30005\n30032\tYuri Willian De Jesus Lima\t615736\t16\t30001\n",
+  "stderr": "",
+  "execution_time_ms": 410
+}

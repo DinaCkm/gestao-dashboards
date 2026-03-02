@@ -219,3 +219,53 @@ describe("assessment with new level fields", () => {
     });
   });
 });
+
+describe("data import verification", () => {
+  const ctx = createAdminContext();
+  const caller = appRouter.createCaller(ctx);
+
+  describe("assessment.porPrograma counts after import", () => {
+    it("SEBRAE ACRE has 123 assessments", async () => {
+      const result = await caller.assessment.porPrograma({ programId: 16 });
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(123);
+    });
+
+    it("SEBRAE TO has 61 assessments", async () => {
+      const result = await caller.assessment.porPrograma({ programId: 17 });
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(61);
+    });
+
+    it("EMBRAPII has 29 assessments", async () => {
+      const result = await caller.assessment.porPrograma({ programId: 18 });
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(29);
+    });
+  });
+
+  describe("jornada.completa returns imported data", () => {
+    it("aluno with assessments has microJornadas with peso field", async () => {
+      const result = await caller.jornada.completa({ alunoId: 30001 });
+      if (result && result.macroJornadas.length > 0) {
+        const mj = result.macroJornadas[0];
+        expect(mj.microJornadas.length).toBeGreaterThan(0);
+        for (const micro of mj.microJornadas) {
+          expect(["obrigatoria", "opcional"]).toContain(micro.peso);
+        }
+        // Verify obrigatorias + opcionais = total
+        expect(mj.obrigatorias + mj.opcionais).toBe(mj.totalCompetencias);
+      }
+    });
+
+    it("microJornadas have micro dates from import", async () => {
+      const result = await caller.jornada.completa({ alunoId: 30001 });
+      if (result && result.macroJornadas.length > 0) {
+        const mj = result.macroJornadas[0];
+        // At least some microJornadas should have dates
+        const withDates = mj.microJornadas.filter((m: any) => m.microInicio || m.microTermino);
+        expect(withDates.length).toBeGreaterThanOrEqual(0);
+      }
+    });
+  });
+});

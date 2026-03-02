@@ -1,0 +1,514 @@
+{
+  "query": "SELECT id, name FROM alunos ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name FROM alunos ORDER BY name;",
+  "rows": [
+    {
+      "id": "30047",
+      "name": "Admary Monteiro Barbosa"
+    },
+    {
+      "id": "30033",
+      "name": "Adonay Fares Custódio Dos Santos"
+    },
+    {
+      "id": "30012",
+      "name": "Adriana Elizabete De Souza Dantas"
+    },
+    {
+      "id": "30020",
+      "name": "Adrielle De Araújo Santos Bessa"
+    },
+    {
+      "id": "30021",
+      "name": "Aldemar Dos Santos Maciel"
+    },
+    {
+      "id": "30048",
+      "name": "Aldeni Batista Torres"
+    },
+    {
+      "id": "30049",
+      "name": "Alencar Hubner Borelli"
+    },
+    {
+      "id": "30100",
+      "name": "Alexandre Crepory Abbott de Oliveira"
+    },
+    {
+      "id": "30034",
+      "name": "Allan Kassio De Oliveira Santos Ribeiro  "
+    },
+    {
+      "id": "30050",
+      "name": "Alorran de Freitas Barbosa"
+    },
+    {
+      "id": "30051",
+      "name": "Amaggeldo Barbosa"
+    },
+    {
+      "id": "30093",
+      "name": "Ana Cássia de Oliveira Costa"
+    },
+    {
+      "id": "30022",
+      "name": "Ana Claudia Silva De Oliveira"
+    },
+    {
+      "id": "30052",
+      "name": "Ana Paula Alves Santos"
+    },
+    {
+      "id": "30053",
+      "name": "Andre Silva Gomes"
+    },
+    {
+      "id": "30054",
+      "name": "Andreia Rodrigues Facundes"
+    },
+    {
+      "id": "30055",
+      "name": "Antonio Louça Curcino"
+    },
+    {
+      "id": "30092",
+      "name": "Antonio Luis Ferreira dos Anjos Filho"
+    },
+    {
+      "id": "30035",
+      "name": "Brenno Soffredi Passoni"
+    },
+    {
+      "id": "30080",
+      "name": "BRUNO DE JESUS RODRIGUES"
+    },
+    {
+      "id": "30056",
+      "name": "Bruno Henrique Vila Verde"
+    },
+    {
+      "id": "30057",
+      "name": "Bruno Martins Vieira"
+    },
+    {
+      "id": "215",
+      "name": "CARINE DONGENSKI"
+    },
+    {
+      "id": "30036",
+      "name": "Carolina Borges Moreira"
+    },
+    {
+      "id": "207",
+      "name": "CATIA CARGNIN"
+    },
+    {
+      "id": "30058",
+      "name": "Cesar Augusto De Sa Moreira"
+    },
+    {
+      "id": "30023",
+      "name": "Cezarinete Alves Izel Mansour"
+    },
+    {
+      "id": "30011",
+      "name": "Claudia Maia Da Silva"
+    },
+    {
+      "id": "30013",
+      "name": "Claudia Veras Baima"
+    },
+    {
+      "id": "211",
+      "name": "CRISTIANE HENN"
+    },
+    {
+      "id": "199",
+      "name": "DANIELA RIVA KELLER"
+    },
+    {
+      "id": "204",
+      "name": "DANIELE FERNANDES OLIVEIRA"
+    },
+    {
+      "id": "30086",
+      "name": "DENISE DA SILVA NUNES"
+    },
+    {
+      "id": "30019",
+      "name": "Diego Biondi De Faria"
+    },
+    {
+      "id": "209",
+      "name": "DIEGO E SILVA DIAS"
+    },
+    {
+      "id": "30037",
+      "name": "Diego Renyer de Miranda Araújo"
+    },
+    {
+      "id": "30059",
+      "name": "Edvaldo Pereira Lima Junior"
+    },
+    {
+      "id": "30060",
+      "name": "Eligeneth Resplandes Pimentel Gomes"
+    },
+    {
+      "id": "30061",
+      "name": "Eliwania Dos Santos Silva"
+    },
+    {
+      "id": "30088",
+      "name": "EMERSON MONTENEGRO LIMA"
+    },
+    {
+      "id": "30038",
+      "name": "Etienne Lopes Ribeiro de Arruda"
+    },
+    {
+      "id": "202",
+      "name": "FABIANA DE BRITO GOMES"
+    },
+    {
+      "id": "220",
+      "name": "FABIANO ROHSLER"
+    },
+    {
+      "id": "30039",
+      "name": "Fabio Maya Cavalcante"
+    },
+    {
+      "id": "30001",
+      "name": "Fabio Silva De Oliveira"
+    },
+    {
+      "id": "217",
+      "name": "FATIMA CORBELLINI"
+    },
+    {
+      "id": "221",
+      "name": "FERNANDA DA SILVA"
+    },
+    {
+      "id": "219",
+      "name": "FERNANDA TORZECKI COPETTI"
+    },
+    {
+      "id": "214",
+      "name": "FERNANDO BECKER ALVES"
+    },
+    {
+      "id": "216",
+      "name": "FERNANDO STRICK CAIEL"
+    },
+    {
+      "id": "30040",
+      "name": "Flavia Pereira Balieiro Salgado"
+    },
+    {
+      "id": "30017",
+      "name": "Flávia Vanessa Huck Oliveira"
+    },
+    {
+      "id": "30006",
+      "name": "Francimir Do Nascimento Franca"
+    },
+    {
+      "id": "30024",
+      "name": "Francinei Do Socorro Lima Dos Santos"
+    },
+    {
+      "id": "30085",
+      "name": "FRANCISCO DE ASSIS DIAS RAMOS"
+    },
+    {
+      "id": "206",
+      "name": "GABRIEL BASSO DAMO"
+    },
+    {
+      "id": "30025",
+      "name": "Gabriel Botelho Da Silva"
+    },
+    {
+      "id": "30062",
+      "name": "Gabriela Tomasi"
+    },
+    {
+      "id": "30063",
+      "name": "Gilzane Pereira Amaral"
+    },
+    {
+      "id": "30003",
+      "name": "Hellen Kelma Araújo Chaves"
+    },
+    {
+      "id": "30064",
+      "name": "Hide Senna De Sousa Soares"
+    },
+    {
+      "id": "30041",
+      "name": "Ilda Bisinotti "
+    },
+    {
+      "id": "30042",
+      "name": "Ingrid de Sousa Pereira"
+    },
+    {
+      "id": "30008",
+      "name": "Izabel Cristina De Oliveira Barros"
+    },
+    {
+      "id": "30065",
+      "name": "Jacirley Pereira Do Nascimento"
+    },
+    {
+      "id": "30084",
+      "name": "JACKELINE DE SOUZA LIMA"
+    },
+    {
+      "id": "30018",
+      "name": "Jailson Barbosa De Araújo"
+    },
+    {
+      "id": "30014",
+      "name": "Janaina Feitosa"
+    },
+    {
+      "id": "30026",
+      "name": "Jersey James Da Costa"
+    },
+    {
+      "id": "30004",
+      "name": "Joelma Da Silva Mourão"
+    },
+    {
+      "id": "30066",
+      "name": "Joseane Rodrigues Leite"
+    },
+    {
+      "id": "208",
+      "name": "JOSIANE CLAIRE SCHNEIDER LEMOS"
+    },
+    {
+      "id": "30010",
+      "name": "Julciléia Da Silva Ferreira"
+    },
+    {
+      "id": "30082",
+      "name": "JULIANA MASSON PREDIGER"
+    },
+    {
+      "id": "30015",
+      "name": "Katiele Siqueira Maia"
+    },
+    {
+      "id": "30027",
+      "name": "Laiz Maria Montenegro Mappes"
+    },
+    {
+      "id": "30067",
+      "name": "Layala Cardoso Da Silva Istofel"
+    },
+    {
+      "id": "30068",
+      "name": "Leonardo Campelo Leite Guedes"
+    },
+    {
+      "id": "223",
+      "name": "LISIANE DAMBROS"
+    },
+    {
+      "id": "30028",
+      "name": "Livia Nunes De Freitas Maia"
+    },
+    {
+      "id": "30043",
+      "name": "Luan Saldanha Oliveira"
+    },
+    {
+      "id": "30098",
+      "name": "Luciana Carvalho de Aguiar"
+    },
+    {
+      "id": "30044",
+      "name": "Luciano Cunha de Sousa"
+    },
+    {
+      "id": "30029",
+      "name": "Marcelo Castro Macedo"
+    },
+    {
+      "id": "205",
+      "name": "MARCIO PETTINE SANTOS"
+    },
+    {
+      "id": "201",
+      "name": "MARCO AURELIO MARCONATO"
+    },
+    {
+      "id": "30002",
+      "name": "Marcos Paulo Maciente"
+    },
+    {
+      "id": "210",
+      "name": "MARCOS PESCE PINTO"
+    },
+    {
+      "id": "30069",
+      "name": "Marcus Vinicius Vieira Queiroz"
+    },
+    {
+      "id": "200",
+      "name": "MARIA DE FATIMA MACIEL PEREIRA"
+    },
+    {
+      "id": "213",
+      "name": "MARIA EULALIA GOMES BRUNI"
+    },
+    {
+      "id": "30030",
+      "name": "Marinete Lourdes Araujo De Queiroz"
+    },
+    {
+      "id": "203",
+      "name": "MARVIN DE ALMEIDA FONTANA"
+    },
+    {
+      "id": "30090",
+      "name": "Mayara Rodrigues de Freitas"
+    },
+    {
+      "id": "30070",
+      "name": "Millena Pereira Lima Rodrigues"
+    },
+    {
+      "id": "30094",
+      "name": "Mirelle Soares Milhomens"
+    },
+    {
+      "id": "30005",
+      "name": "Miriam Nazareth Cardenas Moreno"
+    },
+    {
+      "id": "30007",
+      "name": "Natana Dourado Sousa"
+    },
+    {
+      "id": "30071",
+      "name": "Nemias Gomes"
+    },
+    {
+      "id": "30081",
+      "name": "ODILO JUNIOR OLIVEIRA CARVALHO"
+    },
+    {
+      "id": "30072",
+      "name": "Paula Dos Reis Coelho Alencar Sousa"
+    },
+    {
+      "id": "30046",
+      "name": "Paulo Borges"
+    },
+    {
+      "id": "30089",
+      "name": "PEDRO EMILIO RODRIGUES ALVES DE ARAUJO"
+    },
+    {
+      "id": "30073",
+      "name": "Pedro Junior Da Rocha Silva"
+    },
+    {
+      "id": "224",
+      "name": "RAFAEL CARVALHO DE SOUZA"
+    },
+    {
+      "id": "30074",
+      "name": "Renata Moura Alves Simas"
+    },
+    {
+      "id": "30009",
+      "name": "Ruama Araujo Dos Santos Demir"
+    },
+    {
+      "id": "212",
+      "name": "SANDRA REGINA KOCHEM CAVALHEIRO"
+    },
+    {
+      "id": "30016",
+      "name": "Sônia Caroline Suárez da Costa Pinheiro"
+    },
+    {
+      "id": "222",
+      "name": "THAÍS BAGNARA"
+    },
+    {
+      "id": "30075",
+      "name": "Thais Neres Vieira"
+    },
+    {
+      "id": "218",
+      "name": "THAIS ROSALIA TEIXEIRA DA SILVA"
+    },
+    {
+      "id": "30045",
+      "name": "Thiago Bizerra Fideles"
+    },
+    {
+      "id": "30076",
+      "name": "Thiago Dias Da Silva"
+    },
+    {
+      "id": "30079",
+      "name": "THIAGO MILHOMEM SOARES"
+    },
+    {
+      "id": "30096",
+      "name": "Usuário Teste"
+    },
+    {
+      "id": "30077",
+      "name": "Valci Pereira Da Silva Junior"
+    },
+    {
+      "id": "30099",
+      "name": "Vanessa Bertholdo Vargas"
+    },
+    {
+      "id": "30031",
+      "name": "Vanessa Melo França"
+    },
+    {
+      "id": "30078",
+      "name": "Vera Lucia Teodoro Braga"
+    },
+    {
+      "id": "30095",
+      "name": "Vivian Nascimento Reis"
+    },
+    {
+      "id": "30091",
+      "name": "Walbenia Lemos da Silva Torres"
+    },
+    {
+      "id": "30097",
+      "name": "Wandemberg Pereira Rodrigues"
+    },
+    {
+      "id": "30087",
+      "name": "WANESSA SOBREIRA DOS SANTOS MARTINS"
+    },
+    {
+      "id": "30083",
+      "name": "WESLEY CARDOSO BATISTA"
+    },
+    {
+      "id": "30032",
+      "name": "Yuri Willian De Jesus Lima"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n30047\tAdmary Monteiro Barbosa\n30033\tAdonay Fares Custódio Dos Santos\n30012\tAdriana Elizabete De Souza Dantas\n30020\tAdrielle De Araújo Santos Bessa\n30021\tAldemar Dos Santos Maciel\n30048\tAldeni Batista Torres\n30049\tAlencar Hubner Borelli\n30100\tAlexandre Crepory Abbott de Oliveira\n30034\tAllan Kassio De Oliveira Santos Ribeiro  \n30050\tAlorran de Freitas Barbosa\n30051\tAmaggeldo Barbosa\n30093\tAna Cássia de Oliveira Costa\n30022\tAna Claudia Silva De Oliveira\n30052\tAna Paula Alves Santos\n30053\tAndre Silva Gomes\n30054\tAndreia Rodrigues Facundes\n30055\tAntonio Louça Curcino\n30092\tAntonio Luis Ferreira dos Anjos Filho\n30035\tBrenno Soffredi Passoni\n30080\tBRUNO DE JESUS RODRIGUES\n30056\tBruno Henrique Vila Verde\n30057\tBruno Martins Vieira\n215\tCARINE DONGENSKI\n30036\tCarolina Borges Moreira\n207\tCATIA CARGNIN\n30058\tCesar Augusto De Sa Moreira\n30023\tCezarinete Alves Izel Mansour\n30011\tClaudia Maia Da Silva\n30013\tClaudia Veras Baima\n211\tCRISTIANE HENN\n199\tDANIELA RIVA KELLER\n204\tDANIELE FERNANDES OLIVEIRA\n30086\tDENISE DA SILVA NUNES\n30019\tDiego Biondi De Faria\n209\tDIEGO E SILVA DIAS\n30037\tDiego Renyer de Miranda Araújo\n30059\tEdvaldo Pereira Lima Junior\n30060\tEligeneth Resplandes Pimentel Gomes\n30061\tEliwania Dos Santos Silva\n30088\tEMERSON MONTENEGRO LIMA\n30038\tEtienne Lopes Ribeiro de Arruda\n202\tFABIANA DE BRITO GOMES\n220\tFABIANO ROHSLER\n30039\tFabio Maya Cavalcante\n30001\tFabio Silva De Oliveira\n217\tFATIMA CORBELLINI\n221\tFERNANDA DA SILVA\n219\tFERNANDA TORZECKI COPETTI\n214\tFERNANDO BECKER ALVES\n216\tFERNANDO STRICK CAIEL\n30040\tFlavia Pereira Balieiro Salgado\n30017\tFlávia Vanessa Huck Oliveira\n30006\tFrancimir Do Nascimento Franca\n30024\tFrancinei Do Socorro Lima Dos Santos\n30085\tFRANCISCO DE ASSIS DIAS RAMOS\n206\tGABRIEL BASSO DAMO\n30025\tGabriel Botelho Da Silva\n30062\tGabriela Tomasi\n30063\tGilzane Pereira Amaral\n30003\tHellen Kelma Araújo Chaves\n30064\tHide Senna De Sousa Soares\n30041\tIlda Bisinotti \n30042\tIngrid de Sousa Pereira\n30008\tIzabel Cristina De Oliveira Barros\n30065\tJacirley Pereira Do Nascimento\n30084\tJACKELINE DE SOUZA LIMA\n30018\tJailson Barbosa De Araújo\n30014\tJanaina Feitosa\n30026\tJersey James Da Costa\n30004\tJoelma Da Silva Mourão\n30066\tJoseane Rodrigues Leite\n208\tJOSIANE CLAIRE SCHNEIDER LEMOS\n30010\tJulciléia Da Silva Ferreira\n30082\tJULIANA MASSON PREDIGER\n30015\tKatiele Siqueira Maia\n30027\tLaiz Maria Montenegro Mappes\n30067\tLayala Cardoso Da Silva Istofel\n30068\tLeonardo Campelo Leite Guedes\n223\tLISIANE DAMBROS\n30028\tLivia Nunes De Freitas Maia\n30043\tLuan Saldanha Oliveira\n30098\tLuciana Carvalho de Aguiar\n30044\tLuciano Cunha de Sousa\n30029\tMarcelo Castro Macedo\n205\tMARCIO PETTINE SANTOS\n201\tMARCO AURELIO MARCONATO\n30002\tMarcos Paulo Maciente\n210\tMARCOS PESCE PINTO\n30069\tMarcus Vinicius Vieira Queiroz\n200\tMARIA DE FATIMA MACIEL PEREIRA\n213\tMARIA EULALIA GOMES BRUNI\n30030\tMarinete Lourdes Araujo De Queiroz\n203\tMARVIN DE ALMEIDA FONTANA\n30090\tMayara Rodrigues de Freitas\n30070\tMillena Pereira Lima Rodrigues\n30094\tMirelle Soares Milhomens\n30005\tMiriam Nazareth Cardenas Moreno\n30007\tNatana Dourado Sousa\n30071\tNemias Gomes\n30081\tODILO JUNIOR OLIVEIRA CARVALHO\n30072\tPaula Dos Reis Coelho Alencar Sousa\n30046\tPaulo Borges\n30089\tPEDRO EMILIO RODRIGUES ALVES DE ARAUJO\n30073\tPedro Junior Da Rocha Silva\n224\tRAFAEL CARVALHO DE SOUZA\n30074\tRenata Moura Alves Simas\n30009\tRuama Araujo Dos Santos Demir\n212\tSANDRA REGINA KOCHEM CAVALHEIRO\n30016\tSônia Caroline Suárez da Costa Pinheiro\n222\tTHAÍS BAGNARA\n30075\tThais Neres Vieira\n218\tTHAIS ROSALIA TEIXEIRA DA SILVA\n30045\tThiago Bizerra Fideles\n30076\tThiago Dias Da Silva\n30079\tTHIAGO MILHOMEM SOARES\n30096\tUsuário Teste\n30077\tValci Pereira Da Silva Junior\n30099\tVanessa Bertholdo Vargas\n30031\tVanessa Melo França\n30078\tVera Lucia Teodoro Braga\n30095\tVivian Nascimento Reis\n30091\tWalbenia Lemos da Silva Torres\n30097\tWandemberg Pereira Rodrigues\n30087\tWANESSA SOBREIRA DOS SANTOS MARTINS\n30083\tWESLEY CARDOSO BATISTA\n30032\tYuri Willian De Jesus Lima\n",
+  "stderr": "",
+  "execution_time_ms": 354
+}
