@@ -944,16 +944,9 @@ export default function DashboardMeuPerfil() {
                                         )}
                                       </div>
                                     </div>
-                                    {/* Barra de progresso do ciclo */}
-                                    <div className="flex items-center gap-2 mt-2">
-                                      <Progress value={isEmAndamento ? progressoCiclo : ciclo.percentualConclusao} className="h-1.5 flex-1" />
-                                      <span className="text-xs text-gray-600 font-semibold w-10 text-right">
-                                        {isEmAndamento ? `${progressoCiclo.toFixed(0)}%` : `${(ciclo.percentualConclusao ?? 0).toFixed(0)}%`}
-                                      </span>
-                                    </div>
-                                    {/* Resumo rápido */}
-                                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-500 flex-wrap">
-                                      <span>{isEmAndamento ? (det.competencias?.finalizadas || 0) : (ciclo.competenciasConcluidas || 0)} de {isEmAndamento ? (det.competencias?.total || 0) : (ciclo.totalCompetencias || 0)} competências concluídas</span>
+                                    {/* Resumo rápido - sem barra duplicada */}
+                                    <div className="flex items-center gap-3 mt-2 text-[10px] text-gray-500 flex-wrap">
+                                      {microsDesteCiclo.length > 1 && <span>{isEmAndamento ? (det.competencias?.finalizadas || 0) : (ciclo.competenciasConcluidas || 0)} de {isEmAndamento ? (det.competencias?.total || 0) : (ciclo.totalCompetencias || 0)} competências concluídas</span>}
                                       {det.webinars && <span className="flex items-center gap-0.5"><Video className="h-2.5 w-2.5 text-blue-500" />{det.webinars.presentes || 0}/{det.webinars.total || 0} webinars</span>}
                                       {det.tarefas && <span className="flex items-center gap-0.5"><ClipboardCheck className="h-2.5 w-2.5 text-emerald-500" />{det.tarefas.entregues || 0}/{det.tarefas.total || 0} tarefas</span>}
                                       {det.avaliacoes && det.avaliacoes.provasRealizadas > 0 && <span className="flex items-center gap-0.5"><GraduationCap className="h-2.5 w-2.5 text-red-500" />{det.avaliacoes.provasRealizadas} provas</span>}
@@ -991,10 +984,20 @@ export default function DashboardMeuPerfil() {
                                       <p className="text-[10px] text-emerald-600 text-center">Este ciclo entra no cálculo do Desempenho Geral</p>
                                     )}
 
-                                    {/* Competências deste ciclo */}
-                                    {microsDesteCiclo.length > 0 && (
+                                    {/* Competências deste ciclo - sem duplicação */}
+                                    {microsDesteCiclo.length > 0 ? (
                                       <div className="space-y-2">
                                         {microsDesteCiclo.map((micro: any) => renderMicro(micro))}
+                                      </div>
+                                    ) : (
+                                      /* Se não encontrou micro jornadas associadas, mostrar barra de progresso do ciclo */
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                          <div className={`h-full rounded-full transition-all ${isEmAndamento ? 'bg-blue-500' : ciclo.percentualConclusao >= 100 ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${isEmAndamento ? progressoCiclo : (ciclo.percentualConclusao ?? 0)}%` }} />
+                                        </div>
+                                        <span className="text-xs font-bold min-w-[35px] text-right text-gray-600">
+                                          {isEmAndamento ? `${progressoCiclo.toFixed(0)}%` : `${(ciclo.percentualConclusao ?? 0).toFixed(0)}%`}
+                                        </span>
                                       </div>
                                     )}
                                   </div>

@@ -1313,3 +1313,4 @@
 - [x] Substituir 'Ciclo X' pelo nome da competência nos ciclos exibidos no Portal do Aluno e Dashboard do Aluno
 - [x] Ajustar filtro de indicadores no Dashboard do Aluno (admin) para usar nomes de competências em vez de 'Ciclo X'
 - [x] Unificar os dois blocos visuais de cada ciclo (barra de progresso + cards de indicadores) em uma única régua compacta no Portal do Aluno
+- [x] Remover barra de progresso duplicada e competência repetida nos ciclos — unificar em uma única barra por ciclo
