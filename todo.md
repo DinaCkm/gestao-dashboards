@@ -1340,3 +1340,6 @@
 ## Melhorias no Card do Aluno - Assessment/PDI (03/03/2026)
 - [x] Expandir/colapsar trilhas no card quando aluno tiver muitas trilhas
 - [x] Contagem de competências por trilha no resumo do card
+
+## Card do Portal do Aluno - DashboardMeuPerfil (03/03/2026)
+- [x] Alterar card do cabeçalho do aluno no Portal do Aluno para mostrar TODAS as trilhas com ciclos de execução (mesmo tratamento do Assessment/PDI)

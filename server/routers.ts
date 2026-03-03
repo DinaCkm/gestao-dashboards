@@ -479,7 +479,7 @@ export const appRouter = router({
               competenciaId = compByName.get(compName.toLowerCase().trim()) || null;
               if (!competenciaId) {
                 // Try matching without the suffix like " - Master", " - Essential", " - Basic"
-                const baseName = compName.replace(/\s*-\s*(Master|Essential|Essencial|Basic|Básica|Visão de Futuro|Jornada.*)$/i, '').trim();
+                const baseName = compName.replace(/\s*-\s*(Master|Essential|Essencial|Basic|B.sica|Vis.o de Futuro|Jornada.*)$/i, '').trim();
                 competenciaId = compByName.get(baseName.toLowerCase()) || null;
               }
             }

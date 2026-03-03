@@ -132,6 +132,7 @@ export default function DashboardMeuPerfil() {
   // Filtro de indicadores: "consolidado" | "trilha:NomeTrilha" | "ciclo:CicloId"
   const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
   const [showGlossario, setShowGlossario] = useState(false);
+  const [showAllTrilhasCard, setShowAllTrilhasCard] = useState(false);
 
   // Dados de indicadores - declarado cedo para uso nos useMemo
   const v2 = data?.found ? ((data as any).indicadoresV2 as {
@@ -391,15 +392,67 @@ export default function DashboardMeuPerfil() {
                       <Users className="h-3 w-3 mr-1" />{aluno.turma}
                     </Badge>
                     <Badge className="bg-white/20 text-white border-white/30">
-                      <Target className="h-3 w-3 mr-1" />Trilha: {aluno.trilha}
-                    </Badge>
-                    <Badge className="bg-white/20 text-white border-white/30">
-                      <Clock className="h-3 w-3 mr-1" />Ciclo: {aluno.cicloAtual}
-                    </Badge>
-                    <Badge className="bg-white/20 text-white border-white/30">
                       <User className="h-3 w-3 mr-1" />Mentor: {aluno.mentor}
                     </Badge>
+                    {assessments && assessments.length > 0 && (
+                      <Badge className="bg-[#F5991F]/30 text-[#F5991F] border-[#F5991F]/40">
+                        <Route className="h-3 w-3 mr-1" />{assessments.length} trilha(s) • {assessments.filter((a: any) => a.status === 'ativo').length} ativa(s)
+                      </Badge>
+                    )}
                   </div>
+                  {/* Trilhas e Ciclos de Execução */}
+                  {assessments && assessments.length > 0 && (
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-white/60 uppercase tracking-wider flex items-center gap-1">
+                          <Route className="h-3 w-3" /> Trilhas e Ciclos de Execução
+                        </p>
+                        {assessments.length > 2 && (
+                          <button
+                            onClick={() => setShowAllTrilhasCard(!showAllTrilhasCard)}
+                            className="text-xs text-[#F5991F] hover:text-[#F5991F]/80 flex items-center gap-1"
+                          >
+                            {showAllTrilhasCard ? 'Recolher' : `Ver todas (${assessments.length})`}
+                            {showAllTrilhasCard ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-1.5">
+                        {(showAllTrilhasCard ? assessments : assessments.slice(0, 2)).map((a: any, idx: number) => {
+                          const formatDateCard = (d: string | null) => {
+                            if (!d) return '—';
+                            const parts = d.split('-');
+                            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d;
+                          };
+                          return (
+                            <div key={a.id || idx} className="flex items-center gap-2 text-xs">
+                              <Badge className={`text-[10px] px-1.5 py-0.5 font-bold ${
+                                a.trilhaNome === 'Master' ? 'bg-purple-500/30 text-purple-300 border-purple-400/40' :
+                                a.trilhaNome === 'Essential' ? 'bg-blue-500/30 text-blue-300 border-blue-400/40' :
+                                a.trilhaNome === 'Basic' ? 'bg-green-500/30 text-green-300 border-green-400/40' :
+                                'bg-amber-500/30 text-amber-300 border-amber-400/40'
+                              }`}>{a.trilhaNome}</Badge>
+                              <span className="text-white/70">
+                                Ciclo: de <strong className="text-white">{formatDateCard(a.macroInicio)}</strong> até <strong className="text-white">{formatDateCard(a.macroTermino)}</strong>
+                              </span>
+                              <span className="text-white/50">
+                                {a.totalCompetencias} comp. ({a.obrigatorias} obrig. / {a.opcionais} opc.)
+                              </span>
+                              {a.status === 'congelado' && (
+                                <Badge className="bg-amber-500/30 text-amber-300 border-amber-400/40 text-[10px] px-1 py-0">Em Andamento</Badge>
+                              )}
+                              {a.turmaNome && (
+                                <span className="text-white/40 hidden lg:inline">({a.turmaNome})</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {!showAllTrilhasCard && assessments.length > 2 && (
+                          <p className="text-[10px] text-white/40">+{assessments.length - 2} trilha(s) oculta(s)</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-white/70 mb-1 flex items-center gap-1 justify-end">
