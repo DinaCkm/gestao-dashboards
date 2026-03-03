@@ -471,98 +471,7 @@ export default function DashboardMeuPerfil() {
           </Card>
         )}
 
-        {/* === CICLO EM ANDAMENTO (destaque) === */}
-        {v2 && v2.ciclosEmAndamento && v2.ciclosEmAndamento.length > 0 && (
-          <div className="space-y-4">
-            {v2.ciclosEmAndamento.map((ciclo: any) => {
-              const totalDias = Math.max(1, Math.ceil((new Date(ciclo.dataFim).getTime() - new Date(ciclo.dataInicio).getTime()) / (1000 * 60 * 60 * 24)));
-              const diasPassados = Math.ceil((Date.now() - new Date(ciclo.dataInicio).getTime()) / (1000 * 60 * 60 * 24));
-              const progressoCiclo = Math.min(100, Math.max(0, (diasPassados / totalDias) * 100));
-              const diasRestantes = Math.max(0, totalDias - diasPassados);
-              const det = ciclo.detalhes || {};
-              return (
-                <Card key={ciclo.cicloId} className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 shadow-md">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base text-blue-900 flex items-center gap-2">
-                        <div className="p-1.5 bg-blue-100 rounded-lg">
-                          <Play className="h-4 w-4 text-blue-600" />
-                        </div>
-                        Ciclo em Andamento: {ciclo.nomeCiclo}
-                        <InfoTooltip text="Este é o seu ciclo atual. Os indicadores abaixo são parciais e se atualizam conforme você avança." />
-                      </CardTitle>
-                      <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                        {diasRestantes} dias restantes
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-gray-500">
-                        {new Date(ciclo.dataInicio).toLocaleDateString('pt-BR')} — {new Date(ciclo.dataFim).toLocaleDateString('pt-BR')}
-                      </span>
-                      <span className="text-xs text-gray-400">|</span>
-                      <span className="text-xs text-blue-600 font-medium">Trilha: {ciclo.trilhaNome}</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Barra de progresso do ciclo */}
-                    <div>
-                      <div className="flex justify-between text-xs text-gray-600 mb-1">
-                        <span>Progresso do ciclo</span>
-                        <span>{progressoCiclo.toFixed(0)}% do tempo</span>
-                      </div>
-                      <Progress value={progressoCiclo} className="h-2" />
-                    </div>
 
-                    {/* Mini resumo de competências */}
-                    <div className="flex items-center gap-4 text-xs text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <BookOpen className="h-3.5 w-3.5 text-purple-500" />
-                        {det.competencias?.finalizadas || 0}/{det.competencias?.total || 0} competências concluídas
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Video className="h-3.5 w-3.5 text-blue-500" />
-                        {det.webinars?.presentes || 0}/{det.webinars?.total || 0} webinars
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <ClipboardCheck className="h-3.5 w-3.5 text-emerald-500" />
-                        {det.tarefas?.entregues || 0}/{det.tarefas?.total || 0} tarefas
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <GraduationCap className="h-3.5 w-3.5 text-red-500" />
-                        {det.avaliacoes?.provasRealizadas || 0} provas realizadas
-                      </span>
-                    </div>
-
-                    {/* 6 Indicadores parciais + Engajamento Final */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                      {[
-                        { label: "Webinars", valor: ciclo.ind1_webinars, icon: Video, color: "text-blue-600 bg-blue-100" },
-                        { label: "Avaliações", valor: ciclo.ind2_avaliacoes, icon: GraduationCap, color: "text-red-600 bg-red-100" },
-                        { label: "Competências", valor: ciclo.ind3_competencias, icon: BookOpen, color: "text-purple-600 bg-purple-100" },
-                        { label: "Tarefas", valor: ciclo.ind4_tarefas, icon: ClipboardCheck, color: "text-emerald-600 bg-emerald-100" },
-                        { label: "Engajamento", valor: ciclo.ind5_engajamento, icon: Star, color: "text-amber-600 bg-amber-100" },
-                        { label: "Cases", valor: ciclo.ind6_aplicabilidade, icon: Briefcase, color: "text-rose-600 bg-rose-100" },
-                        { label: "Eng. Final", valor: ciclo.ind7_engajamentoFinal, icon: Trophy, color: "text-[#F5991F] bg-orange-100" },
-                      ].map(({ label, valor, icon: Icon, color }) => (
-                        <div key={label} className="bg-white rounded-lg p-2.5 border border-gray-200 text-center">
-                          <div className={`inline-flex p-1 rounded ${color.split(' ')[1]} mb-1`}>
-                            <Icon className={`h-3.5 w-3.5 ${color.split(' ')[0]}`} />
-                          </div>
-                          <p className="text-lg font-bold text-gray-800">{(valor ?? 0).toFixed(0)}%</p>
-                          <p className="text-[10px] text-gray-500 leading-tight">{label}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    <p className="text-[10px] text-blue-600 italic text-center">
-                      ⚠ Indicadores parciais — baseados apenas nos dados disponíveis até o momento
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
 
         {/* Glossário de Termos */}
         <Card className="bg-white border border-gray-200 shadow-sm">
@@ -672,62 +581,6 @@ export default function DashboardMeuPerfil() {
               regras={[INDICADORES_INFO.ind6.explicacao, INDICADORES_INFO.ind6.formula]}
             />
           </div>
-        )}
-
-        {/* Visualização de Ciclos */}
-        {(ciclosFinalizados.length > 0 || ciclosEmAndamento.length > 0) && (
-          <Card className="bg-white border border-gray-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
-                <Target className="h-4 w-4 text-[#0A1E3E]" />
-                Caminho de Realização das Competências
-              </CardTitle>
-              <CardDescription className="text-gray-500">
-                Progresso nos ciclos • <span className="text-emerald-600">Verde = No prazo</span> • <span className="text-red-600">Vermelho = Atrasado</span> • <span className="text-blue-600">Azul = Adiantado</span>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[...ciclosFinalizados, ...ciclosEmAndamento].map((ciclo: any, idx: number) => {
-                  const statusColors = getCicloStatusColor(ciclo.status);
-                  return (
-                    <div key={ciclo.cicloId || idx} className="p-4 rounded-lg bg-gray-50 border border-gray-100">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${statusColors.bg}`} />
-                          <span className="text-gray-900 font-medium text-sm">{ciclo.nomeCiclo}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-gray-500">
-                            {new Date(ciclo.dataInicio).toLocaleDateString("pt-BR")} — {new Date(ciclo.dataFim).toLocaleDateString("pt-BR")}
-                          </span>
-                          <Badge variant="outline" className={statusColors.badge}>
-                            {getCicloStatusLabel(ciclo.status)}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Progress value={ciclo.percentualConclusao} className="h-2 flex-1" />
-                        <span className="text-xs text-gray-700 font-semibold w-12 text-right">{ciclo.percentualConclusao.toFixed(0)}%</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>{ciclo.competenciasConcluidas} de {ciclo.totalCompetencias} competências concluídas</span>
-                        {ciclo.mediaNotasProvas > 0 && (
-                          <span>Média provas: {ciclo.mediaNotasProvas.toFixed(0)}%</span>
-                        )}
-                      </div>
-                      {ciclo.status === "finalizado" && (
-                        <p className="text-xs text-emerald-600 mt-1">Este ciclo entra no cálculo da Performance Geral</p>
-                      )}
-                      {ciclo.status === "em_andamento" && (
-                        <p className="text-xs text-blue-600 mt-1">Ciclo em andamento — não entra na Performance Geral ainda</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
         )}
 
         {/* Tabs com seções detalhadas */}
@@ -925,6 +778,165 @@ export default function DashboardMeuPerfil() {
                       </div>
                     </CardHeader>
                     <CardContent>
+                      {/* Ciclos desta trilha (integrado do Caminho de Realização) */}
+                      {(() => {
+                        const ciclosDaTrilha = [...(ciclosFinalizados || []), ...(ciclosEmAndamento || [])]
+                          .filter((c: any) => c.trilhaNome === macroJornada.trilhaNome);
+                        const ciclosV2DaTrilha = v2 ? [...(v2.ciclosFinalizados || []), ...(v2.ciclosEmAndamento || [])]
+                          .filter((c: any) => c.trilhaNome === macroJornada.trilhaNome) : [];
+                        if (ciclosDaTrilha.length === 0 && ciclosV2DaTrilha.length === 0) return null;
+                        // Merge: usar v2 se disponível (tem indicadores), senão usar ciclos básicos
+                        const ciclosParaMostrar = ciclosV2DaTrilha.length > 0 ? ciclosV2DaTrilha : ciclosDaTrilha;
+                        return (
+                          <div className="mb-6">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Target className="h-4 w-4 text-[#0A1E3E]" />
+                              <span className="text-sm font-semibold text-gray-700">Caminho de Realização das Competências</span>
+                              <span className="text-xs text-gray-400 ml-1">
+                                <span className="text-emerald-600">Verde = No prazo</span> • <span className="text-red-600">Vermelho = Atrasado</span> • <span className="text-blue-600">Azul = Adiantado</span>
+                              </span>
+                            </div>
+                            <div className="space-y-3">
+                              {ciclosParaMostrar.map((ciclo: any, idx: number) => {
+                                const statusColors = getCicloStatusColor(ciclo.status);
+                                const isEmAndamento = ciclo.status === 'em_andamento';
+                                const totalDias = isEmAndamento ? Math.max(1, Math.ceil((new Date(ciclo.dataFim).getTime() - new Date(ciclo.dataInicio).getTime()) / (1000 * 60 * 60 * 24))) : 0;
+                                const diasPassados = isEmAndamento ? Math.ceil((Date.now() - new Date(ciclo.dataInicio).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                                const progressoCiclo = isEmAndamento ? Math.min(100, Math.max(0, (diasPassados / totalDias) * 100)) : 0;
+                                const diasRestantes = isEmAndamento ? Math.max(0, totalDias - diasPassados) : 0;
+                                const det = ciclo.detalhes || {};
+                                return (
+                                  <div key={ciclo.cicloId || idx} className={`p-4 rounded-xl border transition-colors ${
+                                    isEmAndamento ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300' : 'bg-gray-50 border-gray-100'
+                                  }`}>
+                                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-3 h-3 rounded-full ${statusColors.bg}`} />
+                                        <span className="text-gray-900 font-medium text-sm">{ciclo.nomeCiclo}</span>
+                                        {isEmAndamento && (
+                                          <InfoTooltip text="Este é o seu ciclo atual. Os indicadores abaixo são parciais e se atualizam conforme você avança." />
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-xs text-gray-500">
+                                          {new Date(ciclo.dataInicio).toLocaleDateString("pt-BR")} — {new Date(ciclo.dataFim).toLocaleDateString("pt-BR")}
+                                        </span>
+                                        <Badge variant="outline" className={statusColors.badge}>
+                                          {getCicloStatusLabel(ciclo.status)}
+                                        </Badge>
+                                        {isEmAndamento && (
+                                          <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs">
+                                            {diasRestantes}d restantes
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Barra de progresso */}
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Progress value={isEmAndamento ? progressoCiclo : ciclo.percentualConclusao} className="h-2 flex-1" />
+                                      <span className="text-xs text-gray-700 font-semibold w-12 text-right">
+                                        {isEmAndamento ? `${progressoCiclo.toFixed(0)}%` : `${(ciclo.percentualConclusao ?? 0).toFixed(0)}%`}
+                                      </span>
+                                    </div>
+
+                                    {/* Resumo de competências e detalhes */}
+                                    <div className="flex items-center justify-between text-xs text-gray-500 flex-wrap gap-2">
+                                      <div className="flex items-center gap-4 flex-wrap">
+                                        <span>
+                                          {isEmAndamento ? (det.competencias?.finalizadas || ciclo.competenciasConcluidas || 0) : (ciclo.competenciasConcluidas || 0)} de {isEmAndamento ? (det.competencias?.total || ciclo.totalCompetencias || 0) : (ciclo.totalCompetencias || 0)} competências concluídas
+                                        </span>
+                                        {isEmAndamento && det.webinars && (
+                                          <span className="flex items-center gap-1">
+                                            <Video className="h-3 w-3 text-blue-500" />
+                                            {det.webinars.presentes || 0}/{det.webinars.total || 0} webinars
+                                          </span>
+                                        )}
+                                        {isEmAndamento && det.tarefas && (
+                                          <span className="flex items-center gap-1">
+                                            <ClipboardCheck className="h-3 w-3 text-emerald-500" />
+                                            {det.tarefas.entregues || 0}/{det.tarefas.total || 0} tarefas
+                                          </span>
+                                        )}
+                                        {isEmAndamento && det.avaliacoes && (
+                                          <span className="flex items-center gap-1">
+                                            <GraduationCap className="h-3 w-3 text-red-500" />
+                                            {det.avaliacoes.provasRealizadas || 0} provas
+                                          </span>
+                                        )}
+                                      </div>
+                                      {!isEmAndamento && ciclo.mediaNotasProvas > 0 && (
+                                        <span>Média provas: {ciclo.mediaNotasProvas.toFixed(0)}%</span>
+                                      )}
+                                    </div>
+
+                                    {/* Indicadores parciais (para ciclos em andamento com dados v2) */}
+                                    {isEmAndamento && ciclo.ind1_webinars !== undefined && (
+                                      <div className="mt-3">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                                          {[
+                                            { label: "Webinars", valor: ciclo.ind1_webinars, icon: Video, color: "text-blue-600 bg-blue-100" },
+                                            { label: "Avaliações", valor: ciclo.ind2_avaliacoes, icon: GraduationCap, color: "text-red-600 bg-red-100" },
+                                            { label: "Competências", valor: ciclo.ind3_competencias, icon: BookOpen, color: "text-purple-600 bg-purple-100" },
+                                            { label: "Tarefas", valor: ciclo.ind4_tarefas, icon: ClipboardCheck, color: "text-emerald-600 bg-emerald-100" },
+                                            { label: "Engajamento", valor: ciclo.ind5_engajamento, icon: Star, color: "text-amber-600 bg-amber-100" },
+                                            { label: "Cases", valor: ciclo.ind6_aplicabilidade, icon: Briefcase, color: "text-rose-600 bg-rose-100" },
+                                            { label: "Eng. Final", valor: ciclo.ind7_engajamentoFinal, icon: Trophy, color: "text-[#F5991F] bg-orange-100" },
+                                          ].map(({ label, valor, icon: Icon, color }) => (
+                                            <div key={label} className="bg-white rounded-lg p-2 border border-gray-200 text-center">
+                                              <div className={`inline-flex p-1 rounded ${color.split(' ')[1]} mb-0.5`}>
+                                                <Icon className={`h-3 w-3 ${color.split(' ')[0]}`} />
+                                              </div>
+                                              <p className="text-sm font-bold text-gray-800">{(valor ?? 0).toFixed(0)}%</p>
+                                              <p className="text-[9px] text-gray-500 leading-tight">{label}</p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                        <p className="text-[10px] text-blue-600 italic text-center mt-2">
+                                          ⚠ Indicadores parciais — baseados apenas nos dados disponíveis até o momento
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    {/* Indicadores para ciclos finalizados */}
+                                    {ciclo.status === "finalizado" && ciclo.ind1_webinars !== undefined && (
+                                      <div className="mt-3">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                                          {[
+                                            { label: "Webinars", valor: ciclo.ind1_webinars, icon: Video, color: "text-blue-600 bg-blue-100" },
+                                            { label: "Avaliações", valor: ciclo.ind2_avaliacoes, icon: GraduationCap, color: "text-red-600 bg-red-100" },
+                                            { label: "Competências", valor: ciclo.ind3_competencias, icon: BookOpen, color: "text-purple-600 bg-purple-100" },
+                                            { label: "Tarefas", valor: ciclo.ind4_tarefas, icon: ClipboardCheck, color: "text-emerald-600 bg-emerald-100" },
+                                            { label: "Engajamento", valor: ciclo.ind5_engajamento, icon: Star, color: "text-amber-600 bg-amber-100" },
+                                            { label: "Cases", valor: ciclo.ind6_aplicabilidade, icon: Briefcase, color: "text-rose-600 bg-rose-100" },
+                                            { label: "Eng. Final", valor: ciclo.ind7_engajamentoFinal, icon: Trophy, color: "text-[#F5991F] bg-orange-100" },
+                                          ].map(({ label, valor, icon: Icon, color }) => (
+                                            <div key={label} className="bg-white rounded-lg p-2 border border-gray-200 text-center">
+                                              <div className={`inline-flex p-1 rounded ${color.split(' ')[1]} mb-0.5`}>
+                                                <Icon className={`h-3 w-3 ${color.split(' ')[0]}`} />
+                                              </div>
+                                              <p className="text-sm font-bold text-gray-800">{(valor ?? 0).toFixed(0)}%</p>
+                                              <p className="text-[9px] text-gray-500 leading-tight">{label}</p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {ciclo.status === "finalizado" && (
+                                      <p className="text-xs text-emerald-600 mt-2">Este ciclo entra no cálculo da Performance Geral</p>
+                                    )}
+                                    {ciclo.status === "em_andamento" && (
+                                      <p className="text-xs text-blue-600 mt-2">Ciclo em andamento — não entra na Performance Geral ainda</p>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       {/* Micro Jornadas (competências) */}
                       <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                         {macroJornada.microJornadas.map((micro: any) => {
