@@ -2248,6 +2248,10 @@ export async function getCiclosForCalculator(alunoId: number) {
   const allTrilhas = await dbConn.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
   const trilhaMap = new Map(allTrilhas.map(t => [t.id, t.name]));
   
+  // Buscar nomes das competências para usar no nome do ciclo
+  const allCompetencias = await dbConn.select({ id: competencias.id, nome: competencias.nome }).from(competencias);
+  const compNomeMap = new Map(allCompetencias.map(c => [c.id, c.nome]));
+  
   let autoId = 200000;
   const result: { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[] }[] = [];
   
@@ -2270,19 +2274,19 @@ export async function getCiclosForCalculator(alunoId: number) {
       cicloGroups.set(key, group);
     }
     
-    let cicloNum = 1;
     const sortedGroups = Array.from(cicloGroups.entries()).sort((a, b) => a[1].inicio.localeCompare(b[1].inicio));
     
     for (const [, group] of sortedGroups) {
       if (group.compIds.length === 0) continue;
+      // Usar nomes das competências em vez de "Ciclo X"
+      const compNames = group.compIds.map(id => compNomeMap.get(id) || `Comp ${id}`).join(', ');
       result.push({
         id: autoId++,
-        nomeCiclo: `${trilhaNome} - Ciclo ${cicloNum}`,
+        nomeCiclo: `${trilhaNome} - ${compNames}`,
         dataInicio: group.inicio,
         dataFim: group.termino,
         competenciaIds: group.compIds,
       });
-      cicloNum++;
     }
   }
   
@@ -2318,6 +2322,10 @@ export async function getAllCiclosForCalculator() {
   // Buscar trilhas para nomes
   const allTrilhas = await db.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
   const trilhaMap = new Map(allTrilhas.map(t => [t.id, t.name]));
+  
+  // Buscar nomes das competências para usar no nome do ciclo
+  const allCompetencias = await db.select({ id: competencias.id, nome: competencias.nome }).from(competencias);
+  const compNomeMap = new Map(allCompetencias.map(c => [c.id, c.nome]));
   
   // Buscar alunos para mapear alunoId -> externalId
   const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
@@ -2376,7 +2384,6 @@ export async function getAllCiclosForCalculator() {
     
     // Converter grupos em ciclos
     const existing = ciclosPorAluno.get(alunoKey) || [];
-    let cicloNum = 1;
     
     // Ordenar por data de início
     const sortedGroups = Array.from(cicloGroups.entries()).sort((a, b) => a[1].inicio.localeCompare(b[1].inicio));
@@ -2385,15 +2392,16 @@ export async function getAllCiclosForCalculator() {
       // Só criar ciclo se tem competências obrigatórias
       if (group.compIds.length === 0) continue;
       
+      // Usar nomes das competências em vez de "Ciclo X"
+      const compNames = group.compIds.map(id => compNomeMap.get(id) || `Comp ${id}`).join(', ');
       existing.push({
         id: autoId++,
-        nomeCiclo: `${trilhaNome} - Ciclo ${cicloNum}`,
+        nomeCiclo: `${trilhaNome} - ${compNames}`,
         dataInicio: group.inicio,
         dataFim: group.termino,
         competenciaIds: group.compIds,
         onlyObrigatorias: true, // Flag: este ciclo já contém apenas obrigatórias
       });
-      cicloNum++;
     }
     
     if (existing.length > 0) {

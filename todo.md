@@ -1310,3 +1310,4 @@
 - [ ] Testar todas as funcionalidades no ambiente publicado
 - [x] Adicionar campo de busca/filtro na página de Cadastros (aba Alunos) para pesquisar por nome, e-mail ou empresa
 - [x] Unificar visões "Caminho de Realização das Competências" e "Minha Jornada" em uma única visão integrada
+- [x] Substituir 'Ciclo X' pelo nome da competência nos ciclos exibidos no Portal do Aluno e Dashboard do Aluno
