@@ -1,0 +1,8 @@
+{
+  "query": "SELECT a.id as aluno_id, a.nome, ap.id as pdi_id, ap.trilhaId, t.name as trilha_nome, ap.status, ap.macroInicio, ap.macroTermino, \n(SELECT COUNT(*) FROM assessment_competencias ac WHERE ac.assessmentPdiId = ap.id) as num_competencias\nFROM alunos a \nJOIN assessment_pdi ap ON ap.alunoId = a.id \nLEFT JOIN trilhas t ON t.id = ap.trilhaId\nWHERE a.nome LIKE '%Fabio%' OR a.nome LIKE '%Fábio%'\nORDER BY a.nome, ap.trilhaId, ap.createdAt;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id as aluno_id, a.nome, ap.id as pdi_id, ap.trilhaId, t.name as trilha_nome, ap.status, ap.macroInicio, ap.macroTermino, \n(SELECT COUNT(*) FROM assessment_competencias ac WHERE ac.assessmentPdiId = ap.id) as num_competencias\nFROM alunos a \nJOIN assessment_pdi ap ON ap.alunoId = a.id \nLEFT JOIN trilhas t ON t.id = ap.trilhaId\nWHERE a.nome LIKE '%Fabio%' OR a.nome LIKE '%Fábio%'\nORDER BY a.nome, ap.trilhaId, ap.createdAt;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'a.nome' in 'order clause'"
+  ]
+}

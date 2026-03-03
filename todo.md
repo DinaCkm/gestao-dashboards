@@ -1317,3 +1317,8 @@
 - [x] Fundir cabeçalho do ciclo com card da competência quando há apenas 1 competência (eliminar barra duplicada)
 - [x] Ordenar ciclos do mais recente (atual/em andamento) para os mais antigos (finalizados)
 - [x] Aplicar mesma unificação de barras de progresso (barra única por ciclo + ordenação recente→antigo) no DashboardAluno (visão admin)
+- [x] Corrigir trilha 'Básica' aparecendo duplicada no Portal do Aluno (Fábio Silva de Oliveira)
+- [ ] Corrigir nomes de ciclos longos e confusos (ex: "Básica - Atenção, Empatia, Escuta Ativa, Memória, Raciocínio Lógico e Espacial")
+- [ ] Corrigir ordem dos ciclos dentro de cada trilha (do mais recente ao mais antigo)
+- [x] Criar trilha 'Alinhamento Inicial' (Trilha 1.0) na lista de tipos de trilhas no banco de dados
+- [x] Corrigir nomes de ciclos longos — quando há muitas competências concatenadas, limitar ou formatar melhor

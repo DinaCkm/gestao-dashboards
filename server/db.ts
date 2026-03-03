@@ -2278,8 +2278,11 @@ export async function getCiclosForCalculator(alunoId: number) {
     
     for (const [, group] of sortedGroups) {
       if (group.compIds.length === 0) continue;
-      // Usar nomes das competências em vez de "Ciclo X"
-      const compNames = group.compIds.map(id => compNomeMap.get(id) || `Comp ${id}`).join(', ');
+      // Usar nomes das competências em vez de "Ciclo X" (limitar a 2 nomes)
+      const allNames = group.compIds.map(id => compNomeMap.get(id) || `Comp ${id}`);
+      const compNames = allNames.length <= 2
+        ? allNames.join(', ')
+        : `${allNames.slice(0, 2).join(', ')} +${allNames.length - 2}`;
       result.push({
         id: autoId++,
         nomeCiclo: `${trilhaNome} - ${compNames}`,
@@ -2392,8 +2395,11 @@ export async function getAllCiclosForCalculator() {
       // Só criar ciclo se tem competências obrigatórias
       if (group.compIds.length === 0) continue;
       
-      // Usar nomes das competências em vez de "Ciclo X"
-      const compNames = group.compIds.map(id => compNomeMap.get(id) || `Comp ${id}`).join(', ');
+      // Usar nomes das competências em vez de "Ciclo X" (limitar a 2 nomes)
+      const allNames = group.compIds.map(id => compNomeMap.get(id) || `Comp ${id}`);
+      const compNames = allNames.length <= 2
+        ? allNames.join(', ')
+        : `${allNames.slice(0, 2).join(', ')} +${allNames.length - 2}`;
       existing.push({
         id: autoId++,
         nomeCiclo: `${trilhaNome} - ${compNames}`,
@@ -4015,20 +4021,14 @@ export async function getJornadaCompleta(alunoId: number) {
     }
   }
   
-  // 7. Montar estrutura hierárquica
-  const macroJornadas = pdis.map(pdi => {
-    const comps = allComps.filter(c => c.assessmentPdiId === pdi.id);
-    const microJornadas = comps.map(comp => {
-      // Enriquecer com dados de performance da plataforma
-      const codigo = compCodigoMap[comp.competenciaId];
-      const perf = codigo ? perfMap[codigo] : null;
-      const nivelManual = comp.nivelAtual ? parseFloat(comp.nivelAtual) : null;
-      // Nota da plataforma: prioridade mediaRespondidas, fallback mediaDisponiveis
-      const notaPlataforma = perf ? (perf.mediaRespondidas > 0 ? perf.mediaRespondidas : perf.mediaDisponiveis > 0 ? perf.mediaDisponiveis : null) : null;
-      // Usar nota manual da mentora se existir, senão nota da plataforma
-      const nivelFinal = nivelManual !== null ? nivelManual : notaPlataforma;
-      
-      return {
+  // 7. Montar estrutura hierárquica — helper para enriquecer competência
+  const buildMicroJornada = (comp: typeof allComps[0]) => {
+    const codigo = compCodigoMap[comp.competenciaId];
+    const perf = codigo ? perfMap[codigo] : null;
+    const nivelManual = comp.nivelAtual ? parseFloat(comp.nivelAtual) : null;
+    const notaPlataforma = perf ? (perf.mediaRespondidas > 0 ? perf.mediaRespondidas : perf.mediaDisponiveis > 0 ? perf.mediaDisponiveis : null) : null;
+    const nivelFinal = nivelManual !== null ? nivelManual : notaPlataforma;
+    return {
       id: comp.id,
       competenciaId: comp.competenciaId,
       competenciaNome: compMap[comp.competenciaId]?.nome || `Competência #${comp.competenciaId}`,
@@ -4054,17 +4054,56 @@ export async function getJornadaCompleta(alunoId: number) {
       microTermino: comp.microTermino,
       createdAt: comp.createdAt,
     };
+  };
+
+  // 7b. Agrupar PDIs pela mesma trilha para evitar trilhas duplicadas
+  const trilhaGroups = new Map<string, typeof pdis>();
+  for (const pdi of pdis) {
+    const key = pdi.trilhaId ? String(pdi.trilhaId) : `no-trilha-${pdi.id}`;
+    if (!trilhaGroups.has(key)) trilhaGroups.set(key, []);
+    trilhaGroups.get(key)!.push(pdi);
+  }
+
+  const macroJornadas = Array.from(trilhaGroups.values()).map(groupPdis => {
+    // Usar o PDI mais recente como referência para metadados da trilha
+    const primaryPdi = groupPdis[0]; // já ordenado por desc(createdAt)
+    
+    // Mesclar competências de todos os PDIs do mesmo grupo
+    const allGroupComps = groupPdis.flatMap(pdi => allComps.filter(c => c.assessmentPdiId === pdi.id));
+    
+    // Deduplicar competências pelo competenciaId (manter a mais recente)
+    const seenCompIds = new Set<number>();
+    const dedupedComps = allGroupComps.filter(comp => {
+      if (seenCompIds.has(comp.competenciaId)) return false;
+      seenCompIds.add(comp.competenciaId);
+      return true;
     });
     
+    const microJornadas = dedupedComps.map(buildMicroJornada);
+    
+    // Mesclar observações de todos os PDIs
+    const allObservacoes = groupPdis
+      .map(p => p.observacoes)
+      .filter(Boolean)
+      .join("\n");
+    
+    // Usar o macroInicio mais antigo e macroTermino mais recente
+    const macroInicios = groupPdis.map(p => p.macroInicio).filter(Boolean).sort();
+    const macroTerminos = groupPdis.map(p => p.macroTermino).filter(Boolean).sort();
+    
+    // Status: se algum é 'ativo', o grupo é 'ativo'
+    const hasAtivo = groupPdis.some(p => p.status === 'ativo');
+    const groupStatus = hasAtivo ? 'ativo' : primaryPdi.status;
+    
     return {
-      id: pdi.id,
-      trilhaId: pdi.trilhaId,
-      trilhaNome: pdi.trilhaId ? (trilhaMap[pdi.trilhaId] || `Trilha #${pdi.trilhaId}`) : "Sem trilha",
-      status: pdi.status,
-      macroInicio: pdi.macroInicio,
-      macroTermino: pdi.macroTermino,
-      observacoes: pdi.observacoes,
-      createdAt: pdi.createdAt,
+      id: primaryPdi.id,
+      trilhaId: primaryPdi.trilhaId,
+      trilhaNome: primaryPdi.trilhaId ? (trilhaMap[primaryPdi.trilhaId] || `Trilha #${primaryPdi.trilhaId}`) : "Sem trilha",
+      status: groupStatus,
+      macroInicio: macroInicios[0] || primaryPdi.macroInicio,
+      macroTermino: macroTerminos[macroTerminos.length - 1] || primaryPdi.macroTermino,
+      observacoes: allObservacoes || primaryPdi.observacoes,
+      createdAt: primaryPdi.createdAt,
       microJornadas,
       totalCompetencias: microJornadas.length,
       obrigatorias: microJornadas.filter(m => m.peso === "obrigatoria").length,
