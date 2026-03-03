@@ -419,10 +419,15 @@ export default function DashboardMeuPerfil() {
                       </div>
                       <div className="space-y-1.5">
                         {(showAllTrilhasCard ? assessments : assessments.slice(0, 2)).map((a: any, idx: number) => {
-                          const formatDateCard = (d: string | null) => {
+                          const formatDateCard = (d: any) => {
                             if (!d) return '—';
-                            const parts = d.split('-');
-                            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d;
+                            if (d instanceof Date || (typeof d === 'object' && d.toISOString)) {
+                              const dt = new Date(d);
+                              return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
+                            }
+                            const str = String(d);
+                            const parts = str.split('-');
+                            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : str;
                           };
                           return (
                             <div key={a.id || idx} className="flex items-center gap-2 text-xs">

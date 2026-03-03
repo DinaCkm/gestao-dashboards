@@ -1343,3 +1343,6 @@
 
 ## Card do Portal do Aluno - DashboardMeuPerfil (03/03/2026)
 - [x] Alterar card do cabeçalho do aluno no Portal do Aluno para mostrar TODAS as trilhas com ciclos de execução (mesmo tratamento do Assessment/PDI)
+
+## Bug Crítico - Portal do Aluno (03/03/2026)
+- [x] Corrigir erro "lt.split não é uma função" no Portal do Aluno (meu-dashboard) - causa: macroInicio/macroTermino é Date object, não string. Corrigido formatDateCard para lidar com ambos os tipos
