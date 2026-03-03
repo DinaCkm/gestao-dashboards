@@ -1333,3 +1333,6 @@
 - [x] Trocar "Mestre" por "Master" em todo o sistema (código + banco) - já estava correto
 - [x] Trocar "Outra/Outras" por "Opcional/Opcionais" para competências/trilhas em todo o sistema
 - [x] Trocar "Essencial" por "Essential" em todo o sistema (código + banco)
+
+## Card do Aluno - Assessment/PDI (03/03/2026)
+- [x] Mostrar TODAS as trilhas do profissional no card do cabeçalho com ciclos de execução (formato: Trilha X: Ciclo de Execução: de DD/MM até DD/MM)

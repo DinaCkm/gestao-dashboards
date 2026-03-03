@@ -34,6 +34,7 @@ import {
   TrendingUp,
   Pencil,
   Save,
+  Route,
 } from "lucide-react";
 
 // ============ Progress Bar Component ============
@@ -265,7 +266,7 @@ function AssessmentContent() {
         <>
           <Card className="border-l-4 border-l-secondary">
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-3">
                 <div>
                   <h3 className="font-semibold text-lg">{selectedAluno.name}</h3>
                   <p className="text-sm text-muted-foreground">
@@ -281,6 +282,40 @@ function AssessmentContent() {
                   </Badge>
                 </div>
               </div>
+              {assessments.length > 0 && (
+                <div className="border-t pt-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Route className="h-3.5 w-3.5" />
+                    Trilhas e Ciclos de Execução
+                  </p>
+                  {assessments.map((pdi: any) => {
+                    const macroInicioStr = formatDate(pdi.macroInicio);
+                    const macroTerminoStr = formatDate(pdi.macroTermino);
+                    const isCongelado = pdi.status === "congelado";
+                    return (
+                      <div key={pdi.id} className="flex items-center gap-2 text-sm">
+                        <Badge
+                          variant={isCongelado ? "secondary" : "default"}
+                          className="text-[10px] min-w-[80px] justify-center"
+                        >
+                          {pdi.trilhaNome}
+                        </Badge>
+                        <span className="text-muted-foreground">
+                          Ciclo de Execução: de <strong>{macroInicioStr}</strong> até <strong>{macroTerminoStr}</strong>
+                        </span>
+                        {isCongelado && (
+                          <Badge variant="outline" className="text-[9px] text-amber-600 border-amber-300">
+                            Em Andamento
+                          </Badge>
+                        )}
+                        {pdi.turmaNome && (
+                          <span className="text-xs text-muted-foreground/70">({pdi.turmaNome})</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 
