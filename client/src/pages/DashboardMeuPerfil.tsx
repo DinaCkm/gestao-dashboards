@@ -778,181 +778,63 @@ export default function DashboardMeuPerfil() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      {/* Ciclos desta trilha (integrado do Caminho de Realização) */}
+                      {/* === Visão Unificada: Ciclos + Competências === */}
                       {(() => {
                         const ciclosDaTrilha = [...(ciclosFinalizados || []), ...(ciclosEmAndamento || [])]
                           .filter((c: any) => c.trilhaNome === macroJornada.trilhaNome);
                         const ciclosV2DaTrilha = v2 ? [...(v2.ciclosFinalizados || []), ...(v2.ciclosEmAndamento || [])]
                           .filter((c: any) => c.trilhaNome === macroJornada.trilhaNome) : [];
-                        if (ciclosDaTrilha.length === 0 && ciclosV2DaTrilha.length === 0) return null;
-                        // Merge: usar v2 se disponível (tem indicadores), senão usar ciclos básicos
                         const ciclosParaMostrar = ciclosV2DaTrilha.length > 0 ? ciclosV2DaTrilha : ciclosDaTrilha;
-                        return (
-                          <div className="mb-6">
-                            <div className="flex items-center gap-2 mb-3">
-                              <Target className="h-4 w-4 text-[#0A1E3E]" />
-                              <span className="text-sm font-semibold text-gray-700">Caminho de Realização das Competências</span>
-                              <span className="text-xs text-gray-400 ml-1">
-                                <span className="text-emerald-600">Verde = No prazo</span> • <span className="text-red-600">Vermelho = Atrasado</span> • <span className="text-blue-600">Azul = Adiantado</span>
-                              </span>
-                            </div>
-                            <div className="space-y-3">
-                              {ciclosParaMostrar.map((ciclo: any, idx: number) => {
-                                const statusColors = getCicloStatusColor(ciclo.status);
-                                const isEmAndamento = ciclo.status === 'em_andamento';
-                                const totalDias = isEmAndamento ? Math.max(1, Math.ceil((new Date(ciclo.dataFim).getTime() - new Date(ciclo.dataInicio).getTime()) / (1000 * 60 * 60 * 24))) : 0;
-                                const diasPassados = isEmAndamento ? Math.ceil((Date.now() - new Date(ciclo.dataInicio).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-                                const progressoCiclo = isEmAndamento ? Math.min(100, Math.max(0, (diasPassados / totalDias) * 100)) : 0;
-                                const diasRestantes = isEmAndamento ? Math.max(0, totalDias - diasPassados) : 0;
-                                const det = ciclo.detalhes || {};
-                                return (
-                                  <div key={ciclo.cicloId || idx} className={`p-4 rounded-xl border transition-colors ${
-                                    isEmAndamento ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300' : 'bg-gray-50 border-gray-100'
-                                  }`}>
-                                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                                      <div className="flex items-center gap-2">
-                                        <div className={`w-3 h-3 rounded-full ${statusColors.bg}`} />
-                                        <span className="text-gray-900 font-medium text-sm">{ciclo.nomeCiclo}</span>
-                                        {isEmAndamento && (
-                                          <InfoTooltip text="Este é o seu ciclo atual. Os indicadores abaixo são parciais e se atualizam conforme você avança." />
-                                        )}
-                                      </div>
-                                      <div className="flex items-center gap-3">
-                                        <span className="text-xs text-gray-500">
-                                          {new Date(ciclo.dataInicio).toLocaleDateString("pt-BR")} — {new Date(ciclo.dataFim).toLocaleDateString("pt-BR")}
-                                        </span>
-                                        <Badge variant="outline" className={statusColors.badge}>
-                                          {getCicloStatusLabel(ciclo.status)}
-                                        </Badge>
-                                        {isEmAndamento && (
-                                          <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs">
-                                            {diasRestantes}d restantes
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
+                        const temCiclos = ciclosParaMostrar.length > 0;
 
-                                    {/* Barra de progresso */}
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <Progress value={isEmAndamento ? progressoCiclo : ciclo.percentualConclusao} className="h-2 flex-1" />
-                                      <span className="text-xs text-gray-700 font-semibold w-12 text-right">
-                                        {isEmAndamento ? `${progressoCiclo.toFixed(0)}%` : `${(ciclo.percentualConclusao ?? 0).toFixed(0)}%`}
-                                      </span>
-                                    </div>
+                        // Agrupar microJornadas por ciclo (usando datas de início/término)
+                        const microsPorCiclo = new Map<string, any[]>();
+                        const microsOrfaos: any[] = [];
 
-                                    {/* Resumo de competências e detalhes */}
-                                    <div className="flex items-center justify-between text-xs text-gray-500 flex-wrap gap-2">
-                                      <div className="flex items-center gap-4 flex-wrap">
-                                        <span>
-                                          {isEmAndamento ? (det.competencias?.finalizadas || ciclo.competenciasConcluidas || 0) : (ciclo.competenciasConcluidas || 0)} de {isEmAndamento ? (det.competencias?.total || ciclo.totalCompetencias || 0) : (ciclo.totalCompetencias || 0)} competências concluídas
-                                        </span>
-                                        {isEmAndamento && det.webinars && (
-                                          <span className="flex items-center gap-1">
-                                            <Video className="h-3 w-3 text-blue-500" />
-                                            {det.webinars.presentes || 0}/{det.webinars.total || 0} webinars
-                                          </span>
-                                        )}
-                                        {isEmAndamento && det.tarefas && (
-                                          <span className="flex items-center gap-1">
-                                            <ClipboardCheck className="h-3 w-3 text-emerald-500" />
-                                            {det.tarefas.entregues || 0}/{det.tarefas.total || 0} tarefas
-                                          </span>
-                                        )}
-                                        {isEmAndamento && det.avaliacoes && (
-                                          <span className="flex items-center gap-1">
-                                            <GraduationCap className="h-3 w-3 text-red-500" />
-                                            {det.avaliacoes.provasRealizadas || 0} provas
-                                          </span>
-                                        )}
-                                      </div>
-                                      {!isEmAndamento && ciclo.mediaNotasProvas > 0 && (
-                                        <span>Média provas: {ciclo.mediaNotasProvas.toFixed(0)}%</span>
-                                      )}
-                                    </div>
+                        macroJornada.microJornadas.forEach((micro: any) => {
+                          let encontrouCiclo = false;
+                          if (temCiclos) {
+                            for (const ciclo of ciclosParaMostrar) {
+                              // Match por competenciaIds se disponível
+                              if (ciclo.detalhes?.competencias?.competenciasDetalhe) {
+                                const compIds = ciclo.detalhes.competencias.competenciasDetalhe.map((cd: any) => cd.competenciaId);
+                                if (compIds.includes(micro.competenciaId)) {
+                                  const key = String(ciclo.cicloId || ciclo.nomeCiclo);
+                                  if (!microsPorCiclo.has(key)) microsPorCiclo.set(key, []);
+                                  microsPorCiclo.get(key)!.push(micro);
+                                  encontrouCiclo = true;
+                                  break;
+                                }
+                              }
+                              // Fallback: match por datas
+                              if (micro.microInicio && micro.microTermino && ciclo.dataInicio && ciclo.dataFim) {
+                                const microIni = new Date(micro.microInicio).toISOString().slice(0, 10);
+                                const microFim = new Date(micro.microTermino).toISOString().slice(0, 10);
+                                const cicloIni = new Date(ciclo.dataInicio).toISOString().slice(0, 10);
+                                const cicloFim = new Date(ciclo.dataFim).toISOString().slice(0, 10);
+                                if (microIni === cicloIni && microFim === cicloFim) {
+                                  const key = String(ciclo.cicloId || ciclo.nomeCiclo);
+                                  if (!microsPorCiclo.has(key)) microsPorCiclo.set(key, []);
+                                  microsPorCiclo.get(key)!.push(micro);
+                                  encontrouCiclo = true;
+                                  break;
+                                }
+                              }
+                            }
+                          }
+                          if (!encontrouCiclo) microsOrfaos.push(micro);
+                        });
 
-                                    {/* Indicadores parciais (para ciclos em andamento com dados v2) */}
-                                    {isEmAndamento && ciclo.ind1_webinars !== undefined && (
-                                      <div className="mt-3">
-                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                                          {[
-                                            { label: "Webinars", valor: ciclo.ind1_webinars, icon: Video, color: "text-blue-600 bg-blue-100" },
-                                            { label: "Avaliações", valor: ciclo.ind2_avaliacoes, icon: GraduationCap, color: "text-red-600 bg-red-100" },
-                                            { label: "Competências", valor: ciclo.ind3_competencias, icon: BookOpen, color: "text-purple-600 bg-purple-100" },
-                                            { label: "Tarefas", valor: ciclo.ind4_tarefas, icon: ClipboardCheck, color: "text-emerald-600 bg-emerald-100" },
-                                            { label: "Engajamento", valor: ciclo.ind5_engajamento, icon: Star, color: "text-amber-600 bg-amber-100" },
-                                            { label: "Cases", valor: ciclo.ind6_aplicabilidade, icon: Briefcase, color: "text-rose-600 bg-rose-100" },
-                                            { label: "Eng. Final", valor: ciclo.ind7_engajamentoFinal, icon: Trophy, color: "text-[#F5991F] bg-orange-100" },
-                                          ].map(({ label, valor, icon: Icon, color }) => (
-                                            <div key={label} className="bg-white rounded-lg p-2 border border-gray-200 text-center">
-                                              <div className={`inline-flex p-1 rounded ${color.split(' ')[1]} mb-0.5`}>
-                                                <Icon className={`h-3 w-3 ${color.split(' ')[0]}`} />
-                                              </div>
-                                              <p className="text-sm font-bold text-gray-800">{(valor ?? 0).toFixed(0)}%</p>
-                                              <p className="text-[9px] text-gray-500 leading-tight">{label}</p>
-                                            </div>
-                                          ))}
-                                        </div>
-                                        <p className="text-[10px] text-blue-600 italic text-center mt-2">
-                                          ⚠ Indicadores parciais — baseados apenas nos dados disponíveis até o momento
-                                        </p>
-                                      </div>
-                                    )}
-
-                                    {/* Indicadores para ciclos finalizados */}
-                                    {ciclo.status === "finalizado" && ciclo.ind1_webinars !== undefined && (
-                                      <div className="mt-3">
-                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                                          {[
-                                            { label: "Webinars", valor: ciclo.ind1_webinars, icon: Video, color: "text-blue-600 bg-blue-100" },
-                                            { label: "Avaliações", valor: ciclo.ind2_avaliacoes, icon: GraduationCap, color: "text-red-600 bg-red-100" },
-                                            { label: "Competências", valor: ciclo.ind3_competencias, icon: BookOpen, color: "text-purple-600 bg-purple-100" },
-                                            { label: "Tarefas", valor: ciclo.ind4_tarefas, icon: ClipboardCheck, color: "text-emerald-600 bg-emerald-100" },
-                                            { label: "Engajamento", valor: ciclo.ind5_engajamento, icon: Star, color: "text-amber-600 bg-amber-100" },
-                                            { label: "Cases", valor: ciclo.ind6_aplicabilidade, icon: Briefcase, color: "text-rose-600 bg-rose-100" },
-                                            { label: "Eng. Final", valor: ciclo.ind7_engajamentoFinal, icon: Trophy, color: "text-[#F5991F] bg-orange-100" },
-                                          ].map(({ label, valor, icon: Icon, color }) => (
-                                            <div key={label} className="bg-white rounded-lg p-2 border border-gray-200 text-center">
-                                              <div className={`inline-flex p-1 rounded ${color.split(' ')[1]} mb-0.5`}>
-                                                <Icon className={`h-3 w-3 ${color.split(' ')[0]}`} />
-                                              </div>
-                                              <p className="text-sm font-bold text-gray-800">{(valor ?? 0).toFixed(0)}%</p>
-                                              <p className="text-[9px] text-gray-500 leading-tight">{label}</p>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {ciclo.status === "finalizado" && (
-                                      <p className="text-xs text-emerald-600 mt-2">Este ciclo entra no cálculo da Performance Geral</p>
-                                    )}
-                                    {ciclo.status === "em_andamento" && (
-                                      <p className="text-xs text-blue-600 mt-2">Ciclo em andamento — não entra na Performance Geral ainda</p>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Micro Jornadas (competências) */}
-                      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                        {macroJornada.microJornadas.map((micro: any) => {
-                          const nivel = micro.nivelAtual ?? 0;
-                          const meta = micro.metaFinal ?? 100;
-                          const progressPercent = meta > 0 ? Math.min((nivel / meta) * 100, 100) : 0;
-                          
-                          // Dados de aulas da plataforma
+                        // Função para renderizar uma competência inline
+                        const renderMicro = (micro: any) => {
                           const aulasDisp = micro.aulasDisponiveis ?? 0;
                           const aulasConc = micro.aulasConcluidas ?? 0;
                           const aulasAnd = micro.aulasEmAndamento ?? 0;
                           const competenciaConcluida = aulasDisp > 0 && aulasConc >= aulasDisp;
                           const notaPlataforma = micro.notaPlataforma ?? 0;
                           const progressoAulas = aulasDisp > 0 ? (aulasConc / aulasDisp) * 100 : 0;
-                          
-                          // Status do ciclo
+                          const nivel = micro.nivelAtual ?? 0;
+                          const meta = micro.metaFinal ?? 100;
                           const hoje = new Date();
                           const microInicio = micro.microInicio ? new Date(micro.microInicio) : null;
                           const microTermino = micro.microTermino ? new Date(micro.microTermino) : null;
@@ -960,126 +842,185 @@ export default function DashboardMeuPerfil() {
                             hoje < microInicio ? 'futuro' :
                             hoje > microTermino ? 'finalizado' : 'em_andamento';
                           const diasRestantes = microTermino ? Math.ceil((microTermino.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)) : null;
-                          
-                          // Cores e ícones baseados no status real
                           const barColor = competenciaConcluida ? "bg-emerald-500" : 
                             progressoAulas >= 70 ? "bg-amber-500" : 
                             progressoAulas > 0 ? "bg-blue-500" : "bg-gray-300";
-                          const statusIcon = competenciaConcluida ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> :
-                            aulasConc > 0 ? <TrendingUp className="h-5 w-5 text-amber-500" /> :
-                            cicloStatus === 'futuro' ? <Clock className="h-5 w-5 text-gray-300" /> :
-                            <Target className="h-5 w-5 text-gray-400" />;
+                          const statusIcon = competenciaConcluida ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> :
+                            aulasConc > 0 ? <TrendingUp className="h-4 w-4 text-amber-500" /> :
+                            cicloStatus === 'futuro' ? <Clock className="h-4 w-4 text-gray-300" /> :
+                            <Target className="h-4 w-4 text-gray-400" />;
 
                           return (
-                            <div key={micro.id} className={`p-4 rounded-xl border transition-colors ${
-                              competenciaConcluida ? 'bg-emerald-50 border-emerald-200' :
-                              cicloStatus === 'futuro' ? 'bg-gray-50 border-gray-100 opacity-60' :
-                              cicloStatus === 'finalizado' && aulasConc === 0 ? 'bg-red-50 border-red-200' :
-                              'bg-gray-50 border-gray-100 hover:bg-gray-100'
+                            <div key={micro.id} className={`p-3 rounded-lg border ${
+                              competenciaConcluida ? 'bg-emerald-50/50 border-emerald-200' :
+                              cicloStatus === 'futuro' ? 'bg-gray-50/50 border-gray-100 opacity-60' :
+                              cicloStatus === 'finalizado' && aulasConc === 0 ? 'bg-red-50/50 border-red-200' :
+                              'bg-white/50 border-gray-100'
                             }`}>
-                              <div className="flex items-start gap-3 mb-3">
-                                <div className="flex-shrink-0 mt-0.5">{statusIcon}</div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
-                                    <p className="text-sm text-gray-900 font-semibold">{micro.competenciaNome}</p>
-                                    <div className="flex items-center gap-1.5">
-                                      {cicloStatus === 'em_andamento' && diasRestantes !== null && diasRestantes <= 14 && !competenciaConcluida && micro.peso === 'obrigatoria' && (
-                                        <Badge className={`text-xs ${
-                                          diasRestantes <= 7 ? 'bg-red-100 text-red-700 border-red-300' : 'bg-amber-100 text-amber-700 border-amber-300'
-                                        }`}>
-                                          <Clock className="h-3 w-3 mr-0.5" />
-                                          {diasRestantes}d
-                                        </Badge>
-                                      )}
-                                      {cicloStatus === 'finalizado' && !competenciaConcluida && micro.peso === 'obrigatoria' && (
-                                        <Badge className="bg-red-100 text-red-700 border-red-300 text-xs">
-                                          Vencida
-                                        </Badge>
-                                      )}
-                                      {competenciaConcluida && (
-                                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 text-xs">
-                                          Concluída
-                                        </Badge>
-                                      )}
-                                      <Badge variant="outline" className={micro.peso === 'obrigatoria' ? "bg-amber-50 text-amber-700 border-amber-300 text-xs" : "bg-gray-100 text-gray-600 border-gray-300 text-xs"}>
-                                        {micro.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                  {micro.microInicio && micro.microTermino && (
-                                    <p className="text-xs text-gray-500 mb-1">
-                                      <Calendar className="h-3 w-3 inline mr-1" />
-                                      Micro Jornada: {new Date(micro.microInicio).toLocaleDateString("pt-BR")} a {new Date(micro.microTermino).toLocaleDateString("pt-BR")}
-                                      {cicloStatus === 'futuro' && <span className="ml-1 text-gray-400">(Futuro)</span>}
-                                      {cicloStatus === 'em_andamento' && <span className="ml-1 text-blue-600">(Em andamento)</span>}
-                                      {cicloStatus === 'finalizado' && <span className="ml-1 text-gray-600">(Finalizado)</span>}
-                                    </p>
+                              <div className="flex items-center gap-2 mb-1.5">
+                                {statusIcon}
+                                <span className="text-sm font-semibold text-gray-900 flex-1">{micro.competenciaNome}</span>
+                                <div className="flex items-center gap-1">
+                                  {cicloStatus === 'em_andamento' && diasRestantes !== null && diasRestantes <= 14 && !competenciaConcluida && micro.peso === 'obrigatoria' && (
+                                    <Badge className={`text-[10px] px-1.5 py-0 ${diasRestantes <= 7 ? 'bg-red-100 text-red-700 border-red-300' : 'bg-amber-100 text-amber-700 border-amber-300'}`}>
+                                      <Clock className="h-2.5 w-2.5 mr-0.5" />{diasRestantes}d
+                                    </Badge>
                                   )}
-                                  {/* Dados de aulas */}
-                                  {aulasDisp > 0 && (
-                                    <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
-                                      <BookOpen className="h-3 w-3" />
-                                      <span>Aulas: <strong className="text-gray-700">{aulasConc}/{aulasDisp}</strong> concluídas</span>
-                                      {aulasAnd > 0 && <span>• <strong className="text-blue-600">{aulasAnd}</strong> em andamento</span>}
-                                      {notaPlataforma > 0 && (
-                                        <span>• Nota: <strong className={notaPlataforma >= 70 ? "text-emerald-600" : "text-amber-600"}>{notaPlataforma.toFixed(0)}</strong></span>
-                                      )}
-                                    </div>
+                                  {cicloStatus === 'finalizado' && !competenciaConcluida && micro.peso === 'obrigatoria' && (
+                                    <Badge className="bg-red-100 text-red-700 border-red-300 text-[10px] px-1.5 py-0">Vencida</Badge>
                                   )}
+                                  {competenciaConcluida && (
+                                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 text-[10px] px-1.5 py-0">Concluída</Badge>
+                                  )}
+                                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${micro.peso === 'obrigatoria' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
+                                    {micro.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
+                                  </Badge>
                                 </div>
                               </div>
-
-                              {/* Barra de progresso baseada em aulas */}
-                              <div className="ml-8">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden relative">
-                                    <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${progressoAulas}%` }} />
-                                  </div>
-                                  <span className={`text-sm font-bold min-w-[45px] text-right ${
-                                    competenciaConcluida ? "text-emerald-600" : 
-                                    progressoAulas > 0 ? "text-blue-600" : "text-gray-400"
-                                  }`}>
-                                    {progressoAulas > 0 ? `${progressoAulas.toFixed(0)}%` : "—"}
-                                  </span>
+                              {/* Barra + métricas em linha */}
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${progressoAulas}%` }} />
                                 </div>
-
-                                {/* Info resumida */}
-                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                                  {aulasDisp > 0 && (
-                                    <span className="flex items-center gap-1">
-                                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                      Progresso: <strong className="text-gray-700">{aulasConc}/{aulasDisp} aulas</strong>
-                                    </span>
-                                  )}
-                                  {notaPlataforma > 0 && (
-                                    <span className="flex items-center gap-1">
-                                      <span className={`w-2 h-2 rounded-full ${notaPlataforma >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-                                      Nota Avaliação: <strong className="text-gray-700">{notaPlataforma.toFixed(0)}</strong>
-                                    </span>
-                                  )}
-                                  {nivel > 0 && (
-                                    <span className="flex items-center gap-1">
-                                      <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                                      Nível Mentora: <strong className="text-gray-700">{nivel.toFixed(0)}%</strong>
-                                    </span>
-                                  )}
-                                  <span className="flex items-center gap-1">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                    Meta Final: <strong className="text-gray-700">{meta > 0 ? `${meta.toFixed(0)}%` : "—"}</strong>
-                                  </span>
-                                </div>
-
-                                {/* Justificativa */}
-                                {micro.justificativa && (
-                                  <div className="mt-2 p-2 rounded-lg bg-blue-50 border border-blue-100 text-xs text-gray-700">
-                                    <span className="font-semibold">Justificativa:</span> {micro.justificativa}
-                                  </div>
-                                )}
+                                <span className={`text-xs font-bold min-w-[35px] text-right ${competenciaConcluida ? 'text-emerald-600' : progressoAulas > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
+                                  {progressoAulas > 0 ? `${progressoAulas.toFixed(0)}%` : '—'}
+                                </span>
                               </div>
+                              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-gray-500">
+                                {aulasDisp > 0 && <span>Aulas: <strong className="text-gray-700">{aulasConc}/{aulasDisp}</strong></span>}
+                                {aulasAnd > 0 && <span>Em andamento: <strong className="text-blue-600">{aulasAnd}</strong></span>}
+                                {notaPlataforma > 0 && <span>Nota: <strong className={notaPlataforma >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{notaPlataforma.toFixed(0)}</strong></span>}
+                                {nivel > 0 && <span>Nível Mentora: <strong className="text-gray-700">{nivel.toFixed(0)}%</strong></span>}
+                                <span>Meta: <strong className="text-gray-700">{meta > 0 ? `${meta.toFixed(0)}%` : '—'}</strong></span>
+                              </div>
+                              {micro.justificativa && (
+                                <div className="mt-1.5 p-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] text-gray-700">
+                                  <strong>Justificativa:</strong> {micro.justificativa}
+                                </div>
+                              )}
                             </div>
                           );
-                        })}
-                      </div>
+                        };
+
+                        return (
+                          <div className="space-y-4">
+                            {/* Ciclos com competências integradas */}
+                            {temCiclos && ciclosParaMostrar.map((ciclo: any, idx: number) => {
+                              const statusColors = getCicloStatusColor(ciclo.status);
+                              const isEmAndamento = ciclo.status === 'em_andamento';
+                              const totalDias = isEmAndamento ? Math.max(1, Math.ceil((new Date(ciclo.dataFim).getTime() - new Date(ciclo.dataInicio).getTime()) / (1000 * 60 * 60 * 24))) : 0;
+                              const diasPassados = isEmAndamento ? Math.ceil((Date.now() - new Date(ciclo.dataInicio).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                              const progressoCiclo = isEmAndamento ? Math.min(100, Math.max(0, (diasPassados / totalDias) * 100)) : 0;
+                              const diasRestantes = isEmAndamento ? Math.max(0, totalDias - diasPassados) : 0;
+                              const det = ciclo.detalhes || {};
+                              const key = String(ciclo.cicloId || ciclo.nomeCiclo);
+                              const microsDesteCiclo = microsPorCiclo.get(key) || [];
+
+                              return (
+                                <div key={ciclo.cicloId || idx} className={`rounded-xl border overflow-hidden ${
+                                  isEmAndamento ? 'border-blue-300' : 'border-gray-200'
+                                }`}>
+                                  {/* Cabeçalho do ciclo */}
+                                  <div className={`px-4 py-3 ${
+                                    isEmAndamento ? 'bg-gradient-to-r from-blue-50 to-indigo-50' : 'bg-gray-50'
+                                  }`}>
+                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-2.5 h-2.5 rounded-full ${statusColors.bg}`} />
+                                        <span className="text-sm font-semibold text-gray-900">{ciclo.nomeCiclo}</span>
+                                        {isEmAndamento && <InfoTooltip text="Este é o seu ciclo atual. Os indicadores são parciais e se atualizam conforme você avança." />}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500">
+                                          {new Date(ciclo.dataInicio).toLocaleDateString('pt-BR')} — {new Date(ciclo.dataFim).toLocaleDateString('pt-BR')}
+                                        </span>
+                                        <Badge variant="outline" className={`text-xs ${statusColors.badge}`}>
+                                          {getCicloStatusLabel(ciclo.status)}
+                                        </Badge>
+                                        {isEmAndamento && (
+                                          <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs">
+                                            {diasRestantes} dias restantes
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {/* Barra de progresso do ciclo */}
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <Progress value={isEmAndamento ? progressoCiclo : ciclo.percentualConclusao} className="h-1.5 flex-1" />
+                                      <span className="text-xs text-gray-600 font-semibold w-10 text-right">
+                                        {isEmAndamento ? `${progressoCiclo.toFixed(0)}%` : `${(ciclo.percentualConclusao ?? 0).toFixed(0)}%`}
+                                      </span>
+                                    </div>
+                                    {/* Resumo rápido */}
+                                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-500 flex-wrap">
+                                      <span>{isEmAndamento ? (det.competencias?.finalizadas || 0) : (ciclo.competenciasConcluidas || 0)} de {isEmAndamento ? (det.competencias?.total || 0) : (ciclo.totalCompetencias || 0)} competências concluídas</span>
+                                      {det.webinars && <span className="flex items-center gap-0.5"><Video className="h-2.5 w-2.5 text-blue-500" />{det.webinars.presentes || 0}/{det.webinars.total || 0} webinars</span>}
+                                      {det.tarefas && <span className="flex items-center gap-0.5"><ClipboardCheck className="h-2.5 w-2.5 text-emerald-500" />{det.tarefas.entregues || 0}/{det.tarefas.total || 0} tarefas</span>}
+                                      {det.avaliacoes && det.avaliacoes.provasRealizadas > 0 && <span className="flex items-center gap-0.5"><GraduationCap className="h-2.5 w-2.5 text-red-500" />{det.avaliacoes.provasRealizadas} provas</span>}
+                                    </div>
+                                  </div>
+
+                                  {/* Corpo: indicadores + competências */}
+                                  <div className="px-4 py-3 space-y-3">
+                                    {/* 7 indicadores em linha compacta */}
+                                    {ciclo.ind1_webinars !== undefined && (
+                                      <div className="grid grid-cols-7 gap-1.5">
+                                        {[
+                                          { label: 'Webinars', valor: ciclo.ind1_webinars, icon: Video, color: 'text-blue-600 bg-blue-100' },
+                                          { label: 'Avaliações', valor: ciclo.ind2_avaliacoes, icon: GraduationCap, color: 'text-red-600 bg-red-100' },
+                                          { label: 'Competências', valor: ciclo.ind3_competencias, icon: BookOpen, color: 'text-purple-600 bg-purple-100' },
+                                          { label: 'Tarefas', valor: ciclo.ind4_tarefas, icon: ClipboardCheck, color: 'text-emerald-600 bg-emerald-100' },
+                                          { label: 'Engajamento', valor: ciclo.ind5_engajamento, icon: Star, color: 'text-amber-600 bg-amber-100' },
+                                          { label: 'Cases', valor: ciclo.ind6_aplicabilidade, icon: Briefcase, color: 'text-rose-600 bg-rose-100' },
+                                          { label: 'Eng. Final', valor: ciclo.ind7_engajamentoFinal, icon: Trophy, color: 'text-[#F5991F] bg-orange-100' },
+                                        ].map(({ label, valor, icon: Icon, color }) => (
+                                          <div key={label} className="bg-gray-50 rounded-lg p-1.5 border border-gray-100 text-center">
+                                            <div className={`inline-flex p-0.5 rounded ${color.split(' ')[1]} mb-0.5`}>
+                                              <Icon className={`h-2.5 w-2.5 ${color.split(' ')[0]}`} />
+                                            </div>
+                                            <p className="text-xs font-bold text-gray-800">{(valor ?? 0).toFixed(0)}%</p>
+                                            <p className="text-[8px] text-gray-500 leading-tight">{label}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {isEmAndamento && ciclo.ind1_webinars !== undefined && (
+                                      <p className="text-[10px] text-blue-600 italic text-center">Indicadores parciais — baseados nos dados disponíveis até o momento</p>
+                                    )}
+                                    {ciclo.status === 'finalizado' && (
+                                      <p className="text-[10px] text-emerald-600 text-center">Este ciclo entra no cálculo do Desempenho Geral</p>
+                                    )}
+
+                                    {/* Competências deste ciclo */}
+                                    {microsDesteCiclo.length > 0 && (
+                                      <div className="space-y-2">
+                                        {microsDesteCiclo.map((micro: any) => renderMicro(micro))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {/* Competências sem ciclo associado */}
+                            {microsOrfaos.length > 0 && (
+                              <div className="space-y-2">
+                                {temCiclos && (
+                                  <p className="text-xs text-gray-500 font-medium">Outras competências</p>
+                                )}
+                                {microsOrfaos.map((micro: any) => renderMicro(micro))}
+                              </div>
+                            )}
+
+                            {/* Fallback: se não tem ciclos, mostrar todas as microJornadas */}
+                            {!temCiclos && microsOrfaos.length === 0 && macroJornada.microJornadas.length > 0 && (
+                              <div className="space-y-2">
+                                {macroJornada.microJornadas.map((micro: any) => renderMicro(micro))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* Observações do assessment */}
                       {macroJornada.observacoes && (
