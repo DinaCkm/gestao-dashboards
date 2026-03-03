@@ -1316,3 +1316,4 @@
 - [x] Remover barra de progresso duplicada e competência repetida nos ciclos — unificar em uma única barra por ciclo
 - [x] Fundir cabeçalho do ciclo com card da competência quando há apenas 1 competência (eliminar barra duplicada)
 - [x] Ordenar ciclos do mais recente (atual/em andamento) para os mais antigos (finalizados)
+- [x] Aplicar mesma unificação de barras de progresso (barra única por ciclo + ordenação recente→antigo) no DashboardAluno (visão admin)
