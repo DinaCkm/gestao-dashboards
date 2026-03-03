@@ -175,7 +175,8 @@ export function calcularIndicadoresAluno(
   eventos: EventRecord[],
   performance: PerformanceRecord[],
   ciclos?: CicloExecucaoData[],
-  competenciasObrigatorias?: CompetenciaObrigatoria[]
+  competenciasObrigatorias?: CompetenciaObrigatoria[],
+  compIdToCodigoMap?: Map<number, string>
 ): StudentIndicators {
   // Filtrar registros do aluno
   const mentoriasAluno = mentorias.filter(m => m.idUsuario === idUsuario);
@@ -268,40 +269,78 @@ export function calcularIndicadoresAluno(
     for (const ciclo of ciclos) {
       const status = determinarStatusCiclo(ciclo.dataInicio, ciclo.dataFim);
       
+      // IGNORAR ciclos futuros - não entram em nenhum cálculo
+      if (status === 'futuro') continue;
+      
       // Buscar performance das competências deste ciclo
-      let aulasConcluidas = 0;
-      let totalAulas = 0;
+      let compsConcluidas = 0;
+      let totalComps = 0;
       let somaNotas = 0;
       let competenciasComNota = 0;
-      let competenciasConcluidas = 0;
       
       for (const compId of ciclo.competenciaIds) {
-        // Buscar dados na performance pelo competenciaId
-        const perfComp = performanceAluno.find(p => 
-          p.idCompetencia === String(compId) || 
-          p.nomeCompetencia === String(compId)
-        );
-        
-        // Também buscar no plano individual via competenciasObrigatorias
+        // Só competências OBRIGATÓRIAS entram no cálculo
         const compObrig = competenciasObrigatorias?.find(c => c.competenciaId === compId);
+        // Se não está na lista de obrigatórias, pular
+        // (se não temos lista de obrigatórias, considerar todas)
+        if (competenciasObrigatorias && competenciasObrigatorias.length > 0 && !compObrig) continue;
         
+        totalComps++;
+        
+        // Buscar nota na performance pelo codigoIntegracao
+        const codigoIntegracao = compIdToCodigoMap?.get(compId);
+        const perfComp = performanceAluno.find(p => {
+          if (codigoIntegracao) {
+            return p.idCompetencia === codigoIntegracao || 
+                   p.idCompetencia?.toLowerCase() === codigoIntegracao.toLowerCase();
+          }
+          return p.idCompetencia === String(compId);
+        });
+        
+        // Determinar nota e conclusão: plano_individual > student_performance
         let nota = 0;
+        let temNota = false;
+        let concluiuAulas = false;
+        
         if (compObrig?.notaAtual) {
           nota = parseFloat(compObrig.notaAtual);
-        } else if (perfComp?.notaAvaliacao) {
-          nota = perfComp.notaAvaliacao;
+          temNota = true;
+          concluiuAulas = true; // Se tem nota manual, considerar concluída
+        } else if (perfComp) {
+          // Conclusão = fez todas as aulas disponíveis
+          concluiuAulas = (perfComp as any).competenciaConcluida === true;
+          
+          if (perfComp.notaAvaliacao !== undefined && perfComp.notaAvaliacao >= 0) {
+            nota = perfComp.notaAvaliacao;
+            temNota = nota > 0;
+          }
         }
         
-        totalAulas++;
-        if (nota > 0) {
-          aulasConcluidas++;
-          somaNotas += nota;
-          competenciasComNota++;
-          if (nota >= 7) competenciasConcluidas++;
+        // REGRA: Se ciclo FINALIZADO (vencido) e aluno não cursou,
+        // conta como 0 no cálculo (puxa a nota para baixo)
+        if (status === 'finalizado') {
+          // Sempre conta no total, mesmo se zerado
+          if (temNota) {
+            somaNotas += nota;
+            competenciasComNota++;
+            // Aprovado = concluiu todas as aulas E nota >= 7
+            if (concluiuAulas && nota >= 7) compsConcluidas++;
+          } else {
+            // Não cursou mas ciclo vencido: conta como 0
+            somaNotas += 0;
+            competenciasComNota++;
+          }
+        } else if (status === 'em_andamento') {
+          // Em andamento: só conta se tem nota real
+          if (temNota) {
+            somaNotas += nota;
+            competenciasComNota++;
+            if (concluiuAulas && nota >= 7) compsConcluidas++;
+          }
         }
       }
       
-      const percentualConclusao = totalAulas > 0 ? (aulasConcluidas / totalAulas) * 100 : 0;
+      const percentualConclusao = totalComps > 0 ? (compsConcluidas / totalComps) * 100 : 0;
       const mediaNotas = competenciasComNota > 0 ? (somaNotas / competenciasComNota / 10) * 100 : 0;
       
       const cicloResult: CicloResult = {
@@ -310,8 +349,8 @@ export function calcularIndicadoresAluno(
         status,
         dataInicio: ciclo.dataInicio,
         dataFim: ciclo.dataFim,
-        totalCompetencias: ciclo.competenciaIds.length,
-        competenciasConcluidas: aulasConcluidas,
+        totalCompetencias: totalComps,
+        competenciasConcluidas: compsConcluidas,
         percentualConclusao,
         mediaNotasProvas: mediaNotas,
         competenciasComNota,
@@ -322,17 +361,16 @@ export function calcularIndicadoresAluno(
       } else if (status === 'em_andamento') {
         ciclosEmAndamento.push(cicloResult);
       }
-      // 'futuro' é ignorado
     }
     
-    // Indicador 4: média dos percentuais de conclusão dos ciclos FINALIZADOS
+    // Indicador 4: % de competências aprovadas dos ciclos FINALIZADOS
     if (ciclosFinalizados.length > 0) {
-      performanceCompetencias = ciclosFinalizados.reduce((sum, c) => sum + c.percentualConclusao, 0) / ciclosFinalizados.length;
       totalCompetencias = ciclosFinalizados.reduce((sum, c) => sum + c.totalCompetencias, 0);
       competenciasAprovadas = ciclosFinalizados.reduce((sum, c) => sum + c.competenciasConcluidas, 0);
+      performanceCompetencias = totalCompetencias > 0 ? (competenciasAprovadas / totalCompetencias) * 100 : 0;
     }
     
-    // Indicador 5: média das notas de provas dos ciclos FINALIZADOS
+    // Indicador 5: média das notas dos ciclos FINALIZADOS
     if (ciclosFinalizados.length > 0) {
       const ciclosComNota = ciclosFinalizados.filter(c => c.competenciasComNota > 0);
       if (ciclosComNota.length > 0) {
@@ -340,28 +378,24 @@ export function calcularIndicadoresAluno(
       }
     }
   } else {
-    // Fallback: sem ciclos definidos, usar lógica anterior (todas as competências)
-    // Isso mantém compatibilidade enquanto os ciclos não são configurados
-    totalCompetencias = performanceAluno.length;
-    competenciasAprovadas = performanceAluno.filter(p => p.aprovado === true).length;
-    
-    const notasComp = performanceAluno
-      .filter(p => p.notaAvaliacao !== undefined && p.notaAvaliacao !== null && p.notaAvaliacao > 0)
-      .map(p => p.notaAvaliacao!);
-    
-    if (notasComp.length > 0) {
-      const mediaNotas = notasComp.reduce((a, b) => a + b, 0) / notasComp.length;
-      performanceCompetencias = (competenciasAprovadas / totalCompetencias) * 100 || 0;
-      performanceAprendizado = (mediaNotas / 10) * 100;
-    }
-    
-    // Se tem competências obrigatórias, usar performance filtrada
+    // Fallback: sem ciclos definidos, usar competências obrigatórias diretamente
     if (competenciasObrigatorias && competenciasObrigatorias.length > 0) {
       const perfFiltrada = calcularPerformanceFiltrada(competenciasObrigatorias, performanceAluno);
       totalCompetencias = perfFiltrada.totalObrigatorias;
       competenciasAprovadas = perfFiltrada.aprovadas;
       performanceCompetencias = perfFiltrada.percentualAprovacao;
       performanceAprendizado = (perfFiltrada.mediaNotas / 10) * 100;
+    } else {
+      // Sem ciclos e sem obrigatórias: usar todos os registros de performance
+      totalCompetencias = performanceAluno.length;
+      competenciasAprovadas = performanceAluno.filter(p => p.aprovado === true).length;
+      const notasComp = performanceAluno
+        .filter(p => p.notaAvaliacao !== undefined && p.notaAvaliacao !== null && p.notaAvaliacao > 0)
+        .map(p => p.notaAvaliacao!);
+      if (notasComp.length > 0) {
+        performanceCompetencias = (competenciasAprovadas / totalCompetencias) * 100 || 0;
+        performanceAprendizado = (notasComp.reduce((a, b) => a + b, 0) / notasComp.length / 10) * 100;
+      }
     }
   }
 
@@ -430,7 +464,8 @@ export function calcularIndicadoresTodosAlunos(
   eventos: EventRecord[],
   performance: PerformanceRecord[],
   ciclosPorAluno?: Map<string, CicloExecucaoData[]>,
-  competenciasPorAluno?: Map<string, CompetenciaObrigatoria[]>
+  competenciasPorAluno?: Map<string, CompetenciaObrigatoria[]>,
+  compIdToCodigoMap?: Map<number, string>
 ): StudentIndicators[] {
   // Obter lista única de IDs de usuários
   const idsUsuariosSet: string[] = [];
@@ -449,7 +484,7 @@ export function calcularIndicadoresTodosAlunos(
     const ciclosAluno = ciclosPorAluno?.get(idUsuario);
     const compsAluno = competenciasPorAluno?.get(idUsuario);
     const indicador = calcularIndicadoresAluno(
-      idUsuario, mentorias, eventos, performance, ciclosAluno, compsAluno
+      idUsuario, mentorias, eventos, performance, ciclosAluno, compsAluno, compIdToCodigoMap
     );
     indicadores.push(indicador);
   }
@@ -734,7 +769,7 @@ export function calcularIndicadoresAlunoFiltrado(
 ): StudentIndicators & { performanceFiltrada: ReturnType<typeof calcularPerformanceFiltrada> } {
   const indicadores = calcularIndicadoresAluno(
     idUsuario, mentorias, eventos, performance, ciclos, competenciasObrigatorias
-  );
+  );  // Note: compIdToCodigoMap not passed here for legacy compatibility
   
   const performanceFiltrada = calcularPerformanceFiltrada(
     competenciasObrigatorias, 

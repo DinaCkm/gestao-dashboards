@@ -1191,3 +1191,93 @@
 - [x] Inserir dados no banco: Assessments/PDI com Macro Ciclos e Micro Ciclos por competência
 - [x] Implementar visualização da jornada na área do aluno (programa, macro ciclos, micro ciclos, obrigatórias/opcionais)
 - [ ] Performance geral calculada apenas sobre competências obrigatórias
+
+## Bug: Indicadores 4 e 5 zerados (02/03/2026)
+- [x] BUG: Indicadores 4 (Competências) e 5 (Aprendizado) aparecem como 0% no dashboard mesmo com dados de performance no banco (corrigido: adicionado student_performance como fonte de notas)
+
+## Reestruturação dos Indicadores 4 e 5 por ciclo/período (02/03/2026)
+- [ ] Indicadores 4 e 5 devem considerar apenas competências obrigatórias dentro do período/ciclo
+- [ ] Competências fora do período (futuras) não devem impactar a nota, mesmo que o aluno já tenha feito
+- [ ] Dashboard deve mostrar resultado por macro e micro ciclo
+- [ ] Dashboard deve mostrar resultado geral atual (apenas ciclos finalizados, apenas obrigatórias)
+- [ ] Ciclos em andamento devem aparecer separados dos finalizados
+- [ ] Área do aluno deve mostrar todas as competências realizadas (inclusive fora do período)
+- [ ] Usar ciclos_execucao + datas microInicio/microTermino dos assessments como referência de período
+
+## Alerta de encerramento de micro ciclo na área do aluno (03/03/2026)
+- [ ] Implementar alerta visual na área do aluno mostrando datas de encerramento de micro ciclos próximos
+- [ ] Listar competências pendentes de cada micro ciclo com prazo próximo
+- [ ] Destacar urgência (dias restantes) para motivar o aluno a acessar a plataforma
+- [ ] BUG: Indicadores 4 e 5 mostram 0% para todos os alunos (não só ODILO) - mediaAvaliacoesFinais é 0 para a maioria
+- [ ] BUG: Minha Jornada mostra "Nível Atual: —" para todos - notaAtual no plano_individual é NULL
+- [ ] Definir qual campo da planilha usar como nota (progressoTotal vs mediaAvaliacoesRespondidas vs mediaAvaliacoesFinais)
+- [ ] FIX: Nota da competência deve usar mediaAvaliacoesRespondidas ou mediaAvaliacoesDisponiveis (não progressoTotal como proxy). Quando ambas = 0, aluno não cursou e não deve contar no cálculo.
+
+## Correção lógica de conclusão de competência (03/03/2026)
+- [ ] Conclusão de competência = aulasConcluidas >= aulasDisponiveis (não progressoTotal)
+- [ ] Nota da competência = mediaAvaliacoesRespondidas (provas feitas em cada aula)
+- [ ] Minha Jornada: mostrar total aulas, aulas disponíveis, concluídas, em andamento por competência
+- [ ] Indicador 4: % de competências obrigatórias concluídas (todas aulas feitas) em ciclos finalizados
+- [ ] Indicador 5: nota média das avaliações das competências obrigatórias em ciclos finalizados
+
+## REFATORAÇÃO COMPLETA DOS INDICADORES (03/03/2026)
+
+### Nova lógica simplificada - 7 indicadores POR CICLO (em andamento e finalizado)
+- [x] Ind 1: Webinars/Aulas Online - Presente=100, Ausente=0, média das presenças
+- [x] Ind 2: Performance nas Avaliações - Soma notas provas / nº provas REALIZADAS (nunca pelo total)
+- [x] Ind 3: Performance nas Competências - % competências/cursos finalizados por ciclo
+- [x] Ind 4: Tarefas Práticas - Entregue=100, Não entregue=0, média das entregas
+- [x] Ind 5: Engajamento (Nota da Mentora) - Média notas 0-100 por sessão
+- [x] Ind 6: Aplicabilidade Prática (Case de Sucesso) - Entregue=100, Não entregue=0, só macrociclos finalizados
+- [x] Ind 7: Engajamento Final - Média dos 6 indicadores acima, POR CICLO
+
+### Schema e banco de dados
+- [x] Criar tabela cases_sucesso para registrar entrega de cases por aluno por macrociclo
+- [x] Migrar schema com pnpm db:push
+
+### Calculador de indicadores
+- [x] Refatorar indicatorsCalculatorV2.ts com nova lógica simplificada
+- [x] Calcular indicadores POR CICLO (em andamento separado de finalizado)
+- [x] Criar V2 mantendo compatibilidade com V1 (V1 ainda disponível como fallback)
+
+### Frontend - Dashboard do Aluno
+- [x] Mostrar indicadores POR CICLO (em andamento e finalizado separados)
+- [x] Adicionar alerta visual quando ciclo estiver finalizando (lembrar entrega do case)
+- [x] Mostrar status de entrega de case por macrociclo (Básicas, Essenciais, Master, Visão de Futuro)
+
+### Testes
+- [x] Escrever testes vitest para nova lógica de indicadores (31 testes)
+- [x] Testar cálculo por ciclo em andamento vs finalizado
+- [x] Testar indicador de case de sucesso
+
+## Filtro por Ciclo/Jornada e Card Explicativo (03/03/2026)
+
+### Filtros nos cards e gráfico radar
+- [x] Adicionar filtro por Jornada (macrociclo: Básicas, Essenciais, Master, Visão de Futuro) nos indicadores
+- [x] Adicionar filtro por Ciclo (microciclo dentro da jornada) nos indicadores
+- [x] Gráfico Radar atualizado com os 6 indicadores V2, filtrável por ciclo/jornada
+- [x] Cards de indicadores filtráveis por ciclo/jornada selecionado
+
+### Card explicativo / Glossário
+- [x] Card explicativo do que é Jornada (macrociclo)
+- [x] Card explicativo do que é Ciclo (microciclo)
+- [x] Card explicativo do que é Trilha
+- [x] Card explicativo do que é Aula/Competência
+- [x] Design claro e acessível para não confundir o aluno
+
+### Aplicar em ambas as telas
+- [x] Implementar no DashboardMeuPerfil (Portal do Aluno)
+- [x] Implementar no DashboardAluno (visão admin)
+
+### Correção de escala
+- [x] Converter engagementScore de 0-10 para 0-100 no calculador V2 (regra de 3) - já implementado (*10)
+- [x] Garantir que todas as notas estejam na base 100 - avaliações já vêm em base 100, engajamento convertido
+
+### Tooltips ⓘ explicativos em toda a interface
+- [x] Tooltip ⓘ para "Jornada" - Caminho completo do aluno, tempo total de contrato
+- [x] Tooltip ⓘ para "Macrociclo" - Etapa da jornada que agrupa uma trilha (Básicas, Essenciais, Master)
+- [x] Tooltip ⓘ para "Trilha" - Caminho de aprendizagem dentro do macrociclo
+- [x] Tooltip ⓘ para "Microciclo" - Período com datas onde acontecem competências, webinars, mentorias e tarefas
+- [x] Tooltip ⓘ para "Competência" - Curso composto por grupo de aulas e avaliação
+- [x] Tooltip ⓘ para cada indicador (como é calculado)
+- [x] Tooltip ⓘ para "Engajamento Final" - Média dos 6 indicadores

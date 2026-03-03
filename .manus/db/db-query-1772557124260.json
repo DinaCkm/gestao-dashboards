@@ -1,0 +1,60 @@
+{
+  "query": "SELECT engagementScore, notaEvolucao, COUNT(*) as qty FROM mentoring_sessions WHERE engagementScore IS NOT NULL OR notaEvolucao IS NOT NULL GROUP BY engagementScore, notaEvolucao ORDER BY engagementScore, notaEvolucao LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT engagementScore, notaEvolucao, COUNT(*) as qty FROM mentoring_sessions WHERE engagementScore IS NOT NULL OR notaEvolucao IS NOT NULL GROUP BY engagementScore, notaEvolucao ORDER BY engagementScore, notaEvolucao LIMIT 30;",
+  "rows": [
+    {
+      "engagementScore": "0",
+      "notaEvolucao": "0",
+      "qty": "12"
+    },
+    {
+      "engagementScore": "2",
+      "notaEvolucao": "2",
+      "qty": "185"
+    },
+    {
+      "engagementScore": "3",
+      "notaEvolucao": "3",
+      "qty": "210"
+    },
+    {
+      "engagementScore": "4",
+      "notaEvolucao": "4",
+      "qty": "126"
+    },
+    {
+      "engagementScore": "5",
+      "notaEvolucao": "5",
+      "qty": "153"
+    },
+    {
+      "engagementScore": "6",
+      "notaEvolucao": "6",
+      "qty": "161"
+    },
+    {
+      "engagementScore": "7",
+      "notaEvolucao": "7",
+      "qty": "101"
+    },
+    {
+      "engagementScore": "8",
+      "notaEvolucao": "8",
+      "qty": "77"
+    },
+    {
+      "engagementScore": "9",
+      "notaEvolucao": "9",
+      "qty": "53"
+    },
+    {
+      "engagementScore": "10",
+      "notaEvolucao": "10",
+      "qty": "117"
+    }
+  ],
+  "messages": [],
+  "stdout": "engagementScore\tnotaEvolucao\tqty\n0\t0\t12\n2\t2\t185\n3\t3\t210\n4\t4\t126\n5\t5\t153\n6\t6\t161\n7\t7\t101\n8\t8\t77\n9\t9\t53\n10\t10\t117\n",
+  "stderr": "",
+  "execution_time_ms": 382
+}

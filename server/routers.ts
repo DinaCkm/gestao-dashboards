@@ -6,7 +6,8 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
-import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicators, calcularIndicadoresAlunoFiltrado, calcularPerformanceFiltrada, CompetenciaObrigatoria, CicloExecucaoData } from './indicatorsCalculator';
+import { calcularIndicadoresAlunoFiltrado, calcularPerformanceFiltrada, CompetenciaObrigatoria, CicloExecucaoData } from './indicatorsCalculator';
+import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno as calcularIndicadoresAlunoV2, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicatorsV2, CicloDataV2, CaseSucessoData } from './indicatorsCalculatorV2';
 import { notifyOwner } from "./_core/notification";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
@@ -1071,11 +1072,30 @@ export const appRouter = router({
         }
       }
       
-      // Buscar ciclos de execução
-      const ciclosPorAluno = await db.getAllCiclosForCalculator();
+      // Adicionar dados de performance da tabela student_performance (CSV de performance)
+      // Estes dados contêm notas de avaliações e progresso de aulas por competência
+      const studentPerfRecords = await db.getStudentPerformanceAsRecords();
+      const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+      for (const spRec of studentPerfRecords) {
+        const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+        if (!existingPerfKeys.has(key)) {
+          performance.push(spRec);
+          existingPerfKeys.add(key);
+        }
+      }
       
-      // Calcular indicadores
-      const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno);
+      // Buscar ciclos de execução (V2)
+      const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
+      const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+      const casesMap = await db.getCasesForCalculator();
+      // Flatten cases to array
+      const casesData: CaseSucessoData[] = [];
+      for (const [, cases] of Array.from(casesMap.entries())) {
+        casesData.push(...cases);
+      }
+      
+      // Calcular indicadores (V2)
+      const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData);
       const dashboard = gerarDashboardGeral(indicadores);
       
       return dashboard;
@@ -1143,8 +1163,23 @@ export const appRouter = router({
           }
         }
         
-        const ciclosPorAluno = await db.getAllCiclosForCalculator();
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno);
+        // Adicionar dados de performance da tabela student_performance (CSV)
+        const studentPerfRecords = await db.getStudentPerformanceAsRecords();
+        const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+        for (const spRec of studentPerfRecords) {
+          const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(spRec);
+            existingPerfKeys.add(key);
+          }
+        }
+        
+        const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
+        const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const casesMapEmp = await db.getCasesForCalculator();
+        const casesDataEmp: CaseSucessoData[] = [];
+        for (const [, cases] of Array.from(casesMapEmp.entries())) { casesDataEmp.push(...cases); }
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataEmp);
         const dashboard = gerarDashboardEmpresa(indicadores, input.empresa);
         
         // Enriquecer alunos com turma, trilha, ciclo, competências
@@ -1265,8 +1300,23 @@ export const appRouter = router({
           }
         }
         
-        const ciclosPorAluno = await db.getAllCiclosForCalculator();
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno);
+        // Adicionar dados de performance da tabela student_performance (CSV)
+        const studentPerfRecords = await db.getStudentPerformanceAsRecords();
+        const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+        for (const spRec of studentPerfRecords) {
+          const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(spRec);
+            existingPerfKeys.add(key);
+          }
+        }
+        
+        const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
+        const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const casesMapTurma = await db.getCasesForCalculator();
+        const casesDataTurma: CaseSucessoData[] = [];
+        for (const [, cases] of Array.from(casesMapTurma.entries())) { casesDataTurma.push(...cases); }
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataTurma);
         const agregado = agregarIndicadores(indicadores, 'turma', String(input.turmaId));
         const alunos = indicadores.filter(i => i.turma === String(input.turmaId));
         
@@ -1336,8 +1386,23 @@ export const appRouter = router({
           }
         }
         
-        const ciclosPorAluno = await db.getAllCiclosForCalculator();
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno);
+        // Adicionar dados de performance da tabela student_performance (CSV)
+        const studentPerfRecords = await db.getStudentPerformanceAsRecords();
+        const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+        for (const spRec of studentPerfRecords) {
+          const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(spRec);
+            existingPerfKeys.add(key);
+          }
+        }
+        
+        const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
+        const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const casesMapInd = await db.getCasesForCalculator();
+        const casesDataInd: CaseSucessoData[] = [];
+        for (const [, cases] of Array.from(casesMapInd.entries())) { casesDataInd.push(...cases); }
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataInd);
         const alunoIndicadores = indicadores.find(i => i.idUsuario === input.alunoId);
         
         if (!alunoIndicadores) {
@@ -1428,6 +1493,17 @@ export const appRouter = router({
           });
         }
         
+        // Adicionar dados de performance da tabela student_performance (CSV)
+        const studentPerfRecords = await db.getStudentPerformanceAsRecords();
+        const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+        for (const spRec of studentPerfRecords) {
+          const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(spRec);
+            existingPerfKeys.add(key);
+          }
+        }
+        
         // Converter competências para o formato esperado
         const compObrigatorias: CompetenciaObrigatoria[] = competenciasObrigatorias.map(c => ({
           competenciaId: c.competenciaId,
@@ -1450,6 +1526,23 @@ export const appRouter = router({
           compObrigatorias,
           ciclosAluno
         );
+
+        // === V2: Calcular indicadores simplificados por ciclo ===
+        const ciclosV2 = ciclosAluno.map(c => ({
+          ...c,
+          trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
+        }));
+        const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const casesAluno = await db.getCasesSucessoByAluno(input.alunoId);
+        const casesDataAluno: CaseSucessoData[] = casesAluno.map(c => ({
+          alunoId: c.alunoId,
+          trilhaId: c.trilhaId,
+          trilhaNome: c.trilhaNome,
+          entregue: c.entregue === 1,
+        }));
+        const indicadoresV2 = calcularIndicadoresAlunoV2(
+          idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno
+        );
         
         return {
           aluno: {
@@ -1458,6 +1551,12 @@ export const appRouter = router({
             externalId: aluno.externalId
           },
           indicadores,
+          indicadoresV2: {
+            ciclosFinalizados: indicadoresV2.ciclosFinalizados,
+            ciclosEmAndamento: indicadoresV2.ciclosEmAndamento,
+            consolidado: indicadoresV2.consolidado,
+            alertaCasePendente: indicadoresV2.alertaCasePendente,
+          },
           planoIndividual: {
             totalCompetencias: compObrigatorias.length,
             competenciasAprovadas: indicadores.performanceFiltrada.aprovadas,
@@ -1561,6 +1660,17 @@ export const appRouter = router({
         }
       }
 
+      // Adicionar dados de performance da tabela student_performance (CSV)
+      const studentPerfRecords = await db.getStudentPerformanceAsRecords();
+      const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+      for (const spRec of studentPerfRecords) {
+        const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+        if (!existingPerfKeys.has(key)) {
+          performance.push(spRec);
+          existingPerfKeys.add(key);
+        }
+      }
+
       const idUsuario = aluno.externalId || String(aluno.id);
       const compObrigatorias: CompetenciaObrigatoria[] = competenciasObrigatorias.map(c => ({
         competenciaId: c.competenciaId,
@@ -1575,6 +1685,23 @@ export const appRouter = router({
 
       const indicadores = calcularIndicadoresAlunoFiltrado(
         idUsuario, mentorias, eventos, performance, compObrigatorias, ciclosAluno
+      );
+
+      // === V2: Calcular indicadores simplificados por ciclo ===
+      const ciclosV2 = ciclosAluno.map(c => ({
+        ...c,
+        trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
+      }));
+      const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+      const casesAluno = await db.getCasesSucessoByAluno(aluno.id);
+      const casesDataAluno: CaseSucessoData[] = casesAluno.map(c => ({
+        alunoId: c.alunoId,
+        trilhaId: c.trilhaId,
+        trilhaNome: c.trilhaNome,
+        entregue: c.entregue === 1,
+      }));
+      const indicadoresV2 = calcularIndicadoresAlunoV2(
+        idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno
       );
 
       // Buscar sessões individuais do aluno para histórico
@@ -1631,6 +1758,17 @@ export const appRouter = router({
                 notaAvaliacao: parseFloat(item.notaAtual),
                 aprovado: parseFloat(item.notaAtual) >= 7,
               });
+            }
+          }
+          // Adicionar dados de student_performance para o colega
+          const colegaPerfKeys = new Set(perfColega.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+          for (const spRec of studentPerfRecords) {
+            if (spRec.idUsuario === colegaId) {
+              const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+              if (!colegaPerfKeys.has(key)) {
+                perfColega.push(spRec);
+                colegaPerfKeys.add(key);
+              }
             }
           }
           const compObrigColega: CompetenciaObrigatoria[] = compObrigatoriasColega.map(c => ({
@@ -1715,9 +1853,20 @@ export const appRouter = router({
         planoIndividual: planoItems,
         assessments: await db.getAssessmentsByAluno(aluno.id),
         sessionProgress: await db.getSessionProgressByAluno(aluno.id),
-        // Ciclos detalhados com competências e notas
+        // Ciclos detalhados com competências e notas (enriquecidos com student_performance)
         ciclosDetalhados: await (async () => {
           const ciclos = await db.getCiclosByAluno(aluno!.id);
+          // Criar mapa de performance por codigoIntegracao para lookup rápido
+          const perfByCodigoMap = new Map<string, typeof studentPerfRecords[0]>();
+          const alunoExternalId = aluno!.externalId || String(aluno!.id);
+          for (const sp of studentPerfRecords) {
+            if (sp.idUsuario === alunoExternalId) {
+              perfByCodigoMap.set(sp.idCompetencia.toLowerCase(), sp);
+              if (sp.nomeCompetencia) {
+                perfByCodigoMap.set(sp.nomeCompetencia.toLowerCase(), sp);
+              }
+            }
+          }
           return ciclos.map(c => {
             const today = new Date();
             const inicio = new Date(c.dataInicio);
@@ -1733,18 +1882,44 @@ export const appRouter = router({
               status,
               competencias: c.competencias.map(comp => {
                 const planoItem = planoItems.find(p => p.competenciaId === comp.competenciaId);
+                // Buscar nota do student_performance pelo codigoIntegracao
+                let nota: number | null = planoItem?.notaAtual ? parseFloat(planoItem.notaAtual) : null;
+                let progressoPlataforma: number | null = null;
+                const codigoInt = planoItem?.competenciaCodigo || comp.competenciaCodigo;
+                if (codigoInt) {
+                  const perfRec = perfByCodigoMap.get(codigoInt.toLowerCase());
+                  if (perfRec) {
+                    if (nota === null) {
+                      nota = perfRec.notaAvaliacao; // já em escala 0-10
+                    }
+                    progressoPlataforma = perfRec.progressoAulas || null;
+                  }
+                }
+                const meta = planoItem?.metaNota ? parseFloat(planoItem.metaNota) : 7;
                 return {
                   id: comp.competenciaId,
                   nome: comp.competenciaNome || 'Competência',
-                  nota: planoItem?.notaAtual ? parseFloat(planoItem.notaAtual) : null,
-                  meta: planoItem?.metaNota ? parseFloat(planoItem.metaNota) : 7,
-                  status: planoItem?.notaAtual && parseFloat(planoItem.notaAtual) >= (planoItem?.metaNota ? parseFloat(planoItem.metaNota) : 7) ? 'concluida' as const :
-                         planoItem?.notaAtual ? 'em_progresso' as const : 'pendente' as const,
+                  nota,
+                  meta,
+                  progressoPlataforma,
+                  status: nota !== null && nota >= meta ? 'concluida' as const :
+                         (nota !== null || (progressoPlataforma !== null && progressoPlataforma > 0)) ? 'em_progresso' as const : 'pendente' as const,
                 };
               }),
             };
           });
         })(),
+        // Alertas de micro ciclo - competências obrigatórias com prazo próximo
+        alertasMicroCiclo: await (async () => {
+          return await db.getAlertasMicroCiclo(aluno!.id);
+        })(),
+        // === V2: Indicadores simplificados por ciclo ===
+        indicadoresV2: {
+          ciclosFinalizados: indicadoresV2.ciclosFinalizados,
+          ciclosEmAndamento: indicadoresV2.ciclosEmAndamento,
+          consolidado: indicadoresV2.consolidado,
+          alertaCasePendente: indicadoresV2.alertaCasePendente,
+        },
       };
     }),
   }),
@@ -2815,6 +2990,73 @@ export const appRouter = router({
       .input(z.object({ alunoId: z.number() }))
       .query(async ({ input }) => {
         return await db.checkReavaliacaoPendente(input.alunoId);
+      }),
+  }),
+
+  // Cases de Sucesso routes
+  cases: router({
+    // Listar cases de um aluno
+    byAluno: adminProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCasesSucessoByAluno(input.alunoId);
+      }),
+    
+    // Listar todos os cases (admin)
+    list: adminProcedure.query(async () => {
+      return await db.getAllCasesSucesso();
+    }),
+    
+    // Criar case de sucesso
+    create: adminProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        trilhaId: z.number().optional(),
+        trilhaNome: z.string().optional(),
+        entregue: z.number().min(0).max(1),
+        titulo: z.string().optional(),
+        descricao: z.string().optional(),
+        observacao: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createCaseSucesso({
+          alunoId: input.alunoId,
+          trilhaId: input.trilhaId || null,
+          trilhaNome: input.trilhaNome || null,
+          entregue: input.entregue,
+          titulo: input.titulo || null,
+          descricao: input.descricao || null,
+          observacao: input.observacao || null,
+          dataEntrega: input.entregue === 1 ? new Date() : null,
+        });
+        return { id };
+      }),
+    
+    // Atualizar case de sucesso
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        entregue: z.number().min(0).max(1).optional(),
+        titulo: z.string().optional(),
+        descricao: z.string().optional(),
+        observacao: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const updateData: any = { ...data };
+        if (data.entregue === 1) {
+          updateData.dataEntrega = new Date();
+        }
+        await db.updateCaseSucesso(id, updateData);
+        return { success: true };
+      }),
+    
+    // Deletar case de sucesso
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteCaseSucesso(input.id);
+        return { success: true };
       }),
   }),
 });

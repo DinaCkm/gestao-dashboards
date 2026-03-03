@@ -1,0 +1,103 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "alunos"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "announcements"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "assessment_competencias"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "assessment_pdi"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "calculation_formulas"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "cases_sucesso"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "ciclo_competencias"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "ciclos_execucao"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "competencias"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "consultors"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "contratos_aluno"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "dashboard_metrics"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "departments"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "event_participation"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "events"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "historico_nivel_competencia"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "mentoring_sessions"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "performance_uploads"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "plano_individual"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "processed_data"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "programs"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "reports"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "scheduled_webinars"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "student_performance"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "task_library"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "trilhas"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "turmas"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "upload_batches"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "uploaded_files"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY": "users"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_5n7arrGNHjNdoFCMzyGXcY\n__drizzle_migrations\nalunos\nannouncements\nassessment_competencias\nassessment_pdi\ncalculation_formulas\ncases_sucesso\nciclo_competencias\nciclos_execucao\ncompetencias\nconsultors\ncontratos_aluno\ndashboard_metrics\ndepartments\nevent_participation\nevents\nhistorico_nivel_competencia\nmentoring_sessions\nperformance_uploads\nplano_individual\nprocessed_data\nprograms\nreports\nscheduled_webinars\nstudent_performance\ntask_library\ntrilhas\nturmas\nupload_batches\nuploaded_files\nusers\n",
+  "stderr": "",
+  "execution_time_ms": 373
+}

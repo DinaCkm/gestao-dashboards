@@ -7,17 +7,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   User, Target, Calendar, Award, TrendingUp, BookOpen, Users,
   CheckCircle2, XCircle, Clock, GraduationCap, Trophy, Star, Zap,
   Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
   ClipboardCheck, Play, ExternalLink, FileText, Send, Route, FileBarChart,
+  AlertTriangle, Briefcase, HelpCircle,
 } from "lucide-react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Cell, PieChart, Pie,
 } from "recharts";
+import { InfoTooltip, GLOSSARIO, INDICADORES_INFO } from "@/components/InfoTooltip";
 
 function getClassificacaoColor(classificacao: string): string {
   switch (classificacao) {
@@ -123,6 +126,17 @@ export default function DashboardMeuPerfil() {
   const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
+  // Filtro de indicadores V2: "consolidado" | "trilha:NomeTrilha" | "ciclo:CicloId"
+  const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
+  const [showGlossario, setShowGlossario] = useState(false);
+
+  // V2 data - declarado cedo para uso nos useMemo
+  const v2 = data?.found ? ((data as any).indicadoresV2 as {
+    ciclosFinalizados: any[];
+    ciclosEmAndamento: any[];
+    consolidado: any;
+    alertaCasePendente: any[];
+  } | undefined) : undefined;
 
   // Queries para as novas abas
   const { data: myTasks } = trpc.attendance.myTasks.useQuery();
@@ -160,8 +174,85 @@ export default function DashboardMeuPerfil() {
     return new Set((myAttendance || []).map((a: any) => a.eventId));
   }, [myAttendance]);
 
+  // Dados V2 filtrados conforme seleção
+  const v2Filtrado = useMemo(() => {
+    if (!v2) return null;
+    if (indicadorFiltro === "consolidado") {
+      return v2.consolidado;
+    }
+    if (indicadorFiltro.startsWith("trilha:")) {
+      const trilhaNome = indicadorFiltro.replace("trilha:", "");
+      const ciclosDaTrilha = [...(v2.ciclosFinalizados || []), ...(v2.ciclosEmAndamento || [])]
+        .filter((c: any) => c.trilhaNome === trilhaNome);
+      if (ciclosDaTrilha.length === 0) return v2.consolidado;
+      // Média dos ciclos da trilha
+      const avg = (key: string) => {
+        const vals = ciclosDaTrilha.map((c: any) => c[key] ?? c.indicadores?.[key] ?? 0);
+        return vals.reduce((a: number, b: number) => a + b, 0) / vals.length;
+      };
+      return {
+        ind1_webinars: avg('ind1_webinars'),
+        ind2_avaliacoes: avg('ind2_avaliacoes'),
+        ind3_competencias: avg('ind3_competencias'),
+        ind4_tarefas: avg('ind4_tarefas'),
+        ind5_engajamento: avg('ind5_engajamento'),
+        ind6_aplicabilidade: avg('ind6_aplicabilidade'),
+        ind7_engajamentoFinal: avg('ind7_engajamentoFinal'),
+      };
+    }
+    if (indicadorFiltro.startsWith("ciclo:")) {
+      const cicloId = indicadorFiltro.replace("ciclo:", "");
+      const ciclo = [...(v2.ciclosFinalizados || []), ...(v2.ciclosEmAndamento || [])]
+        .find((c: any) => String(c.cicloId) === cicloId);
+      if (!ciclo) return v2.consolidado;
+      // Os campos podem estar no root ou em ciclo.indicadores
+      return {
+        ind1_webinars: ciclo.ind1_webinars ?? ciclo.indicadores?.ind1_webinars ?? 0,
+        ind2_avaliacoes: ciclo.ind2_avaliacoes ?? ciclo.indicadores?.ind2_avaliacoes ?? 0,
+        ind3_competencias: ciclo.ind3_competencias ?? ciclo.indicadores?.ind3_competencias ?? 0,
+        ind4_tarefas: ciclo.ind4_tarefas ?? ciclo.indicadores?.ind4_tarefas ?? 0,
+        ind5_engajamento: ciclo.ind5_engajamento ?? ciclo.indicadores?.ind5_engajamento ?? 0,
+        ind6_aplicabilidade: ciclo.ind6_aplicabilidade ?? ciclo.indicadores?.ind6_aplicabilidade ?? 0,
+        ind7_engajamentoFinal: ciclo.ind7_engajamentoFinal ?? ciclo.indicadores?.ind7_engajamentoFinal ?? 0,
+      };
+    }
+    return v2.consolidado;
+  }, [v2, indicadorFiltro]);
+
+  // Opções de filtro disponíveis
+  const filtroOpcoes = useMemo(() => {
+    if (!v2) return [];
+    const opcoes: { value: string; label: string; group: string }[] = [
+      { value: "consolidado", label: "Consolidado (Todos os ciclos finalizados)", group: "Geral" },
+    ];
+    const trilhas = new Set<string>();
+    const allCiclos = [...(v2.ciclosFinalizados || []), ...(v2.ciclosEmAndamento || [])];
+    allCiclos.forEach((c: any) => {
+      if (c.trilhaNome && !trilhas.has(c.trilhaNome)) {
+        trilhas.add(c.trilhaNome);
+        opcoes.push({ value: `trilha:${c.trilhaNome}`, label: `Trilha: ${c.trilhaNome}`, group: "Por Trilha" });
+      }
+    });
+    allCiclos.forEach((c: any) => {
+      const status = c.status === 'em_andamento' ? ' (Em Andamento)' : '';
+      opcoes.push({ value: `ciclo:${c.cicloId}`, label: `${c.nomeCiclo}${status}`, group: "Por Microciclo" });
+    });
+    return opcoes;
+  }, [v2]);
+
   const radarData = useMemo(() => {
     if (!data || !data.found) return [];
+    // Usar dados V2 filtrados se disponíveis
+    if (v2Filtrado) {
+      return [
+        { subject: "Webinars", value: v2Filtrado.ind1_webinars ?? 0, fullMark: 100 },
+        { subject: "Avaliações", value: v2Filtrado.ind2_avaliacoes ?? 0, fullMark: 100 },
+        { subject: "Competências", value: v2Filtrado.ind3_competencias ?? 0, fullMark: 100 },
+        { subject: "Tarefas", value: v2Filtrado.ind4_tarefas ?? 0, fullMark: 100 },
+        { subject: "Engajamento", value: v2Filtrado.ind5_engajamento ?? 0, fullMark: 100 },
+        { subject: "Cases", value: v2Filtrado.ind6_aplicabilidade ?? 0, fullMark: 100 },
+      ];
+    }
     const ind = data.indicadores;
     return [
       { subject: "Mentorias", value: ind.participacaoMentorias, fullMark: 100 },
@@ -171,7 +262,7 @@ export default function DashboardMeuPerfil() {
       { subject: "Aprendizado", value: ind.performanceAprendizado || 0, fullMark: 100 },
       { subject: "Eventos", value: ind.participacaoEventos, fullMark: 100 },
     ];
-  }, [data]);
+  }, [data, v2Filtrado]);
 
   const competenciasChart = useMemo(() => {
     if (!data || !data.found || !data.planoIndividual) return [];
@@ -234,6 +325,7 @@ export default function DashboardMeuPerfil() {
   const performanceGeral = indicadores.performanceGeral ?? (indicadores.notaFinal * 10);
   const ciclosFinalizados = indicadores.ciclosFinalizados || [];
   const ciclosEmAndamento = indicadores.ciclosEmAndamento || [];
+  // v2 já declarado acima
   const engComp = indicadores.engajamentoComponentes || { presenca: indicadores.participacaoMentorias, atividades: indicadores.atividadesPraticas, notaMentora: indicadores.engajamento };
 
   return (
@@ -265,9 +357,12 @@ export default function DashboardMeuPerfil() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-white/70 mb-1">Performance Geral</p>
+                  <p className="text-xs text-white/70 mb-1 flex items-center gap-1 justify-end">
+                    Engajamento Final
+                    <InfoTooltip text={INDICADORES_INFO.ind7.explicacao} className="text-white/50 hover:text-white/80" />
+                  </p>
                   <div className="text-4xl font-black text-[#F5991F]">
-                    {performanceGeral.toFixed(0)}%
+                    {(v2Filtrado?.ind7_engajamentoFinal ?? performanceGeral).toFixed(0)}%
                   </div>
                   <Badge className={`mt-1 ${getClassificacaoBadge(indicadores.classificacao)}`}>
                     {indicadores.classificacao}
@@ -283,11 +378,13 @@ export default function DashboardMeuPerfil() {
                   </div>
                 </div>
               )}
-              {/* Explicação da Performance Geral */}
-              <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
-                <p className="font-semibold mb-1 text-white/90">Ind. 7 — Performance Geral:</p>
-                <p>Média dos 6 indicadores: ({indicadores.participacaoMentorias.toFixed(0)} + {indicadores.atividadesPraticas.toFixed(0)} + {indicadores.engajamento.toFixed(0)} + {indicadores.performanceCompetencias.toFixed(0)} + {(indicadores.performanceAprendizado || 0).toFixed(0)} + {indicadores.participacaoEventos.toFixed(0)}) / 6 = <span className="text-[#F5991F] font-bold">{performanceGeral.toFixed(0)}%</span></p>
-              </div>
+              {/* Explicãção do Engajamento Final V2 */}
+              {v2Filtrado && (
+                <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
+                  <p className="font-semibold mb-1 text-white/90">Ind. 7 — Engajamento Final:</p>
+                  <p>Média dos 6 indicadores: ({(v2Filtrado.ind1_webinars ?? 0).toFixed(0)} + {(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)} + {(v2Filtrado.ind3_competencias ?? 0).toFixed(0)} + {(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)} + {(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)} + {(v2Filtrado.ind6_aplicabilidade ?? 0).toFixed(0)}) / 6 = <span className="text-[#F5991F] font-bold">{(v2Filtrado.ind7_engajamentoFinal ?? 0).toFixed(0)}%</span></p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -308,57 +405,136 @@ export default function DashboardMeuPerfil() {
           </Card>
         </div>
 
-        {/* 6 Indicadores individuais */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <IndicadorCardAluno
-            numero={1} icon={MessageSquare} label="Mentorias"
-            valor={indicadores.mentoriasPresente} total={indicadores.totalMentorias}
-            percentual={indicadores.participacaoMentorias}
-            color="bg-blue-100 text-blue-600" borderColor="border-blue-200"
-            regras={["(Sessões presentes / Total sessões) × 100", "Presente = 100%, Ausente = 0%"]}
-          />
-          <IndicadorCardAluno
-            numero={2} icon={Zap} label="Atividades"
-            valor={indicadores.atividadesEntregues} total={indicadores.totalAtividades}
-            percentual={indicadores.atividadesPraticas}
-            color="bg-purple-100 text-purple-600" borderColor="border-purple-200"
-            regras={["(Atividades entregues / Total) × 100", "1ª mentoria (Assessment) excluída", "Sessões sem tarefa não contam"]}
-          />
-          <IndicadorCardAluno
-            numero={3} icon={Activity} label="Engajamento"
-            valor={`${indicadores.engajamento.toFixed(0)}%`} total="100%"
-            percentual={indicadores.engajamento}
-            color="bg-cyan-100 text-cyan-600" borderColor="border-cyan-200"
-            regras={[
-              "Média de 3 componentes, todos convertidos para base 100:",
-              `1) Presença nas Mentorias: ${engComp.presenca?.toFixed(0) || 0}%`,
-              `2) Entrega de Tarefas: ${engComp.atividades?.toFixed(0) || 0}%`,
-              `3) Nota Evolução da Mentora: ${engComp.notaMentora?.toFixed(0) || 0}%`,
-              "Fórmula: (Comp.1 + Comp.2 + Comp.3) / 3"
-            ]}
-          />
-          <IndicadorCardAluno
-            numero={4} icon={BookOpen} label="Competências"
-            valor={indicadores.competenciasAprovadas} total={indicadores.totalCompetencias}
-            percentual={indicadores.performanceCompetencias}
-            color="bg-emerald-100 text-emerald-600" borderColor="border-emerald-200"
-            regras={["% de conteúdos concluídos por competência", "Somente ciclos finalizados entram", `${ciclosFinalizados.length} ciclo(s) finalizado(s)`]}
-          />
-          <IndicadorCardAluno
-            numero={5} icon={GraduationCap} label="Aprendizado"
-            valor={`${(indicadores.performanceAprendizado || 0).toFixed(0)}%`} total="100%"
-            percentual={indicadores.performanceAprendizado || 0}
-            color="bg-red-100 text-red-600" borderColor="border-red-200"
-            regras={["Média das notas das provas por aula", "Somente ciclos finalizados entram", "Notas convertidas para % (base 100)"]}
-          />
-          <IndicadorCardAluno
-            numero={6} icon={Video} label="Eventos"
-            valor={indicadores.eventosPresente} total={indicadores.totalEventos}
-            percentual={indicadores.participacaoEventos}
-            color="bg-orange-100 text-orange-600" borderColor="border-orange-200"
-            regras={["(Eventos presentes / Total eventos) × 100", "Inclui webinários e encontros coletivos"]}
-          />
-        </div>
+        {/* Alerta de Case de Sucesso Pendente */}
+        {v2?.alertaCasePendente && v2.alertaCasePendente.length > 0 && (
+          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-6 w-6 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-amber-800">Entrega de Case de Sucesso Pendente</p>
+                  {v2.alertaCasePendente.map((alerta: any, idx: number) => (
+                    <p key={idx} className="text-sm text-amber-700 mt-1">
+                      O ciclo <strong>{alerta.trilhaNome}</strong> está finalizando
+                      {alerta.diasRestantes !== undefined && ` (${alerta.diasRestantes} dias restantes)`}.
+                      Lembre-se de entregar o <strong>Case de Sucesso</strong> para completar a avaliação do macrociclo.
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Glossário de Termos */}
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardContent className="p-4">
+            <button
+              onClick={() => setShowGlossario(!showGlossario)}
+              className="flex items-center gap-2 w-full text-left"
+            >
+              <HelpCircle className="h-5 w-5 text-[#F5991F]" />
+              <span className="text-sm font-semibold text-gray-700">Glossário de Termos do Programa</span>
+              <InfoTooltip text="Clique para expandir e ver a explicação de cada termo usado no sistema" />
+              {showGlossario ? <ChevronUp className="h-4 w-4 text-gray-400 ml-auto" /> : <ChevronDown className="h-4 w-4 text-gray-400 ml-auto" />}
+            </button>
+            {showGlossario && (
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {([
+                  { termo: "Jornada", desc: GLOSSARIO.jornada, icon: Route, color: "bg-indigo-50 border-indigo-200 text-indigo-700" },
+                  { termo: "Macrociclo", desc: GLOSSARIO.macrociclo, icon: Target, color: "bg-blue-50 border-blue-200 text-blue-700" },
+                  { termo: "Trilha", desc: GLOSSARIO.trilha, icon: TrendingUp, color: "bg-purple-50 border-purple-200 text-purple-700" },
+                  { termo: "Microciclo", desc: GLOSSARIO.microciclo, icon: Clock, color: "bg-cyan-50 border-cyan-200 text-cyan-700" },
+                  { termo: "Competência", desc: GLOSSARIO.competencia, icon: BookOpen, color: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+                  { termo: "Aula", desc: GLOSSARIO.aula, icon: GraduationCap, color: "bg-amber-50 border-amber-200 text-amber-700" },
+                  { termo: "Webinar", desc: GLOSSARIO.webinar, icon: Video, color: "bg-orange-50 border-orange-200 text-orange-700" },
+                  { termo: "Mentoria", desc: GLOSSARIO.mentoria, icon: MessageSquare, color: "bg-pink-50 border-pink-200 text-pink-700" },
+                  { termo: "Tarefa Prática", desc: GLOSSARIO.tarefa, icon: ClipboardCheck, color: "bg-teal-50 border-teal-200 text-teal-700" },
+                  { termo: "Case de Sucesso", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
+                ]).map(({ termo, desc, icon: Icon, color }) => (
+                  <div key={termo} className={`p-3 rounded-lg border ${color}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Icon className="h-4 w-4" />
+                      <span className="text-sm font-semibold">{termo}</span>
+                    </div>
+                    <p className="text-xs text-gray-600 leading-relaxed">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Filtro de Período para Indicadores */}
+        {filtroOpcoes.length > 0 && (
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-600">Visualizar indicadores por:</span>
+              <InfoTooltip text="Selecione o período para filtrar os indicadores. O consolidado mostra a média de todos os ciclos finalizados. Você também pode filtrar por trilha ou por microciclo específico." />
+            </div>
+            <Select value={indicadorFiltro} onValueChange={setIndicadorFiltro}>
+              <SelectTrigger className="w-[320px] bg-white">
+                <SelectValue placeholder="Selecione o período" />
+              </SelectTrigger>
+              <SelectContent>
+                {filtroOpcoes.map((opcao) => (
+                  <SelectItem key={opcao.value} value={opcao.value}>
+                    {opcao.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* 6 Indicadores V2 com Tooltips */}
+        {v2Filtrado && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <IndicadorCardAluno
+              numero={1} icon={Video} label="Webinars"
+              valor={`${(v2Filtrado.ind1_webinars ?? 0).toFixed(0)}%`} total="100%"
+              percentual={v2Filtrado.ind1_webinars ?? 0}
+              color="bg-blue-100 text-blue-600" borderColor="border-blue-200"
+              regras={[INDICADORES_INFO.ind1.explicacao, INDICADORES_INFO.ind1.formula]}
+            />
+            <IndicadorCardAluno
+              numero={2} icon={GraduationCap} label="Avaliações"
+              valor={`${(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)}%`} total="100%"
+              percentual={v2Filtrado.ind2_avaliacoes ?? 0}
+              color="bg-red-100 text-red-600" borderColor="border-red-200"
+              regras={[INDICADORES_INFO.ind2.explicacao, INDICADORES_INFO.ind2.formula]}
+            />
+            <IndicadorCardAluno
+              numero={3} icon={BookOpen} label="Competências"
+              valor={`${(v2Filtrado.ind3_competencias ?? 0).toFixed(0)}%`} total="100%"
+              percentual={v2Filtrado.ind3_competencias ?? 0}
+              color="bg-purple-100 text-purple-600" borderColor="border-purple-200"
+              regras={[INDICADORES_INFO.ind3.explicacao, INDICADORES_INFO.ind3.formula]}
+            />
+            <IndicadorCardAluno
+              numero={4} icon={ClipboardCheck} label="Tarefas"
+              valor={`${(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)}%`} total="100%"
+              percentual={v2Filtrado.ind4_tarefas ?? 0}
+              color="bg-emerald-100 text-emerald-600" borderColor="border-emerald-200"
+              regras={[INDICADORES_INFO.ind4.explicacao, INDICADORES_INFO.ind4.formula]}
+            />
+            <IndicadorCardAluno
+              numero={5} icon={Star} label="Engajamento"
+              valor={`${(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}%`} total="100%"
+              percentual={v2Filtrado.ind5_engajamento ?? 0}
+              color="bg-amber-100 text-amber-600" borderColor="border-amber-200"
+              regras={[INDICADORES_INFO.ind5.explicacao, INDICADORES_INFO.ind5.formula]}
+            />
+            <IndicadorCardAluno
+              numero={6} icon={Briefcase} label="Cases"
+              valor={`${(v2Filtrado.ind6_aplicabilidade ?? 0).toFixed(0)}%`} total="100%"
+              percentual={v2Filtrado.ind6_aplicabilidade ?? 0}
+              color="bg-rose-100 text-rose-600" borderColor="border-rose-200"
+              regras={[INDICADORES_INFO.ind6.explicacao, INDICADORES_INFO.ind6.formula]}
+            />
+          </div>
+        )}
 
         {/* Visualização de Ciclos */}
         {(ciclosFinalizados.length > 0 || ciclosEmAndamento.length > 0) && (
@@ -485,6 +661,65 @@ export default function DashboardMeuPerfil() {
                   </Card>
                 )}
 
+                {/* Alertas de Micro Ciclos com prazo próximo */}
+                {(() => {
+                  const alertas: any[] = [];
+                  const hoje = new Date();
+                  jornadaData.macroJornadas.forEach((mj: any) => {
+                    mj.microJornadas.forEach((micro: any) => {
+                      if (micro.peso !== 'obrigatoria') return;
+                      if (!micro.microTermino) return;
+                      const termino = new Date(micro.microTermino);
+                      const diasRestantes = Math.ceil((termino.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+                      // Alertar se: em andamento (não concluída) e prazo <= 30 dias
+                      const concluida = micro.aulasDisponiveis > 0 && micro.aulasConcluidas >= micro.aulasDisponiveis;
+                      if (!concluida && diasRestantes >= 0 && diasRestantes <= 30) {
+                        alertas.push({ ...micro, trilhaNome: mj.trilhaNome, diasRestantes });
+                      }
+                    });
+                  });
+                  alertas.sort((a: any, b: any) => a.diasRestantes - b.diasRestantes);
+                  if (alertas.length === 0) return null;
+                  return (
+                    <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="p-1.5 rounded-lg bg-amber-100">
+                            <Clock className="h-4 w-4 text-amber-700" />
+                          </div>
+                          <p className="text-sm font-semibold text-amber-800">Atenção: Competências com prazo próximo</p>
+                          <Badge className="bg-amber-200 text-amber-800 border-amber-400 text-xs">{alertas.length}</Badge>
+                        </div>
+                        <div className="space-y-2">
+                          {alertas.map((a: any, i: number) => (
+                            <div key={i} className={`flex items-center justify-between p-2.5 rounded-lg border ${
+                              a.diasRestantes <= 7 ? 'bg-red-50 border-red-200' : 
+                              a.diasRestantes <= 14 ? 'bg-orange-50 border-orange-200' : 
+                              'bg-amber-50 border-amber-200'
+                            }`}>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">{a.competenciaNome}</p>
+                                <p className="text-xs text-gray-500">
+                                  {a.trilhaNome} • Aulas: {a.aulasConcluidas || 0}/{a.aulasDisponiveis || '?'}
+                                  {a.notaPlataforma > 0 && ` • Nota: ${a.notaPlataforma.toFixed(0)}`}
+                                </p>
+                              </div>
+                              <div className={`text-right ml-3 ${
+                                a.diasRestantes <= 7 ? 'text-red-700' : 
+                                a.diasRestantes <= 14 ? 'text-orange-700' : 
+                                'text-amber-700'
+                              }`}>
+                                <p className="text-sm font-bold">{a.diasRestantes === 0 ? 'Hoje!' : `${a.diasRestantes}d`}</p>
+                                <p className="text-xs">restantes</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+
                 {/* Filtro por status */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <Filter className="h-4 w-4 text-gray-500" />
@@ -555,65 +790,124 @@ export default function DashboardMeuPerfil() {
                           const nivel = micro.nivelAtual ?? 0;
                           const meta = micro.metaFinal ?? 100;
                           const progressPercent = meta > 0 ? Math.min((nivel / meta) * 100, 100) : 0;
-                          const barColor = nivel >= meta ? "bg-emerald-500" : nivel >= meta * 0.7 ? "bg-amber-500" : nivel > 0 ? "bg-red-500" : "bg-gray-300";
-                          const statusIcon = nivel >= meta ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> :
-                            nivel > 0 ? <TrendingUp className="h-5 w-5 text-amber-500" /> :
+                          
+                          // Dados de aulas da plataforma
+                          const aulasDisp = micro.aulasDisponiveis ?? 0;
+                          const aulasConc = micro.aulasConcluidas ?? 0;
+                          const aulasAnd = micro.aulasEmAndamento ?? 0;
+                          const competenciaConcluida = aulasDisp > 0 && aulasConc >= aulasDisp;
+                          const notaPlataforma = micro.notaPlataforma ?? 0;
+                          const progressoAulas = aulasDisp > 0 ? (aulasConc / aulasDisp) * 100 : 0;
+                          
+                          // Status do ciclo
+                          const hoje = new Date();
+                          const microInicio = micro.microInicio ? new Date(micro.microInicio) : null;
+                          const microTermino = micro.microTermino ? new Date(micro.microTermino) : null;
+                          const cicloStatus = !microInicio || !microTermino ? 'indefinido' :
+                            hoje < microInicio ? 'futuro' :
+                            hoje > microTermino ? 'finalizado' : 'em_andamento';
+                          const diasRestantes = microTermino ? Math.ceil((microTermino.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                          
+                          // Cores e ícones baseados no status real
+                          const barColor = competenciaConcluida ? "bg-emerald-500" : 
+                            progressoAulas >= 70 ? "bg-amber-500" : 
+                            progressoAulas > 0 ? "bg-blue-500" : "bg-gray-300";
+                          const statusIcon = competenciaConcluida ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> :
+                            aulasConc > 0 ? <TrendingUp className="h-5 w-5 text-amber-500" /> :
+                            cicloStatus === 'futuro' ? <Clock className="h-5 w-5 text-gray-300" /> :
                             <Target className="h-5 w-5 text-gray-400" />;
 
                           return (
-                            <div key={micro.id} className="p-4 rounded-xl bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
+                            <div key={micro.id} className={`p-4 rounded-xl border transition-colors ${
+                              competenciaConcluida ? 'bg-emerald-50 border-emerald-200' :
+                              cicloStatus === 'futuro' ? 'bg-gray-50 border-gray-100 opacity-60' :
+                              cicloStatus === 'finalizado' && aulasConc === 0 ? 'bg-red-50 border-red-200' :
+                              'bg-gray-50 border-gray-100 hover:bg-gray-100'
+                            }`}>
                               <div className="flex items-start gap-3 mb-3">
                                 <div className="flex-shrink-0 mt-0.5">{statusIcon}</div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
                                     <p className="text-sm text-gray-900 font-semibold">{micro.competenciaNome}</p>
-                                    <Badge variant="outline" className={micro.peso === 'obrigatoria' ? "bg-amber-50 text-amber-700 border-amber-300 text-xs" : "bg-gray-100 text-gray-600 border-gray-300 text-xs"}>
-                                      {micro.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
-                                    </Badge>
+                                    <div className="flex items-center gap-1.5">
+                                      {cicloStatus === 'em_andamento' && diasRestantes !== null && diasRestantes <= 14 && !competenciaConcluida && micro.peso === 'obrigatoria' && (
+                                        <Badge className={`text-xs ${
+                                          diasRestantes <= 7 ? 'bg-red-100 text-red-700 border-red-300' : 'bg-amber-100 text-amber-700 border-amber-300'
+                                        }`}>
+                                          <Clock className="h-3 w-3 mr-0.5" />
+                                          {diasRestantes}d
+                                        </Badge>
+                                      )}
+                                      {cicloStatus === 'finalizado' && !competenciaConcluida && micro.peso === 'obrigatoria' && (
+                                        <Badge className="bg-red-100 text-red-700 border-red-300 text-xs">
+                                          Vencida
+                                        </Badge>
+                                      )}
+                                      {competenciaConcluida && (
+                                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 text-xs">
+                                          Concluída
+                                        </Badge>
+                                      )}
+                                      <Badge variant="outline" className={micro.peso === 'obrigatoria' ? "bg-amber-50 text-amber-700 border-amber-300 text-xs" : "bg-gray-100 text-gray-600 border-gray-300 text-xs"}>
+                                        {micro.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
+                                      </Badge>
+                                    </div>
                                   </div>
                                   {micro.microInicio && micro.microTermino && (
-                                    <p className="text-xs text-gray-500 mb-2">
+                                    <p className="text-xs text-gray-500 mb-1">
                                       <Calendar className="h-3 w-3 inline mr-1" />
                                       Micro Jornada: {new Date(micro.microInicio).toLocaleDateString("pt-BR")} a {new Date(micro.microTermino).toLocaleDateString("pt-BR")}
+                                      {cicloStatus === 'futuro' && <span className="ml-1 text-gray-400">(Futuro)</span>}
+                                      {cicloStatus === 'em_andamento' && <span className="ml-1 text-blue-600">(Em andamento)</span>}
+                                      {cicloStatus === 'finalizado' && <span className="ml-1 text-gray-600">(Finalizado)</span>}
                                     </p>
+                                  )}
+                                  {/* Dados de aulas */}
+                                  {aulasDisp > 0 && (
+                                    <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
+                                      <BookOpen className="h-3 w-3" />
+                                      <span>Aulas: <strong className="text-gray-700">{aulasConc}/{aulasDisp}</strong> concluídas</span>
+                                      {aulasAnd > 0 && <span>• <strong className="text-blue-600">{aulasAnd}</strong> em andamento</span>}
+                                      {notaPlataforma > 0 && (
+                                        <span>• Nota: <strong className={notaPlataforma >= 70 ? "text-emerald-600" : "text-amber-600"}>{notaPlataforma.toFixed(0)}</strong></span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               </div>
 
-                              {/* Barra de progresso com níveis */}
+                              {/* Barra de progresso baseada em aulas */}
                               <div className="ml-8">
                                 <div className="flex items-center gap-2 mb-2">
                                   <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden relative">
-                                    <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${progressPercent}%` }} />
-                                    {/* Marcadores de metas */}
-                                    {micro.metaCiclo1 && (
-                                      <div className="absolute top-0 h-full w-0.5 bg-blue-400" style={{ left: `${Math.min((micro.metaCiclo1 / (meta || 100)) * 100, 100)}%` }} title={`Meta Ciclo 1: ${micro.metaCiclo1}%`} />
-                                    )}
-                                    {micro.metaCiclo2 && (
-                                      <div className="absolute top-0 h-full w-0.5 bg-purple-400" style={{ left: `${Math.min((micro.metaCiclo2 / (meta || 100)) * 100, 100)}%` }} title={`Meta Ciclo 2: ${micro.metaCiclo2}%`} />
-                                    )}
+                                    <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${progressoAulas}%` }} />
                                   </div>
-                                  <span className={`text-sm font-bold min-w-[45px] text-right ${nivel >= meta ? "text-emerald-600" : nivel > 0 ? "text-amber-600" : "text-gray-400"}`}>
-                                    {nivel > 0 ? `${nivel.toFixed(0)}%` : "—"}
+                                  <span className={`text-sm font-bold min-w-[45px] text-right ${
+                                    competenciaConcluida ? "text-emerald-600" : 
+                                    progressoAulas > 0 ? "text-blue-600" : "text-gray-400"
+                                  }`}>
+                                    {progressoAulas > 0 ? `${progressoAulas.toFixed(0)}%` : "—"}
                                   </span>
                                 </div>
 
-                                {/* Legenda de metas */}
+                                {/* Info resumida */}
                                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                                  <span className="flex items-center gap-1">
-                                    <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                                    Nível Atual: <strong className="text-gray-700">{nivel > 0 ? `${nivel.toFixed(0)}%` : "—"}</strong>
-                                  </span>
-                                  {micro.metaCiclo1 !== null && (
+                                  {aulasDisp > 0 && (
                                     <span className="flex items-center gap-1">
-                                      <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-                                      Meta C1: <strong className="text-gray-700">{micro.metaCiclo1.toFixed(0)}%</strong>
+                                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                      Progresso: <strong className="text-gray-700">{aulasConc}/{aulasDisp} aulas</strong>
                                     </span>
                                   )}
-                                  {micro.metaCiclo2 !== null && (
+                                  {notaPlataforma > 0 && (
                                     <span className="flex items-center gap-1">
-                                      <span className="w-2 h-2 rounded-full bg-purple-400"></span>
-                                      Meta C2: <strong className="text-gray-700">{micro.metaCiclo2.toFixed(0)}%</strong>
+                                      <span className={`w-2 h-2 rounded-full ${notaPlataforma >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+                                      Nota Avaliação: <strong className="text-gray-700">{notaPlataforma.toFixed(0)}</strong>
+                                    </span>
+                                  )}
+                                  {nivel > 0 && (
+                                    <span className="flex items-center gap-1">
+                                      <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                                      Nível Mentora: <strong className="text-gray-700">{nivel.toFixed(0)}%</strong>
                                     </span>
                                   )}
                                   <span className="flex items-center gap-1">

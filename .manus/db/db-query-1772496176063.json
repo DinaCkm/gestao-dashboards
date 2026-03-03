@@ -1,0 +1,338 @@
+{
+  "query": "DESCRIBE student_performance;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute DESCRIBE student_performance;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "alunoId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "externalUserId",
+      "Type": "varchar(100)",
+      "Null": "NO",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "userName",
+      "Type": "varchar(255)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "userEmail",
+      "Type": "varchar(320)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "lastAccess",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "turmaId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "externalTurmaId",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "turmaName",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "competenciaId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "externalCompetenciaId",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "competenciaName",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "dataInicio",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "dataConclusao",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "totalAulas",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "aulasDisponiveis",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "aulasConcluidas",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "aulasEmAndamento",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "aulasNaoIniciadas",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "aulasAgendadas",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "progressoTotal",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "cargaHorariaTotal",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "cargaHorariaConcluida",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "progressoAulasDisponiveis",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "avaliacoesDiagnostico",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "mediaAvaliacoesDiagnostico",
+      "Type": "decimal(5,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "avaliacoesFinais",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "mediaAvaliacoesFinais",
+      "Type": "decimal(5,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "avaliacoesDisponiveis",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "avaliacoesRespondidas",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "avaliacoesPendentes",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "avaliacoesAgendadas",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "mediaAvaliacoesDisponiveis",
+      "Type": "decimal(5,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "mediaAvaliacoesRespondidas",
+      "Type": "decimal(5,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "concluidoDentroPrazo",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "concluidoEmAtraso",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "naoConcluidoDentroPrazo",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "naoConcluidoEmAtraso",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "uploadId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nalunoId\tint\tYES\tMUL\tNULL\t\nexternalUserId\tvarchar(100)\tNO\tMUL\tNULL\t\nuserName\tvarchar(255)\tNO\t\tNULL\t\nuserEmail\tvarchar(320)\tYES\t\tNULL\t\nlastAccess\tvarchar(100)\tYES\t\tNULL\t\nturmaId\tint\tYES\tMUL\tNULL\t\nexternalTurmaId\tvarchar(100)\tYES\t\tNULL\t\nturmaName\tvarchar(255)\tYES\t\tNULL\t\ncompetenciaId\tint\tYES\tMUL\tNULL\t\nexternalCompetenciaId\tvarchar(100)\tYES\tMUL\tNULL\t\ncompetenciaName\tvarchar(255)\tYES\t\tNULL\t\ndataInicio\tvarchar(100)\tYES\t\tNULL\t\ndataConclusao\tvarchar(100)\tYES\t\tNULL\t\ntotalAulas\tint\tYES\t\t0\t\naulasDisponiveis\tint\tYES\t\t0\t\naulasConcluidas\tint\tYES\t\t0\t\naulasEmAndamento\tint\tYES\t\t0\t\naulasNaoIniciadas\tint\tYES\t\t0\t\naulasAgendadas\tint\tYES\t\t0\t\nprogressoTotal\tint\tYES\t\t0\t\ncargaHorariaTotal\tvarchar(20)\tYES\t\tNULL\t\ncargaHorariaConcluida\tvarchar(20)\tYES\t\tNULL\t\nprogressoAulasDisponiveis\tint\tYES\t\t0\t\navaliacoesDiagnostico\tint\tYES\t\t0\t\nmediaAvaliacoesDiagnostico\tdecimal(5,2)\tYES\t\tNULL\t\navaliacoesFinais\tint\tYES\t\t0\t\nmediaAvaliacoesFinais\tdecimal(5,2)\tYES\t\tNULL\t\navaliacoesDisponiveis\tint\tYES\t\t0\t\navaliacoesRespondidas\tint\tYES\t\t0\t\navaliacoesPendentes\tint\tYES\t\t0\t\navaliacoesAgendadas\tint\tYES\t\t0\t\nmediaAvaliacoesDisponiveis\tdecimal(5,2)\tYES\t\tNULL\t\nmediaAvaliacoesRespondidas\tdecimal(5,2)\tYES\t\tNULL\t\nconcluidoDentroPrazo\tvarchar(100)\tYES\t\tNULL\t\nconcluidoEmAtraso\tvarchar(100)\tYES\t\tNULL\t\nnaoConcluidoDentroPrazo\tvarchar(100)\tYES\t\tNULL\t\nnaoConcluidoEmAtraso\tvarchar(100)\tYES\t\tNULL\t\nuploadId\tint\tYES\tMUL\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\n",
+  "stderr": "",
+  "execution_time_ms": 359
+}

@@ -28,8 +28,16 @@ import {
   Route,
   Layers,
   Video,
-  FileText
+  FileText,
+  AlertTriangle,
+  Briefcase,
+  ClipboardCheck,
+  Star,
+  Filter,
+  HelpCircle,
+  MessageSquare
 } from "lucide-react";
+import { InfoTooltip, GLOSSARIO, INDICADORES_INFO } from "@/components/InfoTooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Table,
@@ -40,9 +48,209 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+// Componente para exibir um indicador individual com tooltip
+function IndicadorCard({ 
+  label, 
+  valor, 
+  descricao, 
+  icon: Icon, 
+  iconBg, 
+  iconColor,
+  tooltip
+}: { 
+  label: string; 
+  valor: number; 
+  descricao: string; 
+  icon: any; 
+  iconBg: string; 
+  iconColor: string;
+  tooltip?: string;
+}) {
+  return (
+    <Card className="bg-white text-gray-900 border border-gray-200">
+      <CardContent className="pt-5 pb-4">
+        <div className="flex items-center gap-3">
+          <div className={`h-10 w-10 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
+            <Icon className={`h-5 w-5 ${iconColor}`} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+              {label}
+              {tooltip && <InfoTooltip text={tooltip} />}
+            </p>
+            <p className="text-xl font-bold">{valor.toFixed(0)}%</p>
+          </div>
+        </div>
+        <Progress value={valor} className="mt-2 h-2" />
+        <p className="text-xs text-gray-400 mt-1.5 line-clamp-2">{descricao}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Componente para exibir indicadores de um ciclo
+function CicloIndicadores({ 
+  ciclo, 
+  tipo 
+}: { 
+  ciclo: any; 
+  tipo: 'em_andamento' | 'finalizado'; 
+}) {
+  const [expandido, setExpandido] = useState(tipo === 'em_andamento');
+  // IndicadoresCiclo has ind fields at root level
+  const ind = ciclo;
+  
+  const borderColor = tipo === 'em_andamento' ? 'border-l-blue-500' : 'border-l-emerald-500';
+  const badgeClass = tipo === 'em_andamento' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800';
+  const badgeLabel = tipo === 'em_andamento' ? 'Em Andamento' : 'Finalizado';
+
+  return (
+    <Card className={`border-l-4 ${borderColor}`}>
+      <Collapsible open={expandido} onOpenChange={setExpandido}>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover:bg-gray-50/50 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <Layers className="h-5 w-5 text-gray-600 shrink-0" />
+                <div className="min-w-0">
+                  <CardTitle className="text-base truncate">{ciclo.nomeCiclo}</CardTitle>
+                  <CardDescription className="text-xs">
+                    {ciclo.dataInicio} a {ciclo.dataFim}
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="text-right">
+                  <p className="text-lg font-bold text-[#0A1E3E]">{ind.ind7_engajamentoFinal.toFixed(0)}%</p>
+                  <p className="text-xs text-gray-400">Engajamento Final</p>
+                </div>
+                <Badge className={badgeClass}>{badgeLabel}</Badge>
+                {expandido ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+              </div>
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="pt-0 space-y-4">
+            {/* Engajamento Final (destaque) */}
+            <div className="p-4 bg-gradient-to-r from-[#0A1E3E]/5 to-transparent rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-[#0A1E3E] flex items-center justify-center">
+                    <Star className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      Engajamento Final <InfoTooltip text={INDICADORES_INFO.ind7.explicacao} />
+                    </p>
+                    <p className="text-2xl font-bold text-[#0A1E3E]">{ind.ind7_engajamentoFinal.toFixed(1)}%</p>
+                  </div>
+                </div>
+              </div>
+              <Progress value={ind.ind7_engajamentoFinal} className="mt-3 h-3" />
+            </div>
+
+            {/* 6 Indicadores individuais */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <IndicadorCard
+                label="1. Webinars/Aulas Online"
+                valor={ind.ind1_webinars}
+                descricao={INDICADORES_INFO.ind1.formula}
+                icon={Video}
+                iconBg="bg-blue-100"
+                iconColor="text-blue-600"
+                tooltip={INDICADORES_INFO.ind1.explicacao}
+              />
+              <IndicadorCard
+                label="2. Performance nas Avaliações"
+                valor={ind.ind2_avaliacoes}
+                descricao={INDICADORES_INFO.ind2.formula}
+                icon={GraduationCap}
+                iconBg="bg-red-100"
+                iconColor="text-red-600"
+                tooltip={INDICADORES_INFO.ind2.explicacao}
+              />
+              <IndicadorCard
+                label="3. Performance nas Competências"
+                valor={ind.ind3_competencias}
+                descricao={INDICADORES_INFO.ind3.formula}
+                icon={BookOpen}
+                iconBg="bg-purple-100"
+                iconColor="text-purple-600"
+                tooltip={INDICADORES_INFO.ind3.explicacao}
+              />
+              <IndicadorCard
+                label="4. Tarefas Práticas"
+                valor={ind.ind4_tarefas}
+                descricao={INDICADORES_INFO.ind4.formula}
+                icon={ClipboardCheck}
+                iconBg="bg-emerald-100"
+                iconColor="text-emerald-600"
+                tooltip={INDICADORES_INFO.ind4.explicacao}
+              />
+              <IndicadorCard
+                label="5. Engajamento (Nota Mentora)"
+                valor={ind.ind5_engajamento}
+                descricao={INDICADORES_INFO.ind5.formula}
+                icon={Zap}
+                iconBg="bg-amber-100"
+                iconColor="text-amber-600"
+                tooltip={INDICADORES_INFO.ind5.explicacao}
+              />
+              {tipo === 'finalizado' && (
+                <IndicadorCard
+                  label="6. Aplicabilidade Prática (Case)"
+                  valor={ind.ind6_aplicabilidade}
+                  descricao={INDICADORES_INFO.ind6.formula}
+                  icon={Briefcase}
+                  iconBg="bg-rose-100"
+                  iconColor="text-rose-600"
+                  tooltip={INDICADORES_INFO.ind6.explicacao}
+                />
+              )}
+              {tipo === 'em_andamento' && (
+                <Card className="bg-gray-50 text-gray-500 border border-dashed border-gray-300">
+                  <CardContent className="pt-5 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center shrink-0">
+                        <Briefcase className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">6. Aplicabilidade Prática (Case)</p>
+                        <p className="text-sm text-gray-400 italic">Avaliado ao final do macrociclo</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Detalhes das competências do ciclo */}
+            {ind.detalhes?.competencias?.competenciasDetalhe && ind.detalhes.competencias.competenciasDetalhe.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Competências do Ciclo:</p>
+                <div className="flex flex-wrap gap-2">
+                  {ind.detalhes.competencias.competenciasDetalhe.map((comp: any, idx: number) => (
+                    <Badge key={idx} variant="outline" className="text-xs">
+                      {comp.nome || `Comp. ${idx + 1}`}
+                      {comp.concluida && <CheckCircle2 className="h-3 w-3 ml-1 text-emerald-500 inline" />}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+}
+
 export default function DashboardAluno() {
   const [selectedAlunoId, setSelectedAlunoId] = useState<number | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState<string>("all");
+  const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
+  const [showGlossario, setShowGlossario] = useState(false);
 
   // Buscar lista de programas
   const { data: programs = [] } = trpc.programs.list.useQuery();
@@ -52,7 +260,7 @@ export default function DashboardAluno() {
     selectedProgramId !== "all" ? { programId: parseInt(selectedProgramId) } : undefined
   );
 
-  // Buscar performance filtrada do aluno selecionado
+  // Buscar performance filtrada do aluno selecionado (inclui V2)
   const { data: performanceData, isLoading: loadingPerformance } = trpc.indicadores.performanceFiltrada.useQuery(
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
@@ -119,6 +327,78 @@ export default function DashboardAluno() {
     return date.toLocaleDateString('pt-BR');
   };
 
+  // V2 data
+  const v2 = performanceData?.indicadoresV2;
+
+  // Filtro de indicadores: opções disponíveis
+  const filtroOpcoes = useMemo(() => {
+    if (!v2) return [];
+    const opcoes: { value: string; label: string }[] = [
+      { value: 'consolidado', label: '⭐ Consolidado (Todos os ciclos finalizados)' },
+    ];
+    // Agrupar ciclos por trilha (macrociclo)
+    const trilhas = new Set<string>();
+    [...(v2.ciclosFinalizados || []), ...(v2.ciclosEmAndamento || [])].forEach((c: any) => {
+      const trilhaNome = c.nomeCiclo?.split(' - ')?.[0] || c.nomeCiclo;
+      if (trilhaNome) trilhas.add(trilhaNome);
+    });
+    Array.from(trilhas).forEach(t => {
+      opcoes.push({ value: `trilha:${t}`, label: `📍 Trilha: ${t}` });
+    });
+    // Ciclos individuais
+    (v2.ciclosFinalizados || []).forEach((c: any, idx: number) => {
+      opcoes.push({ value: `finalizado:${idx}`, label: `✅ ${c.nomeCiclo} (Finalizado)` });
+    });
+    (v2.ciclosEmAndamento || []).forEach((c: any, idx: number) => {
+      opcoes.push({ value: `andamento:${idx}`, label: `⏳ ${c.nomeCiclo} (Em Andamento)` });
+    });
+    return opcoes;
+  }, [v2]);
+
+  // Dados filtrados do V2
+  const v2Filtrado = useMemo(() => {
+    if (!v2) return null;
+    if (indicadorFiltro === 'consolidado') return v2.consolidado;
+    if (indicadorFiltro.startsWith('trilha:')) {
+      const trilhaNome = indicadorFiltro.replace('trilha:', '');
+      const ciclosDaTrilha = [
+        ...(v2.ciclosFinalizados || []).filter((c: any) => c.nomeCiclo?.startsWith(trilhaNome)),
+        ...(v2.ciclosEmAndamento || []).filter((c: any) => c.nomeCiclo?.startsWith(trilhaNome)),
+      ];
+      if (ciclosDaTrilha.length === 0) return v2.consolidado;
+      // Média dos ciclos da trilha
+      const soma = { ind1: 0, ind2: 0, ind3: 0, ind4: 0, ind5: 0, ind6: 0, ind7: 0 };
+      ciclosDaTrilha.forEach((c: any) => {
+        soma.ind1 += c.ind1_webinars || 0;
+        soma.ind2 += c.ind2_avaliacoes || 0;
+        soma.ind3 += c.ind3_competencias || 0;
+        soma.ind4 += c.ind4_tarefas || 0;
+        soma.ind5 += c.ind5_engajamento || 0;
+        soma.ind6 += c.ind6_aplicabilidade || 0;
+        soma.ind7 += c.ind7_engajamentoFinal || 0;
+      });
+      const n = ciclosDaTrilha.length;
+      return {
+        ind1_webinars: soma.ind1 / n,
+        ind2_avaliacoes: soma.ind2 / n,
+        ind3_competencias: soma.ind3 / n,
+        ind4_tarefas: soma.ind4 / n,
+        ind5_engajamento: soma.ind5 / n,
+        ind6_aplicabilidade: soma.ind6 / n,
+        ind7_engajamentoFinal: soma.ind7 / n,
+      };
+    }
+    if (indicadorFiltro.startsWith('finalizado:')) {
+      const idx = parseInt(indicadorFiltro.replace('finalizado:', ''));
+      return v2.ciclosFinalizados?.[idx] || v2.consolidado;
+    }
+    if (indicadorFiltro.startsWith('andamento:')) {
+      const idx = parseInt(indicadorFiltro.replace('andamento:', ''));
+      return v2.ciclosEmAndamento?.[idx] || v2.consolidado;
+    }
+    return v2.consolidado;
+  }, [v2, indicadorFiltro]);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -126,7 +406,7 @@ export default function DashboardAluno() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Dashboard do Aluno</h1>
-            <p className="text-gray-500">Performance individual com histórico e plano de desenvolvimento</p>
+            <p className="text-gray-500">Performance individual com indicadores por ciclo</p>
           </div>
         </div>
 
@@ -182,7 +462,7 @@ export default function DashboardAluno() {
         {/* Conteúdo do Dashboard */}
         {selectedAlunoId && (
           <>
-            {/* Informações do Aluno - Card com turma, trilha, programa, mentor */}
+            {/* Informações do Aluno */}
             <Card>
               <CardContent className="pt-6">
                 <div className="flex flex-col md:flex-row md:items-start gap-4">
@@ -242,33 +522,94 @@ export default function DashboardAluno() {
                       </div>
                     )}
                   </div>
-                  {performanceData && (
+                  {/* Consolidado V2 */}
+                  {v2?.consolidado && (
                     <div className="text-center shrink-0">
-                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${getEstagioColor(performanceData.indicadores.classificacao)} text-white`}>
-                        <Award className="h-5 w-5" />
-                        <span className="font-semibold">{performanceData.indicadores.classificacao}</span>
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0A1E3E] text-white">
+                        <Star className="h-5 w-5" />
+                        <span className="font-semibold">Consolidado</span>
                       </div>
                       <p className="text-2xl font-bold text-gray-900 mt-2">
-                        {(performanceData.indicadores.performanceGeral || 0).toFixed(0)}%
+                        {v2.consolidado.ind7_engajamentoFinal.toFixed(0)}%
                       </p>
-                      <p className="text-sm text-gray-500">Performance Geral</p>
+                      <p className="text-sm text-gray-500">Engajamento Final</p>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
+            {/* Glossário de Termos */}
+            <Card className="bg-white border border-gray-200 shadow-sm">
+              <CardContent className="p-4">
+                <button
+                  onClick={() => setShowGlossario(!showGlossario)}
+                  className="flex items-center gap-2 w-full text-left"
+                >
+                  <HelpCircle className="h-5 w-5 text-[#F5991F]" />
+                  <span className="text-sm font-semibold text-gray-700">Glossário de Termos do Programa</span>
+                  <InfoTooltip text="Clique para expandir e ver a explicação de cada termo usado no sistema" />
+                  {showGlossario ? <ChevronUp className="h-4 w-4 text-gray-400 ml-auto" /> : <ChevronDown className="h-4 w-4 text-gray-400 ml-auto" />}
+                </button>
+                {showGlossario && (
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {([
+                      { termo: "Jornada", desc: GLOSSARIO.jornada, icon: Award, color: "bg-indigo-50 border-indigo-200 text-indigo-700" },
+                      { termo: "Macrociclo", desc: GLOSSARIO.macrociclo, icon: Target, color: "bg-blue-50 border-blue-200 text-blue-700" },
+                      { termo: "Trilha", desc: GLOSSARIO.trilha, icon: TrendingUp, color: "bg-purple-50 border-purple-200 text-purple-700" },
+                      { termo: "Microciclo", desc: GLOSSARIO.microciclo, icon: Clock, color: "bg-cyan-50 border-cyan-200 text-cyan-700" },
+                      { termo: "Competência", desc: GLOSSARIO.competencia, icon: BookOpen, color: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+                      { termo: "Aula", desc: GLOSSARIO.aula, icon: GraduationCap, color: "bg-amber-50 border-amber-200 text-amber-700" },
+                      { termo: "Webinar", desc: GLOSSARIO.webinar, icon: Video, color: "bg-orange-50 border-orange-200 text-orange-700" },
+                      { termo: "Mentoria", desc: GLOSSARIO.mentoria, icon: MessageSquare, color: "bg-pink-50 border-pink-200 text-pink-700" },
+                      { termo: "Tarefa Prática", desc: GLOSSARIO.tarefa, icon: ClipboardCheck, color: "bg-teal-50 border-teal-200 text-teal-700" },
+                      { termo: "Case de Sucesso", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
+                    ]).map(({ termo, desc, icon: Icon, color }) => (
+                      <div key={termo} className={`p-3 rounded-lg border ${color}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Icon className="h-4 w-4" />
+                          <span className="text-sm font-semibold">{termo}</span>
+                        </div>
+                        <p className="text-xs text-gray-600 leading-relaxed">{desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Alerta de Case Pendente */}
+            {v2?.alertaCasePendente && v2.alertaCasePendente.length > 0 && (
+              <Card className="border-2 border-amber-400 bg-amber-50">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-6 w-6 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-amber-800">Alerta: Case de Sucesso Pendente</p>
+                      {v2.alertaCasePendente.map((alerta: any, idx: number) => (
+                        <p key={idx} className="text-sm text-amber-700 mt-1">
+                          O ciclo <strong>{alerta.cicloNome}</strong> está finalizando 
+                          {alerta.dataFim && ` (término: ${new Date(alerta.dataFim).toLocaleDateString('pt-BR')})`}. 
+                          O aluno precisa entregar o <strong>Case de Sucesso</strong> para completar a avaliação do macrociclo.
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Tabs de Conteúdo */}
             <Tabs defaultValue="indicadores" className="space-y-4">
               <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="indicadores">Indicadores</TabsTrigger>
+                <TabsTrigger value="indicadores">Indicadores V2</TabsTrigger>
                 <TabsTrigger value="competencias">Competências</TabsTrigger>
                 <TabsTrigger value="eventos">Eventos</TabsTrigger>
                 <TabsTrigger value="ciclos">Ciclos</TabsTrigger>
                 <TabsTrigger value="historico">Histórico</TabsTrigger>
               </TabsList>
 
-              {/* Tab Indicadores */}
+              {/* Tab Indicadores V2 - Por Ciclo */}
               <TabsContent value="indicadores" className="space-y-4">
                 {loadingPerformance ? (
                   <Card>
@@ -276,183 +617,134 @@ export default function DashboardAluno() {
                       Carregando indicadores...
                     </CardContent>
                   </Card>
-                ) : performanceData ? (
+                ) : v2 ? (
                   <>
-                    {/* Card Performance Geral (destaque) */}
-                    <Card className="border-2 border-[#0A1E3E]">
-                      <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-lg bg-[#0A1E3E] flex items-center justify-center">
-                              <Target className="h-6 w-6 text-white" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Ind. 7: Performance Geral</p>
-                              <p className="text-3xl font-bold text-[#0A1E3E]">{(performanceData.indicadores.performanceGeral || 0).toFixed(0)}%</p>
-                            </div>
-                          </div>
-                          <div className={`px-4 py-2 rounded-full ${getEstagioColor(performanceData.indicadores.classificacao)} text-white font-semibold`}>
-                            {performanceData.indicadores.classificacao}
-                          </div>
+                    {/* Filtro de Período */}
+                    {filtroOpcoes.length > 0 && (
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <Filter className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm font-medium text-gray-600">Visualizar indicadores por:</span>
+                          <InfoTooltip text="Selecione o período para filtrar os indicadores. O consolidado mostra a média de todos os ciclos finalizados. Você também pode filtrar por trilha ou por microciclo específico." />
                         </div>
-                        <Progress value={performanceData.indicadores.performanceGeral || 0} className="mt-3 h-3" />
-                        <p className="text-xs text-gray-400 mt-2">Média dos 6 indicadores abaixo (peso igual)</p>
-                      </CardContent>
-                    </Card>
+                        <Select value={indicadorFiltro} onValueChange={setIndicadorFiltro}>
+                          <SelectTrigger className="w-[350px] bg-white">
+                            <SelectValue placeholder="Selecione o período" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filtroOpcoes.map((opcao) => (
+                              <SelectItem key={opcao.value} value={opcao.value}>
+                                {opcao.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
-                    {/* Progresso do Ciclo Macro */}
-                    {sessionProgress && (
-                      <Card className="border border-[#0A1E3E]/20 bg-gradient-to-r from-[#0A1E3E]/5 to-transparent">
+                    {/* Consolidado/Filtrado */}
+                    {v2Filtrado && (
+                      <Card className="border-2 border-[#0A1E3E]">
                         <CardContent className="pt-6">
-                          <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-lg bg-[#0A1E3E]/10 flex items-center justify-center">
-                                <Clock className="h-5 w-5 text-[#0A1E3E]" />
+                              <div className="h-12 w-12 rounded-lg bg-[#0A1E3E] flex items-center justify-center">
+                                <Target className="h-6 w-6 text-white" />
                               </div>
                               <div>
-                                <p className="text-sm text-gray-500">Progresso do Ciclo Macro</p>
-                                <p className="text-xl font-bold text-[#0A1E3E]">
-                                  {sessionProgress.sessoesRealizadas}/{sessionProgress.totalSessoesEsperadas} sessões
+                                <p className="text-sm text-gray-500 flex items-center gap-1">
+                                  Engajamento Final
+                                  <InfoTooltip text={INDICADORES_INFO.ind7.explicacao} />
                                 </p>
+                                <p className="text-3xl font-bold text-[#0A1E3E]">{(v2Filtrado.ind7_engajamentoFinal ?? 0).toFixed(0)}%</p>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="text-2xl font-bold text-[#0A1E3E]">{sessionProgress.percentualProgresso}%</p>
-                              {sessionProgress.cicloCompleto ? (
-                                <Badge className="bg-emerald-100 text-emerald-800 border-0 mt-1">
-                                  <Award className="h-3 w-3 mr-1" /> Ciclo Completo
-                                </Badge>
-                              ) : sessionProgress.faltaUmaSessao ? (
-                                <Badge className="bg-amber-100 text-amber-800 border-0 mt-1 animate-pulse">
-                                  Falta 1 sessão!
-                                </Badge>
-                              ) : (
-                                <p className="text-xs text-gray-500 mt-1">Faltam {sessionProgress.sessoesFaltantes} sessões para o término do Macro-Ciclo</p>
-                              )}
-                            </div>
                           </div>
-                          <Progress value={sessionProgress.percentualProgresso} className="h-2" />
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs text-gray-500">
-                              {sessionProgress.macroInicio ? new Date(sessionProgress.macroInicio).toLocaleDateString('pt-BR') : ''}
-                              {' → '}
-                              {sessionProgress.macroTermino ? new Date(sessionProgress.macroTermino).toLocaleDateString('pt-BR') : ''}
-                            </span>
-                            <span className="text-xs text-gray-400">Sessões mensais</span>
+                          <Progress value={v2Filtrado.ind7_engajamentoFinal ?? 0} className="h-3" />
+                          <p className="text-xs text-gray-400 mt-2">
+                            {indicadorFiltro === 'consolidado' 
+                              ? 'Média de todos os ciclos finalizados' 
+                              : `Filtrado por: ${filtroOpcoes.find(o => o.value === indicadorFiltro)?.label || indicadorFiltro}`}
+                          </p>
+                          
+                          {/* Mini resumo dos 6 indicadores */}
+                          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-4">
+                            <div className="text-center p-2 bg-blue-50 rounded">
+                              <p className="text-lg font-bold text-blue-700">{(v2Filtrado.ind1_webinars ?? 0).toFixed(0)}%</p>
+                              <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">Webinars <InfoTooltip text={INDICADORES_INFO.ind1.explicacao} /></p>
+                            </div>
+                            <div className="text-center p-2 bg-red-50 rounded">
+                              <p className="text-lg font-bold text-red-700">{(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)}%</p>
+                              <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">Avaliações <InfoTooltip text={INDICADORES_INFO.ind2.explicacao} /></p>
+                            </div>
+                            <div className="text-center p-2 bg-purple-50 rounded">
+                              <p className="text-lg font-bold text-purple-700">{(v2Filtrado.ind3_competencias ?? 0).toFixed(0)}%</p>
+                              <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">Competências <InfoTooltip text={INDICADORES_INFO.ind3.explicacao} /></p>
+                            </div>
+                            <div className="text-center p-2 bg-emerald-50 rounded">
+                              <p className="text-lg font-bold text-emerald-700">{(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)}%</p>
+                              <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">Tarefas <InfoTooltip text={INDICADORES_INFO.ind4.explicacao} /></p>
+                            </div>
+                            <div className="text-center p-2 bg-amber-50 rounded">
+                              <p className="text-lg font-bold text-amber-700">{(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}%</p>
+                              <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">Engajamento <InfoTooltip text={INDICADORES_INFO.ind5.explicacao} /></p>
+                            </div>
+                            <div className="text-center p-2 bg-rose-50 rounded">
+                              <p className="text-lg font-bold text-rose-700">{(v2Filtrado.ind6_aplicabilidade ?? 0).toFixed(0)}%</p>
+                              <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">Cases <InfoTooltip text={INDICADORES_INFO.ind6.explicacao} /></p>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
                     )}
 
-                    {/* 6 Indicadores individuais */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {/* Ind 1 - Mentorias */}
-                      <Card className="bg-white text-gray-900 border border-gray-200">
-                        <CardContent className="pt-6">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                              <Calendar className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Ind. 1: Mentorias</p>
-                              <p className="text-xl font-bold">{performanceData.indicadores.participacaoMentorias.toFixed(0)}%</p>
-                            </div>
-                          </div>
-                          <Progress value={performanceData.indicadores.participacaoMentorias} className="mt-3 h-2" />
-                          <p className="text-xs text-gray-400 mt-2">
-                            {performanceData.indicadores.mentoriasPresente || 0} presenças de {performanceData.indicadores.totalMentorias || 0} sessões
-                          </p>
-                        </CardContent>
-                      </Card>
+                    {/* Ciclos em Andamento */}
+                    {v2.ciclosEmAndamento && v2.ciclosEmAndamento.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                          <Clock className="h-5 w-5 text-blue-500" />
+                          Ciclos em Andamento
+                        </h3>
+                        {v2.ciclosEmAndamento.map((ciclo: any, idx: number) => (
+                          <CicloIndicadores key={`andamento-${idx}`} ciclo={ciclo} tipo="em_andamento" />
+                        ))}
+                      </div>
+                    )}
 
-                      {/* Ind 2 - Atividades */}
-                      <Card className="bg-white text-gray-900 border border-gray-200">
-                        <CardContent className="pt-6">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Ind. 2: Atividades</p>
-                              <p className="text-xl font-bold">{performanceData.indicadores.atividadesPraticas.toFixed(0)}%</p>
-                            </div>
-                          </div>
-                          <Progress value={performanceData.indicadores.atividadesPraticas} className="mt-3 h-2" />
-                          <p className="text-xs text-gray-400 mt-2">1ª mentoria (Assessment) excluída do cálculo</p>
-                        </CardContent>
-                      </Card>
+                    {/* Ciclos Finalizados */}
+                    {v2.ciclosFinalizados && v2.ciclosFinalizados.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                          Ciclos Finalizados
+                        </h3>
+                        {v2.ciclosFinalizados.map((ciclo: any, idx: number) => (
+                          <CicloIndicadores key={`finalizado-${idx}`} ciclo={ciclo} tipo="finalizado" />
+                        ))}
+                      </div>
+                    )}
 
-                      {/* Ind 3 - Engajamento */}
-                      <Card className="bg-white text-gray-900 border border-gray-200">
-                        <CardContent className="pt-6">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                              <Zap className="h-5 w-5 text-amber-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Ind. 3: Engajamento</p>
-                              <p className="text-xl font-bold">{performanceData.indicadores.engajamento.toFixed(0)}%</p>
-                            </div>
-                          </div>
-                          <Progress value={performanceData.indicadores.engajamento} className="mt-3 h-2" />
-                          <p className="text-xs text-gray-400 mt-2">Média de 3 componentes base 100: presença (100/0) + tarefa (100/0) + nota evolução (nota/10×100)</p>
+                    {/* Sem ciclos */}
+                    {(!v2.ciclosEmAndamento || v2.ciclosEmAndamento.length === 0) && 
+                     (!v2.ciclosFinalizados || v2.ciclosFinalizados.length === 0) && (
+                      <Card>
+                        <CardContent className="py-8 text-center text-gray-500">
+                          <Layers className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                          <p>Nenhum ciclo encontrado para este aluno.</p>
+                          <p className="text-sm mt-2">Os indicadores serão calculados quando ciclos forem definidos.</p>
                         </CardContent>
                       </Card>
-
-                      {/* Ind 4 - Competências */}
-                      <Card className="bg-white text-gray-900 border border-gray-200">
-                        <CardContent className="pt-6">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                              <BookOpen className="h-5 w-5 text-purple-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Ind. 4: Competências</p>
-                              <p className="text-xl font-bold">{performanceData.indicadores.performanceCompetencias.toFixed(0)}%</p>
-                            </div>
-                          </div>
-                          <Progress value={performanceData.indicadores.performanceCompetencias} className="mt-3 h-2" />
-                          <p className="text-xs text-gray-400 mt-2">% conteúdos concluídos (aulas, filmes, livros, podcasts, vídeos) - ciclos finalizados</p>
-                        </CardContent>
-                      </Card>
-
-                      {/* Ind 5 - Aprendizado */}
-                      <Card className="bg-white text-gray-900 border border-gray-200">
-                        <CardContent className="pt-6">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center">
-                              <GraduationCap className="h-5 w-5 text-red-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Ind. 5: Aprendizado</p>
-                              <p className="text-xl font-bold">{(performanceData.indicadores.performanceAprendizado || 0).toFixed(0)}%</p>
-                            </div>
-                          </div>
-                          <Progress value={performanceData.indicadores.performanceAprendizado || 0} className="mt-3 h-2" />
-                          <p className="text-xs text-gray-400 mt-2">Notas das avaliações (filmes, vídeos, livros, podcasts, EAD) — ciclos finalizados</p>
-                        </CardContent>
-                      </Card>
-
-                      {/* Ind 6 - Eventos */}
-                      <Card className="bg-white text-gray-900 border border-gray-200">
-                        <CardContent className="pt-6">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center">
-                              <PartyPopper className="h-5 w-5 text-rose-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-500">Ind. 6: Eventos</p>
-                              <p className="text-xl font-bold">{performanceData.indicadores.participacaoEventos.toFixed(0)}%</p>
-                            </div>
-                          </div>
-                          <Progress value={performanceData.indicadores.participacaoEventos} className="mt-3 h-2" />
-                          <p className="text-xs text-gray-400 mt-2">
-                            {performanceData.indicadores.eventosPresente || 0} presenças de {performanceData.indicadores.totalEventos || 0} eventos
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
+                    )}
                   </>
+                ) : performanceData ? (
+                  /* Fallback: mostrar indicadores antigos se V2 não disponível */
+                  <Card>
+                    <CardContent className="py-8 text-center text-gray-500">
+                      <Info className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>Indicadores V2 não disponíveis para este aluno.</p>
+                      <p className="text-sm mt-2">Verifique se os ciclos estão configurados corretamente.</p>
+                    </CardContent>
+                  </Card>
                 ) : (
                   <Card>
                     <CardContent className="py-8 text-center text-gray-500">

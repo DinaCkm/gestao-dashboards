@@ -1,0 +1,16 @@
+{
+  "query": "SELECT COUNT(*) as total, COUNT(CASE WHEN mediaAvaliacoesRespondidas IS NOT NULL THEN 1 END) as com_nota, COUNT(CASE WHEN progressoTotal > 0 THEN 1 END) as com_progresso, COUNT(CASE WHEN aulasConcluidas > 0 THEN 1 END) as com_aulas FROM student_performance;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total, COUNT(CASE WHEN mediaAvaliacoesRespondidas IS NOT NULL THEN 1 END) as com_nota, COUNT(CASE WHEN progressoTotal > 0 THEN 1 END) as com_progresso, COUNT(CASE WHEN aulasConcluidas > 0 THEN 1 END) as com_aulas FROM student_performance;",
+  "rows": [
+    {
+      "total": "1464",
+      "com_nota": "701",
+      "com_progresso": "768",
+      "com_aulas": "768"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tcom_nota\tcom_progresso\tcom_aulas\n1464\t701\t768\t768\n",
+  "stderr": "",
+  "execution_time_ms": 348
+}

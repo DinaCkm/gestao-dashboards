@@ -25,7 +25,8 @@ import {
   scheduledWebinars, InsertScheduledWebinar, ScheduledWebinar,
   announcements, InsertAnnouncement, Announcement,
   contratosAluno, InsertContratoAluno, ContratoAluno,
-  historicoNivelCompetencia, InsertHistoricoNivelCompetencia, HistoricoNivelCompetencia
+  historicoNivelCompetencia, InsertHistoricoNivelCompetencia, HistoricoNivelCompetencia,
+  casesSucesso, InsertCaseSucesso, CaseSucesso
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -2206,42 +2207,383 @@ export async function deleteCicloExecucao(cicloId: number) {
 }
 
 // Buscar ciclos por aluno formatados para o calculador de indicadores
+// Usa ciclos_execucao se existirem, senão gera a partir de assessment_competencias
 export async function getCiclosForCalculator(alunoId: number) {
   const ciclos = await getCiclosByAluno(alunoId);
-  return ciclos.map(c => ({
-    id: c.id,
-    nomeCiclo: c.nomeCiclo,
-    dataInicio: typeof c.dataInicio === 'string' ? c.dataInicio : new Date(c.dataInicio).toISOString().split('T')[0],
-    dataFim: typeof c.dataFim === 'string' ? c.dataFim : new Date(c.dataFim).toISOString().split('T')[0],
-    competenciaIds: c.competenciaIds,
-  }));
+  
+  // Se existem ciclos manuais, usar eles
+  if (ciclos.length > 0) {
+    return ciclos.map(c => ({
+      id: c.id,
+      nomeCiclo: c.nomeCiclo,
+      dataInicio: typeof c.dataInicio === 'string' ? c.dataInicio : new Date(c.dataInicio).toISOString().split('T')[0],
+      dataFim: typeof c.dataFim === 'string' ? c.dataFim : new Date(c.dataFim).toISOString().split('T')[0],
+      competenciaIds: c.competenciaIds,
+    }));
+  }
+  
+  // Fallback: gerar ciclos a partir de assessment_competencias
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  
+  const pdis = await dbConn.select({
+    id: assessmentPdi.id,
+    trilhaId: assessmentPdi.trilhaId,
+  }).from(assessmentPdi)
+    .where(sql`${assessmentPdi.alunoId} = ${alunoId} AND ${assessmentPdi.status} = 'ativo'`);
+  
+  if (pdis.length === 0) return [];
+  
+  const pdiIds = pdis.map(p => p.id);
+  const allComps = await dbConn.select({
+    id: assessmentCompetencias.id,
+    assessmentPdiId: assessmentCompetencias.assessmentPdiId,
+    competenciaId: assessmentCompetencias.competenciaId,
+    peso: assessmentCompetencias.peso,
+    microInicio: assessmentCompetencias.microInicio,
+    microTermino: assessmentCompetencias.microTermino,
+  }).from(assessmentCompetencias)
+    .where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map(id => sql`${id}`), sql`, `)})`);
+  
+  const allTrilhas = await dbConn.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t.name]));
+  
+  let autoId = 200000;
+  const result: { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[] }[] = [];
+  
+  for (const pdi of pdis) {
+    const trilhaNome = trilhaMap.get(pdi.trilhaId) || `Trilha ${pdi.trilhaId}`;
+    const comps = allComps.filter(c => c.assessmentPdiId === pdi.id);
+    
+    const cicloGroups = new Map<string, { compIds: number[]; inicio: string; termino: string }>();
+    
+    for (const comp of comps) {
+      if (!comp.microInicio || !comp.microTermino) continue;
+      if (comp.peso !== 'obrigatoria') continue; // Só obrigatórias
+      
+      const inicio = new Date(comp.microInicio).toISOString().split('T')[0];
+      const termino = new Date(comp.microTermino).toISOString().split('T')[0];
+      const key = `${inicio}|${termino}`;
+      
+      const group = cicloGroups.get(key) || { compIds: [], inicio, termino };
+      group.compIds.push(comp.competenciaId);
+      cicloGroups.set(key, group);
+    }
+    
+    let cicloNum = 1;
+    const sortedGroups = Array.from(cicloGroups.entries()).sort((a, b) => a[1].inicio.localeCompare(b[1].inicio));
+    
+    for (const [, group] of sortedGroups) {
+      if (group.compIds.length === 0) continue;
+      result.push({
+        id: autoId++,
+        nomeCiclo: `${trilhaNome} - Ciclo ${cicloNum}`,
+        dataInicio: group.inicio,
+        dataFim: group.termino,
+        competenciaIds: group.compIds,
+      });
+      cicloNum++;
+    }
+  }
+  
+  return result;
 }
 
 // Buscar todos os ciclos formatados para cálculo em massa (agrupados por alunoId)
+// Agora usa assessment_competencias como fonte principal de ciclos
 export async function getAllCiclosForCalculator() {
-  const allCiclos = await getAllCiclos();
-  const alunosList = await getAlunos();
+  const db = await getDb();
+  if (!db) return new Map<string, { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[]; onlyObrigatorias: boolean }[]>();
   
-  const ciclosPorAluno = new Map<string, { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[] }[]>();
+  // Primeiro tentar ciclos_execucao (se existirem)
+  const manualCiclos = await getAllCiclos();
   
-  for (const ciclo of allCiclos) {
-    const aluno = alunosList.find(a => a.id === ciclo.alunoId);
-    const alunoKey = aluno?.externalId || String(ciclo.alunoId);
+  // Buscar assessment_competencias com dados de período e obrigatoriedade
+  const allPdis = await db.select({
+    id: assessmentPdi.id,
+    alunoId: assessmentPdi.alunoId,
+    trilhaId: assessmentPdi.trilhaId,
+    status: assessmentPdi.status,
+  }).from(assessmentPdi).where(eq(assessmentPdi.status, 'ativo'));
+  
+  const allComps = await db.select({
+    id: assessmentCompetencias.id,
+    assessmentPdiId: assessmentCompetencias.assessmentPdiId,
+    competenciaId: assessmentCompetencias.competenciaId,
+    peso: assessmentCompetencias.peso,
+    microInicio: assessmentCompetencias.microInicio,
+    microTermino: assessmentCompetencias.microTermino,
+  }).from(assessmentCompetencias);
+  
+  // Buscar trilhas para nomes
+  const allTrilhas = await db.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t.name]));
+  
+  // Buscar alunos para mapear alunoId -> externalId
+  const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
+  const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId]));
+  
+  const ciclosPorAluno = new Map<string, { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[]; onlyObrigatorias: boolean }[]>();
+  
+  // Se existem ciclos manuais, usar eles
+  if (manualCiclos.length > 0) {
+    for (const ciclo of manualCiclos) {
+      const aluno = alunosList.find(a => a.id === ciclo.alunoId);
+      const alunoKey = aluno?.externalId || String(ciclo.alunoId);
+      const existing = ciclosPorAluno.get(alunoKey) || [];
+      existing.push({
+        id: ciclo.id,
+        nomeCiclo: ciclo.nomeCiclo,
+        dataInicio: typeof ciclo.dataInicio === 'string' ? ciclo.dataInicio : new Date(ciclo.dataInicio).toISOString().split('T')[0],
+        dataFim: typeof ciclo.dataFim === 'string' ? ciclo.dataFim : new Date(ciclo.dataFim).toISOString().split('T')[0],
+        competenciaIds: ciclo.competenciaIds,
+        onlyObrigatorias: false,
+      });
+      ciclosPorAluno.set(alunoKey, existing);
+    }
+    return ciclosPorAluno;
+  }
+  
+  // Gerar ciclos automaticamente a partir de assessment_competencias
+  // Agrupar por aluno -> assessment -> (microInicio, microTermino)
+  let autoId = 100000; // IDs auto-gerados
+  
+  for (const pdi of allPdis) {
+    const alunoKey = alunoMap.get(pdi.alunoId) || String(pdi.alunoId);
+    const trilhaNome = trilhaMap.get(pdi.trilhaId) || `Trilha ${pdi.trilhaId}`;
+    const comps = allComps.filter(c => c.assessmentPdiId === pdi.id);
     
+    // Agrupar competências por período (microInicio + microTermino)
+    const cicloGroups = new Map<string, { compIds: number[]; inicio: string; termino: string; hasObrigatoria: boolean }>();
+    
+    for (const comp of comps) {
+      if (!comp.microInicio || !comp.microTermino) continue;
+      
+      const inicio = new Date(comp.microInicio).toISOString().split('T')[0];
+      const termino = new Date(comp.microTermino).toISOString().split('T')[0];
+      const key = `${inicio}|${termino}`;
+      
+      const group = cicloGroups.get(key) || { compIds: [], inicio, termino, hasObrigatoria: false };
+      
+      // Só incluir competências OBRIGATÓRIAS no ciclo para cálculo
+      if (comp.peso === 'obrigatoria') {
+        group.compIds.push(comp.competenciaId);
+        group.hasObrigatoria = true;
+      }
+      
+      cicloGroups.set(key, group);
+    }
+    
+    // Converter grupos em ciclos
     const existing = ciclosPorAluno.get(alunoKey) || [];
-    existing.push({
-      id: ciclo.id,
-      nomeCiclo: ciclo.nomeCiclo,
-      dataInicio: typeof ciclo.dataInicio === 'string' ? ciclo.dataInicio : new Date(ciclo.dataInicio).toISOString().split('T')[0],
-      dataFim: typeof ciclo.dataFim === 'string' ? ciclo.dataFim : new Date(ciclo.dataFim).toISOString().split('T')[0],
-      competenciaIds: ciclo.competenciaIds,
-    });
-    ciclosPorAluno.set(alunoKey, existing);
+    let cicloNum = 1;
+    
+    // Ordenar por data de início
+    const sortedGroups = Array.from(cicloGroups.entries()).sort((a, b) => a[1].inicio.localeCompare(b[1].inicio));
+    
+    for (const [, group] of sortedGroups) {
+      // Só criar ciclo se tem competências obrigatórias
+      if (group.compIds.length === 0) continue;
+      
+      existing.push({
+        id: autoId++,
+        nomeCiclo: `${trilhaNome} - Ciclo ${cicloNum}`,
+        dataInicio: group.inicio,
+        dataFim: group.termino,
+        competenciaIds: group.compIds,
+        onlyObrigatorias: true, // Flag: este ciclo já contém apenas obrigatórias
+      });
+      cicloNum++;
+    }
+    
+    if (existing.length > 0) {
+      ciclosPorAluno.set(alunoKey, existing);
+    }
   }
   
   return ciclosPorAluno;
 }
 
+
+// ============ ALERTAS DE MICRO CICLO ============
+
+export interface AlertaMicroCiclo {
+  microCicloId: string; // chave: inicio|termino
+  dataInicio: string;
+  dataTermino: string;
+  diasRestantes: number;
+  urgencia: 'critico' | 'urgente' | 'atencao' | 'normal'; // <=7d, <=14d, <=30d, >30d
+  competenciasPendentes: {
+    competenciaId: number;
+    nome: string;
+    peso: string;
+    progressoTotal: number;
+    aulasConcluidas: number;
+    totalAulas: number;
+  }[];
+  totalCompetencias: number;
+  competenciasConcluidas: number;
+}
+
+/**
+ * Retorna alertas de micro ciclos em andamento com competências pendentes para um aluno.
+ * Agrupa competências obrigatórias por período (microInicio/microTermino),
+ * cruza com student_performance para verificar progresso.
+ */
+export async function getAlertasMicroCiclo(alunoId: number): Promise<AlertaMicroCiclo[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Buscar assessments ativos do aluno
+  const pdis = await db.select({
+    id: assessmentPdi.id,
+  }).from(assessmentPdi)
+    .where(sql`${assessmentPdi.alunoId} = ${alunoId} AND ${assessmentPdi.status} = 'ativo'`);
+  
+  if (pdis.length === 0) return [];
+  
+  const pdiIds = pdis.map(p => p.id);
+  
+  // Buscar todas as competências dos assessments com datas
+  const allComps = await db.select({
+    id: assessmentCompetencias.id,
+    assessmentPdiId: assessmentCompetencias.assessmentPdiId,
+    competenciaId: assessmentCompetencias.competenciaId,
+    peso: assessmentCompetencias.peso,
+    microInicio: assessmentCompetencias.microInicio,
+    microTermino: assessmentCompetencias.microTermino,
+  }).from(assessmentCompetencias)
+    .where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map(id => sql`${id}`), sql`, `)})`);
+  
+  // Buscar nomes das competências
+  const compIds = Array.from(new Set(allComps.map(c => c.competenciaId)));
+  if (compIds.length === 0) return [];
+  
+  const allCompDetails = await db.select({
+    id: competencias.id,
+    nome: competencias.nome,
+    codigoIntegracao: competencias.codigoIntegracao,
+  }).from(competencias)
+    .where(sql`${competencias.id} IN (${sql.join(compIds.map(id => sql`${id}`), sql`, `)})`);
+  
+  const compMap = new Map(allCompDetails.map(c => [c.id, c]));
+  
+  // Buscar dados de performance do aluno
+  const perfData = await db.select({
+    externalCompetenciaId: studentPerformance.externalCompetenciaId,
+    progressoTotal: studentPerformance.progressoTotal,
+    aulasConcluidas: studentPerformance.aulasConcluidas,
+    totalAulas: studentPerformance.totalAulas,
+  }).from(studentPerformance)
+    .where(sql`${studentPerformance.alunoId} = ${alunoId}`);
+  
+  const perfMap = new Map(perfData.map(p => [p.externalCompetenciaId, p]));
+  
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  
+  // Agrupar competências por período (microInicio|microTermino)
+  const cicloGroups = new Map<string, {
+    inicio: string;
+    termino: string;
+    comps: typeof allComps;
+  }>();
+  
+  for (const comp of allComps) {
+    if (!comp.microInicio || !comp.microTermino) continue;
+    
+    const inicio = new Date(comp.microInicio).toISOString().split('T')[0];
+    const termino = new Date(comp.microTermino).toISOString().split('T')[0];
+    
+    // Só ciclos em andamento (inicio <= hoje <= termino)
+    if (inicio > todayStr || termino < todayStr) continue;
+    
+    const key = `${inicio}|${termino}`;
+    const group = cicloGroups.get(key) || { inicio, termino, comps: [] };
+    group.comps.push(comp);
+    cicloGroups.set(key, group);
+  }
+  
+  const alertas: AlertaMicroCiclo[] = [];
+  
+  for (const [key, group] of Array.from(cicloGroups.entries())) {
+    const diasRestantes = Math.ceil((new Date(group.termino).getTime() - today.getTime()) / 86400000);
+    
+    let urgencia: AlertaMicroCiclo['urgencia'] = 'normal';
+    if (diasRestantes <= 7) urgencia = 'critico';
+    else if (diasRestantes <= 14) urgencia = 'urgente';
+    else if (diasRestantes <= 30) urgencia = 'atencao';
+    
+    const competenciasPendentes: AlertaMicroCiclo['competenciasPendentes'] = [];
+    let totalComps = 0;
+    let concluidas = 0;
+    
+    for (const comp of group.comps) {
+      const compDetail = compMap.get(comp.competenciaId);
+      if (!compDetail) continue;
+      
+      totalComps++;
+      
+      const perf = compDetail.codigoIntegracao ? perfMap.get(compDetail.codigoIntegracao) : null;
+      const progresso = perf ? Number(perf.progressoTotal) || 0 : 0;
+      const aulasConc = perf ? Number(perf.aulasConcluidas) || 0 : 0;
+      const totalAulas = perf ? Number(perf.totalAulas) || 0 : 0;
+      
+      if (progresso >= 100) {
+        concluidas++;
+        continue; // Não incluir nas pendentes
+      }
+      
+      competenciasPendentes.push({
+        competenciaId: comp.competenciaId,
+        nome: compDetail.nome,
+        peso: comp.peso || 'obrigatoria',
+        progressoTotal: progresso,
+        aulasConcluidas: aulasConc,
+        totalAulas: totalAulas,
+      });
+    }
+    
+    // Só criar alerta se tem competências pendentes
+    if (competenciasPendentes.length > 0) {
+      alertas.push({
+        microCicloId: key,
+        dataInicio: group.inicio,
+        dataTermino: group.termino,
+        diasRestantes,
+        urgencia,
+        competenciasPendentes,
+        totalCompetencias: totalComps,
+        competenciasConcluidas: concluidas,
+      });
+    }
+  }
+  
+  // Ordenar por urgência (mais urgente primeiro)
+  alertas.sort((a, b) => a.diasRestantes - b.diasRestantes);
+  
+  return alertas;
+}
+
+// ============ MAPA COMPETENCIA ID -> CODIGO INTEGRACAO ============
+
+/**
+ * Retorna um mapa de competenciaId (int) -> codigoIntegracao (string)
+ * Usado pelo calculador de indicadores para cruzar ciclos com performance
+ */
+export async function getCompIdToCodigoMap(): Promise<Map<number, string>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  
+  const allComps = await db.select({ id: competencias.id, codigoIntegracao: competencias.codigoIntegracao }).from(competencias);
+  const map = new Map<number, string>();
+  for (const comp of allComps) {
+    if (comp.codigoIntegracao) {
+      map.set(comp.id, comp.codigoIntegracao);
+    }
+  }
+  return map;
+}
 
 // ============ DETALHE COMPLETO DO ALUNO ============
 
@@ -3021,6 +3363,89 @@ export async function getAllStudentPerformance(): Promise<StudentPerformance[]> 
   return await db.select().from(studentPerformance).orderBy(studentPerformance.userName, studentPerformance.competenciaName);
 }
 
+/**
+ * Converte registros de student_performance para PerformanceRecord[] do calculador.
+ * A nota é mediaAvaliacoesRespondidas (escala 0-100), convertida para 0-10.
+ * Aprovado = nota >= 7 (na escala 0-10).
+ */
+export async function getStudentPerformanceAsRecords(): Promise<{
+  idUsuario: string;
+  nomeTurma: string;
+  idCompetencia: string;
+  nomeCompetencia: string;
+  progressoAulas: number;
+  notaAvaliacao: number;
+  aprovado: boolean;
+  totalAulas: number;
+  aulasDisponiveis: number;
+  aulasConcluidas: number;
+  aulasEmAndamento: number;
+  competenciaConcluida: boolean;
+}[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const records = await db.select({
+    externalUserId: studentPerformance.externalUserId,
+    alunoId: studentPerformance.alunoId,
+    turmaName: studentPerformance.turmaName,
+    competenciaId: studentPerformance.competenciaId,
+    externalCompetenciaId: studentPerformance.externalCompetenciaId,
+    competenciaName: studentPerformance.competenciaName,
+    progressoTotal: studentPerformance.progressoTotal,
+    mediaAvaliacoesRespondidas: studentPerformance.mediaAvaliacoesRespondidas,
+    mediaAvaliacoesDisponiveis: studentPerformance.mediaAvaliacoesDisponiveis,
+    totalAulas: studentPerformance.totalAulas,
+    aulasDisponiveis: studentPerformance.aulasDisponiveis,
+    aulasConcluidas: studentPerformance.aulasConcluidas,
+    aulasEmAndamento: studentPerformance.aulasEmAndamento,
+  }).from(studentPerformance);
+  
+  // Buscar alunos para mapear alunoId -> externalId
+  const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
+  const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId]));
+  
+  return records.map(r => {
+    // Nota: usar mediaAvaliacoesRespondidas se > 0, senão mediaAvaliacoesDisponiveis
+    const mediaResp = r.mediaAvaliacoesRespondidas ? parseFloat(String(r.mediaAvaliacoesRespondidas)) : 0;
+    const mediaDisp = r.mediaAvaliacoesDisponiveis ? parseFloat(String(r.mediaAvaliacoesDisponiveis)) : 0;
+    const progresso = r.progressoTotal || 0;
+    
+    // Dados de aulas
+    const totalAulas = r.totalAulas || 0;
+    const aulasDisponiveis = r.aulasDisponiveis || 0;
+    const aulasConcluidas = r.aulasConcluidas || 0;
+    const aulasEmAndamento = r.aulasEmAndamento || 0;
+    
+    // Competência concluída = fez todas as aulas disponíveis
+    const competenciaConcluida = aulasDisponiveis > 0 && aulasConcluidas >= aulasDisponiveis;
+    
+    // Nota: prioridade mediaAvaliacoesRespondidas > mediaAvaliacoesDisponiveis
+    // Escala 0-100, converter para 0-10
+    const notaBase = mediaResp > 0 ? mediaResp : (mediaDisp > 0 ? mediaDisp : 0);
+    const nota010 = notaBase / 10;
+    
+    // Se ambas as médias são 0, o aluno não cursou
+    const naoCursou = mediaResp === 0 && mediaDisp === 0;
+    
+    const idUsuario = (r.alunoId ? alunoMap.get(r.alunoId) : null) || r.externalUserId;
+    return {
+      idUsuario: idUsuario || r.externalUserId,
+      nomeTurma: r.turmaName || '',
+      idCompetencia: r.externalCompetenciaId || String(r.competenciaId || ''),
+      nomeCompetencia: r.competenciaName || '',
+      progressoAulas: progresso,
+      notaAvaliacao: naoCursou ? -1 : nota010, // -1 indica "não cursou"
+      aprovado: competenciaConcluida && !naoCursou && nota010 >= 7,
+      totalAulas,
+      aulasDisponiveis,
+      aulasConcluidas,
+      aulasEmAndamento,
+      competenciaConcluida,
+    };
+  });
+}
+
 // ==================== SCHEDULED WEBINARS ====================
 
 export async function createWebinar(data: InsertScheduledWebinar): Promise<number> {
@@ -3545,15 +3970,73 @@ export async function getJornadaCompleta(alunoId: number) {
     };
   }
   
+  // 6.5. Buscar dados de performance da plataforma (student_performance) para enriquecer a jornada
+  // Primeiro buscar o aluno para pegar o externalId
+  const alunoData = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  const alunoExternalId = alunoData[0]?.externalId || null;
+  
+  // Buscar codigoIntegracao das competências
+  let compCodigoMap: Record<number, string> = {};
+  if (compIds.length > 0) {
+    const compsWithCodigo = await db.select({ id: competencias.id, codigoIntegracao: competencias.codigoIntegracao })
+      .from(competencias)
+      .where(sql`${competencias.id} IN (${sql.join(compIds.map(id => sql`${id}`), sql`, `)})`);
+    compCodigoMap = Object.fromEntries(compsWithCodigo.filter(c => c.codigoIntegracao).map(c => [c.id, c.codigoIntegracao!]));
+  }
+  
+  // Buscar student_performance do aluno
+  let perfMap: Record<string, { progressoTotal: number; mediaRespondidas: number; mediaDisponiveis: number; totalAulas: number; aulasDisponiveis: number; aulasConcluidas: number; aulasEmAndamento: number; aulasNaoIniciadas: number; avaliacoesRespondidas: number; avaliacoesDisponiveis: number }> = {};
+  if (alunoExternalId) {
+    const perfRecords = await db.select().from(studentPerformance)
+      .where(eq(studentPerformance.externalUserId, alunoExternalId));
+    for (const p of perfRecords) {
+      if (p.externalCompetenciaId) {
+        perfMap[p.externalCompetenciaId] = {
+          progressoTotal: parseFloat(String(p.progressoTotal || '0')),
+          mediaRespondidas: parseFloat(String(p.mediaAvaliacoesRespondidas || '0')),
+          mediaDisponiveis: parseFloat(String(p.mediaAvaliacoesDisponiveis || '0')),
+          totalAulas: p.totalAulas || 0,
+          aulasDisponiveis: p.aulasDisponiveis || 0,
+          aulasConcluidas: p.aulasConcluidas || 0,
+          aulasEmAndamento: p.aulasEmAndamento || 0,
+          aulasNaoIniciadas: p.aulasNaoIniciadas || 0,
+          avaliacoesRespondidas: p.avaliacoesRespondidas || 0,
+          avaliacoesDisponiveis: p.avaliacoesDisponiveis || 0,
+        };
+      }
+    }
+  }
+  
   // 7. Montar estrutura hierárquica
   const macroJornadas = pdis.map(pdi => {
     const comps = allComps.filter(c => c.assessmentPdiId === pdi.id);
-    const microJornadas = comps.map(comp => ({
+    const microJornadas = comps.map(comp => {
+      // Enriquecer com dados de performance da plataforma
+      const codigo = compCodigoMap[comp.competenciaId];
+      const perf = codigo ? perfMap[codigo] : null;
+      const nivelManual = comp.nivelAtual ? parseFloat(comp.nivelAtual) : null;
+      // Nota da plataforma: prioridade mediaRespondidas, fallback mediaDisponiveis
+      const notaPlataforma = perf ? (perf.mediaRespondidas > 0 ? perf.mediaRespondidas : perf.mediaDisponiveis > 0 ? perf.mediaDisponiveis : null) : null;
+      // Usar nota manual da mentora se existir, senão nota da plataforma
+      const nivelFinal = nivelManual !== null ? nivelManual : notaPlataforma;
+      
+      return {
       id: comp.id,
       competenciaId: comp.competenciaId,
       competenciaNome: compMap[comp.competenciaId]?.nome || `Competência #${comp.competenciaId}`,
       peso: comp.peso,
-      nivelAtual: comp.nivelAtual ? parseFloat(comp.nivelAtual) : null,
+      nivelAtual: nivelFinal,
+      nivelManual,
+      notaPlataforma,
+      progressoPlataforma: perf?.progressoTotal ?? null,
+      totalAulas: perf?.totalAulas ?? null,
+      aulasDisponiveis: perf?.aulasDisponiveis ?? null,
+      aulasConcluidas: perf?.aulasConcluidas ?? null,
+      aulasEmAndamento: perf?.aulasEmAndamento ?? null,
+      aulasNaoIniciadas: perf?.aulasNaoIniciadas ?? null,
+      avaliacoesRespondidas: perf?.avaliacoesRespondidas ?? null,
+      avaliacoesDisponiveis: perf?.avaliacoesDisponiveis ?? null,
+      competenciaConcluida: perf ? (perf.aulasConcluidas >= perf.aulasDisponiveis && perf.aulasDisponiveis > 0) : false,
       metaCiclo1: comp.metaCiclo1 ? parseFloat(comp.metaCiclo1) : null,
       metaCiclo2: comp.metaCiclo2 ? parseFloat(comp.metaCiclo2) : null,
       metaFinal: comp.metaFinal ? parseFloat(comp.metaFinal) : null,
@@ -3562,7 +4045,8 @@ export async function getJornadaCompleta(alunoId: number) {
       microInicio: comp.microInicio,
       microTermino: comp.microTermino,
       createdAt: comp.createdAt,
-    }));
+    };
+    });
     
     return {
       id: pdi.id,
@@ -3663,4 +4147,130 @@ export async function checkReavaliacaoPendente(alunoId: number) {
     precisaReavaliar: sessoesDesdeUltimaAtualizacao >= 3,
     ultimaAtualizacao: ultimaData,
   };
+}
+
+
+// ============ CASES DE SUCESSO ============
+
+/**
+ * Get all cases de sucesso for a specific student
+ */
+export async function getCasesSucessoByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(casesSucesso).where(eq(casesSucesso.alunoId, alunoId));
+}
+
+/**
+ * Get all cases de sucesso (for admin view)
+ */
+export async function getAllCasesSucesso() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(casesSucesso).orderBy(desc(casesSucesso.createdAt));
+}
+
+/**
+ * Create a new case de sucesso
+ */
+export async function createCaseSucesso(data: InsertCaseSucesso) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(casesSucesso).values(data);
+  return result.insertId;
+}
+
+/**
+ * Update case de sucesso
+ */
+export async function updateCaseSucesso(id: number, data: Partial<InsertCaseSucesso>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(casesSucesso).set(data).where(eq(casesSucesso.id, id));
+}
+
+/**
+ * Delete case de sucesso
+ */
+export async function deleteCaseSucesso(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(casesSucesso).where(eq(casesSucesso.id, id));
+}
+
+/**
+ * Get cases data formatted for the V2 calculator
+ * Returns a map: alunoId -> CaseSucessoData[]
+ */
+export async function getCasesForCalculator(): Promise<Map<number, { alunoId: number; trilhaId: number | null; trilhaNome: string | null; entregue: boolean }[]>> {
+  const db = await getDb();
+  const result = new Map<number, { alunoId: number; trilhaId: number | null; trilhaNome: string | null; entregue: boolean }[]>();
+  if (!db) return result;
+  
+  const allCases = await db.select().from(casesSucesso);
+  
+  for (const c of allCases) {
+    const existing = result.get(c.alunoId) || [];
+    existing.push({
+      alunoId: c.alunoId,
+      trilhaId: c.trilhaId,
+      trilhaNome: c.trilhaNome,
+      entregue: c.entregue === 1,
+    });
+    result.set(c.alunoId, existing);
+  }
+  
+  return result;
+}
+
+/**
+ * Get ciclos data formatted for the V2 calculator
+ * Returns a map: idUsuario -> CicloDataV2[]
+ */
+export async function getAllCiclosForCalculatorV2(): Promise<Map<string, { id: number; nomeCiclo: string; trilhaNome: string; dataInicio: string; dataFim: string; competenciaIds: number[] }[]>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  
+  // Reuse existing logic from getAllCiclosForCalculator
+  const existingCiclos = await getAllCiclosForCalculator();
+  
+  // Convert to V2 format (add trilhaNome)
+  const result = new Map<string, { id: number; nomeCiclo: string; trilhaNome: string; dataInicio: string; dataFim: string; competenciaIds: number[] }[]>();
+  
+  // Get trilhas for names
+  const allTrilhas = await db.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t.name]));
+  
+  // Get assessment PDIs to map trilha names
+  const allPdis = await db.select({
+    id: assessmentPdi.id,
+    alunoId: assessmentPdi.alunoId,
+    trilhaId: assessmentPdi.trilhaId,
+  }).from(assessmentPdi);
+  
+  const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
+  const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId]));
+  
+  // Map alunoId -> trilhaNome
+  const alunoTrilhaMap = new Map<string, string>();
+  for (const pdi of allPdis) {
+    const alunoKey = alunoMap.get(pdi.alunoId) || String(pdi.alunoId);
+    const trilhaNome = trilhaMap.get(pdi.trilhaId) || `Trilha ${pdi.trilhaId}`;
+    alunoTrilhaMap.set(alunoKey, trilhaNome);
+  }
+  
+  for (const [alunoKey, ciclos] of Array.from(existingCiclos.entries())) {
+    const trilhaNome = alunoTrilhaMap.get(alunoKey) || 'Geral';
+    const v2Ciclos = ciclos.map(c => ({
+      id: c.id,
+      nomeCiclo: c.nomeCiclo,
+      trilhaNome,
+      dataInicio: c.dataInicio,
+      dataFim: c.dataFim,
+      competenciaIds: c.competenciaIds,
+    }));
+    result.set(alunoKey, v2Ciclos);
+  }
+  
+  return result;
 }

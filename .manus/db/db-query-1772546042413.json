@@ -1,0 +1,100 @@
+{
+  "query": "SELECT ac.id, ac.competenciaId, c.nome, c.codigoIntegracao, ac.peso, ac.microInicio, ac.microTermino \nFROM assessment_competencias ac \nJOIN competencias c ON c.id = ac.competenciaId\nJOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId\nWHERE ap.alunoId = 30038\nORDER BY ac.microInicio\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ac.id, ac.competenciaId, c.nome, c.codigoIntegracao, ac.peso, ac.microInicio, ac.microTermino \nFROM assessment_competencias ac \nJOIN competencias c ON c.id = ac.competenciaId\nJOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId\nWHERE ap.alunoId = 30038\nORDER BY ac.microInicio\nLIMIT 20;",
+  "rows": [
+    {
+      "id": "30450",
+      "competenciaId": "30005",
+      "nome": "Autopercepção",
+      "codigoIntegracao": "01J805YN0WJF9BCE0A2KQDBJ5C",
+      "peso": "obrigatoria",
+      "microInicio": "2025-03-24",
+      "microTermino": "2025-09-30"
+    },
+    {
+      "id": "30449",
+      "competenciaId": "30004",
+      "nome": "Atenção",
+      "codigoIntegracao": "01J7XFQV2N5Z65PYVRCJV3VM67",
+      "peso": "obrigatoria",
+      "microInicio": "2025-03-24",
+      "microTermino": "2025-09-30"
+    },
+    {
+      "id": "30454",
+      "competenciaId": "30003",
+      "nome": "Gestão do Tempo",
+      "codigoIntegracao": "01J8094529YD53AEGPQDAQDYRH",
+      "peso": "obrigatoria",
+      "microInicio": "2025-03-24",
+      "microTermino": "2025-09-30"
+    },
+    {
+      "id": "30453",
+      "competenciaId": "30008",
+      "nome": "Escuta Ativa",
+      "codigoIntegracao": "01J8092M9HTM5NY0NT0SXSSVVE",
+      "peso": "obrigatoria",
+      "microInicio": "2025-03-24",
+      "microTermino": "2025-09-30"
+    },
+    {
+      "id": "30455",
+      "competenciaId": "30009",
+      "nome": "Memória",
+      "codigoIntegracao": "01J8097B4V48RV5NJXM1XGPFK2",
+      "peso": "obrigatoria",
+      "microInicio": "2025-03-24",
+      "microTermino": "2025-09-30"
+    },
+    {
+      "id": "30456",
+      "competenciaId": "30010",
+      "nome": "Raciocínio Lógico e Espacial",
+      "codigoIntegracao": "01J80994KE3S7A2T30QKV1MRV4",
+      "peso": "opcional",
+      "microInicio": "2025-03-24",
+      "microTermino": "2025-09-30"
+    },
+    {
+      "id": "30451",
+      "competenciaId": "30006",
+      "nome": "Disciplina",
+      "codigoIntegracao": "01J80620M940GZ1STEAGG2NJHG",
+      "peso": "obrigatoria",
+      "microInicio": "2025-03-24",
+      "microTermino": "2025-09-30"
+    },
+    {
+      "id": "30452",
+      "competenciaId": "30007",
+      "nome": "Empatia",
+      "codigoIntegracao": "01J8090N7MG9AP6EV0442M0Z0E",
+      "peso": "obrigatoria",
+      "microInicio": "2025-03-24",
+      "microTermino": "2025-09-30"
+    },
+    {
+      "id": "30457",
+      "competenciaId": "30014",
+      "nome": "Comunicação Assertiva",
+      "codigoIntegracao": "01JC66JPST9FD8XKYV3CBEJF0R",
+      "peso": "opcional",
+      "microInicio": "2025-10-15",
+      "microTermino": "2026-03-30"
+    },
+    {
+      "id": "30458",
+      "competenciaId": "30029",
+      "nome": "Relacionamentos Conectivos",
+      "codigoIntegracao": "01JN4106XCQ9HW33MDE5YYKX81",
+      "peso": "opcional",
+      "microInicio": "2025-10-15",
+      "microTermino": "2026-03-30"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcompetenciaId\tnome\tcodigoIntegracao\tpeso\tmicroInicio\tmicroTermino\n30450\t30005\tAutopercepção\t01J805YN0WJF9BCE0A2KQDBJ5C\tobrigatoria\t2025-03-24\t2025-09-30\n30449\t30004\tAtenção\t01J7XFQV2N5Z65PYVRCJV3VM67\tobrigatoria\t2025-03-24\t2025-09-30\n30454\t30003\tGestão do Tempo\t01J8094529YD53AEGPQDAQDYRH\tobrigatoria\t2025-03-24\t2025-09-30\n30453\t30008\tEscuta Ativa\t01J8092M9HTM5NY0NT0SXSSVVE\tobrigatoria\t2025-03-24\t2025-09-30\n30455\t30009\tMemória\t01J8097B4V48RV5NJXM1XGPFK2\tobrigatoria\t2025-03-24\t2025-09-30\n30456\t30010\tRaciocínio Lógico e Espacial\t01J80994KE3S7A2T30QKV1MRV4\topcional\t2025-03-24\t2025-09-30\n30451\t30006\tDisciplina\t01J80620M940GZ1STEAGG2NJHG\tobrigatoria\t2025-03-24\t2025-09-30\n30452\t30007\tEmpatia\t01J8090N7MG9AP6EV0442M0Z0E\tobrigatoria\t2025-03-24\t2025-09-30\n30457\t30014\tComunicação Assertiva\t01JC66JPST9FD8XKYV3CBEJF0R\topcional\t2025-10-15\t2026-03-30\n30458\t30029\tRelacionamentos Conectivos\t01JN4106XCQ9HW33MDE5YYKX81\topcional\t2025-10-15\t2026-03-30\n",
+  "stderr": "",
+  "execution_time_ms": 384
+}

@@ -618,3 +618,25 @@ export const historicoNivelCompetencia = mysqlTable("historico_nivel_competencia
 
 export type HistoricoNivelCompetencia = typeof historicoNivelCompetencia.$inferSelect;
 export type InsertHistoricoNivelCompetencia = typeof historicoNivelCompetencia.$inferInsert;
+
+/**
+ * Cases de Sucesso - Registro de entrega de cases por aluno por macrociclo
+ * Cada macrociclo (Básicas, Essenciais, Master, Visão de Futuro) exige um case ao final
+ * Entregue = 100, Não entregue = 0
+ */
+export const casesSucesso = mysqlTable("cases_sucesso", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  trilhaId: int("trilhaId"), // FK para trilhas (macrociclo: Básicas, Essenciais, etc.)
+  trilhaNome: varchar("trilhaNome", { length: 255 }), // Nome do macrociclo para referência rápida
+  entregue: int("entregue").default(0).notNull(), // 1 = entregue, 0 = não entregue
+  dataEntrega: timestamp("dataEntrega"), // Data em que o case foi entregue
+  titulo: varchar("titulo", { length: 500 }), // Título do case
+  descricao: text("descricao"), // Descrição/resumo do case
+  avaliadoPor: int("avaliadoPor"), // FK para consultors (mentora que avaliou)
+  observacao: text("observacao"), // Observação da mentora
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CaseSucesso = typeof casesSucesso.$inferSelect;
+export type InsertCaseSucesso = typeof casesSucesso.$inferInsert;

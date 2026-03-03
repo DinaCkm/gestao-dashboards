@@ -1,0 +1,10 @@
+{
+  "query": "SELECT COUNT(*) as total FROM student_performance; SELECT COUNT(*) as with_nota FROM student_performance WHERE media_avaliacoes_respondidas IS NOT NULL AND media_avaliacoes_respondidas != ''; SELECT aluno_id, user_name, competencia_name, progresso_total, media_avaliacoes_respondidas, media_avaliacoes_disponiveis FROM student_performance WHERE media_avaliacoes_respondidas IS NOT NULL AND media_avaliacoes_respondidas != '' AND media_avaliacoes_respondidas != 'Sem avaliações respondidas' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total FROM student_performance; SELECT COUNT(*) as with_nota FROM student_performance WHERE media_avaliacoes_respondidas IS NOT NULL AND media_avaliacoes_respondidas != ''; SELECT aluno_id, user_name, competencia_name, progresso_total, media_avaliacoes_respondidas, media_avaliacoes_disponiveis FROM student_performance WHERE media_avaliacoes_respondidas IS NOT NULL AND media_avaliacoes_respondidas != '' AND media_avaliacoes_respondidas != 'Sem avaliações respondidas' LIMIT 10;",
+  "returncode": 1,
+  "logs": [
+    "total",
+    "1464",
+    "ERROR 1054 (42S22) at line 1: Unknown column 'media_avaliacoes_respondidas' in 'where clause'"
+  ]
+}

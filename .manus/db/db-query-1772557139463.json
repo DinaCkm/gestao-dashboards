@@ -1,0 +1,40 @@
+{
+  "query": "SELECT DISTINCT engagementScore FROM mentoring_sessions WHERE engagementScore IS NOT NULL ORDER BY engagementScore;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT DISTINCT engagementScore FROM mentoring_sessions WHERE engagementScore IS NOT NULL ORDER BY engagementScore;",
+  "rows": [
+    {
+      "engagementScore": "0"
+    },
+    {
+      "engagementScore": "2"
+    },
+    {
+      "engagementScore": "3"
+    },
+    {
+      "engagementScore": "4"
+    },
+    {
+      "engagementScore": "5"
+    },
+    {
+      "engagementScore": "6"
+    },
+    {
+      "engagementScore": "7"
+    },
+    {
+      "engagementScore": "8"
+    },
+    {
+      "engagementScore": "9"
+    },
+    {
+      "engagementScore": "10"
+    }
+  ],
+  "messages": [],
+  "stdout": "engagementScore\n0\n2\n3\n4\n5\n6\n7\n8\n9\n10\n",
+  "stderr": "",
+  "execution_time_ms": 363
+}

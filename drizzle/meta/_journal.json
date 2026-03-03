@@ -162,6 +162,13 @@
       "when": 1772229369968,
       "tag": "0022_thin_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1772548647818,
+      "tag": "0023_cheerful_supernaut",
+      "breakpoints": true
     }
   ]
 }
