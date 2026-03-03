@@ -1920,6 +1920,28 @@ export const appRouter = router({
           consolidado: indicadoresV2.consolidado,
           alertaCasePendente: indicadoresV2.alertaCasePendente,
         },
+        // Cases de sucesso do aluno
+        casesAluno: casesAluno.map(c => ({
+          id: c.id,
+          trilhaId: c.trilhaId,
+          trilhaNome: c.trilhaNome,
+          entregue: c.entregue === 1,
+          dataEntrega: c.dataEntrega,
+          titulo: c.titulo,
+          descricao: c.descricao,
+          fileUrl: c.fileUrl,
+          fileName: c.fileName,
+          observacao: c.observacao,
+        })),
+        // Trilhas disponíveis para o aluno (para saber quais cases pode enviar)
+        trilhasDisponiveis: await (async () => {
+          const allTrilhas = await db.getAllTrilhas();
+          return allTrilhas.filter(t => t.isActive === 1).map(t => ({
+            id: t.id,
+            name: t.name,
+            codigo: t.codigo,
+          }));
+        })(),
       };
     }),
   }),
@@ -3057,6 +3079,85 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await db.deleteCaseSucesso(input.id);
         return { success: true };
+      }),
+
+    // === PROCEDURES DO ALUNO (protectedProcedure, não admin) ===
+
+    // Listar meus cases (aluno logado)
+    meusCases: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
+      let aluno: Awaited<ReturnType<typeof db.getAlunoByEmail>> | undefined;
+      if (ctx.user.alunoId) {
+        const allAlunos = await db.getAlunos();
+        aluno = allAlunos.find(a => a.id === ctx.user!.alunoId) || undefined;
+      }
+      if (!aluno && ctx.user.email) aluno = await db.getAlunoByEmail(ctx.user.email);
+      if (!aluno) aluno = await db.getAlunoByExternalId(ctx.user.openId);
+      if (!aluno) return [];
+      return await db.getCasesSucessoByAluno(aluno.id);
+    }),
+
+    // Enviar case de sucesso (aluno logado)
+    enviar: protectedProcedure
+      .input(z.object({
+        trilhaId: z.number(),
+        trilhaNome: z.string(),
+        titulo: z.string().min(1, 'Título é obrigatório'),
+        descricao: z.string().optional(),
+        fileBase64: z.string().min(1, 'Arquivo é obrigatório'),
+        fileName: z.string().min(1),
+        mimeType: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
+        let aluno: Awaited<ReturnType<typeof db.getAlunoByEmail>> | undefined;
+        if (ctx.user.alunoId) {
+          const allAlunos = await db.getAlunos();
+          aluno = allAlunos.find(a => a.id === ctx.user!.alunoId) || undefined;
+        }
+        if (!aluno && ctx.user.email) aluno = await db.getAlunoByEmail(ctx.user.email);
+        if (!aluno) aluno = await db.getAlunoByExternalId(ctx.user.openId);
+        if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Perfil de aluno não encontrado' });
+
+        // Upload do arquivo para S3
+        const buffer = Buffer.from(input.fileBase64, 'base64');
+        const ext = input.fileName.split('.').pop() || 'pdf';
+        const randomSuffix = Math.random().toString(36).substring(2, 10);
+        const fileKey = `cases-sucesso/aluno-${aluno.id}/case-trilha-${input.trilhaId}-${randomSuffix}.${ext}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+
+        // Verificar se já existe um case para esta trilha
+        const casesExistentes = await db.getCasesSucessoByAluno(aluno.id);
+        const caseExistente = casesExistentes.find(c => c.trilhaId === input.trilhaId);
+
+        if (caseExistente) {
+          // Atualizar o case existente
+          await db.updateCaseSucesso(caseExistente.id, {
+            titulo: input.titulo,
+            descricao: input.descricao || null,
+            fileUrl: url,
+            fileKey: fileKey,
+            fileName: input.fileName,
+            entregue: 1,
+            dataEntrega: new Date(),
+          });
+          return { id: caseExistente.id, url, updated: true };
+        } else {
+          // Criar novo case
+          const id = await db.createCaseSucesso({
+            alunoId: aluno.id,
+            trilhaId: input.trilhaId,
+            trilhaNome: input.trilhaNome,
+            titulo: input.titulo,
+            descricao: input.descricao || null,
+            fileUrl: url,
+            fileKey: fileKey,
+            fileName: input.fileName,
+            entregue: 1,
+            dataEntrega: new Date(),
+          });
+          return { id, url, updated: false };
+        }
       }),
   }),
 });

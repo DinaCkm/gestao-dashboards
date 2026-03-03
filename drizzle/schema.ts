@@ -635,6 +635,9 @@ export const casesSucesso = mysqlTable("cases_sucesso", {
   descricao: text("descricao"), // Descrição/resumo do case
   avaliadoPor: int("avaliadoPor"), // FK para consultors (mentora que avaliou)
   observacao: text("observacao"), // Observação da mentora
+  fileUrl: varchar("fileUrl", { length: 1000 }), // URL do arquivo no S3
+  fileKey: varchar("fileKey", { length: 500 }), // Chave do arquivo no S3
+  fileName: varchar("fileName", { length: 500 }), // Nome original do arquivo
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

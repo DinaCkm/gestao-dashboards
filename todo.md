@@ -1281,3 +1281,24 @@
 - [x] Tooltip ⓘ para "Competência" - Curso composto por grupo de aulas e avaliação
 - [x] Tooltip ⓘ para cada indicador (como é calculado)
 - [x] Tooltip ⓘ para "Engajamento Final" - Média dos 6 indicadores
+
+## 3 Melhorias Finais (03/03/2026)
+
+### 1. Envio de Case de Sucesso (Portal do Aluno)
+- [x] Seção no Portal do Aluno para o aluno enviar/entregar o case de sucesso por macrociclo/trilha
+- [x] Upload de arquivo do case pelo aluno (salvar no S3)
+- [x] Mostrar status de entrega por trilha (Básicas, Essenciais, Master) - pendente/entregue
+- [x] Alerta visual quando a trilha estiver finalizando e o case ainda não foi entregue
+- [x] Visualização do status de cases no DashboardAluno (admin) - apenas leitura
+- [x] Procedure tRPC protegida para envio de case pelo aluno
+
+### 2. Seção Ciclo em Andamento
+- [x] Seção destacada no topo do Portal do Aluno com indicadores parciais do ciclo atual
+- [x] Barra de progresso do ciclo (competências concluídas / total)
+- [x] Mesmos 6 indicadores V2 mas com dados parciais do ciclo em andamento
+- [x] Implementar também no DashboardAluno (admin)
+
+### 3. Renomear e Limpar
+- [x] Renomear aba "Indicadores V2" para "Indicadores" em DashboardAluno
+- [x] Renomear aba "Indicadores V2" para "Indicadores" em DashboardMeuPerfil
+- [x] Remover referências ao V1 antigo na interface

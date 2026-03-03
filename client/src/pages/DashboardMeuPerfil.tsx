@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import {
   CheckCircle2, XCircle, Clock, GraduationCap, Trophy, Star, Zap,
   Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
   ClipboardCheck, Play, ExternalLink, FileText, Send, Route, FileBarChart,
-  AlertTriangle, Briefcase, HelpCircle,
+  AlertTriangle, Briefcase, HelpCircle, Upload, Paperclip, FileUp,
 } from "lucide-react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -21,6 +21,9 @@ import {
   Tooltip, Cell, PieChart, Pie,
 } from "recharts";
 import { InfoTooltip, GLOSSARIO, INDICADORES_INFO } from "@/components/InfoTooltip";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 function getClassificacaoColor(classificacao: string): string {
   switch (classificacao) {
@@ -126,11 +129,11 @@ export default function DashboardMeuPerfil() {
   const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
-  // Filtro de indicadores V2: "consolidado" | "trilha:NomeTrilha" | "ciclo:CicloId"
+  // Filtro de indicadores: "consolidado" | "trilha:NomeTrilha" | "ciclo:CicloId"
   const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
   const [showGlossario, setShowGlossario] = useState(false);
 
-  // V2 data - declarado cedo para uso nos useMemo
+  // Dados de indicadores - declarado cedo para uso nos useMemo
   const v2 = data?.found ? ((data as any).indicadoresV2 as {
     ciclosFinalizados: any[];
     ciclosEmAndamento: any[];
@@ -169,12 +172,54 @@ export default function DashboardMeuPerfil() {
     },
   });
 
+  // === Case de Sucesso ===
+  const [caseDialogOpen, setCaseDialogOpen] = useState(false);
+  const [caseTrilhaId, setCaseTrilhaId] = useState<number | null>(null);
+  const [caseTrilhaNome, setCaseTrilhaNome] = useState("");
+  const [caseTitulo, setCaseTitulo] = useState("");
+  const [caseDescricao, setCaseDescricao] = useState("");
+  const [caseFile, setCaseFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const enviarCase = trpc.cases.enviar.useMutation({
+    onSuccess: () => {
+      utils.indicadores.meuDashboard.invalidate();
+      setCaseDialogOpen(false);
+      setCaseTitulo("");
+      setCaseDescricao("");
+      setCaseFile(null);
+      setCaseTrilhaId(null);
+    },
+  });
+
+  const handleCaseSubmit = async () => {
+    if (!caseFile || !caseTrilhaId || !caseTitulo) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = (reader.result as string).split(',')[1];
+      await enviarCase.mutateAsync({
+        trilhaId: caseTrilhaId,
+        trilhaNome: caseTrilhaNome,
+        titulo: caseTitulo,
+        descricao: caseDescricao || undefined,
+        fileBase64: base64,
+        fileName: caseFile.name,
+        mimeType: caseFile.type || 'application/pdf',
+      });
+    };
+    reader.readAsDataURL(caseFile);
+  };
+
+  // Cases do aluno e trilhas disponíveis
+  const casesAluno = data?.found ? (data as any).casesAluno || [] : [];
+  const trilhasDisponiveis = data?.found ? (data as any).trilhasDisponiveis || [] : [];
+
   // Set de eventIds já confirmados
   const confirmedEventIds = useMemo(() => {
     return new Set((myAttendance || []).map((a: any) => a.eventId));
   }, [myAttendance]);
 
-  // Dados V2 filtrados conforme seleção
+  // Dados filtrados conforme seleção
   const v2Filtrado = useMemo(() => {
     if (!v2) return null;
     if (indicadorFiltro === "consolidado") {
@@ -242,7 +287,7 @@ export default function DashboardMeuPerfil() {
 
   const radarData = useMemo(() => {
     if (!data || !data.found) return [];
-    // Usar dados V2 filtrados se disponíveis
+    // Usar dados filtrados se disponíveis
     if (v2Filtrado) {
       return [
         { subject: "Webinars", value: v2Filtrado.ind1_webinars ?? 0, fullMark: 100 },
@@ -378,7 +423,7 @@ export default function DashboardMeuPerfil() {
                   </div>
                 </div>
               )}
-              {/* Explicãção do Engajamento Final V2 */}
+              {/* Explicação do Engajamento Final */}
               {v2Filtrado && (
                 <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
                   <p className="font-semibold mb-1 text-white/90">Ind. 7 — Engajamento Final:</p>
@@ -424,6 +469,99 @@ export default function DashboardMeuPerfil() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* === CICLO EM ANDAMENTO (destaque) === */}
+        {v2 && v2.ciclosEmAndamento && v2.ciclosEmAndamento.length > 0 && (
+          <div className="space-y-4">
+            {v2.ciclosEmAndamento.map((ciclo: any) => {
+              const totalDias = Math.max(1, Math.ceil((new Date(ciclo.dataFim).getTime() - new Date(ciclo.dataInicio).getTime()) / (1000 * 60 * 60 * 24)));
+              const diasPassados = Math.ceil((Date.now() - new Date(ciclo.dataInicio).getTime()) / (1000 * 60 * 60 * 24));
+              const progressoCiclo = Math.min(100, Math.max(0, (diasPassados / totalDias) * 100));
+              const diasRestantes = Math.max(0, totalDias - diasPassados);
+              const det = ciclo.detalhes || {};
+              return (
+                <Card key={ciclo.cicloId} className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 shadow-md">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base text-blue-900 flex items-center gap-2">
+                        <div className="p-1.5 bg-blue-100 rounded-lg">
+                          <Play className="h-4 w-4 text-blue-600" />
+                        </div>
+                        Ciclo em Andamento: {ciclo.nomeCiclo}
+                        <InfoTooltip text="Este é o seu ciclo atual. Os indicadores abaixo são parciais e se atualizam conforme você avança." />
+                      </CardTitle>
+                      <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                        {diasRestantes} dias restantes
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-xs text-gray-500">
+                        {new Date(ciclo.dataInicio).toLocaleDateString('pt-BR')} — {new Date(ciclo.dataFim).toLocaleDateString('pt-BR')}
+                      </span>
+                      <span className="text-xs text-gray-400">|</span>
+                      <span className="text-xs text-blue-600 font-medium">Trilha: {ciclo.trilhaNome}</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Barra de progresso do ciclo */}
+                    <div>
+                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Progresso do ciclo</span>
+                        <span>{progressoCiclo.toFixed(0)}% do tempo</span>
+                      </div>
+                      <Progress value={progressoCiclo} className="h-2" />
+                    </div>
+
+                    {/* Mini resumo de competências */}
+                    <div className="flex items-center gap-4 text-xs text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <BookOpen className="h-3.5 w-3.5 text-purple-500" />
+                        {det.competencias?.finalizadas || 0}/{det.competencias?.total || 0} competências concluídas
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Video className="h-3.5 w-3.5 text-blue-500" />
+                        {det.webinars?.presentes || 0}/{det.webinars?.total || 0} webinars
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <ClipboardCheck className="h-3.5 w-3.5 text-emerald-500" />
+                        {det.tarefas?.entregues || 0}/{det.tarefas?.total || 0} tarefas
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <GraduationCap className="h-3.5 w-3.5 text-red-500" />
+                        {det.avaliacoes?.provasRealizadas || 0} provas realizadas
+                      </span>
+                    </div>
+
+                    {/* 6 Indicadores parciais + Engajamento Final */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                      {[
+                        { label: "Webinars", valor: ciclo.ind1_webinars, icon: Video, color: "text-blue-600 bg-blue-100" },
+                        { label: "Avaliações", valor: ciclo.ind2_avaliacoes, icon: GraduationCap, color: "text-red-600 bg-red-100" },
+                        { label: "Competências", valor: ciclo.ind3_competencias, icon: BookOpen, color: "text-purple-600 bg-purple-100" },
+                        { label: "Tarefas", valor: ciclo.ind4_tarefas, icon: ClipboardCheck, color: "text-emerald-600 bg-emerald-100" },
+                        { label: "Engajamento", valor: ciclo.ind5_engajamento, icon: Star, color: "text-amber-600 bg-amber-100" },
+                        { label: "Cases", valor: ciclo.ind6_aplicabilidade, icon: Briefcase, color: "text-rose-600 bg-rose-100" },
+                        { label: "Eng. Final", valor: ciclo.ind7_engajamentoFinal, icon: Trophy, color: "text-[#F5991F] bg-orange-100" },
+                      ].map(({ label, valor, icon: Icon, color }) => (
+                        <div key={label} className="bg-white rounded-lg p-2.5 border border-gray-200 text-center">
+                          <div className={`inline-flex p-1 rounded ${color.split(' ')[1]} mb-1`}>
+                            <Icon className={`h-3.5 w-3.5 ${color.split(' ')[0]}`} />
+                          </div>
+                          <p className="text-lg font-bold text-gray-800">{(valor ?? 0).toFixed(0)}%</p>
+                          <p className="text-[10px] text-gray-500 leading-tight">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-[10px] text-blue-600 italic text-center">
+                      ⚠ Indicadores parciais — baseados apenas nos dados disponíveis até o momento
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         )}
 
         {/* Glossário de Termos */}
@@ -488,7 +626,7 @@ export default function DashboardMeuPerfil() {
           </div>
         )}
 
-        {/* 6 Indicadores V2 com Tooltips */}
+        {/* 6 Indicadores com Tooltips */}
         {v2Filtrado && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <IndicadorCardAluno
@@ -613,6 +751,9 @@ export default function DashboardMeuPerfil() {
             </TabsTrigger>
             <TabsTrigger value="cursos" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <GraduationCap className="h-4 w-4 mr-1" /> Cursos
+            </TabsTrigger>
+            <TabsTrigger value="cases" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
+              <Briefcase className="h-4 w-4 mr-1" /> Cases de Sucesso
             </TabsTrigger>
           </TabsList>
 
@@ -1352,7 +1493,215 @@ export default function DashboardMeuPerfil() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* === CASES DE SUCESSO === */}
+          <TabsContent value="cases" className="mt-4">
+            <div className="space-y-4">
+              {/* Explicação */}
+              <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <Briefcase className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-semibold text-amber-800 text-sm">Case de Sucesso</p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Ao final de cada trilha (Básicas, Essenciais, Master, etc.), você deve entregar um Case de Sucesso 
+                        documentando a aplicação prática dos aprendizados. A entrega do case é obrigatória e impacta 
+                        diretamente no seu Indicador 6 (Aplicabilidade Prática).
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Cards por trilha */}
+              <div className="grid gap-4 md:grid-cols-2">
+                {trilhasDisponiveis.map((trilha: any) => {
+                  const caseEntregue = casesAluno.find((c: any) => c.trilhaId === trilha.id);
+                  return (
+                    <Card key={trilha.id} className={`border shadow-sm transition-all ${
+                      caseEntregue?.entregue 
+                        ? 'bg-emerald-50 border-emerald-200' 
+                        : 'bg-white border-gray-200 hover:border-amber-300'
+                    }`}>
+                      <CardContent className="p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`p-2 rounded-lg ${caseEntregue?.entregue ? 'bg-emerald-100' : 'bg-gray-100'}`}>
+                              <Briefcase className={`h-4 w-4 ${caseEntregue?.entregue ? 'text-emerald-600' : 'text-gray-500'}`} />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm text-gray-800">Trilha {trilha.name}</p>
+                              <InfoTooltip text="Case de Sucesso: documento que comprova a aplicação prática dos aprendizados da trilha" />
+                            </div>
+                          </div>
+                          <Badge className={caseEntregue?.entregue 
+                            ? 'bg-emerald-100 text-emerald-700 border-emerald-300' 
+                            : 'bg-gray-100 text-gray-600 border-gray-300'}>
+                            {caseEntregue?.entregue ? 'Entregue' : 'Pendente'}
+                          </Badge>
+                        </div>
+
+                        {caseEntregue?.entregue ? (
+                          <div className="space-y-2">
+                            <p className="text-sm text-emerald-700 font-medium">{caseEntregue.titulo}</p>
+                            {caseEntregue.descricao && (
+                              <p className="text-xs text-gray-600">{caseEntregue.descricao}</p>
+                            )}
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                              <span>Entregue em {caseEntregue.dataEntrega ? new Date(caseEntregue.dataEntrega).toLocaleDateString('pt-BR') : '-'}</span>
+                            </div>
+                            {caseEntregue.fileUrl && (
+                              <a href={caseEntregue.fileUrl} target="_blank" rel="noopener noreferrer" 
+                                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1">
+                                <FileText className="h-3.5 w-3.5" />
+                                {caseEntregue.fileName || 'Ver arquivo'}
+                              </a>
+                            )}
+                            {/* Botão para reenviar */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 text-xs"
+                              onClick={() => {
+                                setCaseTrilhaId(trilha.id);
+                                setCaseTrilhaNome(trilha.name);
+                                setCaseTitulo(caseEntregue.titulo || '');
+                                setCaseDescricao(caseEntregue.descricao || '');
+                                setCaseDialogOpen(true);
+                              }}
+                            >
+                              <Upload className="h-3.5 w-3.5 mr-1" /> Atualizar Case
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <p className="text-xs text-gray-500">
+                              Envie seu Case de Sucesso para a trilha {trilha.name}. 
+                              Formatos aceitos: PDF, DOC, DOCX, PPT, PPTX (máx. 10MB).
+                            </p>
+                            <Button
+                              className="w-full bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
+                              onClick={() => {
+                                setCaseTrilhaId(trilha.id);
+                                setCaseTrilhaNome(trilha.name);
+                                setCaseTitulo('');
+                                setCaseDescricao('');
+                                setCaseFile(null);
+                                setCaseDialogOpen(true);
+                              }}
+                            >
+                              <FileUp className="h-4 w-4 mr-2" /> Enviar Case de Sucesso
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {trilhasDisponiveis.length === 0 && (
+                <Card className="bg-white border border-gray-200 shadow-sm">
+                  <CardContent className="text-center py-12 text-gray-500">
+                    <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Nenhuma trilha disponível</p>
+                    <p className="text-xs mt-1">As trilhas serão disponibilizadas pelo administrador do programa</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
         </Tabs>
+
+        {/* Dialog de envio de Case */}
+        <Dialog open={caseDialogOpen} onOpenChange={setCaseDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-amber-600" />
+                Enviar Case de Sucesso
+              </DialogTitle>
+              <DialogDescription>
+                Trilha: <strong>{caseTrilhaNome}</strong>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="case-titulo">Título do Case *</Label>
+                <Input 
+                  id="case-titulo" 
+                  placeholder="Ex: Implementação de melhoria no processo de atendimento"
+                  value={caseTitulo}
+                  onChange={e => setCaseTitulo(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="case-descricao">Descrição (opcional)</Label>
+                <Textarea 
+                  id="case-descricao" 
+                  placeholder="Descreva brevemente o que foi aplicado e os resultados obtidos..."
+                  value={caseDescricao}
+                  onChange={e => setCaseDescricao(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Arquivo do Case *</Label>
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-amber-400 hover:bg-amber-50/50 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {caseFile ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <Paperclip className="h-5 w-5 text-amber-600" />
+                      <span className="text-sm text-gray-700 font-medium">{caseFile.name}</span>
+                      <span className="text-xs text-gray-500">({(caseFile.size / 1024 / 1024).toFixed(1)} MB)</span>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">Clique para selecionar o arquivo</p>
+                      <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, PPT, PPTX (máx. 10MB)</p>
+                    </div>
+                  )}
+                </div>
+                <input 
+                  ref={fileInputRef}
+                  type="file" 
+                  className="hidden" 
+                  accept=".pdf,.doc,.docx,.ppt,.pptx"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file && file.size <= 10 * 1024 * 1024) {
+                      setCaseFile(file);
+                    } else if (file) {
+                      alert('Arquivo muito grande. Máximo: 10MB');
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCaseDialogOpen(false)}>Cancelar</Button>
+              <Button 
+                className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
+                onClick={handleCaseSubmit}
+                disabled={!caseTitulo || !caseFile || enviarCase.isPending}
+              >
+                {enviarCase.isPending ? (
+                  <><Clock className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
+                ) : (
+                  <><Send className="h-4 w-4 mr-2" /> Enviar Case</>
+                )}
+              </Button>
+            </DialogFooter>
+            {enviarCase.isError && (
+              <p className="text-xs text-red-600 mt-2">{enviarCase.error?.message || 'Erro ao enviar case'}</p>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AlunoLayout>
   );
