@@ -35,6 +35,7 @@ import {
   Pencil,
   Save,
   Route,
+  Users,
 } from "lucide-react";
 
 // ============ Progress Bar Component ============
@@ -284,60 +285,105 @@ function AssessmentContent() {
                 </div>
               </div>
               {assessments.length > 0 && (() => {
-                const MAX_VISIBLE = 2;
-                const hasMore = assessments.length > MAX_VISIBLE;
-                const visibleAssessments = trilhasExpanded ? assessments : assessments.slice(0, MAX_VISIBLE);
+                // Agrupar assessments por turma
+                const turmaGroups = new Map<string, any[]>();
+                assessments.forEach((a: any) => {
+                  const key = a.turmaNome || 'Sem Turma';
+                  if (!turmaGroups.has(key)) turmaGroups.set(key, []);
+                  turmaGroups.get(key)!.push(a);
+                });
+                const groups = Array.from(turmaGroups.entries());
                 return (
                   <div className="border-t pt-3">
                     <button
                       type="button"
-                      onClick={() => hasMore && setTrilhasExpanded(!trilhasExpanded)}
-                      className={`text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5 w-full ${hasMore ? 'cursor-pointer hover:text-foreground transition-colors' : 'cursor-default'}`}
+                      onClick={() => setTrilhasExpanded(!trilhasExpanded)}
+                      className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5 w-full cursor-pointer hover:text-foreground transition-colors"
                     >
                       <Route className="h-3.5 w-3.5" />
                       Trilhas e Ciclos de Execução
-                      {hasMore && (
-                        <span className="ml-auto flex items-center gap-1 text-[10px] normal-case font-normal">
-                          {trilhasExpanded ? 'Recolher' : `Ver todas (${assessments.length})`}
-                          {trilhasExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                        </span>
-                      )}
+                      <span className="ml-auto flex items-center gap-1 text-[10px] normal-case font-normal">
+                        {trilhasExpanded ? 'Recolher' : `Expandir (${assessments.length} trilhas)`}
+                        {trilhasExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </span>
                     </button>
-                    <div className="space-y-1.5">
-                      {visibleAssessments.map((pdi: any) => {
-                        const macroInicioStr = formatDate(pdi.macroInicio);
-                        const macroTerminoStr = formatDate(pdi.macroTermino);
-                        const isCongelado = pdi.status === "congelado";
-                        return (
-                          <div key={pdi.id} className="flex items-center gap-2 text-sm flex-wrap">
-                            <Badge
-                              variant={isCongelado ? "secondary" : "default"}
-                              className="text-[10px] min-w-[80px] justify-center"
-                            >
-                              {pdi.trilhaNome}
-                            </Badge>
-                            <span className="text-muted-foreground">
-                              Ciclo: de <strong>{macroInicioStr}</strong> até <strong>{macroTerminoStr}</strong>
+                    {/* Resumo compacto */}
+                    {!trilhasExpanded && (
+                      <div className="space-y-1">
+                        {groups.map(([turmaName, turmaAssessments]) => (
+                          <div key={turmaName} className="flex items-center gap-2 text-xs flex-wrap">
+                            <span className="font-medium truncate max-w-[250px]">{turmaName}</span>
+                            <span className="text-muted-foreground/40">•</span>
+                            <div className="flex gap-1">
+                              {turmaAssessments.map((a: any) => (
+                                <Badge key={a.id} variant="outline" className={`text-[9px] px-1 py-0 font-bold ${
+                                  a.trilhaNome === 'Master' ? 'text-purple-600 border-purple-300' :
+                                  a.trilhaNome === 'Essential' ? 'text-blue-600 border-blue-300' :
+                                  a.trilhaNome === 'Basic' ? 'text-green-600 border-green-300' :
+                                  'text-amber-600 border-amber-300'
+                                }`}>{a.trilhaNome}</Badge>
+                              ))}
+                            </div>
+                            <span className="text-muted-foreground/60 text-[10px]">
+                              {turmaAssessments.reduce((sum: number, a: any) => sum + (a.competencias?.length || a.totalCompetencias || 0), 0)} comp.
                             </span>
-                            <Badge variant="outline" className="text-[9px]">
-                              {pdi.totalCompetencias} comp. ({pdi.obrigatorias} obrig. / {pdi.opcionais} opc.)
-                            </Badge>
-                            {isCongelado && (
-                              <Badge variant="outline" className="text-[9px] text-amber-600 border-amber-300">
-                                Em Andamento
-                              </Badge>
-                            )}
-                            {pdi.turmaNome && (
-                              <span className="text-xs text-muted-foreground/70">({pdi.turmaNome})</span>
-                            )}
                           </div>
-                        );
-                      })}
-                    </div>
-                    {hasMore && !trilhasExpanded && (
-                      <p className="text-[10px] text-muted-foreground/60 mt-1.5">
-                        +{assessments.length - MAX_VISIBLE} trilha{assessments.length - MAX_VISIBLE !== 1 ? 's' : ''} oculta{assessments.length - MAX_VISIBLE !== 1 ? 's' : ''}
-                      </p>
+                        ))}
+                      </div>
+                    )}
+                    {/* Detalhes expandidos - agrupados por turma com competências */}
+                    {trilhasExpanded && (
+                      <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                        {groups.map(([turmaName, turmaAssessments]) => (
+                          <div key={turmaName} className="rounded-lg bg-muted/50 p-3">
+                            <p className="text-xs font-bold mb-2 flex items-center gap-2">
+                              <Users className="h-3 w-3 text-primary" />
+                              {turmaName}
+                            </p>
+                            {turmaAssessments.map((a: any) => (
+                              <div key={a.id} className="mb-2 last:mb-0">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <Badge variant="outline" className={`text-[9px] px-1.5 py-0 font-bold ${
+                                    a.trilhaNome === 'Master' ? 'text-purple-600 border-purple-300' :
+                                    a.trilhaNome === 'Essential' ? 'text-blue-600 border-blue-300' :
+                                    a.trilhaNome === 'Basic' ? 'text-green-600 border-green-300' :
+                                    'text-amber-600 border-amber-300'
+                                  }`}>{a.trilhaNome}</Badge>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {a.totalCompetencias} comp. ({a.obrigatorias} obrig. / {a.opcionais} opc.)
+                                  </span>
+                                  {a.status === 'congelado' && (
+                                    <Badge variant="outline" className="text-[9px] text-amber-600 border-amber-300">Em Andamento</Badge>
+                                  )}
+                                </div>
+                                {/* Tabela de competências */}
+                                {a.competencias && a.competencias.length > 0 && (
+                                  <div className="ml-4 border-l border-border pl-3">
+                                    <table className="w-full text-[11px]">
+                                      <thead>
+                                        <tr className="text-muted-foreground/60">
+                                          <th className="text-left font-medium pb-1">Competência</th>
+                                          <th className="text-left font-medium pb-1 w-[90px]">Início</th>
+                                          <th className="text-left font-medium pb-1 w-[90px]">Fim</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {a.competencias.map((c: any) => (
+                                          <tr key={c.id} className="text-foreground/80 hover:text-foreground">
+                                            <td className="py-0.5 pr-2">{c.competenciaNome}</td>
+                                            <td className="py-0.5 font-medium">{formatDate(c.microInicio)}</td>
+                                            <td className="py-0.5 font-medium">{formatDate(c.microTermino)}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 );

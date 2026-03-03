@@ -400,64 +400,121 @@ export default function DashboardMeuPerfil() {
                       </Badge>
                     )}
                   </div>
-                  {/* Trilhas e Ciclos de Execução */}
-                  {assessments && assessments.length > 0 && (
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold text-white/60 uppercase tracking-wider flex items-center gap-1">
-                          <Route className="h-3 w-3" /> Trilhas e Ciclos de Execução
-                        </p>
-                        {assessments.length > 2 && (
+                  {/* Trilhas e Ciclos de Execução - Agrupados por Turma */}
+                  {assessments && assessments.length > 0 && (() => {
+                    const formatDateCard = (d: any) => {
+                      if (!d) return '—';
+                      if (d instanceof Date || (typeof d === 'object' && d.toISOString)) {
+                        const dt = new Date(d);
+                        return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
+                      }
+                      const str = String(d);
+                      const parts = str.split('-');
+                      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : str;
+                    };
+                    // Agrupar assessments por turma
+                    const turmaGroups = new Map<string, any[]>();
+                    assessments.forEach((a: any) => {
+                      const key = a.turmaNome || 'Sem Turma';
+                      if (!turmaGroups.has(key)) turmaGroups.set(key, []);
+                      turmaGroups.get(key)!.push(a);
+                    });
+                    const groups = Array.from(turmaGroups.entries());
+                    return (
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold text-white/60 uppercase tracking-wider flex items-center gap-1">
+                            <Route className="h-3 w-3" /> Trilhas e Ciclos de Execução
+                          </p>
                           <button
                             onClick={() => setShowAllTrilhasCard(!showAllTrilhasCard)}
                             className="text-xs text-[#F5991F] hover:text-[#F5991F]/80 flex items-center gap-1"
                           >
-                            {showAllTrilhasCard ? 'Recolher' : `Ver todas (${assessments.length})`}
+                            {showAllTrilhasCard ? 'Recolher' : `Expandir (${assessments.length} trilhas)`}
                             {showAllTrilhasCard ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                           </button>
+                        </div>
+                        {/* Resumo compacto */}
+                        {!showAllTrilhasCard && (
+                          <div className="space-y-1">
+                            {groups.map(([turmaName, turmaAssessments]) => (
+                              <div key={turmaName} className="flex items-center gap-2 text-xs">
+                                <span className="text-white/80 font-medium truncate max-w-[200px]">{turmaName}</span>
+                                <span className="text-white/40">•</span>
+                                <div className="flex gap-1">
+                                  {turmaAssessments.map((a: any) => (
+                                    <Badge key={a.id} className={`text-[9px] px-1 py-0 font-bold ${
+                                      a.trilhaNome === 'Master' ? 'bg-purple-500/30 text-purple-300 border-purple-400/40' :
+                                      a.trilhaNome === 'Essential' ? 'bg-blue-500/30 text-blue-300 border-blue-400/40' :
+                                      a.trilhaNome === 'Basic' ? 'bg-green-500/30 text-green-300 border-green-400/40' :
+                                      'bg-amber-500/30 text-amber-300 border-amber-400/40'
+                                    }`}>{a.trilhaNome}</Badge>
+                                  ))}
+                                </div>
+                                <span className="text-white/40 text-[10px]">
+                                  {turmaAssessments.reduce((sum: number, a: any) => sum + (a.competencias?.length || a.totalCompetencias || 0), 0)} comp.
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {/* Detalhes expandidos - agrupados por turma com competências */}
+                        {showAllTrilhasCard && (
+                          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                            {groups.map(([turmaName, turmaAssessments]) => (
+                              <div key={turmaName} className="rounded-lg bg-white/5 p-3">
+                                <p className="text-xs font-bold text-white/90 mb-2 flex items-center gap-2">
+                                  <Users className="h-3 w-3 text-[#F5991F]" />
+                                  {turmaName}
+                                </p>
+                                {turmaAssessments.map((a: any) => (
+                                  <div key={a.id} className="mb-2 last:mb-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Badge className={`text-[9px] px-1.5 py-0 font-bold ${
+                                        a.trilhaNome === 'Master' ? 'bg-purple-500/30 text-purple-300 border-purple-400/40' :
+                                        a.trilhaNome === 'Essential' ? 'bg-blue-500/30 text-blue-300 border-blue-400/40' :
+                                        a.trilhaNome === 'Basic' ? 'bg-green-500/30 text-green-300 border-green-400/40' :
+                                        'bg-amber-500/30 text-amber-300 border-amber-400/40'
+                                      }`}>{a.trilhaNome}</Badge>
+                                      <span className="text-[10px] text-white/50">
+                                        {a.totalCompetencias} comp. ({a.obrigatorias} obrig. / {a.opcionais} opc.)
+                                      </span>
+                                      {a.status === 'congelado' && (
+                                        <Badge className="bg-amber-500/30 text-amber-300 border-amber-400/40 text-[9px] px-1 py-0">Em Andamento</Badge>
+                                      )}
+                                    </div>
+                                    {/* Tabela de competências */}
+                                    {a.competencias && a.competencias.length > 0 && (
+                                      <div className="ml-4 border-l border-white/10 pl-3">
+                                        <table className="w-full text-[10px]">
+                                          <thead>
+                                            <tr className="text-white/40">
+                                              <th className="text-left font-medium pb-1">Competência</th>
+                                              <th className="text-left font-medium pb-1 w-[90px]">Início</th>
+                                              <th className="text-left font-medium pb-1 w-[90px]">Fim</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {a.competencias.map((c: any) => (
+                                              <tr key={c.id} className="text-white/70 hover:text-white/90">
+                                                <td className="py-0.5 pr-2">{c.competenciaNome}</td>
+                                                <td className="py-0.5 font-medium text-white/80">{formatDateCard(c.microInicio)}</td>
+                                                <td className="py-0.5 font-medium text-white/80">{formatDateCard(c.microTermino)}</td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
-                      <div className="space-y-1.5">
-                        {(showAllTrilhasCard ? assessments : assessments.slice(0, 2)).map((a: any, idx: number) => {
-                          const formatDateCard = (d: any) => {
-                            if (!d) return '—';
-                            if (d instanceof Date || (typeof d === 'object' && d.toISOString)) {
-                              const dt = new Date(d);
-                              return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
-                            }
-                            const str = String(d);
-                            const parts = str.split('-');
-                            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : str;
-                          };
-                          return (
-                            <div key={a.id || idx} className="flex items-center gap-2 text-xs">
-                              <Badge className={`text-[10px] px-1.5 py-0.5 font-bold ${
-                                a.trilhaNome === 'Master' ? 'bg-purple-500/30 text-purple-300 border-purple-400/40' :
-                                a.trilhaNome === 'Essential' ? 'bg-blue-500/30 text-blue-300 border-blue-400/40' :
-                                a.trilhaNome === 'Basic' ? 'bg-green-500/30 text-green-300 border-green-400/40' :
-                                'bg-amber-500/30 text-amber-300 border-amber-400/40'
-                              }`}>{a.trilhaNome}</Badge>
-                              <span className="text-white/70">
-                                Ciclo: de <strong className="text-white">{formatDateCard(a.macroInicio)}</strong> até <strong className="text-white">{formatDateCard(a.macroTermino)}</strong>
-                              </span>
-                              <span className="text-white/50">
-                                {a.totalCompetencias} comp. ({a.obrigatorias} obrig. / {a.opcionais} opc.)
-                              </span>
-                              {a.status === 'congelado' && (
-                                <Badge className="bg-amber-500/30 text-amber-300 border-amber-400/40 text-[10px] px-1 py-0">Em Andamento</Badge>
-                              )}
-                              {a.turmaNome && (
-                                <span className="text-white/40 hidden lg:inline">({a.turmaNome})</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                        {!showAllTrilhasCard && assessments.length > 2 && (
-                          <p className="text-[10px] text-white/40">+{assessments.length - 2} trilha(s) oculta(s)</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-white/70 mb-1 flex items-center gap-1 justify-end">

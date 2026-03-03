@@ -1346,3 +1346,8 @@
 
 ## Bug Crítico - Portal do Aluno (03/03/2026)
 - [x] Corrigir erro "lt.split não é uma função" no Portal do Aluno (meu-dashboard) - causa: macroInicio/macroTermino é Date object, não string. Corrigido formatDateCard para lidar com ambos os tipos
+
+## Redesenho do Card de Trilhas - Assessment/PDI e Portal do Aluno (03/03/2026)
+- [x] Redesenhar card de trilhas: agrupar por turma, listar competências com datas de micro jornada (início/fim)
+- [x] Botão de expansão organizado para ver detalhes das competências por trilha
+- [x] Aplicar mesmo redesenho no Assessment/PDI e Portal do Aluno
