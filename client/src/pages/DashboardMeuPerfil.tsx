@@ -728,7 +728,7 @@ export default function DashboardMeuPerfil() {
                       ativo: isActive ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
                       congelado: isActive ? "bg-gray-500 text-white border-gray-500" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
                     };
-                    const labelMap = { todos: "Todos", ativo: "Ativos", congelado: "Congelados" };
+                    const labelMap = { todos: "Todos", ativo: "Finalizada", congelado: "Em Andamento" };
                     return (
                       <button
                         key={status}
@@ -772,7 +772,7 @@ export default function DashboardMeuPerfil() {
                             </div>
                           )}
                           <Badge variant="outline" className={macroJornada.status === "ativo" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
-                            {macroJornada.status === "ativo" ? "Ativo" : "Congelado"}
+                            {macroJornada.status === "ativo" ? "Finalizada" : "Em Andamento"}
                           </Badge>
                         </div>
                       </div>

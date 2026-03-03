@@ -1322,3 +1322,8 @@
 - [ ] Corrigir ordem dos ciclos dentro de cada trilha (do mais recente ao mais antigo)
 - [x] Criar trilha 'Alinhamento Inicial' (Trilha 1.0) na lista de tipos de trilhas no banco de dados
 - [x] Corrigir nomes de ciclos longos — quando há muitas competências concatenadas, limitar ou formatar melhor
+
+## Correções de Terminologia (03/03/2026)
+- [x] Alterar termo "Congelados" para "Em Andamento" no Portal do Aluno
+- [x] Alterar termo "Ativos" para "Finalizada" no Portal do Aluno
+- [x] Verificado: "Básica" está correto no banco e no código. "Badia" era problema de cache/renderização do navegador do usuário

@@ -1,0 +1,87 @@
+{
+  "query": "SELECT * FROM trilhas ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT * FROM trilhas ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "externalId": "NULL",
+      "name": "Básica",
+      "programId": "NULL",
+      "createdAt": "2026-01-30 16:43:56",
+      "codigo": "BASICA",
+      "ordem": "1",
+      "isActive": "1",
+      "updatedAt": "2026-02-13 14:13:19"
+    },
+    {
+      "id": "2",
+      "externalId": "NULL",
+      "name": "Essencial",
+      "programId": "NULL",
+      "createdAt": "2026-01-30 16:43:56",
+      "codigo": "ESSENCIAL",
+      "ordem": "2",
+      "isActive": "1",
+      "updatedAt": "2026-02-13 14:13:19"
+    },
+    {
+      "id": "3",
+      "externalId": "NULL",
+      "name": "Master",
+      "programId": "NULL",
+      "createdAt": "2026-01-30 16:43:56",
+      "codigo": "MASTER",
+      "ordem": "3",
+      "isActive": "1",
+      "updatedAt": "2026-01-30 16:43:56"
+    },
+    {
+      "id": "4",
+      "externalId": "NULL",
+      "name": "Visão de Futuro",
+      "programId": "NULL",
+      "createdAt": "2026-01-30 16:43:56",
+      "codigo": "VISAO_FUTURO",
+      "ordem": "4",
+      "isActive": "1",
+      "updatedAt": "2026-02-13 14:13:19"
+    },
+    {
+      "id": "30001",
+      "externalId": "NULL",
+      "name": "Jornada do Futuro I.A",
+      "programId": "NULL",
+      "createdAt": "2026-02-27 01:17:13",
+      "codigo": "JORNADA_FUTURO_IA",
+      "ordem": "5",
+      "isActive": "1",
+      "updatedAt": "2026-02-27 01:17:13"
+    },
+    {
+      "id": "60001",
+      "externalId": "NULL",
+      "name": "Jornada Personalizada",
+      "programId": "18",
+      "createdAt": "2026-03-02 23:22:50",
+      "codigo": "JORNADA_PERSONALIZADA",
+      "ordem": "5",
+      "isActive": "1",
+      "updatedAt": "2026-03-02 23:22:50"
+    },
+    {
+      "id": "90001",
+      "externalId": "NULL",
+      "name": "Alinhamento Inicial",
+      "programId": "NULL",
+      "createdAt": "2026-03-03 21:25:38",
+      "codigo": "NULL",
+      "ordem": "0",
+      "isActive": "1",
+      "updatedAt": "2026-03-03 21:25:38"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\texternalId\tname\tprogramId\tcreatedAt\tcodigo\tordem\tisActive\tupdatedAt\n1\tNULL\tBásica\tNULL\t2026-01-30 16:43:56\tBASICA\t1\t1\t2026-02-13 14:13:19\n2\tNULL\tEssencial\tNULL\t2026-01-30 16:43:56\tESSENCIAL\t2\t1\t2026-02-13 14:13:19\n3\tNULL\tMaster\tNULL\t2026-01-30 16:43:56\tMASTER\t3\t1\t2026-01-30 16:43:56\n4\tNULL\tVisão de Futuro\tNULL\t2026-01-30 16:43:56\tVISAO_FUTURO\t4\t1\t2026-02-13 14:13:19\n30001\tNULL\tJornada do Futuro I.A\tNULL\t2026-02-27 01:17:13\tJORNADA_FUTURO_IA\t5\t1\t2026-02-27 01:17:13\n60001\tNULL\tJornada Personalizada\t18\t2026-03-02 23:22:50\tJORNADA_PERSONALIZADA\t5\t1\t2026-03-02 23:22:50\n90001\tNULL\tAlinhamento Inicial\tNULL\t2026-03-03 21:25:38\tNULL\t0\t1\t2026-03-03 21:25:38\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}

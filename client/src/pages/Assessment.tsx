@@ -425,7 +425,7 @@ function AssessmentCard({
               <CardTitle className="text-base flex items-center gap-2">
                 {pdi.trilhaNome}
                 <Badge variant={isCongelado ? "secondary" : isExpirado ? "destructive" : "default"} className="text-[10px]">
-                  {isCongelado ? "Congelada" : isExpirado ? "Expirada" : "Ativa"}
+                  {isCongelado ? "Em Andamento" : isExpirado ? "Expirada" : "Finalizada"}
                 </Badge>
               </CardTitle>
               <CardDescription className="text-xs mt-0.5">

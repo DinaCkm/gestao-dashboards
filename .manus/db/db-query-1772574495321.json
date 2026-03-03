@@ -1,0 +1,45 @@
+{
+  "query": "SELECT id, name, codigo FROM trilhas ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, codigo FROM trilhas ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Básica",
+      "codigo": "BASICA"
+    },
+    {
+      "id": "2",
+      "name": "Essencial",
+      "codigo": "ESSENCIAL"
+    },
+    {
+      "id": "3",
+      "name": "Master",
+      "codigo": "MASTER"
+    },
+    {
+      "id": "4",
+      "name": "Visão de Futuro",
+      "codigo": "VISAO_FUTURO"
+    },
+    {
+      "id": "30001",
+      "name": "Jornada do Futuro I.A",
+      "codigo": "JORNADA_FUTURO_IA"
+    },
+    {
+      "id": "60001",
+      "name": "Jornada Personalizada",
+      "codigo": "JORNADA_PERSONALIZADA"
+    },
+    {
+      "id": "90001",
+      "name": "Alinhamento Inicial",
+      "codigo": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcodigo\n1\tBásica\tBASICA\n2\tEssencial\tESSENCIAL\n3\tMaster\tMASTER\n4\tVisão de Futuro\tVISAO_FUTURO\n30001\tJornada do Futuro I.A\tJORNADA_FUTURO_IA\n60001\tJornada Personalizada\tJORNADA_PERSONALIZADA\n90001\tAlinhamento Inicial\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 374
+}
