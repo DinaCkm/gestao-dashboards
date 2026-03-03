@@ -2628,7 +2628,7 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
   // 3. Trilha - extrair do nome da turma ou do plano individual
   let trilhaNome = 'Não definida';
   if (turmaInfo) {
-    // Extrair trilha do nome da turma (ex: "[2024] Banrisul - B.E.M. | Básicas" -> "Básicas")
+    // Extrair trilha do nome da turma (ex: "[2024] Banrisul - B.E.M. | Basic" -> "Basic")
     const pipeMatch = turmaInfo.name.match(/\|\s*(.+)$/);
     if (pipeMatch) {
       trilhaNome = pipeMatch[1].trim();

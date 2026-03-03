@@ -24,8 +24,8 @@ export function InfoTooltip({ text, className }: { text: string; className?: str
  */
 export const GLOSSARIO = {
   jornada: "Caminho completo do aluno no programa. Corresponde ao tempo total de contrato com a empresa.",
-  macrociclo: "Etapa da jornada que agrupa uma trilha completa (ex: Básicas, Essenciais, Master). Ao final de cada macrociclo é exigida a entrega de um Case de Sucesso.",
-  trilha: "Caminho de aprendizagem dentro do macrociclo. Define quais competências são obrigatórias para o aluno (ex: Trilha Básicas, Trilha Essenciais, Trilha Master).",
+  macrociclo: "Etapa da jornada que agrupa uma trilha completa (ex: Basic, Essential, Master). Ao final de cada macrociclo é exigida a entrega de um Case de Sucesso.",
+  trilha: "Caminho de aprendizagem dentro do macrociclo. Define quais competências são obrigatórias para o aluno (ex: Trilha Basic, Trilha Essential, Trilha Master).",
   microciclo: "Período com datas de início e fim dentro do macrociclo. Agrupa as competências, webinars, mentorias e tarefas que o aluno deve cumprir naquele período.",
   competencia: "Curso composto por um grupo de aulas e uma avaliação (prova). O aluno assiste as aulas e realiza a prova ao final.",
   aula: "Conteúdo dentro de cada competência. O aluno assiste as aulas online e ao final de todas as aulas da competência, realiza uma prova.",

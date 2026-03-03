@@ -1119,7 +1119,7 @@ export default function DashboardMeuPerfil() {
                             {microsOrfaos.length > 0 && (
                               <div className="space-y-2">
                                 {temCiclos && (
-                                  <p className="text-xs text-gray-500 font-medium">Outras competências</p>
+                                  <p className="text-xs text-gray-500 font-medium">Competências Opcionais</p>
                                 )}
                                 {microsOrfaos.map((micro: any) => renderMicro(micro))}
                               </div>
@@ -1571,7 +1571,7 @@ export default function DashboardMeuPerfil() {
                     <div>
                       <p className="font-semibold text-amber-800 text-sm">Case de Sucesso</p>
                       <p className="text-xs text-amber-700 mt-1">
-                        Ao final de cada trilha (Básicas, Essenciais, Master, etc.), você deve entregar um Case de Sucesso 
+                        Ao final de cada trilha (Basic, Essential, Master, etc.), você deve entregar um Case de Sucesso 
                         documentando a aplicação prática dos aprendizados. A entrega do case é obrigatória e impacta 
                         diretamente no seu Indicador 6 (Aplicabilidade Prática).
                       </p>

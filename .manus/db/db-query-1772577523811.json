@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE turmas SET name = REPLACE(name, 'Básicas', 'Basic') WHERE name LIKE '%Básicas%';\nUPDATE turmas SET name = REPLACE(name, 'Essenciais', 'Essential') WHERE name LIKE '%Essenciais%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute UPDATE turmas SET name = REPLACE(name, 'Básicas', 'Basic') WHERE name LIKE '%Básicas%';\nUPDATE turmas SET name = REPLACE(name, 'Essenciais', 'Essential') WHERE name LIKE '%Essenciais%';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 410
+}

@@ -478,8 +478,8 @@ export const appRouter = router({
               // Try exact match first, then partial
               competenciaId = compByName.get(compName.toLowerCase().trim()) || null;
               if (!competenciaId) {
-                // Try matching without the suffix like " - Master", " - Essencial"
-                const baseName = compName.replace(/\s*-\s*(Master|Essencial|B\u00e1sica|Vis\u00e3o de Futuro|Jornada.*)$/i, '').trim();
+                // Try matching without the suffix like " - Master", " - Essential", " - Basic"
+                const baseName = compName.replace(/\s*-\s*(Master|Essential|Essencial|Basic|Básica|Visão de Futuro|Jornada.*)$/i, '').trim();
                 competenciaId = compByName.get(baseName.toLowerCase()) || null;
               }
             }

@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE trilhas SET name = 'Basic' WHERE id = 1 AND name = 'Básica';\nUPDATE trilhas SET name = 'Essential' WHERE id = 2 AND name = 'Essencial';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute UPDATE trilhas SET name = 'Basic' WHERE id = 1 AND name = 'Básica';\nUPDATE trilhas SET name = 'Essential' WHERE id = 2 AND name = 'Essencial';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 475
+}

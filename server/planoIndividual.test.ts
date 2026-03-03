@@ -33,7 +33,7 @@ describe('Plano Individual - Database Functions', () => {
           competenciaNome: 'Comunicação',
           competenciaCodigo: 'COM001',
           trilhaId: 1,
-          trilhaNome: 'Básicas'
+          trilhaNome: 'Basic'
         }
       ];
       

@@ -1327,3 +1327,9 @@
 - [x] Alterar termo "Congelados" para "Em Andamento" no Portal do Aluno
 - [x] Alterar termo "Ativos" para "Finalizada" no Portal do Aluno
 - [x] Verificado: "Básica" está correto no banco e no código. "Badia" era problema de cache/renderização do navegador do usuário
+
+## Auditoria de Nomenclatura (03/03/2026)
+- [x] Trocar "Básica" por "Basic" em todo o sistema (código + banco)
+- [x] Trocar "Mestre" por "Master" em todo o sistema (código + banco) - já estava correto
+- [x] Trocar "Outra/Outras" por "Opcional/Opcionais" para competências/trilhas em todo o sistema
+- [x] Trocar "Essencial" por "Essential" em todo o sistema (código + banco)

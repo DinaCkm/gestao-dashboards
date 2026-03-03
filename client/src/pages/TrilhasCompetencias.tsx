@@ -134,13 +134,13 @@ export default function TrilhasCompetencias() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Básicas</CardDescription>
+              <CardDescription>Basic</CardDescription>
               <CardTitle className="text-3xl">{getCompetenciasCount(1)}</CardTitle>
             </CardHeader>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Essenciais</CardDescription>
+              <CardDescription>Essential</CardDescription>
               <CardTitle className="text-3xl">{getCompetenciasCount(2)}</CardTitle>
             </CardHeader>
           </Card>
@@ -356,7 +356,7 @@ export default function TrilhasCompetencias() {
                 <Input 
                   value={trilhaForm.name}
                   onChange={(e) => setTrilhaForm({...trilhaForm, name: e.target.value})}
-                  placeholder="Ex: Básicas"
+                  placeholder="Ex: Basic"
                 />
               </div>
               <div>

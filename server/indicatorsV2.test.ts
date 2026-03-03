@@ -57,7 +57,7 @@ function mkPerformance(overrides: Record<string, any> = {}): PerformanceRecord {
 function mkCiclo(overrides: Partial<CicloDataV2> = {}): CicloDataV2 {
   return {
     id: 1,
-    nomeCiclo: 'Básicas',
+    nomeCiclo: 'Basic',
     trilhaNome: 'Trilha Gestão',
     dataInicio: '2025-01-01',
     dataFim: '2025-06-30',
@@ -313,14 +313,14 @@ describe('calcularIndicadoresAluno', () => {
   describe('Separação por ciclo', () => {
     it('deve separar ciclos finalizados e em andamento', () => {
       const ciclos = [
-        mkCiclo({ id: 1, nomeCiclo: 'Básicas', dataInicio: '2024-01-01', dataFim: '2024-06-30' }),
-        mkCiclo({ id: 2, nomeCiclo: 'Essenciais', dataInicio: '2025-01-01', dataFim: '2027-12-31', competenciaIds: [3] }),
+        mkCiclo({ id: 1, nomeCiclo: 'Basic', dataInicio: '2024-01-01', dataFim: '2024-06-30' }),
+        mkCiclo({ id: 2, nomeCiclo: 'Essential', dataInicio: '2025-01-01', dataFim: '2027-12-31', competenciaIds: [3] }),
       ];
       const result = calcularIndicadoresAluno('aluno1', [], [], [], ciclos, emptyMap, []);
       expect(result.ciclosFinalizados.length).toBe(1);
       expect(result.ciclosEmAndamento.length).toBe(1);
-      expect(result.ciclosFinalizados[0].nomeCiclo).toBe('Básicas');
-      expect(result.ciclosEmAndamento[0].nomeCiclo).toBe('Essenciais');
+      expect(result.ciclosFinalizados[0].nomeCiclo).toBe('Basic');
+      expect(result.ciclosEmAndamento[0].nomeCiclo).toBe('Essential');
     });
   });
 
@@ -384,7 +384,7 @@ describe('calcularIndicadoresAluno', () => {
       ];
       const ciclos = [mkCiclo({ 
         id: 1,
-        nomeCiclo: 'Básicas',
+        nomeCiclo: 'Basic',
         dataInicio: '2024-01-01',
         dataFim: '2024-06-30',
         competenciaIds: [1],
