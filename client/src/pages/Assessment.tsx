@@ -92,6 +92,7 @@ function AssessmentContent() {
   const [selectedAlunoId, setSelectedAlunoId] = useState<number | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [expandedPdiId, setExpandedPdiId] = useState<number | null>(null);
+  const [trilhasExpanded, setTrilhasExpanded] = useState(false);
 
   // Data queries
   const { data: allPrograms = [] } = trpc.programs.list.useQuery(undefined, { enabled: isAdmin });
@@ -282,40 +283,65 @@ function AssessmentContent() {
                   </Badge>
                 </div>
               </div>
-              {assessments.length > 0 && (
-                <div className="border-t pt-3 space-y-1.5">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Route className="h-3.5 w-3.5" />
-                    Trilhas e Ciclos de Execução
-                  </p>
-                  {assessments.map((pdi: any) => {
-                    const macroInicioStr = formatDate(pdi.macroInicio);
-                    const macroTerminoStr = formatDate(pdi.macroTermino);
-                    const isCongelado = pdi.status === "congelado";
-                    return (
-                      <div key={pdi.id} className="flex items-center gap-2 text-sm">
-                        <Badge
-                          variant={isCongelado ? "secondary" : "default"}
-                          className="text-[10px] min-w-[80px] justify-center"
-                        >
-                          {pdi.trilhaNome}
-                        </Badge>
-                        <span className="text-muted-foreground">
-                          Ciclo de Execução: de <strong>{macroInicioStr}</strong> até <strong>{macroTerminoStr}</strong>
+              {assessments.length > 0 && (() => {
+                const MAX_VISIBLE = 2;
+                const hasMore = assessments.length > MAX_VISIBLE;
+                const visibleAssessments = trilhasExpanded ? assessments : assessments.slice(0, MAX_VISIBLE);
+                return (
+                  <div className="border-t pt-3">
+                    <button
+                      type="button"
+                      onClick={() => hasMore && setTrilhasExpanded(!trilhasExpanded)}
+                      className={`text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5 w-full ${hasMore ? 'cursor-pointer hover:text-foreground transition-colors' : 'cursor-default'}`}
+                    >
+                      <Route className="h-3.5 w-3.5" />
+                      Trilhas e Ciclos de Execução
+                      {hasMore && (
+                        <span className="ml-auto flex items-center gap-1 text-[10px] normal-case font-normal">
+                          {trilhasExpanded ? 'Recolher' : `Ver todas (${assessments.length})`}
+                          {trilhasExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                         </span>
-                        {isCongelado && (
-                          <Badge variant="outline" className="text-[9px] text-amber-600 border-amber-300">
-                            Em Andamento
-                          </Badge>
-                        )}
-                        {pdi.turmaNome && (
-                          <span className="text-xs text-muted-foreground/70">({pdi.turmaNome})</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      )}
+                    </button>
+                    <div className="space-y-1.5">
+                      {visibleAssessments.map((pdi: any) => {
+                        const macroInicioStr = formatDate(pdi.macroInicio);
+                        const macroTerminoStr = formatDate(pdi.macroTermino);
+                        const isCongelado = pdi.status === "congelado";
+                        return (
+                          <div key={pdi.id} className="flex items-center gap-2 text-sm flex-wrap">
+                            <Badge
+                              variant={isCongelado ? "secondary" : "default"}
+                              className="text-[10px] min-w-[80px] justify-center"
+                            >
+                              {pdi.trilhaNome}
+                            </Badge>
+                            <span className="text-muted-foreground">
+                              Ciclo: de <strong>{macroInicioStr}</strong> até <strong>{macroTerminoStr}</strong>
+                            </span>
+                            <Badge variant="outline" className="text-[9px]">
+                              {pdi.totalCompetencias} comp. ({pdi.obrigatorias} obrig. / {pdi.opcionais} opc.)
+                            </Badge>
+                            {isCongelado && (
+                              <Badge variant="outline" className="text-[9px] text-amber-600 border-amber-300">
+                                Em Andamento
+                              </Badge>
+                            )}
+                            {pdi.turmaNome && (
+                              <span className="text-xs text-muted-foreground/70">({pdi.turmaNome})</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {hasMore && !trilhasExpanded && (
+                      <p className="text-[10px] text-muted-foreground/60 mt-1.5">
+                        +{assessments.length - MAX_VISIBLE} trilha{assessments.length - MAX_VISIBLE !== 1 ? 's' : ''} oculta{assessments.length - MAX_VISIBLE !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 

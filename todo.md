@@ -1336,3 +1336,7 @@
 
 ## Card do Aluno - Assessment/PDI (03/03/2026)
 - [x] Mostrar TODAS as trilhas do profissional no card do cabeçalho com ciclos de execução (formato: Trilha X: Ciclo de Execução: de DD/MM até DD/MM)
+
+## Melhorias no Card do Aluno - Assessment/PDI (03/03/2026)
+- [x] Expandir/colapsar trilhas no card quando aluno tiver muitas trilhas
+- [x] Contagem de competências por trilha no resumo do card
