@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap } from "lucide-react";
+import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 function formatCpf(value: string): string {
@@ -262,6 +262,10 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editUser, setEditUser] = useState<any>(null);
+
+  // Search/filter state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterEmpresa, setFilterEmpresa] = useState("all");
   
   // Create form
   const [nome, setNome] = useState("");
@@ -450,6 +454,54 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
           <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
           <>
+            {/* Search and filter bar */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, e-mail ou ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-9"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <select
+                value={filterEmpresa}
+                onChange={(e) => setFilterEmpresa(e.target.value)}
+                className="flex h-9 min-w-[200px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="all">Todas as Empresas</option>
+                {empresas.map((emp) => (
+                  <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtered count indicator */}
+            {(searchTerm || filterEmpresa !== "all") && (
+              <div className="text-sm text-muted-foreground mb-3">
+                Mostrando {[...accessUsers].filter((user) => {
+                  const term = searchTerm.toLowerCase().trim();
+                  const matchesSearch = !term || 
+                    (user.name || "").toLowerCase().includes(term) ||
+                    (user.email || "").toLowerCase().includes(term) ||
+                    (user.cpf || "").includes(term) ||
+                    (user.programName || "").toLowerCase().includes(term);
+                  const matchesEmpresa = filterEmpresa === "all" || 
+                    (user.programId && user.programId.toString() === filterEmpresa);
+                  return matchesSearch && matchesEmpresa;
+                }).length} de {accessUsers.length} alunos
+              </div>
+            )}
+
             {/* Summary cards - por empresa */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
               <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
@@ -480,7 +532,20 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...accessUsers].sort((a, b) => (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0)).map((user) => (
+                {[...accessUsers]
+                .filter((user) => {
+                  const term = searchTerm.toLowerCase().trim();
+                  const matchesSearch = !term || 
+                    (user.name || "").toLowerCase().includes(term) ||
+                    (user.email || "").toLowerCase().includes(term) ||
+                    (user.cpf || "").includes(term) ||
+                    (user.programName || "").toLowerCase().includes(term);
+                  const matchesEmpresa = filterEmpresa === "all" || 
+                    (user.programId && user.programId.toString() === filterEmpresa);
+                  return matchesSearch && matchesEmpresa;
+                })
+                .sort((a, b) => (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0))
+                .map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email || "-"}</TableCell>
@@ -520,6 +585,24 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       Nenhum aluno cadastrado. Clique em "Novo Aluno" para começar.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {accessUsers.length > 0 && [...accessUsers]
+                  .filter((user) => {
+                    const term = searchTerm.toLowerCase().trim();
+                    const matchesSearch = !term || 
+                      (user.name || "").toLowerCase().includes(term) ||
+                      (user.email || "").toLowerCase().includes(term) ||
+                      (user.cpf || "").includes(term) ||
+                      (user.programName || "").toLowerCase().includes(term);
+                    const matchesEmpresa = filterEmpresa === "all" || 
+                      (user.programId && user.programId.toString() === filterEmpresa);
+                    return matchesSearch && matchesEmpresa;
+                  }).length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      Nenhum aluno encontrado para a busca "{searchTerm}"{filterEmpresa !== "all" ? " na empresa selecionada" : ""}.
                     </TableCell>
                   </TableRow>
                 )}

@@ -1302,3 +1302,10 @@
 - [x] Renomear aba "Indicadores V2" para "Indicadores" em DashboardAluno
 - [x] Renomear aba "Indicadores V2" para "Indicadores" em DashboardMeuPerfil
 - [x] Remover referências ao V1 antigo na interface
+
+## BUGS REPORTADOS (03/03/2026) - Funcionalidades não funcionando
+- [ ] Investigar e corrigir: Envio de Case de Sucesso não funciona
+- [ ] Investigar e corrigir: Seção Ciclo em Andamento não aparece
+- [ ] Investigar e corrigir: Indicadores/Filtros não funcionam
+- [ ] Testar todas as funcionalidades no ambiente publicado
+- [x] Adicionar campo de busca/filtro na página de Cadastros (aba Alunos) para pesquisar por nome, e-mail ou empresa
