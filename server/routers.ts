@@ -6,6 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
+import * as XLSX from 'xlsx';
 import { calcularIndicadoresAlunoFiltrado, calcularPerformanceFiltrada, CompetenciaObrigatoria, CicloExecucaoData } from './indicatorsCalculator';
 import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno as calcularIndicadoresAlunoV2, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicatorsV2, CicloDataV2, CaseSucessoData } from './indicatorsCalculatorV2';
 import { notifyOwner } from "./_core/notification";
@@ -284,9 +285,199 @@ export const appRouter = router({
           status: "processed"
         });
         
+        // Se for performance, processar e inserir dados na tabela student_performance
+        let performanceInserted = 0;
+        if (input.fileType === 'performance') {
+          try {
+            // Criar registro de upload de performance
+            const perfUploadId = await db.createPerformanceUpload({
+              uploadedBy: ctx.user.id,
+              fileName: input.fileName,
+              status: 'processing',
+            });
+            
+            // Ler XLSX e extrair dados
+            const workbook = XLSX.read(buffer, { type: 'buffer' });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            
+            if (data.length >= 2) {
+              const headers = (data[0] as unknown[]).map((h: unknown) => String(h || '').trim());
+              const colMap: Record<string, number> = {};
+              headers.forEach((h, idx) => { colMap[h] = idx; });
+              
+              // Get existing alunos for matching
+              const alunosList = await db.getAlunos();
+              const alunoByName = new Map<string, number>();
+              const alunoByEmail = new Map<string, number>();
+              const alunoByExternalId = new Map<string, number>();
+              for (const a of alunosList) {
+                if (a.name) alunoByName.set(a.name.toLowerCase().trim(), a.id);
+                if (a.email) alunoByEmail.set(a.email.toLowerCase().trim(), a.id);
+                if (a.externalId) alunoByExternalId.set(a.externalId.trim(), a.id);
+              }
+              
+              // Get existing turmas for matching
+              const turmasList = await db.getTurmas();
+              const turmaByName = new Map<string, number>();
+              for (const t of turmasList) {
+                if (t.name) turmaByName.set(t.name.toLowerCase().trim(), t.id);
+              }
+              
+              // Get existing competencias for matching
+              const compList = await db.getAllCompetencias();
+              const compByName = new Map<string, number>();
+              for (const c of compList) {
+                if (c.nome) compByName.set(c.nome.toLowerCase().trim(), c.id);
+              }
+              
+              // Delete existing data (replaceAll)
+              await db.deleteAllStudentPerformance();
+              
+              const getXlsxVal = (row: unknown[], colName: string): string | undefined => {
+                const idx = colMap[colName];
+                if (idx === undefined || idx >= row.length) return undefined;
+                const val = row[idx];
+                if (val === null || val === undefined) return undefined;
+                const str = String(val).trim();
+                if (!str || str === '-') return undefined;
+                return str;
+              };
+              
+              const parseIntSafe = (val: string | undefined): number => {
+                if (!val || val === '-') return 0;
+                const n = parseInt(val, 10);
+                return isNaN(n) ? 0 : n;
+              };
+              
+              const parseDecimalSafe = (val: string | undefined): string | null => {
+                if (!val || val === '-' || val.includes('Sem avalia')) return null;
+                const n = parseFloat(val.replace(',', '.'));
+                return isNaN(n) ? null : n.toFixed(2);
+              };
+              
+              const records: any[] = [];
+              let skipped = 0;
+              let totalRows = 0;
+              const unmatchedStudents = new Set<string>();
+              const unmatchedTurmas = new Set<string>();
+              
+              for (let i = 1; i < data.length; i++) {
+                const row = data[i] as unknown[];
+                if (!row || row.length === 0) continue;
+                totalRows++;
+                
+                const externalUserId = getXlsxVal(row, 'Id Usuário');
+                const userName = getXlsxVal(row, 'Nome Usuário');
+                
+                if (!externalUserId || !userName) {
+                  skipped++;
+                  continue;
+                }
+                
+                const userEmail = getXlsxVal(row, 'E-mail');
+                const turmaName = getXlsxVal(row, 'Turma (agrupador 1)');
+                const compName = getXlsxVal(row, 'Competência (agrupador 2)');
+                
+                // Try to match aluno by externalId first, then email, then name
+                let alunoId: number | null = null;
+                alunoId = alunoByExternalId.get(String(externalUserId).trim()) || null;
+                if (!alunoId && userEmail) {
+                  alunoId = alunoByEmail.get(userEmail.toLowerCase().trim()) || null;
+                }
+                if (!alunoId && userName) {
+                  alunoId = alunoByName.get(userName.toLowerCase().trim()) || null;
+                }
+                if (!alunoId) unmatchedStudents.add(userName);
+                
+                // Try to match turma
+                let turmaId: number | null = null;
+                if (turmaName) {
+                  turmaId = turmaByName.get(turmaName.toLowerCase().trim()) || null;
+                  if (!turmaId) unmatchedTurmas.add(turmaName);
+                }
+                
+                // Try to match competencia
+                let competenciaId: number | null = null;
+                if (compName) {
+                  competenciaId = compByName.get(compName.toLowerCase().trim()) || null;
+                  if (!competenciaId) {
+                    const baseName = compName.replace(/\s*-\s*(Master|Essential|Essencial|Basic|B.sica|Vis.o de Futuro|Jornada.*)$/i, '').trim();
+                    competenciaId = compByName.get(baseName.toLowerCase()) || null;
+                  }
+                }
+                
+                records.push({
+                  alunoId,
+                  externalUserId: String(externalUserId),
+                  userName,
+                  userEmail: userEmail || null,
+                  lastAccess: getXlsxVal(row, 'Último acesso') || null,
+                  turmaId,
+                  externalTurmaId: getXlsxVal(row, 'Id Turma (agrupador 1)') || null,
+                  turmaName: turmaName || null,
+                  competenciaId,
+                  externalCompetenciaId: getXlsxVal(row, 'Id Competência (agrupador 2)') || null,
+                  competenciaName: compName || null,
+                  dataInicio: getXlsxVal(row, 'Data de início') || null,
+                  dataConclusao: getXlsxVal(row, 'Data de conclusão') || null,
+                  totalAulas: parseIntSafe(getXlsxVal(row, 'Total de aulas')),
+                  aulasDisponiveis: parseIntSafe(getXlsxVal(row, 'Aulas disponíveis')),
+                  aulasConcluidas: parseIntSafe(getXlsxVal(row, 'Aulas concluídas')),
+                  aulasEmAndamento: parseIntSafe(getXlsxVal(row, 'Aulas em andamento')),
+                  aulasNaoIniciadas: parseIntSafe(getXlsxVal(row, 'Aulas não iniciadas')),
+                  aulasAgendadas: parseIntSafe(getXlsxVal(row, 'Aulas agendadas')),
+                  progressoTotal: parseIntSafe(getXlsxVal(row, 'Progresso Total')),
+                  cargaHorariaTotal: getXlsxVal(row, 'Carga horária total') || null,
+                  cargaHorariaConcluida: getXlsxVal(row, 'Carga horária concluída') || null,
+                  progressoAulasDisponiveis: parseIntSafe(getXlsxVal(row, 'Progresso em aulas disponíveis')),
+                  avaliacoesDiagnostico: parseIntSafe(getXlsxVal(row, 'Avaliações de diagnóstico')),
+                  mediaAvaliacoesDiagnostico: parseDecimalSafe(getXlsxVal(row, 'Média das avaliações de diagnóstico')),
+                  avaliacoesFinais: parseIntSafe(getXlsxVal(row, 'Avaliações finais')),
+                  mediaAvaliacoesFinais: parseDecimalSafe(getXlsxVal(row, 'Média das avaliações finais')),
+                  avaliacoesDisponiveis: parseIntSafe(getXlsxVal(row, 'Avaliações disponíveis')),
+                  avaliacoesRespondidas: parseIntSafe(getXlsxVal(row, 'Avaliações respondidas')),
+                  avaliacoesPendentes: parseIntSafe(getXlsxVal(row, 'Avaliações pendentes')),
+                  avaliacoesAgendadas: parseIntSafe(getXlsxVal(row, 'Avaliações agendadas')),
+                  mediaAvaliacoesDisponiveis: parseDecimalSafe(getXlsxVal(row, 'Média em avaliações disponíveis')),
+                  mediaAvaliacoesRespondidas: parseDecimalSafe(getXlsxVal(row, 'Média em avaliações respondidas')),
+                  concluidoDentroPrazo: getXlsxVal(row, 'Concluído dentro do prazo (%)') || null,
+                  concluidoEmAtraso: getXlsxVal(row, 'Concluído em atraso (%)') || null,
+                  naoConcluidoDentroPrazo: getXlsxVal(row, 'Não Concluído e dentro do prazo (%)') || null,
+                  naoConcluidoEmAtraso: getXlsxVal(row, 'Não Concluído e em atraso (%)') || null,
+                  uploadId: perfUploadId,
+                });
+              }
+              
+              // Insert all records
+              performanceInserted = await db.insertStudentPerformanceBatch(records);
+              
+              // Update upload record
+              await db.updatePerformanceUpload(perfUploadId, {
+                totalRecords: totalRows,
+                processedRecords: performanceInserted,
+                skippedRecords: skipped,
+                newAlunos: unmatchedStudents.size,
+                updatedRecords: performanceInserted,
+                status: 'completed',
+                summary: {
+                  unmatchedStudents: Array.from(unmatchedStudents),
+                  unmatchedTurmas: Array.from(unmatchedTurmas),
+                  headers,
+                  totalColumns: headers.length,
+                } as any,
+              });
+            }
+          } catch (perfError) {
+            console.error('Erro ao processar performance XLSX:', perfError);
+          }
+        }
+        
         return { 
           fileId, 
           success: true,
+          performanceInserted,
           sheets: result.sheets.map(s => ({
             name: s.sheetName,
             rows: s.rowCount,

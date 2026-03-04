@@ -1383,3 +1383,13 @@
 - [x] Remover "Cases" do radar de performance (5 eixos em vez de 6)
 - [x] Atualizar explicações/tooltips nos dashboards
 - [x] Atualizar testes vitest
+
+## Divergência Portal vs Mural - Joseane (03/03/2026)
+- [ ] Investigar: Portal mostra 100% para Decisões Ágeis (6/6 aulas), Mural mostra 97%
+- [ ] Investigar: Divergência em Arquitetura de Mudanças (Portal vs Mural)
+- [ ] Determinar qual valor está correto e corrigir a fonte incorreta
+
+## BUG CRÍTICO: Upload de Planilha de Performance - 0 registros (04/03/2026)
+- [x] Upload mostra "0 registro(s)" → Causa raiz: uploadFile processava XLSX apenas para contagem (processExcelBuffer) mas não inseria dados na tabela student_performance
+- [x] Corrigido: adicionado processamento completo de XLSX no uploadFile quando fileType='performance' - lê dados com XLSX.js, faz matching de alunos/turmas/competências, insere na tabela
+- [x] Testado: XLSX parseado corretamente (1513 linhas válidas, 34 colunas, headers com acentos OK). Todos os 243 testes passaram.
