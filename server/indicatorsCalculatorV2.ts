@@ -454,14 +454,21 @@ export function calcularIndicadoresAluno(
     }
   }
   
-  // Consolidar: média apenas dos ciclos que têm competências obrigatórias
+  // Consolidar: média apenas dos ciclos FINALIZADOS que têm competências obrigatórias
   // Ciclos com apenas opcionais (competenciaIds vazio) não entram no cálculo
-  const ciclosParaConsolidar = [...ciclosFinalizados, ...ciclosEmAndamento]
+  // Ciclos em andamento não entram no consolidado (label = "Todos os ciclos finalizados")
+  const ciclosFinalizadosComObrig = ciclosFinalizados
     .filter(c => {
-      // Encontrar o ciclo original para verificar se tem obrigatórias
       const cicloOriginal = ciclos.find(co => co.nomeCiclo === c.nomeCiclo);
       return cicloOriginal ? cicloOriginal.competenciaIds.length > 0 : true;
     });
+  // Se não há finalizados com obrigatórias, usar todos (finalizados + em andamento) como fallback
+  const ciclosParaConsolidar = ciclosFinalizadosComObrig.length > 0
+    ? ciclosFinalizadosComObrig
+    : [...ciclosFinalizados, ...ciclosEmAndamento].filter(c => {
+        const cicloOriginal = ciclos.find(co => co.nomeCiclo === c.nomeCiclo);
+        return cicloOriginal ? cicloOriginal.competenciaIds.length > 0 : true;
+      });
   const consolidado = consolidarCiclos(ciclosParaConsolidar, trilha || 'Geral');
   
   // Alertas de case pendente

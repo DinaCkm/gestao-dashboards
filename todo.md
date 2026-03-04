@@ -1369,3 +1369,10 @@
 - [x] Auditar Ind. 3 Competências = 67% → Mesmo bug: (0+100+100)/3=67%. Correto: (100+100)/2=100%. Todas as 9 competências obrigatórias têm 6/6 aulas concluídas
 - [x] Investigar Eventos vs Webinários → São fontes diferentes: "Eventos" mostra dados importados das planilhas (2228 registros de presença), "Webinários" mostra eventos criados no sistema (32 webinars com funcionalidades interativas como marcar presença e ver gravações). Ambas são válidas e complementares.
 - [x] Demonstrar cálculo Ind. 5 Engajamento → Antes: 68.75% (média de 16 sessões sem filtro de ciclo). Após correção: Basic=80%, Essential=92%, Consolidado=(80+92)/2=86%. Ciclo com apenas opcionais (53.33%) excluído do consolidado.
+
+## Auditoria Detalhada Ind. 2 Avaliações - Fábio (03/03/2026)
+- [x] Verificar de onde cada nota vem → Tabela student_performance, coluna mediaAvaliacoesRespondidas (prioridade) ou mediaAvaliacoesDisponiveis. Escala 0-100 no banco, convertida para 0-10 e depois para 0-100 no cálculo
+- [x] Verificar se usa apenas obrigatórias → Sim, itera sobre ciclo.competenciaIds (apenas obrigatórias)
+- [x] Verificar se consolidado exclui ciclos em andamento → BUG ENCONTRADO: consolidado incluía finalizados+em andamento, mas label dizia "finalizados". CORRIGIDO: agora usa apenas ciclos finalizados com obrigatórias (fallback para todos se não há finalizados)
+- [x] Comparar nota por nota → Basic: Atenção=100, Empatia=100, Escuta=100, Memória=90, Raciocínio=100 → 490/5=98%. Essential: Comunicação=90, Inteligência=98, Leitura=86, Planejamento=96 → 370/4=92.5%
+- [x] Breakdown: Consolidado finalizados = (98+92.5)/2 = 95.25%
