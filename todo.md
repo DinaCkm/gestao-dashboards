@@ -1351,3 +1351,8 @@
 - [x] Redesenhar card de trilhas: agrupar por turma, listar competências com datas de micro jornada (início/fim)
 - [x] Botão de expansão organizado para ver detalhes das competências por trilha
 - [x] Aplicar mesmo redesenho no Assessment/PDI e Portal do Aluno
+
+- [x] Bug: Cabeçalhos da tabela de competências no card de trilhas mostram "Não se trata de uma questão de..." e "Filme" em vez de "Início" e "Fim" → Causa: lang="en" no HTML causava tradução automática do navegador. Corrigido para lang="pt-BR" + meta notranslate
+- [x] Bug: Portal do Aluno mostra visão diferente para Fábio e Joseane → Não é bug. Layout é idêntico. Diferença visual é consequência da estrutura de dados: Joseane tem 1 competência por ciclo (layout compacto), Fábio tem múltiplas competências por ciclo (layout expandido com indicadores no topo + competências abaixo)
+- [x] Bug: Cabeçalhos da tabela de competências mostram "Não se trata de uma questão de..." e "Filme" em vez de "Início" e "Fim" → Duplicata, mesma causa acima (tradução automática)
+- [x] REGRA: Nunca abortar trabalho em andamento quando o usuário faz uma pergunta. Anotar a pergunta e retomar após concluir o que estava fazendo.
