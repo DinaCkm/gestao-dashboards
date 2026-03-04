@@ -1361,3 +1361,11 @@
 - [x] Reverter remoção dos cards por ciclo - cards removidos dos ciclos, mantidos apenas no topo da trilha conforme solicitado pelo usuário
 - [x] Bug: Na área do aluno Fábio, os 7 cards de indicadores não aparecem quando a trilha está em andamento → Corrigido: ciclos com apenas competências opcionais agora são criados (allCompetenciaIds)
 - [x] Competências opcionais devem aparecer DENTRO da trilha à qual pertencem (não em blocos separados tipo "Competências Opcionais"), apenas não entram no cálculo dos indicadores → Corrigido: match por allCompetenciaIds no frontend
+
+## Auditoria de Cálculos - Fábio Silva De Oliveira (03/03/2026)
+- [x] Auditar Ind. 2 Avaliações = 64% → Causa raiz: ciclo com apenas competências opcionais (competenciaIds vazio) gerava ind=0 e entrava no consolidado. Correto: (98+92.5)/2=95.25%. Corrigido: ciclos com competenciaIds vazio excluídos do consolidado
+- [x] Auditar todos os 6 indicadores consolidados → Todos afetados pelo mesmo bug (ciclo vazio com 0%). Correção única resolve todos
+- [x] Verificar se o consolidado "Todos os ciclos finalizados" exclui corretamente trilhas em andamento → Sim, agora exclui ciclos com competenciaIds vazio
+- [x] Auditar Ind. 3 Competências = 67% → Mesmo bug: (0+100+100)/3=67%. Correto: (100+100)/2=100%. Todas as 9 competências obrigatórias têm 6/6 aulas concluídas
+- [x] Investigar Eventos vs Webinários → São fontes diferentes: "Eventos" mostra dados importados das planilhas (2228 registros de presença), "Webinários" mostra eventos criados no sistema (32 webinars com funcionalidades interativas como marcar presença e ver gravações). Ambas são válidas e complementares.
+- [x] Demonstrar cálculo Ind. 5 Engajamento → Antes: 68.75% (média de 16 sessões sem filtro de ciclo). Após correção: Basic=80%, Essential=92%, Consolidado=(80+92)/2=86%. Ciclo com apenas opcionais (53.33%) excluído do consolidado.

@@ -442,6 +442,11 @@ export function calcularIndicadoresAluno(
     if (indicadoresCiclo.status === 'futuro') continue; // Ignorar ciclos futuros
     
     todosCiclos.push(indicadoresCiclo);
+    
+    // Ciclos com competenciaIds vazio (apenas opcionais) são mantidos para exibição
+    // mas NÃO entram no cálculo consolidado dos indicadores
+    const temObrigatorias = ciclo.competenciaIds.length > 0;
+    
     if (indicadoresCiclo.status === 'finalizado') {
       ciclosFinalizados.push(indicadoresCiclo);
     } else {
@@ -449,8 +454,14 @@ export function calcularIndicadoresAluno(
     }
   }
   
-  // Consolidar: média de todos os ciclos (finalizados + em andamento)
-  const ciclosParaConsolidar = [...ciclosFinalizados, ...ciclosEmAndamento];
+  // Consolidar: média apenas dos ciclos que têm competências obrigatórias
+  // Ciclos com apenas opcionais (competenciaIds vazio) não entram no cálculo
+  const ciclosParaConsolidar = [...ciclosFinalizados, ...ciclosEmAndamento]
+    .filter(c => {
+      // Encontrar o ciclo original para verificar se tem obrigatórias
+      const cicloOriginal = ciclos.find(co => co.nomeCiclo === c.nomeCiclo);
+      return cicloOriginal ? cicloOriginal.competenciaIds.length > 0 : true;
+    });
   const consolidado = consolidarCiclos(ciclosParaConsolidar, trilha || 'Geral');
   
   // Alertas de case pendente

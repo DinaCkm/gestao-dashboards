@@ -229,7 +229,12 @@ export default function DashboardMeuPerfil() {
     if (indicadorFiltro.startsWith("trilha:")) {
       const trilhaNome = indicadorFiltro.replace("trilha:", "");
       const ciclosDaTrilha = [...(v2.ciclosFinalizados || []), ...(v2.ciclosEmAndamento || [])]
-        .filter((c: any) => c.trilhaNome === trilhaNome);
+        .filter((c: any) => c.trilhaNome === trilhaNome)
+        .filter((c: any) => {
+          // Excluir ciclos com apenas competências opcionais (competenciaIds vazio) do cálculo
+          // total = número de competências obrigatórias no ciclo (ciclo.competenciaIds.length no backend)
+          return (c.detalhes?.competencias?.total ?? 0) > 0;
+        });
       if (ciclosDaTrilha.length === 0) return v2.consolidado;
       // Média dos ciclos da trilha
       const avg = (key: string) => {
