@@ -1376,3 +1376,10 @@
 - [x] Verificar se consolidado exclui ciclos em andamento → BUG ENCONTRADO: consolidado incluía finalizados+em andamento, mas label dizia "finalizados". CORRIGIDO: agora usa apenas ciclos finalizados com obrigatórias (fallback para todos se não há finalizados)
 - [x] Comparar nota por nota → Basic: Atenção=100, Empatia=100, Escuta=100, Memória=90, Raciocínio=100 → 490/5=98%. Essential: Comunicação=90, Inteligência=98, Leitura=86, Planejamento=96 → 370/4=92.5%
 - [x] Breakdown: Consolidado finalizados = (98+92.5)/2 = 95.25%
+
+## Reestruturação Case de Sucesso - De Indicador para Bônus (03/03/2026)
+- [x] Remover Ind. 6 (Case de Sucesso) da média dos indicadores — Engajamento Final passa a ser média de 5 indicadores
+- [x] Case como bônus: quem entregar o case recebe +10% na nota da mentora (Ind. 5 Engajamento), limitado a 100%
+- [x] Remover "Cases" do radar de performance (5 eixos em vez de 6)
+- [x] Atualizar explicações/tooltips nos dashboards
+- [x] Atualizar testes vitest

@@ -66,19 +66,19 @@ export const INDICADORES_INFO = {
   ind5: {
     nome: "Engajamento (Nota Mentora)",
     icone: "Star",
-    explicacao: "Média das notas de engajamento dadas pela mentora após cada sessão. Nota original de 0 a 10, convertida para base 100.",
-    formula: "(Média das notas da mentora / 10) × 100",
+    explicacao: "Média das notas de engajamento dadas pela mentora após cada sessão. Nota original de 0 a 10, convertida para base 100. Bônus: quem entrega o Case de Sucesso recebe +10% neste indicador (limitado a 100%).",
+    formula: "(Média das notas da mentora / 10) × 100 [+10% se Case entregue]",
   },
   ind6: {
-    nome: "Aplicabilidade Prática (Case)",
+    nome: "Case de Sucesso (Bônus)",
     icone: "Briefcase",
-    explicacao: "Entrega do Case de Sucesso ao final do macrociclo/trilha. Entregue = 100, Não entregue = 0. Só entra no cálculo quando o macrociclo está finalizado.",
-    formula: "Entregue = 100% | Não entregue = 0%",
+    explicacao: "Entrega do Case de Sucesso ao final do macrociclo/trilha. Não entra na média dos indicadores. Quem entrega recebe +10% no Ind. 5 (Engajamento), limitado a 100%.",
+    formula: "Bônus de +10% no Ind. 5 se entregue",
   },
   ind7: {
     nome: "Engajamento Final",
     icone: "TrendingUp",
-    explicacao: "Média dos 6 indicadores acima. Representa o desempenho geral do aluno no período selecionado.",
-    formula: "(Ind.1 + Ind.2 + Ind.3 + Ind.4 + Ind.5 + Ind.6) / 6",
+    explicacao: "Média dos 5 indicadores (1 a 5). Representa o desempenho geral do aluno no período selecionado.",
+    formula: "(Ind.1 + Ind.2 + Ind.3 + Ind.4 + Ind.5) / 5",
   },
 } as const;

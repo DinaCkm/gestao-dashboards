@@ -8,8 +8,8 @@
  * 3. Performance nas Competências: % competências/cursos finalizados por ciclo
  * 4. Tarefas Práticas: Entregue=100, Não entregue=0, média das entregas
  * 5. Engajamento (Nota da Mentora): Média notas 0-100 por sessão
- * 6. Aplicabilidade Prática (Case de Sucesso): Entregue=100, Não entregue=0, só macrociclos finalizados
- * 7. Engajamento Final: Média dos 6 indicadores acima, POR CICLO
+ * 6. Aplicabilidade Prática (Case de Sucesso): Informativo apenas (não entra na média). Quem entrega recebe +10% no Ind. 5 (limitado a 100)
+ * 7. Engajamento Final: Média dos 5 indicadores (1 a 5), POR CICLO
  */
 
 import { MentoringRecord, EventRecord, PerformanceRecord } from './excelProcessor';
@@ -327,6 +327,7 @@ export function calcularIndicadoresCiclo(
   // IND 5: Engajamento (Nota da Mentora)
   // Média das notas 0-100 por sessão
   // Nota original é 0-10, converter para 0-100
+  // BÔNUS: Se o aluno entregou o Case de Sucesso da trilha, +10% (limitado a 100)
   // ============================================================
   const notasEngajamento = mentoriasAluno
     .filter(m => m.engajamento !== undefined && m.engajamento !== null)
@@ -334,42 +335,40 @@ export function calcularIndicadoresCiclo(
   const totalSessoesEngajamento = notasEngajamento.length;
   const somaEngajamento = notasEngajamento.reduce((a, b) => a + b, 0);
   // Converter de 0-10 para 0-100
-  const ind5_engajamento = totalSessoesEngajamento > 0 
+  let ind5_engajamento_base = totalSessoesEngajamento > 0 
     ? (somaEngajamento / totalSessoesEngajamento) * 10 
     : 0;
   
   // ============================================================
   // IND 6: Aplicabilidade Prática (Case de Sucesso)
-  // Entregue = 100, Não entregue = 0
-  // Só entra no cálculo quando o MACROCICLO está finalizado
-  // Se o macrociclo está em andamento, não penaliza (não entra no cálculo)
+  // Campo INFORMATIVO apenas — NÃO entra na média dos indicadores
+  // Quem entrega o case recebe +10% no Ind. 5 (Engajamento), limitado a 100
   // ============================================================
   const isMacrocicloFinalizado = status === 'finalizado';
   const caseAluno = casesData.find(c => 
     c.trilhaNome?.toLowerCase() === ciclo.trilhaNome?.toLowerCase()
   );
   const caseEntregue = caseAluno?.entregue || false;
-  const caseObrigatorio = isMacrocicloFinalizado; // Só obrigatório se macrociclo finalizado
+  const caseObrigatorio = isMacrocicloFinalizado; // Informativo: macrociclo finalizado
   
   let ind6_aplicabilidade = 0;
   if (caseObrigatorio) {
     ind6_aplicabilidade = caseEntregue ? 100 : 0;
   }
-  // Se não é obrigatório (ciclo em andamento), não entra no cálculo do ind7
+  
+  // Aplicar bônus de +10% no Ind. 5 se o case foi entregue (limitado a 100)
+  let ind5_engajamento = ind5_engajamento_base;
+  if (caseEntregue && ind5_engajamento_base > 0) {
+    ind5_engajamento = Math.min(100, ind5_engajamento_base * 1.10);
+  }
   
   // ============================================================
   // IND 7: Engajamento Final
-  // Média dos indicadores acima, POR CICLO
-  // Se o case não é obrigatório (ciclo em andamento), média de 5 indicadores
-  // Se o case é obrigatório (ciclo finalizado), média de 6 indicadores
+  // Média dos 5 indicadores (1 a 5), POR CICLO
+  // Case NÃO entra na média — é apenas bônus no Ind. 5
   // ============================================================
-  let somaIndicadores = ind1_webinars + ind2_avaliacoes + ind3_competencias + ind4_tarefas + ind5_engajamento;
-  let numIndicadores = 5;
-  
-  if (caseObrigatorio) {
-    somaIndicadores += ind6_aplicabilidade;
-    numIndicadores = 6;
-  }
+  const somaIndicadores = ind1_webinars + ind2_avaliacoes + ind3_competencias + ind4_tarefas + ind5_engajamento;
+  const numIndicadores = 5;
   
   const ind7_engajamentoFinal = numIndicadores > 0 
     ? somaIndicadores / numIndicadores 

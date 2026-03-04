@@ -301,7 +301,6 @@ export default function DashboardMeuPerfil() {
         { subject: "Competências", value: v2Filtrado.ind3_competencias ?? 0, fullMark: 100 },
         { subject: "Tarefas", value: v2Filtrado.ind4_tarefas ?? 0, fullMark: 100 },
         { subject: "Engajamento", value: v2Filtrado.ind5_engajamento ?? 0, fullMark: 100 },
-        { subject: "Cases", value: v2Filtrado.ind6_aplicabilidade ?? 0, fullMark: 100 },
       ];
     }
     const ind = data.indicadores;
@@ -547,7 +546,7 @@ export default function DashboardMeuPerfil() {
               {v2Filtrado && (
                 <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
                   <p className="font-semibold mb-1 text-white/90">Ind. 7 — Engajamento Final:</p>
-                  <p>Média dos 6 indicadores: ({(v2Filtrado.ind1_webinars ?? 0).toFixed(0)} + {(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)} + {(v2Filtrado.ind3_competencias ?? 0).toFixed(0)} + {(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)} + {(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)} + {(v2Filtrado.ind6_aplicabilidade ?? 0).toFixed(0)}) / 6 = <span className="text-[#F5991F] font-bold">{(v2Filtrado.ind7_engajamentoFinal ?? 0).toFixed(0)}%</span></p>
+                  <p>Média dos 5 indicadores: ({(v2Filtrado.ind1_webinars ?? 0).toFixed(0)} + {(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)} + {(v2Filtrado.ind3_competencias ?? 0).toFixed(0)} + {(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)} + {(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}) / 5 = <span className="text-[#F5991F] font-bold">{(v2Filtrado.ind7_engajamentoFinal ?? 0).toFixed(0)}%</span>{v2Filtrado.ind6_aplicabilidade > 0 ? <span className="text-green-400 ml-1">(Case entregue: +10% no Engajamento)</span> : null}</p>
                 </div>
               )}
             </CardContent>
@@ -694,8 +693,8 @@ export default function DashboardMeuPerfil() {
               regras={[INDICADORES_INFO.ind5.explicacao, INDICADORES_INFO.ind5.formula]}
             />
             <IndicadorCardAluno
-              numero={6} icon={Briefcase} label="Cases"
-              valor={`${(v2Filtrado.ind6_aplicabilidade ?? 0).toFixed(0)}%`} total="100%"
+              numero={6} icon={Briefcase} label="Case (Bônus)"
+              valor={v2Filtrado.ind6_aplicabilidade > 0 ? "Entregue ✅" : "Pendente"} total="+10% no Ind.5"
               percentual={v2Filtrado.ind6_aplicabilidade ?? 0}
               color="bg-rose-100 text-rose-600" borderColor="border-rose-200"
               regras={[INDICADORES_INFO.ind6.explicacao, INDICADORES_INFO.ind6.formula]}

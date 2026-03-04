@@ -201,7 +201,7 @@ function CicloIndicadores({
               />
               {tipo === 'finalizado' && (
                 <IndicadorCard
-                  label="6. Aplicabilidade Prática (Case)"
+                  label="6. Case de Sucesso (Bônus)"
                   valor={ind.ind6_aplicabilidade}
                   descricao={INDICADORES_INFO.ind6.formula}
                   icon={Briefcase}
@@ -671,8 +671,8 @@ export default function DashboardAluno() {
                               : `Filtrado por: ${filtroOpcoes.find(o => o.value === indicadorFiltro)?.label || indicadorFiltro}`}
                           </p>
                           
-                          {/* Mini resumo dos 6 indicadores */}
-                          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-4">
+                          {/* Mini resumo dos 5 indicadores + bônus case */}
+                          <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-4">
                             <div className="text-center p-2 bg-blue-50 rounded">
                               <p className="text-lg font-bold text-blue-700">{(v2Filtrado.ind1_webinars ?? 0).toFixed(0)}%</p>
                               <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">Webinars <InfoTooltip text={INDICADORES_INFO.ind1.explicacao} /></p>
@@ -693,11 +693,10 @@ export default function DashboardAluno() {
                               <p className="text-lg font-bold text-amber-700">{(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}%</p>
                               <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">Engajamento <InfoTooltip text={INDICADORES_INFO.ind5.explicacao} /></p>
                             </div>
-                            <div className="text-center p-2 bg-rose-50 rounded">
-                              <p className="text-lg font-bold text-rose-700">{(v2Filtrado.ind6_aplicabilidade ?? 0).toFixed(0)}%</p>
-                              <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">Cases <InfoTooltip text={INDICADORES_INFO.ind6.explicacao} /></p>
-                            </div>
                           </div>
+                          {v2Filtrado.ind6_aplicabilidade > 0 && (
+                            <p className="text-xs text-green-600 mt-2 font-medium">✅ Case de Sucesso entregue (+10% no Engajamento)</p>
+                          )}
                         </CardContent>
                       </Card>
                     )}

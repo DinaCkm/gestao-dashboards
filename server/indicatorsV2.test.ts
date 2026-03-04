@@ -282,7 +282,7 @@ describe('calcularIndicadoresAluno', () => {
   });
 
   describe('Ind 7: Engajamento Final', () => {
-    it('deve ser a média dos 6 indicadores', () => {
+    it('deve ser a média dos 5 indicadores (Case é bônus no Ind. 5)', () => {
       const mentorias = [
         mkMentoria({ presenca: 'presente', atividadeEntregue: 'entregue', engajamento: 10 }),
       ];
@@ -298,14 +298,14 @@ describe('calcularIndicadoresAluno', () => {
       const result = calcularIndicadoresAluno('aluno1', mentorias, [], performance, ciclos, compMap, cases);
       const consolidado = result.consolidado;
       
+      // Ind. 7 agora é média de 5 indicadores (Case não entra na média, é bônus no Ind. 5)
       const mediaEsperada = (
         consolidado.ind1_webinars + 
         consolidado.ind2_avaliacoes + 
         consolidado.ind3_competencias + 
         consolidado.ind4_tarefas + 
-        consolidado.ind5_engajamento + 
-        consolidado.ind6_aplicabilidade
-      ) / 6;
+        consolidado.ind5_engajamento
+      ) / 5;
       expect(consolidado.ind7_engajamentoFinal).toBeCloseTo(mediaEsperada, 1);
     });
   });

@@ -57,12 +57,12 @@ describe("Performance calculation with cycles and aulas data", () => {
       expect(result.visaoGeral.mediaPerformanceAprendizado).toBeGreaterThan(0);
     });
 
-    it("Ind 7 (Geral) is average of 6 V2 indicators", async () => {
+    it("Ind 7 (Geral) is average of 5 V2 indicators (Case is bonus on Ind5)", async () => {
       const result = await caller.indicadores.visaoGeral();
       const vg = result.visaoGeral;
-      // V2: mediaPerformanceGeral = mediaInd7 = avg(ind1..ind6)
+      // V2: mediaPerformanceGeral = mediaInd7 = avg(ind1..ind5), Case is bonus on Ind5
       // V1 compat: mentorias=ind1, atividades=ind4, engajamento=ind5, competencias=ind3, aprendizado=ind2, eventos=ind1
-      // mediaInd7 is the true average of all 7 V2 indicators
+      // mediaInd7 is the true average of 5 V2 indicators
       expect(vg.mediaPerformanceGeral).toBeGreaterThanOrEqual(0);
       expect(vg.mediaPerformanceGeral).toBeLessThanOrEqual(100);
       // Verify it equals mediaInd7 directly
