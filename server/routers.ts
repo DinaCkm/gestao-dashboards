@@ -469,6 +469,13 @@ export const appRouter = router({
                 } as any,
               });
             }
+            
+            // Atualizar totalRecords do batch com os registros processados
+            if (performanceInserted > 0) {
+              const currentBatch = await db.getUploadBatchById(input.batchId);
+              const newTotal = (currentBatch?.totalRecords || 0) + performanceInserted;
+              await db.updateUploadBatchTotalRecords(input.batchId, newTotal);
+            }
           } catch (perfError) {
             console.error('Erro ao processar performance XLSX:', perfError);
           }

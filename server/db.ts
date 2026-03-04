@@ -199,6 +199,12 @@ export async function updateUploadBatchStatus(id: number, status: "pending" | "p
   await db.update(uploadBatches).set({ status, notes }).where(eq(uploadBatches.id, id));
 }
 
+export async function updateUploadBatchTotalRecords(id: number, totalRecords: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(uploadBatches).set({ totalRecords }).where(eq(uploadBatches.id, id));
+}
+
 export async function getLatestBatch() {
   const db = await getDb();
   if (!db) return null;
