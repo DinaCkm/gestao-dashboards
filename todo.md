@@ -1357,3 +1357,7 @@
 - [x] Bug: Cabeçalhos da tabela de competências mostram "Não se trata de uma questão de..." e "Filme" em vez de "Início" e "Fim" → Duplicata, mesma causa acima (tradução automática)
 - [x] REGRA: Nunca abortar trabalho em andamento quando o usuário faz uma pergunta. Anotar a pergunta e retomar após concluir o que estava fazendo.
 - [x] Cards de indicadores (7 mini-cards) devem aparecer apenas no início da trilha/ciclo, não repetidos por competência cursada
+- [x] Cards de indicadores por ciclo devem refletir APENAS os dados do período daquele ciclo (webinars, mentorias, tarefas dentro das datas do ciclo), não o consolidado geral
+- [x] Reverter remoção dos cards por ciclo - cards removidos dos ciclos, mantidos apenas no topo da trilha conforme solicitado pelo usuário
+- [x] Bug: Na área do aluno Fábio, os 7 cards de indicadores não aparecem quando a trilha está em andamento → Corrigido: ciclos com apenas competências opcionais agora são criados (allCompetenciaIds)
+- [x] Competências opcionais devem aparecer DENTRO da trilha à qual pertencem (não em blocos separados tipo "Competências Opcionais"), apenas não entram no cálculo dos indicadores → Corrigido: match por allCompetenciaIds no frontend

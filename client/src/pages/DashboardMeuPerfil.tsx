@@ -910,8 +910,16 @@ export default function DashboardMeuPerfil() {
                           let encontrouCiclo = false;
                           if (temCiclos) {
                             for (const ciclo of ciclosParaMostrar) {
-                              // Match por competenciaIds se disponível
-                              if (ciclo.detalhes?.competencias?.competenciasDetalhe) {
+                              // Match por allCompetenciaIds (inclui obrigatórias + opcionais)
+                              if (ciclo.allCompetenciaIds && ciclo.allCompetenciaIds.includes(micro.competenciaId)) {
+                                const key = String(ciclo.cicloId || ciclo.nomeCiclo);
+                                if (!microsPorCiclo.has(key)) microsPorCiclo.set(key, []);
+                                microsPorCiclo.get(key)!.push(micro);
+                                encontrouCiclo = true;
+                                break;
+                              }
+                              // Fallback: match por competenciasDetalhe (apenas obrigatórias)
+                              if (!encontrouCiclo && ciclo.detalhes?.competencias?.competenciasDetalhe) {
                                 const compIds = ciclo.detalhes.competencias.competenciasDetalhe.map((cd: any) => cd.competenciaId);
                                 if (compIds.includes(micro.competenciaId)) {
                                   const key = String(ciclo.cicloId || ciclo.nomeCiclo);
@@ -1124,8 +1132,7 @@ export default function DashboardMeuPerfil() {
 
                                   </div>
                                 );
-                              }
-
+                               }
                               // Se tem múltiplas competências, manter cabeçalho do ciclo + cards individuais
                               return (
                                 <div key={ciclo.cicloId || idx} className={`rounded-xl border overflow-hidden ${
@@ -1173,12 +1180,9 @@ export default function DashboardMeuPerfil() {
                               );
                             })}
 
-                            {/* Competências sem ciclo associado */}
+                            {/* Competências sem ciclo associado (fallback) */}
                             {microsOrfaos.length > 0 && (
                               <div className="space-y-2">
-                                {temCiclos && (
-                                  <p className="text-xs text-gray-500 font-medium">Competências Opcionais</p>
-                                )}
                                 {microsOrfaos.map((micro: any) => renderMicro(micro))}
                               </div>
                             )}

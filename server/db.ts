@@ -2253,33 +2253,38 @@ export async function getCiclosForCalculator(alunoId: number) {
   const compNomeMap = new Map(allCompetencias.map(c => [c.id, c.nome]));
   
   let autoId = 200000;
-  const result: { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[] }[] = [];
+  const result: { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[]; allCompetenciaIds?: number[]; competenciaIdsObrigatorias?: number[] }[] = [];
   
   for (const pdi of pdis) {
     const trilhaNome = trilhaMap.get(pdi.trilhaId) || `Trilha ${pdi.trilhaId}`;
     const comps = allComps.filter(c => c.assessmentPdiId === pdi.id);
     
-    const cicloGroups = new Map<string, { compIds: number[]; inicio: string; termino: string }>();
+    // Agrupar TODAS as competências por período (obrigatórias + opcionais)
+    const cicloGroups = new Map<string, { allCompIds: number[]; obrigatoriaIds: number[]; inicio: string; termino: string }>();
     
     for (const comp of comps) {
       if (!comp.microInicio || !comp.microTermino) continue;
-      if (comp.peso !== 'obrigatoria') continue; // Só obrigatórias
       
       const inicio = new Date(comp.microInicio).toISOString().split('T')[0];
       const termino = new Date(comp.microTermino).toISOString().split('T')[0];
       const key = `${inicio}|${termino}`;
       
-      const group = cicloGroups.get(key) || { compIds: [], inicio, termino };
-      group.compIds.push(comp.competenciaId);
+      const group = cicloGroups.get(key) || { allCompIds: [], obrigatoriaIds: [], inicio, termino };
+      group.allCompIds.push(comp.competenciaId);
+      if (comp.peso === 'obrigatoria') {
+        group.obrigatoriaIds.push(comp.competenciaId);
+      }
       cicloGroups.set(key, group);
     }
     
     const sortedGroups = Array.from(cicloGroups.entries()).sort((a, b) => a[1].inicio.localeCompare(b[1].inicio));
     
     for (const [, group] of sortedGroups) {
-      if (group.compIds.length === 0) continue;
-      // Usar nomes das competências em vez de "Ciclo X" (limitar a 2 nomes)
-      const allNames = group.compIds.map(id => compNomeMap.get(id) || `Comp ${id}`);
+      // Criar ciclo se tem QUALQUER competência (obrigatória ou opcional)
+      if (group.allCompIds.length === 0) continue;
+      // Nome do ciclo usa apenas competências obrigatórias (se houver), senão todas
+      const namesForTitle = group.obrigatoriaIds.length > 0 ? group.obrigatoriaIds : group.allCompIds;
+      const allNames = namesForTitle.map(id => compNomeMap.get(id) || `Comp ${id}`);
       const compNames = allNames.length <= 2
         ? allNames.join(', ')
         : `${allNames.slice(0, 2).join(', ')} +${allNames.length - 2}`;
@@ -2288,7 +2293,12 @@ export async function getCiclosForCalculator(alunoId: number) {
         nomeCiclo: `${trilhaNome} - ${compNames}`,
         dataInicio: group.inicio,
         dataFim: group.termino,
-        competenciaIds: group.compIds,
+        // competenciaIds mantém APENAS obrigatórias para cálculo dos indicadores (compatibilidade)
+        competenciaIds: group.obrigatoriaIds,
+        // allCompetenciaIds inclui TODAS (obrigatórias + opcionais) para exibição
+        allCompetenciaIds: group.allCompIds,
+        // Separar obrigatórias explicitamente
+        competenciaIdsObrigatorias: group.obrigatoriaIds,
       });
     }
   }
@@ -2300,7 +2310,7 @@ export async function getCiclosForCalculator(alunoId: number) {
 // Agora usa assessment_competencias como fonte principal de ciclos
 export async function getAllCiclosForCalculator() {
   const db = await getDb();
-  if (!db) return new Map<string, { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[]; onlyObrigatorias: boolean }[]>();
+  if (!db) return new Map<string, { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[]; allCompetenciaIds?: number[]; onlyObrigatorias: boolean }[]>();
   
   // Primeiro tentar ciclos_execucao (se existirem)
   const manualCiclos = await getAllCiclos();
@@ -2334,7 +2344,7 @@ export async function getAllCiclosForCalculator() {
   const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
   const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId]));
   
-  const ciclosPorAluno = new Map<string, { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[]; onlyObrigatorias: boolean }[]>();
+  const ciclosPorAluno = new Map<string, { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[]; allCompetenciaIds?: number[]; onlyObrigatorias: boolean }[]>();
   
   // Se existem ciclos manuais, usar eles
   if (manualCiclos.length > 0) {
@@ -2364,8 +2374,8 @@ export async function getAllCiclosForCalculator() {
     const trilhaNome = trilhaMap.get(pdi.trilhaId) || `Trilha ${pdi.trilhaId}`;
     const comps = allComps.filter(c => c.assessmentPdiId === pdi.id);
     
-    // Agrupar competências por período (microInicio + microTermino)
-    const cicloGroups = new Map<string, { compIds: number[]; inicio: string; termino: string; hasObrigatoria: boolean }>();
+    // Agrupar TODAS as competências por período (obrigatórias + opcionais)
+    const cicloGroups = new Map<string, { allCompIds: number[]; obrigatoriaIds: number[]; inicio: string; termino: string }>();
     
     for (const comp of comps) {
       if (!comp.microInicio || !comp.microTermino) continue;
@@ -2374,14 +2384,11 @@ export async function getAllCiclosForCalculator() {
       const termino = new Date(comp.microTermino).toISOString().split('T')[0];
       const key = `${inicio}|${termino}`;
       
-      const group = cicloGroups.get(key) || { compIds: [], inicio, termino, hasObrigatoria: false };
-      
-      // Só incluir competências OBRIGATÓRIAS no ciclo para cálculo
+      const group = cicloGroups.get(key) || { allCompIds: [], obrigatoriaIds: [], inicio, termino };
+      group.allCompIds.push(comp.competenciaId);
       if (comp.peso === 'obrigatoria') {
-        group.compIds.push(comp.competenciaId);
-        group.hasObrigatoria = true;
+        group.obrigatoriaIds.push(comp.competenciaId);
       }
-      
       cicloGroups.set(key, group);
     }
     
@@ -2392,11 +2399,12 @@ export async function getAllCiclosForCalculator() {
     const sortedGroups = Array.from(cicloGroups.entries()).sort((a, b) => a[1].inicio.localeCompare(b[1].inicio));
     
     for (const [, group] of sortedGroups) {
-      // Só criar ciclo se tem competências obrigatórias
-      if (group.compIds.length === 0) continue;
+      // Criar ciclo se tem QUALQUER competência (obrigatória ou opcional)
+      if (group.allCompIds.length === 0) continue;
       
-      // Usar nomes das competências em vez de "Ciclo X" (limitar a 2 nomes)
-      const allNames = group.compIds.map(id => compNomeMap.get(id) || `Comp ${id}`);
+      // Nome do ciclo usa apenas competências obrigatórias (se houver), senão todas
+      const namesForTitle = group.obrigatoriaIds.length > 0 ? group.obrigatoriaIds : group.allCompIds;
+      const allNames = namesForTitle.map(id => compNomeMap.get(id) || `Comp ${id}`);
       const compNames = allNames.length <= 2
         ? allNames.join(', ')
         : `${allNames.slice(0, 2).join(', ')} +${allNames.length - 2}`;
@@ -2405,8 +2413,11 @@ export async function getAllCiclosForCalculator() {
         nomeCiclo: `${trilhaNome} - ${compNames}`,
         dataInicio: group.inicio,
         dataFim: group.termino,
-        competenciaIds: group.compIds,
-        onlyObrigatorias: true, // Flag: este ciclo já contém apenas obrigatórias
+        // competenciaIds mantém APENAS obrigatórias para cálculo dos indicadores
+        competenciaIds: group.obrigatoriaIds,
+        // allCompetenciaIds inclui TODAS (obrigatórias + opcionais) para exibição
+        allCompetenciaIds: group.allCompIds,
+        onlyObrigatorias: true,
       });
     }
     
@@ -4274,7 +4285,7 @@ export async function getCasesForCalculator(): Promise<Map<number, { alunoId: nu
  * Get ciclos data formatted for the V2 calculator
  * Returns a map: idUsuario -> CicloDataV2[]
  */
-export async function getAllCiclosForCalculatorV2(): Promise<Map<string, { id: number; nomeCiclo: string; trilhaNome: string; dataInicio: string; dataFim: string; competenciaIds: number[] }[]>> {
+export async function getAllCiclosForCalculatorV2(): Promise<Map<string, { id: number; nomeCiclo: string; trilhaNome: string; dataInicio: string; dataFim: string; competenciaIds: number[]; allCompetenciaIds?: number[] }[]>> {
   const db = await getDb();
   if (!db) return new Map();
   
@@ -4282,7 +4293,7 @@ export async function getAllCiclosForCalculatorV2(): Promise<Map<string, { id: n
   const existingCiclos = await getAllCiclosForCalculator();
   
   // Convert to V2 format (add trilhaNome)
-  const result = new Map<string, { id: number; nomeCiclo: string; trilhaNome: string; dataInicio: string; dataFim: string; competenciaIds: number[] }[]>();
+  const result = new Map<string, { id: number; nomeCiclo: string; trilhaNome: string; dataInicio: string; dataFim: string; competenciaIds: number[]; allCompetenciaIds?: number[] }[]>();
   
   // Get trilhas for names
   const allTrilhas = await db.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
@@ -4315,6 +4326,7 @@ export async function getAllCiclosForCalculatorV2(): Promise<Map<string, { id: n
       dataInicio: c.dataInicio,
       dataFim: c.dataFim,
       competenciaIds: c.competenciaIds,
+      allCompetenciaIds: c.allCompetenciaIds,
     }));
     result.set(alunoKey, v2Ciclos);
   }

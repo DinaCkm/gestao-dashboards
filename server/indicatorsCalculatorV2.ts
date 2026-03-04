@@ -50,6 +50,9 @@ export interface IndicadoresCiclo {
     case: { entregue: boolean; obrigatorio: boolean }; // obrigatorio = macrociclo finalizado
   };
   
+  // Todas as competências (obrigatórias + opcionais) para exibição
+  allCompetenciaIds?: number[];
+  
   // Classificação
   classificacao: string;
 }
@@ -137,6 +140,7 @@ export interface CicloDataV2 {
   dataInicio: string;
   dataFim: string;
   competenciaIds: number[];
+  allCompetenciaIds?: number[]; // Todas as competências (obrigatórias + opcionais) para exibição
 }
 
 // ============================================================
@@ -193,9 +197,32 @@ export function calcularIndicadoresCiclo(
 ): IndicadoresCiclo {
   const status = determinarStatusCiclo(ciclo.dataInicio, ciclo.dataFim, hoje);
   
-  // Filtrar registros do aluno
-  const mentoriasAluno = mentorias.filter(m => m.idUsuario === idUsuario);
-  const eventosAluno = eventos.filter(e => e.idUsuario === idUsuario);
+  // Filtrar registros do aluno E pelo período do ciclo
+  const cicloInicio = new Date(ciclo.dataInicio + 'T00:00:00');
+  const cicloFim = new Date(ciclo.dataFim + 'T23:59:59');
+  
+  const mentoriasAluno = mentorias.filter(m => {
+    if (m.idUsuario !== idUsuario) return false;
+    // Se tem data da sessão, filtrar pelo período do ciclo
+    if (m.dataSessao) {
+      const dataSessao = new Date(m.dataSessao);
+      return dataSessao >= cicloInicio && dataSessao <= cicloFim;
+    }
+    // Se não tem data, incluir (fallback para dados antigos sem data)
+    return true;
+  });
+  
+  const eventosAluno = eventos.filter(e => {
+    if (e.idUsuario !== idUsuario) return false;
+    // Se tem data do evento, filtrar pelo período do ciclo
+    if (e.dataEvento) {
+      const dataEvento = new Date(e.dataEvento);
+      return dataEvento >= cicloInicio && dataEvento <= cicloFim;
+    }
+    // Se não tem data, incluir (fallback para dados antigos sem data)
+    return true;
+  });
+  
   const performanceAluno = performance.filter(p => p.idUsuario === idUsuario);
   
   // ============================================================
@@ -373,6 +400,7 @@ export function calcularIndicadoresCiclo(
       case: { entregue: caseEntregue, obrigatorio: caseObrigatorio },
     },
     
+    allCompetenciaIds: ciclo.allCompetenciaIds || ciclo.competenciaIds,
     classificacao: classificarPercentual(ind7_engajamentoFinal),
   };
 }
