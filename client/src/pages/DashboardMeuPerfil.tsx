@@ -1122,36 +1122,6 @@ export default function DashboardMeuPerfil() {
                                       )}
                                     </div>
 
-                                    {/* Indicadores + notas do ciclo */}
-                                    <div className="px-4 py-3 space-y-3">
-                                      {ciclo.ind1_webinars !== undefined && (
-                                        <div className="grid grid-cols-7 gap-1.5">
-                                          {[
-                                            { label: 'Webinars', valor: ciclo.ind1_webinars, icon: Video, color: 'text-blue-600 bg-blue-100' },
-                                            { label: 'Avaliações', valor: ciclo.ind2_avaliacoes, icon: GraduationCap, color: 'text-red-600 bg-red-100' },
-                                            { label: 'Competências', valor: ciclo.ind3_competencias, icon: BookOpen, color: 'text-purple-600 bg-purple-100' },
-                                            { label: 'Tarefas', valor: ciclo.ind4_tarefas, icon: ClipboardCheck, color: 'text-emerald-600 bg-emerald-100' },
-                                            { label: 'Engajamento', valor: ciclo.ind5_engajamento, icon: Star, color: 'text-amber-600 bg-amber-100' },
-                                            { label: 'Cases', valor: ciclo.ind6_aplicabilidade, icon: Briefcase, color: 'text-rose-600 bg-rose-100' },
-                                            { label: 'Eng. Final', valor: ciclo.ind7_engajamentoFinal, icon: Trophy, color: 'text-[#F5991F] bg-orange-100' },
-                                          ].map(({ label, valor, icon: Icon, color }) => (
-                                            <div key={label} className="bg-gray-50 rounded-lg p-1.5 border border-gray-100 text-center">
-                                              <div className={`inline-flex p-0.5 rounded ${color.split(' ')[1]} mb-0.5`}>
-                                                <Icon className={`h-2.5 w-2.5 ${color.split(' ')[0]}`} />
-                                              </div>
-                                              <p className="text-xs font-bold text-gray-800">{(valor ?? 0).toFixed(0)}%</p>
-                                              <p className="text-[8px] text-gray-500 leading-tight">{label}</p>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                      {isEmAndamento && ciclo.ind1_webinars !== undefined && (
-                                        <p className="text-[10px] text-blue-600 italic text-center">Indicadores parciais — baseados nos dados disponíveis até o momento</p>
-                                      )}
-                                      {ciclo.status === 'finalizado' && (
-                                        <p className="text-[10px] text-emerald-600 text-center">Este ciclo entra no cálculo do Desempenho Geral</p>
-                                      )}
-                                    </div>
                                   </div>
                                 );
                               }
@@ -1193,35 +1163,8 @@ export default function DashboardMeuPerfil() {
                                     </div>
                                   </div>
 
-                                  {/* Corpo: indicadores + competências individuais */}
+                                  {/* Corpo: competências individuais (sem cards de indicadores repetidos) */}
                                   <div className="px-4 py-3 space-y-3">
-                                    {ciclo.ind1_webinars !== undefined && (
-                                      <div className="grid grid-cols-7 gap-1.5">
-                                        {[
-                                          { label: 'Webinars', valor: ciclo.ind1_webinars, icon: Video, color: 'text-blue-600 bg-blue-100' },
-                                          { label: 'Avaliações', valor: ciclo.ind2_avaliacoes, icon: GraduationCap, color: 'text-red-600 bg-red-100' },
-                                          { label: 'Competências', valor: ciclo.ind3_competencias, icon: BookOpen, color: 'text-purple-600 bg-purple-100' },
-                                          { label: 'Tarefas', valor: ciclo.ind4_tarefas, icon: ClipboardCheck, color: 'text-emerald-600 bg-emerald-100' },
-                                          { label: 'Engajamento', valor: ciclo.ind5_engajamento, icon: Star, color: 'text-amber-600 bg-amber-100' },
-                                          { label: 'Cases', valor: ciclo.ind6_aplicabilidade, icon: Briefcase, color: 'text-rose-600 bg-rose-100' },
-                                          { label: 'Eng. Final', valor: ciclo.ind7_engajamentoFinal, icon: Trophy, color: 'text-[#F5991F] bg-orange-100' },
-                                        ].map(({ label, valor, icon: Icon, color }) => (
-                                          <div key={label} className="bg-gray-50 rounded-lg p-1.5 border border-gray-100 text-center">
-                                            <div className={`inline-flex p-0.5 rounded ${color.split(' ')[1]} mb-0.5`}>
-                                              <Icon className={`h-2.5 w-2.5 ${color.split(' ')[0]}`} />
-                                            </div>
-                                            <p className="text-xs font-bold text-gray-800">{(valor ?? 0).toFixed(0)}%</p>
-                                            <p className="text-[8px] text-gray-500 leading-tight">{label}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {isEmAndamento && ciclo.ind1_webinars !== undefined && (
-                                      <p className="text-[10px] text-blue-600 italic text-center">Indicadores parciais — baseados nos dados disponíveis até o momento</p>
-                                    )}
-                                    {ciclo.status === 'finalizado' && (
-                                      <p className="text-[10px] text-emerald-600 text-center">Este ciclo entra no cálculo do Desempenho Geral</p>
-                                    )}
                                     <div className="space-y-2">
                                       {microsDesteCiclo.map((micro: any) => renderMicro(micro))}
                                     </div>
