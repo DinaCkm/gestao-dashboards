@@ -1210,7 +1210,7 @@ export const appRouter = router({
     visaoGeral: adminProcedure.query(async () => {
       // Buscar todos os dados de mentorias e eventos
       const mentoringSessions = await db.getAllMentoringSessions();
-      const eventParticipations = await db.getAllEventParticipation();
+      const eventParticipations = await db.getAllEventParticipationWithDate();
       const alunosList = await db.getAlunos();
       const programsList = await db.getPrograms();
       const allPlanoItems = await db.getAllPlanoIndividual();
@@ -1249,7 +1249,8 @@ export const appRouter = router({
           idUsuario: aluno.externalId || String(aluno.id),
           nomeAluno: aluno.name,
           empresa: program?.name || 'Desconhecida',
-          tituloEvento: 'Evento',
+          tituloEvento: participation.eventTitle || 'Evento',
+          dataEvento: participation.eventDate ? new Date(participation.eventDate) : undefined,
           presenca: participation.status as 'presente' | 'ausente'
         });
       }
@@ -1304,7 +1305,7 @@ export const appRouter = router({
       .input(z.object({ empresa: z.string() }))
       .query(async ({ input }) => {
         const mentoringSessions = await db.getAllMentoringSessions();
-        const eventParticipations = await db.getAllEventParticipation();
+        const eventParticipations = await db.getAllEventParticipationWithDate();
         const alunosList = await db.getAlunos();
         const programsList = await db.getPrograms();
         const allPlanoItems = await db.getAllPlanoIndividual();
@@ -1341,7 +1342,8 @@ export const appRouter = router({
             idUsuario: aluno.externalId || String(aluno.id),
             nomeAluno: aluno.name,
             empresa: program?.name || 'Desconhecida',
-            tituloEvento: 'Evento',
+            tituloEvento: participation.eventTitle || 'Evento',
+            dataEvento: participation.eventDate ? new Date(participation.eventDate) : undefined,
             presenca: participation.status as 'presente' | 'ausente'
           });
         }
@@ -1440,7 +1442,7 @@ export const appRouter = router({
       .input(z.object({ turmaId: z.number() }))
       .query(async ({ input }) => {
         const mentoringSessions = await db.getAllMentoringSessions();
-        const eventParticipations = await db.getAllEventParticipation();
+        const eventParticipations = await db.getAllEventParticipationWithDate();
         const alunosList = await db.getAlunosByTurma(input.turmaId);
         const programsList = await db.getPrograms();
         const allPlanoItems = await db.getAllPlanoIndividual();
@@ -1477,7 +1479,8 @@ export const appRouter = router({
             idUsuario: aluno.externalId || String(aluno.id),
             nomeAluno: aluno.name,
             empresa: program?.name || 'Desconhecida',
-            tituloEvento: 'Evento',
+            tituloEvento: participation.eventTitle || 'Evento',
+            dataEvento: participation.eventDate ? new Date(participation.eventDate) : undefined,
             presenca: participation.status as 'presente' | 'ausente'
           });
         }
@@ -1526,7 +1529,7 @@ export const appRouter = router({
       .input(z.object({ alunoId: z.string() }))
       .query(async ({ input }) => {
         const mentoringSessions = await db.getAllMentoringSessions();
-        const eventParticipations = await db.getAllEventParticipation();
+        const eventParticipations = await db.getAllEventParticipationWithDate();
         const alunosList = await db.getAlunos();
         const programsList = await db.getPrograms();
         const allPlanoItems = await db.getAllPlanoIndividual();
@@ -1563,7 +1566,8 @@ export const appRouter = router({
             idUsuario: aluno.externalId || String(aluno.id),
             nomeAluno: aluno.name,
             empresa: program?.name || 'Desconhecida',
-            tituloEvento: 'Evento',
+            tituloEvento: participation.eventTitle || 'Evento',
+            dataEvento: participation.eventDate ? new Date(participation.eventDate) : undefined,
             presenca: participation.status as 'presente' | 'ausente'
           });
         }
@@ -1651,7 +1655,7 @@ export const appRouter = router({
         
         // Buscar dados de mentorias e eventos
         const mentoringSessions = await db.getAllMentoringSessions();
-        const eventParticipations = await db.getAllEventParticipation();
+        const eventParticipations = await db.getAllEventParticipationWithDate();
         const programsList = await db.getPrograms();
         
         const mentorias: MentoringRecord[] = [];
@@ -1686,7 +1690,8 @@ export const appRouter = router({
             idUsuario: partAluno.externalId || String(partAluno.id),
             nomeAluno: partAluno.name,
             empresa: program?.name || 'Desconhecida',
-            tituloEvento: 'Evento',
+            tituloEvento: participation.eventTitle || 'Evento',
+            dataEvento: participation.eventDate ? new Date(participation.eventDate) : undefined,
             presenca: participation.status as 'presente' | 'ausente'
           });
         }
@@ -1793,7 +1798,7 @@ export const appRouter = router({
 
       // Buscar dados globais para cálculo de indicadores e ranking
       const allSessions = await db.getAllMentoringSessions();
-      const allEventParticipations = await db.getAllEventParticipation();
+      const allEventParticipations = await db.getAllEventParticipationWithDate();
       const alunosList = await db.getAlunos();
       const programsList = await db.getPrograms();
       const turmasList = await db.getTurmas();
@@ -1837,8 +1842,8 @@ export const appRouter = router({
           empresa: program?.name || 'Desconhecida',
           turma: '',
           trilha: '',
-          tituloEvento: 'Evento',
-          dataEvento: undefined,
+          tituloEvento: ep.eventTitle || 'Evento',
+          dataEvento: ep.eventDate ? new Date(ep.eventDate) : undefined,
           presenca: ep.status as 'presente' | 'ausente',
         });
       }

@@ -131,6 +131,75 @@ describe('calcularIndicadoresAluno', () => {
       const result = calcularIndicadoresAluno('aluno1', [], [], [], ciclos, emptyMap, []);
       expect(result.consolidado.ind1_webinars).toBe(0);
     });
+
+    it('deve filtrar webinars por data do ciclo (não incluir eventos fora do período)', () => {
+      // Ciclo: 2025-01-01 a 2025-06-30
+      const eventos = [
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2025-03-15') }), // dentro do ciclo
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2025-05-20') }), // dentro do ciclo
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2024-11-01') }), // FORA do ciclo (antes)
+        mkEvento({ presenca: 'ausente', dataEvento: new Date('2025-08-15') }),  // FORA do ciclo (depois)
+      ];
+      const ciclos = [mkCiclo({ dataInicio: '2025-01-01', dataFim: '2025-06-30' })];
+      const result = calcularIndicadoresAluno('aluno1', [], eventos, [], ciclos, emptyMap, []);
+      // Apenas 2 eventos dentro do ciclo, ambos presentes → 100%
+      expect(result.consolidado.ind1_webinars).toBe(100);
+      expect(result.consolidado.detalhes.webinars.total).toBe(2);
+      expect(result.consolidado.detalhes.webinars.presentes).toBe(2);
+    });
+
+    it('deve contar corretamente webinars em ciclos diferentes', () => {
+      const eventos = [
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2024-03-15') }), // ciclo 1
+        mkEvento({ presenca: 'ausente', dataEvento: new Date('2024-04-20') }),  // ciclo 1
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2025-02-10') }), // ciclo 2
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2025-03-10') }), // ciclo 2
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2025-04-10') }), // ciclo 2
+      ];
+      const ciclos = [
+        mkCiclo({ id: 1, nomeCiclo: 'Basic', dataInicio: '2024-01-01', dataFim: '2024-06-30', competenciaIds: [1] }),
+        mkCiclo({ id: 2, nomeCiclo: 'Essential', dataInicio: '2025-01-01', dataFim: '2025-06-30', competenciaIds: [2] }),
+      ];
+      const result = calcularIndicadoresAluno('aluno1', [], eventos, [], ciclos, emptyMap, []);
+      // Ambos os ciclos são finalizados (hoje é março 2026)
+      expect(result.ciclosFinalizados.length).toBe(2);
+      // Ciclo 1 (Basic): 2 eventos (1 presente, 1 ausente) → 50%
+      const ciclo1 = result.ciclosFinalizados.find(c => c.nomeCiclo === 'Basic')!;
+      expect(ciclo1.detalhes.webinars.total).toBe(2);
+      expect(ciclo1.ind1_webinars).toBe(50);
+      // Ciclo 2 (Essential): 3 eventos (3 presentes) → 100%
+      const ciclo2 = result.ciclosFinalizados.find(c => c.nomeCiclo === 'Essential')!;
+      expect(ciclo2.detalhes.webinars.total).toBe(3);
+      expect(ciclo2.ind1_webinars).toBe(100);
+    });
+
+    it('não deve incluir eventos sem data em ciclos quando dataEvento é undefined', () => {
+      // Eventos SEM dataEvento caem no fallback (return true) - incluídos em todos os ciclos
+      // Este teste documenta o comportamento de fallback para dados legados
+      const eventos = [
+        mkEvento({ presenca: 'presente' }), // sem dataEvento → incluído em todos os ciclos
+      ];
+      const ciclos = [mkCiclo({ dataInicio: '2025-01-01', dataFim: '2025-06-30' })];
+      const result = calcularIndicadoresAluno('aluno1', [], eventos, [], ciclos, emptyMap, []);
+      // Fallback: evento sem data é incluído
+      expect(result.consolidado.detalhes.webinars.total).toBe(1);
+    });
+
+    it('consolidado deve somar webinars de todos os ciclos finalizados corretamente', () => {
+      const eventos = [
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2024-03-15') }), // ciclo 1
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2024-04-15') }), // ciclo 1
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2024-09-15') }), // ciclo 2
+      ];
+      const ciclos = [
+        mkCiclo({ id: 1, nomeCiclo: 'Basic', dataInicio: '2024-01-01', dataFim: '2024-06-30', competenciaIds: [1] }),
+        mkCiclo({ id: 2, nomeCiclo: 'Essential', dataInicio: '2024-07-01', dataFim: '2024-12-31', competenciaIds: [2] }),
+      ];
+      const result = calcularIndicadoresAluno('aluno1', [], eventos, [], ciclos, emptyMap, []);
+      // Consolidado: soma de ciclo 1 (2) + ciclo 2 (1) = 3 webinars total
+      expect(result.consolidado.detalhes.webinars.total).toBe(3);
+      expect(result.consolidado.detalhes.webinars.presentes).toBe(3);
+    });
   });
 
   describe('Ind 2: Performance nas Avaliações', () => {

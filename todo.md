@@ -1396,3 +1396,16 @@
 
 ## Remover Jornada do Mural (04/03/2026)
 - [x] Remover seção "Minha Jornada de Desenvolvimento" do Mural (competências, nível médio, metas atingidas) — pertence ao Portal do Aluno
+
+## Investigação: Tarefas e Webinars por Ciclo (04/03/2026)
+- [x] Ciclo Decisões Ágeis (26/10/2025 — 26/01/2026) mostra 16/22 webinars mas 0/0 tarefas — por que?
+- [x] Verificar de onde vem a contagem de tarefas por ciclo no calculador V2 → mentorias filtradas por dataSessao, 0 mentorias no período
+- [x] Verificar se há tarefas cadastradas para o período no banco → 0 mentorias no período, 0/0 tarefas está correto
+
+## BUG: Contadores de webinars não filtrados por ciclo (04/03/2026)
+- [x] Portal do Aluno mostra "16/22 webinars" no ciclo Decisões Ágeis mas só existem 5 eventos no período
+- [x] O sistema mostra o total do programa inteiro (22) em vez de filtrar pelo período do ciclo
+- [x] Causa raiz: dataEvento NÃO é preenchido ao construir EventRecords em 6 rotas do routers.ts → fallback 'return true' inclui TODOS os eventos em TODOS os ciclos
+- [x] Corrigir: fazer JOIN event_participation + events para obter eventDate e preencher dataEvento
+- [x] Corrigir em TODAS as 6 rotas: visaoGeral, porEmpresa, porTurma, porAluno, detalheAluno, portalAluno
+- [x] Impacto: afeta contadores de webinars de TODOS os 131 alunos em todos os dashboards e no consolidado

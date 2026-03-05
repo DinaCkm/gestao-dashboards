@@ -789,6 +789,30 @@ export async function getAllEventParticipation(): Promise<EventParticipation[]> 
   return await db.select().from(eventParticipation);
 }
 
+/**
+ * Retorna todas as participações em eventos COM a data do evento (JOIN com events).
+ * Essencial para filtrar webinars por período do ciclo no calculador V2.
+ */
+export type EventParticipationWithDate = EventParticipation & { eventDate: Date | string | null; eventTitle: string };
+export async function getAllEventParticipationWithDate(): Promise<EventParticipationWithDate[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({
+    id: eventParticipation.id,
+    eventId: eventParticipation.eventId,
+    alunoId: eventParticipation.alunoId,
+    status: eventParticipation.status,
+    reflexao: eventParticipation.reflexao,
+    selfReportedAt: eventParticipation.selfReportedAt,
+    batchId: eventParticipation.batchId,
+    createdAt: eventParticipation.createdAt,
+    eventDate: events.eventDate,
+    eventTitle: events.title,
+  }).from(eventParticipation)
+    .innerJoin(events, eq(eventParticipation.eventId, events.id));
+  return rows;
+}
+
 // ============ CONSULTOR FUNCTIONS ============
 export async function upsertConsultor(consultor: InsertConsultor): Promise<number | null> {
   const db = await getDb();
