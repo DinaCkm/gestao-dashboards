@@ -443,6 +443,7 @@ function AssessmentContent() {
           trilhas={trilhas}
           programs={programs}
           mentores={mentores}
+          isAdmin={isAdmin}
           onSuccess={() => {
             refetchAssessments();
             setTimeout(() => setShowCreateDialog(false), 100);
@@ -774,6 +775,7 @@ function CreateAssessmentDialog({
   programs,
   mentores,
   onSuccess,
+  isAdmin,
 }: {
   open: boolean;
   onClose: () => void;
@@ -786,6 +788,7 @@ function CreateAssessmentDialog({
   programs: any[];
   mentores: any[];
   onSuccess: () => void;
+  isAdmin: boolean;
 }) {
   const [step, setStep] = useState(1);
   const [selectedTrilhaId, setSelectedTrilhaId] = useState<string>("");
@@ -931,16 +934,27 @@ function CreateAssessmentDialog({
 
             <div className="space-y-2">
               <Label className="font-medium">Mentora responsável</Label>
-              <Select value={selectedConsultorId} onValueChange={setSelectedConsultorId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a mentora" />
-                </SelectTrigger>
-                <SelectContentNoPortal>
-                  {mentores.map(m => (
-                    <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>
-                  ))}
-                </SelectContentNoPortal>
-              </Select>
+              {isAdmin ? (
+                <Select value={selectedConsultorId} onValueChange={setSelectedConsultorId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a mentora" />
+                  </SelectTrigger>
+                  <SelectContentNoPortal>
+                    {mentores.map(m => (
+                      <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>
+                    ))}
+                  </SelectContentNoPortal>
+                </Select>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Input 
+                    value={mentores.find(m => String(m.id) === selectedConsultorId)?.name || 'Mentor vinculado'} 
+                    disabled 
+                    className="bg-muted cursor-not-allowed"
+                  />
+                  <p className="text-xs text-muted-foreground">Definido automaticamente. Para alterar, solicite ao administrador.</p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

@@ -1658,6 +1658,7 @@ export async function updateAccessUser(userId: number, data: {
   role?: 'user' | 'admin' | 'manager';
   programId?: number | null;
   isActive?: number;
+  consultorId?: number | null;
 }): Promise<{ success: boolean; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
@@ -1705,6 +1706,37 @@ export async function updateAccessUser(userId: number, data: {
   await db.update(users)
     .set(updateData)
     .where(eq(users.id, userId));
+  
+  // Se consultorId foi passado, atualizar o mentor na tabela alunos
+  if (data.consultorId !== undefined) {
+    // Buscar o aluno vinculado a este userId via externalId (cpf do user = externalId do aluno)
+    const [userRecord] = await db.select({ cpf: users.cpf, alunoId: users.alunoId })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    
+    if (userRecord) {
+      // Tentar vincular por alunoId direto, ou por externalId (cpf)
+      let alunoRecord: any = null;
+      if (userRecord.alunoId) {
+        [alunoRecord] = await db.select({ id: alunos.id })
+          .from(alunos)
+          .where(eq(alunos.id, userRecord.alunoId))
+          .limit(1);
+      }
+      if (!alunoRecord && userRecord.cpf) {
+        [alunoRecord] = await db.select({ id: alunos.id })
+          .from(alunos)
+          .where(eq(alunos.externalId, userRecord.cpf))
+          .limit(1);
+      }
+      if (alunoRecord) {
+        await db.update(alunos)
+          .set({ consultorId: data.consultorId })
+          .where(eq(alunos.id, alunoRecord.id));
+      }
+    }
+  }
   
   return { success: true };
 }

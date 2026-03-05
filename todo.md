@@ -1480,3 +1480,7 @@
 - [x] Validação visual completa do fluxo
 - [x] BUG: Aluno novo (UsuarioTeste) não vê o fluxo de onboarding (assessment + escolha de mentor)
 - [x] Corrigir redirecionamento: aluno sem mentor deve ir para /onboarding automaticamente
+
+## Ajustes Mentor-Aluno (05/03/2026)
+- [x] Desativar/remover vinculação de mentor na área do assessment do mentor
+- [x] Adicionar campo de troca de mentor no formulário Editar aluno (AdminCadastros)

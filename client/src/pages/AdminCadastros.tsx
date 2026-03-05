@@ -390,6 +390,7 @@ function GestaoAcessoTab({ accessUsers, empresas, mentoresList, turmasList, load
   const [editEmail, setEditEmail] = useState("");
   const [editCpf, setEditCpf] = useState("");
   const [editProgramId, setEditProgramId] = useState("");
+  const [editConsultorId, setEditConsultorId] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -423,6 +424,9 @@ function GestaoAcessoTab({ accessUsers, empresas, mentoresList, turmasList, load
     setEditEmail(user.email || "");
     setEditCpf(user.cpf || "");
     setEditProgramId(user.programId ? user.programId.toString() : "");
+    // Encontrar o consultorId do aluno a partir do mentorNome
+    const mentorMatch = mentoresList.find((m: any) => m.name === user.mentorNome);
+    setEditConsultorId(mentorMatch ? mentorMatch.id.toString() : "");
     setEditOpen(true);
   };
 
@@ -441,6 +445,7 @@ function GestaoAcessoTab({ accessUsers, empresas, mentoresList, turmasList, load
       cpf: editCredentialDigits,
       role: "user" as "user" | "admin" | "manager",
       programId: editProgramId ? parseInt(editProgramId) : null,
+      consultorId: editConsultorId ? parseInt(editConsultorId) : null,
     });
     setEditOpen(false);
     setEditUser(null);
@@ -644,6 +649,20 @@ function GestaoAcessoTab({ accessUsers, empresas, mentoresList, turmasList, load
                       <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
                     ))}
                   </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Mentor(a) Vinculado(a)</Label>
+                  <select
+                    value={editConsultorId}
+                    onChange={(e) => setEditConsultorId(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">Sem mentor atribuído</option>
+                    {mentoresList.map((m: any) => (
+                      <option key={m.id} value={m.id.toString()}>{m.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">Alterar o mentor aqui não afeta sessões de mentoria já realizadas.</p>
                 </div>
               </div>
               <DialogFooter>
