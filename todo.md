@@ -1393,3 +1393,6 @@
 - [x] Upload mostra "0 registro(s)" → Causa raiz: uploadFile processava XLSX apenas para contagem (processExcelBuffer) mas não inseria dados na tabela student_performance
 - [x] Corrigido: adicionado processamento completo de XLSX no uploadFile quando fileType='performance' - lê dados com XLSX.js, faz matching de alunos/turmas/competências, insere na tabela
 - [x] Testado: XLSX parseado corretamente (1513 linhas válidas, 34 colunas, headers com acentos OK). Todos os 243 testes passaram.
+
+## Remover Jornada do Mural (04/03/2026)
+- [x] Remover seção "Minha Jornada de Desenvolvimento" do Mural (competências, nível médio, metas atingidas) — pertence ao Portal do Aluno
