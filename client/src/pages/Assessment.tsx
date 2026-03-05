@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -902,7 +902,7 @@ function CreateAssessmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
@@ -1002,16 +1002,16 @@ function CreateAssessmentDialog({
               </div>
             </div>
 
-            <ScrollArea className="flex-1 border rounded-lg">
+            <ScrollArea className="flex-1 border rounded-lg" type="always">
               <div className="p-1">
-                <Table>
+                <Table className="min-w-[800px]">
                   <TableHeader>
                     <TableRow className="bg-muted/30">
                       <TableHead className="w-10"></TableHead>
                       <TableHead className="text-xs font-semibold">Competência</TableHead>
-                      <TableHead className="text-xs font-semibold text-center w-32">Peso</TableHead>
-                      <TableHead className="text-xs font-semibold text-center w-36">Micro Jornada Início</TableHead>
-                      <TableHead className="text-xs font-semibold text-center w-36">Micro Jornada Término</TableHead>
+                      <TableHead className="text-xs font-semibold text-center w-28">Peso</TableHead>
+                      <TableHead className="text-xs font-semibold text-center w-40">Micro Jornada Início</TableHead>
+                      <TableHead className="text-xs font-semibold text-center w-40">Micro Jornada Término</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1086,6 +1086,8 @@ function CreateAssessmentDialog({
                   </TableBody>
                 </Table>
               </div>
+              <ScrollBar orientation="horizontal" />
+              <ScrollBar orientation="vertical" />
             </ScrollArea>
 
             <div className="mt-3 text-xs text-muted-foreground flex items-center gap-1">

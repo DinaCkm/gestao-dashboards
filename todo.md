@@ -1475,7 +1475,7 @@
 - [x] Criar formulário "Cadastrar Aluno (Direto)" no Admin com dados cadastrais + vincular mentor
 - [x] Implementar procedure backend para cadastro direto com bypass
 - [x] Ajustar fluxo de login do aluno: se bypass ativo, redirecionar direto ao agendamento
-- [ ] Desativar/remover vinculação de mentor na área do mentor (assessment)
+- [x] Desativar/remover vinculação de mentor na área do mentor (assessment)
 - [x] Testes unitários para o novo fluxo
 - [x] Validação visual completa do fluxo
 - [x] BUG: Aluno novo (UsuarioTeste) não vê o fluxo de onboarding (assessment + escolha de mentor)
@@ -1484,3 +1484,14 @@
 ## Ajustes Mentor-Aluno (05/03/2026)
 - [x] Desativar/remover vinculação de mentor na área do assessment do mentor
 - [x] Adicionar campo de troca de mentor no formulário Editar aluno (AdminCadastros)
+
+## Limpeza de Dados de Teste (05/03/2026)
+- [x] Identificar e remover alunos de teste criados por testes unitários do banco de dados
+
+## Bug: Alunos não aparecem como mentorados da Adriana (05/03/2026)
+- [x] Investigar por que alunos vinculados à Adriana não aparecem na lista filtrada por mentor (RESOLVIDO: os 4 alunos estão corretamente vinculados e visíveis)
+
+## Bug: Dialog Novo Assessment pequeno e sem Data Fim (05/03/2026)
+- [x] Ampliar tamanho do dialog de Novo Assessment para caber todas as colunas
+- [x] Garantir que coluna "Data Fim" do micro ciclo apareça visível
+- [x] Adicionar barra de rolagem horizontal na tabela de competências do dialog

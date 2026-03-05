@@ -1,0 +1,110 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.alunoId, u.role, u.loginMethod, u.isActive, u.createdAt FROM users u ORDER BY u.id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.alunoId, u.role, u.loginMethod, u.isActive, u.createdAt FROM users u ORDER BY u.id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "2040152",
+      "name": "MARIA TESTE DA SILVA",
+      "email": "dina@ckmtalents.net",
+      "alunoId": "90013",
+      "role": "user",
+      "loginMethod": "email_cpf",
+      "isActive": "1",
+      "createdAt": "2026-03-05 18:50:32"
+    },
+    {
+      "id": "2040133",
+      "name": "First User 1772736439540",
+      "email": "first.1772736439540@example.com",
+      "alunoId": "NULL",
+      "role": "user",
+      "loginMethod": "email_cpf",
+      "isActive": "0",
+      "createdAt": "2026-03-05 18:47:19"
+    },
+    {
+      "id": "2040093",
+      "name": "First User 1772735761999",
+      "email": "first.1772735761999@example.com",
+      "alunoId": "NULL",
+      "role": "user",
+      "loginMethod": "email_cpf",
+      "isActive": "0",
+      "createdAt": "2026-03-05 18:36:02"
+    },
+    {
+      "id": "2040086",
+      "name": "First User 1772735732593",
+      "email": "first.1772735732593@example.com",
+      "alunoId": "NULL",
+      "role": "user",
+      "loginMethod": "email_cpf",
+      "isActive": "0",
+      "createdAt": "2026-03-05 18:35:32"
+    },
+    {
+      "id": "2010230",
+      "name": "First User 1772731086724",
+      "email": "first.1772731086724@example.com",
+      "alunoId": "NULL",
+      "role": "user",
+      "loginMethod": "email_cpf",
+      "isActive": "0",
+      "createdAt": "2026-03-05 17:18:06"
+    },
+    {
+      "id": "1950172",
+      "name": "First User 1772679087474",
+      "email": "first.1772679087474@example.com",
+      "alunoId": "NULL",
+      "role": "user",
+      "loginMethod": "email_cpf",
+      "isActive": "0",
+      "createdAt": "2026-03-05 02:51:27"
+    },
+    {
+      "id": "1950170",
+      "name": "First User 1772679060113",
+      "email": "first.1772679060113@example.com",
+      "alunoId": "NULL",
+      "role": "user",
+      "loginMethod": "email_cpf",
+      "isActive": "0",
+      "createdAt": "2026-03-05 02:51:00"
+    },
+    {
+      "id": "1950091",
+      "name": "First User 1772675628708",
+      "email": "first.1772675628708@example.com",
+      "alunoId": "NULL",
+      "role": "user",
+      "loginMethod": "email_cpf",
+      "isActive": "0",
+      "createdAt": "2026-03-05 01:53:48"
+    },
+    {
+      "id": "1950086",
+      "name": "First User 1772675591346",
+      "email": "first.1772675591346@example.com",
+      "alunoId": "NULL",
+      "role": "user",
+      "loginMethod": "email_cpf",
+      "isActive": "0",
+      "createdAt": "2026-03-05 01:53:11"
+    },
+    {
+      "id": "1950017",
+      "name": "First User 1772674112746",
+      "email": "first.1772674112746@example.com",
+      "alunoId": "NULL",
+      "role": "user",
+      "loginMethod": "email_cpf",
+      "isActive": "0",
+      "createdAt": "2026-03-05 01:28:32"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\talunoId\trole\tloginMethod\tisActive\tcreatedAt\n2040152\tMARIA TESTE DA SILVA\tdina@ckmtalents.net\t90013\tuser\temail_cpf\t1\t2026-03-05 18:50:32\n2040133\tFirst User 1772736439540\tfirst.1772736439540@example.com\tNULL\tuser\temail_cpf\t0\t2026-03-05 18:47:19\n2040093\tFirst User 1772735761999\tfirst.1772735761999@example.com\tNULL\tuser\temail_cpf\t0\t2026-03-05 18:36:02\n2040086\tFirst User 1772735732593\tfirst.1772735732593@example.com\tNULL\tuser\temail_cpf\t0\t2026-03-05 18:35:32\n2010230\tFirst User 1772731086724\tfirst.1772731086724@example.com\tNULL\tuser\temail_cpf\t0\t2026-03-05 17:18:06\n1950172\tFirst User 1772679087474\tfirst.1772679087474@example.com\tNULL\tuser\temail_cpf\t0\t2026-03-05 02:51:27\n1950170\tFirst User 1772679060113\tfirst.1772679060113@example.com\tNULL\tuser\temail_cpf\t0\t2026-03-05 02:51:00\n1950091\tFirst User 1772675628708\tfirst.1772675628708@example.com\tNULL\tuser\temail_cpf\t0\t2026-03-05 01:53:48\n1950086\tFirst User 1772675591346\tfirst.1772675591346@example.com\tNULL\tuser\temail_cpf\t0\t2026-03-05 01:53:11\n1950017\tFirst User 1772674112746\tfirst.1772674112746@example.com\tNULL\tuser\temail_cpf\t0\t2026-03-05 01:28:32\n",
+  "stderr": "",
+  "execution_time_ms": 356
+}

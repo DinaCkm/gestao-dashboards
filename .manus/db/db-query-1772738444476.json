@@ -1,0 +1,50 @@
+{
+  "query": "\nSELECT a.id as aluno_id, a.name as aluno_nome, a.email as aluno_email, a.consultorId, \n       c.name as mentor_nome,\n       u.id as user_id, u.name as user_name, u.alunoId as user_alunoId\nFROM alunos a\nLEFT JOIN consultors c ON a.consultorId = c.id\nLEFT JOIN users u ON u.alunoId = a.id\nWHERE c.name LIKE '%Adriana%'\nORDER BY a.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT a.id as aluno_id, a.name as aluno_nome, a.email as aluno_email, a.consultorId, \n       c.name as mentor_nome,\n       u.id as user_id, u.name as user_name, u.alunoId as user_alunoId\nFROM alunos a\nLEFT JOIN consultors c ON a.consultorId = c.id\nLEFT JOIN users u ON u.alunoId = a.id\nWHERE c.name LIKE '%Adriana%'\nORDER BY a.id;\n",
+  "rows": [
+    {
+      "aluno_id": "30090",
+      "aluno_nome": "Mayara Rodrigues de Freitas",
+      "aluno_email": "mayara.freitas@embrapii.org.br",
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus",
+      "user_id": "660206",
+      "user_name": "Mayara Rodrigues de Freitas",
+      "user_alunoId": "30090"
+    },
+    {
+      "aluno_id": "30099",
+      "aluno_nome": "Vanessa Bertholdo Vargas",
+      "aluno_email": "vanessa.vargas@embrapii.org.br",
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus",
+      "user_id": "660209",
+      "user_name": "Vanessa Bertholdo Vargas",
+      "user_alunoId": "30099"
+    },
+    {
+      "aluno_id": "90013",
+      "aluno_nome": "MARIA TESTE DA SILVA",
+      "aluno_email": "dina@ckmtalents.net",
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus",
+      "user_id": "2040152",
+      "user_name": "MARIA TESTE DA SILVA",
+      "user_alunoId": "90013"
+    },
+    {
+      "aluno_id": "90014",
+      "aluno_nome": "maria teste3",
+      "aluno_email": "teste3@teste3.com.br",
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus",
+      "user_id": "2040209",
+      "user_name": "maria teste3",
+      "user_alunoId": "90014"
+    }
+  ],
+  "messages": [],
+  "stdout": "aluno_id\taluno_nome\taluno_email\tconsultorId\tmentor_nome\tuser_id\tuser_name\tuser_alunoId\n30090\tMayara Rodrigues de Freitas\tmayara.freitas@embrapii.org.br\t39\tAdriana Deus\t660206\tMayara Rodrigues de Freitas\t30090\n30099\tVanessa Bertholdo Vargas\tvanessa.vargas@embrapii.org.br\t39\tAdriana Deus\t660209\tVanessa Bertholdo Vargas\t30099\n90013\tMARIA TESTE DA SILVA\tdina@ckmtalents.net\t39\tAdriana Deus\t2040152\tMARIA TESTE DA SILVA\t90013\n90014\tmaria teste3\tteste3@teste3.com.br\t39\tAdriana Deus\t2040209\tmaria teste3\t90014\n",
+  "stderr": "",
+  "execution_time_ms": 363
+}

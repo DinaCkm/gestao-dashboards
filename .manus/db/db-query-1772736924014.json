@@ -1,0 +1,535 @@
+{
+  "query": "SELECT id, name, email, cpf, role FROM users WHERE email LIKE '%@test.com' OR name LIKE 'Test %' OR name LIKE 'Aluno Direto Test%' ORDER BY id DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, cpf, role FROM users WHERE email LIKE '%@test.com' OR name LIKE 'Test %' OR name LIKE 'Aluno Direto Test%' ORDER BY id DESC;",
+  "rows": [
+    {
+      "id": "2040137",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772736440295@test.com",
+      "cpf": "440295",
+      "role": "user"
+    },
+    {
+      "id": "2040136",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772736440083@test.com",
+      "cpf": "440083",
+      "role": "user"
+    },
+    {
+      "id": "2040135",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772736439873@test.com",
+      "cpf": "439873",
+      "role": "user"
+    },
+    {
+      "id": "2040134",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772736439287@test.com",
+      "cpf": "439287",
+      "role": "user"
+    },
+    {
+      "id": "2040132",
+      "name": "Test Gestor 1772736439375",
+      "email": "gestor.test.1772736439375@example.com",
+      "cpf": "72736439375",
+      "role": "manager"
+    },
+    {
+      "id": "2040096",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772735762564@test.com",
+      "cpf": "762564",
+      "role": "user"
+    },
+    {
+      "id": "2040095",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772735762350@test.com",
+      "cpf": "762350",
+      "role": "user"
+    },
+    {
+      "id": "2040094",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772735762142@test.com",
+      "cpf": "762142",
+      "role": "user"
+    },
+    {
+      "id": "2040092",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772735761574@test.com",
+      "cpf": "761574",
+      "role": "user"
+    },
+    {
+      "id": "2040091",
+      "name": "Test Gestor 1772735761845",
+      "email": "gestor.test.1772735761845@example.com",
+      "cpf": "72735761845",
+      "role": "manager"
+    },
+    {
+      "id": "2040088",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772735732921@test.com",
+      "cpf": "732921",
+      "role": "user"
+    },
+    {
+      "id": "2040087",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772735732702@test.com",
+      "cpf": "732702",
+      "role": "user"
+    },
+    {
+      "id": "2040085",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772735732483@test.com",
+      "cpf": "732483",
+      "role": "user"
+    },
+    {
+      "id": "2040084",
+      "name": "Test Gestor 1772735732410",
+      "email": "gestor.test.1772735732410@example.com",
+      "cpf": "72735732410",
+      "role": "manager"
+    },
+    {
+      "id": "2040083",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772735731881@test.com",
+      "cpf": "731881",
+      "role": "user"
+    },
+    {
+      "id": "2010229",
+      "name": "Test Gestor 1772731086563",
+      "email": "gestor.test.1772731086563@example.com",
+      "cpf": "72731086563",
+      "role": "manager"
+    },
+    {
+      "id": "1950171",
+      "name": "Test Gestor 1772679087317",
+      "email": "gestor.test.1772679087317@example.com",
+      "cpf": "72679087317",
+      "role": "manager"
+    },
+    {
+      "id": "1950169",
+      "name": "Test Gestor 1772679059960",
+      "email": "gestor.test.1772679059960@example.com",
+      "cpf": "72679059960",
+      "role": "manager"
+    },
+    {
+      "id": "1950090",
+      "name": "Test Gestor 1772675628547",
+      "email": "gestor.test.1772675628547@example.com",
+      "cpf": "72675628547",
+      "role": "manager"
+    },
+    {
+      "id": "1950085",
+      "name": "Test Gestor 1772675591184",
+      "email": "gestor.test.1772675591184@example.com",
+      "cpf": "72675591184",
+      "role": "manager"
+    },
+    {
+      "id": "1950016",
+      "name": "Test Gestor 1772674112578",
+      "email": "gestor.test.1772674112578@example.com",
+      "cpf": "72674112578",
+      "role": "manager"
+    },
+    {
+      "id": "1830078",
+      "name": "Test Gestor 1772639254658",
+      "email": "gestor.test.1772639254658@example.com",
+      "cpf": "72639254658",
+      "role": "manager"
+    },
+    {
+      "id": "1830071",
+      "name": "Test Gestor 1772639193834",
+      "email": "gestor.test.1772639193834@example.com",
+      "cpf": "72639193834",
+      "role": "manager"
+    },
+    {
+      "id": "1830068",
+      "name": "Test Gestor 1772639172288",
+      "email": "gestor.test.1772639172288@example.com",
+      "cpf": "72639172288",
+      "role": "manager"
+    },
+    {
+      "id": "1830015",
+      "name": "Test Gestor 1772630354590",
+      "email": "gestor.test.1772630354590@example.com",
+      "cpf": "72630354590",
+      "role": "manager"
+    },
+    {
+      "id": "1711334",
+      "name": "Test Gestor 1772588117395",
+      "email": "gestor.test.1772588117395@example.com",
+      "cpf": "72588117395",
+      "role": "manager"
+    },
+    {
+      "id": "1711329",
+      "name": "Test Gestor 1772588070105",
+      "email": "gestor.test.1772588070105@example.com",
+      "cpf": "72588070105",
+      "role": "manager"
+    },
+    {
+      "id": "1711261",
+      "name": "Test Gestor 1772587169720",
+      "email": "gestor.test.1772587169720@example.com",
+      "cpf": "72587169720",
+      "role": "manager"
+    },
+    {
+      "id": "1711192",
+      "name": "Test Gestor 1772586591786",
+      "email": "gestor.test.1772586591786@example.com",
+      "cpf": "72586591786",
+      "role": "manager"
+    },
+    {
+      "id": "1710901",
+      "name": "Test Gestor 1772581337046",
+      "email": "gestor.test.1772581337046@example.com",
+      "cpf": "72581337046",
+      "role": "manager"
+    },
+    {
+      "id": "1710842",
+      "name": "Test Gestor 1772579962758",
+      "email": "gestor.test.1772579962758@example.com",
+      "cpf": "72579962758",
+      "role": "manager"
+    },
+    {
+      "id": "1710818",
+      "name": "Test Gestor 1772579492793",
+      "email": "gestor.test.1772579492793@example.com",
+      "cpf": "72579492793",
+      "role": "manager"
+    },
+    {
+      "id": "1710775",
+      "name": "Test Gestor 1772578960760",
+      "email": "gestor.test.1772578960760@example.com",
+      "cpf": "72578960760",
+      "role": "manager"
+    },
+    {
+      "id": "1710745",
+      "name": "Test Gestor 1772578427167",
+      "email": "gestor.test.1772578427167@example.com",
+      "cpf": "72578427167",
+      "role": "manager"
+    },
+    {
+      "id": "1710706",
+      "name": "Test Gestor 1772577563013",
+      "email": "gestor.test.1772577563013@example.com",
+      "cpf": "72577563013",
+      "role": "manager"
+    },
+    {
+      "id": "1710642",
+      "name": "Test Gestor 1772576540382",
+      "email": "gestor.test.1772576540382@example.com",
+      "cpf": "72576540382",
+      "role": "manager"
+    },
+    {
+      "id": "1710540",
+      "name": "Test Gestor 1772573198907",
+      "email": "gestor.test.1772573198907@example.com",
+      "cpf": "72573198907",
+      "role": "manager"
+    },
+    {
+      "id": "1710530",
+      "name": "Test Gestor 1772573023924",
+      "email": "gestor.test.1772573023924@example.com",
+      "cpf": "72573023924",
+      "role": "manager"
+    },
+    {
+      "id": "1710507",
+      "name": "Test Gestor 1772572698139",
+      "email": "gestor.test.1772572698139@example.com",
+      "cpf": "72572698139",
+      "role": "manager"
+    },
+    {
+      "id": "1710484",
+      "name": "Test Gestor 1772572167041",
+      "email": "gestor.test.1772572167041@example.com",
+      "cpf": "72572167041",
+      "role": "manager"
+    },
+    {
+      "id": "1710412",
+      "name": "Test Gestor 1772568547784",
+      "email": "gestor.test.1772568547784@example.com",
+      "cpf": "72568547784",
+      "role": "manager"
+    },
+    {
+      "id": "1710383",
+      "name": "Test Gestor 1772567219484",
+      "email": "gestor.test.1772567219484@example.com",
+      "cpf": "72567219484",
+      "role": "manager"
+    },
+    {
+      "id": "1710318",
+      "name": "Test Gestor 1772564148915",
+      "email": "gestor.test.1772564148915@example.com",
+      "cpf": "72564148915",
+      "role": "manager"
+    },
+    {
+      "id": "1710292",
+      "name": "Test Gestor 1772563416697",
+      "email": "gestor.test.1772563416697@example.com",
+      "cpf": "72563416697",
+      "role": "manager"
+    },
+    {
+      "id": "1710242",
+      "name": "Test Gestor 1772562011698",
+      "email": "gestor.test.1772562011698@example.com",
+      "cpf": "72562011698",
+      "role": "manager"
+    },
+    {
+      "id": "1710156",
+      "name": "Test Gestor 1772560541189",
+      "email": "gestor.test.1772560541189@example.com",
+      "cpf": "72560541189",
+      "role": "manager"
+    },
+    {
+      "id": "1710082",
+      "name": "Test Gestor 1772558995925",
+      "email": "gestor.test.1772558995925@example.com",
+      "cpf": "72558995925",
+      "role": "manager"
+    },
+    {
+      "id": "1680289",
+      "name": "Test Gestor 1772550850844",
+      "email": "gestor.test.1772550850844@example.com",
+      "cpf": "72550850844",
+      "role": "manager"
+    },
+    {
+      "id": "1680270",
+      "name": "Test Gestor 1772550561820",
+      "email": "gestor.test.1772550561820@example.com",
+      "cpf": "72550561820",
+      "role": "manager"
+    },
+    {
+      "id": "1680268",
+      "name": "Test Gestor 1772550528380",
+      "email": "gestor.test.1772550528380@example.com",
+      "cpf": "72550528380",
+      "role": "manager"
+    },
+    {
+      "id": "1680264",
+      "name": "Test Gestor 1772550490104",
+      "email": "gestor.test.1772550490104@example.com",
+      "cpf": "72550490104",
+      "role": "manager"
+    },
+    {
+      "id": "1680259",
+      "name": "Test Gestor 1772550372217",
+      "email": "gestor.test.1772550372217@example.com",
+      "cpf": "72550372217",
+      "role": "manager"
+    },
+    {
+      "id": "1680128",
+      "name": "Test Gestor 1772545832350",
+      "email": "gestor.test.1772545832350@example.com",
+      "cpf": "72545832350",
+      "role": "manager"
+    },
+    {
+      "id": "1470396",
+      "name": "Test Gestor 1772230002666",
+      "email": "gestor.test.1772230002666@example.com",
+      "cpf": "72230002666",
+      "role": "manager"
+    },
+    {
+      "id": "1470376",
+      "name": "Test Gestor 1772229727251",
+      "email": "gestor.test.1772229727251@example.com",
+      "cpf": "72229727251",
+      "role": "manager"
+    },
+    {
+      "id": "1350230",
+      "name": "Test Gestor 1772163225666",
+      "email": "gestor.test.1772163225666@example.com",
+      "cpf": "72163225666",
+      "role": "manager"
+    },
+    {
+      "id": "1350157",
+      "name": "Test Gestor 1772161418036",
+      "email": "gestor.test.1772161418036@example.com",
+      "cpf": "72161418036",
+      "role": "manager"
+    },
+    {
+      "id": "1350080",
+      "name": "Test Gestor 1772160316766",
+      "email": "gestor.test.1772160316766@example.com",
+      "cpf": "72160316766",
+      "role": "manager"
+    },
+    {
+      "id": "1350013",
+      "name": "Test Gestor 1772159242302",
+      "email": "gestor.test.1772159242302@example.com",
+      "cpf": "72159242302",
+      "role": "manager"
+    },
+    {
+      "id": "1320183",
+      "name": "Test Gestor 1772158727302",
+      "email": "gestor.test.1772158727302@example.com",
+      "cpf": "72158727302",
+      "role": "manager"
+    },
+    {
+      "id": "1320082",
+      "name": "Test Gestor 1772157213020",
+      "email": "gestor.test.1772157213020@example.com",
+      "cpf": "72157213020",
+      "role": "manager"
+    },
+    {
+      "id": "780044",
+      "name": "Test Gestor 1771029500996",
+      "email": "gestor.test.1771029500996@example.com",
+      "cpf": "71029500996",
+      "role": "manager"
+    },
+    {
+      "id": "720601",
+      "name": "Test Gestor 1771026430434",
+      "email": "gestor.test.1771026430434@example.com",
+      "cpf": "71026430434",
+      "role": "manager"
+    },
+    {
+      "id": "720544",
+      "name": "Test Gestor 1771025816341",
+      "email": "gestor.test.1771025816341@example.com",
+      "cpf": "71025816341",
+      "role": "manager"
+    },
+    {
+      "id": "720397",
+      "name": "Test Gestor 1771023384553",
+      "email": "gestor.test.1771023384553@example.com",
+      "cpf": "71023384553",
+      "role": "manager"
+    },
+    {
+      "id": "720363",
+      "name": "Test Gestor 1771022855441",
+      "email": "gestor.test.1771022855441@example.com",
+      "cpf": "71022855441",
+      "role": "manager"
+    },
+    {
+      "id": "720329",
+      "name": "Test Gestor 1771022273882",
+      "email": "gestor.test.1771022273882@example.com",
+      "cpf": "71022273882",
+      "role": "manager"
+    },
+    {
+      "id": "720286",
+      "name": "Test Gestor 1771021007964",
+      "email": "gestor.test.1771021007964@example.com",
+      "cpf": "71021007964",
+      "role": "manager"
+    },
+    {
+      "id": "720203",
+      "name": "Test Gestor 1771020007422",
+      "email": "gestor.test.1771020007422@example.com",
+      "cpf": "71020007422",
+      "role": "manager"
+    },
+    {
+      "id": "720170",
+      "name": "Test Gestor 1771019041135",
+      "email": "gestor.test.1771019041135@example.com",
+      "cpf": "71019041135",
+      "role": "manager"
+    },
+    {
+      "id": "720108",
+      "name": "Test Gestor 1771018366947",
+      "email": "gestor.test.1771018366947@example.com",
+      "cpf": "71018366947",
+      "role": "manager"
+    },
+    {
+      "id": "720099",
+      "name": "Test Gestor 1771018139250",
+      "email": "gestor.test.1771018139250@example.com",
+      "cpf": "71018139250",
+      "role": "manager"
+    },
+    {
+      "id": "720056",
+      "name": "Test Gestor 1771016535927",
+      "email": "gestor.test.1771016535927@example.com",
+      "cpf": "71016535927",
+      "role": "manager"
+    },
+    {
+      "id": "690404",
+      "name": "Test Gestor 1771013443113",
+      "email": "gestor.test.1771013443113@example.com",
+      "cpf": "71013443113",
+      "role": "manager"
+    },
+    {
+      "id": "690383",
+      "name": "Test Gestor 1771012990883",
+      "email": "gestor.test.1771012990883@example.com",
+      "cpf": "71012990883",
+      "role": "manager"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tcpf\trole\n2040137\tTest Turma Undefined\tturma-undef-1772736440295@test.com\t440295\tuser\n2040136\tTest Turma Number\tturma-num-1772736440083@test.com\t440083\tuser\n2040135\tTest Turma Null\tturma-null-1772736439873@test.com\t439873\tuser\n2040134\tAluno Direto Test\tdireto-test-1772736439287@test.com\t439287\tuser\n2040132\tTest Gestor 1772736439375\tgestor.test.1772736439375@example.com\t72736439375\tmanager\n2040096\tTest Turma Undefined\tturma-undef-1772735762564@test.com\t762564\tuser\n2040095\tTest Turma Number\tturma-num-1772735762350@test.com\t762350\tuser\n2040094\tTest Turma Null\tturma-null-1772735762142@test.com\t762142\tuser\n2040092\tAluno Direto Test\tdireto-test-1772735761574@test.com\t761574\tuser\n2040091\tTest Gestor 1772735761845\tgestor.test.1772735761845@example.com\t72735761845\tmanager\n2040088\tTest Turma Undefined\tturma-undef-1772735732921@test.com\t732921\tuser\n2040087\tTest Turma Number\tturma-num-1772735732702@test.com\t732702\tuser\n2040085\tTest Turma Null\tturma-null-1772735732483@test.com\t732483\tuser\n2040084\tTest Gestor 1772735732410\tgestor.test.1772735732410@example.com\t72735732410\tmanager\n2040083\tAluno Direto Test\tdireto-test-1772735731881@test.com\t731881\tuser\n2010229\tTest Gestor 1772731086563\tgestor.test.1772731086563@example.com\t72731086563\tmanager\n1950171\tTest Gestor 1772679087317\tgestor.test.1772679087317@example.com\t72679087317\tmanager\n1950169\tTest Gestor 1772679059960\tgestor.test.1772679059960@example.com\t72679059960\tmanager\n1950090\tTest Gestor 1772675628547\tgestor.test.1772675628547@example.com\t72675628547\tmanager\n1950085\tTest Gestor 1772675591184\tgestor.test.1772675591184@example.com\t72675591184\tmanager\n1950016\tTest Gestor 1772674112578\tgestor.test.1772674112578@example.com\t72674112578\tmanager\n1830078\tTest Gestor 1772639254658\tgestor.test.1772639254658@example.com\t72639254658\tmanager\n1830071\tTest Gestor 1772639193834\tgestor.test.1772639193834@example.com\t72639193834\tmanager\n1830068\tTest Gestor 1772639172288\tgestor.test.1772639172288@example.com\t72639172288\tmanager\n1830015\tTest Gestor 1772630354590\tgestor.test.1772630354590@example.com\t72630354590\tmanager\n1711334\tTest Gestor 1772588117395\tgestor.test.1772588117395@example.com\t72588117395\tmanager\n1711329\tTest Gestor 1772588070105\tgestor.test.1772588070105@example.com\t72588070105\tmanager\n1711261\tTest Gestor 1772587169720\tgestor.test.1772587169720@example.com\t72587169720\tmanager\n1711192\tTest Gestor 1772586591786\tgestor.test.1772586591786@example.com\t72586591786\tmanager\n1710901\tTest Gestor 1772581337046\tgestor.test.1772581337046@example.com\t72581337046\tmanager\n1710842\tTest Gestor 1772579962758\tgestor.test.1772579962758@example.com\t72579962758\tmanager\n1710818\tTest Gestor 1772579492793\tgestor.test.1772579492793@example.com\t72579492793\tmanager\n1710775\tTest Gestor 1772578960760\tgestor.test.1772578960760@example.com\t72578960760\tmanager\n1710745\tTest Gestor 1772578427167\tgestor.test.1772578427167@example.com\t72578427167\tmanager\n1710706\tTest Gestor 1772577563013\tgestor.test.1772577563013@example.com\t72577563013\tmanager\n1710642\tTest Gestor 1772576540382\tgestor.test.1772576540382@example.com\t72576540382\tmanager\n1710540\tTest Gestor 1772573198907\tgestor.test.1772573198907@example.com\t72573198907\tmanager\n1710530\tTest Gestor 1772573023924\tgestor.test.1772573023924@example.com\t72573023924\tmanager\n1710507\tTest Gestor 1772572698139\tgestor.test.1772572698139@example.com\t72572698139\tmanager\n1710484\tTest Gestor 1772572167041\tgestor.test.1772572167041@example.com\t72572167041\tmanager\n1710412\tTest Gestor 1772568547784\tgestor.test.1772568547784@example.com\t72568547784\tmanager\n1710383\tTest Gestor 1772567219484\tgestor.test.1772567219484@example.com\t72567219484\tmanager\n1710318\tTest Gestor 1772564148915\tgestor.test.1772564148915@example.com\t72564148915\tmanager\n1710292\tTest Gestor 1772563416697\tgestor.test.1772563416697@example.com\t72563416697\tmanager\n1710242\tTest Gestor 1772562011698\tgestor.test.1772562011698@example.com\t72562011698\tmanager\n1710156\tTest Gestor 1772560541189\tgestor.test.1772560541189@example.com\t72560541189\tmanager\n1710082\tTest Gestor 1772558995925\tgestor.test.1772558995925@example.com\t72558995925\tmanager\n1680289\tTest Gestor 1772550850844\tgestor.test.1772550850844@example.com\t72550850844\tmanager\n1680270\tTest Gestor 1772550561820\tgestor.test.1772550561820@example.com\t72550561820\tmanager\n1680268\tTest Gestor 1772550528380\tgestor.test.1772550528380@example.com\t72550528380\tmanager\n1680264\tTest Gestor 1772550490104\tgestor.test.1772550490104@example.com\t72550490104\tmanager\n1680259\tTest Gestor 1772550372217\tgestor.test.1772550372217@example.com\t72550372217\tmanager\n1680128\tTest Gestor 1772545832350\tgestor.test.1772545832350@example.com\t72545832350\tmanager\n1470396\tTest Gestor 1772230002666\tgestor.test.1772230002666@example.com\t72230002666\tmanager\n1470376\tTest Gestor 1772229727251\tgestor.test.1772229727251@example.com\t72229727251\tmanager\n1350230\tTest Gestor 1772163225666\tgestor.test.1772163225666@example.com\t72163225666\tmanager\n1350157\tTest Gestor 1772161418036\tgestor.test.1772161418036@example.com\t72161418036\tmanager\n1350080\tTest Gestor 1772160316766\tgestor.test.1772160316766@example.com\t72160316766\tmanager\n1350013\tTest Gestor 1772159242302\tgestor.test.1772159242302@example.com\t72159242302\tmanager\n1320183\tTest Gestor 1772158727302\tgestor.test.1772158727302@example.com\t72158727302\tmanager\n1320082\tTest Gestor 1772157213020\tgestor.test.1772157213020@example.com\t72157213020\tmanager\n780044\tTest Gestor 1771029500996\tgestor.test.1771029500996@example.com\t71029500996\tmanager\n720601\tTest Gestor 1771026430434\tgestor.test.1771026430434@example.com\t71026430434\tmanager\n720544\tTest Gestor 1771025816341\tgestor.test.1771025816341@example.com\t71025816341\tmanager\n720397\tTest Gestor 1771023384553\tgestor.test.1771023384553@example.com\t71023384553\tmanager\n720363\tTest Gestor 1771022855441\tgestor.test.1771022855441@example.com\t71022855441\tmanager\n720329\tTest Gestor 1771022273882\tgestor.test.1771022273882@example.com\t71022273882\tmanager\n720286\tTest Gestor 1771021007964\tgestor.test.1771021007964@example.com\t71021007964\tmanager\n720203\tTest Gestor 1771020007422\tgestor.test.1771020007422@example.com\t71020007422\tmanager\n720170\tTest Gestor 1771019041135\tgestor.test.1771019041135@example.com\t71019041135\tmanager\n720108\tTest Gestor 1771018366947\tgestor.test.1771018366947@example.com\t71018366947\tmanager\n720099\tTest Gestor 1771018139250\tgestor.test.1771018139250@example.com\t71018139250\tmanager\n720056\tTest Gestor 1771016535927\tgestor.test.1771016535927@example.com\t71016535927\tmanager\n690404\tTest Gestor 1771013443113\tgestor.test.1771013443113@example.com\t71013443113\tmanager\n690383\tTest Gestor 1771012990883\tgestor.test.1771012990883@example.com\t71012990883\tmanager\n",
+  "stderr": "",
+  "execution_time_ms": 366
+}
