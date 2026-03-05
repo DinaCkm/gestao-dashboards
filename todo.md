@@ -1495,3 +1495,16 @@
 - [x] Ampliar tamanho do dialog de Novo Assessment para caber todas as colunas
 - [x] Garantir que coluna "Data Fim" do micro ciclo apareça visível
 - [x] Adicionar barra de rolagem horizontal na tabela de competências do dialog
+
+## Importação de Ciclos - Planilha Atualizada (05/03/2026)
+- [x] Analisar estrutura da planilha COMPETENCIAS-JORNADAS atualizada com IDs
+- [x] Comparar dados da planilha com dados atuais no banco de dados
+- [x] Gerar relatório de impacto das mudanças
+- [x] Aplicar mudanças no banco conforme decisão do usuário
+- [x] Substituir todos os assessments: apagar assessment_competencias e assessment_pdi e recriar com base na planilha
+- [x] Criar turma [2026] SEBRAE Tocantins - Essenciais [BS3] (já existia ID 60001)
+- [x] Verificar/criar alunos novos (Ilda Bisinotti, Brenno Soffredi Passoni) - já existiam no banco
+- [x] Normalizar 'Gestão de Tempo' para 'Gestão do Tempo' (59 registros usando nome correto)
+- [x] Ignorar Usuário Teste (696504) na importação (0 registros)
+- [x] Verificar contagens finais: 220 PDIs, 1.423 competências
+- [ ] AVISO: 4 competências da Jornada Personalizada não encontradas (Gestão de Conflitos x2, Mentalidade Sistêmica, Relacionamentos Conectivos) - podem precisar ser criadas no banco
