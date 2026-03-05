@@ -4447,3 +4447,133 @@ export async function getMentoringSessionById(sessionId: number): Promise<Mentor
     .limit(1);
   return result[0];
 }
+
+
+// ============ CADASTRO DIRETO DE ALUNO PELO ADMIN ============
+
+export async function createAlunoDireto(data: {
+  name: string;
+  email: string;
+  cpf: string;
+  programId: number;
+  consultorId: number;
+  turmaId?: number | null;
+}): Promise<{ success: boolean; alunoId?: number; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+
+  const normalizedCpf = data.cpf.replace(/[.\-]/g, '');
+
+  // Verificar se já existe aluno com este email
+  const [existingAluno] = await db.select()
+    .from(alunos)
+    .where(eq(alunos.email, data.email.toLowerCase()))
+    .limit(1);
+
+  if (existingAluno) {
+    return { success: false, message: "Já existe um aluno com este email." };
+  }
+
+  // Verificar se já existe user com este CPF
+  const [existingUser] = await db.select()
+    .from(users)
+    .where(eq(users.cpf, normalizedCpf))
+    .limit(1);
+
+  if (existingUser) {
+    return { success: false, message: "Este ID/CPF já está cadastrado no sistema." };
+  }
+
+  // 1. Criar registro na tabela alunos COM mentor e bypass
+  const [alunoResult] = await db.insert(alunos).values({
+    name: data.name,
+    email: data.email.toLowerCase(),
+    externalId: normalizedCpf,
+    programId: data.programId,
+    turmaId: data.turmaId ?? null,
+    consultorId: data.consultorId,
+    bypassOnboarding: 1,
+    cadastradoPorAdmin: 1,
+    canLogin: 1,
+    isActive: 1,
+  });
+
+  const alunoId = alunoResult.insertId;
+
+  // 2. Criar registro na tabela users para login (Email + CPF)
+  const openId = `access_user_${normalizedCpf}`;
+  await db.insert(users).values({
+    openId,
+    name: data.name,
+    email: data.email.toLowerCase(),
+    cpf: normalizedCpf,
+    role: 'user',
+    programId: data.programId,
+    alunoId: Number(alunoId),
+    loginMethod: 'email_cpf',
+    isActive: 1,
+    lastSignedIn: new Date(),
+  });
+
+  return { success: true, alunoId: Number(alunoId) };
+}
+
+// ============ STATUS DE ONBOARDING DO ALUNO ============
+
+export async function getAlunoOnboardingStatus(user: {
+  id: number;
+  openId: string;
+  email?: string | null;
+  alunoId?: number | null;
+  role: string;
+}): Promise<{
+  needsOnboarding: boolean;
+  hasMentor: boolean;
+  bypassOnboarding: boolean;
+  alunoId: number | null;
+}> {
+  const db = await getDb();
+  if (!db) return { needsOnboarding: false, hasMentor: false, bypassOnboarding: false, alunoId: null };
+
+  // Só se aplica a alunos (role === 'user')
+  if (user.role !== 'user') {
+    return { needsOnboarding: false, hasMentor: false, bypassOnboarding: false, alunoId: null };
+  }
+
+  // Buscar aluno: primeiro pelo alunoId, depois pelo email
+  let aluno: any = null;
+
+  if (user.alunoId) {
+    const [found] = await db.select()
+      .from(alunos)
+      .where(eq(alunos.id, user.alunoId))
+      .limit(1);
+    aluno = found;
+  }
+
+  if (!aluno && user.email) {
+    const [found] = await db.select()
+      .from(alunos)
+      .where(eq(alunos.email, user.email.toLowerCase()))
+      .limit(1);
+    aluno = found;
+  }
+
+  if (!aluno) {
+    // Aluno não encontrado na tabela alunos - precisa de onboarding
+    return { needsOnboarding: true, hasMentor: false, bypassOnboarding: false, alunoId: null };
+  }
+
+  const hasMentor = !!aluno.consultorId;
+  const bypassOnboarding = aluno.bypassOnboarding === 1;
+
+  // Se tem bypass OU já tem mentor → não precisa de onboarding
+  const needsOnboarding = !bypassOnboarding && !hasMentor;
+
+  return {
+    needsOnboarding,
+    hasMentor,
+    bypassOnboarding,
+    alunoId: aluno.id,
+  };
+}

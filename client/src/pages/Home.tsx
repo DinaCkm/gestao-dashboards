@@ -22,6 +22,11 @@ export default function Home() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
 
+  // Verificar status de onboarding do aluno
+  const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
+    enabled: !loading && !!user && user.role === 'user',
+  });
+
   // Redirect based on role
   useEffect(() => {
     if (loading || !user) return;
@@ -40,11 +45,21 @@ export default function Home() {
     }
     
     if (user.role === "user") {
-      setLocation("/meu-dashboard");
+      // Verificar se precisa de onboarding
+      if (onboardingStatus) {
+        if (onboardingStatus.needsOnboarding) {
+          // Aluno sem mentor e sem bypass → vai para onboarding
+          setLocation("/onboarding");
+        } else {
+          // Aluno com mentor ou bypass → vai direto para dashboard
+          setLocation("/meu-dashboard");
+        }
+      }
+      // Se onboardingStatus ainda não carregou, aguarda
       return;
     }
     // admin stays on Home
-  }, [user, loading, setLocation]);
+  }, [user, loading, setLocation, onboardingStatus]);
 
   const isAdmin = user?.role === "admin";
 

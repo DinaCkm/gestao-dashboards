@@ -168,6 +168,22 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro ao atualizar gerente: ${err.message}`),
   });
 
+  // Queries para Cadastro Direto
+  const { data: mentoresList } = trpc.mentor.list.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: turmasList } = trpc.turmas.list.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+
+  const createAlunoDireto = trpc.admin.createAlunoDireto.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success("Aluno cadastrado com sucesso! Mentor vinculado e bypass de onboarding ativado.");
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao cadastrar aluno");
+      }
+    },
+    onError: (err) => toast.error(`Erro ao cadastrar aluno: ${err.message}`),
+  });
+
   // Proteger página: apenas admin pode acessar — redirecionar para página correta do role
   useEffect(() => {
     if (loading || !user) return;
@@ -233,11 +249,15 @@ export default function AdminCadastros() {
             <GestaoAcessoTab
               accessUsers={(accessUsers || []).filter((u: any) => u.role === 'user')}
               empresas={empresas || []}
+              mentoresList={mentoresList || []}
+              turmasList={turmasList || []}
               loading={loadingAccessUsers}
               onCreate={createAccessUser.mutate}
+              onCreateDireto={createAlunoDireto.mutate}
               onToggleStatus={toggleAccessUserStatus.mutate}
               onUpdate={updateAccessUser.mutate}
               isCreating={createAccessUser.isPending}
+              isCreatingDireto={createAlunoDireto.isPending}
             />
           </TabsContent>
 
@@ -285,14 +305,18 @@ export default function AdminCadastros() {
 }
 
 // ============ ALUNOS TAB ============
-function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleStatus, onUpdate, isCreating }: {
+function GestaoAcessoTab({ accessUsers, empresas, mentoresList, turmasList, loading, onCreate, onCreateDireto, onToggleStatus, onUpdate, isCreating, isCreatingDireto }: {
   accessUsers: any[];
   empresas: any[];
+  mentoresList: any[];
+  turmasList: any[];
   loading: boolean;
   onCreate: (data: any) => void;
+  onCreateDireto: (data: any) => void;
   onToggleStatus: (data: any) => void;
   onUpdate: (data: any) => void;
   isCreating: boolean;
+  isCreatingDireto: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -314,11 +338,52 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
     return Array.from(mentorSet.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }, [accessUsers]);
   
-  // Create form
+  // Create form (Novo Aluno - fluxo normal)
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
   const [programId, setProgramId] = useState("");
+
+  // Create form (Cadastro Direto - com mentor vinculado)
+  const [diretoOpen, setDiretoOpen] = useState(false);
+  const [diretoNome, setDiretoNome] = useState("");
+  const [diretoEmail, setDiretoEmail] = useState("");
+  const [diretoCpf, setDiretoCpf] = useState("");
+  const [diretoProgramId, setDiretoProgramId] = useState("");
+  const [diretoConsultorId, setDiretoConsultorId] = useState("");
+  const [diretoTurmaId, setDiretoTurmaId] = useState("");
+
+  const handleDiretoSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const credentialDigits = diretoCpf.replace(/\D/g, '');
+    if (credentialDigits.length === 0) {
+      toast.error("ID do aluno deve ser informado");
+      return;
+    }
+    if (!diretoProgramId) {
+      toast.error("Selecione a empresa vinculada");
+      return;
+    }
+    if (!diretoConsultorId) {
+      toast.error("Selecione o mentor para vincular ao aluno");
+      return;
+    }
+    onCreateDireto({
+      name: diretoNome,
+      email: diretoEmail,
+      cpf: credentialDigits,
+      programId: parseInt(diretoProgramId),
+      consultorId: parseInt(diretoConsultorId),
+      turmaId: diretoTurmaId ? parseInt(diretoTurmaId) : null,
+    });
+    setDiretoNome("");
+    setDiretoEmail("");
+    setDiretoCpf("");
+    setDiretoProgramId("");
+    setDiretoConsultorId("");
+    setDiretoTurmaId("");
+    setDiretoOpen(false);
+  };
 
   // Edit form
   const [editNome, setEditNome] = useState("");
@@ -393,9 +458,10 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
             Cadastro e gerenciamento dos alunos que acessam a plataforma por Email + ID.
           </CardDescription>
         </div>
+        <div className="flex gap-2">
         <Dialog open={open} onOpenChange={(v) => { if (!v) setOpen(false); else setOpen(true); }}>
           <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Novo Aluno</Button>
+            <Button variant="outline"><Plus className="h-4 w-4 mr-2" /> Novo Aluno</Button>
           </DialogTrigger>
           <DialogContent className="z-50" onPointerDownOutside={(e) => e.preventDefault()}>
             <form onSubmit={handleSubmit}>
@@ -448,6 +514,97 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Cadastro Direto Dialog */}
+        <Dialog open={diretoOpen} onOpenChange={setDiretoOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-emerald-600 hover:bg-emerald-700"><UserCheck className="h-4 w-4 mr-2" /> Cadastro Direto</Button>
+          </DialogTrigger>
+          <DialogContent className="z-50 max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
+            <form onSubmit={handleDiretoSubmit}>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <UserCheck className="h-5 w-5 text-emerald-600" />
+                  Cadastro Direto de Aluno
+                </DialogTitle>
+                <DialogDescription>
+                  Cadastre o aluno e vincule o mentor diretamente. O aluno pulará o assessment e a vitrine de mentores, indo direto para o dashboard de agendamento no primeiro login.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Nome Completo *</Label>
+                  <Input value={diretoNome} onChange={(e) => setDiretoNome(e.target.value)} placeholder="Nome completo" required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email *</Label>
+                  <Input type="email" value={diretoEmail} onChange={(e) => setDiretoEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                </div>
+                <div className="space-y-2">
+                  <Label>ID do Aluno *</Label>
+                  <Input 
+                    value={diretoCpf} 
+                    onChange={(e) => setDiretoCpf(e.target.value.replace(/\D/g, ''))} 
+                    placeholder="Ex: 667306" 
+                    required 
+                    maxLength={10}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Empresa Vinculada *</Label>
+                  <select
+                    value={diretoProgramId}
+                    onChange={(e) => setDiretoProgramId(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    required
+                  >
+                    <option value="">Selecione a empresa</option>
+                    {empresas.map((emp) => (
+                      <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Turma (Opcional)</Label>
+                  <select
+                    value={diretoTurmaId}
+                    onChange={(e) => setDiretoTurmaId(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">Nenhuma turma</option>
+                    {turmasList.map((t: any) => (
+                      <option key={t.id} value={t.id.toString()}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-emerald-700 font-semibold">Vincular Mentor(a) *</Label>
+                  <select
+                    value={diretoConsultorId}
+                    onChange={(e) => setDiretoConsultorId(e.target.value)}
+                    className="flex h-9 w-full rounded-md border-2 border-emerald-300 bg-emerald-50 px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
+                    required
+                  >
+                    <option value="">Selecione o mentor(a)</option>
+                    {mentoresList.map((m: any) => (
+                      <option key={m.id} value={m.id.toString()}>{m.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    O aluno será vinculado a este mentor e pulará o fluxo de onboarding.
+                  </p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setDiretoOpen(false)}>Cancelar</Button>
+                <Button type="submit" disabled={isCreatingDireto} className="bg-emerald-600 hover:bg-emerald-700">
+                  {isCreatingDireto ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Cadastrando...</> : "Cadastrar com Mentor"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+        </div>
 
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>

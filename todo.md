@@ -1468,3 +1468,15 @@
 - [x] Corrigir bug de hooks no AdminCadastros (early return antes dos hooks)
 - [x] Filtro por Mentor na lista de alunos do Cadastros
 - [x] Garantir que mentor aparece em todas as telas admin relevantes (Visão Geral, detalhe aluno)
+
+## Cadastro Direto de Aluno pelo Admin com Bypass (05/03/2026)
+- [x] Analisar schema atual (alunos, assessment, mentoring_sessions, fluxo de entrada)
+- [x] Adicionar campo bypass_assessment na tabela alunos (flag para pular etapas)
+- [x] Criar formulário "Cadastrar Aluno (Direto)" no Admin com dados cadastrais + vincular mentor
+- [x] Implementar procedure backend para cadastro direto com bypass
+- [x] Ajustar fluxo de login do aluno: se bypass ativo, redirecionar direto ao agendamento
+- [ ] Desativar/remover vinculação de mentor na área do mentor (assessment)
+- [x] Testes unitários para o novo fluxo
+- [x] Validação visual completa do fluxo
+- [x] BUG: Aluno novo (UsuarioTeste) não vê o fluxo de onboarding (assessment + escolha de mentor)
+- [x] Corrigir redirecionamento: aluno sem mentor deve ir para /onboarding automaticamente

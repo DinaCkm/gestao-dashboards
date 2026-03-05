@@ -2816,6 +2816,30 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.toggleAccessUserStatus(input.userId);
       }),
+
+    // Cadastro Direto de Aluno pelo Admin (com bypass de onboarding)
+    createAlunoDireto: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        cpf: z.string().min(1),
+        programId: z.number(),
+        consultorId: z.number(), // mentor vinculado
+        turmaId: z.number().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createAlunoDireto(input);
+      }),
+  }),
+
+  // Status de onboarding do aluno logado
+  aluno: router({
+    onboardingStatus: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
+      }
+      return await db.getAlunoOnboardingStatus(ctx.user);
+    }),
   }),
 
   // Ciclos de Execução da Trilha

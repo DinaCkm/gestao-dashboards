@@ -181,6 +181,8 @@ export const alunos = mysqlTable("alunos", {
   programId: int("programId"),
   isActive: int("isActive").default(1).notNull(),
   canLogin: int("canLogin").default(1).notNull(), // 1 = pode fazer login
+  bypassOnboarding: int("bypassOnboarding").default(0).notNull(), // 1 = pular assessment/vitrine, ir direto ao dashboard
+  cadastradoPorAdmin: int("cadastradoPorAdmin").default(0).notNull(), // 1 = cadastrado diretamente pelo admin
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
