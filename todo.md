@@ -1530,3 +1530,4 @@
 - [x] Validação visual do fluxo completo (botão Evoluir CKM visível no menu lateral)
 - [x] Adicionar botão/link no menu lateral para Evoluir CKM (https://www.evoluirckm.com) - transit entre os dois sistemas
 - [x] Renomear botão Evoluir CKM para "P.D.I Evoluir" e ao clicar sair do sistema e redirecionar para https://www.evoluirckm.com
+- [x] BUG CORRIGIDO: Login com CPF - 30 CPFs com zeros à esquerda removidos corrigidos + 50 registros users sincronizados com CPF real da tabela alunos
