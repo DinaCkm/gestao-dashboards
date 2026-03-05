@@ -1409,3 +1409,48 @@
 - [x] Corrigir: fazer JOIN event_participation + events para obter eventDate e preencher dataEvento
 - [x] Corrigir em TODAS as 6 rotas: visaoGeral, porEmpresa, porTurma, porAluno, detalheAluno, portalAluno
 - [x] Impacto: afeta contadores de webinars de TODOS os 131 alunos em todos os dashboards e no consolidado
+
+## Módulo Atividades Práticas (04/03/2026)
+
+### Schema e Migração
+- [x] Adicionar campos na mentoring_sessions: evidence_link, evidence_image_url, evidence_image_key, submitted_at, validated_by, validated_at
+- [x] Criar tabela practical_activity_comments (session_id, author_id, author_role, author_name, comment, created_at)
+- [x] Rodar pnpm db:push para aplicar migração
+
+### Backend (APIs tRPC)
+- [x] attendance.submitEvidence — aluno envia link e/ou imagem (valida formato URL, tipo/tamanho imagem, grava submitted_at, muda taskStatus para entregue)
+- [x] attendance.myTaskComments — aluno visualiza comentários de uma sessão
+- [x] mentor.getSubmissionDetail — mentor visualiza evidência do aluno (link + imagem + data envio)
+- [x] mentor.validateTask — mentor valida entrega (idempotente, grava validated_by/validated_at, não duplica)
+- [x] mentor.addTaskComment — mentor adiciona comentário
+- [x] practicalActivities.submissions — admin consulta entregas com filtros (mentor, aluno, status)
+- [x] practicalActivities.submissionDetail — admin visualiza evidência
+- [x] practicalActivities.addComment — admin adiciona comentário
+- [x] Upload de imagem para S3 via storagePut (validar jpg/png/webp, max 5MB)
+
+### Frontend Aluno (aba Tarefas - DashboardMeuPerfil.tsx)
+- [x] Evoluir lista: status visual PENDENTE/ENTREGUE/VALIDADA com ações corretas
+- [x] Tela de detalhe: campo URL + upload imagem + botão "Enviar Evidência"
+- [x] Exibir evidência enviada (link clicável + preview imagem) quando ENTREGUE/VALIDADA
+- [x] Seção de comentários (lista com autor + data)
+
+### Frontend Mentor (RegistroMentoria.tsx)
+- [x] Visualização de evidência do aluno (link + preview imagem + data/hora envio)
+- [x] Botão "Atividade Prática Entregue" (validar) — só aparece se status=ENTREGUE
+- [x] Campo e lista de comentários
+- [x] Auditoria: mostrar quem validou e quando
+
+### Frontend Admin (nova tela)
+- [x] Criar tela AtividadesPraticas.tsx com filtros (mentor, status, busca)
+- [x] Contadores: Total / Pendentes / Entregues / Validadas
+- [x] Lista de resultados: atividade, aluno, mentor, prazo, status, indicador de atraso
+- [x] Detalhe da entrega: evidências + comentários
+- [x] Campo para adicionar comentário (admin não valida — aviso exibido)
+- [x] Registrar rota no App.tsx e item na sidebar
+
+### Testes
+- [x] Testes vitest para submitEvidence (validações de input, URL)
+- [x] Testes vitest para validateTask (autenticação, permissões)
+- [x] Testes vitest para comentários (validação, permissões admin/mentor)
+- [x] Testes vitest para consulta admin (permissões, NOT_FOUND)
+- [x] 265/265 testes passando (16 novos testes)

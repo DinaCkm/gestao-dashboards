@@ -35,6 +35,7 @@ import WebinarsAdmin from "./pages/WebinarsAdmin";
 import MuralAluno from "./pages/MuralAluno";
 import AvisosAdmin from "./pages/AvisosAdmin";
 import OnboardingAluno from "./pages/OnboardingAluno";
+import AtividadesPraticas from "./pages/AtividadesPraticas";
 
 function Router() {
   return (
@@ -68,6 +69,7 @@ function Router() {
       <Route path={"/mural"} component={MuralAluno} />
       <Route path={"/onboarding"} component={OnboardingAluno} />
       <Route path={"/avisos"} component={AvisosAdmin} />
+      <Route path={"/atividades-praticas"} component={AtividadesPraticas} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -152,6 +152,11 @@ export default function DashboardMeuPerfil() {
   // State para relato de tarefa
   const [relatoText, setRelatoText] = useState<Record<number, string>>({});
   const [expandedTask, setExpandedTask] = useState<number | null>(null);
+  // State para envio de evidência
+  const [evidenceLink, setEvidenceLink] = useState<Record<number, string>>({});
+  const [evidenceFile, setEvidenceFile] = useState<Record<number, File | null>>({});
+  const evidenceFileRef = useRef<HTMLInputElement>(null);
+  const [taskDetailOpen, setTaskDetailOpen] = useState<number | null>(null);
 
   // State para reflexão de webinar
   const [reflexaoText, setReflexaoText] = useState<Record<number, string>>({});
@@ -165,6 +170,37 @@ export default function DashboardMeuPerfil() {
       setExpandedTask(null);
     },
   });
+  const submitEvidence = trpc.attendance.submitEvidence.useMutation({
+    onSuccess: () => {
+      utils.attendance.myTasks.invalidate();
+      setEvidenceLink({});
+      setEvidenceFile({});
+      setTaskDetailOpen(null);
+    },
+  });
+
+  const handleEvidenceSubmit = async (sessionId: number) => {
+    const link = evidenceLink[sessionId];
+    const file = evidenceFile[sessionId];
+    if (!link && !file) return;
+    let base64: string | undefined;
+    let fileName: string | undefined;
+    if (file) {
+      const reader = new FileReader();
+      const result = await new Promise<string>((resolve) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+      base64 = result.split(',')[1];
+      fileName = file.name;
+    }
+    await submitEvidence.mutateAsync({
+      sessionId,
+      evidenceLink: link || undefined,
+      evidenceImageBase64: base64,
+      evidenceImageName: fileName,
+    });
+  };
   const markPresence = trpc.attendance.markPresence.useMutation({
     onSuccess: () => {
       utils.attendance.myAttendance.invalidate();
@@ -1350,80 +1386,274 @@ export default function DashboardMeuPerfil() {
               <CardContent>
                 {myTasks && myTasks.length > 0 ? (
                   <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                    {myTasks.map((task: any) => (
-                      <div key={task.sessionId} className="p-4 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-medium text-gray-900">{task.taskName}</span>
-                              <Badge variant="outline" className={task.taskStatus === "entregue" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : task.taskStatus === "nao_entregue" ? "bg-red-50 text-red-700 border-red-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
-                                {task.taskStatus === "entregue" ? "Entregue" : task.taskStatus === "nao_entregue" ? "Não Entregue" : "Pendente"}
-                              </Badge>
-                            </div>
-                            {task.taskCompetencia && (
-                              <p className="text-xs text-blue-600 mb-1">Competência: {task.taskCompetencia}</p>
-                            )}
-                            <p className="text-xs text-gray-500">
-                              Sessão {task.sessionNumber} • {task.sessionDate ? new Date(task.sessionDate).toLocaleDateString("pt-BR") : ""}
-                              {task.taskDeadline && (<> • Prazo: {new Date(task.taskDeadline).toLocaleDateString("pt-BR")}</>)}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setExpandedTask(expandedTask === task.sessionId ? null : task.sessionId)}
-                            className="text-gray-500 hover:text-gray-900"
-                          >
-                            {expandedTask === task.sessionId ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        {expandedTask === task.sessionId && (
-                          <div className="mt-3 space-y-3">
-                            {task.taskResumo && (
-                              <div className="p-3 rounded bg-blue-50 border border-blue-100">
-                                <p className="text-xs font-semibold text-gray-700 mb-1">Resumo:</p>
-                                <p className="text-xs text-gray-600">{task.taskResumo}</p>
-                              </div>
-                            )}
-                            {task.taskOQueFazer && (
-                              <div className="p-3 rounded bg-blue-50 border border-blue-100">
-                                <p className="text-xs font-semibold text-gray-700 mb-1">O que fazer:</p>
-                                <p className="text-xs text-gray-600">{task.taskOQueFazer}</p>
-                              </div>
-                            )}
-                            {task.taskOQueGanha && (
-                              <div className="p-3 rounded bg-emerald-50 border border-emerald-100">
-                                <p className="text-xs font-semibold text-gray-700 mb-1">O que você ganha:</p>
-                                <p className="text-xs text-gray-600">{task.taskOQueGanha}</p>
-                              </div>
-                            )}
-                            {task.taskStatus !== "entregue" && (
-                              <div className="space-y-2">
-                                <p className="text-xs font-semibold text-gray-700">Seu relato:</p>
-                                <Textarea
-                                  placeholder="Descreva como foi a realização desta tarefa..."
-                                  value={relatoText[task.sessionId] || ""}
-                                  onChange={(e) => setRelatoText(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
-                                  className="border-gray-300 text-gray-900 text-sm min-h-[80px]"
-                                />
-                                <Button
-                                  size="sm"
-                                  onClick={() => submitRelato.mutate({ sessionId: task.sessionId, relatoAluno: relatoText[task.sessionId] || "" })}
-                                  disabled={!relatoText[task.sessionId] || submitRelato.isPending}
-                                  className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
-                                >
-                                  <Send className="h-3 w-3 mr-1" />
-                                  {submitRelato.isPending ? "Enviando..." : "Enviar Relato"}
-                                </Button>
-                                {submitRelato.isError && (
-                                  <p className="text-xs text-red-600">{submitRelato.error?.message || "Erro ao enviar relato"}</p>
+                    {myTasks.map((task: any) => {
+                      const statusConfig = task.taskStatus === 'validada'
+                        ? { label: 'Validada', className: 'bg-purple-50 text-purple-700 border-purple-300', icon: <Award className="h-3 w-3" /> }
+                        : task.taskStatus === 'entregue'
+                        ? { label: 'Entregue', className: 'bg-emerald-50 text-emerald-700 border-emerald-300', icon: <CheckCircle2 className="h-3 w-3" /> }
+                        : task.taskStatus === 'nao_entregue'
+                        ? { label: 'Pendente', className: 'bg-amber-50 text-amber-700 border-amber-300', icon: <Clock className="h-3 w-3" /> }
+                        : { label: 'Sem Tarefa', className: 'bg-gray-100 text-gray-600 border-gray-300', icon: <Minus className="h-3 w-3" /> };
+                      const isOverdue = task.taskDeadline && task.taskStatus !== 'validada' && task.taskStatus !== 'entregue' && new Date(task.taskDeadline) < new Date();
+                      return (
+                        <div key={task.sessionId} className={`p-4 rounded-lg border transition-colors ${isOverdue ? 'bg-red-50/50 border-red-200' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <span className="text-sm font-medium text-gray-900">{task.taskName}</span>
+                                <Badge variant="outline" className={statusConfig.className}>
+                                  <span className="flex items-center gap-1">{statusConfig.icon} {statusConfig.label}</span>
+                                </Badge>
+                                {isOverdue && (
+                                  <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">
+                                    <AlertTriangle className="h-3 w-3 mr-1" /> Atrasada
+                                  </Badge>
                                 )}
                               </div>
-                            )}
+                              {task.taskCompetencia && (
+                                <p className="text-xs text-blue-600 mb-1">Competência: {task.taskCompetencia}</p>
+                              )}
+                              <p className="text-xs text-gray-500">
+                                Sessão {task.sessionNumber} • {task.sessionDate ? new Date(task.sessionDate).toLocaleDateString("pt-BR") : ""}
+                                {task.taskDeadline && (<> • Prazo: <span className={isOverdue ? 'text-red-600 font-medium' : ''}>{new Date(task.taskDeadline).toLocaleDateString("pt-BR")}</span></>)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {task.taskStatus === 'nao_entregue' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setTaskDetailOpen(task.sessionId)}
+                                  className="text-[#F5991F] border-[#F5991F] hover:bg-[#F5991F]/10 text-xs"
+                                >
+                                  <Upload className="h-3 w-3 mr-1" /> Entregar
+                                </Button>
+                              )}
+                              {(task.taskStatus === 'entregue' || task.taskStatus === 'validada') && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setTaskDetailOpen(task.sessionId)}
+                                  className="text-gray-600 hover:text-gray-900 text-xs"
+                                >
+                                  <FileText className="h-3 w-3 mr-1" /> {task.taskStatus === 'validada' ? 'Ver Feedback' : 'Ver Envio'}
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setExpandedTask(expandedTask === task.sessionId ? null : task.sessionId)}
+                                className="text-gray-500 hover:text-gray-900"
+                              >
+                                {expandedTask === task.sessionId ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              </Button>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    ))}
+                          {expandedTask === task.sessionId && (
+                            <div className="mt-3 space-y-3">
+                              {task.taskResumo && (
+                                <div className="p-3 rounded bg-blue-50 border border-blue-100">
+                                  <p className="text-xs font-semibold text-gray-700 mb-1">Resumo:</p>
+                                  <p className="text-xs text-gray-600">{task.taskResumo}</p>
+                                </div>
+                              )}
+                              {task.taskOQueFazer && (
+                                <div className="p-3 rounded bg-blue-50 border border-blue-100">
+                                  <p className="text-xs font-semibold text-gray-700 mb-1">O que fazer:</p>
+                                  <p className="text-xs text-gray-600">{task.taskOQueFazer}</p>
+                                </div>
+                              )}
+                              {task.taskOQueGanha && (
+                                <div className="p-3 rounded bg-emerald-50 border border-emerald-100">
+                                  <p className="text-xs font-semibold text-gray-700 mb-1">O que você ganha:</p>
+                                  <p className="text-xs text-gray-600">{task.taskOQueGanha}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Dialog de Detalhe da Tarefa */}
+                          <Dialog open={taskDetailOpen === task.sessionId} onOpenChange={(open) => { if (!open) setTaskDetailOpen(null); }}>
+                            <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle className="text-gray-900 flex items-center gap-2">
+                                  <ClipboardCheck className="h-5 w-5 text-[#F5991F]" />
+                                  {task.taskName}
+                                </DialogTitle>
+                                <DialogDescription className="text-gray-500">
+                                  Sessão {task.sessionNumber} • {task.taskCompetencia}
+                                  {task.taskDeadline && (<> • Prazo: {new Date(task.taskDeadline).toLocaleDateString("pt-BR")}</>)}
+                                </DialogDescription>
+                              </DialogHeader>
+
+                              <div className="space-y-4">
+                                {/* Instruções */}
+                                {task.taskOQueFazer && (
+                                  <div className="p-3 rounded bg-blue-50 border border-blue-100">
+                                    <p className="text-xs font-semibold text-gray-700 mb-1">O que fazer:</p>
+                                    <p className="text-xs text-gray-600">{task.taskOQueFazer}</p>
+                                  </div>
+                                )}
+
+                                {/* Status */}
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium text-gray-700">Status:</span>
+                                  <Badge variant="outline" className={statusConfig.className}>
+                                    <span className="flex items-center gap-1">{statusConfig.icon} {statusConfig.label}</span>
+                                  </Badge>
+                                </div>
+
+                                {/* Se PENDENTE: formulário de envio */}
+                                {task.taskStatus === 'nao_entregue' && (
+                                  <div className="space-y-3 p-4 rounded-lg bg-amber-50/50 border border-amber-200">
+                                    <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                      <Upload className="h-4 w-4 text-[#F5991F]" /> Enviar Evidência
+                                    </h4>
+                                    <p className="text-xs text-gray-500">Envie pelo menos um link ou uma imagem como evidência da atividade.</p>
+                                    <div className="space-y-2">
+                                      <Label className="text-xs text-gray-700">Link (opcional)</Label>
+                                      <Input
+                                        type="url"
+                                        placeholder="https://..."
+                                        value={evidenceLink[task.sessionId] || ''}
+                                        onChange={(e) => setEvidenceLink(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
+                                        className="text-sm"
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="text-xs text-gray-700">Imagem (opcional, máx 5MB: JPG, PNG, WebP)</Label>
+                                      <div className="flex items-center gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            const input = document.createElement('input');
+                                            input.type = 'file';
+                                            input.accept = 'image/jpeg,image/png,image/webp';
+                                            input.onchange = (e: any) => {
+                                              const file = e.target.files?.[0];
+                                              if (file) {
+                                                if (file.size > 5 * 1024 * 1024) {
+                                                  alert('Imagem deve ter no máximo 5MB');
+                                                  return;
+                                                }
+                                                setEvidenceFile(prev => ({ ...prev, [task.sessionId]: file }));
+                                              }
+                                            };
+                                            input.click();
+                                          }}
+                                          className="text-xs"
+                                        >
+                                          <Paperclip className="h-3 w-3 mr-1" /> Anexar Imagem
+                                        </Button>
+                                        {evidenceFile[task.sessionId] && (
+                                          <span className="text-xs text-gray-600 flex items-center gap-1">
+                                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                            {evidenceFile[task.sessionId]!.name}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="text-xs text-gray-700">Relato (opcional)</Label>
+                                      <Textarea
+                                        placeholder="Descreva como foi a realização desta tarefa..."
+                                        value={relatoText[task.sessionId] || ''}
+                                        onChange={(e) => setRelatoText(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
+                                        className="text-sm min-h-[60px]"
+                                      />
+                                    </div>
+                                    <Button
+                                      onClick={async () => {
+                                        if (relatoText[task.sessionId]) {
+                                          await submitRelato.mutateAsync({ sessionId: task.sessionId, relatoAluno: relatoText[task.sessionId] });
+                                        }
+                                        await handleEvidenceSubmit(task.sessionId);
+                                      }}
+                                      disabled={(!evidenceLink[task.sessionId] && !evidenceFile[task.sessionId]) || submitEvidence.isPending}
+                                      className="w-full bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
+                                    >
+                                      <Send className="h-4 w-4 mr-2" />
+                                      {submitEvidence.isPending ? 'Enviando...' : 'Enviar Evidência'}
+                                    </Button>
+                                    {submitEvidence.isError && (
+                                      <p className="text-xs text-red-600">{submitEvidence.error?.message}</p>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Se ENTREGUE ou VALIDADA: mostrar evidência enviada */}
+                                {(task.taskStatus === 'entregue' || task.taskStatus === 'validada') && (
+                                  <div className="space-y-3">
+                                    <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                      <FileText className="h-4 w-4 text-emerald-600" /> Minha Entrega
+                                    </h4>
+                                    {task.submittedAt && (
+                                      <p className="text-xs text-gray-500">Enviado em: {new Date(task.submittedAt).toLocaleString("pt-BR")}</p>
+                                    )}
+                                    {task.evidenceLink && (
+                                      <div className="p-3 rounded bg-gray-50 border border-gray-200">
+                                        <p className="text-xs font-medium text-gray-700 mb-1">Link:</p>
+                                        <a href={task.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                          <ExternalLink className="h-3 w-3" /> {task.evidenceLink}
+                                        </a>
+                                      </div>
+                                    )}
+                                    {task.evidenceImageUrl && (
+                                      <div className="p-3 rounded bg-gray-50 border border-gray-200">
+                                        <p className="text-xs font-medium text-gray-700 mb-2">Imagem:</p>
+                                        <img src={task.evidenceImageUrl} alt="Evidência" className="max-w-full max-h-64 rounded-lg border" />
+                                      </div>
+                                    )}
+                                    {task.relatoAluno && (
+                                      <div className="p-3 rounded bg-gray-50 border border-gray-200">
+                                        <p className="text-xs font-medium text-gray-700 mb-1">Relato:</p>
+                                        <p className="text-xs text-gray-600">{task.relatoAluno}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Validação */}
+                                {task.taskStatus === 'validada' && task.validatedAt && (
+                                  <div className="p-3 rounded bg-purple-50 border border-purple-200">
+                                    <p className="text-xs font-semibold text-purple-700 flex items-center gap-1">
+                                      <Award className="h-3 w-3" /> Atividade Validada
+                                    </p>
+                                    <p className="text-xs text-purple-600 mt-1">
+                                      Validada em: {new Date(task.validatedAt).toLocaleString("pt-BR")}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Comentários */}
+                                {task.comments && task.comments.length > 0 && (
+                                  <div className="space-y-2">
+                                    <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                      <MessageSquare className="h-4 w-4 text-blue-600" /> Comentários ({task.comments.length})
+                                    </h4>
+                                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                                      {task.comments.map((c: any) => (
+                                        <div key={c.id} className="p-3 rounded bg-gray-50 border border-gray-200">
+                                          <div className="flex items-center justify-between mb-1">
+                                            <span className="text-xs font-medium text-gray-700">{c.authorName}</span>
+                                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                              {c.authorRole === 'mentor' ? 'Mentora' : 'Admin'}
+                                            </Badge>
+                                          </div>
+                                          <p className="text-xs text-gray-600">{c.comment}</p>
+                                          <p className="text-[10px] text-gray-400 mt-1">{new Date(c.createdAt).toLocaleString("pt-BR")}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-12 text-gray-500">

@@ -202,7 +202,7 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   sessionDate: date("sessionDate"),
   isAssessment: int("isAssessment").default(0).notNull(), // 1 = sessão de assessment (não conta no saldo), 0 = sessão normal
   presence: mysqlEnum("presence", ["presente", "ausente"]).notNull(),
-  taskStatus: mysqlEnum("taskStatus", ["entregue", "nao_entregue", "sem_tarefa"]),
+  taskStatus: mysqlEnum("taskStatus", ["entregue", "nao_entregue", "sem_tarefa", "validada"]),
   engagementScore: int("engagementScore"),
   notaEvolucao: int("notaEvolucao"), // Nota da mentora (0-10) - BLOCO 8
   feedback: text("feedback"),
@@ -211,6 +211,14 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   taskDeadline: date("taskDeadline"),
   relatoAluno: text("relatoAluno"),
   batchId: int("batchId"),
+  // Campos de evidência (aluno envia link/imagem como prova da atividade)
+  evidenceLink: varchar("evidenceLink", { length: 1000 }), // URL da evidência
+  evidenceImageUrl: text("evidenceImageUrl"), // URL da imagem no S3
+  evidenceImageKey: varchar("evidenceImageKey", { length: 512 }), // Key da imagem no S3
+  submittedAt: timestamp("submittedAt"), // Data/hora que o aluno enviou a evidência
+  // Campos de validação (mentor valida a entrega)
+  validatedBy: int("validatedBy"), // ID do consultor/mentor que validou
+  validatedAt: timestamp("validatedAt"), // Data/hora da validação
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -643,3 +651,21 @@ export const casesSucesso = mysqlTable("cases_sucesso", {
 });
 export type CaseSucesso = typeof casesSucesso.$inferSelect;
 export type InsertCaseSucesso = typeof casesSucesso.$inferInsert;
+
+/**
+ * Comentários em Atividades Práticas
+ * Mentor e Admin podem comentar nas entregas dos alunos
+ * Aluno visualiza os comentários no detalhe da tarefa
+ */
+export const practicalActivityComments = mysqlTable("practical_activity_comments", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull(), // FK para mentoring_sessions
+  authorId: int("authorId").notNull(), // ID do autor (user.id)
+  authorRole: mysqlEnum("authorRole", ["mentor", "admin"]).notNull(),
+  authorName: varchar("authorName", { length: 255 }).notNull(),
+  comment: text("comment").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PracticalActivityComment = typeof practicalActivityComments.$inferSelect;
+export type InsertPracticalActivityComment = typeof practicalActivityComments.$inferInsert;

@@ -75,6 +75,7 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: UserCheck, label: "Painel de controle Mentores", path: "/dashboard/mentor", roles: ["admin"] },
   { icon: UserCheck, label: "Meu Dashboard", path: "/dashboard/mentor", roles: ["manager"], requireConsultorId: true },
   { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria", roles: ["manager"] },
+  { icon: ClipboardCheck, label: "Atividades Práticas", path: "/atividades-praticas", roles: ["admin"] },
   { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment", roles: ["admin", "manager"] },
   
   // === GERENTES DE EMPRESA ===

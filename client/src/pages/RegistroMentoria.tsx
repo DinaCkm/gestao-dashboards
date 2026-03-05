@@ -30,7 +30,13 @@ import {
   Clock,
   Plus,
   Search,
-  X
+  X,
+  ExternalLink,
+  MessageSquare,
+  Award,
+  Send,
+  FileText,
+  Image as ImageIcon
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -93,6 +99,9 @@ export default function RegistroMentoria() {
   );
   const { data: taskLibrary = [] } = trpc.mentor.getTaskLibrary.useQuery();
 
+  // Evidência / Validação / Comentários states
+  const [commentText, setCommentText] = useState<string>("");
+
   // Mutations
   const updateSession = trpc.mentor.updateSession.useMutation({
     onSuccess: () => {
@@ -115,6 +124,32 @@ export default function RegistroMentoria() {
       toast.error(`Erro ao criar sessão: ${error.message}`);
     }
   });
+
+  const validateTask = trpc.mentor.validateTask.useMutation({
+    onSuccess: () => {
+      toast.success("Atividade prática validada com sucesso!");
+      refetchSessions();
+    },
+    onError: (error: { message: string }) => {
+      toast.error(`Erro ao validar: ${error.message}`);
+    }
+  });
+
+  const addComment = trpc.mentor.addTaskComment.useMutation({
+    onSuccess: () => {
+      toast.success("Comentário adicionado!");
+      setCommentText("");
+      refetchSessions();
+    },
+    onError: (error: { message: string }) => {
+      toast.error(`Erro: ${error.message}`);
+    }
+  });
+
+  const { data: submissionDetail } = trpc.mentor.getSubmissionDetail.useQuery(
+    { sessionId: viewingSession! },
+    { enabled: !!viewingSession }
+  );
 
   // Computed
   const selectedAluno = useMemo(() => alunos.find(a => a.id === selectedAlunoId), [alunos, selectedAlunoId]);
@@ -925,6 +960,110 @@ export default function RegistroMentoria() {
                   <div>
                     <p className="text-xs text-gray-500 mb-1 font-medium">Feedback / Observações</p>
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 text-sm text-gray-700 whitespace-pre-wrap overflow-y-auto max-h-40">{viewedSession.feedback}</div>
+                  </div>
+                )}
+
+                {/* === SEÇÃO DE EVIDÊNCIA DO ALUNO === */}
+                {submissionDetail && (submissionDetail.evidenceLink || submissionDetail.evidenceImageUrl || submissionDetail.submittedAt) && (
+                  <div className="space-y-3 border-t pt-4">
+                    <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-blue-600" /> Evidência do Aluno
+                    </h4>
+                    {submissionDetail.submittedAt && (
+                      <p className="text-xs text-gray-500">Enviado em: {new Date(submissionDetail.submittedAt).toLocaleString('pt-BR')}</p>
+                    )}
+                    {submissionDetail.evidenceLink && (
+                      <div className="p-3 rounded bg-blue-50 border border-blue-200">
+                        <p className="text-xs font-medium text-gray-700 mb-1">Link:</p>
+                        <a href={submissionDetail.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                          <ExternalLink className="h-3 w-3" /> {submissionDetail.evidenceLink}
+                        </a>
+                      </div>
+                    )}
+                    {submissionDetail.evidenceImageUrl && (
+                      <div className="p-3 rounded bg-gray-50 border border-gray-200">
+                        <p className="text-xs font-medium text-gray-700 mb-2">Imagem:</p>
+                        <img src={submissionDetail.evidenceImageUrl} alt="Evidência" className="max-w-full max-h-48 rounded-lg border cursor-pointer" onClick={() => window.open(submissionDetail.evidenceImageUrl!, '_blank')} />
+                      </div>
+                    )}
+                    {submissionDetail.relatoAluno && (
+                      <div className="p-3 rounded bg-gray-50 border border-gray-200">
+                        <p className="text-xs font-medium text-gray-700 mb-1">Relato do Aluno:</p>
+                        <p className="text-xs text-gray-600 whitespace-pre-wrap">{submissionDetail.relatoAluno}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* === VALIDAÇÃO === */}
+                {submissionDetail && viewedSession.taskStatus === 'entregue' && submissionDetail.submittedAt && (
+                  <div className="border-t pt-4">
+                    <Button
+                      onClick={() => validateTask.mutate({ sessionId: viewedSession.id })}
+                      disabled={validateTask.isPending}
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      <Award className="h-4 w-4 mr-2" />
+                      {validateTask.isPending ? 'Validando...' : 'Atividade Prática Entregue (Validar)'}
+                    </Button>
+                  </div>
+                )}
+
+                {/* === STATUS VALIDADA === */}
+                {submissionDetail && viewedSession.taskStatus === 'validada' && submissionDetail.validatedAt && (
+                  <div className="p-3 rounded bg-purple-50 border border-purple-200">
+                    <p className="text-xs font-semibold text-purple-700 flex items-center gap-1">
+                      <Award className="h-3 w-3" /> Atividade Validada
+                    </p>
+                    <p className="text-xs text-purple-600 mt-1">Validada em: {new Date(submissionDetail.validatedAt).toLocaleString('pt-BR')}</p>
+                    {submissionDetail.validatedByName && (
+                      <p className="text-xs text-purple-600">Por: {submissionDetail.validatedByName}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* === COMENTÁRIOS === */}
+                {submissionDetail && (
+                  <div className="space-y-3 border-t pt-4">
+                    <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-blue-600" /> Comentários
+                      {submissionDetail.comments && submissionDetail.comments.length > 0 && (
+                        <Badge variant="outline" className="text-xs">{submissionDetail.comments.length}</Badge>
+                      )}
+                    </h4>
+                    {submissionDetail.comments && submissionDetail.comments.length > 0 && (
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {submissionDetail.comments.map((c: any) => (
+                          <div key={c.id} className="p-3 rounded bg-gray-50 border border-gray-200">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium text-gray-700">{c.authorName}</span>
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                {c.authorRole === 'mentor' ? 'Mentora' : 'Admin'}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-gray-600">{c.comment}</p>
+                            <p className="text-[10px] text-gray-400 mt-1">{new Date(c.createdAt).toLocaleString('pt-BR')}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Textarea
+                        placeholder="Adicionar comentário..."
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        className="text-sm min-h-[60px] flex-1"
+                      />
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => addComment.mutate({ sessionId: viewedSession.id, comment: commentText })}
+                      disabled={!commentText.trim() || addComment.isPending}
+                      className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
+                    >
+                      <Send className="h-3 w-3 mr-1" />
+                      {addComment.isPending ? 'Enviando...' : 'Enviar Comentário'}
+                    </Button>
                   </div>
                 )}
               </div>

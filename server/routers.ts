@@ -2334,6 +2334,145 @@ export const appRouter = router({
         return { success };
       }),
     
+    // Mentor valida a entrega de uma atividade prática (idempotente)
+    validateTask: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        // Verificar se é mentor (consultor)
+        const consultors = await db.getConsultors();
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        if (!consultor && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentores podem validar atividades' });
+        }
+
+        const session = await db.getMentoringSessionById(input.sessionId);
+        if (!session) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Sessão não encontrada' });
+        }
+
+        // Idempotência: se já está validada, retorna sucesso sem duplicar
+        if (session.taskStatus === 'validada') {
+          return { success: true, alreadyValidated: true };
+        }
+
+        // Só pode validar se está entregue
+        if (session.taskStatus !== 'entregue') {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Só é possível validar atividades com status ENTREGUE' });
+        }
+
+        await db.updateMentoringSession(input.sessionId, {
+          taskStatus: 'validada',
+          validatedBy: consultor?.id || ctx.user.id,
+          validatedAt: new Date(),
+        });
+
+        return { success: true, alreadyValidated: false };
+      }),
+
+    // Mentor visualiza detalhe da entrega de um aluno
+    getSubmissionDetail: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ input }) => {
+        const session = await db.getMentoringSessionById(input.sessionId);
+        if (!session) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sessão não encontrada' });
+        const task = session.taskId ? await db.getTaskLibraryById(session.taskId) : null;
+        const comments = await db.getCommentsBySessionId(input.sessionId);
+        const allAlunos = await db.getAlunos();
+        const aluno = allAlunos.find(a => a.id === session.alunoId);
+        const consultors = await db.getConsultors();
+        const validador = session.validatedBy ? consultors.find(c => c.id === session.validatedBy) : null;
+        return {
+          sessionId: session.id,
+          alunoId: session.alunoId,
+          alunoNome: aluno?.name || 'Aluno não encontrado',
+          sessionNumber: session.sessionNumber,
+          sessionDate: session.sessionDate,
+          taskId: session.taskId,
+          taskName: task?.nome || '',
+          taskCompetencia: task?.competencia || '',
+          taskResumo: task?.resumo || '',
+          taskOQueFazer: task?.oQueFazer || '',
+          taskDeadline: session.taskDeadline,
+          taskStatus: session.taskStatus,
+          evidenceLink: session.evidenceLink,
+          evidenceImageUrl: session.evidenceImageUrl,
+          submittedAt: session.submittedAt,
+          validatedBy: session.validatedBy,
+          validatedByName: validador?.name || null,
+          validatedAt: session.validatedAt,
+          relatoAluno: session.relatoAluno,
+          comments,
+        };
+      }),
+
+    // Mentor adiciona comentário em uma entrega
+    addTaskComment: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        comment: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const consultors = await db.getConsultors();
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        const authorRole = ctx.user.role === 'admin' ? 'admin' : 'mentor';
+        const authorName = consultor?.name || ctx.user.name || 'Mentor';
+
+        const id = await db.addActivityComment({
+          sessionId: input.sessionId,
+          authorId: ctx.user.id,
+          authorRole: authorRole as 'mentor' | 'admin',
+          authorName,
+          comment: input.comment,
+        });
+
+        return { success: true, commentId: id };
+      }),
+
+    // Mentor: listar sessões com tarefas dos seus alunos (para acompanhamento)
+    taskSubmissions: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+      }).optional())
+      .query(async ({ ctx, input }) => {
+        const consultors = await db.getConsultors();
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        if (!consultor) return [];
+
+        const sessions = await db.getMentoringSessionsByConsultor(consultor.id);
+        const sessionsWithTask = sessions.filter(s => s.taskId !== null && s.taskId !== undefined);
+        
+        // Filtrar por status se fornecido
+        const filtered = input?.status 
+          ? sessionsWithTask.filter(s => s.taskStatus === input.status)
+          : sessionsWithTask;
+
+        const allAlunos = await db.getAlunos();
+        const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
+
+        const result = await Promise.all(
+          filtered.map(async (s) => {
+            const task = await db.getTaskLibraryById(s.taskId!);
+            const aluno = alunoMap.get(s.alunoId);
+            return {
+              sessionId: s.id,
+              alunoId: s.alunoId,
+              alunoNome: aluno?.name || 'Aluno não encontrado',
+              sessionNumber: s.sessionNumber,
+              sessionDate: s.sessionDate,
+              taskName: task?.nome || 'Tarefa não encontrada',
+              taskCompetencia: task?.competencia || '',
+              taskDeadline: s.taskDeadline,
+              taskStatus: s.taskStatus,
+              evidenceLink: s.evidenceLink,
+              evidenceImageUrl: s.evidenceImageUrl,
+              submittedAt: s.submittedAt,
+              validatedAt: s.validatedAt,
+            };
+          })
+        );
+        return result;
+      }),
+
     // Dashboard consolidado de todos os mentores
     dashboardGeral: managerProcedure.query(async () => {
       const consultors = await db.getConsultors();
@@ -2358,6 +2497,113 @@ export const appRouter = router({
         mentores: allStats.sort((a, b) => b.totalMentorias - a.totalMentorias)
       };
     }),
+  }),
+
+  // ==================== ATIVIDADES PRÁTICAS (ADMIN) ====================
+  practicalActivities: router({
+    // Admin: consulta de entregas com filtros
+    submissions: adminProcedure
+      .input(z.object({
+        consultorId: z.number().optional(),
+        alunoId: z.number().optional(),
+        turmaId: z.number().optional(),
+        status: z.string().optional(),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const sessions = await db.getActivitySubmissionsForAdmin(input);
+        const allAlunos = await db.getAlunos();
+        const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
+        const consultors = await db.getConsultors();
+        const consultorMap = new Map(consultors.map(c => [c.id, c]));
+        const programs = await db.getPrograms();
+        const programMap = new Map(programs.map(p => [p.id, p]));
+
+        const result = await Promise.all(
+          sessions.map(async (s) => {
+            const task = s.taskId ? await db.getTaskLibraryById(s.taskId) : null;
+            const aluno = alunoMap.get(s.alunoId);
+            const consultor = consultorMap.get(s.consultorId);
+            const program = aluno?.programId ? programMap.get(aluno.programId) : null;
+            return {
+              sessionId: s.id,
+              alunoId: s.alunoId,
+              alunoNome: aluno?.name || 'Aluno não encontrado',
+              empresaNome: program?.name || 'N/A',
+              consultorId: s.consultorId,
+              consultorNome: consultor?.name || 'Mentor não encontrado',
+              sessionNumber: s.sessionNumber,
+              sessionDate: s.sessionDate,
+              taskName: task?.nome || '',
+              taskCompetencia: task?.competencia || '',
+              taskDeadline: s.taskDeadline,
+              taskStatus: s.taskStatus,
+              evidenceLink: s.evidenceLink,
+              evidenceImageUrl: s.evidenceImageUrl,
+              submittedAt: s.submittedAt,
+              validatedAt: s.validatedAt,
+              validatedBy: s.validatedBy,
+            };
+          })
+        );
+        return result;
+      }),
+
+    // Admin: detalhe de uma entrega
+    submissionDetail: adminProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ input }) => {
+        const session = await db.getMentoringSessionById(input.sessionId);
+        if (!session) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sessão não encontrada' });
+        const task = session.taskId ? await db.getTaskLibraryById(session.taskId) : null;
+        const comments = await db.getCommentsBySessionId(input.sessionId);
+        const allAlunos = await db.getAlunos();
+        const aluno = allAlunos.find(a => a.id === session.alunoId);
+        const consultors = await db.getConsultors();
+        const consultor = consultors.find(c => c.id === session.consultorId);
+        const validador = session.validatedBy ? consultors.find(c => c.id === session.validatedBy) : null;
+        return {
+          sessionId: session.id,
+          alunoId: session.alunoId,
+          alunoNome: aluno?.name || 'Aluno não encontrado',
+          consultorNome: consultor?.name || 'Mentor não encontrado',
+          sessionNumber: session.sessionNumber,
+          sessionDate: session.sessionDate,
+          taskId: session.taskId,
+          taskName: task?.nome || '',
+          taskCompetencia: task?.competencia || '',
+          taskResumo: task?.resumo || '',
+          taskOQueFazer: task?.oQueFazer || '',
+          taskDeadline: session.taskDeadline,
+          taskStatus: session.taskStatus,
+          evidenceLink: session.evidenceLink,
+          evidenceImageUrl: session.evidenceImageUrl,
+          submittedAt: session.submittedAt,
+          validatedBy: session.validatedBy,
+          validatedByName: validador?.name || null,
+          validatedAt: session.validatedAt,
+          relatoAluno: session.relatoAluno,
+          comments,
+        };
+      }),
+
+    // Admin: adicionar comentário
+    addComment: adminProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        comment: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.addActivityComment({
+          sessionId: input.sessionId,
+          authorId: ctx.user.id,
+          authorRole: 'admin',
+          authorName: ctx.user.name || 'Administrador',
+          comment: input.comment,
+        });
+        return { success: true, commentId: id };
+      }),
   }),
 
   // Admin - Cadastros
@@ -3033,6 +3279,7 @@ export const appRouter = router({
         const tasks = await Promise.all(
           sessionsWithTask.map(async (s) => {
             const task = await db.getTaskLibraryById(s.taskId!);
+            const comments = await db.getCommentsBySessionId(s.id);
             return {
               sessionId: s.id,
               sessionNumber: s.sessionNumber,
@@ -3045,10 +3292,94 @@ export const appRouter = router({
               taskResumo: task?.resumo || '',
               taskOQueFazer: task?.oQueFazer || '',
               taskOQueGanha: task?.oQueGanha || '',
+              // Campos de evidência
+              evidenceLink: s.evidenceLink,
+              evidenceImageUrl: s.evidenceImageUrl,
+              submittedAt: s.submittedAt,
+              // Campos de validação
+              validatedBy: s.validatedBy,
+              validatedAt: s.validatedAt,
+              relatoAluno: s.relatoAluno,
+              // Comentários
+              comments,
             };
           })
         );
         return tasks;
+      }),
+
+    // Aluno envia evidência (link e/ou imagem) para uma tarefa
+    submitEvidence: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        evidenceLink: z.string().url().optional(),
+        evidenceImageBase64: z.string().optional(), // Base64 da imagem
+        evidenceImageName: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+
+        // Verificar se a sessão pertence ao aluno
+        const session = await db.getMentoringSessionById(input.sessionId);
+        if (!session || session.alunoId !== aluno.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Sessão não pertence a este aluno' });
+        }
+
+        // Verificar se já está validada
+        if (session.taskStatus === 'validada') {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Atividade já foi validada, não pode ser alterada' });
+        }
+
+        // Exigir pelo menos link ou imagem
+        if (!input.evidenceLink && !input.evidenceImageBase64) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Envie pelo menos um link ou uma imagem como evidência' });
+        }
+
+        let imageUrl: string | null = null;
+        let imageKey: string | null = null;
+
+        // Upload de imagem para S3 se fornecida
+        if (input.evidenceImageBase64) {
+          const buffer = Buffer.from(input.evidenceImageBase64, 'base64');
+          // Validar tamanho (5MB)
+          if (buffer.length > 5 * 1024 * 1024) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Imagem deve ter no máximo 5MB' });
+          }
+          const ext = input.evidenceImageName?.split('.').pop()?.toLowerCase() || 'jpg';
+          if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Formato de imagem inválido. Use JPG, PNG ou WebP' });
+          }
+          const randomSuffix = Math.random().toString(36).substring(2, 10);
+          const fileKey = `evidence/${aluno.id}-${input.sessionId}-${randomSuffix}.${ext}`;
+          const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+          const result = await storagePut(fileKey, buffer, contentType);
+          imageUrl = result.url;
+          imageKey = result.key;
+        }
+
+        // Atualizar sessão com evidência
+        await db.updateMentoringSession(input.sessionId, {
+          evidenceLink: input.evidenceLink || null,
+          evidenceImageUrl: imageUrl,
+          evidenceImageKey: imageKey,
+          submittedAt: new Date(),
+          taskStatus: 'entregue',
+        });
+
+        return { success: true };
+      }),
+
+    // Aluno visualiza comentários de uma sessão
+    myTaskComments: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        if (!aluno) return [];
+        // Verificar se a sessão pertence ao aluno
+        const session = await db.getMentoringSessionById(input.sessionId);
+        if (!session || session.alunoId !== aluno.id) return [];
+        return await db.getCommentsBySessionId(input.sessionId);
       }),
 
     // Admin: visualizar reflexões dos alunos

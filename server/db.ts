@@ -1,4 +1,4 @@
-import { eq, and, or, desc, asc, sql, not, gte, lt, inArray, isNotNull } from "drizzle-orm";
+import { eq, and, or, desc, asc, sql, not, gte, lt, lte, inArray, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -26,7 +26,8 @@ import {
   announcements, InsertAnnouncement, Announcement,
   contratosAluno, InsertContratoAluno, ContratoAluno,
   historicoNivelCompetencia, InsertHistoricoNivelCompetencia, HistoricoNivelCompetencia,
-  casesSucesso, InsertCaseSucesso, CaseSucesso
+  casesSucesso, InsertCaseSucesso, CaseSucesso,
+  practicalActivityComments, InsertPracticalActivityComment, PracticalActivityComment
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -667,9 +668,15 @@ export async function updateMentoringSession(sessionId: number, data: {
   mensagemAluno?: string;
   taskId?: number | null;
   taskDeadline?: string | null;
-  taskStatus?: "entregue" | "nao_entregue" | "sem_tarefa";
+  taskStatus?: "entregue" | "nao_entregue" | "sem_tarefa" | "validada";
   relatoAluno?: string;
   presence?: "presente" | "ausente";
+  evidenceLink?: string | null;
+  evidenceImageUrl?: string | null;
+  evidenceImageKey?: string | null;
+  submittedAt?: Date | null;
+  validatedBy?: number | null;
+  validatedAt?: Date | null;
 }): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
@@ -684,6 +691,12 @@ export async function updateMentoringSession(sessionId: number, data: {
   if (data.taskStatus !== undefined) updateData.taskStatus = data.taskStatus;
   if (data.relatoAluno !== undefined) updateData.relatoAluno = data.relatoAluno;
   if (data.presence !== undefined) updateData.presence = data.presence;
+  if (data.evidenceLink !== undefined) updateData.evidenceLink = data.evidenceLink;
+  if (data.evidenceImageUrl !== undefined) updateData.evidenceImageUrl = data.evidenceImageUrl;
+  if (data.evidenceImageKey !== undefined) updateData.evidenceImageKey = data.evidenceImageKey;
+  if (data.submittedAt !== undefined) updateData.submittedAt = data.submittedAt;
+  if (data.validatedBy !== undefined) updateData.validatedBy = data.validatedBy;
+  if (data.validatedAt !== undefined) updateData.validatedAt = data.validatedAt;
   
   if (Object.keys(updateData).length === 0) return true;
   
@@ -4362,4 +4375,72 @@ export async function getAllCiclosForCalculatorV2(): Promise<Map<string, { id: n
   }
   
   return result;
+}
+
+
+// ============ PRACTICAL ACTIVITY COMMENTS ============
+
+export async function getCommentsBySessionId(sessionId: number): Promise<PracticalActivityComment[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(practicalActivityComments)
+    .where(eq(practicalActivityComments.sessionId, sessionId))
+    .orderBy(practicalActivityComments.createdAt);
+}
+
+export async function addActivityComment(data: InsertPracticalActivityComment): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(practicalActivityComments).values(data);
+  return result[0].insertId;
+}
+
+// ============ PRACTICAL ACTIVITY ADMIN QUERIES ============
+
+export async function getActivitySubmissionsForAdmin(filters?: {
+  consultorId?: number;
+  alunoId?: number;
+  turmaId?: number;
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<MentoringSession[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [
+    isNotNull(mentoringSessions.taskId), // Apenas sessões com tarefa atribuída
+  ];
+  
+  if (filters?.consultorId) {
+    conditions.push(eq(mentoringSessions.consultorId, filters.consultorId));
+  }
+  if (filters?.alunoId) {
+    conditions.push(eq(mentoringSessions.alunoId, filters.alunoId));
+  }
+  if (filters?.turmaId) {
+    conditions.push(eq(mentoringSessions.turmaId, filters.turmaId));
+  }
+  if (filters?.status) {
+    conditions.push(eq(mentoringSessions.taskStatus, filters.status as any));
+  }
+  if (filters?.dateFrom) {
+    conditions.push(gte(mentoringSessions.taskDeadline, filters.dateFrom as any));
+  }
+  if (filters?.dateTo) {
+    conditions.push(lte(mentoringSessions.taskDeadline, filters.dateTo as any));
+  }
+  
+  return await db.select().from(mentoringSessions)
+    .where(and(...conditions))
+    .orderBy(desc(mentoringSessions.createdAt));
+}
+
+export async function getMentoringSessionById(sessionId: number): Promise<MentoringSession | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(mentoringSessions)
+    .where(eq(mentoringSessions.id, sessionId))
+    .limit(1);
+  return result[0];
 }
