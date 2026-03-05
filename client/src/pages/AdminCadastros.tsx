@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -56,41 +56,12 @@ export default function AdminCadastros() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("acesso");
 
-  // Proteger página: apenas admin pode acessar — redirecionar para página correta do role
-  useEffect(() => {
-    if (loading || !user) return;
-    if (user.role === 'admin') return; // admin pode acessar
-    
-    if (user.role === 'manager') {
-      const userAny = user as any;
-      if (userAny.consultorId) {
-        setLocation('/dashboard/mentor');
-      } else {
-        setLocation('/dashboard/gestor');
-      }
-    } else if (user.role === 'user') {
-      setLocation('/meu-dashboard');
-    } else {
-      setLocation('/');
-    }
-  }, [user, loading, setLocation]);
-
-  // Enquanto carrega ou se não é admin, mostra loading (redirecionamento acontece no useEffect)
-  if (loading || !user || user.role !== 'admin') {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-[60vh]">
-          <div className="animate-pulse text-muted-foreground">Redirecionando...</div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
+  // ALL hooks must be called before any early return (React rules of hooks)
   // Queries
-  const { data: empresas, refetch: refetchEmpresas, isLoading: loadingEmpresas } = trpc.admin.listEmpresas.useQuery();
-  const { data: mentores, refetch: refetchMentores, isLoading: loadingMentores } = trpc.admin.listMentores.useQuery();
-  const { data: gerentes, refetch: refetchGerentes, isLoading: loadingGerentes } = trpc.admin.listGerentes.useQuery();
-  const { data: accessUsers, refetch: refetchAccessUsers, isLoading: loadingAccessUsers } = trpc.admin.listAccessUsers.useQuery();
+  const { data: empresas, refetch: refetchEmpresas, isLoading: loadingEmpresas } = trpc.admin.listEmpresas.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: mentores, refetch: refetchMentores, isLoading: loadingMentores } = trpc.admin.listMentores.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: gerentes, refetch: refetchGerentes, isLoading: loadingGerentes } = trpc.admin.listGerentes.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: accessUsers, refetch: refetchAccessUsers, isLoading: loadingAccessUsers } = trpc.admin.listAccessUsers.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
 
   // Mutations
   const createEmpresa = trpc.admin.createEmpresa.useMutation({
@@ -197,6 +168,36 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro ao atualizar gerente: ${err.message}`),
   });
 
+  // Proteger página: apenas admin pode acessar — redirecionar para página correta do role
+  useEffect(() => {
+    if (loading || !user) return;
+    if (user.role === 'admin') return; // admin pode acessar
+    
+    if (user.role === 'manager') {
+      const userAny = user as any;
+      if (userAny.consultorId) {
+        setLocation('/dashboard/mentor');
+      } else {
+        setLocation('/dashboard/gestor');
+      }
+    } else if (user.role === 'user') {
+      setLocation('/meu-dashboard');
+    } else {
+      setLocation('/');
+    }
+  }, [user, loading, setLocation]);
+
+  // Enquanto carrega ou se não é admin, mostra loading (redirecionamento acontece no useEffect)
+  if (loading || !user || user.role !== 'admin') {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="animate-pulse text-muted-foreground">Redirecionando...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -300,6 +301,18 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
   // Search/filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEmpresa, setFilterEmpresa] = useState("all");
+  const [filterMentor, setFilterMentor] = useState("all");
+
+  // Extrair lista única de mentores dos alunos
+  const mentoresUnicos = useMemo(() => {
+    const mentorSet = new Map<string, string>();
+    accessUsers.forEach((u: any) => {
+      if (u.mentorNome) {
+        mentorSet.set(u.mentorNome, u.mentorNome);
+      }
+    });
+    return Array.from(mentorSet.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [accessUsers]);
   
   // Create form
   const [nome, setNome] = useState("");
@@ -510,17 +523,28 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
               <select
                 value={filterEmpresa}
                 onChange={(e) => setFilterEmpresa(e.target.value)}
-                className="flex h-9 min-w-[200px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="flex h-9 min-w-[180px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <option value="all">Todas as Empresas</option>
                 {empresas.map((emp) => (
                   <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
                 ))}
               </select>
+              <select
+                value={filterMentor}
+                onChange={(e) => setFilterMentor(e.target.value)}
+                className="flex h-9 min-w-[200px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="all">Todos os Mentores</option>
+                <option value="sem_mentor">Sem mentor atribuído</option>
+                {mentoresUnicos.map((nome) => (
+                  <option key={nome} value={nome}>{nome}</option>
+                ))}
+              </select>
             </div>
 
             {/* Filtered count indicator */}
-            {(searchTerm || filterEmpresa !== "all") && (
+            {(searchTerm || filterEmpresa !== "all" || filterMentor !== "all") && (
               <div className="text-sm text-muted-foreground mb-3">
                 Mostrando {[...accessUsers].filter((user) => {
                   const term = searchTerm.toLowerCase().trim();
@@ -528,11 +552,20 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                     (user.name || "").toLowerCase().includes(term) ||
                     (user.email || "").toLowerCase().includes(term) ||
                     (user.cpf || "").includes(term) ||
-                    (user.programName || "").toLowerCase().includes(term);
+                    (user.programName || "").toLowerCase().includes(term) ||
+                    (user.mentorNome || "").toLowerCase().includes(term);
                   const matchesEmpresa = filterEmpresa === "all" || 
                     (user.programId && user.programId.toString() === filterEmpresa);
-                  return matchesSearch && matchesEmpresa;
+                  const matchesMentor = filterMentor === "all" ||
+                    (filterMentor === "sem_mentor" ? !user.mentorNome : user.mentorNome === filterMentor);
+                  return matchesSearch && matchesEmpresa && matchesMentor;
                 }).length} de {accessUsers.length} alunos
+                {filterMentor !== "all" && filterMentor !== "sem_mentor" && (
+                  <span className="ml-1">| Mentor(a): <strong>{filterMentor}</strong></span>
+                )}
+                {filterMentor === "sem_mentor" && (
+                  <span className="ml-1">| <strong>Sem mentor atribuído</strong></span>
+                )}
               </div>
             )}
 
@@ -561,6 +594,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                   <TableHead>Email</TableHead>
                   <TableHead>ID</TableHead>
                   <TableHead>Empresa</TableHead>
+                  <TableHead>Mentor(a)</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
@@ -573,10 +607,13 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                     (user.name || "").toLowerCase().includes(term) ||
                     (user.email || "").toLowerCase().includes(term) ||
                     (user.cpf || "").includes(term) ||
-                    (user.programName || "").toLowerCase().includes(term);
+                    (user.programName || "").toLowerCase().includes(term) ||
+                    (user.mentorNome || "").toLowerCase().includes(term);
                   const matchesEmpresa = filterEmpresa === "all" || 
                     (user.programId && user.programId.toString() === filterEmpresa);
-                  return matchesSearch && matchesEmpresa;
+                  const matchesMentor = filterMentor === "all" ||
+                    (filterMentor === "sem_mentor" ? !user.mentorNome : user.mentorNome === filterMentor);
+                  return matchesSearch && matchesEmpresa && matchesMentor;
                 })
                 .sort((a, b) => (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0))
                 .map((user) => (
@@ -586,6 +623,9 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                     <TableCell className="font-mono text-sm">{user.cpf || "-"}</TableCell>
                     <TableCell>
 {user.programName || "-"}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {user.mentorNome ? user.mentorNome : <span className="text-muted-foreground">-</span>}
                     </TableCell>
                     <TableCell>
                       {user.isActive ? (
@@ -617,7 +657,7 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                 ))}
                 {accessUsers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       Nenhum aluno cadastrado. Clique em "Novo Aluno" para começar.
                     </TableCell>
                   </TableRow>
@@ -629,14 +669,17 @@ function GestaoAcessoTab({ accessUsers, empresas, loading, onCreate, onToggleSta
                       (user.name || "").toLowerCase().includes(term) ||
                       (user.email || "").toLowerCase().includes(term) ||
                       (user.cpf || "").includes(term) ||
-                      (user.programName || "").toLowerCase().includes(term);
+                      (user.programName || "").toLowerCase().includes(term) ||
+                      (user.mentorNome || "").toLowerCase().includes(term);
                     const matchesEmpresa = filterEmpresa === "all" || 
                       (user.programId && user.programId.toString() === filterEmpresa);
-                    return matchesSearch && matchesEmpresa;
+                    const matchesMentor = filterMentor === "all" ||
+                      (filterMentor === "sem_mentor" ? !user.mentorNome : user.mentorNome === filterMentor);
+                    return matchesSearch && matchesEmpresa && matchesMentor;
                   }).length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                      Nenhum aluno encontrado para a busca "{searchTerm}"{filterEmpresa !== "all" ? " na empresa selecionada" : ""}.
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      Nenhum aluno encontrado com os filtros aplicados.
                     </TableCell>
                   </TableRow>
                 )}

@@ -217,7 +217,7 @@ function DashboardLayoutContent({
     if (role === 'admin') return { label: "Admin", className: "bg-primary/20 text-primary" };
     if (role === 'manager' && hasConsultorId) return { label: "Mentor", className: "bg-orange-100 text-orange-700" };
     if (role === 'manager') return { label: "Gerente", className: "bg-secondary/20 text-secondary" };
-    return { label: "Usuário", className: "bg-muted text-muted-foreground" };
+    return { label: "Aluno", className: "bg-green-100 text-green-700" };
   };
 
   const badge = getRoleBadge(user?.role || "user", !!(user as any)?.consultorId);

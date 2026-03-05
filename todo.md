@@ -1459,3 +1459,12 @@
 - [x] Bug: Mentora Ana Carolina aparece com badge "Gerente" em vez de "Mentor" — corrigido: getRoleBadge agora diferencia mentor (manager+consultorId) de gerente
 - [x] Bug: Mentor/Gerente ao logar é redirecionado para /cadastros — corrigido: página /cadastros agora bloqueia acesso de não-admin
 - [x] Bug: Aluno ao logar é redirecionado para /cadastros em vez de /meu-dashboard — corrigido: CustomLogin agora redireciona para / após login (em vez de reload) + AdminCadastros redireciona não-admin para página correta
+- [ ] Bug: Header do Portal do Aluno mostra "Usuário" em vez de "Aluno" no canto superior direito
+- [ ] Exibir mentor(a) de cada aluno na área do administrador (Cadastros e/ou Dashboard)
+- [ ] Corrigir header do Portal do Aluno: trocar "Usuário" para "Aluno" no badge/label
+
+## Visibilidade Mentor-Aluno (05/03/2026)
+- [x] Coluna Mentor(a) na lista de alunos do Cadastros (backend + frontend)
+- [x] Corrigir bug de hooks no AdminCadastros (early return antes dos hooks)
+- [x] Filtro por Mentor na lista de alunos do Cadastros
+- [x] Garantir que mentor aparece em todas as telas admin relevantes (Visão Geral, detalhe aluno)
