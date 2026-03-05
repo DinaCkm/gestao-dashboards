@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,19 @@ function getDisplayRole(user: any): string {
 }
 
 export default function AdminCadastros() {
+  const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("acesso");
+
+  // Proteger página: apenas admin pode acessar
+  if (!loading && user && user.role !== 'admin') {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+          <p className="text-muted-foreground">Acesso restrito a administradores.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   // Queries
   const { data: empresas, refetch: refetchEmpresas, isLoading: loadingEmpresas } = trpc.admin.listEmpresas.useQuery();

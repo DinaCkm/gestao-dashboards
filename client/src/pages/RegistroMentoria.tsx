@@ -864,7 +864,7 @@ export default function RegistroMentoria() {
 
         {/* Modal de Visualização da Sessão */}
         <Dialog open={!!viewingSession} onOpenChange={(open) => { if (!open) setTimeout(() => setViewingSession(null), 100); }}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-[#0A1E3E]" />

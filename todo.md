@@ -1454,3 +1454,7 @@
 - [x] Testes vitest para comentários (validação, permissões admin/mentor)
 - [x] Testes vitest para consulta admin (permissões, NOT_FOUND)
 - [x] 265/265 testes passando (16 novos testes)
+- [x] Bug: Mentor ao logar é redirecionado para /cadastros (página que não está no menu do mentor) — corrigido: proteção de role + badge correto
+- [x] Bug: Dialog de Visualizar sessão de mentoria não tem barra de rolagem — conteúdo ultrapassa a tela
+- [x] Bug: Mentora Ana Carolina aparece com badge "Gerente" em vez de "Mentor" — corrigido: getRoleBadge agora diferencia mentor (manager+consultorId) de gerente
+- [x] Bug: Mentor/Gerente ao logar é redirecionado para /cadastros — corrigido: página /cadastros agora bloqueia acesso de não-admin

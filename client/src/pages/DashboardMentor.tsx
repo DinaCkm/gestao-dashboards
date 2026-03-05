@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Calendar, Building2, ClipboardList, TrendingUp, UserCheck, Eye } from "lucide-react";
+import { Users, Calendar, Building2, ClipboardList, TrendingUp, UserCheck, Eye, Info } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -267,7 +267,12 @@ function DashboardMentorContent() {
                     <p className="text-2xl font-bold">
                       {stats.totalAlunos > 0 ? (stats.totalMentorias / stats.totalAlunos).toFixed(1) : 0}
                     </p>
-                    <p className="text-sm text-muted-foreground">Média por Aluno</p>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      Média por Aluno
+                      <span title="Média de sessões de mentoria por aluno atendido. Calculada dividindo o total de mentorias pelo número de alunos." className="cursor-help">
+                        <Info className="h-3.5 w-3.5 text-muted-foreground/60" />
+                      </span>
+                    </p>
                   </div>
                 </div>
               </CardContent>

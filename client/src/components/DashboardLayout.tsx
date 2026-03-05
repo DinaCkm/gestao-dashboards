@@ -213,16 +213,14 @@ function DashboardLayoutContent({
     };
   }, [isResizing, setSidebarWidth]);
 
-  const getRoleBadge = (role: string) => {
-    const badges: Record<string, { label: string; className: string }> = {
-      admin: { label: "Admin", className: "bg-primary/20 text-primary" },
-      manager: { label: "Gerente", className: "bg-secondary/20 text-secondary" },
-      user: { label: "Usuário", className: "bg-muted text-muted-foreground" },
-    };
-    return badges[role] || badges.user;
+  const getRoleBadge = (role: string, hasConsultorId: boolean) => {
+    if (role === 'admin') return { label: "Admin", className: "bg-primary/20 text-primary" };
+    if (role === 'manager' && hasConsultorId) return { label: "Mentor", className: "bg-orange-100 text-orange-700" };
+    if (role === 'manager') return { label: "Gerente", className: "bg-secondary/20 text-secondary" };
+    return { label: "Usuário", className: "bg-muted text-muted-foreground" };
   };
 
-  const badge = getRoleBadge(user?.role || "user");
+  const badge = getRoleBadge(user?.role || "user", !!(user as any)?.consultorId);
 
   return (
     <>
