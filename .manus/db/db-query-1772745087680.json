@@ -1,0 +1,38 @@
+{
+  "query": "\nSELECT a.externalId, c.nome as competencia, ac.peso, \n  DATE_FORMAT(ac.microInicio, '%Y-%m-%d') as micro_ini,\n  DATE_FORMAT(ac.microTermino, '%Y-%m-%d') as micro_fim\nFROM assessment_competencias ac\nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id\nJOIN alunos a ON ap.alunoId = a.id\nJOIN competencias c ON ac.competenciaId = c.id\nWHERE a.externalId IN ('651877', '651878', '651879', '651880')\nAND ap.trilhaId = 60001\nAND c.id IN (60015, 60023, 60032);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT a.externalId, c.nome as competencia, ac.peso, \n  DATE_FORMAT(ac.microInicio, '%Y-%m-%d') as micro_ini,\n  DATE_FORMAT(ac.microTermino, '%Y-%m-%d') as micro_fim\nFROM assessment_competencias ac\nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id\nJOIN alunos a ON ap.alunoId = a.id\nJOIN competencias c ON ac.competenciaId = c.id\nWHERE a.externalId IN ('651877', '651878', '651879', '651880')\nAND ap.trilhaId = 60001\nAND c.id IN (60015, 60023, 60032);\n",
+  "rows": [
+    {
+      "externalId": "651877",
+      "competencia": "Gestão de Conflitos",
+      "peso": "opcional",
+      "micro_ini": "2025-10-15",
+      "micro_fim": "2026-03-30"
+    },
+    {
+      "externalId": "651879",
+      "competencia": "Gestão de Conflitos",
+      "peso": "opcional",
+      "micro_ini": "2025-10-15",
+      "micro_fim": "2026-03-30"
+    },
+    {
+      "externalId": "651878",
+      "competencia": "Mentalidade Sistêmica",
+      "peso": "opcional",
+      "micro_ini": "2025-10-15",
+      "micro_fim": "2026-03-30"
+    },
+    {
+      "externalId": "651880",
+      "competencia": "Relacionamentos Conectivos",
+      "peso": "opcional",
+      "micro_ini": "2025-10-15",
+      "micro_fim": "2026-03-30"
+    }
+  ],
+  "messages": [],
+  "stdout": "externalId\tcompetencia\tpeso\tmicro_ini\tmicro_fim\n651877\tGestão de Conflitos\topcional\t2025-10-15\t2026-03-30\n651879\tGestão de Conflitos\topcional\t2025-10-15\t2026-03-30\n651878\tMentalidade Sistêmica\topcional\t2025-10-15\t2026-03-30\n651880\tRelacionamentos Conectivos\topcional\t2025-10-15\t2026-03-30\n",
+  "stderr": "",
+  "execution_time_ms": 373
+}

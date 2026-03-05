@@ -231,10 +231,10 @@ describe("data import verification", () => {
       expect(result.length).toBe(123);
     });
 
-    it("SEBRAE TO has 61 assessments", async () => {
+    it("SEBRAE TO has 68 assessments", async () => {
       const result = await caller.assessment.porPrograma({ programId: 17 });
       expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(61);
+      expect(result.length).toBe(68);
     });
 
     it("EMBRAPII has 29 assessments", async () => {

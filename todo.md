@@ -1507,4 +1507,11 @@
 - [x] Normalizar 'Gestão de Tempo' para 'Gestão do Tempo' (59 registros usando nome correto)
 - [x] Ignorar Usuário Teste (696504) na importação (0 registros)
 - [x] Verificar contagens finais: 220 PDIs, 1.423 competências
-- [ ] AVISO: 4 competências da Jornada Personalizada não encontradas (Gestão de Conflitos x2, Mentalidade Sistêmica, Relacionamentos Conectivos) - podem precisar ser criadas no banco
+- [x] AVISO: 4 competências da Jornada Personalizada corretamente importadas (Gestão de Conflitos, Mentalidade Sistêmica, Relacionamentos Conectivos) com datas micro_inicio: 2025-10-15 e micro_fim: 2026-03-30
+
+## Jornada Personalizada - Competências Completas (05/03/2026)
+- [x] Verificar competências existentes em cada trilha (72 competências no banco, 36 séries 30xxx e 36 séries 60xxx)
+- [x] Competências da Jornada Personalizada já vinculadas aos 4 alunos (Brenno, Diego, Carolina, Etienne)
+- [x] Datas de micro ciclo corretas: 2025-10-15 a 2026-03-30
+- [x] Limpeza de 18 registros duplicados (competências com IDs 30xxx e 60xxx para o mesmo PDI)
+- [x] Contagens finais: 220 PDIs, 1.418 competências, 99 alunos, 5 trilhas
