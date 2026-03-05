@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,14 +53,34 @@ function getDisplayRole(user: any): string {
 
 export default function AdminCadastros() {
   const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("acesso");
 
-  // Proteger página: apenas admin pode acessar
-  if (!loading && user && user.role !== 'admin') {
+  // Proteger página: apenas admin pode acessar — redirecionar para página correta do role
+  useEffect(() => {
+    if (loading || !user) return;
+    if (user.role === 'admin') return; // admin pode acessar
+    
+    if (user.role === 'manager') {
+      const userAny = user as any;
+      if (userAny.consultorId) {
+        setLocation('/dashboard/mentor');
+      } else {
+        setLocation('/dashboard/gestor');
+      }
+    } else if (user.role === 'user') {
+      setLocation('/meu-dashboard');
+    } else {
+      setLocation('/');
+    }
+  }, [user, loading, setLocation]);
+
+  // Enquanto carrega ou se não é admin, mostra loading (redirecionamento acontece no useEffect)
+  if (loading || !user || user.role !== 'admin') {
     return (
       <DashboardLayout>
-        <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-          <p className="text-muted-foreground">Acesso restrito a administradores.</p>
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="animate-pulse text-muted-foreground">Redirecionando...</div>
         </div>
       </DashboardLayout>
     );

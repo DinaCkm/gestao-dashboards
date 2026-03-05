@@ -37,7 +37,7 @@ export default function CustomLogin() {
   const emailCpfLoginMutation = trpc.auth.emailCpfLogin.useMutation({
     onSuccess: (data) => {
       if (data.success) {
-        window.location.reload();
+        window.location.href = "/";
       } else {
         setError(data.message || "Erro ao fazer login");
       }
@@ -52,7 +52,7 @@ export default function CustomLogin() {
   const adminLoginMutation = trpc.auth.adminLogin.useMutation({
     onSuccess: (data) => {
       if (data.success) {
-        window.location.reload();
+        window.location.href = "/";
       } else {
         setError(data.message || "Erro ao fazer login");
       }

@@ -1458,3 +1458,4 @@
 - [x] Bug: Dialog de Visualizar sessão de mentoria não tem barra de rolagem — conteúdo ultrapassa a tela
 - [x] Bug: Mentora Ana Carolina aparece com badge "Gerente" em vez de "Mentor" — corrigido: getRoleBadge agora diferencia mentor (manager+consultorId) de gerente
 - [x] Bug: Mentor/Gerente ao logar é redirecionado para /cadastros — corrigido: página /cadastros agora bloqueia acesso de não-admin
+- [x] Bug: Aluno ao logar é redirecionado para /cadastros em vez de /meu-dashboard — corrigido: CustomLogin agora redireciona para / após login (em vez de reload) + AdminCadastros redireciona não-admin para página correta
