@@ -1515,3 +1515,17 @@
 - [x] Datas de micro ciclo corretas: 2025-10-15 a 2026-03-30
 - [x] Limpeza de 18 registros duplicados (competências com IDs 30xxx e 60xxx para o mesmo PDI)
 - [x] Contagens finais: 220 PDIs, 1.418 competências, 99 alunos, 5 trilhas
+
+## Login de Alunos com CPF (05/03/2026)
+- [x] Adicionar campo CPF na tabela alunos (varchar 14, nullable)
+- [x] Importar CPFs dos líderes SEBRAE TO da planilha fornecida: 50 alunos matched por email (são os líderes do Projeto Evoluir)
+- [ ] Regra: novos alunos cadastrados com CPF = participam dos dois programas (Ecossistema + Evoluir)
+- [x] Regra de login: Se aluno tem CPF cadastrado → login com Email + CPF
+- [x] Regra de login: Se aluno NÃO tem CPF → login com Email + ID do aluno (externalId)
+- [x] Regra de login: Alunos SEBRAE TO usam EXCLUSIVAMENTE CPF nos dois sistemas
+- [x] Atualizar tela de login para suportar os 2 modos (Email+CPF ou Email+ID) com toggle
+- [x] Atualizar backend de autenticação: authenticateByEmailCpf refatorado com 4 caminhos (users, aluno CPF, aluno ID, consultor CPF)
+- [ ] Permitir admin cadastrar/editar CPF dos alunos
+- [x] Testes unitários para os novos fluxos de login (276 testes passando)
+- [x] Validação visual do fluxo completo (botão Evoluir CKM visível no menu lateral)
+- [x] Adicionar botão/link no menu lateral para Evoluir CKM (https://www.evoluirckm.com) - transit entre os dois sistemas

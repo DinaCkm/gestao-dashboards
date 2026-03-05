@@ -44,7 +44,8 @@ import {
   PlayCircle,
   Compass,
   Video,
-  Megaphone
+  Megaphone,
+  ExternalLink
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -281,6 +282,19 @@ function DashboardLayoutContent({
                 );
               })}
             </SidebarMenu>
+
+            {/* Botão Evoluir CKM - visível para todos os usuários */}
+            <div className="px-2 py-2 mt-auto">
+              <a
+                href="https://www.evoluirckm.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 h-10 px-3 rounded-lg text-sm font-medium transition-all bg-gradient-to-r from-orange-500/10 to-amber-500/10 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/20 hover:border-orange-500/40 text-orange-600 dark:text-orange-400 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+              >
+                <ExternalLink className="h-4 w-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Evoluir CKM</span>
+              </a>
+            </div>
           </SidebarContent>
 
           <SidebarFooter className="p-3 border-t border-sidebar-border">

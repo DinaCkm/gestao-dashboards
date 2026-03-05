@@ -172,7 +172,8 @@ export type InsertPlanoIndividual = typeof planoIndividual.$inferInsert;
  */
 export const alunos = mysqlTable("alunos", {
   id: int("id").autoincrement().primaryKey(),
-  externalId: varchar("externalId", { length: 100 }), // Id Usuário da planilha (usado para login)
+  externalId: varchar("externalId", { length: 100 }), // Id Usuário da planilha (usado para login sem CPF)
+  cpf: varchar("cpf", { length: 14 }), // CPF do aluno (sem formatação, apenas dígitos) - quando presente, login é por Email+CPF
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }), // Email para login
   turmaId: int("turmaId"),

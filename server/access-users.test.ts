@@ -114,12 +114,12 @@ afterAll(async () => {
 });
 
 describe("emailCpfLogin", () => {
-  it("rejects login with invalid email/cpf combination", async () => {
+  it("rejects login with invalid email/credential combination", async () => {
     const { ctx } = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const result = await caller.auth.emailCpfLogin({
       email: "nonexistent@test.com",
-      cpf: "00000000000",
+      credential: "00000000000",
     });
     expect(result.success).toBe(false);
     expect(result.message).toBeDefined();
@@ -131,7 +131,7 @@ describe("emailCpfLogin", () => {
     await expect(
       caller.auth.emailCpfLogin({
         email: "invalid-email",
-        cpf: "12345678900",
+        credential: "12345678900",
       })
     ).rejects.toThrow();
   });
@@ -141,7 +141,40 @@ describe("emailCpfLogin", () => {
     const caller = appRouter.createCaller(ctx);
     const result = await caller.auth.emailCpfLogin({
       email: "test@test.com",
-      cpf: "123",
+      credential: "123",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects login with empty credential", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.auth.emailCpfLogin({
+        email: "test@test.com",
+        credential: "",
+      })
+    ).rejects.toThrow();
+  });
+
+  it("normalizes CPF with dots and dashes", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    // Should not crash with formatted CPF - just return not found
+    const result = await caller.auth.emailCpfLogin({
+      email: "test@test.com",
+      credential: "123.456.789-00",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts numeric ID as credential for alunos without CPF", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    // Should not crash with numeric ID - just return not found for invalid combo
+    const result = await caller.auth.emailCpfLogin({
+      email: "nonexistent@test.com",
+      credential: "667257",
     });
     expect(result.success).toBe(false);
   });

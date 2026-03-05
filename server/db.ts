@@ -1478,25 +1478,36 @@ export async function deleteUploadedFile(id: number) {
 // Login para Administradores (username + password)
 // ============ LOGIN UNIVERSAL EMAIL + CPF ou ID ============
 
-export async function authenticateByEmailCpf(email: string, cpf: string): Promise<{ success: boolean; user?: any; message?: string }> {
+/**
+ * Login universal para alunos, mentores e gerentes.
+ * 
+ * Regras de login para ALUNOS:
+ * 1. Se o aluno tem CPF cadastrado → login com Email + CPF
+ * 2. Se o aluno NÃO tem CPF → login com Email + ID do aluno (externalId)
+ * 3. Alunos SEBRAE TO com CPF usam EXCLUSIVAMENTE CPF (participam do Projeto Evoluir)
+ * 
+ * Mentores/Gerentes: login com Email + CPF (tabela consultors)
+ * Admin: login separado via adminLogin
+ */
+export async function authenticateByEmailCpf(email: string, credential: string): Promise<{ success: boolean; user?: any; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
   
   // Normalizar credencial (remover pontos e traços)
-  const normalizedCredential = cpf.replace(/[.\-]/g, '');
+  const normalizedCredential = credential.replace(/[.\-]/g, '');
+  const normalizedEmail = email.toLowerCase().trim();
   
-  // Tentar autenticar com CPF ou ID (ambos ficam no campo cpf)
+  // ===== 1. Tentar login em users (admin/manager já cadastrados) =====
   const [user] = await db.select()
     .from(users)
     .where(and(
-      eq(users.email, email.toLowerCase()),
+      eq(users.email, normalizedEmail),
       eq(users.cpf, normalizedCredential),
       eq(users.isActive, 1)
     ))
     .limit(1);
   
   if (user) {
-    // Atualizar último login
     await db.update(users)
       .set({ lastSignedIn: new Date() })
       .where(eq(users.id, user.id));
@@ -1516,11 +1527,45 @@ export async function authenticateByEmailCpf(email: string, cpf: string): Promis
     };
   }
   
-  // Se não encontrou em users, buscar na tabela consultors (mentores/gerentes)
+  // ===== 2. Tentar login de ALUNO por CPF (aluno.cpf preenchido) =====
+  const [alunoByCpf] = await db.select()
+    .from(alunos)
+    .where(and(
+      eq(alunos.email, normalizedEmail),
+      eq(alunos.cpf, normalizedCredential),
+      eq(alunos.canLogin, 1),
+      eq(alunos.isActive, 1)
+    ))
+    .limit(1);
+  
+  if (alunoByCpf) {
+    return await createOrUpdateAlunoSession(db, alunoByCpf, normalizedCredential);
+  }
+  
+  // ===== 3. Tentar login de ALUNO por ID (externalId) - apenas se NÃO tem CPF =====
+  const [alunoById] = await db.select()
+    .from(alunos)
+    .where(and(
+      eq(alunos.email, normalizedEmail),
+      eq(alunos.externalId, normalizedCredential),
+      eq(alunos.canLogin, 1),
+      eq(alunos.isActive, 1)
+    ))
+    .limit(1);
+  
+  if (alunoById) {
+    // Se o aluno tem CPF cadastrado, NÃO permitir login por ID
+    if (alunoById.cpf) {
+      return { success: false, message: "Este aluno deve fazer login com Email e CPF (não com ID)." };
+    }
+    return await createOrUpdateAlunoSession(db, alunoById, normalizedCredential);
+  }
+  
+  // ===== 4. Tentar login de CONSULTOR (mentor/gerente) por CPF =====
   const [consultor] = await db.select()
     .from(consultors)
     .where(and(
-      eq(consultors.email, email.toLowerCase()),
+      eq(consultors.email, normalizedEmail),
       eq(consultors.cpf, normalizedCredential),
       eq(consultors.isActive, 1),
       eq(consultors.canLogin, 1)
@@ -1528,8 +1573,7 @@ export async function authenticateByEmailCpf(email: string, cpf: string): Promis
     .limit(1);
   
   if (consultor) {
-    // Criar/atualizar registro na tabela users para o consultor
-    const role = consultor.role === 'gerente' ? 'manager' as const : 'manager' as const;
+    const role = 'manager' as const;
     const openId = `consultor_${consultor.id}`;
     
     const [existingUser] = await db.select()
@@ -1538,7 +1582,6 @@ export async function authenticateByEmailCpf(email: string, cpf: string): Promis
       .limit(1);
     
     if (existingUser) {
-      // Atualizar último login
       await db.update(users)
         .set({ lastSignedIn: new Date() })
         .where(eq(users.id, existingUser.id));
@@ -1556,7 +1599,6 @@ export async function authenticateByEmailCpf(email: string, cpf: string): Promis
         }
       };
     } else {
-      // Criar registro em users para o consultor
       await db.insert(users).values({
         openId,
         name: consultor.name,
@@ -1591,6 +1633,69 @@ export async function authenticateByEmailCpf(email: string, cpf: string): Promis
   }
   
   return { success: false, message: "Email ou CPF/ID incorretos, ou usuário inativo. Verifique suas credenciais." };
+}
+
+/**
+ * Helper: cria ou atualiza sessão de aluno na tabela users
+ */
+async function createOrUpdateAlunoSession(db: any, aluno: any, normalizedCredential: string) {
+  const openId = `aluno_${aluno.id}`;
+  
+  const [existingUser] = await db.select()
+    .from(users)
+    .where(eq(users.openId, openId))
+    .limit(1);
+  
+  if (existingUser) {
+    await db.update(users)
+      .set({ lastSignedIn: new Date() })
+      .where(eq(users.id, existingUser.id));
+    
+    return {
+      success: true,
+      user: {
+        id: existingUser.id,
+        openId: existingUser.openId,
+        name: existingUser.name,
+        email: existingUser.email,
+        role: existingUser.role,
+        programId: existingUser.programId,
+        alunoId: aluno.id,
+        consultorId: existingUser.consultorId
+      }
+    };
+  } else {
+    await db.insert(users).values({
+      openId,
+      name: aluno.name,
+      email: aluno.email?.toLowerCase(),
+      cpf: aluno.cpf || normalizedCredential,
+      role: 'user' as const,
+      loginMethod: aluno.cpf ? 'email_cpf' : 'email_id',
+      isActive: 1,
+      alunoId: aluno.id,
+      programId: aluno.programId ?? null,
+      lastSignedIn: new Date(),
+    });
+    
+    const [newUser] = await db.select()
+      .from(users)
+      .where(eq(users.openId, openId))
+      .limit(1);
+    
+    return {
+      success: true,
+      user: {
+        id: newUser?.id,
+        openId,
+        name: aluno.name,
+        email: aluno.email,
+        role: 'user',
+        programId: aluno.programId,
+        alunoId: aluno.id
+      }
+    };
+  }
 }
 
 // ============ GESTÃO DE ACESSO (ADMIN) ============

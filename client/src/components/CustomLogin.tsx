@@ -5,30 +5,28 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
-import { Loader2, AlertCircle, Shield, LogIn, Mail, Fingerprint } from "lucide-react";
+import { Loader2, AlertCircle, Shield, LogIn, Mail, Fingerprint, Hash } from "lucide-react";
 
-function formatCredential(value: string): string {
-  const digits = value.replace(/\D/g, '');
-  // Se tem mais de 6 dígitos, formata como CPF
-  if (digits.length > 6) {
-    const cpfDigits = digits.slice(0, 11);
-    if (cpfDigits.length <= 3) return cpfDigits;
-    if (cpfDigits.length <= 6) return `${cpfDigits.slice(0, 3)}.${cpfDigits.slice(3)}`;
-    if (cpfDigits.length <= 9) return `${cpfDigits.slice(0, 3)}.${cpfDigits.slice(3, 6)}.${cpfDigits.slice(6)}`;
-    return `${cpfDigits.slice(0, 3)}.${cpfDigits.slice(3, 6)}.${cpfDigits.slice(6, 9)}-${cpfDigits.slice(9)}`;
-  }
-  // Se tem 6 ou menos dígitos, mantém como ID (sem formatação)
-  return digits;
+function formatCpf(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
+
+type LoginMode = "cpf" | "id";
 
 export default function CustomLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [loginMode, setLoginMode] = useState<LoginMode>("cpf");
   
-  // Email + CPF ou ID login states
+  // Email + CPF/ID login states
   const [email, setEmail] = useState("");
-  const [credential, setCredential] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [alunoId, setAlunoId] = useState("");
   
   // Admin login states
   const [adminUsername, setAdminUsername] = useState("");
@@ -64,20 +62,28 @@ export default function CustomLogin() {
     },
   });
 
-  const handleEmailCpfLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
-    const digits = credential.replace(/\D/g, '');
-    if (digits.length === 0) {
-      setError("Informe seu CPF ou ID.");
+    const credential = loginMode === "cpf" 
+      ? cpf.replace(/\D/g, '') 
+      : alunoId.trim();
+    
+    if (credential.length === 0) {
+      setError(loginMode === "cpf" ? "Informe seu CPF." : "Informe seu ID de aluno.");
+      return;
+    }
+    
+    if (loginMode === "cpf" && credential.length < 9) {
+      setError("CPF deve ter pelo menos 9 dígitos.");
       return;
     }
     
     setLoading(true);
     emailCpfLoginMutation.mutate({
       email: email.trim().toLowerCase(),
-      cpf: digits,
+      credential,
     });
   };
 
@@ -193,7 +199,7 @@ export default function CustomLogin() {
     );
   }
 
-  // Main Login Screen - Email + CPF ou ID
+  // Main Login Screen
   return (
     <div className="flex items-center justify-center min-h-screen gradient-bg">
       <div className="flex flex-col items-center gap-6 p-8 max-w-lg w-full">
@@ -220,7 +226,9 @@ export default function CustomLogin() {
           <CardHeader className="text-center pb-2">
             <CardTitle>Acesse sua conta</CardTitle>
             <CardDescription>
-              Informe seu email e CPF ou ID para entrar na plataforma
+              {loginMode === "cpf" 
+                ? "Informe seu email e CPF para entrar" 
+                : "Informe seu email e ID de aluno para entrar"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -231,7 +239,35 @@ export default function CustomLogin() {
               </Alert>
             )}
 
-            <form onSubmit={handleEmailCpfLogin} className="space-y-4">
+            {/* Toggle entre CPF e ID */}
+            <div className="flex rounded-lg border border-border mb-4 overflow-hidden">
+              <button
+                type="button"
+                className={`flex-1 py-2 px-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                  loginMode === "cpf" 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-transparent hover:bg-muted"
+                }`}
+                onClick={() => { setLoginMode("cpf"); setError(null); }}
+              >
+                <Fingerprint className="h-4 w-4" />
+                Login com CPF
+              </button>
+              <button
+                type="button"
+                className={`flex-1 py-2 px-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                  loginMode === "id" 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-transparent hover:bg-muted"
+                }`}
+                onClick={() => { setLoginMode("id"); setError(null); }}
+              >
+                <Hash className="h-4 w-4" />
+                Login com ID
+              </button>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login-email" className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
@@ -247,24 +283,46 @@ export default function CustomLogin() {
                   autoComplete="email"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="login-credential" className="flex items-center gap-2">
-                  <Fingerprint className="h-4 w-4 text-muted-foreground" />
-                  CPF ou ID
-                </Label>
-                <Input
-                  id="login-credential"
-                  placeholder="000.000.000-00 ou seu ID"
-                  value={credential}
-                  onChange={(e) => setCredential(formatCredential(e.target.value))}
-                  required
-                  autoComplete="off"
-                  maxLength={14}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Alunos: use seu ID. Mentores e Gestores: use seu CPF.
-                </p>
-              </div>
+
+              {loginMode === "cpf" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="login-cpf" className="flex items-center gap-2">
+                    <Fingerprint className="h-4 w-4 text-muted-foreground" />
+                    CPF
+                  </Label>
+                  <Input
+                    id="login-cpf"
+                    placeholder="000.000.000-00"
+                    value={cpf}
+                    onChange={(e) => setCpf(formatCpf(e.target.value))}
+                    required
+                    autoComplete="off"
+                    maxLength={14}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Mentores, gestores e alunos com CPF cadastrado.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="login-id" className="flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-muted-foreground" />
+                    ID do Aluno
+                  </Label>
+                  <Input
+                    id="login-id"
+                    placeholder="Seu ID numérico (ex: 667257)"
+                    value={alunoId}
+                    onChange={(e) => setAlunoId(e.target.value.replace(/\D/g, ''))}
+                    required
+                    autoComplete="off"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Alunos sem CPF cadastrado usam o ID fornecido pelo sistema.
+                  </p>
+                </div>
+              )}
+
               <Button type="submit" className="w-full glow-orange" disabled={loading}>
                 {loading ? (
                   <>

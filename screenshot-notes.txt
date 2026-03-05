@@ -1,0 +1,5 @@
+Screenshot verificado em 05/03/2026:
+- Botão "Evoluir CKM" visível no menu lateral, entre Webinars e Avisos e Comunicados
+- Cor laranja com ícone de link externo
+- Dashboard admin funcionando normalmente com 153 alunos, 11 mentores, 1195 mentorias, 4 programas
+- Tela de login precisa ser verificada separadamente (requer logout)

@@ -75,10 +75,10 @@ export const appRouter = router({
     emailCpfLogin: publicProcedure
       .input(z.object({
         email: z.string().email(),
-      cpf: z.string().min(1)
+        credential: z.string().min(1) // CPF ou ID do aluno
       }))
       .mutation(async ({ input, ctx }) => {
-        const result = await db.authenticateByEmailCpf(input.email, input.cpf);
+        const result = await db.authenticateByEmailCpf(input.email, input.credential);
         
         if (!result.success) {
           return { success: false, message: result.message };

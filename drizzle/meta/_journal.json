@@ -190,6 +190,13 @@
       "when": 1772734878031,
       "tag": "0026_robust_morg",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1772752153988,
+      "tag": "0027_careful_kang",
+      "breakpoints": true
     }
   ]
 }
