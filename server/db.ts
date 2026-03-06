@@ -2923,8 +2923,8 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
     };
   });
 
-  // 8. Ciclos de execução
-  const ciclos = await getCiclosByAluno(alunoId);
+  // 8. Ciclos de execução (usa getCiclosForCalculator que tem fallback para assessment_competencias)
+  const ciclos = await getCiclosForCalculator(alunoId);
 
   // 9. Sessões de mentoria
   const sessoes = await getMentoringSessionsByAluno(alunoId);
@@ -2955,8 +2955,8 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
       nomeCiclo: c.nomeCiclo,
       dataInicio: c.dataInicio,
       dataFim: c.dataFim,
-      observacoes: c.observacoes,
-      competencias: c.competencias,
+      observacoes: (c as any).observacoes || null,
+      competencias: (c as any).competencias || [],
       status: new Date(c.dataFim) < new Date() ? 'finalizado' : 'em_andamento',
     })),
     sessoes: sessoes.map(s => ({

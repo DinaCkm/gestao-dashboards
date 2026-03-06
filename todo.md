@@ -1647,3 +1647,8 @@
 - [x] Remover gráfico pizza "Distribuição por Classificação" do Dashboard Gestor
 - [x] Gráfico "Performance por Turma" deve mostrar o ciclo junto com o nome da turma
 - [x] Botão "Ver detalhes" na lista de alunos do Dashboard Gestor não está funcionando - corrigir
+- [x] Filtro de turma no Dashboard Gestor deve agrupar por turma base (sem separar por jornada/ciclo BS1, BS2, BS3)
+- [x] Remover card "Precisam Atenção" do Dashboard Gestor
+- [x] Mudar modelo do gráfico "Performance por Turma" (nomes muito longos com ciclo)
+- [x] Gerente só pode ver alunos da empresa dele no Dashboard Aluno (não "Todas as empresas")
+- [x] Corrigir "Ciclo Atual" mostrando "Nenhum ciclo" no Dashboard do Aluno

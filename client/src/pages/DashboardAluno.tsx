@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -249,10 +250,22 @@ function CicloIndicadores({
 }
 
 export default function DashboardAluno() {
+  const { user } = useAuth();
+  const isGerente = user?.role === 'manager';
   const [selectedAlunoId, setSelectedAlunoId] = useState<number | null>(null);
-  const [selectedProgramId, setSelectedProgramId] = useState<string>("all");
+  const [selectedProgramId, setSelectedProgramId] = useState<string>(() => {
+    // Gerente só vê a empresa dele - inicializar com o programId do gerente
+    return "all";
+  });
   const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
   const [showGlossario, setShowGlossario] = useState(false);
+
+  // Se for gerente, forçar o filtro para a empresa dele
+  useEffect(() => {
+    if (isGerente && user?.programId) {
+      setSelectedProgramId(String(user.programId));
+    }
+  }, [isGerente, user?.programId]);
 
   // Ler query param ?id= da URL para pré-selecionar aluno (ex: vindo do Dashboard Gestor)
   useEffect(() => {
@@ -436,15 +449,17 @@ export default function DashboardAluno() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Empresa/Programa</label>
-                <Select value={selectedProgramId} onValueChange={setSelectedProgramId}>
+                <Select value={selectedProgramId} onValueChange={setSelectedProgramId} disabled={isGerente}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todas as empresas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todas as empresas</SelectItem>
-                    {programs.map(p => (
-                      <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                    ))}
+                    {!isGerente && <SelectItem value="all">Todas as empresas</SelectItem>}
+                    {programs
+                      .filter(p => isGerente ? p.id === user?.programId : true)
+                      .map(p => (
+                        <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

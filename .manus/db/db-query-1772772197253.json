@@ -1,0 +1,52 @@
+{
+  "query": "SELECT CONCAT(id, ': ', name) as turma_info FROM turmas ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT CONCAT(id, ': ', name) as turma_info FROM turmas ORDER BY name;",
+  "rows": [
+    {
+      "turma_info": "36: [2024] Banrisul - B.E.M. | Basic"
+    },
+    {
+      "turma_info": "37: [2024] Banrisul - B.E.M. | Essential"
+    },
+    {
+      "turma_info": "30001: [2024] SEBRAE Acre - Turma 1.0"
+    },
+    {
+      "turma_info": "30002: [2025] Embrapii | Basic"
+    },
+    {
+      "turma_info": "30009: [2025] Embrapii | Jornada Personalizada"
+    },
+    {
+      "turma_info": "30004: [2025] SEBRAE Acre - B.E.M. | Basic"
+    },
+    {
+      "turma_info": "30006: [2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "turma_info": "30010: [2025] SEBRAE Acre - B.E.M. | Masters"
+    },
+    {
+      "turma_info": "30005: [2025] SEBRAE Tocantins - Basic [BS1]"
+    },
+    {
+      "turma_info": "30008: [2025] SEBRAE Tocantins - Basic [BS3]"
+    },
+    {
+      "turma_info": "30007: [2025] SEBRAE Tocantins - Essential [BS1]"
+    },
+    {
+      "turma_info": "30003: [2025] SEBRAE Tocantins - Visão de Futuro [BS2]"
+    },
+    {
+      "turma_info": "30011: [2026] Embrapii | Visão do Futuro"
+    },
+    {
+      "turma_info": "60001: [2026] SEBRAE Tocantins - Essential [BS3]"
+    }
+  ],
+  "messages": [],
+  "stdout": "turma_info\n36: [2024] Banrisul - B.E.M. | Basic\n37: [2024] Banrisul - B.E.M. | Essential\n30001: [2024] SEBRAE Acre - Turma 1.0\n30002: [2025] Embrapii | Basic\n30009: [2025] Embrapii | Jornada Personalizada\n30004: [2025] SEBRAE Acre - B.E.M. | Basic\n30006: [2025] SEBRAE Acre - B.E.M. | Essential\n30010: [2025] SEBRAE Acre - B.E.M. | Masters\n30005: [2025] SEBRAE Tocantins - Basic [BS1]\n30008: [2025] SEBRAE Tocantins - Basic [BS3]\n30007: [2025] SEBRAE Tocantins - Essential [BS1]\n30003: [2025] SEBRAE Tocantins - Visão de Futuro [BS2]\n30011: [2026] Embrapii | Visão do Futuro\n60001: [2026] SEBRAE Tocantins - Essential [BS3]\n",
+  "stderr": "",
+  "execution_time_ms": 353
+}

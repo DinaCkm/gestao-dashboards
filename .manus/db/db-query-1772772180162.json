@@ -1,0 +1,80 @@
+{
+  "query": "SELECT id, name, programId FROM turmas ORDER BY name LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, programId FROM turmas ORDER BY name LIMIT 20;",
+  "rows": [
+    {
+      "id": "36",
+      "name": "[2024] Banrisul - B.E.M. | Basic",
+      "programId": "19"
+    },
+    {
+      "id": "37",
+      "name": "[2024] Banrisul - B.E.M. | Essential",
+      "programId": "19"
+    },
+    {
+      "id": "30001",
+      "name": "[2024] SEBRAE Acre - Turma 1.0",
+      "programId": "16"
+    },
+    {
+      "id": "30002",
+      "name": "[2025] Embrapii | Basic",
+      "programId": "18"
+    },
+    {
+      "id": "30009",
+      "name": "[2025] Embrapii | Jornada Personalizada",
+      "programId": "18"
+    },
+    {
+      "id": "30004",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Basic",
+      "programId": "16"
+    },
+    {
+      "id": "30006",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Essential",
+      "programId": "16"
+    },
+    {
+      "id": "30010",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Masters",
+      "programId": "16"
+    },
+    {
+      "id": "30005",
+      "name": "[2025] SEBRAE Tocantins - Basic [BS1]",
+      "programId": "17"
+    },
+    {
+      "id": "30008",
+      "name": "[2025] SEBRAE Tocantins - Basic [BS3]",
+      "programId": "17"
+    },
+    {
+      "id": "30007",
+      "name": "[2025] SEBRAE Tocantins - Essential [BS1]",
+      "programId": "17"
+    },
+    {
+      "id": "30003",
+      "name": "[2025] SEBRAE Tocantins - Visão de Futuro [BS2]",
+      "programId": "17"
+    },
+    {
+      "id": "30011",
+      "name": "[2026] Embrapii | Visão do Futuro",
+      "programId": "18"
+    },
+    {
+      "id": "60001",
+      "name": "[2026] SEBRAE Tocantins - Essential [BS3]",
+      "programId": "17"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tprogramId\n36\t[2024] Banrisul - B.E.M. | Basic\t19\n37\t[2024] Banrisul - B.E.M. | Essential\t19\n30001\t[2024] SEBRAE Acre - Turma 1.0\t16\n30002\t[2025] Embrapii | Basic\t18\n30009\t[2025] Embrapii | Jornada Personalizada\t18\n30004\t[2025] SEBRAE Acre - B.E.M. | Basic\t16\n30006\t[2025] SEBRAE Acre - B.E.M. | Essential\t16\n30010\t[2025] SEBRAE Acre - B.E.M. | Masters\t16\n30005\t[2025] SEBRAE Tocantins - Basic [BS1]\t17\n30008\t[2025] SEBRAE Tocantins - Basic [BS3]\t17\n30007\t[2025] SEBRAE Tocantins - Essential [BS1]\t17\n30003\t[2025] SEBRAE Tocantins - Visão de Futuro [BS2]\t17\n30011\t[2026] Embrapii | Visão do Futuro\t18\n60001\t[2026] SEBRAE Tocantins - Essential [BS3]\t17\n",
+  "stderr": "",
+  "execution_time_ms": 409
+}

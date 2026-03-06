@@ -28,7 +28,7 @@ const CLASSIFICATION_COLORS: Record<string, string> = {
 
 export default function DashboardGestor() {
   const { user } = useAuth();
-  const [selectedTurmaId, setSelectedTurmaId] = useState<string>("todas");
+  const [selectedTurmaGroup, setSelectedTurmaGroup] = useState<string>("todas");
   const [selectedAlunoId, setSelectedAlunoId] = useState<string>("todos");
 
   // Get the empresa name from the user's programId
@@ -57,13 +57,48 @@ export default function DashboardGestor() {
     { enabled: !!user?.programId }
   );
 
-  // Filter alunos by selected turma
+  // Turma names map
+  const turmaNames = useMemo(() => {
+    const map = new Map<string, string>();
+    if (turmas) {
+      turmas.forEach(t => {
+        map.set(String(t.id), t.name);
+      });
+    }
+    return map;
+  }, [turmas]);
+
+  // Group turmas by base name (removing [BSx] jornada suffix)
+  const turmaGroups = useMemo(() => {
+    if (!turmas) return [];
+    const groupMap = new Map<string, { baseName: string; turmaIds: string[] }>();
+    turmas.forEach(t => {
+      // Remove [BSx] or similar jornada suffixes from name
+      const baseName = t.name.replace(/\s*\[BS\d+\]\s*$/, '').trim();
+      const existing = groupMap.get(baseName);
+      if (existing) {
+        existing.turmaIds.push(String(t.id));
+      } else {
+        groupMap.set(baseName, { baseName, turmaIds: [String(t.id)] });
+      }
+    });
+    return Array.from(groupMap.values());
+  }, [turmas]);
+
+  // Get turma IDs for the selected group
+  const selectedTurmaIds = useMemo(() => {
+    if (selectedTurmaGroup === "todas") return null;
+    const group = turmaGroups.find(g => g.baseName === selectedTurmaGroup);
+    return group ? group.turmaIds : null;
+  }, [selectedTurmaGroup, turmaGroups]);
+
+  // Filter alunos by selected turma group
   const filteredAlunos = useMemo(() => {
     if (!data?.alunos) return [];
     let result = [...data.alunos];
     
-    if (selectedTurmaId !== "todas") {
-      result = result.filter(a => String(a.turma) === selectedTurmaId);
+    if (selectedTurmaIds) {
+      result = result.filter(a => selectedTurmaIds.includes(String(a.turma)));
     }
     
     if (selectedAlunoId !== "todos") {
@@ -71,7 +106,7 @@ export default function DashboardGestor() {
     }
     
     return result;
-  }, [data?.alunos, selectedTurmaId, selectedAlunoId]);
+  }, [data?.alunos, selectedTurmaIds, selectedAlunoId]);
 
   // Recalculate KPIs based on filtered alunos using V2 indicators
   const filteredKPIs = useMemo(() => {
@@ -136,23 +171,12 @@ export default function DashboardGestor() {
     };
   }, [filteredAlunos]);
 
-  // Available alunos for the dropdown (filtered by turma)
+  // Available alunos for the dropdown (filtered by turma group)
   const availableAlunos = useMemo(() => {
     if (!data?.alunos) return [];
-    if (selectedTurmaId === "todas") return data.alunos;
-    return data.alunos.filter(a => String(a.turma) === selectedTurmaId);
-  }, [data?.alunos, selectedTurmaId]);
-
-  // Turma names map
-  const turmaNames = useMemo(() => {
-    const map = new Map<string, string>();
-    if (turmas) {
-      turmas.forEach(t => {
-        map.set(String(t.id), t.name);
-      });
-    }
-    return map;
-  }, [turmas]);
+    if (!selectedTurmaIds) return data.alunos;
+    return data.alunos.filter(a => selectedTurmaIds.includes(String(a.turma)));
+  }, [data?.alunos, selectedTurmaIds]);
 
   // Unique turma IDs from alunos
   const uniqueTurmaIds = useMemo(() => {
@@ -164,15 +188,15 @@ export default function DashboardGestor() {
     return Array.from(ids);
   }, [data?.alunos]);
 
-  const isFiltered = selectedTurmaId !== "todas" || selectedAlunoId !== "todos";
+  const isFiltered = selectedTurmaGroup !== "todas" || selectedAlunoId !== "todos";
 
   const clearFilters = () => {
-    setSelectedTurmaId("todas");
+    setSelectedTurmaGroup("todas");
     setSelectedAlunoId("todos");
   };
 
   const handleTurmaChange = (value: string) => {
-    setSelectedTurmaId(value);
+    setSelectedTurmaGroup(value);
     setSelectedAlunoId("todos");
   };
 
@@ -275,24 +299,17 @@ export default function DashboardGestor() {
               {/* Filtro por Turma */}
               <div className="space-y-1.5 min-w-[200px]">
                 <label className="text-sm font-medium text-muted-foreground">Turma</label>
-                <Select value={selectedTurmaId} onValueChange={handleTurmaChange}>
+                <Select value={selectedTurmaGroup} onValueChange={handleTurmaChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todas as turmas" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todas">Todas as turmas</SelectItem>
-                    {(turmas || []).map(t => (
-                      <SelectItem key={t.id} value={String(t.id)}>
-                        {t.name}
+                    {turmaGroups.map(g => (
+                      <SelectItem key={g.baseName} value={g.baseName}>
+                        {g.baseName}{g.turmaIds.length > 1 ? ` (${g.turmaIds.length} jornadas)` : ''}
                       </SelectItem>
                     ))}
-                    {uniqueTurmaIds
-                      .filter(id => !turmas?.some(t => String(t.id) === id))
-                      .map(id => (
-                        <SelectItem key={`extra-${id}`} value={id}>
-                          Turma {id}
-                        </SelectItem>
-                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -327,7 +344,7 @@ export default function DashboardGestor() {
         </Card>
 
         {/* Cards de resumo */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-1">
@@ -379,21 +396,7 @@ export default function DashboardGestor() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-1">
-                Precisam Atenção
-                <InfoTooltip text="Quantidade de alunos classificados como 'Básico' (nota 3.0-4.9) ou 'Inicial' (nota 0.0-2.9). Estes alunos precisam de acompanhamento especial." />
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-500">
-                {filteredKPIs.precisamAtencao}
-              </div>
-              <p className="text-xs text-muted-foreground">Básico ou Inicial</p>
-            </CardContent>
-          </Card>
+
         </div>
 
         {/* Engajamento Final Consolidado - Card principal V2 */}
@@ -461,7 +464,7 @@ export default function DashboardGestor() {
         </Card>
 
         {/* Cards de Engajamento Final por Turma */}
-        {selectedTurmaId === "todas" && porTurma.length > 0 && (
+        {selectedTurmaGroup === "todas" && porTurma.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               Engajamento por Turma
@@ -534,7 +537,7 @@ export default function DashboardGestor() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]" key={`radar-${selectedTurmaId}-${selectedAlunoId}`}>
+              <div className="h-[300px]" key={`radar-${selectedTurmaGroup}-${selectedAlunoId}`}>
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
                     <PolarGrid />
@@ -557,7 +560,7 @@ export default function DashboardGestor() {
         </div>
 
         {/* Performance por Turma (only when no turma filter) */}
-        {selectedTurmaId === "todas" && porTurma.length > 0 && (
+        {selectedTurmaGroup === "todas" && porTurma.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-1">
@@ -567,30 +570,35 @@ export default function DashboardGestor() {
               <CardDescription>Nota média e quantidade de alunos por turma</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]" key="bar-turma">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
-                    data={porTurma.map(t => {
-                      const turmaNome = turmaNames.get(String(t.identificador)) || t.identificador;
-                      // Buscar ciclo dos alunos desta turma
-                      const alunosDaTurma = data?.alunos?.filter(a => String(a.turma) === String(t.identificador)) || [];
-                      const cicloInfo = alunosDaTurma[0]?.cicloAtual || '';
-                      const nomeComCiclo = cicloInfo ? `${turmaNome} (${cicloInfo})` : turmaNome;
-                      return {
-                        nome: nomeComCiclo,
-                        nota: Number(t.mediaNotaFinal.toFixed(1)),
-                        alunos: t.totalAlunos
-                      };
-                    })} 
-                    layout="vertical"
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" domain={[0, 10]} />
-                    <YAxis dataKey="nome" type="category" width={120} />
-                    <RechartsTooltip />
-                    <Bar dataKey="nota" fill="#F5A623" name="Nota Média" isAnimationActive={false} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="space-y-3">
+                {porTurma
+                  .sort((a, b) => b.mediaNotaFinal - a.mediaNotaFinal)
+                  .map(t => {
+                    const turmaNome = turmaNames.get(String(t.identificador)) || t.identificador;
+                    // Buscar ciclo dos alunos desta turma
+                    const alunosDaTurma = data?.alunos?.filter(a => String(a.turma) === String(t.identificador)) || [];
+                    const cicloInfo = alunosDaTurma[0]?.cicloAtual || '';
+                    const nota = t.mediaNotaFinal;
+                    const cor = nota >= 9 ? 'text-green-600' : nota >= 7 ? 'text-blue-600' : nota >= 5 ? 'text-yellow-600' : 'text-red-500';
+                    const bgCor = nota >= 9 ? 'bg-green-500' : nota >= 7 ? 'bg-blue-500' : nota >= 5 ? 'bg-yellow-500' : 'bg-red-500';
+                    return (
+                      <div key={t.identificador} className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate" title={turmaNome}>{turmaNome}</p>
+                          {cicloInfo && <p className="text-xs text-muted-foreground">{cicloInfo}</p>}
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <Badge variant="outline" className="text-xs">{t.totalAlunos} alunos</Badge>
+                          <div className="w-24">
+                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div className={`h-full ${bgCor} rounded-full transition-all`} style={{ width: `${(nota / 10) * 100}%` }} />
+                            </div>
+                          </div>
+                          <span className={`font-bold text-lg min-w-[3rem] text-right ${cor}`}>{nota.toFixed(1)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </CardContent>
           </Card>
