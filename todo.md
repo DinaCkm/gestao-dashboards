@@ -1639,3 +1639,4 @@
 - [x] Filtros avançados: por turma (parcial - turma e aluno implementados, ciclo/jornada no Bloco 2)
 - [x] Radar de Performance agregado por turma (reutilizar formato do aluno com 5 eixos V2)
 - [x] Tooltips de explicação em todos os cards
+- [x] Substituir banner de presença por aviso simples "Clique aqui e veja se não tem eventos pendentes" (sem contagem)

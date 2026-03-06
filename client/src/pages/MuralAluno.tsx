@@ -94,33 +94,25 @@ const VIEW_CONFIG: Record<Exclude<ViewType, "home">, {
 // ATTENDANCE BANNER
 // ============================================================
 
-function AttendanceBanner({ pendingCount }: { pendingCount: number }) {
-  if (pendingCount === 0) return null;
+function AttendanceBanner() {
   return (
-    <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200 shadow-sm">
+    <a
+      href="/portal-aluno?tab=eventos"
+      className="block relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group"
+    >
       <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/30 rounded-full blur-2xl -translate-y-1/2 translate-x-1/4" />
       <div className="relative flex items-center gap-4 p-4 sm:p-5">
         <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 ring-4 ring-amber-200/50">
           <HandHeart className="h-6 w-6 text-amber-600" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-amber-900 text-sm sm:text-base">
-            Não deixe de marcar sua presença!
+          <h3 className="font-semibold text-amber-900 text-sm sm:text-base group-hover:text-amber-700 transition-colors">
+            Clique aqui e veja se não tem eventos pendentes
           </h3>
-          <p className="text-xs sm:text-sm text-amber-700/80 mt-0.5">
-            Você tem <strong>{pendingCount} evento{pendingCount > 1 ? "s" : ""}</strong> pendente{pendingCount > 1 ? "s" : ""} de confirmação.
-          </p>
         </div>
-        <Button
-          onClick={() => window.location.href = "/portal-aluno?tab=eventos"}
-          className="bg-amber-600 hover:bg-amber-700 text-white shadow-md flex-shrink-0"
-          size="sm"
-        >
-          <MessageSquareText className="h-4 w-4 mr-1.5" />
-          Marcar Presença
-        </Button>
+        <ChevronRight className="h-5 w-5 text-amber-600 group-hover:translate-x-1 transition-transform" />
       </div>
-    </div>
+    </a>
   );
 }
 
@@ -632,9 +624,7 @@ export default function MuralAluno() {
           </div>
 
           {/* Attendance Banner - redireciona para Portal do Aluno aba Eventos */}
-          <AttendanceBanner
-            pendingCount={pendingCount}
-          />
+          <AttendanceBanner />
 
           {/* Card ECO_EVOLUIR */}
           <a
