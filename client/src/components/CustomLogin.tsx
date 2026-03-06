@@ -115,9 +115,10 @@ export default function CustomLogin() {
               LOGIN ADMINISTRATIVO
             </h1>
             <h2 className="text-xl font-bold tracking-tight text-center">
-              <span className="text-primary">ECOSSISTEMA DO </span>
-              <span className="text-secondary">BEM</span>
+              <span className="text-primary">Ecossistema de Desenvolvimento do </span>
+              <span className="text-secondary">B.E.M</span>
             </h2>
+            <p className="text-sm font-medium text-muted-foreground tracking-widest uppercase">Líderes Sucessores</p>
           </div>
 
           <Card className="w-full gradient-card relative z-10">
@@ -214,9 +215,10 @@ export default function CustomLogin() {
             className="h-20 object-contain"
           />
           <h2 className="text-xl font-bold tracking-tight text-center">
-            <span className="text-primary">ECOSSISTEMA DO </span>
-            <span className="text-secondary">BEM</span>
+            <span className="text-primary">Ecossistema de Desenvolvimento do </span>
+            <span className="text-secondary">B.E.M</span>
           </h2>
+          <p className="text-sm font-medium text-muted-foreground tracking-widest uppercase">Líderes Sucessores</p>
         </div>
 
         <Card className="w-full gradient-card relative z-10">
