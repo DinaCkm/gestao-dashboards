@@ -1050,6 +1050,38 @@ export const appRouter = router({
                 presenca: ep.status as 'presente' | 'ausente',
               });
             }
+            // === UNIFICAÇÃO: Adicionar eventos ausentes ===
+            {
+              const _epEvtIds3 = new Map<number, Set<number>>();
+              for (const _ep3 of eventParticipations) {
+                if (!_epEvtIds3.has(_ep3.alunoId)) _epEvtIds3.set(_ep3.alunoId, new Set());
+                _epEvtIds3.get(_ep3.alunoId)!.add(_ep3.eventId);
+              }
+              const _evtsByProg3 = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
+              for (const _prog3 of programsList) {
+                _evtsByProg3.set(_prog3.id, await db.getEventsByProgram(_prog3.id));
+              }
+              for (const _a3 of alunosList) {
+                if (!_a3.programId) continue;
+                const _progEvts3 = _evtsByProg3.get(_a3.programId) || [];
+                const _participated3 = _epEvtIds3.get(_a3.id) || new Set();
+                const _aIdStr3 = _a3.externalId || String(_a3.id);
+                const _prog3b = programMap.get(_a3.programId);
+                for (const _evt3 of _progEvts3) {
+                  if (!_participated3.has(_evt3.id)) {
+                    eventosV2.push({
+                      idUsuario: _aIdStr3,
+                      nomeAluno: _a3.name,
+                      empresa: _prog3b?.name || 'Desconhecida',
+                      turma: '', trilha: '',
+                      tituloEvento: _evt3.title || 'Evento',
+                      dataEvento: _evt3.eventDate ? new Date(_evt3.eventDate) : undefined,
+                      presenca: 'ausente' as const,
+                    });
+                  }
+                }
+              }
+            }
             const studentPerfRecs = await db.getStudentPerformanceAsRecords();
             for (const spRec of studentPerfRecs) { performanceV2.push(spRec); }
             
@@ -1482,6 +1514,37 @@ export const appRouter = router({
           presenca: participation.status as 'presente' | 'ausente'
         });
       }
+      // === UNIFICAÇÃO: Adicionar eventos ausentes para alunos sem registro de participação ===
+      {
+        const _epEvtIds = new Map<number, Set<number>>();
+        for (const _ep of eventParticipations) {
+          if (!_epEvtIds.has(_ep.alunoId)) _epEvtIds.set(_ep.alunoId, new Set());
+          _epEvtIds.get(_ep.alunoId)!.add(_ep.eventId);
+        }
+        const _evtsByProg = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
+        for (const _prog of programsList) {
+          _evtsByProg.set(_prog.id, await db.getEventsByProgram(_prog.id));
+        }
+        for (const _a of alunosList) {
+          if (!_a.programId) continue;
+          const _progEvts = _evtsByProg.get(_a.programId) || [];
+          const _participated = _epEvtIds.get(_a.id) || new Set();
+          const _aIdStr = _a.externalId || String(_a.id);
+          const _prog = programMap.get(_a.programId);
+          for (const _evt of _progEvts) {
+            if (!_participated.has(_evt.id)) {
+              eventos.push({
+                idUsuario: _aIdStr,
+                nomeAluno: _a.name,
+                empresa: _prog?.name || 'Desconhecida',
+                tituloEvento: _evt.title || 'Evento',
+                dataEvento: _evt.eventDate ? new Date(_evt.eventDate) : undefined,
+                presenca: 'ausente' as const,
+              });
+            }
+          }
+        }
+      }
       
       // Adicionar dados de performance de competências do plano individual
       for (const item of allPlanoItems) {
@@ -1575,6 +1638,37 @@ export const appRouter = router({
             presenca: participation.status as 'presente' | 'ausente'
           });
         }
+      // === UNIFICAÇÃO: Adicionar eventos ausentes para alunos sem registro de participação ===
+      {
+        const _epEvtIds = new Map<number, Set<number>>();
+        for (const _ep of eventParticipations) {
+          if (!_epEvtIds.has(_ep.alunoId)) _epEvtIds.set(_ep.alunoId, new Set());
+          _epEvtIds.get(_ep.alunoId)!.add(_ep.eventId);
+        }
+        const _evtsByProg = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
+        for (const _prog of programsList) {
+          _evtsByProg.set(_prog.id, await db.getEventsByProgram(_prog.id));
+        }
+        for (const _a of alunosList) {
+          if (!_a.programId) continue;
+          const _progEvts = _evtsByProg.get(_a.programId) || [];
+          const _participated = _epEvtIds.get(_a.id) || new Set();
+          const _aIdStr = _a.externalId || String(_a.id);
+          const _prog = programMap.get(_a.programId);
+          for (const _evt of _progEvts) {
+            if (!_participated.has(_evt.id)) {
+              eventos.push({
+                idUsuario: _aIdStr,
+                nomeAluno: _a.name,
+                empresa: _prog?.name || 'Desconhecida',
+                tituloEvento: _evt.title || 'Evento',
+                dataEvento: _evt.eventDate ? new Date(_evt.eventDate) : undefined,
+                presenca: 'ausente' as const,
+              });
+            }
+          }
+        }
+      }
         
         for (const item of allPlanoItems) {
           if (item.notaAtual) {
@@ -1719,6 +1813,37 @@ export const appRouter = router({
             presenca: participation.status as 'presente' | 'ausente'
           });
         }
+      // === UNIFICAÇÃO: Adicionar eventos ausentes para alunos sem registro de participação ===
+      {
+        const _epEvtIds = new Map<number, Set<number>>();
+        for (const _ep of eventParticipations) {
+          if (!_epEvtIds.has(_ep.alunoId)) _epEvtIds.set(_ep.alunoId, new Set());
+          _epEvtIds.get(_ep.alunoId)!.add(_ep.eventId);
+        }
+        const _evtsByProg = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
+        for (const _prog of programsList) {
+          _evtsByProg.set(_prog.id, await db.getEventsByProgram(_prog.id));
+        }
+        for (const _a of alunosList) {
+          if (!_a.programId) continue;
+          const _progEvts = _evtsByProg.get(_a.programId) || [];
+          const _participated = _epEvtIds.get(_a.id) || new Set();
+          const _aIdStr = _a.externalId || String(_a.id);
+          const _prog = programMap.get(_a.programId);
+          for (const _evt of _progEvts) {
+            if (!_participated.has(_evt.id)) {
+              eventos.push({
+                idUsuario: _aIdStr,
+                nomeAluno: _a.name,
+                empresa: _prog?.name || 'Desconhecida',
+                tituloEvento: _evt.title || 'Evento',
+                dataEvento: _evt.eventDate ? new Date(_evt.eventDate) : undefined,
+                presenca: 'ausente' as const,
+              });
+            }
+          }
+        }
+      }
         
         // Adicionar dados de performance de competências do plano individual
         for (const item of allPlanoItems) {
@@ -1805,6 +1930,37 @@ export const appRouter = router({
             dataEvento: participation.eventDate ? new Date(participation.eventDate) : undefined,
             presenca: participation.status as 'presente' | 'ausente'
           });
+        }
+        // === UNIFICAÇÃO: Adicionar eventos ausentes para alunos sem registro de participação ===
+        {
+          const _epEvtIds = new Map<number, Set<number>>();
+          for (const _ep of eventParticipations) {
+            if (!_epEvtIds.has(_ep.alunoId)) _epEvtIds.set(_ep.alunoId, new Set());
+            _epEvtIds.get(_ep.alunoId)!.add(_ep.eventId);
+          }
+          const _evtsByProg = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
+          for (const _prog of programsList) {
+            _evtsByProg.set(_prog.id, await db.getEventsByProgram(_prog.id));
+          }
+          for (const _a of alunosList) {
+            if (!_a.programId) continue;
+            const _progEvts = _evtsByProg.get(_a.programId) || [];
+            const _participated = _epEvtIds.get(_a.id) || new Set();
+            const _aIdStr = _a.externalId || String(_a.id);
+            const _prog2 = programMap.get(_a.programId);
+            for (const _evt of _progEvts) {
+              if (!_participated.has(_evt.id)) {
+                eventos.push({
+                  idUsuario: _aIdStr,
+                  nomeAluno: _a.name,
+                  empresa: _prog2?.name || 'Desconhecida',
+                  tituloEvento: _evt.title || 'Evento',
+                  dataEvento: _evt.eventDate ? new Date(_evt.eventDate) : undefined,
+                  presenca: 'ausente' as const,
+                });
+              }
+            }
+          }
         }
         
         // Adicionar dados de performance de competências do plano individual
@@ -1929,6 +2085,37 @@ export const appRouter = router({
             dataEvento: participation.eventDate ? new Date(participation.eventDate) : undefined,
             presenca: participation.status as 'presente' | 'ausente'
           });
+        }
+        // === UNIFICAÇÃO: Adicionar eventos ausentes para alunos sem registro de participação ===
+        {
+          const _epEvtIds = new Map<number, Set<number>>();
+          for (const _ep of eventParticipations) {
+            if (!_epEvtIds.has(_ep.alunoId)) _epEvtIds.set(_ep.alunoId, new Set());
+            _epEvtIds.get(_ep.alunoId)!.add(_ep.eventId);
+          }
+          const _evtsByProg = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
+          for (const _prog of programsList) {
+            _evtsByProg.set(_prog.id, await db.getEventsByProgram(_prog.id));
+          }
+          for (const _a of alunosList) {
+            if (!_a.programId) continue;
+            const _progEvts = _evtsByProg.get(_a.programId) || [];
+            const _participated = _epEvtIds.get(_a.id) || new Set();
+            const _aIdStr = _a.externalId || String(_a.id);
+            const _prog2 = programMap.get(_a.programId);
+            for (const _evt of _progEvts) {
+              if (!_participated.has(_evt.id)) {
+                eventos.push({
+                  idUsuario: _aIdStr,
+                  nomeAluno: _a.name,
+                  empresa: _prog2?.name || 'Desconhecida',
+                  tituloEvento: _evt.title || 'Evento',
+                  dataEvento: _evt.eventDate ? new Date(_evt.eventDate) : undefined,
+                  presenca: 'ausente' as const,
+                });
+              }
+            }
+          }
         }
         
         // Adicionar dados de performance da tabela student_performance (CSV)
@@ -2081,6 +2268,47 @@ export const appRouter = router({
           dataEvento: ep.eventDate ? new Date(ep.eventDate) : undefined,
           presenca: ep.status as 'presente' | 'ausente',
         });
+      }
+
+      // === UNIFICAÇÃO DE FONTE DE DADOS DE EVENTOS ===
+      // Para cada aluno, adicionar registros de 'ausente' para eventos do programa
+      // onde o aluno NÃO tem registro de participação.
+      // Isso garante que o calculador V2 (e os cards de resumo) considerem TODOS os
+      // eventos do programa, não apenas aqueles com registro em eventParticipation.
+      const eventParticipationEventIds = new Map<number, Set<number>>(); // alunoId -> Set<eventId>
+      for (const ep of allEventParticipations) {
+        if (!eventParticipationEventIds.has(ep.alunoId)) {
+          eventParticipationEventIds.set(ep.alunoId, new Set());
+        }
+        eventParticipationEventIds.get(ep.alunoId)!.add(ep.eventId);
+      }
+      // Buscar todos os eventos por programa
+      const eventsByProgram = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
+      for (const prog of programsList) {
+        const progEvents = await db.getEventsByProgram(prog.id);
+        eventsByProgram.set(prog.id, progEvents);
+      }
+      // Para cada aluno, adicionar eventos ausentes (sem registro de participação)
+      for (const a of alunosList) {
+        if (!a.programId) continue;
+        const progEvents = eventsByProgram.get(a.programId) || [];
+        const alunoParticipatedEvents = eventParticipationEventIds.get(a.id) || new Set();
+        const alunoIdStr = a.externalId || String(a.id);
+        const program = programMap.get(a.programId);
+        for (const evt of progEvents) {
+          if (!alunoParticipatedEvents.has(evt.id)) {
+            eventos.push({
+              idUsuario: alunoIdStr,
+              nomeAluno: a.name,
+              empresa: program?.name || 'Desconhecida',
+              turma: '',
+              trilha: '',
+              tituloEvento: evt.title || 'Evento',
+              dataEvento: evt.eventDate ? new Date(evt.eventDate) : undefined,
+              presenca: 'ausente' as const,
+            });
+          }
+        }
       }
 
       // Buscar performance de competências do plano individual

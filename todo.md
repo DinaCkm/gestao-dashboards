@@ -1718,3 +1718,14 @@
 ## Substituição do Logo - eco do bem (06/03/2026)
 - [x] Fazer upload do novo logo eco do bem para CDN
 - [x] Substituir logo em todos os locais: menu lateral (DashboardLayout), tela de login/cadastro (CustomLogin), header/footer do aluno (AlunoLayout), mural (MuralAluno), portal do aluno (DashboardMeuPerfil)
+
+## Bug: Discrepância card vs lista de eventos (06/03/2026)
+- [x] Card de resumo mostra 0 Ausências mas lista mostra 3 eventos com status Ausente para Carolina Borges Moreira. Indicador 1 (Webinars) também mostra 100%. Unificar todas as fontes: card, indicador e lista devem usar a mesma lógica (todos os eventos do programa cruzados com participações).
+
+## Unificação de Fontes de Dados de Eventos (06/03/2026)
+- [x] Unificar 3 fontes de dados de eventos para uma única fonte (todos os eventos do programa)
+- [x] Atualizar indicatorsCalculatorV2.ts para receber totalEventosPrograma e calcular ausências corretamente
+- [x] Atualizar endpoint meuDashboard para passar total de eventos do programa ao calculador
+- [x] Atualizar cards de resumo (Presenças/Ausências/Total) para usar dados consistentes com a lista
+- [x] Garantir que Indicador 1 (Webinars) use a mesma lógica
+- [x] Verificar que Dashboard Gestor e Dashboard Aluno também ficam consistentes
