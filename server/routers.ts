@@ -946,6 +946,7 @@ export const appRouter = router({
           
           // Build Excel workbook
           const wb = XLSX.utils.book_new();
+          const dataEmissao = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
           
           if (input.type === 'individual' && input.scopeId) {
             // Individual report - specific student
@@ -1083,6 +1084,7 @@ export const appRouter = router({
                 'Ind.7 Engajamento Final (%)': ind ? Math.round(ind.consolidado.ind7_engajamentoFinal) : 0,
                 'Classificação': ind?.classificacao || 'Sem dados',
                 'Nota Final (0-10)': ind ? (ind.notaFinal).toFixed(1) : '0.0',
+                'Data de Emissão': dataEmissao,
               };
             });
             const ws1 = XLSX.utils.json_to_sheet(alunosComIndicadores);
@@ -1129,6 +1131,7 @@ export const appRouter = router({
                   'Ind.6 Case': Math.round(ciclo.ind6_aplicabilidade),
                   'Ind.7 Eng. Final': Math.round(ciclo.ind7_engajamentoFinal),
                   'Classificação': ciclo.classificacao || '',
+                  'Data de Emissão': dataEmissao,
                 });
               }
             }

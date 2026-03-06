@@ -1679,3 +1679,9 @@
 
 ## Remoção do Ranking do Portal do Aluno (06/03/2026)
 - [x] Remover bloco de ranking (Xº lugar de Y alunos na empresa) da página DashboardMeuPerfil
+
+## Correções Página Relatórios (06/03/2026)
+- [x] Remover os 2 templates rápidos (Relatório Semanal e Performance da Equipe)
+- [x] Adicionar botão recolher/expandir no histórico de relatórios
+- [x] Corrigir bug: relatórios já gerados mostram "Processando..." em vez de "Baixar" (adicionado refetchInterval 5s)
+- [x] Adicionar coluna "Data de Emissão" nos relatórios Excel gerados (todas as abas)
