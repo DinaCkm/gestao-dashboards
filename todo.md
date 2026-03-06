@@ -1714,3 +1714,7 @@
 
 ## Card ECO_EVOLUIR - Filtro por empresa (06/03/2026)
 - [x] Fazer o card ECO_EVOLUIR aparecer apenas para alunos da empresa SEBRAE TO no Portal do Aluno - CORRIGIDO: condição adicionada em DashboardMeuPerfil.tsx (aluno.programa contém 'SEBRAE' e 'TO') e MuralAluno.tsx (user.programId === 17)
+
+## Substituição do Logo - eco do bem (06/03/2026)
+- [x] Fazer upload do novo logo eco do bem para CDN
+- [x] Substituir logo em todos os locais: menu lateral (DashboardLayout), tela de login/cadastro (CustomLogin), header/footer do aluno (AlunoLayout), mural (MuralAluno), portal do aluno (DashboardMeuPerfil)

@@ -603,8 +603,8 @@ export default function MuralAluno() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/bem-logo-cerebro_a018b383.png"
-                alt="B.E.M. - Competências do B.E.M."
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
+                alt="eco do bem"
                 className="h-14 object-contain hidden sm:block"
               />
               <div className="hidden sm:block w-px h-10 bg-gray-200" />
@@ -678,8 +678,8 @@ export default function MuralAluno() {
             <div className="relative flex items-center gap-5 p-5 sm:p-6">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-blue-100 shadow-lg p-2">
                 <img
-                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/bem-logo-cerebro_a018b383.png"
-                  alt="B.E.M."
+                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
+                  alt="eco do bem"
                   className="w-full h-full object-contain"
                 />
               </div>

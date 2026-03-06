@@ -820,8 +820,8 @@ export default function DashboardMeuPerfil() {
           <div className="relative flex items-center gap-4 p-4 sm:p-5">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-blue-100 shadow-lg p-2">
               <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/bem-logo-cerebro_a018b383.png"
-                alt="B.E.M."
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
+                alt="eco do bem"
                 className="w-full h-full object-contain"
               />
             </div>
