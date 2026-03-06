@@ -45,7 +45,8 @@ import {
   Compass,
   Video,
   Megaphone,
-  ExternalLink
+  ExternalLink,
+  Calendar
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -93,6 +94,8 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: Users, label: "Cadastros", path: "/cadastros", roles: ["admin"] },
   
   // === RELATÓRIOS E GESTÃO ===
+  { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["admin"] },
+  { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], hideIfConsultorId: true },
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager"] },
   { icon: GraduationCap, label: "Turmas", path: "/turmas", roles: ["admin"] },
   { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias", roles: ["admin"] },

@@ -1043,20 +1043,22 @@ function MentorAgendamentosTab({ consultorId }: { consultorId: number }) {
                   {groupForm.alunoIds.length === (mentorAlunos?.length || 0) ? 'Desmarcar Todos' : 'Selecionar Todos'}
                 </Button>
               </div>
-              <div className="border rounded-lg max-h-48 overflow-y-auto p-2 space-y-1">
+              <div className="border rounded-lg max-h-64 overflow-y-auto p-2 space-y-1">
                 {(mentorAlunos || []).map((aluno: any) => (
                   <label
                     key={aluno.id}
-                    className={`flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-accent ${groupForm.alunoIds.includes(aluno.id) ? 'bg-blue-50 border border-blue-200' : ''}`}
+                    className={`flex items-center gap-3 p-2.5 rounded cursor-pointer hover:bg-accent transition-colors ${groupForm.alunoIds.includes(aluno.id) ? 'bg-blue-50 border border-blue-200' : ''}`}
                   >
                     <input
                       type="checkbox"
                       checked={groupForm.alunoIds.includes(aluno.id)}
                       onChange={() => toggleAlunoSelection(aluno.id)}
-                      className="rounded"
+                      className="rounded shrink-0"
                     />
-                    <span className="text-sm">{aluno.name}</span>
-                    {aluno.empresa && <Badge variant="outline" className="text-xs ml-auto">{aluno.empresa}</Badge>}
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-sm font-medium truncate">{aluno.nome || aluno.name}</span>
+                      {aluno.empresa && <span className="text-xs text-muted-foreground truncate">{aluno.empresa}</span>}
+                    </div>
                   </label>
                 ))}
               </div>

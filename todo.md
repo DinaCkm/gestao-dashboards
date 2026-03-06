@@ -1698,3 +1698,16 @@
 - [x] Bug 2: Botão Enviar Case não funciona - CORRIGIDO: alertaCasePendente não incluía trilhaId, fazendo caseTrilhaId ficar null e handleCaseSubmit retornar silenciosamente. Adicionado trilhaId ao tipo e ao endpoint meuDashboard com mapeamento trilhaNome→trilhaId. Também adicionado !caseTrilhaId ao disabled do botão.
 - [x] Bug 3: Filtro BS1 no Dashboard Gestor não mostra trilha Essencial - CORRIGIDO: filtro de trilha agora extrai trilhas reais dos alunos via assessment_pdi (campo trilhasReais) em vez de extrair do nome da turma.
 - [x] Bug 4: Filtro BS3 no Dashboard Gestor não mostra trilha Essencial - CORRIGIDO: mesma correção do Bug 3 (trilhasReais via assessment_pdi).
+
+## Demonstrativo de Sessões de Mentoria (06/03/2026)
+- [ ] Criar endpoint backend para listar sessões de mentoria por aluno com contagem de realizadas/faltantes
+- [ ] Criar página DemonstrativoMentorias com filtros (empresa, turma, trilha) e tabela detalhada
+- [ ] Integrar na navegação do gestor (sidebar)
+- [ ] Mostrar: nome aluno, empresa, turma, sessões realizadas, sessões faltantes, total contratadas, progresso visual
+
+## Bug: Área de cadastro do mentor não aparece (06/03/2026)
+- [ ] Investigar por que a área de cadastro do mentor (currículo, foto, agenda) não aparece na visualização do mentor
+- [ ] Corrigir visibilidade da área de cadastro do mentor
+
+## Bug: Agenda de reunião em grupo - nomes dos mentorados não aparecem (06/03/2026)
+- [x] Na tela de criação de agenda/reunião em grupo, ao selecionar convidados, aparece somente o nome da empresa e não o nome dos mentorados. CORRIGIDO: campo usava aluno.name mas backend retorna aluno.nome. Layout melhorado com nome em destaque e empresa abaixo, max-h-64, melhor espaçamento.

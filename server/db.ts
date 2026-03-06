@@ -3438,6 +3438,14 @@ export async function getAllStudentsSessionProgress() {
   const allPrograms = await db.select().from(programs);
   const programMap = new Map(allPrograms.map(p => [p.id, p]));
 
+  // Get turma names
+  const allTurmas = await db.select().from(turmas);
+  const turmaMap = new Map(allTurmas.map(t => [t.id, t]));
+
+  // Get trilha names
+  const allTrilhas = await db.select().from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t]));
+
   return pdis.map(pdi => {
     const macroInicio = new Date(pdi.macroInicio);
     const macroTermino = new Date(pdi.macroTermino);
@@ -3453,6 +3461,8 @@ export async function getAllStudentsSessionProgress() {
     const aluno = alunoMap.get(pdi.alunoId);
     const consultor = pdi.consultorId ? consultorMap.get(pdi.consultorId) : null;
     const program = pdi.programId ? programMap.get(pdi.programId) : null;
+    const turma = aluno?.turmaId ? turmaMap.get(aluno.turmaId) : null;
+    const trilha = pdi.trilhaId ? trilhaMap.get(pdi.trilhaId) : null;
 
     return {
       alunoId: pdi.alunoId,
@@ -3461,6 +3471,10 @@ export async function getAllStudentsSessionProgress() {
       consultorNome: consultor?.name || null,
       programId: pdi.programId,
       programaNome: program?.name || null,
+      turmaId: aluno?.turmaId || null,
+      turmaNome: turma?.name || null,
+      trilhaId: pdi.trilhaId,
+      trilhaNome: trilha?.name || null,
       macroInicio: pdi.macroInicio,
       macroTermino: pdi.macroTermino,
       totalSessoesEsperadas,
