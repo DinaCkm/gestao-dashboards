@@ -36,7 +36,8 @@ import {
   Award,
   Send,
   FileText,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Snowflake
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -449,7 +450,7 @@ export default function RegistroMentoria() {
               </div>
 
               {/* Progresso do Ciclo Macro */}
-              {sessionProgress && (
+              {sessionProgress && !(sessionProgress as any).todosCongelados && (
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -481,6 +482,17 @@ export default function RegistroMentoria() {
                 </div>
               )}
 
+              {/* Aviso: PDIs congelados */}
+              {sessionProgress && (sessionProgress as any).todosCongelados && selectedAlunoId && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex items-center gap-2 text-blue-700 bg-blue-50 rounded-lg px-3 py-2">
+                    <Snowflake className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm">Todas as trilhas deste aluno estão <strong>congeladas</strong>. O progresso do ciclo macro não pode ser calculado enquanto as trilhas estiverem congeladas.</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Aviso: PDI não cadastrado */}
               {!sessionProgress && selectedAlunoId && sessions.length > 0 && (
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex items-center gap-2 text-amber-600 bg-amber-50 rounded-lg px-3 py-2">

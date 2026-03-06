@@ -616,7 +616,7 @@ export default function DashboardMeuPerfil() {
                   </p>
                   <p className="text-sm text-blue-800 mt-1">
                     Este aluno possui <strong>{data.pdisCongelados.length} trilha(s) congelada(s)</strong>. 
-                    Os indicadores de performance <strong>n\u00e3o consideram</strong> trilhas congeladas no c\u00e1lculo.
+                    Os indicadores de performance <strong>não consideram</strong> trilhas congeladas no cálculo.
                   </p>
                   <div className="mt-3 space-y-2">
                     {data.pdisCongelados.map((pdi: any) => (

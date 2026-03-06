@@ -1786,3 +1786,11 @@
 - [x] Aviso de PDI congelado no dashboard do aluno (admin/gestor)
 - [x] Aviso de PDI congelado no dashboard individual do aluno (meu perfil)
 - [x] Aviso de PDI congelado nas listagens de alunos (visão geral, por empresa)
+
+## Bug: Mensagem "Assessment PDI não cadastrado" aparece incorretamente para Vanessa (06/03/2026)
+- [x] Investigar por que a tela P.D.I Evoluir mostra "Assessment PDI não cadastrado" para Vanessa que tem assessments cadastrados
+  - Causa: getSessionProgressByAluno filtrava apenas status='ativo', ignorando PDIs congelados
+- [x] Corrigir a lógica de verificação de assessment na tela P.D.I Evoluir
+  - Agora retorna flag todosCongelados quando só há PDIs congelados
+  - Mensagem diferenciada: "Trilhas congeladas" (azul) vs "PDI não cadastrado" (amarelo)
+- [x] Corrigir escapes Unicode (\\u00e3o, \\u00e1, etc.) nos textos de aviso de congelamento

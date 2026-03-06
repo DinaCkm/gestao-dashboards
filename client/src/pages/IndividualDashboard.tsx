@@ -123,8 +123,8 @@ export default function IndividualDashboard() {
                     Trilha(s) Congelada(s)
                   </p>
                   <p className="text-xs text-blue-800 mt-1">
-                    Voc\u00ea possui <strong>{(dashboardData as any).pdisCongelados.length} trilha(s) congelada(s)</strong>. 
-                    Os indicadores de performance <strong>n\u00e3o consideram</strong> trilhas congeladas no c\u00e1lculo.
+                    Você possui <strong>{(dashboardData as any).pdisCongelados.length} trilha(s) congelada(s)</strong>. 
+                    Os indicadores de performance <strong>não consideram</strong> trilhas congeladas no cálculo.
                   </p>
                   <div className="mt-2 space-y-1">
                     {(dashboardData as any).pdisCongelados.map((pdi: any) => (

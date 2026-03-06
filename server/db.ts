@@ -3468,7 +3468,20 @@ export async function getSessionProgressByAluno(alunoId: number) {
     .limit(1);
 
   if (pdis.length === 0) {
-    // No assessment PDI - return null (can't calculate progress)
+    // Check if there are frozen PDIs (congelados) - different from "no PDI at all"
+    const frozenPdis = await db.select().from(assessmentPdi)
+      .where(and(
+        eq(assessmentPdi.alunoId, alunoId),
+        eq(assessmentPdi.status, 'congelado')
+      ))
+      .limit(1);
+
+    if (frozenPdis.length > 0) {
+      // Has frozen PDIs - return special indicator so frontend can show appropriate message
+      return { alunoId, todosCongelados: true, macroInicio: null, macroTermino: null, totalSessoesEsperadas: 0, sessoesRealizadas: 0, sessoesFaltantes: 0, faltaUmaSessao: false, cicloCompleto: false, percentualProgresso: 0, assessmentPdiId: null, trilhaId: null };
+    }
+
+    // No assessment PDI at all - return null (can't calculate progress)
     return null;
   }
 

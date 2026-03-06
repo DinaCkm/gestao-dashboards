@@ -90,7 +90,7 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
                 <span className="text-sm font-semibold text-blue-800">Este aluno possui trilha(s) congelada(s)</span>
               </div>
               <p className="text-xs text-blue-700 mb-2">
-                Os indicadores de performance <strong>n\u00e3o consideram</strong> trilhas congeladas. Se a performance est\u00e1 zerada ou baixa, pode ser por este motivo.
+                Os indicadores de performance <strong>não consideram</strong> trilhas congeladas. Se a performance está zerada ou baixa, pode ser por este motivo.
               </p>
               {aluno.pdisCongelados.map((pdi: any, idx: number) => (
                 <div key={idx} className="flex items-center gap-2 text-xs text-blue-700 bg-white/60 rounded px-2 py-1 mt-1">
