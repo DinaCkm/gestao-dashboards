@@ -1009,79 +1009,132 @@ export const appRouter = router({
               const ws4 = XLSX.utils.json_to_sheet(planoData);
               XLSX.utils.book_append_sheet(wb, ws4, 'Plano Individual');
             }
-          } else if (input.type === 'manager') {
-            // Manager report - team data
-            const teamAlunos = ctx.user.programId 
+          } else if (input.type === 'manager' || input.type === 'admin') {
+            // Manager/Admin report - team or all data with V2 indicators
+            const reportAlunos = (input.type === 'manager' && ctx.user.programId)
               ? alunosList.filter(a => a.programId === ctx.user.programId)
               : alunosList;
             
-            // Sheet 1: Lista de Alunos
-            const teamData = teamAlunos.map(a => {
+            // Calculate V2 indicators for all students (same logic as Dashboard Gestor)
+            const mentoriasV2: import('./excelProcessor').MentoringRecord[] = [];
+            const eventosV2: import('./excelProcessor').EventRecord[] = [];
+            const performanceV2: import('./excelProcessor').PerformanceRecord[] = [];
+            for (const session of mentoringSessions) {
+              const sessionAluno = alunoMap.get(session.alunoId);
+              if (!sessionAluno) continue;
+              const prog = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
+              const turma = sessionAluno.turmaId ? turmaMap.get(sessionAluno.turmaId) : null;
+              mentoriasV2.push({
+                idUsuario: sessionAluno.externalId || String(sessionAluno.id),
+                nomeAluno: sessionAluno.name, empresa: prog?.name || 'Desconhecida',
+                turma: turma?.name || '', trilha: '', ciclo: session.ciclo || '',
+                sessao: session.sessionNumber || 0,
+                dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
+                presenca: session.presence as 'presente' | 'ausente',
+                atividadeEntregue: (session.taskStatus || 'sem_tarefa') as 'entregue' | 'nao_entregue' | 'sem_tarefa',
+                engajamento: session.engagementScore || undefined,
+                feedback: session.feedback || '',
+              });
+            }
+            for (const ep of eventParticipations) {
+              const epAluno = alunoMap.get(ep.alunoId);
+              if (!epAluno) continue;
+              const prog = epAluno.programId ? programMap.get(epAluno.programId) : null;
+              eventosV2.push({
+                idUsuario: epAluno.externalId || String(epAluno.id),
+                nomeAluno: epAluno.name, empresa: prog?.name || 'Desconhecida',
+                turma: '', trilha: '',
+                tituloEvento: ep.eventTitle || 'Evento',
+                dataEvento: ep.eventDate ? new Date(ep.eventDate) : undefined,
+                presenca: ep.status as 'presente' | 'ausente',
+              });
+            }
+            const studentPerfRecs = await db.getStudentPerformanceAsRecords();
+            for (const spRec of studentPerfRecs) { performanceV2.push(spRec); }
+            
+            const ciclosPorAlunoReport = await db.getAllCiclosForCalculatorV2();
+            const compIdToCodigoMapReport = await db.getCompIdToCodigoMap();
+            const casesMapReport = await db.getCasesForCalculator();
+            const casesDataReport: CaseSucessoData[] = [];
+            for (const [, cases] of Array.from(casesMapReport.entries())) { casesDataReport.push(...cases); }
+            const todosIndicadores = calcularIndicadoresTodosAlunos(mentoriasV2, eventosV2, performanceV2, ciclosPorAlunoReport, compIdToCodigoMapReport, casesDataReport);
+            const indicadoresMap = new Map(todosIndicadores.map(i => [i.idUsuario, i]));
+            
+            // Sheet 1: Alunos com Indicadores V2
+            const sheetName1 = input.type === 'manager' ? 'Equipe' : 'Todos os Alunos';
+            const alunosComIndicadores = reportAlunos.map(a => {
               const prog = a.programId ? programMap.get(a.programId) : null;
               const turma = a.turmaId ? turmaMap.get(a.turmaId) : null;
               const mentor = a.consultorId ? consultorMap.get(a.consultorId) : null;
+              const idUsr = a.externalId || String(a.id);
+              const ind = indicadoresMap.get(idUsr);
               return {
                 'Nome': a.name || '',
                 'Email': a.email || '',
                 'Empresa': prog?.name || '',
                 'Turma': turma?.name || '',
                 'Mentor(a)': mentor?.name || '',
+                'Ind.1 Webinars (%)': ind ? Math.round(ind.consolidado.ind1_webinars) : 0,
+                'Ind.2 Avaliações (%)': ind ? Math.round(ind.consolidado.ind2_avaliacoes) : 0,
+                'Ind.3 Competências (%)': ind ? Math.round(ind.consolidado.ind3_competencias) : 0,
+                'Ind.4 Tarefas (%)': ind ? Math.round(ind.consolidado.ind4_tarefas) : 0,
+                'Ind.5 Engajamento (%)': ind ? Math.round(ind.consolidado.ind5_engajamento) : 0,
+                'Ind.6 Case (%)': ind ? Math.round(ind.consolidado.ind6_aplicabilidade) : 0,
+                'Ind.7 Engajamento Final (%)': ind ? Math.round(ind.consolidado.ind7_engajamentoFinal) : 0,
+                'Classificação': ind?.classificacao || 'Sem dados',
+                'Nota Final (0-10)': ind ? (ind.notaFinal).toFixed(1) : '0.0',
               };
             });
-            const ws1 = XLSX.utils.json_to_sheet(teamData);
-            XLSX.utils.book_append_sheet(wb, ws1, 'Equipe');
+            const ws1 = XLSX.utils.json_to_sheet(alunosComIndicadores);
+            XLSX.utils.book_append_sheet(wb, ws1, sheetName1);
             
-            // Sheet 2: Mentorias da Equipe
-            const teamIds = new Set(teamAlunos.map(a => a.id));
-            const teamMentorias = mentoringSessions
-              .filter(s => teamIds.has(s.alunoId))
+            // Sheet 2: Mentorias
+            const reportIds = new Set(reportAlunos.map(a => a.id));
+            const reportMentorias = mentoringSessions
+              .filter(s => reportIds.has(s.alunoId))
               .map(s => {
                 const al = alunoMap.get(s.alunoId);
+                const prog = al?.programId ? programMap.get(al.programId) : null;
                 return {
                   'Aluno': al?.name || '',
+                  ...(input.type === 'admin' ? { 'Empresa': prog?.name || '' } : {}),
                   'Data': s.sessionDate ? String(s.sessionDate) : '',
                   'Presença': s.presence || '',
                   'Atividade': s.taskStatus || '',
                   'Engajamento': s.engagementScore ?? '',
                 };
               });
-            if (teamMentorias.length > 0) {
-              const ws2 = XLSX.utils.json_to_sheet(teamMentorias);
+            if (reportMentorias.length > 0) {
+              const ws2 = XLSX.utils.json_to_sheet(reportMentorias);
               XLSX.utils.book_append_sheet(wb, ws2, 'Mentorias');
             }
-          } else {
-            // Admin report - all data
-            const allData = alunosList.map(a => {
-              const prog = a.programId ? programMap.get(a.programId) : null;
-              const turma = a.turmaId ? turmaMap.get(a.turmaId) : null;
-              const mentor = a.consultorId ? consultorMap.get(a.consultorId) : null;
-              return {
-                'Nome': a.name || '',
-                'Email': a.email || '',
-                'Empresa': prog?.name || '',
-                'Turma': turma?.name || '',
-                'Mentor(a)': mentor?.name || '',
-              };
-            });
-            const ws1 = XLSX.utils.json_to_sheet(allData);
-            XLSX.utils.book_append_sheet(wb, ws1, 'Todos os Alunos');
             
-            // Sheet 2: Todas as Mentorias
-            const allMentorias = mentoringSessions.map(s => {
-              const al = alunoMap.get(s.alunoId);
-              const prog = al?.programId ? programMap.get(al.programId) : null;
-              return {
-                'Aluno': al?.name || '',
-                'Empresa': prog?.name || '',
-                'Data': s.sessionDate ? String(s.sessionDate) : '',
-                'Presença': s.presence || '',
-                'Atividade': s.taskStatus || '',
-                'Engajamento': s.engagementScore ?? '',
-              };
-            });
-            if (allMentorias.length > 0) {
-              const ws2 = XLSX.utils.json_to_sheet(allMentorias);
-              XLSX.utils.book_append_sheet(wb, ws2, 'Mentorias');
+            // Sheet 3: Indicadores por Ciclo (detalhado)
+            const indicadoresPorCiclo: any[] = [];
+            for (const a of reportAlunos) {
+              const idUsr = a.externalId || String(a.id);
+              const ind = indicadoresMap.get(idUsr);
+              if (!ind) continue;
+              const allCiclos = [...ind.ciclosFinalizados, ...ind.ciclosEmAndamento];
+              for (const ciclo of allCiclos) {
+                indicadoresPorCiclo.push({
+                  'Aluno': a.name || '',
+                  'Ciclo': ciclo.nomeCiclo || '',
+                  'Status': ciclo.status || '',
+                  'Ind.1 Webinars': Math.round(ciclo.ind1_webinars),
+                  'Ind.2 Avaliações': Math.round(ciclo.ind2_avaliacoes),
+                  'Ind.3 Competências': Math.round(ciclo.ind3_competencias),
+                  'Ind.4 Tarefas': Math.round(ciclo.ind4_tarefas),
+                  'Ind.5 Engajamento': Math.round(ciclo.ind5_engajamento),
+                  'Ind.6 Case': Math.round(ciclo.ind6_aplicabilidade),
+                  'Ind.7 Eng. Final': Math.round(ciclo.ind7_engajamentoFinal),
+                  'Classificação': ciclo.classificacao || '',
+                });
+              }
+            }
+            if (indicadoresPorCiclo.length > 0) {
+              const ws3 = XLSX.utils.json_to_sheet(indicadoresPorCiclo);
+              XLSX.utils.book_append_sheet(wb, ws3, 'Indicadores por Ciclo');
             }
           }
           
@@ -2114,56 +2167,29 @@ export const appRouter = router({
         }
       }
 
-      // Calcular ranking na empresa (posição entre colegas da mesma empresa)
+      // Calcular ranking na empresa usando V2 (mesma lógica do Dashboard Gestor)
+      // Isso garante que o ranking aqui seja idêntico ao mostrado no Dashboard Gestor
+      const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
+      const compIdToCodigoMapAll = await db.getCompIdToCodigoMap();
+      const casesMapAll = await db.getCasesForCalculator();
+      const casesDataAll: CaseSucessoData[] = [];
+      for (const [, cases] of Array.from(casesMapAll.entries())) { casesDataAll.push(...cases); }
+      const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll);
+
       let ranking = { posicao: 0, totalAlunos: 0 };
       if (aluno.programId) {
-        const colegasEmpresa = alunosList.filter(a => a.programId === aluno!.programId && a.isActive === 1);
-        // Calcular nota de cada colega
-        const notasColegas: { alunoId: number; nota: number }[] = [];
-        for (const colega of colegasEmpresa) {
-          const colegaId = colega.externalId || String(colega.id);
-          const compObrigatoriasColega = await db.getCompetenciasObrigatoriasAluno(colega.id);
-          const planoColega = await db.getPlanoIndividualByAluno(colega.id);
-          const perfColega: PerformanceRecord[] = [];
-          for (const item of planoColega) {
-            if (item.notaAtual) {
-              perfColega.push({
-                idUsuario: colegaId,
-                nomeTurma: '',
-                idCompetencia: String(item.competenciaId),
-                nomeCompetencia: item.competenciaNome || '',
-                notaAvaliacao: parseFloat(item.notaAtual),
-                aprovado: parseFloat(item.notaAtual) >= 7,
-              });
-            }
-          }
-          // Adicionar dados de student_performance para o colega
-          const colegaPerfKeys = new Set(perfColega.map(p => `${p.idUsuario}|${p.idCompetencia}`));
-          for (const spRec of studentPerfRecords) {
-            if (spRec.idUsuario === colegaId) {
-              const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
-              if (!colegaPerfKeys.has(key)) {
-                perfColega.push(spRec);
-                colegaPerfKeys.add(key);
-              }
-            }
-          }
-          const compObrigColega: CompetenciaObrigatoria[] = compObrigatoriasColega.map(c => ({
-            competenciaId: c.competenciaId,
-            codigoIntegracao: c.codigoIntegracao,
-            notaAtual: c.notaAtual,
-            metaNota: c.metaNota,
-            status: c.status,
-          }));
-          const indColega = calcularIndicadoresAlunoFiltrado(
-            colegaId, mentorias, eventos, perfColega, compObrigColega
-          );
-          notasColegas.push({ alunoId: colega.id, nota: indColega.notaFinal });
-        }
-        notasColegas.sort((a, b) => b.nota - a.nota);
-        const posicao = notasColegas.findIndex(n => n.alunoId === aluno!.id) + 1;
-        ranking = { posicao, totalAlunos: notasColegas.length };
+        const programa = programMap.get(aluno.programId);
+        const empresaNome = programa?.name || '';
+        // Filtrar alunos da mesma empresa (mesma lógica de gerarDashboardEmpresa)
+        const alunosEmpresaV2 = todosIndicadoresV2
+          .filter(i => i.empresa === empresaNome)
+          .sort((a, b) => b.notaFinal - a.notaFinal);
+        const posicao = alunosEmpresaV2.findIndex(i => i.idUsuario === idUsuario) + 1;
+        ranking = { posicao, totalAlunos: alunosEmpresaV2.length };
       }
+
+      // Usar indicadores V2 do aluno para notaFinal e performanceGeral consistentes
+      const alunoIndicadoresV2Global = todosIndicadoresV2.find(i => i.idUsuario === idUsuario);
 
       return {
         found: true as const,
@@ -2188,24 +2214,25 @@ export const appRouter = router({
           mentorId: mentorAluno?.id || null,
         },
         indicadores: {
-          participacaoMentorias: indicadores.participacaoMentorias,
-          atividadesPraticas: indicadores.atividadesPraticas,
-          engajamento: indicadores.engajamento,
-          performanceCompetencias: indicadores.performanceCompetencias,
-          performanceAprendizado: indicadores.performanceAprendizado,
-          participacaoEventos: indicadores.participacaoEventos,
-          performanceGeral: indicadores.performanceGeral,
-          notaFinal: indicadores.notaFinal,
-          classificacao: indicadores.classificacao,
-          totalMentorias: indicadores.totalMentorias,
-          mentoriasPresente: indicadores.mentoriasPresente,
-          totalAtividades: indicadores.totalAtividades,
-          atividadesEntregues: indicadores.atividadesEntregues,
-          totalEventos: indicadores.totalEventos,
-          eventosPresente: indicadores.eventosPresente,
-          totalCompetencias: indicadores.totalCompetencias,
-          competenciasAprovadas: indicadores.competenciasAprovadas,
-          mediaEngajamentoRaw: indicadores.mediaEngajamentoRaw,
+          // Usar V2 para notaFinal e performanceGeral (consistente com Dashboard Gestor)
+          participacaoMentorias: alunoIndicadoresV2Global?.participacaoMentorias ?? indicadores.participacaoMentorias,
+          atividadesPraticas: alunoIndicadoresV2Global?.atividadesPraticas ?? indicadores.atividadesPraticas,
+          engajamento: alunoIndicadoresV2Global?.engajamento ?? indicadores.engajamento,
+          performanceCompetencias: alunoIndicadoresV2Global?.performanceCompetencias ?? indicadores.performanceCompetencias,
+          performanceAprendizado: alunoIndicadoresV2Global?.performanceAprendizado ?? indicadores.performanceAprendizado,
+          participacaoEventos: alunoIndicadoresV2Global?.participacaoEventos ?? indicadores.participacaoEventos,
+          performanceGeral: alunoIndicadoresV2Global?.performanceGeral ?? indicadores.performanceGeral,
+          notaFinal: alunoIndicadoresV2Global?.notaFinal ?? indicadores.notaFinal,
+          classificacao: alunoIndicadoresV2Global?.classificacao ?? indicadores.classificacao,
+          totalMentorias: alunoIndicadoresV2Global?.totalMentorias ?? indicadores.totalMentorias,
+          mentoriasPresente: alunoIndicadoresV2Global?.mentoriasPresente ?? indicadores.mentoriasPresente,
+          totalAtividades: alunoIndicadoresV2Global?.totalAtividades ?? indicadores.totalAtividades,
+          atividadesEntregues: alunoIndicadoresV2Global?.atividadesEntregues ?? indicadores.atividadesEntregues,
+          totalEventos: alunoIndicadoresV2Global?.totalEventos ?? indicadores.totalEventos,
+          eventosPresente: alunoIndicadoresV2Global?.eventosPresente ?? indicadores.eventosPresente,
+          totalCompetencias: alunoIndicadoresV2Global?.totalCompetencias ?? indicadores.totalCompetencias,
+          competenciasAprovadas: alunoIndicadoresV2Global?.competenciasAprovadas ?? indicadores.competenciasAprovadas,
+          mediaEngajamentoRaw: alunoIndicadoresV2Global?.mediaEngajamentoRaw ?? indicadores.mediaEngajamentoRaw,
           engajamentoComponentes: indicadores.engajamentoComponentes,
           ciclosFinalizados: indicadores.ciclosFinalizados,
           ciclosEmAndamento: indicadores.ciclosEmAndamento,

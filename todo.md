@@ -1663,3 +1663,16 @@
 - [x] Adicionar filtro por trilha como segundo nível de filtro dentro da turma selecionada
 - [x] Ajustar cards de Engajamento por Turma para usar nomenclatura BS1/BS2/BS3
 - [x] Adicionar gráfico de timeline/execução dos ciclos para o gestor saber quando todos os ciclos terminam
+
+## Limpeza de Dados (06/03/2026)
+- [x] Identificar e remover todos os alunos de teste do banco de dados (116 alunos vitest removidos, 3 manuais mantidos)
+
+## Bug Ranking Discrepante (06/03/2026)
+- [x] Investigar discrepância: Joseane aparece 21º no Portal do Aluno e 2º no Dashboard Gestor (causa: V1 vs V2)
+- [x] Unificar cálculo: meuDashboard (Portal do Aluno) agora usa V2 para ranking
+- [x] Unificar cálculo: ranking no meuDashboard usa calcularIndicadoresTodosAlunos (V2) para todos os colegas
+- [x] Atualizar frontend DashboardMeuPerfil para consumir dados V2 (classificação usa V2)
+- [x] Limpar todos os alunos de teste do banco de dados (241 users vitest + 9 relatórios teste removidos)
+
+## Relatório Gerencial com Indicadores V2 (06/03/2026)
+- [x] Incluir todos os 7 indicadores V2 (Webinars, Avaliações, Competências, Tarefas, Engajamento, Case, Engajamento Final) de cada aluno no Relatório Gerencial e Administrativo Excel (3 abas: Equipe/Indicadores, Mentorias, Indicadores por Ciclo)

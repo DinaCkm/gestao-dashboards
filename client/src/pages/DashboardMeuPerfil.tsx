@@ -568,8 +568,8 @@ export default function DashboardMeuPerfil() {
                   <div className="text-4xl font-black text-[#F5991F]">
                     {(v2Filtrado?.ind7_engajamentoFinal ?? performanceGeral).toFixed(0)}%
                   </div>
-                  <Badge className={`mt-1 ${getClassificacaoBadge(indicadores.classificacao)}`}>
-                    {indicadores.classificacao}
+                  <Badge className={`mt-1 ${getClassificacaoBadge(v2Filtrado?.classificacao ?? indicadores.classificacao)}`}>
+                    {v2Filtrado?.classificacao ?? indicadores.classificacao}
                   </Badge>
                 </div>
               </div>
