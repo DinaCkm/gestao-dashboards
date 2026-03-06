@@ -787,9 +787,29 @@ export async function getEventsByProgram(programId: number): Promise<Event[]> {
 export async function getEventsByProgramOrGlobal(programId: number): Promise<Event[]> {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(events).where(
+  const allEvts = await db.select().from(events).where(
     or(eq(events.programId, programId), isNull(events.programId))
   );
+  // Deduplicar eventos por título normalizado (evita duplicados como 4x "2025/19 Estrutura e Conceitos")
+  const normTitle = (t: string | null): string => {
+    if (!t) return '';
+    return t.toLowerCase().trim()
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/\s+/g, ' ')
+      .replace(/\s*-\s*/g, ' - ')
+      .trim();
+  };
+  const coreTitle = (n: string): string => n.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '').trim();
+  const seen = new Map<string, Event>();
+  const deduped: Event[] = [];
+  for (const evt of allEvts) {
+    const core = coreTitle(normTitle(evt.title));
+    if (!seen.has(core)) {
+      seen.set(core, evt);
+      deduped.push(evt);
+    }
+  }
+  return deduped;
 }
 
 // ============ EVENT PARTICIPATION FUNCTIONS ============
@@ -2926,8 +2946,40 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
     }
   }
   
-  // Montar lista unificada: eventos com participação + eventos sem participação (ausentes)
-  const eventosDetalhados = allProgramEvents.map(evt => {
+  // DEDUPLICAR eventos por título normalizado (mesma lógica de getWebinarsPendingAttendance)
+  const normalizeTitleDedup = (title: string | null): string => {
+    if (!title) return '';
+    return title.toLowerCase().trim()
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/\s+/g, ' ')
+      .replace(/\s*-\s*/g, ' - ')
+      .trim();
+  };
+  const extractCoreDedup = (normalized: string): string => {
+    return normalized.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '').trim();
+  };
+  const seenCoresDedup = new Map<string, Event>();
+  const deduplicatedProgramEvents: Event[] = [];
+  for (const evt of allProgramEvents) {
+    const core = extractCoreDedup(normalizeTitleDedup(evt.title));
+    const existing = seenCoresDedup.get(core);
+    if (!existing) {
+      seenCoresDedup.set(core, evt);
+      deduplicatedProgramEvents.push(evt);
+    } else {
+      // Preferir o evento que tem participação
+      const existingPart = participationMap.get(existing.id);
+      const currentPart = participationMap.get(evt.id);
+      if (!existingPart && currentPart) {
+        const idx = deduplicatedProgramEvents.indexOf(existing);
+        if (idx >= 0) deduplicatedProgramEvents[idx] = evt;
+        seenCoresDedup.set(core, evt);
+      }
+    }
+  }
+
+  // Montar lista unificada: eventos deduplicados com participação + eventos sem participação (ausentes)
+  const eventosDetalhados = deduplicatedProgramEvents.map(evt => {
     const part = participationMap.get(evt.id);
     return {
       id: part?.id || 0,
@@ -3933,21 +3985,49 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
   for (const w of allScheduledWebinars) {
     const normalized = normalizeTitle(w.title);
     // Remover prefixo como "2025/19 - aula 01 - " para ficar só com o conteúdo principal
-    const withoutAula = normalized.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*[-\u2013]\s*)?/i, '');
+    const withoutAula = normalized.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '').trim();
     if (withoutAula) webinarByTitleNoPrefix.set(withoutAula, w);
   }
   const now = new Date();
 
-  // Retornar TODOS os eventos com status de presença
-  return allEvents.map(evt => {
+  // Função auxiliar para extrair o conteúdo principal do título (sem prefixo "aula XX")
+  const extractCore = (normalized: string): string => {
+    return normalized.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '').trim();
+  };
+
+  // DEDUPLICAR eventos por título normalizado (manter o que tem participação, ou o primeiro)
+  const seenCores = new Map<string, typeof allEvents[0]>();
+  const deduplicatedEvents: typeof allEvents = [];
+  for (const evt of allEvents) {
+    const core = extractCore(normalizeTitle(evt.title));
+    const existing = seenCores.get(core);
+    if (!existing) {
+      seenCores.set(core, evt);
+      deduplicatedEvents.push(evt);
+    } else {
+      // Se o evento atual tem participação e o existente não, substituir
+      const existingPart = participationMap.get(existing.id);
+      const currentPart = participationMap.get(evt.id);
+      if (!existingPart && currentPart) {
+        // Substituir: remover o antigo e adicionar o novo
+        const idx = deduplicatedEvents.indexOf(existing);
+        if (idx >= 0) deduplicatedEvents[idx] = evt;
+        seenCores.set(core, evt);
+      }
+      // Se ambos têm ou ambos não têm participação, manter o primeiro (já está no array)
+    }
+  }
+
+  // Retornar TODOS os eventos (deduplicados) com status de presença
+  return deduplicatedEvents.map(evt => {
     const part = participationMap.get(evt.id);
     // Tentar match exato normalizado primeiro, depois match parcial sem prefixo
     const normalizedEvtTitle = normalizeTitle(evt.title);
     let matchedWebinar = webinarByTitle.get(normalizedEvtTitle) || null;
     if (!matchedWebinar) {
-      // Tentar sem prefixo "aula XX - "
-      const evtWithoutAula = normalizedEvtTitle.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*[-\u2013]\s*)?/i, '');
-      matchedWebinar = webinarByTitleNoPrefix.get(evtWithoutAula) || null;
+      // Tentar sem prefixo "aula XX - " (após normalização, traços já são hífen simples)
+      const evtCore = extractCore(normalizedEvtTitle);
+      matchedWebinar = webinarByTitleNoPrefix.get(evtCore) || null;
     }
     const endDate = matchedWebinar?.endDate || matchedWebinar?.eventDate || evt.eventDate;
     const hasEnded = endDate ? new Date(endDate) < now : true;

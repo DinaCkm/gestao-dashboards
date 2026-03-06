@@ -1742,3 +1742,11 @@
 - [x] Causa raiz: matching de títulos entre tabelas events e scheduled_webinars falhava por diferenças de traços (– vs -), espaços e prefixo "Aula 01"
 - [x] Solução: normalização de títulos tolerante + fallback sem prefixo "aula XX" no getWebinarsPendingAttendance
 - [x] Verificado: todos os 4 eventos duplicados agora fazem match e retornam o youtubeLink correto
+
+## Bug: Eventos duplicados e Link em breve persistente (06/03/2026)
+- [x] 4 eventos duplicados do 2025/19 Estrutura e Conceitos aparecem na lista do portal do aluno (deveria ser apenas 1)
+- [x] 2 dos 4 eventos duplicados ainda mostram "Link em breve" mesmo após correção de matching
+- [x] Investigar se a correção foi publicada ou se há problema no matching em produção
+- [x] Deduplicar eventos por título normalizado em getEventsByProgramOrGlobal (centralizado)
+- [x] Deduplicar eventos em getWebinarsPendingAttendance e getAlunoDetalheCompleto
+- [x] 32 eventos -> 28 após deduplicar (4 duplicados do 2025/19 viram 1)
