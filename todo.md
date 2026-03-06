@@ -1757,3 +1757,32 @@
 - [x] Causa raiz: extractCore não removia "- 01 -" no meio do título (ex: "O Código de Aprendizagem - 01 - O Preparo")
 - [x] Solução: regex melhorada + fallback de similaridade >= 70%
 - [x] Resultado: 32/32 eventos com link (29 exato + 3 parcial), 0 sem link
+
+## Bug: Vanessa não aparece no dropdown de seleção de aluno ao incluir texto de mentoria (06/03/2026)
+- [ ] Investigar por que Vanessa Bertholdo Vargas não aparece no dropdown de seleção ao incluir texto de mentoria na tela de Sessões de Mentoria
+
+## Bug: Vanessa Bertholdo Vargas com todos indicadores zerados no Portal do Aluno (06/03/2026)
+- [ ] Investigar por que Vanessa aparece com 0% em todos os indicadores mesmo tendo 4 sessões de mentoria e participações em eventos
+
+## Melhorias no Congelamento de PDI (06/03/2026)
+- [x] Adicionar coluna 'motivoCongelamento' na tabela assessment_pdi
+- [x] Adicionar colunas 'descongeladoEm' e 'descongeladoPor' na tabela assessment_pdi
+- [x] Atualizar endpoint congelar para exigir motivo obrigatório
+- [x] Criar endpoint descongelar para reverter congelamento
+- [x] Adicionar diálogo de confirmação com campo de motivo no frontend
+- [x] Adicionar botão de descongelar no frontend para PDIs congelados
+- [x] Mostrar informações de congelamento (quem, quando, motivo) no card do PDI
+- [x] Escrever testes para congelar e descongelar
+
+## Fluxo de Congelamento de PDI (06/03/2026)
+- [x] Adicionar campo motivoCongelamento na tabela assessment_pdi (migration)
+- [x] Adicionar campos descongeladoEm e descongeladoPor na tabela assessment_pdi
+- [x] Criar diálogo de confirmação antes de congelar (com campo de motivo obrigatório)
+- [x] Adicionar botão "Descongelar" no Assessment.tsx (visível para PDIs congelados)
+- [x] Atualizar endpoint congelarPDI para receber e salvar motivo
+- [x] Criar endpoint descongelarPDI
+- [x] Exibir info de congelamento (data, quem congelou, motivo) no card expandido
+- [x] Testes automatizados para congelar/descongelar/campos
+- [x] Aviso de PDI congelado no dashboard do aluno (admin/gestor)
+- [x] Aviso de PDI congelado no dashboard individual do aluno (meu perfil)
+- [x] Aviso de PDI congelado nas listagens de alunos (visão geral, por empresa)

@@ -3001,6 +3001,18 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
   // 9. Sessões de mentoria
   const sessoes = await getMentoringSessionsByAluno(alunoId);
 
+  // 10. PDIs congelados
+  const assessmentPdis = await getAssessmentsByAluno(alunoId);
+  const pdisCongelados = assessmentPdis
+    .filter(a => a.status === 'congelado')
+    .map(a => ({
+      id: a.id,
+      trilhaNome: a.trilhaNome,
+      motivoCongelamento: a.motivoCongelamento || null,
+      congeladoEm: a.congeladoEm || null,
+      congeladoPorNome: a.congeladoPorNome || null,
+    }));
+
   // Montar resultado
   return {
     aluno: {
@@ -3044,6 +3056,8 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
     })),
     totalMentorias: sessoes.length,
     mentoriasPresente: sessoes.filter(s => s.presence === 'presente').length,
+    pdisCongelados,
+    temPdiCongelado: pdisCongelados.length > 0,
   };
 }
 
@@ -3169,11 +3183,14 @@ export async function getAssessmentsByAluno(alunoId: number) {
     const turma = pdi.turmaId ? turmaMap.get(pdi.turmaId) : null;
     const consultor = pdi.consultorId ? consultorMap.get(pdi.consultorId) : null;
     
+    const congeladoPor = pdi.congeladoPor ? consultorMap.get(pdi.congeladoPor) : null;
+    
     return {
       ...pdi,
       trilhaNome: trilha?.name || 'Não definida',
       turmaNome: turma?.name || null,
       consultorNome: consultor?.name || null,
+      congeladoPorNome: congeladoPor?.name || null,
       competencias: comps.map(c => {
         const comp = compMap.get(c.competenciaId);
         const notaAtual = notaByComp.get(c.competenciaId);
@@ -3323,7 +3340,7 @@ export async function createAssessmentPdi(
 /**
  * Freeze (congelar) an assessment PDI
  */
-export async function congelarAssessmentPdi(pdiId: number, consultorId: number) {
+export async function congelarAssessmentPdi(pdiId: number, consultorId: number, motivo?: string) {
   const db = await getDb();
   if (!db) return;
   
@@ -3331,6 +3348,22 @@ export async function congelarAssessmentPdi(pdiId: number, consultorId: number) 
     status: 'congelado',
     congeladoEm: new Date(),
     congeladoPor: consultorId,
+    motivoCongelamento: motivo || null,
+  }).where(eq(assessmentPdi.id, pdiId));
+}
+
+/**
+ * Unfreeze (descongelar) an assessment PDI - reverts status to 'ativo'
+ */
+export async function descongelarAssessmentPdi(pdiId: number, consultorId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(assessmentPdi).set({
+    status: 'ativo',
+    descongeladoEm: new Date(),
+    descongeladoPor: consultorId,
+    // Mantém motivoCongelamento, congeladoEm e congeladoPor para histórico
   }).where(eq(assessmentPdi.id, pdiId));
 }
 
@@ -5620,4 +5653,15 @@ export async function getTrilhasReaisPorAluno(): Promise<Map<number, string[]>> 
   }
   
   return result;
+}
+
+
+/**
+ * Get all assessment PDIs (for checking frozen status across all students)
+ */
+export async function getAllAssessmentPdis() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(assessmentPdi);
 }

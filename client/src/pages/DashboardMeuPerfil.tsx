@@ -13,7 +13,7 @@ import {
   CheckCircle2, XCircle, Clock, GraduationCap, Trophy, Star, Zap,
   Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
   ClipboardCheck, Play, ExternalLink, FileText, Send, Route, FileBarChart,
-  AlertTriangle, Briefcase, HelpCircle, Upload, Paperclip, FileUp, Bell,
+  AlertTriangle, Briefcase, HelpCircle, Upload, Paperclip, FileUp, Bell, Lock, Snowflake,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -600,6 +600,47 @@ export default function DashboardMeuPerfil() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Aviso de PDI Congelado */}
+        {data.pdisCongelados && data.pdisCongelados.length > 0 && (
+          <Card className="bg-blue-50 border-2 border-blue-300 shadow-md">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-full bg-blue-100 shrink-0">
+                  <Snowflake className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-blue-900 text-base flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    Trilha(s) Congelada(s)
+                  </p>
+                  <p className="text-sm text-blue-800 mt-1">
+                    Este aluno possui <strong>{data.pdisCongelados.length} trilha(s) congelada(s)</strong>. 
+                    Os indicadores de performance <strong>n\u00e3o consideram</strong> trilhas congeladas no c\u00e1lculo.
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {data.pdisCongelados.map((pdi: any) => (
+                      <div key={pdi.id} className="p-2 bg-white/70 rounded-lg border border-blue-200 flex items-center gap-2">
+                        <Lock className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                        <div className="flex-1">
+                          <span className="text-sm font-semibold text-blue-900">{pdi.trilhaNome}</span>
+                          {pdi.congeladoEm && (
+                            <span className="text-xs text-blue-600 ml-2">
+                              (congelada em {new Date(pdi.congeladoEm).toLocaleDateString('pt-BR')})
+                            </span>
+                          )}
+                          {pdi.motivoCongelamento && (
+                            <p className="text-xs text-blue-700 italic mt-0.5">Motivo: {pdi.motivoCongelamento}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Convite para Case de Sucesso */}
         {v2?.alertaCasePendente && v2.alertaCasePendente.length > 0 && (

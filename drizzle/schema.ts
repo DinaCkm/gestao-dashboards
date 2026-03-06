@@ -366,6 +366,9 @@ export const assessmentPdi = mysqlTable("assessment_pdi", {
   observacoes: text("observacoes"),
   congeladoEm: timestamp("congeladoEm"), // Data em que a mentora congelou a trilha
   congeladoPor: int("congeladoPor"), // FK para consultors (quem congelou)
+  motivoCongelamento: text("motivoCongelamento"), // Motivo obrigatório do congelamento
+  descongeladoEm: timestamp("descongeladoEm"), // Data em que foi descongelado
+  descongeladoPor: int("descongeladoPor"), // FK para consultors (quem descongelou)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

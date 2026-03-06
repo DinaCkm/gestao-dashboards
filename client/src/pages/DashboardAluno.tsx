@@ -38,7 +38,9 @@ import {
   HelpCircle,
   MessageSquare,
   Play,
-  Trophy
+  Trophy,
+  Snowflake,
+  Lock
 } from "lucide-react";
 import { InfoTooltip, GLOSSARIO, INDICADORES_INFO } from "@/components/InfoTooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -548,6 +550,34 @@ export default function DashboardAluno() {
                           </div>
                           <p className="text-sm font-semibold text-gray-900 truncate">{detalheAluno.mentor?.name || 'Não definido'}</p>
                         </div>
+                      </div>
+                    )}
+                    {/* Aviso de PDI congelado */}
+                    {detalheAluno?.temPdiCongelado && detalheAluno.pdisCongelados?.length > 0 && (
+                      <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Snowflake className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-semibold text-blue-800">
+                            <Lock className="h-3.5 w-3.5 inline mr-1" />
+                            Trilha(s) Congelada(s)
+                          </span>
+                        </div>
+                        <p className="text-xs text-blue-700 mb-2">
+                          Este aluno possui <strong>{detalheAluno.pdisCongelados.length} trilha(s) congelada(s)</strong>. 
+                          Os indicadores de performance <strong>n\u00e3o consideram</strong> trilhas congeladas. Se a performance est\u00e1 zerada ou baixa, pode ser por este motivo.
+                        </p>
+                        {detalheAluno.pdisCongelados.map((pdi: any, idx: number) => (
+                          <div key={idx} className="flex items-center gap-2 text-xs text-blue-700 bg-white/60 rounded px-2 py-1 mt-1">
+                            <Snowflake className="h-3 w-3 flex-shrink-0" />
+                            <span className="font-medium">{pdi.trilhaNome}</span>
+                            {pdi.motivoCongelamento && <span className="italic">\u2014 {pdi.motivoCongelamento}</span>}
+                            {pdi.congeladoEm && (
+                              <span className="text-blue-500 ml-auto">
+                                ({new Date(pdi.congeladoEm).toLocaleDateString('pt-BR')})
+                              </span>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>

@@ -21,6 +21,7 @@ import {
   Plus,
   Eye,
   Lock,
+  LockOpen,
   Calendar,
   Target,
   User,
@@ -126,9 +127,25 @@ function AssessmentContent() {
     { enabled: !!selectedAlunoId }
   );
 
+  // ---- Congelar: diálogo de confirmação com motivo obrigatório ----
+  const [congelarDialogOpen, setCongelarDialogOpen] = useState(false);
+  const [congelarPdiId, setCongelarPdiId] = useState<number | null>(null);
+  const [congelarMotivo, setCongelarMotivo] = useState("");
+
   const congelarMutation = trpc.assessment.congelar.useMutation({
     onSuccess: () => {
       toast.success("Trilha congelada com sucesso!");
+      setCongelarDialogOpen(false);
+      setCongelarPdiId(null);
+      setCongelarMotivo("");
+      refetchAssessments();
+    },
+    onError: (err: { message: string }) => toast.error(err.message),
+  });
+
+  const descongelarMutation = trpc.assessment.descongelar.useMutation({
+    onSuccess: () => {
+      toast.success("Trilha descongelada com sucesso! Os indicadores serão recalculados.");
       refetchAssessments();
     },
     onError: (err: { message: string }) => toast.error(err.message),
@@ -140,13 +157,33 @@ function AssessmentContent() {
     return programs.find(p => p.id === selectedAluno.programId);
   }, [selectedAluno, programs]);
 
-  const handleCongelar = (pdiId: number) => {
+  const handleCongelarClick = (pdiId: number) => {
+    setCongelarPdiId(pdiId);
+    setCongelarMotivo("");
+    setCongelarDialogOpen(true);
+  };
+
+  const handleCongelarConfirm = () => {
+    if (!congelarPdiId) return;
     const consultorId = userConsultorId || (selectedAluno?.consultorId as number);
     if (!consultorId) {
       toast.error("Consultor não identificado");
       return;
     }
-    congelarMutation.mutate({ pdiId, consultorId });
+    if (!congelarMotivo.trim()) {
+      toast.error("Informe o motivo do congelamento");
+      return;
+    }
+    congelarMutation.mutate({ pdiId: congelarPdiId, consultorId, motivo: congelarMotivo.trim() });
+  };
+
+  const handleDescongelar = (pdiId: number) => {
+    const consultorId = userConsultorId || (selectedAluno?.consultorId as number);
+    if (!consultorId) {
+      toast.error("Consultor não identificado");
+      return;
+    }
+    descongelarMutation.mutate({ pdiId, consultorId });
   };
 
   const formatDate = (d: any) => {
@@ -409,7 +446,9 @@ function AssessmentContent() {
                   pdi={pdi}
                   isExpanded={expandedPdiId === pdi.id}
                   onToggle={() => setExpandedPdiId(expandedPdiId === pdi.id ? null : pdi.id)}
-                  onCongelar={() => handleCongelar(pdi.id)}
+                  onCongelar={() => handleCongelarClick(pdi.id)}
+                  onDescongelar={() => handleDescongelar(pdi.id)}
+                  isDescongelando={descongelarMutation.isPending}
                   formatDate={formatDate}
                   refetch={refetchAssessments}
                 />
@@ -450,6 +489,62 @@ function AssessmentContent() {
           }}
         />
       )}
+
+      {/* Diálogo de Confirmação de Congelamento */}
+      <Dialog open={congelarDialogOpen} onOpenChange={(open) => { if (!open) { setCongelarDialogOpen(false); setCongelarPdiId(null); setCongelarMotivo(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-blue-700">
+              <Lock className="h-5 w-5" />
+              Confirmar Congelamento
+            </DialogTitle>
+            <DialogDescription>
+              Ao congelar esta trilha, os indicadores do aluno serão zerados e a trilha ficará inativa.
+              Você poderá descongelar depois, se necessário.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                <p className="text-sm text-amber-800">
+                  <strong>Atenção:</strong> PDIs congelados são excluídos do cálculo de indicadores.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Motivo do congelamento <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                value={congelarMotivo}
+                onChange={(e) => setCongelarMotivo(e.target.value)}
+                placeholder="Ex: Trilha finalizada, aluno desligado, troca de trilha..."
+                className="h-24 resize-none"
+              />
+              {congelarMotivo.trim().length === 0 && (
+                <p className="text-xs text-muted-foreground">O motivo é obrigatório para registrar o congelamento.</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => { setCongelarDialogOpen(false); setCongelarPdiId(null); setCongelarMotivo(""); }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCongelarConfirm}
+              disabled={!congelarMotivo.trim() || congelarMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Lock className="h-3.5 w-3.5 mr-1" />
+              {congelarMutation.isPending ? "Congelando..." : "Confirmar Congelamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -460,6 +555,8 @@ function AssessmentCard({
   isExpanded,
   onToggle,
   onCongelar,
+  onDescongelar,
+  isDescongelando,
   formatDate,
   refetch,
 }: {
@@ -467,6 +564,8 @@ function AssessmentCard({
   isExpanded: boolean;
   onToggle: () => void;
   onCongelar: () => void;
+  onDescongelar: () => void;
+  isDescongelando: boolean;
   formatDate: (d: any) => string;
   refetch: () => void;
 }) {
@@ -556,7 +655,7 @@ function AssessmentCard({
               <div>{pdi.obrigatorias} obrigatórias</div>
               <div>{pdi.opcionais} opcionais</div>
             </div>
-            {!isCongelado && (
+            {!isCongelado ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -565,6 +664,17 @@ function AssessmentCard({
               >
                 <Lock className="h-3.5 w-3.5 mr-1" />
                 Congelar
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => { e.stopPropagation(); onDescongelar(); }}
+                disabled={isDescongelando}
+                className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+              >
+                <LockOpen className="h-3.5 w-3.5 mr-1" />
+                {isDescongelando ? "Descongelando..." : "Descongelar"}
               </Button>
             )}
             {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
@@ -575,6 +685,27 @@ function AssessmentCard({
       {isExpanded && pdi.competencias && (
         <CardContent className="pt-0">
           <Separator className="mb-4" />
+
+          {/* Info de congelamento */}
+          {isCongelado && (
+            <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+              <div className="flex items-center gap-2 mb-1">
+                <Lock className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-semibold text-blue-800">Trilha Congelada</span>
+              </div>
+              {pdi.congeladoEm && (
+                <p className="text-xs text-blue-700">
+                  Congelada em {formatDate(pdi.congeladoEm)}
+                  {pdi.congeladoPorNome && ` por ${pdi.congeladoPorNome}`}
+                </p>
+              )}
+              {pdi.motivoCongelamento && (
+                <p className="text-xs text-blue-700 mt-1 italic border-l-2 border-blue-300 pl-2">
+                  Motivo: {pdi.motivoCongelamento}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Summary stats */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">

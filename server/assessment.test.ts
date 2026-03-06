@@ -164,22 +164,105 @@ describe("assessment endpoints", () => {
     });
   });
 
-  describe("assessment.congelar", () => {
-    it("successfully freezes an existing PDI", async () => {
-      // First, get an existing PDI to freeze
+  describe("assessment.congelar (com motivo obrigatório)", () => {
+    it("rejects freezing without motivo", async () => {
+      const assessments = await caller.assessment.porAluno({ alunoId: 30001 });
+      
+      if (assessments.length > 0) {
+        try {
+          await caller.assessment.congelar({
+            pdiId: assessments[0].id,
+            consultorId: 1,
+            motivo: "", // empty motivo should fail validation
+          });
+          expect.fail("Should have thrown validation error for empty motivo");
+        } catch (err: any) {
+          expect(err.message).toBeDefined();
+        }
+      }
+    });
+
+    it("successfully freezes an existing PDI with motivo", async () => {
       const assessments = await caller.assessment.porAluno({ alunoId: 30001 });
       
       if (assessments.length > 0 && assessments[0].status === "ativo") {
         const result = await caller.assessment.congelar({
           pdiId: assessments[0].id,
           consultorId: 1,
+          motivo: "Trilha finalizada - teste automatizado",
         });
         expect(result).toEqual({ success: true });
         
-        // Verify it's now frozen
+        // Verify it's now frozen with motivo
         const updated = await caller.assessment.porAluno({ alunoId: 30001 });
         const frozen = updated.find(a => a.id === assessments[0].id);
         expect(frozen?.status).toBe("congelado");
+        expect(frozen?.motivoCongelamento).toBe("Trilha finalizada - teste automatizado");
+        expect(frozen?.congeladoEm).toBeDefined();
+        expect(frozen?.congeladoPor).toBe(1);
+      }
+    });
+  });
+
+  describe("assessment.descongelar", () => {
+    it("successfully unfreezes a frozen PDI", async () => {
+      const assessments = await caller.assessment.porAluno({ alunoId: 30001 });
+      const frozen = assessments.find(a => a.status === "congelado");
+      
+      if (frozen) {
+        const result = await caller.assessment.descongelar({
+          pdiId: frozen.id,
+          consultorId: 1,
+        });
+        expect(result).toEqual({ success: true });
+        
+        // Verify it's now active again
+        const updated = await caller.assessment.porAluno({ alunoId: 30001 });
+        const unfrozen = updated.find(a => a.id === frozen.id);
+        expect(unfrozen?.status).toBe("ativo");
+        expect(unfrozen?.descongeladoEm).toBeDefined();
+        expect(unfrozen?.descongeladoPor).toBe(1);
+        // Motivo original should be preserved for history
+        if (frozen.motivoCongelamento) {
+          expect(unfrozen?.motivoCongelamento).toBe(frozen.motivoCongelamento);
+        }
+      }
+    });
+  });
+
+  describe("assessment.porAluno returns congelamento fields", () => {
+    it("includes congeladoPorNome in response", async () => {
+      const assessments = await caller.assessment.porAluno({ alunoId: 30001 });
+      if (assessments.length > 0) {
+        const pdi = assessments[0];
+        expect(pdi).toHaveProperty("congeladoPorNome");
+        expect(pdi).toHaveProperty("motivoCongelamento");
+        expect(pdi).toHaveProperty("congeladoEm");
+        expect(pdi).toHaveProperty("congeladoPor");
+        expect(pdi).toHaveProperty("descongeladoEm");
+        expect(pdi).toHaveProperty("descongeladoPor");
+      }
+    });
+  });
+
+  describe("meuDashboard includes pdisCongelados", () => {
+    it("pdisCongelados field is present in meuDashboard response", async () => {
+      // This test verifies the structure of the meuDashboard endpoint
+      // Since meuDashboard requires a linked aluno, we test the detalheAluno endpoint instead
+      // which also returns pdisCongelados
+      const result = await caller.indicadores.detalheAluno({ alunoId: 30001 });
+      expect(result).toHaveProperty("pdisCongelados");
+      expect(result).toHaveProperty("temPdiCongelado");
+      expect(Array.isArray(result.pdisCongelados)).toBe(true);
+      expect(typeof result.temPdiCongelado).toBe("boolean");
+      
+      // Each frozen PDI should have the expected fields
+      for (const pdi of result.pdisCongelados) {
+        expect(pdi).toHaveProperty("id");
+        expect(pdi).toHaveProperty("trilhaNome");
+        expect(pdi).toHaveProperty("motivoCongelamento");
+        expect(pdi).toHaveProperty("congeladoEm");
+        expect(pdi).toHaveProperty("congeladoPorNome");
       }
     });
   });

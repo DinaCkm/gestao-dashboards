@@ -19,7 +19,9 @@ import {
   AlertCircle,
   AlertTriangle,
   Trophy,
-  Loader2
+  Loader2,
+  Snowflake,
+  Lock
 } from "lucide-react";
 import {
   RadarChart,
@@ -106,6 +108,38 @@ export default function IndividualDashboard() {
             </Badge>
           </div>
         </div>
+
+        {/* Aviso de PDI Congelado */}
+        {(dashboardData as any).pdisCongelados && (dashboardData as any).pdisCongelados.length > 0 && (
+          <Card className="bg-blue-50 border-2 border-blue-300">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-full bg-blue-100 shrink-0">
+                  <Snowflake className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-blue-900 text-sm flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    Trilha(s) Congelada(s)
+                  </p>
+                  <p className="text-xs text-blue-800 mt-1">
+                    Voc\u00ea possui <strong>{(dashboardData as any).pdisCongelados.length} trilha(s) congelada(s)</strong>. 
+                    Os indicadores de performance <strong>n\u00e3o consideram</strong> trilhas congeladas no c\u00e1lculo.
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    {(dashboardData as any).pdisCongelados.map((pdi: any) => (
+                      <div key={pdi.id} className="flex items-center gap-2 text-xs text-blue-700 bg-white/60 rounded px-2 py-1">
+                        <Snowflake className="h-3 w-3 flex-shrink-0" />
+                        <span className="font-medium">{pdi.trilhaNome}</span>
+                        {pdi.motivoCongelamento && <span className="italic">\u2014 {pdi.motivoCongelamento}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Performance Overview Card */}
         <Card>

@@ -1713,6 +1713,21 @@ export const appRouter = router({
         // Buscar trilhas reais dos alunos via assessment_pdi
         const trilhasReaisPorAluno = await db.getTrilhasReaisPorAluno();
         
+        // Buscar PDIs congelados por aluno
+        const allAssessmentPdis = await db.getAllAssessmentPdis();
+        const allTrilhasLookup = await db.getAllTrilhas();
+        const trilhaLookupMap = new Map(allTrilhasLookup.map(t => [t.id, t.name]));
+        const pdisCongeladosPorAluno = new Map<number, { trilhaNome: string; motivoCongelamento: string | null }[]>();
+        for (const pdi of allAssessmentPdis) {
+          if (pdi.status === 'congelado') {
+            if (!pdisCongeladosPorAluno.has(pdi.alunoId)) pdisCongeladosPorAluno.set(pdi.alunoId, []);
+            pdisCongeladosPorAluno.get(pdi.alunoId)!.push({
+              trilhaNome: trilhaLookupMap.get(pdi.trilhaId) || 'Trilha',
+              motivoCongelamento: pdi.motivoCongelamento || null,
+            });
+          }
+        }
+        
         const alunosEnriquecidos = dashboard.alunos.map(ind => {
           const alunoDb = alunosList.find(a => (a.externalId || String(a.id)) === ind.idUsuario);
           const turma = alunoDb?.turmaId ? turmaMap.get(alunoDb.turmaId) : null;
@@ -1746,6 +1761,9 @@ export const appRouter = router({
           // Trilhas reais do aluno (via assessment_pdi)
           const trilhasReais = alunoDb ? (trilhasReaisPorAluno.get(alunoDb.id) || [trilhaNome]) : [trilhaNome];
           
+          // PDIs congelados do aluno
+          const pdisCongelados = alunoDb ? (pdisCongeladosPorAluno.get(alunoDb.id) || []) : [];
+          
           return {
             ...ind,
             alunoDbId: alunoDb?.id || 0,
@@ -1757,6 +1775,8 @@ export const appRouter = router({
             competencias,
             totalCompetencias: competencias.length,
             competenciasComNota: competencias.filter(c => c.nota !== null).length,
+            pdisCongelados,
+            temPdiCongelado: pdisCongelados.length > 0,
           };
         });
         
@@ -2494,6 +2514,14 @@ export const appRouter = router({
         eventos: eventosDetalhados,
         planoIndividual: planoItems,
         assessments: await db.getAssessmentsByAluno(aluno.id),
+        // Flag para indicar se o aluno tem PDIs congelados
+        pdisCongelados: (await db.getAssessmentsByAluno(aluno.id)).filter(a => a.status === 'congelado').map(a => ({
+          id: a.id,
+          trilhaNome: a.trilhaNome,
+          motivoCongelamento: a.motivoCongelamento,
+          congeladoEm: a.congeladoEm,
+          congeladoPorNome: a.congeladoPorNome,
+        })),
         sessionProgress: await db.getSessionProgressByAluno(aluno.id),
         // Ciclos detalhados com competências e notas (enriquecidos com student_performance)
         ciclosDetalhados: await (async () => {
@@ -3683,14 +3711,26 @@ export const appRouter = router({
         return { success: true, pdiId };
       }),
 
-    // Congelar assessment PDI
+    // Congelar assessment PDI (com motivo obrigatório)
     congelar: protectedProcedure
+      .input(z.object({
+        pdiId: z.number(),
+        consultorId: z.number(),
+        motivo: z.string().min(1, 'Motivo é obrigatório'),
+      }))
+      .mutation(async ({ input }) => {
+        await db.congelarAssessmentPdi(input.pdiId, input.consultorId, input.motivo);
+        return { success: true };
+      }),
+
+    // Descongelar assessment PDI (reverter para ativo)
+    descongelar: protectedProcedure
       .input(z.object({
         pdiId: z.number(),
         consultorId: z.number(),
       }))
       .mutation(async ({ input }) => {
-        await db.congelarAssessmentPdi(input.pdiId, input.consultorId);
+        await db.descongelarAssessmentPdi(input.pdiId, input.consultorId);
         return { success: true };
       }),
 

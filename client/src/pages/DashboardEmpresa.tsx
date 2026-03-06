@@ -6,7 +6,7 @@ import {
   PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   Legend
 } from "recharts";
-import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, ArrowLeft, HelpCircle, GraduationCap, PartyPopper, Info, ChevronDown, ChevronUp, User, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, ArrowLeft, HelpCircle, GraduationCap, PartyPopper, Info, ChevronDown, ChevronUp, User, Clock, CheckCircle2, XCircle, Snowflake } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -58,6 +58,11 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
                   <User className="h-3 w-3 mr-1" />{aluno.mentorNome}
                 </Badge>
               )}
+              {aluno.temPdiCongelado && (
+                <Badge variant="outline" className="text-xs text-cyan-700 border-cyan-400 bg-cyan-50">
+                  <Snowflake className="h-3 w-3 mr-1" />PDI Congelado
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -77,6 +82,26 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
       {/* Detalhes expandidos */}
       {expanded && (
         <div className="border-t bg-muted/30 p-4 space-y-4">
+          {/* Aviso de PDI congelado */}
+          {aluno.temPdiCongelado && aluno.pdisCongelados?.length > 0 && (
+            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+              <div className="flex items-center gap-2 mb-1">
+                <Snowflake className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-semibold text-blue-800">Este aluno possui trilha(s) congelada(s)</span>
+              </div>
+              <p className="text-xs text-blue-700 mb-2">
+                Os indicadores de performance <strong>n\u00e3o consideram</strong> trilhas congeladas. Se a performance est\u00e1 zerada ou baixa, pode ser por este motivo.
+              </p>
+              {aluno.pdisCongelados.map((pdi: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-2 text-xs text-blue-700 bg-white/60 rounded px-2 py-1 mt-1">
+                  <Snowflake className="h-3 w-3 flex-shrink-0" />
+                  <span className="font-medium">{pdi.trilhaNome}</span>
+                  {pdi.motivoCongelamento && <span className="italic">— {pdi.motivoCongelamento}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* 6 Indicadores em mini-cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
             <div className="p-2 rounded bg-background border text-center">
