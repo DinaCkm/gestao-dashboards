@@ -3,16 +3,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   Legend
 } from "recharts";
-import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, HelpCircle, Filter, X, ChevronDown, Building2 } from "lucide-react";
+import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, HelpCircle, Filter, X, ChevronDown, Building2, Video, GraduationCap, ClipboardCheck, Star, Briefcase, Info } from "lucide-react";
+import { InfoTooltip, INDICADORES_INFO } from "@/components/InfoTooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 
@@ -72,19 +74,22 @@ export default function DashboardGestor() {
     return result;
   }, [data?.alunos, selectedTurmaId, selectedAlunoId]);
 
-  // Recalculate KPIs based on filtered alunos
+  // Recalculate KPIs based on filtered alunos using V2 indicators
   const filteredKPIs = useMemo(() => {
     if (filteredAlunos.length === 0) {
       return {
         totalAlunos: 0,
         mediaNotaFinal: 0,
-        melhorAluno: null as { nomeAluno: string; notaFinal: number } | null,
+        melhorAluno: null as { nomeAluno: string; notaFinal: number; consolidado?: any } | null,
         precisamAtencao: 0,
-        mediaParticipacaoMentorias: 0,
-        mediaAtividadesPraticas: 0,
-        mediaEngajamento: 0,
-        mediaPerformanceCompetencias: 0,
-        mediaParticipacaoEventos: 0,
+        // V2 indicators (averages from consolidado)
+        mediaInd1: 0,
+        mediaInd2: 0,
+        mediaInd3: 0,
+        mediaInd4: 0,
+        mediaInd5: 0,
+        mediaInd6: 0,
+        mediaInd7: 0,
         distribuicaoClassificacao: [] as { nome: string; quantidade: number; percentual: number }[],
       };
     }
@@ -108,9 +113,11 @@ export default function DashboardGestor() {
       a.classificacao === 'Básico' || a.classificacao === 'Inicial'
     ).length;
 
-    // Calculate average indicators from filtered alunos
-    const avgIndicator = (field: string) => {
-      const values = filteredAlunos.map(a => (a as any)[field]).filter((v: any) => typeof v === 'number');
+    // Calculate V2 indicator averages from consolidado of each aluno
+    const avgV2 = (field: string) => {
+      const values = filteredAlunos
+        .map(a => (a.consolidado as any)?.[field])
+        .filter((v: any) => typeof v === 'number' && !isNaN(v));
       return values.length > 0 ? values.reduce((s: number, v: number) => s + v, 0) / values.length : 0;
     };
 
@@ -119,14 +126,16 @@ export default function DashboardGestor() {
       mediaNotaFinal,
       melhorAluno,
       precisamAtencao,
-      mediaParticipacaoMentorias: avgIndicator('participacaoMentorias') || data?.visaoEmpresa?.mediaParticipacaoMentorias || 0,
-      mediaAtividadesPraticas: avgIndicator('atividadesPraticas') || data?.visaoEmpresa?.mediaAtividadesPraticas || 0,
-      mediaEngajamento: avgIndicator('engajamento') || data?.visaoEmpresa?.mediaEngajamento || 0,
-      mediaPerformanceCompetencias: avgIndicator('performanceCompetencias') || data?.visaoEmpresa?.mediaPerformanceCompetencias || 0,
-      mediaParticipacaoEventos: avgIndicator('participacaoEventos') || data?.visaoEmpresa?.mediaParticipacaoEventos || 0,
+      mediaInd1: avgV2('ind1_webinars'),
+      mediaInd2: avgV2('ind2_avaliacoes'),
+      mediaInd3: avgV2('ind3_competencias'),
+      mediaInd4: avgV2('ind4_tarefas'),
+      mediaInd5: avgV2('ind5_engajamento'),
+      mediaInd6: avgV2('ind6_aplicabilidade'),
+      mediaInd7: avgV2('ind7_engajamentoFinal'),
       distribuicaoClassificacao,
     };
-  }, [filteredAlunos, data?.visaoEmpresa]);
+  }, [filteredAlunos]);
 
   // Available alunos for the dropdown (filtered by turma)
   const availableAlunos = useMemo(() => {
@@ -165,17 +174,19 @@ export default function DashboardGestor() {
 
   const handleTurmaChange = (value: string) => {
     setSelectedTurmaId(value);
-    setSelectedAlunoId("todos"); // Reset aluno when turma changes
+    setSelectedAlunoId("todos");
   };
 
-  // Radar data
+  // Radar data V2 - same 5 axes as DashboardAluno
   const radarData = [
-    { indicador: 'Mentorias', valor: filteredKPIs.mediaParticipacaoMentorias },
-    { indicador: 'Atividades', valor: filteredKPIs.mediaAtividadesPraticas },
-    { indicador: 'Engajamento', valor: filteredKPIs.mediaEngajamento },
-    { indicador: 'Competências', valor: filteredKPIs.mediaPerformanceCompetencias },
-    { indicador: 'Eventos', valor: filteredKPIs.mediaParticipacaoEventos },
+    { indicador: 'Webinars', valor: filteredKPIs.mediaInd1 },
+    { indicador: 'Avaliações', valor: filteredKPIs.mediaInd2 },
+    { indicador: 'Competências', valor: filteredKPIs.mediaInd3 },
+    { indicador: 'Tarefas', valor: filteredKPIs.mediaInd4 },
+    { indicador: 'Engajamento', valor: filteredKPIs.mediaInd5 },
   ];
+
+  const META_EXCELENCIA = 9.0;
 
   if (!user?.programId) {
     return (
@@ -233,7 +244,6 @@ export default function DashboardGestor() {
   }
 
   const { porTurma } = data;
-  const META_EXCELENCIA = 9.0;
 
   return (
     <DashboardLayout>
@@ -277,7 +287,6 @@ export default function DashboardGestor() {
                         {t.name}
                       </SelectItem>
                     ))}
-                    {/* Also show turma IDs from alunos that might not be in turmas table */}
                     {uniqueTurmaIds
                       .filter(id => !turmas?.some(t => String(t.id) === id))
                       .map(id => (
@@ -322,7 +331,10 @@ export default function DashboardGestor() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Alunos</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-1">
+                Total de Alunos
+                <InfoTooltip text="Quantidade total de alunos cadastrados na empresa, considerando o filtro de turma selecionado." />
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -335,7 +347,10 @@ export default function DashboardGestor() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Nota Média</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-1">
+                Nota Média
+                <InfoTooltip text="Média do Engajamento Final (Ind. 7) de todos os alunos filtrados. Calculado como a média dos 5 indicadores (Webinars + Avaliações + Competências + Tarefas + Engajamento) / 5." />
+              </CardTitle>
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -346,7 +361,10 @@ export default function DashboardGestor() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Melhor Nota</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-1">
+                Melhor Nota
+                <InfoTooltip text="Aluno com maior Engajamento Final (nota de 0 a 10) entre os alunos filtrados. Baseado na média consolidada dos ciclos finalizados." />
+              </CardTitle>
               <Award className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
@@ -364,7 +382,10 @@ export default function DashboardGestor() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Precisam Atenção</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-1">
+                Precisam Atenção
+                <InfoTooltip text="Quantidade de alunos classificados como 'Básico' (nota 3.0-4.9) ou 'Inicial' (nota 0.0-2.9). Estes alunos precisam de acompanhamento especial." />
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
@@ -376,80 +397,79 @@ export default function DashboardGestor() {
           </Card>
         </div>
 
-        {/* 5 Indicadores */}
-        <div className="grid gap-4 md:grid-cols-5">
-          <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Mentorias
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{filteredKPIs.mediaParticipacaoMentorias.toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Participação</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-secondary/10 to-secondary/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                Atividades
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{filteredKPIs.mediaAtividadesPraticas.toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Entregues</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                Engajamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{filteredKPIs.mediaEngajamento.toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Média</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-purple-500/10 to-purple-500/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Award className="h-4 w-4" />
-                Competências
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{filteredKPIs.mediaPerformanceCompetencias.toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Aprovadas</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Eventos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{filteredKPIs.mediaParticipacaoEventos.toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Presença</p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Engajamento Final Consolidado - Card principal V2 */}
+        <Card className="border-2 border-[#0A1E3E]">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-lg bg-[#0A1E3E] flex items-center justify-center">
+                  <Target className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    Engajamento Final (Média da Empresa)
+                    <InfoTooltip text={INDICADORES_INFO.ind7.explicacao + " Fórmula: " + INDICADORES_INFO.ind7.formula} />
+                  </p>
+                  <p className="text-3xl font-bold text-[#0A1E3E]">{filteredKPIs.mediaInd7.toFixed(0)}%</p>
+                </div>
+              </div>
+            </div>
+            <Progress value={filteredKPIs.mediaInd7} className="h-3" />
+            <p className="text-xs text-gray-400 mt-2">
+              {isFiltered ? "Média dos alunos filtrados" : "Média de todos os alunos da empresa"} — Apenas ciclos finalizados
+            </p>
+            
+            {/* Mini resumo dos 5 indicadores V2 + bônus case — idêntico ao DashboardAluno */}
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-4">
+              <div className="text-center p-2 bg-blue-50 rounded">
+                <p className="text-lg font-bold text-blue-700">{filteredKPIs.mediaInd1.toFixed(0)}%</p>
+                <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
+                  Webinars <InfoTooltip text={INDICADORES_INFO.ind1.explicacao + " | Fórmula: " + INDICADORES_INFO.ind1.formula} />
+                </p>
+              </div>
+              <div className="text-center p-2 bg-red-50 rounded">
+                <p className="text-lg font-bold text-red-700">{filteredKPIs.mediaInd2.toFixed(0)}%</p>
+                <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
+                  Avaliações <InfoTooltip text={INDICADORES_INFO.ind2.explicacao + " | Fórmula: " + INDICADORES_INFO.ind2.formula} />
+                </p>
+              </div>
+              <div className="text-center p-2 bg-purple-50 rounded">
+                <p className="text-lg font-bold text-purple-700">{filteredKPIs.mediaInd3.toFixed(0)}%</p>
+                <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
+                  Competências <InfoTooltip text={INDICADORES_INFO.ind3.explicacao + " | Fórmula: " + INDICADORES_INFO.ind3.formula} />
+                </p>
+              </div>
+              <div className="text-center p-2 bg-emerald-50 rounded">
+                <p className="text-lg font-bold text-emerald-700">{filteredKPIs.mediaInd4.toFixed(0)}%</p>
+                <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
+                  Tarefas <InfoTooltip text={INDICADORES_INFO.ind4.explicacao + " | Fórmula: " + INDICADORES_INFO.ind4.formula} />
+                </p>
+              </div>
+              <div className="text-center p-2 bg-amber-50 rounded">
+                <p className="text-lg font-bold text-amber-700">{filteredKPIs.mediaInd5.toFixed(0)}%</p>
+                <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
+                  Engajamento <InfoTooltip text={INDICADORES_INFO.ind5.explicacao + " | Fórmula: " + INDICADORES_INFO.ind5.formula} />
+                </p>
+              </div>
+              <div className="text-center p-2 bg-green-50 rounded">
+                <p className="text-lg font-bold text-green-700">{filteredKPIs.mediaInd6.toFixed(0)}%</p>
+                <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
+                  Case <InfoTooltip text={INDICADORES_INFO.ind6.explicacao} />
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Gráficos */}
         <div className="grid gap-6 md:grid-cols-2">
           {/* Distribuição por Classificação */}
           <Card>
             <CardHeader>
-              <CardTitle>Distribuição por Classificação</CardTitle>
+              <CardTitle className="flex items-center gap-1">
+                Distribuição por Classificação
+                <InfoTooltip text="Distribuição dos alunos por faixa de classificação. Excelência (9-10), Avançado (7-8.9), Intermediário (5-6.9), Básico (3-4.9), Inicial (0-2.9). Baseado no Engajamento Final (Ind. 7)." />
+              </CardTitle>
               <CardDescription>
                 {isFiltered ? "Alunos filtrados" : "Todos os alunos da empresa"}
               </CardDescription>
@@ -475,7 +495,7 @@ export default function DashboardGestor() {
                           <Cell key={`cell-${index}`} fill={CLASSIFICATION_COLORS[entry.nome] || COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <RechartsTooltip />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
@@ -488,12 +508,15 @@ export default function DashboardGestor() {
             </CardContent>
           </Card>
 
-          {/* Radar dos Indicadores */}
+          {/* Radar dos Indicadores V2 */}
           <Card>
             <CardHeader>
-              <CardTitle>Radar de Indicadores</CardTitle>
+              <CardTitle className="flex items-center gap-1">
+                Radar de Performance
+                <InfoTooltip text="Gráfico radar com os 5 indicadores V2: Webinars (Ind.1), Avaliações (Ind.2), Competências (Ind.3), Tarefas (Ind.4) e Engajamento (Ind.5). Mostra a média dos alunos filtrados. Quanto mais próximo de 100% em todos os eixos, melhor a performance." />
+              </CardTitle>
               <CardDescription>
-                {isFiltered ? "Média dos indicadores filtrados" : "Média dos 5 indicadores da empresa"}
+                {isFiltered ? "Média dos indicadores filtrados" : "Média dos 5 indicadores V2 da empresa"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -511,7 +534,7 @@ export default function DashboardGestor() {
                       fillOpacity={0.6}
                       isAnimationActive={false}
                     />
-                    <Tooltip />
+                    <RechartsTooltip />
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
@@ -523,7 +546,10 @@ export default function DashboardGestor() {
         {selectedTurmaId === "todas" && porTurma.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Performance por Turma</CardTitle>
+              <CardTitle className="flex items-center gap-1">
+                Performance por Turma
+                <InfoTooltip text="Nota média (Engajamento Final) de cada turma da empresa. Permite comparar o desempenho entre turmas." />
+              </CardTitle>
               <CardDescription>Nota média e quantidade de alunos por turma</CardDescription>
             </CardHeader>
             <CardContent>
@@ -540,7 +566,7 @@ export default function DashboardGestor() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" domain={[0, 10]} />
                     <YAxis dataKey="nome" type="category" width={120} />
-                    <Tooltip />
+                    <RechartsTooltip />
                     <Bar dataKey="nota" fill="#F5A623" name="Nota Média" isAnimationActive={false} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -554,8 +580,9 @@ export default function DashboardGestor() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>
+                <CardTitle className="flex items-center gap-1">
                   Alunos {isFiltered ? "(Filtrados)" : "da Empresa"}
+                  <InfoTooltip text="Lista de alunos ordenados por nota (maior para menor). A nota é o Engajamento Final (Ind. 7), calculado como média dos 5 indicadores dos ciclos finalizados. Clique em 'Ver detalhes' para ver o dashboard individual do aluno." />
                 </CardTitle>
                 <CardDescription>
                   {filteredAlunos.length} alunos - Ordenados por nota (maior para menor)
@@ -571,49 +598,53 @@ export default function DashboardGestor() {
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <HelpCircle className="h-5 w-5 text-primary" />
-                      Como a Nota Final é Calculada?
+                      Como os Indicadores V2 são Calculados?
                     </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 text-sm">
                     <p className="text-muted-foreground">
-                      A nota final de cada aluno é calculada com base em <strong>5 indicadores</strong>, cada um com peso de <strong>20%</strong>:
+                      O Engajamento Final de cada aluno é calculado com base em <strong>5 indicadores</strong>, cada um com peso igual de <strong>20%</strong>. Apenas <strong>ciclos finalizados</strong> entram no cálculo.
                     </p>
                     <div className="space-y-3">
                       <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
                         <span className="font-bold text-blue-600">1.</span>
                         <div>
-                          <p className="font-medium">Participação nas Mentorias</p>
-                          <p className="text-xs text-muted-foreground">Presente/Ausente nas sessões</p>
+                          <p className="font-medium">{INDICADORES_INFO.ind1.nome}</p>
+                          <p className="text-xs text-muted-foreground">{INDICADORES_INFO.ind1.formula}</p>
                         </div>
                       </div>
-                      <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
-                        <span className="font-bold text-green-600">2.</span>
+                      <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                        <span className="font-bold text-red-600">2.</span>
                         <div>
-                          <p className="font-medium">Atividades Práticas</p>
-                          <p className="text-xs text-muted-foreground">Entregue/Não entregue</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg">
-                        <span className="font-bold text-yellow-600">3.</span>
-                        <div>
-                          <p className="font-medium">Engajamento</p>
-                          <p className="text-xs text-muted-foreground">Nota 1 a 5 (Evolução/Engajamento)</p>
+                          <p className="font-medium">{INDICADORES_INFO.ind2.nome}</p>
+                          <p className="text-xs text-muted-foreground">{INDICADORES_INFO.ind2.formula}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg">
-                        <span className="font-bold text-purple-600">4.</span>
+                        <span className="font-bold text-purple-600">3.</span>
                         <div>
-                          <p className="font-medium">Performance de Competências</p>
-                          <p className="text-xs text-muted-foreground">Notas das competências (aprovado se nota &ge; 7)</p>
+                          <p className="font-medium">{INDICADORES_INFO.ind3.nome}</p>
+                          <p className="text-xs text-muted-foreground">{INDICADORES_INFO.ind3.formula}</p>
                         </div>
                       </div>
-                      <div className="flex items-start gap-3 p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
-                        <span className="font-bold text-orange-600">5.</span>
+                      <div className="flex items-start gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
+                        <span className="font-bold text-emerald-600">4.</span>
                         <div>
-                          <p className="font-medium">Participação em Eventos</p>
-                          <p className="text-xs text-muted-foreground">Presença em eventos do programa</p>
+                          <p className="font-medium">{INDICADORES_INFO.ind4.nome}</p>
+                          <p className="text-xs text-muted-foreground">{INDICADORES_INFO.ind4.formula}</p>
                         </div>
                       </div>
+                      <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+                        <span className="font-bold text-amber-600">5.</span>
+                        <div>
+                          <p className="font-medium">{INDICADORES_INFO.ind5.nome}</p>
+                          <p className="text-xs text-muted-foreground">{INDICADORES_INFO.ind5.formula}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                      <p className="font-medium text-green-700">Bônus: {INDICADORES_INFO.ind6.nome}</p>
+                      <p className="text-xs text-muted-foreground">{INDICADORES_INFO.ind6.explicacao}</p>
                     </div>
                     <div className="border-t pt-4">
                       <p className="font-medium mb-2">Classificação por Estágio:</p>
@@ -662,12 +693,35 @@ export default function DashboardGestor() {
                         </span>
                         <div>
                           <p className="font-medium">{aluno.nomeAluno}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Turma: {turmaNames.get(String(aluno.turma)) || aluno.turma || 'N/A'}
-                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>Turma: {turmaNames.get(String(aluno.turma)) || aluno.turma || 'N/A'}</span>
+                            {aluno.trilha && <span>| Trilha: {aluno.trilha}</span>}
+                          </div>
                         </div>
                       </div>
                       <div className="text-right flex items-center gap-4">
+                        {/* Mini indicadores V2 inline */}
+                        <div className="hidden lg:flex items-center gap-1">
+                          {aluno.consolidado && (
+                            <>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700" title="Webinars">
+                                W:{(aluno.consolidado.ind1_webinars ?? 0).toFixed(0)}%
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-700" title="Avaliações">
+                                A:{(aluno.consolidado.ind2_avaliacoes ?? 0).toFixed(0)}%
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-700" title="Competências">
+                                C:{(aluno.consolidado.ind3_competencias ?? 0).toFixed(0)}%
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700" title="Tarefas">
+                                T:{(aluno.consolidado.ind4_tarefas ?? 0).toFixed(0)}%
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700" title="Engajamento">
+                                E:{(aluno.consolidado.ind5_engajamento ?? 0).toFixed(0)}%
+                              </span>
+                            </>
+                          )}
+                        </div>
                         <div>
                           <p className={`font-bold ${
                             aluno.notaFinal >= 7 ? 'text-green-600' : 

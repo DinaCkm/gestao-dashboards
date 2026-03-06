@@ -1628,3 +1628,14 @@
 - [x] Testes vitest para funcionalidades do papel duplo
 - [x] Bug: texto "P.D.I Evoluir" em vermelho sobreposto ao item "Relatórios" no menu lateral do admin
 - [x] Melhorar tab Gerentes no Cadastro: exibir nome completo, email, CPF, ID do mentor vinculado ao aluno
+- [ ] Adicionar tooltip com explicação do cálculo em cada card de indicador (Total de Alunos, Nota Média, Melhor Nota, Precisam Atenção, Mentorias, Atividades, Engajamento, Competências, Eventos)
+- [ ] Garantir que DashboardGestor usa exatamente a mesma lógica de cálculo do DashboardAluno (ciclos finalizados, sem fallback para em andamento)
+- [ ] Filtro por turma independente de trilha no DashboardGestor
+
+## Bloco 1 - Reformulação Área Gerencial (Indicadores V2, Filtros, Radar)
+- [x] Analisar componentes e endpoints existentes reutilizáveis para o Bloco 1
+- [x] Substituir 5 cards antigos pelos 7 indicadores V2 (reutilizar IndicadorCard, InfoTooltip, INDICADORES_INFO)
+- [x] Cards de resumo por turma (Total Alunos, Nota Média, Melhor Nota, Precisam Atenção) - não misturar turmas
+- [x] Filtros avançados: por turma (parcial - turma e aluno implementados, ciclo/jornada no Bloco 2)
+- [x] Radar de Performance agregado por turma (reutilizar formato do aluno com 5 eixos V2)
+- [x] Tooltips de explicação em todos os cards
