@@ -68,27 +68,29 @@ export default function DashboardGestor() {
     return map;
   }, [turmas]);
 
-  // Group turmas by base name (removing [BSx] jornada suffix)
+  // Group turmas by turma code (BS1, BS2, BS3) - TURMA = jornada (BS1/BS2/BS3)
   const turmaGroups = useMemo(() => {
     if (!turmas) return [];
-    const groupMap = new Map<string, { baseName: string; turmaIds: string[] }>();
+    const groupMap = new Map<string, { turmaCode: string; turmaIds: string[]; turmaNames: string[] }>();
     turmas.forEach(t => {
-      // Remove [BSx] or similar jornada suffixes from name
-      const baseName = t.name.replace(/\s*\[BS\d+\]\s*$/, '').trim();
-      const existing = groupMap.get(baseName);
+      // Extract turma code [BSx] from name like "[2025] SEBRAE Tocantins - Basic [BS1]"
+      const match = t.name.match(/\[(BS\d+)\]/);
+      const turmaCode = match ? match[1] : t.name;
+      const existing = groupMap.get(turmaCode);
       if (existing) {
         existing.turmaIds.push(String(t.id));
+        existing.turmaNames.push(t.name);
       } else {
-        groupMap.set(baseName, { baseName, turmaIds: [String(t.id)] });
+        groupMap.set(turmaCode, { turmaCode, turmaIds: [String(t.id)], turmaNames: [t.name] });
       }
     });
-    return Array.from(groupMap.values());
+    return Array.from(groupMap.values()).sort((a, b) => a.turmaCode.localeCompare(b.turmaCode));
   }, [turmas]);
 
   // Get turma IDs for the selected group
   const selectedTurmaIds = useMemo(() => {
     if (selectedTurmaGroup === "todas") return null;
-    const group = turmaGroups.find(g => g.baseName === selectedTurmaGroup);
+    const group = turmaGroups.find(g => g.turmaCode === selectedTurmaGroup);
     return group ? group.turmaIds : null;
   }, [selectedTurmaGroup, turmaGroups]);
 
@@ -306,8 +308,8 @@ export default function DashboardGestor() {
                   <SelectContent>
                     <SelectItem value="todas">Todas as turmas</SelectItem>
                     {turmaGroups.map(g => (
-                      <SelectItem key={g.baseName} value={g.baseName}>
-                        {g.baseName}{g.turmaIds.length > 1 ? ` (${g.turmaIds.length} jornadas)` : ''}
+                      <SelectItem key={g.turmaCode} value={g.turmaCode}>
+                        {g.turmaCode}
                       </SelectItem>
                     ))}
                   </SelectContent>

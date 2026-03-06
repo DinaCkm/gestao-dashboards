@@ -1652,3 +1652,11 @@
 - [x] Mudar modelo do gráfico "Performance por Turma" (nomes muito longos com ciclo)
 - [x] Gerente só pode ver alunos da empresa dele no Dashboard Aluno (não "Todas as empresas")
 - [x] Corrigir "Ciclo Atual" mostrando "Nenhum ciclo" no Dashboard do Aluno
+
+## AJUSTE2 - Correções Relatórios e Dashboard Gestor
+- [ ] Incluir visão de jornadas/ciclos com datas de início e fim no Dashboard Gestor
+- [ ] Incluir filtro de aluno na página de Relatórios para gerar relatório individual
+- [ ] Corrigir botão Baixar relatório no histórico de relatórios (não está liberando download)
+- [ ] Alterar texto do Relatório Individual para "Relatório Individual, mostra a performance do aluno"
+- [ ] Corrigir cards Templates Rápidos (Relatório Semanal e Performance da Equipe) que não estão funcionando
+- [x] Corrigir filtro de turma: TURMA = BS1, BS2, BS3 (jornada). TRILHA = Basic, Essential, Master, Visão de Futuro, etc. Filtro deve mostrar apenas BS1/BS2/BS3
