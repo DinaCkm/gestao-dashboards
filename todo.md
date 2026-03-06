@@ -1685,3 +1685,10 @@
 - [x] Adicionar botão recolher/expandir no histórico de relatórios
 - [x] Corrigir bug: relatórios já gerados mostram "Processando..." em vez de "Baixar" (adicionado refetchInterval 5s)
 - [x] Adicionar coluna "Data de Emissão" nos relatórios Excel gerados (todas as abas)
+
+## Troca de Logo (06/03/2026)
+- [x] Upload do novo logo (B.E.M com cérebro) para CDN
+- [x] Trocar logo na página de login (arquivo public/logo-bem-full.d3b12449.png substituído)
+- [x] Trocar logo na sidebar (DashboardLayout) (arquivo public/logo-bem-icon.d3b12449.png substituído)
+- [x] VITE_APP_LOGO não é usado diretamente no código (logo é referenciado via arquivos public/)
+- [x] Trocar logo em DashboardMeuPerfil.tsx e MuralAluno.tsx (CDN URL atualizada)

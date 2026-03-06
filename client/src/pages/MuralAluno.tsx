@@ -676,7 +676,7 @@ export default function MuralAluno() {
             <div className="relative flex items-center gap-5 p-5 sm:p-6">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-blue-100 shadow-lg p-2">
                 <img
-                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/bem_logo_cf035dbb.svg"
+                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/bem-logo-cerebro_a018b383.png"
                   alt="B.E.M."
                   className="w-full h-full object-contain"
                 />
