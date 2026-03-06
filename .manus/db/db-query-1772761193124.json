@@ -1,0 +1,30 @@
+{
+  "query": "SELECT title, youtubeLink FROM scheduled_webinars WHERE youtubeLink IS NOT NULL AND youtubeLink != '' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT title, youtubeLink FROM scheduled_webinars WHERE youtubeLink IS NOT NULL AND youtubeLink != '' LIMIT 5;",
+  "rows": [
+    {
+      "title": "2025/06 - Liderança Tóxica com Emerson Dias",
+      "youtubeLink": "https://youtu.be/7UvjMCdiuqE?si=yx80ybOwr4pQ1YKJ"
+    },
+    {
+      "title": "2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio",
+      "youtubeLink": "https://www.youtube.com/live/Xqxu3FkxRTs?si=K_8pWO--3UXP7odD"
+    },
+    {
+      "title": "2025/08 - LinkedIn e Carreira com Gislaine",
+      "youtubeLink": "https://www.youtube.com/live/Ncp5y-BRUIA?si=VxEWgKJ1_VTBJUzl"
+    },
+    {
+      "title": "2025/09 - Foco x Procrastinação com Emerson Dias",
+      "youtubeLink": "https://www.youtube.com/watch?v=pr__P5h_dSE"
+    },
+    {
+      "title": "2025/10 - Do Talento ao Resultado com Fabio Barbosa",
+      "youtubeLink": "https://www.youtube.com/live/UPP3-ewCJe8?si=YL5kN3HhgzwmJR-R"
+    }
+  ],
+  "messages": [],
+  "stdout": "title\tyoutubeLink\n2025/06 - Liderança Tóxica com Emerson Dias\thttps://youtu.be/7UvjMCdiuqE?si=yx80ybOwr4pQ1YKJ\n2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio\thttps://www.youtube.com/live/Xqxu3FkxRTs?si=K_8pWO--3UXP7odD\n2025/08 - LinkedIn e Carreira com Gislaine\thttps://www.youtube.com/live/Ncp5y-BRUIA?si=VxEWgKJ1_VTBJUzl\n2025/09 - Foco x Procrastinação com Emerson Dias\thttps://www.youtube.com/watch?v=pr__P5h_dSE\n2025/10 - Do Talento ao Resultado com Fabio Barbosa\thttps://www.youtube.com/live/UPP3-ewCJe8?si=YL5kN3HhgzwmJR-R\n",
+  "stderr": "",
+  "execution_time_ms": 348
+}

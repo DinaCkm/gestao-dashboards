@@ -1582,3 +1582,11 @@
 - [x] Reformular alerta Case de Sucesso: convite para compartilhar experiências + explicar bônus + data limite (final do ciclo) + botão upload arquivo
 - [x] Deduplicar alerta por trilha (aparece 6x, deveria ser 1x)
 - [x] Corrigir lista de eventos vazia (events.programId=NULL vs aluno.programId definido)
+
+## Bug: Botão Marcar Presença inconsistente (05/03/2026)
+- [x] Botão "Marcar Presença" corrigido: só aparece em eventos Ausentes que TEM link de vídeo (regra atualizada pelo usuário)
+
+## Ajuste: Link de eventos (05/03/2026)
+- [x] Quando evento não tem link de vídeo, mostrar "Link será disponibilizado em breve" em vez de esconder
+- [x] Botão Marcar Presença deve aparecer em TODOS os eventos Ausentes, independente de ter link (REVISADO: só aparece com link)
+- [x] Botão Marcar Presença só aparece quando o evento TEM link de vídeo (se não tem link, mostra apenas Ausente + "Link em breve")

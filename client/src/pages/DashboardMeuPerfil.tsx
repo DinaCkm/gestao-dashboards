@@ -1474,8 +1474,8 @@ export default function DashboardMeuPerfil() {
 
                             {/* Botões: Assistir + Status/Marcar Presença */}
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              {/* Botão Assistir (se tem link de vídeo) */}
-                              {evt.videoLink && (
+                              {/* Botão Assistir ou aviso de link em breve */}
+                              {evt.videoLink ? (
                                 <a
                                   href={evt.videoLink}
                                   target="_blank"
@@ -1484,6 +1484,10 @@ export default function DashboardMeuPerfil() {
                                 >
                                   <Play className="h-3 w-3" /> Assistir
                                 </a>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-xs text-gray-400 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-200">
+                                  <Clock className="h-3 w-3" /> Link em breve
+                                </span>
                               )}
 
                               {/* Status Badge + Botão Marcar Presença */}
@@ -1496,17 +1500,19 @@ export default function DashboardMeuPerfil() {
                                   <Badge className="bg-red-100 text-red-700 border-red-200 font-medium">
                                     Ausente
                                   </Badge>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setExpandedWebinar(expandedWebinar === evt.eventId ? null : evt.eventId)}
-                                    className={expandedWebinar === evt.eventId
-                                      ? "border-gray-300 text-gray-600 text-xs"
-                                      : "border-[#F5991F] text-[#F5991F] hover:bg-[#F5991F]/10 text-xs"
-                                    }
-                                  >
-                                    {expandedWebinar === evt.eventId ? "Fechar" : "Marcar Presença"}
-                                  </Button>
+                                  {evt.videoLink && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setExpandedWebinar(expandedWebinar === evt.eventId ? null : evt.eventId)}
+                                      className={expandedWebinar === evt.eventId
+                                        ? "border-gray-300 text-gray-600 text-xs"
+                                        : "border-[#F5991F] text-[#F5991F] hover:bg-[#F5991F]/10 text-xs"
+                                      }
+                                    >
+                                      {expandedWebinar === evt.eventId ? "Fechar" : "Marcar Presença"}
+                                    </Button>
+                                  )}
                                 </div>
                               )}
                             </div>

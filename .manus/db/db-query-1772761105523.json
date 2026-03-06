@@ -1,0 +1,142 @@
+{
+  "query": "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'events' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'events' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "EVENT_CATALOG",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "externalId",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "EVENT_SCHEMA",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "title",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "EVENT_NAME",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "DEFINER",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "eventType",
+      "DATA_TYPE": "enum"
+    },
+    {
+      "COLUMN_NAME": "eventDate",
+      "DATA_TYPE": "date"
+    },
+    {
+      "COLUMN_NAME": "TIME_ZONE",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "programId",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "EVENT_BODY",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "trilhaId",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "EVENT_DEFINITION",
+      "DATA_TYPE": "longtext"
+    },
+    {
+      "COLUMN_NAME": "createdAt",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "COLUMN_NAME": "EVENT_TYPE",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "videoLink",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "EXECUTE_AT",
+      "DATA_TYPE": "datetime"
+    },
+    {
+      "COLUMN_NAME": "INTERVAL_VALUE",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "INTERVAL_FIELD",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "SQL_MODE",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "STARTS",
+      "DATA_TYPE": "datetime"
+    },
+    {
+      "COLUMN_NAME": "ENDS",
+      "DATA_TYPE": "datetime"
+    },
+    {
+      "COLUMN_NAME": "STATUS",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "ON_COMPLETION",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "CREATED",
+      "DATA_TYPE": "datetime"
+    },
+    {
+      "COLUMN_NAME": "LAST_ALTERED",
+      "DATA_TYPE": "datetime"
+    },
+    {
+      "COLUMN_NAME": "LAST_EXECUTED",
+      "DATA_TYPE": "datetime"
+    },
+    {
+      "COLUMN_NAME": "EVENT_COMMENT",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "ORIGINATOR",
+      "DATA_TYPE": "int"
+    },
+    {
+      "COLUMN_NAME": "CHARACTER_SET_CLIENT",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "COLLATION_CONNECTION",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "DATABASE_COLLATION",
+      "DATA_TYPE": "varchar"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\tDATA_TYPE\nid\tint\nEVENT_CATALOG\tvarchar\nexternalId\tvarchar\nEVENT_SCHEMA\tvarchar\ntitle\tvarchar\nEVENT_NAME\tvarchar\nDEFINER\tvarchar\neventType\tenum\neventDate\tdate\nTIME_ZONE\tvarchar\nprogramId\tint\nEVENT_BODY\tvarchar\ntrilhaId\tint\nEVENT_DEFINITION\tlongtext\ncreatedAt\ttimestamp\nEVENT_TYPE\tvarchar\nvideoLink\tvarchar\nEXECUTE_AT\tdatetime\nINTERVAL_VALUE\tvarchar\nINTERVAL_FIELD\tvarchar\nSQL_MODE\tvarchar\nSTARTS\tdatetime\nENDS\tdatetime\nSTATUS\tvarchar\nON_COMPLETION\tvarchar\nCREATED\tdatetime\nLAST_ALTERED\tdatetime\nLAST_EXECUTED\tdatetime\nEVENT_COMMENT\tvarchar\nORIGINATOR\tint\nCHARACTER_SET_CLIENT\tvarchar\nCOLLATION_CONNECTION\tvarchar\nDATABASE_COLLATION\tvarchar\n",
+  "stderr": "",
+  "execution_time_ms": 351
+}

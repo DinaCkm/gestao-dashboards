@@ -1,0 +1,115 @@
+{
+  "query": "SELECT e.id, e.title as event_title, sw.title as webinar_title, sw.youtubeLink, e.videoLink FROM events e LEFT JOIN scheduled_webinars sw ON LOWER(TRIM(e.title)) = LOWER(TRIM(sw.title)) ORDER BY e.eventDate DESC LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT e.id, e.title as event_title, sw.title as webinar_title, sw.youtubeLink, e.videoLink FROM events e LEFT JOIN scheduled_webinars sw ON LOWER(TRIM(e.title)) = LOWER(TRIM(sw.title)) ORDER BY e.eventDate DESC LIMIT 15;",
+  "rows": [
+    {
+      "id": "30022",
+      "event_title": "2026/04 - Aula 02 -  Resiliência e Proatividade na Prática Organizacional",
+      "webinar_title": "2026/04 - Aula 02 -  Resiliência e Proatividade na Prática Organizacional",
+      "youtubeLink": "https://www.youtube.com/watch?v=dru-cC5JdT0",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30021",
+      "event_title": "2026/03 - Aula 01 - Resiliência e Proatividade na Prática Organizacional",
+      "webinar_title": "2026/03 - Aula 01 - Resiliência e Proatividade na Prática Organizacional",
+      "youtubeLink": "https://www.youtube.com/watch?v=qOXykyg3ERc",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30020",
+      "event_title": "2026/02 - Aula 02 – O Código de Aprendizagem - A Execução",
+      "webinar_title": "2026/02 - Aula 02 – O Código de Aprendizagem - A Execução",
+      "youtubeLink": "https://www.youtube.com/watch?v=TtzfMNEc7B4",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30027",
+      "event_title": "2026/02 - O Código de Aprendizagem - 02 - A Execução",
+      "webinar_title": "NULL",
+      "youtubeLink": "NULL",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30019",
+      "event_title": "2026/01 - Aula 01 – O Código de Aprendizagem - O Preparo",
+      "webinar_title": "2026/01 - Aula 01 – O Código de Aprendizagem - O Preparo",
+      "youtubeLink": "https://www.youtube.com/watch?v=TtzfMNEc7B4",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30026",
+      "event_title": "2026/01 - O Código de Aprendizagem - 01 - O Preparo",
+      "webinar_title": "NULL",
+      "youtubeLink": "NULL",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30018",
+      "event_title": "2025/23 - Felicidade e Promessas de Final de Ano, com Emerson Dias",
+      "webinar_title": "2025/23 - Felicidade e Promessas de Final de Ano, com Emerson Dias",
+      "youtubeLink": "https://www.youtube.com/watch?v=0DOT-RtJF8s",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30017",
+      "event_title": "2025/22 - Aula 04 – Monitoramento, Avaliação e Encerramento com Emerson Dias",
+      "webinar_title": "2025/22 - Aula 04 – Monitoramento, Avaliação e Encerramento com Emerson Dias",
+      "youtubeLink": "https://www.youtube.com/watch?v=okYik_cdF4U",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30016",
+      "event_title": "2025/21 - Aula 03 – Planejamento e Implementação com Emerson Dias",
+      "webinar_title": "2025/21 - Aula 03 – Planejamento e Implementação com Emerson Dias",
+      "youtubeLink": "https://www.youtube.com/watch?v=3b7MPjfdoOI",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30015",
+      "event_title": "2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias",
+      "webinar_title": "2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias",
+      "youtubeLink": "https://www.youtube.com/watch?v=unTw_PO-x24",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30014",
+      "event_title": "2025/19 - Aula 01 – Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "webinar_title": "NULL",
+      "youtubeLink": "NULL",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30032",
+      "event_title": "2025/19 - Aula 01 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "webinar_title": "NULL",
+      "youtubeLink": "NULL",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30024",
+      "event_title": "2025/19 - Aula 01 –Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "webinar_title": "2025/19 - Aula 01 –Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "youtubeLink": "https://www.youtube.com/watch?v=FH0e49f7_eQ",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30025",
+      "event_title": "2025/19 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "webinar_title": "NULL",
+      "youtubeLink": "NULL",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30013",
+      "event_title": "2025/18 - Mindfulness na Comunicação e no Tempo com Otácia",
+      "webinar_title": "2025/18 - Mindfulness na Comunicação e no Tempo com Otácia",
+      "youtubeLink": "https://youtu.be/AFwUs8PfIEU",
+      "videoLink": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tevent_title\twebinar_title\tyoutubeLink\tvideoLink\n30022\t2026/04 - Aula 02 -  Resiliência e Proatividade na Prática Organizacional\t2026/04 - Aula 02 -  Resiliência e Proatividade na Prática Organizacional\thttps://www.youtube.com/watch?v=dru-cC5JdT0\tNULL\n30021\t2026/03 - Aula 01 - Resiliência e Proatividade na Prática Organizacional\t2026/03 - Aula 01 - Resiliência e Proatividade na Prática Organizacional\thttps://www.youtube.com/watch?v=qOXykyg3ERc\tNULL\n30020\t2026/02 - Aula 02 – O Código de Aprendizagem - A Execução\t2026/02 - Aula 02 – O Código de Aprendizagem - A Execução\thttps://www.youtube.com/watch?v=TtzfMNEc7B4\tNULL\n30027\t2026/02 - O Código de Aprendizagem - 02 - A Execução\tNULL\tNULL\tNULL\n30019\t2026/01 - Aula 01 – O Código de Aprendizagem - O Preparo\t2026/01 - Aula 01 – O Código de Aprendizagem - O Preparo\thttps://www.youtube.com/watch?v=TtzfMNEc7B4\tNULL\n30026\t2026/01 - O Código de Aprendizagem - 01 - O Preparo\tNULL\tNULL\tNULL\n30018\t2025/23 - Felicidade e Promessas de Final de Ano, com Emerson Dias\t2025/23 - Felicidade e Promessas de Final de Ano, com Emerson Dias\thttps://www.youtube.com/watch?v=0DOT-RtJF8s\tNULL\n30017\t2025/22 - Aula 04 – Monitoramento, Avaliação e Encerramento com Emerson Dias\t2025/22 - Aula 04 – Monitoramento, Avaliação e Encerramento com Emerson Dias\thttps://www.youtube.com/watch?v=okYik_cdF4U\tNULL\n30016\t2025/21 - Aula 03 – Planejamento e Implementação com Emerson Dias\t2025/21 - Aula 03 – Planejamento e Implementação com Emerson Dias\thttps://www.youtube.com/watch?v=3b7MPjfdoOI\tNULL\n30015\t2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias\t2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias\thttps://www.youtube.com/watch?v=unTw_PO-x24\tNULL\n30014\t2025/19 - Aula 01 – Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\tNULL\tNULL\tNULL\n30032\t2025/19 - Aula 01 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\tNULL\tNULL\tNULL\n30024\t2025/19 - Aula 01 –Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\t2025/19 - Aula 01 –Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\thttps://www.youtube.com/watch?v=FH0e49f7_eQ\tNULL\n30025\t2025/19 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\tNULL\tNULL\tNULL\n30013\t2025/18 - Mindfulness na Comunicação e no Tempo com Otácia\t2025/18 - Mindfulness na Comunicação e no Tempo com Otácia\thttps://youtu.be/AFwUs8PfIEU\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 386
+}
