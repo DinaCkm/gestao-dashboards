@@ -1626,3 +1626,4 @@
 - [x] Criar user manager para Carolina (EMBRAPII) com alunoId=30036
 - [x] Admin: seção "Gerentes de Empresa" nos Cadastros (atribuir aluno como gerente, cadastrar gerente puro, remover/alterar gerentes)
 - [x] Testes vitest para funcionalidades do papel duplo
+- [x] Bug: texto "P.D.I Evoluir" em vermelho sobreposto ao item "Relatórios" no menu lateral do admin
