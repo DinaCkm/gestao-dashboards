@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "wouter";
 
 const COLORS = ['#1E3A5F', '#F5A623', '#2E7D32', '#D32F2F', '#7B1FA2'];
@@ -220,6 +220,23 @@ export default function DashboardGestor() {
     });
     return Array.from(ids);
   }, [data?.alunos]);
+
+  // Get jornadas/ciclos por turma
+  const { data: jornadasPorTurma } = trpc.jornada.porTurma.useQuery(
+    { empresa: empresaNome || '' },
+    { enabled: !!empresaNome }
+  );
+
+  // State for expanded jornada cards
+  const [expandedJornadas, setExpandedJornadas] = useState<Set<number>>(new Set());
+  const toggleJornada = useCallback((turmaId: number) => {
+    setExpandedJornadas(prev => {
+      const next = new Set(prev);
+      if (next.has(turmaId)) next.delete(turmaId);
+      else next.add(turmaId);
+      return next;
+    });
+  }, []);
 
   const isFiltered = selectedTurmaGroup !== "todas" || selectedTrilha !== "todas" || selectedAlunoId !== "todos";
 
@@ -663,6 +680,198 @@ export default function DashboardGestor() {
                       </div>
                     );
                   })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Trilhas e Ciclos de Execução */}
+        {jornadasPorTurma && jornadasPorTurma.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-primary" />
+                Trilhas e Ciclos de Execução
+                <InfoTooltip text="Visão das jornadas de cada turma com as competências (micro ciclos) e suas datas de início e fim." />
+              </CardTitle>
+              <CardDescription>
+                Macro e micro jornadas por turma com datas de execução
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Gráfico de Timeline de Execução */}
+              {(() => {
+                // Calcular range global de datas
+                const allDates: Date[] = [];
+                jornadasPorTurma.forEach(j => {
+                  j.microCiclos.forEach(m => {
+                    if (m.microInicio) allDates.push(new Date(m.microInicio));
+                    if (m.microTermino) allDates.push(new Date(m.microTermino));
+                  });
+                });
+                if (allDates.length < 2) return null;
+                const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+                const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+                const totalMs = maxDate.getTime() - minDate.getTime();
+                if (totalMs <= 0) return null;
+                const today = new Date();
+                const todayPct = Math.max(0, Math.min(100, ((today.getTime() - minDate.getTime()) / totalMs) * 100));
+                const fmtShort = (d: Date) => d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+
+                // Cores para turmas
+                const turmaColors = ['#1E3A5F', '#F5A623', '#2E7D32', '#D32F2F', '#7B1FA2', '#00838F'];
+
+                return (
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-muted-foreground">Timeline de Execução</h4>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{fmtShort(minDate)}</span>
+                        <span>→</span>
+                        <span>{fmtShort(maxDate)}</span>
+                      </div>
+                    </div>
+                    <div className="relative bg-muted/20 rounded-lg p-4 overflow-x-auto">
+                      {/* Header com meses */}
+                      <div className="relative h-6 mb-2 border-b border-muted">
+                        {(() => {
+                          const months: { label: string; pct: number }[] = [];
+                          const cur = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+                          while (cur <= maxDate) {
+                            const pct = ((cur.getTime() - minDate.getTime()) / totalMs) * 100;
+                            if (pct >= 0 && pct <= 100) {
+                              months.push({ label: cur.toLocaleDateString('pt-BR', { month: 'short' }), pct });
+                            }
+                            cur.setMonth(cur.getMonth() + 1);
+                          }
+                          return months.map((m, i) => (
+                            <span key={i} className="absolute text-[10px] text-muted-foreground -translate-x-1/2" style={{ left: `${m.pct}%` }}>
+                              {m.label}
+                            </span>
+                          ));
+                        })()}
+                      </div>
+                      {/* Barras por turma */}
+                      <div className="space-y-3">
+                        {jornadasPorTurma.map((jornada, jIdx) => {
+                          const bsM = jornada.turmaNome.match(/\[(BS\d+)\]/);
+                          const label = bsM ? `${bsM[1]} — ${jornada.trilhaNome}` : jornada.trilhaNome;
+                          const color = turmaColors[jIdx % turmaColors.length];
+                          // Calcular barra macro
+                          const macroStart = jornada.macroInicio ? ((new Date(jornada.macroInicio).getTime() - minDate.getTime()) / totalMs) * 100 : 0;
+                          const macroEnd = jornada.macroTermino ? ((new Date(jornada.macroTermino).getTime() - minDate.getTime()) / totalMs) * 100 : 100;
+                          const macroWidth = Math.max(1, macroEnd - macroStart);
+                          const fmtD = (d: string | Date | null) => {
+                            if (!d) return '—';
+                            return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                          };
+                          return (
+                            <div key={jornada.turmaId} className="flex items-center gap-3">
+                              <div className="w-32 md:w-40 shrink-0 text-xs font-medium truncate" title={label}>{label}</div>
+                              <div className="flex-1 relative h-6 bg-muted/30 rounded">
+                                <div
+                                  className="absolute h-full rounded opacity-80"
+                                  style={{ left: `${macroStart}%`, width: `${macroWidth}%`, backgroundColor: color }}
+                                  title={`${label}: ${fmtD(jornada.macroInicio)} → ${fmtD(jornada.macroTermino)}`}
+                                />
+                              </div>
+                              <div className="w-20 shrink-0 text-[10px] text-muted-foreground text-right">
+                                {fmtD(jornada.macroTermino)}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* Linha do hoje */}
+                      <div className="absolute top-0 bottom-0" style={{ left: `calc(${todayPct}% + 4rem)`, width: '2px' }}>
+                        <div className="w-0.5 h-full bg-red-500 opacity-70" />
+                        <span className="absolute -top-1 left-1 text-[9px] font-bold text-red-500">Hoje</span>
+                      </div>
+                    </div>
+                    {/* Legenda */}
+                    <div className="flex flex-wrap gap-3 mt-3">
+                      {jornadasPorTurma.map((jornada, jIdx) => {
+                        const bsM = jornada.turmaNome.match(/\[(BS\d+)\]/);
+                        const label = bsM ? `${bsM[1]} — ${jornada.trilhaNome}` : jornada.trilhaNome;
+                        const color = turmaColors[jIdx % turmaColors.length];
+                        return (
+                          <div key={jornada.turmaId} className="flex items-center gap-1.5 text-xs">
+                            <span className="w-3 h-3 rounded" style={{ backgroundColor: color }} />
+                            <span>{label}</span>
+                          </div>
+                        );
+                      })}
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="w-3 h-0.5 bg-red-500" />
+                        <span className="text-red-500">Hoje</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="space-y-4">
+                {jornadasPorTurma.map((jornada) => {
+                  const isExpanded = expandedJornadas.has(jornada.turmaId);
+                  const bsMatch = jornada.turmaNome.match(/\[(BS\d+)\]/);
+                  const turmaCode = bsMatch ? bsMatch[1] : jornada.turmaCode;
+                  const formatDate = (d: string | Date | null) => {
+                    if (!d) return '—';
+                    const date = new Date(d);
+                    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                  };
+                  return (
+                    <div key={jornada.turmaId} className="border rounded-lg overflow-hidden">
+                      <div
+                        className="flex items-center justify-between p-4 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => toggleJornada(jornada.turmaId)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Users className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium text-sm">{jornada.turmaNome}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge className="bg-amber-500 text-white text-xs">{jornada.trilhaNome}</Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {jornada.microCiclos.length} comp. • {jornada.qtdAlunos} aluno(s)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {jornada.macroInicio && jornada.macroTermino && (
+                            <span className="text-xs text-muted-foreground hidden md:block">
+                              {formatDate(jornada.macroInicio)} → {formatDate(jornada.macroTermino)}
+                            </span>
+                          )}
+                          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </div>
+                      </div>
+                      {isExpanded && jornada.microCiclos.length > 0 && (
+                        <div className="p-4 border-t">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="text-left text-muted-foreground border-b">
+                                <th className="pb-2 font-medium">Competência</th>
+                                <th className="pb-2 font-medium text-right">Início</th>
+                                <th className="pb-2 font-medium text-right">Fim</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {jornada.microCiclos.map((micro, idx) => (
+                                <tr key={idx} className="border-b last:border-0">
+                                  <td className="py-2">{micro.competencia}</td>
+                                  <td className="py-2 text-right text-muted-foreground">{formatDate(micro.microInicio)}</td>
+                                  <td className="py-2 text-right text-muted-foreground">{formatDate(micro.microTermino)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

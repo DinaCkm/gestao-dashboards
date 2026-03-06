@@ -12,47 +12,87 @@ import {
   FileSpreadsheet,
   Calendar,
   Loader2,
-  Clock
+  Clock,
+  User,
+  Users,
+  BarChart3
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 export default function ReportsPage() {
   const { user } = useAuth();
   const [reportType, setReportType] = useState<"admin" | "manager" | "individual">("individual");
-  const [reportFormat, setReportFormat] = useState<"pdf" | "excel">("pdf");
+  const [reportFormat, setReportFormat] = useState<"pdf" | "excel">("excel");
   const [reportName, setReportName] = useState("");
+  const [selectedAlunoId, setSelectedAlunoId] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
 
   const isAdmin = user?.role === "admin";
   const isManager = user?.role === "manager" || isAdmin;
+
+  // Fetch alunos list for individual report filter
+  const { data: alunos } = trpc.alunos.list.useQuery(undefined, {
+    enabled: reportType === "individual" && isManager,
+  });
+
+  // Fetch programs for manager filter
+  const { data: programs } = trpc.programs.list.useQuery(undefined, {
+    enabled: isManager,
+  });
+
+  // Filter alunos by manager's company
+  const filteredAlunos = useMemo(() => {
+    if (!alunos) return [];
+    if (user?.role === "manager" && user.programId) {
+      return alunos.filter((a: any) => a.programId === user.programId);
+    }
+    return alunos;
+  }, [alunos, user]);
 
   // Fetch reports history
   const { data: reports, refetch } = trpc.reports.list.useQuery({ limit: 20 });
 
   const generateReportMutation = trpc.reports.generate.useMutation({
     onSuccess: () => {
-      toast.success("Relatório gerado com sucesso!");
+      toast.success("Relatório gerado com sucesso! O arquivo estará disponível para download em instantes.");
       refetch();
       setReportName("");
+      setSelectedAlunoId("");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error("Erro ao gerar relatório: " + error.message);
     }
   });
 
-  const handleGenerateReport = async () => {
-    if (!reportName.trim()) {
+  const handleGenerateReport = async (overrides?: {
+    name?: string;
+    type?: "admin" | "manager" | "individual";
+    format?: "pdf" | "excel";
+    scopeId?: number;
+  }) => {
+    const name = overrides?.name || reportName;
+    const type = overrides?.type || reportType;
+    const format = overrides?.format || reportFormat;
+    const scopeId = overrides?.scopeId || (selectedAlunoId ? parseInt(selectedAlunoId) : undefined);
+
+    if (!name.trim()) {
       toast.error("Digite um nome para o relatório");
+      return;
+    }
+
+    if (type === "individual" && isManager && !scopeId) {
+      toast.error("Selecione um aluno para o relatório individual");
       return;
     }
 
     setIsGenerating(true);
     try {
       await generateReportMutation.mutateAsync({
-        name: reportName,
-        type: reportType,
-        format: reportFormat
+        name,
+        type,
+        format,
+        scopeId,
       });
     } finally {
       setIsGenerating(false);
@@ -77,7 +117,7 @@ export default function ReportsPage() {
             <span className="text-gradient">Relatórios</span>
           </h1>
           <p className="text-muted-foreground mt-2">
-            Gere e exporte relatórios personalizados em PDF ou Excel
+            Gere e exporte relatórios personalizados em Excel
           </p>
         </div>
 
@@ -93,7 +133,7 @@ export default function ReportsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="report-name">Nome do Relatório</Label>
                 <Input
@@ -109,7 +149,10 @@ export default function ReportsPage() {
                 <Label>Tipo de Relatório</Label>
                 <Select 
                   value={reportType} 
-                  onValueChange={(v) => setReportType(v as "admin" | "manager" | "individual")}
+                  onValueChange={(v) => {
+                    setReportType(v as "admin" | "manager" | "individual");
+                    setSelectedAlunoId("");
+                  }}
                 >
                   <SelectTrigger className="bg-input">
                     <SelectValue />
@@ -122,6 +165,28 @@ export default function ReportsPage() {
                 </Select>
               </div>
 
+              {/* Filtro de Aluno - aparece quando tipo é Individual e user é manager/admin */}
+              {reportType === "individual" && isManager && (
+                <div className="space-y-2">
+                  <Label>Aluno</Label>
+                  <Select 
+                    value={selectedAlunoId} 
+                    onValueChange={setSelectedAlunoId}
+                  >
+                    <SelectTrigger className="bg-input">
+                      <SelectValue placeholder="Selecione um aluno" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredAlunos.map((aluno: any) => (
+                        <SelectItem key={aluno.id} value={String(aluno.id)}>
+                          {aluno.name || aluno.email || `Aluno #${aluno.id}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Formato</Label>
                 <Select 
@@ -132,55 +197,54 @@ export default function ReportsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pdf">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        PDF
-                      </div>
-                    </SelectItem>
                     <SelectItem value="excel">
                       <div className="flex items-center gap-2">
                         <FileSpreadsheet className="h-4 w-4" />
                         Excel
                       </div>
                     </SelectItem>
+                    <SelectItem value="pdf">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        PDF
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label>&nbsp;</Label>
-                <Button 
-                  onClick={handleGenerateReport}
-                  disabled={isGenerating || !reportName.trim()}
-                  className="w-full glow-orange"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Gerando...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Gerar Relatório
-                    </>
-                  )}
-                </Button>
-              </div>
+            <div className="flex items-center gap-4">
+              <Button 
+                onClick={() => handleGenerateReport()}
+                disabled={isGenerating || !reportName.trim() || (reportType === "individual" && isManager && !selectedAlunoId)}
+                className="glow-orange"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Gerar Relatório
+                  </>
+                )}
+              </Button>
             </div>
 
             {/* Report Type Description */}
             <div className="p-4 rounded-lg bg-muted/30">
-              <h4 className="font-medium mb-2">
-                {reportType === "admin" && "Relatório Administrativo"}
-                {reportType === "manager" && "Relatório Gerencial"}
-                {reportType === "individual" && "Relatório Individual"}
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                {reportType === "admin" && <><BarChart3 className="h-4 w-4" /> Relatório Administrativo</>}
+                {reportType === "manager" && <><Users className="h-4 w-4" /> Relatório Gerencial</>}
+                {reportType === "individual" && <><User className="h-4 w-4" /> Relatório Individual</>}
               </h4>
               <p className="text-sm text-muted-foreground">
-                {reportType === "admin" && "Visão consolidada de todos os dados do sistema, incluindo métricas de todos os departamentos, usuários e histórico completo de uploads."}
-                {reportType === "manager" && "Dados do departamento/equipe, incluindo performance individual de cada membro, comparativos e tendências."}
-                {reportType === "individual" && "Suas métricas pessoais, histórico de evolução, conquistas e comparativo com as metas estabelecidas."}
+                {reportType === "admin" && "Visão consolidada de todos os dados do sistema, incluindo métricas de todos os alunos, mentorias e eventos."}
+                {reportType === "manager" && "Dados da equipe da empresa, incluindo lista de alunos, sessões de mentoria e performance individual."}
+                {reportType === "individual" && "Relatório Individual, mostra a performance do aluno com indicadores por ciclo, engajamento e evolução."}
               </p>
             </div>
           </CardContent>
@@ -200,7 +264,7 @@ export default function ReportsPage() {
           <CardContent>
             {reports && reports.length > 0 ? (
               <div className="space-y-3">
-                {reports.map((report) => (
+                {reports.map((report: any) => (
                   <div 
                     key={report.id}
                     className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
@@ -234,17 +298,16 @@ export default function ReportsPage() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      disabled={!report.fileUrl}
                       onClick={() => {
                         if (report.fileUrl) {
                           window.open(report.fileUrl, '_blank');
                         } else {
-                          toast.info("Relatório em processamento...");
+                          toast.info("Relatório em processamento. Atualize a página e tente novamente.");
                         }
                       }}
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Baixar
+                      {report.fileUrl ? 'Baixar' : 'Processando...'}
                     </Button>
                   </div>
                 ))}
@@ -265,10 +328,26 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card 
               className="gradient-card card-hover cursor-pointer"
-              onClick={() => {
-                setReportName("Relatório Semanal");
-                setReportType("individual");
-                setReportFormat("pdf");
+              onClick={async () => {
+                if (reportType === "individual" && isManager && !selectedAlunoId) {
+                  // For individual reports, fill the form and ask to select student
+                  setReportName("Relatório Semanal");
+                  setReportType("individual");
+                  setReportFormat("excel");
+                  toast.info("Selecione um aluno acima e clique em 'Gerar Relatório'.");
+                } else if (!isManager) {
+                  // Regular user - cannot generate
+                  setReportName("Relatório Semanal");
+                  setReportType("individual");
+                  setReportFormat("excel");
+                  toast.info("Template carregado. Clique em 'Gerar Relatório'.");
+                } else {
+                  // Manager/admin with no student needed or already selected
+                  setReportName("Relatório Semanal");
+                  setReportType("individual");
+                  setReportFormat("excel");
+                  toast.info("Selecione um aluno acima e clique em 'Gerar Relatório'.");
+                }
               }}
             >
               <CardContent className="p-6">
@@ -277,7 +356,7 @@ export default function ReportsPage() {
                 </div>
                 <h3 className="font-semibold mb-1">Relatório Semanal</h3>
                 <p className="text-sm text-muted-foreground">
-                  Resumo individual da semana em PDF
+                  Resumo individual do aluno em Excel
                 </p>
               </CardContent>
             </Card>
@@ -285,10 +364,24 @@ export default function ReportsPage() {
             {isManager && (
               <Card 
                 className="gradient-card card-hover cursor-pointer"
-                onClick={() => {
+                onClick={async () => {
+                  // Auto-generate manager report
                   setReportName("Performance da Equipe");
                   setReportType("manager");
                   setReportFormat("excel");
+                  
+                  setIsGenerating(true);
+                  try {
+                    await generateReportMutation.mutateAsync({
+                      name: "Performance da Equipe",
+                      type: "manager",
+                      format: "excel",
+                    });
+                  } catch {
+                    // Error handled by mutation onError
+                  } finally {
+                    setIsGenerating(false);
+                  }
                 }}
               >
                 <CardContent className="p-6">
@@ -299,6 +392,12 @@ export default function ReportsPage() {
                   <p className="text-sm text-muted-foreground">
                     Dados da equipe em planilha Excel
                   </p>
+                  {isGenerating && reportName === "Performance da Equipe" && (
+                    <div className="mt-2 flex items-center gap-2 text-xs text-primary">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Gerando...
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -306,10 +405,24 @@ export default function ReportsPage() {
             {isAdmin && (
               <Card 
                 className="gradient-card card-hover cursor-pointer"
-                onClick={() => {
+                onClick={async () => {
+                  // Auto-generate admin report
                   setReportName("Relatório Executivo");
                   setReportType("admin");
-                  setReportFormat("pdf");
+                  setReportFormat("excel");
+                  
+                  setIsGenerating(true);
+                  try {
+                    await generateReportMutation.mutateAsync({
+                      name: "Relatório Executivo",
+                      type: "admin",
+                      format: "excel",
+                    });
+                  } catch {
+                    // Error handled by mutation onError
+                  } finally {
+                    setIsGenerating(false);
+                  }
                 }}
               >
                 <CardContent className="p-6">
@@ -318,8 +431,14 @@ export default function ReportsPage() {
                   </div>
                   <h3 className="font-semibold mb-1">Relatório Executivo</h3>
                   <p className="text-sm text-muted-foreground">
-                    Visão consolidada em PDF
+                    Visão consolidada em Excel
                   </p>
+                  {isGenerating && reportName === "Relatório Executivo" && (
+                    <div className="mt-2 flex items-center gap-2 text-xs text-primary">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Gerando...
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

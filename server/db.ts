@@ -5290,3 +5290,126 @@ export async function getAlunosByProgram(programId: number): Promise<{ id: numbe
 
   return result;
 }
+
+
+/**
+ * Buscar jornadas agrupadas por turma para o Dashboard Gestor
+ * Retorna macro jornadas com micro ciclos (competências) agrupados por turma
+ */
+export async function getJornadasPorTurma(empresa?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Buscar todos os assessment_pdi ativos com turma e trilha
+  const pdis = await db.select({
+    id: assessmentPdi.id,
+    alunoId: assessmentPdi.alunoId,
+    turmaId: assessmentPdi.turmaId,
+    trilhaId: assessmentPdi.trilhaId,
+    macroInicio: assessmentPdi.macroInicio,
+    macroTermino: assessmentPdi.macroTermino,
+    status: assessmentPdi.status,
+  }).from(assessmentPdi)
+    .where(eq(assessmentPdi.status, 'ativo'));
+  
+  if (pdis.length === 0) return [];
+  
+  // Buscar turmas e trilhas
+  const turmasList = await db.select().from(turmas);
+  const trilhasList = await db.select().from(trilhas);
+  const turmaMap = new Map(turmasList.map(t => [t.id, t]));
+  const trilhaMap = new Map(trilhasList.map(t => [t.id, t]));
+  
+  // Filtrar por empresa se necessário
+  let filteredPdis = pdis;
+  if (empresa) {
+    const programsList = await db.select().from(programs);
+    const alunosList = await db.select({ id: alunos.id, programId: alunos.programId }).from(alunos);
+    const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+    const programMap = new Map(programsList.map(p => [p.id, p]));
+    
+    filteredPdis = pdis.filter(pdi => {
+      const aluno = alunoMap.get(pdi.alunoId);
+      if (!aluno || !aluno.programId) return false;
+      const program = programMap.get(aluno.programId);
+      return program?.name === empresa;
+    });
+  }
+  
+  // Buscar competências de todos os PDIs filtrados
+  const pdiIds = filteredPdis.map(p => p.id);
+  if (pdiIds.length === 0) return [];
+  
+  const allComps = await db.select({
+    id: assessmentCompetencias.id,
+    assessmentPdiId: assessmentCompetencias.assessmentPdiId,
+    competenciaId: assessmentCompetencias.competenciaId,
+    microInicio: assessmentCompetencias.microInicio,
+    microTermino: assessmentCompetencias.microTermino,
+  }).from(assessmentCompetencias)
+    .where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map(id => sql`${id}`), sql`, `)})`);
+  
+  const compMap = new Map<number, string>();
+  const compsList = await db.select({ id: competencias.id, nome: competencias.nome }).from(competencias);
+  compsList.forEach(c => compMap.set(c.id, c.nome));
+  
+  // Agrupar por turma
+  const turmaGroups = new Map<number, {
+    turmaId: number;
+    turmaNome: string;
+    turmaCode: string; // BS1, BS2, BS3
+    trilhaNome: string;
+    macroInicio: Date | null;
+    macroTermino: Date | null;
+    qtdAlunos: number;
+    microCiclos: { competencia: string; microInicio: Date | null; microTermino: Date | null }[];
+  }>();
+  
+  for (const pdi of filteredPdis) {
+    const turma = pdi.turmaId ? turmaMap.get(pdi.turmaId) : null;
+    const trilha = pdi.trilhaId ? trilhaMap.get(pdi.trilhaId) : null;
+    if (!turma) continue;
+    
+    // Extrair código da turma (BS1, BS2, BS3)
+    const codeMatch = turma.name.match(/\[(BS\d+)\]/);
+    const turmaCode = codeMatch ? codeMatch[1] : turma.name;
+    
+    const key = pdi.turmaId!;
+    if (!turmaGroups.has(key)) {
+      // Buscar micro ciclos para esta turma (pegar de qualquer aluno, são iguais)
+      const pdiComps = allComps.filter(c => c.assessmentPdiId === pdi.id);
+      const microCiclos = pdiComps.map(c => ({
+        competencia: compMap.get(c.competenciaId) || 'Desconhecida',
+        microInicio: c.microInicio,
+        microTermino: c.microTermino,
+      })).sort((a, b) => {
+        if (!a.microInicio || !b.microInicio) return 0;
+        return new Date(a.microInicio).getTime() - new Date(b.microInicio).getTime();
+      });
+      
+      turmaGroups.set(key, {
+        turmaId: key,
+        turmaNome: turma.name,
+        turmaCode,
+        trilhaNome: trilha?.name || 'Não definida',
+        macroInicio: pdi.macroInicio,
+        macroTermino: pdi.macroTermino,
+        qtdAlunos: 1,
+        microCiclos,
+      });
+    } else {
+      turmaGroups.get(key)!.qtdAlunos++;
+    }
+  }
+  
+  return Array.from(turmaGroups.values()).sort((a, b) => {
+    if (!a.macroInicio || !b.macroInicio) return 0;
+    return new Date(a.macroInicio).getTime() - new Date(b.macroInicio).getTime();
+  });
+}
+
+export async function updateReport(id: number, data: { fileKey?: string; fileUrl?: string }) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(reports).set(data).where(eq(reports.id, id));
+}

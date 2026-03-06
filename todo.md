@@ -1654,11 +1654,12 @@
 - [x] Corrigir "Ciclo Atual" mostrando "Nenhum ciclo" no Dashboard do Aluno
 
 ## AJUSTE2 - Correções Relatórios e Dashboard Gestor
-- [ ] Incluir visão de jornadas/ciclos com datas de início e fim no Dashboard Gestor
-- [ ] Incluir filtro de aluno na página de Relatórios para gerar relatório individual
-- [ ] Corrigir botão Baixar relatório no histórico de relatórios (não está liberando download)
-- [ ] Alterar texto do Relatório Individual para "Relatório Individual, mostra a performance do aluno"
-- [ ] Corrigir cards Templates Rápidos (Relatório Semanal e Performance da Equipe) que não estão funcionando
+- [x] Incluir visão de jornadas/ciclos com datas de início e fim no Dashboard Gestor
+- [x] Incluir filtro de aluno na página de Relatórios para gerar relatório individual
+- [x] Corrigir botão Baixar relatório no histórico de relatórios (backend gera Excel real e faz upload para S3)
+- [x] Alterar texto do Relatório Individual para "Relatório Individual, mostra a performance do aluno"
+- [x] Corrigir cards Templates Rápidos (Relatório Semanal preenche form, Performance da Equipe e Executivo geram automaticamente)
 - [x] Corrigir filtro de turma: TURMA = BS1, BS2, BS3 (jornada). TRILHA = Basic, Essential, Master, Visão de Futuro, etc. Filtro deve mostrar apenas BS1/BS2/BS3
 - [x] Adicionar filtro por trilha como segundo nível de filtro dentro da turma selecionada
 - [x] Ajustar cards de Engajamento por Turma para usar nomenclatura BS1/BS2/BS3
+- [x] Adicionar gráfico de timeline/execução dos ciclos para o gestor saber quando todos os ciclos terminam

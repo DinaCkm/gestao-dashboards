@@ -923,10 +923,182 @@ export const appRouter = router({
           throw new TRPCError({ code: 'FORBIDDEN' });
         }
         
+        // Create report record first
         const id = await db.createReport({
           ...input,
           generatedBy: ctx.user.id
         });
+        
+        // Generate actual report file
+        try {
+          const mentoringSessions = await db.getAllMentoringSessions();
+          const eventParticipations = await db.getAllEventParticipationWithDate();
+          const alunosList = await db.getAlunos();
+          const programsList = await db.getPrograms();
+          const allPlanoItems = await db.getAllPlanoIndividual();
+          const turmasList = await db.getTurmas();
+          const consultorsList = await db.getConsultors();
+          
+          const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+          const programMap = new Map(programsList.map(p => [p.id, p]));
+          const turmaMap = new Map(turmasList.map(t => [t.id, t]));
+          const consultorMap = new Map(consultorsList.map(c => [c.id, c]));
+          
+          // Build Excel workbook
+          const wb = XLSX.utils.book_new();
+          
+          if (input.type === 'individual' && input.scopeId) {
+            // Individual report - specific student
+            const aluno = alunosList.find(a => a.id === input.scopeId);
+            if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+            
+            const program = aluno.programId ? programMap.get(aluno.programId) : null;
+            const turma = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
+            const consultor = aluno.consultorId ? consultorMap.get(aluno.consultorId) : null;
+            const planoItems = allPlanoItems.filter((p: any) => p.alunoId === aluno.id);
+            
+            // Sheet 1: Dados do Aluno
+            const dadosAluno = [{
+              'Nome': aluno.name || '',
+              'Email': aluno.email || '',
+              'Empresa': program?.name || '',
+              'Turma': turma?.name || '',
+              'Mentor(a)': consultor?.name || '',
+              'Data do Relatório': new Date().toLocaleDateString('pt-BR'),
+            }];
+            const ws1 = XLSX.utils.json_to_sheet(dadosAluno);
+            XLSX.utils.book_append_sheet(wb, ws1, 'Dados do Aluno');
+            
+            // Sheet 2: Sessões de Mentoria
+            const alunoMentorias = mentoringSessions
+              .filter(s => s.alunoId === aluno.id)
+              .map(s => ({
+                'Data': s.sessionDate ? String(s.sessionDate) : '',
+                'Presença': s.presence || '',
+                'Atividade': s.taskStatus || '',
+                'Engajamento': s.engagementScore ?? '',
+                'Nota Evolução': s.notaEvolucao ?? '',
+                'Feedback': s.feedback || '',
+              }));
+            if (alunoMentorias.length > 0) {
+              const ws2 = XLSX.utils.json_to_sheet(alunoMentorias);
+              XLSX.utils.book_append_sheet(wb, ws2, 'Mentorias');
+            }
+            
+            // Sheet 3: Participação em Eventos
+            const alunoEventos = eventParticipations
+              .filter(ep => ep.alunoId === aluno.id)
+              .map(ep => ({
+                'Evento': ep.eventTitle || '',
+                'Data': ep.eventDate ? String(ep.eventDate) : '',
+                'Status': ep.status || '',
+              }));
+            if (alunoEventos.length > 0) {
+              const ws3 = XLSX.utils.json_to_sheet(alunoEventos);
+              XLSX.utils.book_append_sheet(wb, ws3, 'Eventos');
+            }
+            
+            // Sheet 4: Plano Individual
+            if (planoItems.length > 0) {
+              const planoData = planoItems.map((p: any) => ({
+                'Competência': p.competenciaName || p.competenciaId || '',
+                'Trilha': p.trilhaNome || '',
+                'Nota Atual': p.notaAtual ?? '',
+                'Meta': p.metaNota ?? '',
+              }));
+              const ws4 = XLSX.utils.json_to_sheet(planoData);
+              XLSX.utils.book_append_sheet(wb, ws4, 'Plano Individual');
+            }
+          } else if (input.type === 'manager') {
+            // Manager report - team data
+            const teamAlunos = ctx.user.programId 
+              ? alunosList.filter(a => a.programId === ctx.user.programId)
+              : alunosList;
+            
+            // Sheet 1: Lista de Alunos
+            const teamData = teamAlunos.map(a => {
+              const prog = a.programId ? programMap.get(a.programId) : null;
+              const turma = a.turmaId ? turmaMap.get(a.turmaId) : null;
+              const mentor = a.consultorId ? consultorMap.get(a.consultorId) : null;
+              return {
+                'Nome': a.name || '',
+                'Email': a.email || '',
+                'Empresa': prog?.name || '',
+                'Turma': turma?.name || '',
+                'Mentor(a)': mentor?.name || '',
+              };
+            });
+            const ws1 = XLSX.utils.json_to_sheet(teamData);
+            XLSX.utils.book_append_sheet(wb, ws1, 'Equipe');
+            
+            // Sheet 2: Mentorias da Equipe
+            const teamIds = new Set(teamAlunos.map(a => a.id));
+            const teamMentorias = mentoringSessions
+              .filter(s => teamIds.has(s.alunoId))
+              .map(s => {
+                const al = alunoMap.get(s.alunoId);
+                return {
+                  'Aluno': al?.name || '',
+                  'Data': s.sessionDate ? String(s.sessionDate) : '',
+                  'Presença': s.presence || '',
+                  'Atividade': s.taskStatus || '',
+                  'Engajamento': s.engagementScore ?? '',
+                };
+              });
+            if (teamMentorias.length > 0) {
+              const ws2 = XLSX.utils.json_to_sheet(teamMentorias);
+              XLSX.utils.book_append_sheet(wb, ws2, 'Mentorias');
+            }
+          } else {
+            // Admin report - all data
+            const allData = alunosList.map(a => {
+              const prog = a.programId ? programMap.get(a.programId) : null;
+              const turma = a.turmaId ? turmaMap.get(a.turmaId) : null;
+              const mentor = a.consultorId ? consultorMap.get(a.consultorId) : null;
+              return {
+                'Nome': a.name || '',
+                'Email': a.email || '',
+                'Empresa': prog?.name || '',
+                'Turma': turma?.name || '',
+                'Mentor(a)': mentor?.name || '',
+              };
+            });
+            const ws1 = XLSX.utils.json_to_sheet(allData);
+            XLSX.utils.book_append_sheet(wb, ws1, 'Todos os Alunos');
+            
+            // Sheet 2: Todas as Mentorias
+            const allMentorias = mentoringSessions.map(s => {
+              const al = alunoMap.get(s.alunoId);
+              const prog = al?.programId ? programMap.get(al.programId) : null;
+              return {
+                'Aluno': al?.name || '',
+                'Empresa': prog?.name || '',
+                'Data': s.sessionDate ? String(s.sessionDate) : '',
+                'Presença': s.presence || '',
+                'Atividade': s.taskStatus || '',
+                'Engajamento': s.engagementScore ?? '',
+              };
+            });
+            if (allMentorias.length > 0) {
+              const ws2 = XLSX.utils.json_to_sheet(allMentorias);
+              XLSX.utils.book_append_sheet(wb, ws2, 'Mentorias');
+            }
+          }
+          
+          // Generate buffer and upload
+          const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+          const timestamp = Date.now();
+          const fileKey = `reports/${ctx.user.id}/${timestamp}-${input.name.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
+          const { url } = await storagePut(fileKey, buffer, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+          
+          // Update report with file URL
+          if (id) {
+            await db.updateReport(id, { fileKey, fileUrl: url });
+          }
+        } catch (err) {
+          console.error('Error generating report file:', err);
+          // Report record exists but file generation failed - user can retry
+        }
         
         return { id, success: true };
       }),
@@ -3857,6 +4029,13 @@ export const appRouter = router({
       .input(z.object({ alunoId: z.number() }))
       .query(async ({ input }) => {
         return await db.checkReavaliacaoPendente(input.alunoId);
+      }),
+
+    // Jornadas agrupadas por turma (para Dashboard Gestor)
+    porTurma: managerProcedure
+      .input(z.object({ empresa: z.string().optional() }))
+      .query(async ({ input }) => {
+        return await db.getJornadasPorTurma(input.empresa);
       }),
   }),
 
