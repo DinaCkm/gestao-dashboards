@@ -780,6 +780,18 @@ export async function getEventsByProgram(programId: number): Promise<Event[]> {
   return await db.select().from(events).where(eq(events.programId, programId));
 }
 
+/**
+ * Busca eventos do programa OU eventos sem programa (programId NULL).
+ * Mesma lógica usada em getWebinarsPendingAttendance para garantir consistência.
+ */
+export async function getEventsByProgramOrGlobal(programId: number): Promise<Event[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(events).where(
+    or(eq(events.programId, programId), isNull(events.programId))
+  );
+}
+
 // ============ EVENT PARTICIPATION FUNCTIONS ============
 export async function insertEventParticipation(participations: InsertEventParticipation[]): Promise<void> {
   const db = await getDb();
@@ -2898,28 +2910,32 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
     });
   }
 
-  // 7. Eventos/Webinários com datas
+  // 7. Eventos/Webinários com datas - UNIFICAÇÃO: incluir TODOS os eventos do programa
   const participacoes = await getEventParticipationByAluno(alunoId);
-  // Buscar detalhes dos eventos diretamente pelos IDs das participações
-  const eventIds = Array.from(new Set(participacoes.map(ep => ep.eventId)));
-  let allRelevantEvents: Event[] = [];
-  if (eventIds.length > 0) {
+  const participationMap = new Map(participacoes.map(ep => [ep.eventId, ep]));
+  
+  // Buscar TODOS os eventos do programa (ou globais se programId é null)
+  let allProgramEvents: Event[] = [];
+  if (aluno.programId) {
+    allProgramEvents = await getEventsByProgramOrGlobal(aluno.programId);
+  } else {
+    // Se aluno não tem programa, buscar todos os eventos
     const db2 = await getDb();
     if (db2) {
-      allRelevantEvents = await db2.select().from(events).where(inArray(events.id, eventIds));
+      allProgramEvents = await db2.select().from(events);
     }
   }
-  const eventMap = new Map(allRelevantEvents.map(e => [e.id, e]));
-
-  const eventosDetalhados = participacoes.map(ep => {
-    const evento = eventMap.get(ep.eventId);
+  
+  // Montar lista unificada: eventos com participação + eventos sem participação (ausentes)
+  const eventosDetalhados = allProgramEvents.map(evt => {
+    const part = participationMap.get(evt.id);
     return {
-      id: ep.id,
-      eventId: ep.eventId,
-      titulo: evento?.title || `Evento #${ep.eventId}`,
-      tipo: evento?.eventType || 'webinar',
-      data: evento?.eventDate || null,
-      status: ep.status,
+      id: part?.id || 0,
+      eventId: evt.id,
+      titulo: evt.title || `Evento #${evt.id}`,
+      tipo: evt.eventType || 'webinar',
+      data: evt.eventDate || null,
+      status: part?.status || 'ausente',
     };
   });
 

@@ -1059,7 +1059,7 @@ export const appRouter = router({
               }
               const _evtsByProg3 = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
               for (const _prog3 of programsList) {
-                _evtsByProg3.set(_prog3.id, await db.getEventsByProgram(_prog3.id));
+                _evtsByProg3.set(_prog3.id, await db.getEventsByProgramOrGlobal(_prog3.id));
               }
               for (const _a3 of alunosList) {
                 if (!_a3.programId) continue;
@@ -1523,7 +1523,7 @@ export const appRouter = router({
         }
         const _evtsByProg = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
         for (const _prog of programsList) {
-          _evtsByProg.set(_prog.id, await db.getEventsByProgram(_prog.id));
+          _evtsByProg.set(_prog.id, await db.getEventsByProgramOrGlobal(_prog.id));
         }
         for (const _a of alunosList) {
           if (!_a.programId) continue;
@@ -1647,7 +1647,7 @@ export const appRouter = router({
         }
         const _evtsByProg = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
         for (const _prog of programsList) {
-          _evtsByProg.set(_prog.id, await db.getEventsByProgram(_prog.id));
+          _evtsByProg.set(_prog.id, await db.getEventsByProgramOrGlobal(_prog.id));
         }
         for (const _a of alunosList) {
           if (!_a.programId) continue;
@@ -1822,7 +1822,7 @@ export const appRouter = router({
         }
         const _evtsByProg = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
         for (const _prog of programsList) {
-          _evtsByProg.set(_prog.id, await db.getEventsByProgram(_prog.id));
+          _evtsByProg.set(_prog.id, await db.getEventsByProgramOrGlobal(_prog.id));
         }
         for (const _a of alunosList) {
           if (!_a.programId) continue;
@@ -1940,7 +1940,7 @@ export const appRouter = router({
           }
           const _evtsByProg = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
           for (const _prog of programsList) {
-            _evtsByProg.set(_prog.id, await db.getEventsByProgram(_prog.id));
+            _evtsByProg.set(_prog.id, await db.getEventsByProgramOrGlobal(_prog.id));
           }
           for (const _a of alunosList) {
             if (!_a.programId) continue;
@@ -2095,7 +2095,7 @@ export const appRouter = router({
           }
           const _evtsByProg = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
           for (const _prog of programsList) {
-            _evtsByProg.set(_prog.id, await db.getEventsByProgram(_prog.id));
+            _evtsByProg.set(_prog.id, await db.getEventsByProgramOrGlobal(_prog.id));
           }
           for (const _a of alunosList) {
             if (!_a.programId) continue;
@@ -2285,7 +2285,7 @@ export const appRouter = router({
       // Buscar todos os eventos por programa
       const eventsByProgram = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
       for (const prog of programsList) {
-        const progEvents = await db.getEventsByProgram(prog.id);
+        const progEvents = await db.getEventsByProgramOrGlobal(prog.id);
         eventsByProgram.set(prog.id, progEvents);
       }
       // Para cada aluno, adicionar eventos ausentes (sem registro de participação)

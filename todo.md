@@ -1729,3 +1729,10 @@
 - [x] Atualizar cards de resumo (Presenças/Ausências/Total) para usar dados consistentes com a lista
 - [x] Garantir que Indicador 1 (Webinars) use a mesma lógica
 - [x] Verificar que Dashboard Gestor e Dashboard Aluno também ficam consistentes
+
+## Bug: Unificação de eventos não refletindo na interface (06/03/2026)
+- [x] Investigar por que os dados de eventos não mudaram no portal do aluno após publicação
+- [x] Causa raiz: eventos na tabela `events` têm programId=NULL, getEventsByProgram(18) retornava 0 resultados
+- [x] Criação de getEventsByProgramOrGlobal() que busca eventos do programa OU com programId NULL
+- [x] Correção de getAlunoDetalheCompleto() no db.ts para incluir todos os eventos do programa (4ª fonte de dados identificada)
+- [x] Verificado visualmente: Carolina agora mostra 32 total, 23 presenças, 72% taxa, 9 ausências

@@ -1,0 +1,14 @@
+{
+  "query": "SELECT programId, COUNT(*) as total FROM events GROUP BY programId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT programId, COUNT(*) as total FROM events GROUP BY programId;",
+  "rows": [
+    {
+      "programId": "NULL",
+      "total": "32"
+    }
+  ],
+  "messages": [],
+  "stdout": "programId\ttotal\nNULL\t32\n",
+  "stderr": "",
+  "execution_time_ms": 416
+}
