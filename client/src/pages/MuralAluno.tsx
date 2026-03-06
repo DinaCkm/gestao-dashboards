@@ -626,7 +626,8 @@ export default function MuralAluno() {
           {/* Attendance Banner - redireciona para Portal do Aluno aba Eventos */}
           <AttendanceBanner />
 
-          {/* Card ECO_EVOLUIR */}
+          {/* Card ECO_EVOLUIR - apenas para SEBRAE TO (programId=17) */}
+          {user?.programId === 17 && (
           <a
             href="https://www.evoluirckm.com"
             target="_blank"
@@ -662,6 +663,7 @@ export default function MuralAluno() {
               </div>
             </div>
           </a>
+          )}
 
           {/* Card B.E.M. - Área de Aulas */}
           <a

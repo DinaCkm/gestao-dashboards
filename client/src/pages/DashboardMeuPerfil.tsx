@@ -772,7 +772,8 @@ export default function DashboardMeuPerfil() {
           </div>
         )}
 
-        {/* Card ECO_EVOLUIR */}
+        {/* Card ECO_EVOLUIR - apenas para SEBRAE TO */}
+        {aluno.programa && aluno.programa.toUpperCase().includes('SEBRAE') && aluno.programa.toUpperCase().includes('TO') && (
         <a
           href="https://www.evoluirckm.com"
           target="_blank"
@@ -804,6 +805,7 @@ export default function DashboardMeuPerfil() {
             </div>
           </div>
         </a>
+        )}
 
         {/* Card B.E.M. - Área de Aulas */}
         <a

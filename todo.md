@@ -1711,3 +1711,6 @@
 
 ## Bug: Agenda de reunião em grupo - nomes dos mentorados não aparecem (06/03/2026)
 - [x] Na tela de criação de agenda/reunião em grupo, ao selecionar convidados, aparece somente o nome da empresa e não o nome dos mentorados. CORRIGIDO: campo usava aluno.name mas backend retorna aluno.nome. Layout melhorado com nome em destaque e empresa abaixo, max-h-64, melhor espaçamento.
+
+## Card ECO_EVOLUIR - Filtro por empresa (06/03/2026)
+- [x] Fazer o card ECO_EVOLUIR aparecer apenas para alunos da empresa SEBRAE TO no Portal do Aluno - CORRIGIDO: condição adicionada em DashboardMeuPerfil.tsx (aluno.programa contém 'SEBRAE' e 'TO') e MuralAluno.tsx (user.programId === 17)
