@@ -245,7 +245,7 @@ function DashboardLayoutContent({
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
                   <img
-                    src="/logo-bem-icon.d3b12449.png"
+                    src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/bem-logo-cerebro_a018b383.png"
                     alt="B.E.M."
                     className="h-7 object-contain shrink-0"
                   />
@@ -255,7 +255,7 @@ function DashboardLayoutContent({
                 </div>
               ) : (
                 <img
-                  src="/logo-bem-icon.d3b12449.png"
+                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/bem-logo-cerebro_a018b383.png"
                   alt="B.E.M."
                   className="h-7 object-contain"
                 />

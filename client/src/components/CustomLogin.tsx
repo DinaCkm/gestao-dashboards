@@ -107,7 +107,7 @@ export default function CustomLogin() {
           
           <div className="flex flex-col items-center gap-4 relative z-10">
             <img
-              src="/logo-bem-full.d3b12449.png"
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/bem-logo-cerebro_a018b383.png"
               alt="B.E.M. - Competências do B.E.M."
               className="h-20 object-contain"
             />
@@ -209,7 +209,7 @@ export default function CustomLogin() {
         
         <div className="flex flex-col items-center gap-4 relative z-10">
           <img
-            src="/logo-bem-full.d3b12449.png"
+            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/bem-logo-cerebro_a018b383.png"
             alt="B.E.M. - Competências do B.E.M."
             className="h-20 object-contain"
           />

@@ -603,7 +603,7 @@ export default function MuralAluno() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <img
-                src="/logo-bem-full.d3b12449.png"
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/bem-logo-cerebro_a018b383.png"
                 alt="B.E.M. - Competências do B.E.M."
                 className="h-14 object-contain hidden sm:block"
               />
