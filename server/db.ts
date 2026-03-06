@@ -3914,13 +3914,41 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
 
   // Buscar webinars agendados para verificar endDate e youtubeLink
   const allScheduledWebinars = await db.select().from(scheduledWebinars);
-  const webinarByTitle = new Map(allScheduledWebinars.map(w => [w.title?.toLowerCase().trim(), w]));
+  // Função de normalização de título para matching tolerante
+  // Remove diferenças de traços (– vs -), espaços extras, "Aula 01 - ", etc.
+  const normalizeTitle = (title: string | null): string => {
+    if (!title) return '';
+    return title
+      .toLowerCase()
+      .trim()
+      .replace(/[\u2013\u2014]/g, '-')  // Converter em-dash e en-dash para hífen
+      .replace(/\s+/g, ' ')             // Normalizar espaços múltiplos
+      .replace(/\s*-\s*/g, ' - ')       // Normalizar espaços ao redor de hífens
+      .trim();
+  };
+  // Criar mapa com título normalizado
+  const webinarByTitle = new Map(allScheduledWebinars.map(w => [normalizeTitle(w.title), w]));
+  // Também criar mapa secundário sem prefixo "aula XX - " para matching parcial
+  const webinarByTitleNoPrefix = new Map<string, typeof allScheduledWebinars[0]>();
+  for (const w of allScheduledWebinars) {
+    const normalized = normalizeTitle(w.title);
+    // Remover prefixo como "2025/19 - aula 01 - " para ficar só com o conteúdo principal
+    const withoutAula = normalized.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*[-\u2013]\s*)?/i, '');
+    if (withoutAula) webinarByTitleNoPrefix.set(withoutAula, w);
+  }
   const now = new Date();
 
   // Retornar TODOS os eventos com status de presença
   return allEvents.map(evt => {
     const part = participationMap.get(evt.id);
-    const matchedWebinar = webinarByTitle.get(evt.title?.toLowerCase().trim() || '');
+    // Tentar match exato normalizado primeiro, depois match parcial sem prefixo
+    const normalizedEvtTitle = normalizeTitle(evt.title);
+    let matchedWebinar = webinarByTitle.get(normalizedEvtTitle) || null;
+    if (!matchedWebinar) {
+      // Tentar sem prefixo "aula XX - "
+      const evtWithoutAula = normalizedEvtTitle.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*[-\u2013]\s*)?/i, '');
+      matchedWebinar = webinarByTitleNoPrefix.get(evtWithoutAula) || null;
+    }
     const endDate = matchedWebinar?.endDate || matchedWebinar?.eventDate || evt.eventDate;
     const hasEnded = endDate ? new Date(endDate) < now : true;
     // Link do vídeo: prioridade para videoLink do evento, depois youtubeLink do webinar agendado

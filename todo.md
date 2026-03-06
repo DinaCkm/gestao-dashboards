@@ -1736,3 +1736,9 @@
 - [x] Criação de getEventsByProgramOrGlobal() que busca eventos do programa OU com programId NULL
 - [x] Correção de getAlunoDetalheCompleto() no db.ts para incluir todos os eventos do programa (4ª fonte de dados identificada)
 - [x] Verificado visualmente: Carolina agora mostra 32 total, 23 presenças, 72% taxa, 9 ausências
+
+## Bug: Evento 2025/19 sem link no portal do aluno (06/03/2026)
+- [x] Evento 2025/19 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias aparece com "Link em breve" e status "Ausente" no portal do aluno, mas tem link cadastrado na área de webinars do admin
+- [x] Causa raiz: matching de títulos entre tabelas events e scheduled_webinars falhava por diferenças de traços (– vs -), espaços e prefixo "Aula 01"
+- [x] Solução: normalização de títulos tolerante + fallback sem prefixo "aula XX" no getWebinarsPendingAttendance
+- [x] Verificado: todos os 4 eventos duplicados agora fazem match e retornam o youtubeLink correto
