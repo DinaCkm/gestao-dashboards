@@ -1814,23 +1814,43 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
               </AlertDescription>
             </Alert>
 
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
+                  <TableHead>Nome Completo</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>CPF</TableHead>
                   <TableHead>Empresa</TableHead>
+                  <TableHead>Turma</TableHead>
+                  <TableHead>Mentor</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {gerentesEmpresa.map((g: any) => (
                   <TableRow key={g.id}>
-                    <TableCell className="font-medium">{g.name}</TableCell>
-                    <TableCell>{g.email || "-"}</TableCell>
+                    <TableCell className="font-medium">
+                      <div>
+                        <p>{g.name}</p>
+                        {g.alunoId && <p className="text-xs text-muted-foreground">Aluno #{g.alunoId}</p>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{g.email || "-"}</TableCell>
+                    <TableCell className="text-sm font-mono">
+                      {g.cpf ? g.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : "-"}
+                    </TableCell>
                     <TableCell>{g.programName || "-"}</TableCell>
+                    <TableCell className="text-sm">{g.turmaName || "-"}</TableCell>
+                    <TableCell className="text-sm">
+                      {g.mentorName ? (
+                        <div>
+                          <p>{g.mentorName}</p>
+                          {g.mentorId && <p className="text-xs text-muted-foreground">ID: {g.mentorId}</p>}
+                        </div>
+                      ) : "-"}
+                    </TableCell>
                     <TableCell>
                       {g.isAlsoStudent ? (
                         <Badge className="bg-blue-600">
@@ -1842,13 +1862,6 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                           <Building2 className="h-3 w-3 mr-1" />
                           Gerente Puro
                         </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {g.id ? (
-                        <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
-                      ) : (
-                        <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" /> Inativo</Badge>
                       )}
                     </TableCell>
                     <TableCell>
@@ -1866,13 +1879,14 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                 ))}
                 {gerentesEmpresa.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       Nenhum gerente de empresa com visão dupla cadastrado. Use "Promover Aluno" ou "Gerente Puro" para adicionar.
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
+            </div>
           </>
         )}
       </CardContent>

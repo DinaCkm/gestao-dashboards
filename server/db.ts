@@ -5219,8 +5219,22 @@ export async function getGerentesEmpresa(): Promise<any[]> {
 
   const allAlunos = await db.select().from(alunos);
   const allPrograms = await db.select().from(programs);
+  const allTurmas = await db.select().from(turmas);
+  const allConsultors = await db.select().from(consultors);
+  const allMentoringSessions = await db.select().from(mentoringSessions);
+  
   const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
   const programMap = new Map(allPrograms.map(p => [p.id, p]));
+  const turmaMap = new Map(allTurmas.map(t => [t.id, t]));
+  const consultorMap = new Map(allConsultors.map(c => [c.id, c]));
+  
+  // Mapear alunoId -> mentorId (primeiro mentor encontrado)
+  const alunoMentorMap = new Map<number, number>();
+  for (const ms of allMentoringSessions) {
+    if (ms.alunoId && ms.consultorId && !alunoMentorMap.has(ms.alunoId)) {
+      alunoMentorMap.set(ms.alunoId, ms.consultorId);
+    }
+  }
 
   return managerUsers
     .filter(u => {
@@ -5231,11 +5245,14 @@ export async function getGerentesEmpresa(): Promise<any[]> {
     .map(u => {
       const aluno = u.alunoId ? alunoMap.get(u.alunoId) : null;
       const program = u.programId ? programMap.get(u.programId) : null;
+      const turma = aluno?.turmaId ? turmaMap.get(aluno.turmaId) : null;
+      const mentorId = u.alunoId ? alunoMentorMap.get(u.alunoId) : null;
+      const mentor = mentorId ? consultorMap.get(mentorId) : null;
       return {
         id: u.id,
-        name: u.name,
-        email: u.email,
-        cpf: u.cpf,
+        name: aluno?.name || u.name,
+        email: aluno?.email || u.email,
+        cpf: aluno?.cpf || u.cpf,
         role: u.role,
         programId: u.programId,
         programName: program?.name || null,
@@ -5243,6 +5260,10 @@ export async function getGerentesEmpresa(): Promise<any[]> {
         alunoName: aluno?.name || null,
         isAlsoStudent: !!u.alunoId,
         consultorId: u.consultorId,
+        turmaId: aluno?.turmaId || null,
+        turmaName: turma?.name || null,
+        mentorId: mentorId || null,
+        mentorName: mentor?.name || null,
         createdAt: u.createdAt,
       };
     });

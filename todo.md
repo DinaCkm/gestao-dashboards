@@ -1627,3 +1627,4 @@
 - [x] Admin: seção "Gerentes de Empresa" nos Cadastros (atribuir aluno como gerente, cadastrar gerente puro, remover/alterar gerentes)
 - [x] Testes vitest para funcionalidades do papel duplo
 - [x] Bug: texto "P.D.I Evoluir" em vermelho sobreposto ao item "Relatórios" no menu lateral do admin
+- [x] Melhorar tab Gerentes no Cadastro: exibir nome completo, email, CPF, ID do mentor vinculado ao aluno
