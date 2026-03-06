@@ -3858,13 +3858,7 @@ export async function markWebinarAttendance(
  * Buscar webinars pendentes de presença para um aluno
  * Retorna eventos do programa do aluno onde ele ainda não marcou presença (selfReportedAt é null)
  */
-export async function getWebinarsPendingAttendance(alunoId: number): Promise<{
-  eventId: number;
-  eventName: string;
-  eventDate: Date | null;
-  hasParticipation: boolean;
-  status: string | null;
-}[]> {
+export async function getWebinarsPendingAttendance(alunoId: number): Promise<any[]> {
   const db = await getDb();
   if (!db) return [];
 
@@ -3884,34 +3878,42 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<{
 
   const participationMap = new Map(participations.map(p => [p.eventId, p]));
 
-  // Buscar webinars agendados para verificar endDate
+  // Buscar webinars agendados para verificar endDate e youtubeLink
   const allScheduledWebinars = await db.select().from(scheduledWebinars);
   const webinarByTitle = new Map(allScheduledWebinars.map(w => [w.title?.toLowerCase().trim(), w]));
   const now = new Date();
 
-  // Retornar eventos onde selfReportedAt é null (não marcou presença pelo sistema)
-  // E que já terminaram (endDate < agora)
+  // Retornar TODOS os eventos com status de presença
   return allEvents.map(evt => {
     const part = participationMap.get(evt.id);
-    // Tentar encontrar o webinar agendado correspondente para verificar endDate
     const matchedWebinar = webinarByTitle.get(evt.title?.toLowerCase().trim() || '');
     const endDate = matchedWebinar?.endDate || matchedWebinar?.eventDate || evt.eventDate;
-    const hasEnded = endDate ? new Date(endDate) < now : true; // Se não tem data, assume que já passou
+    const hasEnded = endDate ? new Date(endDate) < now : true;
+    // Link do vídeo: prioridade para videoLink do evento, depois youtubeLink do webinar agendado
+    const videoLink = evt.videoLink || matchedWebinar?.youtubeLink || null;
+    const isPresent = part?.status === 'presente';
+    const selfReported = !!part?.selfReportedAt;
 
     return {
       eventId: evt.id,
       scheduledWebinarId: matchedWebinar?.id || null,
-      eventName: evt.title,
+      title: evt.title,
+      eventType: evt.eventType || 'webinar',
       eventDate: evt.eventDate,
-      hasParticipation: !!part,
-      status: part?.status || null,
-      selfReported: !!part?.selfReportedAt,
+      videoLink,
+      status: isPresent ? 'presente' : 'ausente',
+      selfReported,
       reflexao: part?.reflexao || null,
+      selfReportedAt: part?.selfReportedAt || null,
       hasEnded,
-      endDate: endDate || null,
-      youtubeLink: matchedWebinar?.youtubeLink || null,
     };
-  }).filter(e => !participationMap.get(e.eventId)?.selfReportedAt && e.hasEnded);
+  }).sort((a, b) => {
+    // Ordenar: ausentes primeiro, depois por data decrescente
+    if (a.status !== b.status) return a.status === 'ausente' ? -1 : 1;
+    const dateA = a.eventDate ? new Date(a.eventDate).getTime() : 0;
+    const dateB = b.eventDate ? new Date(b.eventDate).getTime() : 0;
+    return dateB - dateA;
+  });
 }
 
 /**
@@ -3951,6 +3953,15 @@ export async function getWebinarReflections(eventId?: number) {
   }));
 }
 
+
+/**
+ * Atualizar o link de vídeo de um evento
+ */
+export async function updateEventVideoLink(eventId: number, videoLink: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(events).set({ videoLink }).where(eq(events.id, eventId));
+}
 
 /**
  * Buscar evento por ID

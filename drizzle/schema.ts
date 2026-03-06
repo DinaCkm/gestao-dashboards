@@ -239,6 +239,7 @@ export const events = mysqlTable("events", {
   title: varchar("title", { length: 500 }).notNull(),
   eventType: mysqlEnum("eventType", ["webinar", "aula", "workshop", "curso_online", "outro"]).default("webinar"),
   eventDate: date("eventDate"),
+  videoLink: varchar("videoLink", { length: 500 }), // Link da gravação/vídeo do evento (YouTube, etc.)
   programId: int("programId"),
   trilhaId: int("trilhaId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

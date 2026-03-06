@@ -211,6 +211,13 @@
       "when": 1772757669057,
       "tag": "0029_glorious_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1772759313960,
+      "tag": "0030_empty_supreme_intelligence",
+      "breakpoints": true
     }
   ]
 }

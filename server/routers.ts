@@ -3485,12 +3485,23 @@ export const appRouter = router({
         return { success: true, ...result };
       }),
 
-    // Listar webinars pendentes de presença do aluno
+    // Listar TODOS os eventos do aluno (lista unificada com status)
     pending: protectedProcedure
       .query(async ({ ctx }) => {
         const aluno = await db.getAlunoByEmail(ctx.user.email || '');
         if (!aluno) return [];
         return await db.getWebinarsPendingAttendance(aluno.id);
+      }),
+
+    // Admin: atualizar videoLink de um evento importado
+    updateVideoLink: adminProcedure
+      .input(z.object({
+        eventId: z.number(),
+        videoLink: z.string().min(1, 'Link do vídeo é obrigatório'),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateEventVideoLink(input.eventId, input.videoLink);
+        return { success: true };
       }),
 
     // Listar webinars já confirmados pelo aluno (com reflexão)

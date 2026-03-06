@@ -1556,3 +1556,16 @@
 - [x] Frontend Aluno: agendamento de sessão escolhendo horário disponível do mentor
 - [x] Agendamento de Grupo (Opção 2): Mentor define sessão de grupo com data/horário + alunos convidados, alunos confirmam presença (sim/não)
 - [x] Frontend Aluno: agendamento de sessão individual + confirmação de convites de grupo
+- [ ] Fluxo de presença: antes de marcar presença, aluno deve assistir o vídeo primeiro (botão Assistir + botão Marcar Presença)
+- [ ] Unificar Eventos Disponíveis + Histórico em lista única: Nome | Data | Link (Assistir) | Presente/Ausente | Marcar Presença
+- [ ] Adicionar campo videoLink na tabela events para link de gravação
+
+## Unificação da Aba Eventos no Dashboard do Aluno (05/03/2026)
+- [x] Adicionar campo videoLink na tabela events (migração aplicada)
+- [x] Criar função updateEventVideoLink no db.ts
+- [x] Criar rota admin attendance.updateVideoLink para atualizar link de vídeo dos eventos
+- [x] Refatorar getWebinarsPendingAttendance para retornar TODOS os eventos (não apenas pendentes) com status, videoLink
+- [x] Unificar seções "Próximos Eventos", "Pendentes de Presença", "Histórico de Eventos" e "Gravações Disponíveis" em uma lista única
+- [x] Lista unificada mostra: Nome do Evento | Data | Botão Assistir (link do vídeo) | Status (Presente/Ausente) | Botão Marcar Presença
+- [x] Ordenação: ausentes primeiro, depois por data decrescente
+- [x] Testes vitest para attendance.pending, attendance.updateVideoLink e attendance.markPresence
