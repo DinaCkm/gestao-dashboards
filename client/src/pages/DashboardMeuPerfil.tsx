@@ -13,8 +13,9 @@ import {
   CheckCircle2, XCircle, Clock, GraduationCap, Trophy, Star, Zap,
   Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
   ClipboardCheck, Play, ExternalLink, FileText, Send, Route, FileBarChart,
-  AlertTriangle, Briefcase, HelpCircle, Upload, Paperclip, FileUp,
+  AlertTriangle, Briefcase, HelpCircle, Upload, Paperclip, FileUp, Bell,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -158,9 +159,10 @@ export default function DashboardMeuPerfil() {
   const evidenceFileRef = useRef<HTMLInputElement>(null);
   const [taskDetailOpen, setTaskDetailOpen] = useState<number | null>(null);
 
-  // State para reflexão de webinar
+  // State para reflexão de webinar e eventos importados
   const [reflexaoText, setReflexaoText] = useState<Record<number, string>>({});
   const [expandedWebinar, setExpandedWebinar] = useState<number | null>(null);
+  const [expandedEventoImportado, setExpandedEventoImportado] = useState<number | null>(null);
 
   // Mutations
   const utils = trpc.useUtils();
@@ -205,7 +207,9 @@ export default function DashboardMeuPerfil() {
     onSuccess: () => {
       utils.attendance.myAttendance.invalidate();
       utils.attendance.pending.invalidate();
+      utils.indicadores.meuDashboard.invalidate();
       setExpandedWebinar(null);
+      setExpandedEventoImportado(null);
     },
   });
 
@@ -754,9 +758,7 @@ export default function DashboardMeuPerfil() {
             <TabsTrigger value="tarefas" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <ClipboardCheck className="h-4 w-4 mr-1" /> Tarefas
             </TabsTrigger>
-            <TabsTrigger value="webinarios" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <Play className="h-4 w-4 mr-1" /> Webinários
-            </TabsTrigger>
+
             <TabsTrigger value="cursos" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <GraduationCap className="h-4 w-4 mr-1" /> Cursos
             </TabsTrigger>
@@ -1263,6 +1265,12 @@ export default function DashboardMeuPerfil() {
 
           {/* === HISTÓRICO DE MENTORIAS === */}
           <TabsContent value="mentorias" className="mt-4">
+            {/* Card do Perfil do Mentor */}
+            {aluno.mentorId && <MentorProfileCard mentorId={aluno.mentorId} mentorName={aluno.mentor} />}
+
+            {/* Agendamento de Sessão + Convites de Grupo */}
+            {aluno.mentorId && <AlunoAgendamentoSection alunoId={aluno.id} consultorId={aluno.mentorId} mentorName={aluno.mentor} />}
+
             <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-sm text-gray-700">Histórico de Sessões de Mentoria</CardTitle>
@@ -1332,42 +1340,345 @@ export default function DashboardMeuPerfil() {
             </Card>
           </TabsContent>
 
-          {/* === PARTICIPAÇÃO EM EVENTOS === */}
+          {/* === EVENTOS UNIFICADO (Webinários + Eventos Importados) === */}
           <TabsContent value="eventos" className="mt-4">
-            <Card className="bg-white border border-gray-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-sm text-gray-700">Participação em Eventos e Webinars</CardTitle>
-                <CardDescription className="text-gray-500">{indicadores.eventosPresente} presenças de {indicadores.totalEventos} eventos</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {eventos && eventos.length > 0 ? (
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
-                    {eventos.map((evento: any, idx: number) => (
-                      <div key={evento.id || idx} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
-                        <div className="flex-shrink-0">
-                          <Video className={`h-5 w-5 ${evento.status === "presente" ? "text-emerald-600" : "text-red-500"}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 font-medium">{evento.titulo}</p>
-                          <p className="text-xs text-gray-500">
-                            {evento.tipo === "webinar" ? "Webinar" : evento.tipo === "workshop" ? "Workshop" : "Evento"}
-                            {evento.data && (<> • {new Date(evento.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</>)}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className={evento.status === "presente" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-red-50 text-red-700 border-red-300"}>
-                          {evento.status === "presente" ? "Presente" : "Ausente"}
-                        </Badge>
+            <div className="space-y-6">
+              {/* Resumo com contadores visuais */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200">
+                  <CardContent className="p-4 text-center">
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-200/60 mb-2">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-700" />
+                    </div>
+                    <p className="text-2xl font-bold text-emerald-800">{indicadores.eventosPresente}</p>
+                    <p className="text-xs text-emerald-600 font-medium">Presenças</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200">
+                  <CardContent className="p-4 text-center">
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-red-200/60 mb-2">
+                      <XCircle className="h-5 w-5 text-red-700" />
+                    </div>
+                    <p className="text-2xl font-bold text-red-800">{indicadores.totalEventos - indicadores.eventosPresente}</p>
+                    <p className="text-xs text-red-600 font-medium">Ausências</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200">
+                  <CardContent className="p-4 text-center">
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-200/60 mb-2">
+                      <Video className="h-5 w-5 text-blue-700" />
+                    </div>
+                    <p className="text-2xl font-bold text-blue-800">{indicadores.totalEventos}</p>
+                    <p className="text-xs text-blue-600 font-medium">Total de Eventos</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Dica informativa */}
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <div className="flex-shrink-0 mt-0.5">
+                  <Clock className="h-4 w-4 text-amber-600" />
+                </div>
+                <p className="text-xs text-amber-800">
+                  <span className="font-semibold">Dica:</span> Se você não assistiu ao vivo, pode assistir a gravação e marcar presença a qualquer momento. Clique em "Marcar Presença" nos eventos com status Ausente.
+                </p>
+              </div>
+
+              {/* Próximos Eventos */}
+              {upcomingWebinars && upcomingWebinars.length > 0 && (
+                <Card className="bg-white border-2 border-blue-300 shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100">
+                        <Play className="h-3.5 w-3.5 text-blue-600" />
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    <Video className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Nenhum evento registrado ainda</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      Próximos Eventos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {upcomingWebinars.map((w: any) => (
+                        <div key={w.id} className="group p-4 rounded-xl bg-gradient-to-br from-blue-50/50 to-white border border-blue-100 hover:shadow-md hover:border-blue-200 transition-all duration-200">
+                          {w.cardImageUrl && (
+                            <img src={w.cardImageUrl} alt={w.title} className="w-full h-36 object-cover rounded-lg mb-3 shadow-sm" />
+                          )}
+                          <h4 className="text-sm font-semibold text-gray-900 mb-1 group-hover:text-blue-700 transition-colors">{w.title}</h4>
+                          {w.description && <p className="text-xs text-gray-600 mb-3 line-clamp-2">{w.description}</p>}
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                            <span className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(w.eventDate).toLocaleDateString("pt-BR")}
+                            </span>
+                            <span className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full">
+                              <Clock className="h-3 w-3" />
+                              {new Date(w.eventDate).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                            {w.speaker && (
+                              <span className="inline-flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full">
+                                <User className="h-3 w-3" />
+                                {w.speaker}
+                              </span>
+                            )}
+                          </div>
+                          {w.meetingLink && (
+                            <a href={w.meetingLink} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
+                              <ExternalLink className="h-3 w-3" /> Acessar reunião
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Pendentes de Presença */}
+              {pendingWebinars && pendingWebinars.length > 0 && (
+                <Card className="bg-white border-2 border-amber-300 shadow-md">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold text-amber-800 flex items-center gap-2">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 animate-pulse">
+                        <Clock className="h-3.5 w-3.5 text-amber-600" />
+                      </div>
+                      Pendentes de Presença
+                      <Badge className="bg-amber-200 text-amber-800 border-0 ml-1">{pendingWebinars.length}</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {pendingWebinars.map((w: any) => (
+                        <div key={w.eventId} className="rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 overflow-hidden">
+                          <div className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-200/60 flex items-center justify-center">
+                                <Video className="h-5 w-5 text-amber-700" />
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-semibold text-gray-900">{w.title}</h4>
+                                <p className="text-xs text-gray-500">
+                                  {w.eventDate ? new Date(w.eventDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : ""}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => setExpandedWebinar(expandedWebinar === w.eventId ? null : w.eventId)}
+                              className={expandedWebinar === w.eventId ? "bg-gray-200 text-gray-700 hover:bg-gray-300" : "bg-[#F5991F] text-white hover:bg-[#F5991F]/90"}
+                            >
+                              {expandedWebinar === w.eventId ? "Fechar" : "Marcar Presença"}
+                            </Button>
+                          </div>
+                          {expandedWebinar === w.eventId && (
+                            <div className="px-4 pb-4 space-y-3 border-t border-amber-200 bg-white/50">
+                              <p className="text-xs text-gray-600 pt-3">Escreva uma reflexão sobre o evento (mínimo 20 caracteres):</p>
+                              <Textarea
+                                placeholder="O que você aprendeu neste evento? Como pretende aplicar no seu dia a dia?"
+                                value={reflexaoText[w.eventId] || ""}
+                                onChange={(e) => setReflexaoText(prev => ({ ...prev, [w.eventId]: e.target.value }))}
+                                className="border-amber-200 focus:border-amber-400 text-gray-900 text-sm min-h-[80px] bg-white"
+                              />
+                              <div className="flex items-center gap-3">
+                                <Button
+                                  size="sm"
+                                  onClick={() => markPresence.mutate({ eventId: w.eventId, reflexao: reflexaoText[w.eventId] || "" })}
+                                  disabled={!reflexaoText[w.eventId] || reflexaoText[w.eventId].length < 20 || markPresence.isPending}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                >
+                                  <Send className="h-3 w-3 mr-1.5" />
+                                  {markPresence.isPending ? "Enviando..." : "Confirmar Presença"}
+                                </Button>
+                                {reflexaoText[w.eventId] && reflexaoText[w.eventId].length < 20 && (
+                                  <p className="text-xs text-amber-600">{20 - (reflexaoText[w.eventId]?.length || 0)} caracteres restantes</p>
+                                )}
+                              </div>
+                              {markPresence.isError && (
+                                <p className="text-xs text-red-600">{markPresence.error?.message || "Erro ao marcar presença"}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Histórico de Todos os Eventos */}
+              <Card className="bg-white border border-gray-200 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100">
+                      <Video className="h-3.5 w-3.5 text-purple-600" />
+                    </div>
+                    Histórico de Eventos
+                  </CardTitle>
+                  <CardDescription className="text-gray-500 text-xs">
+                    Todos os eventos do seu programa. Clique em "Marcar Presença" nos eventos com status Ausente.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {eventos && eventos.length > 0 ? (
+                    <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+                      {eventos.map((evento: any, idx: number) => (
+                        <div key={evento.id || idx} className={`rounded-xl border overflow-hidden transition-all duration-200 ${
+                          evento.status === "ausente" && !evento.selfReportedAt
+                            ? "bg-gradient-to-r from-red-50/80 to-white border-red-200 hover:shadow-sm"
+                            : "bg-gradient-to-r from-emerald-50/30 to-white border-gray-100 hover:shadow-sm"
+                        }`}>
+                          <div className="flex items-center gap-3 p-3">
+                            <div className="flex-shrink-0">
+                              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                                evento.status === "presente" 
+                                  ? "bg-emerald-100" 
+                                  : "bg-red-100"
+                              }`}>
+                                {evento.status === "presente" ? (
+                                  <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600" />
+                                ) : (
+                                  <XCircle className="h-4.5 w-4.5 text-red-500" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-gray-900 font-medium leading-tight">{evento.titulo}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                                  {evento.tipo === "webinar" ? "Webinar" : evento.tipo === "workshop" ? "Workshop" : "Evento"}
+                                </span>
+                                {evento.data && (
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(evento.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                                  </span>
+                                )}
+                              </div>
+                              {evento.status === "presente" && evento.selfReportedAt && (
+                                <p className="text-xs text-emerald-600 mt-0.5 flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Presença confirmada em {new Date(evento.selfReportedAt).toLocaleDateString("pt-BR")}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {evento.status === "presente" ? (
+                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 font-medium">
+                                  Presente
+                                </Badge>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-red-100 text-red-700 border-red-200 font-medium">
+                                    Ausente
+                                  </Badge>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setExpandedEventoImportado(expandedEventoImportado === evento.eventId ? null : evento.eventId)}
+                                    className={expandedEventoImportado === evento.eventId 
+                                      ? "border-gray-300 text-gray-600 text-xs" 
+                                      : "border-amber-300 text-amber-700 hover:bg-amber-50 text-xs"
+                                    }
+                                  >
+                                    {expandedEventoImportado === evento.eventId ? "Fechar" : "Marcar Presença"}
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {/* Formulário de marcação de presença retroativa */}
+                          {evento.status === "ausente" && expandedEventoImportado === evento.eventId && (
+                            <div className="px-4 pb-4 space-y-3 border-t border-red-100 bg-white/80">
+                              <p className="text-xs text-gray-600 pt-3">Assistiu ao evento? Escreva uma reflexão para confirmar sua presença (mínimo 20 caracteres):</p>
+                              <Textarea
+                                placeholder="O que você aprendeu neste evento? Como pretende aplicar no seu dia a dia?"
+                                value={reflexaoText[evento.eventId] || ""}
+                                onChange={(e) => setReflexaoText(prev => ({ ...prev, [evento.eventId]: e.target.value }))}
+                                className="border-gray-200 focus:border-amber-400 text-gray-900 text-sm min-h-[80px] bg-white"
+                              />
+                              <div className="flex items-center gap-3">
+                                <Button
+                                  size="sm"
+                                  onClick={() => markPresence.mutate({ eventId: evento.eventId, reflexao: reflexaoText[evento.eventId] || "" })}
+                                  disabled={!reflexaoText[evento.eventId] || reflexaoText[evento.eventId].length < 20 || markPresence.isPending}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                >
+                                  <Send className="h-3 w-3 mr-1.5" />
+                                  {markPresence.isPending ? "Enviando..." : "Confirmar Presença"}
+                                </Button>
+                                {reflexaoText[evento.eventId] && reflexaoText[evento.eventId].length < 20 && (
+                                  <p className="text-xs text-amber-600">{20 - (reflexaoText[evento.eventId]?.length || 0)} caracteres restantes</p>
+                                )}
+                              </div>
+                              {markPresence.isError && (
+                                <p className="text-xs text-red-600">{markPresence.error?.message || "Erro ao marcar presença"}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-gray-400">
+                      <Video className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                      <p className="text-sm">Nenhum evento registrado ainda</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Gravações Disponíveis */}
+              {pastWebinars && pastWebinars.length > 0 && (
+                <Card className="bg-white border border-gray-200 shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-red-100">
+                        <Play className="h-3.5 w-3.5 text-red-600" />
+                      </div>
+                      Gravações Disponíveis
+                    </CardTitle>
+                    <CardDescription className="text-gray-500 text-xs">Assista às gravações dos eventos realizados</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                      {pastWebinars.map((w: any) => {
+                        const isConfirmed = confirmedEventIds.has(w.id);
+                        return (
+                          <div key={w.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50/80 border border-gray-100 hover:bg-gray-100/80 hover:shadow-sm transition-all duration-200">
+                            <div className="flex-shrink-0">
+                              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                                isConfirmed ? "bg-emerald-100" : "bg-gray-200"
+                              }`}>
+                                {isConfirmed ? (
+                                  <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600" />
+                                ) : (
+                                  <Play className="h-4.5 w-4.5 text-gray-500" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-gray-900 font-medium">{w.title}</p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(w.eventDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                                {w.speaker && ` • ${w.speaker}`}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {isConfirmed && (
+                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">Presente</Badge>
+                              )}
+                              {w.youtubeLink && (
+                                <a href={w.youtubeLink} target="_blank" rel="noopener noreferrer" 
+                                   className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-lg hover:bg-red-100 transition-colors">
+                                  <Play className="h-3 w-3" /> Assistir
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </TabsContent>
 
 
@@ -1666,176 +1977,6 @@ export default function DashboardMeuPerfil() {
             </Card>
           </TabsContent>
 
-          {/* === WEBINÁRIOS === */}
-          <TabsContent value="webinarios" className="mt-4">
-            <div className="space-y-6">
-              {/* Próximos Webinários */}
-              <Card className="bg-white border border-gray-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
-                    <Play className="h-4 w-4 text-blue-600" />
-                    Próximos Webinários
-                  </CardTitle>
-                  <CardDescription className="text-gray-500">Webinários agendados para o seu programa</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {upcomingWebinars && upcomingWebinars.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {upcomingWebinars.map((w: any) => (
-                        <div key={w.id} className="p-4 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
-                          {w.cardImageUrl && (
-                            <img src={w.cardImageUrl} alt={w.title} className="w-full h-32 object-cover rounded-lg mb-3" />
-                          )}
-                          <h4 className="text-sm font-medium text-gray-900 mb-1">{w.title}</h4>
-                          {w.description && <p className="text-xs text-gray-600 mb-2 line-clamp-2">{w.description}</p>}
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(w.eventDate).toLocaleDateString("pt-BR")}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {new Date(w.eventDate).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                            {w.speaker && (
-                              <span className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                {w.speaker}
-                              </span>
-                            )}
-                          </div>
-                          {w.meetingLink && (
-                            <a href={w.meetingLink} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700">
-                              <ExternalLink className="h-3 w-3" /> Acessar reunião
-                            </a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Play className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                      <p>Nenhum webinário agendado no momento</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Webinários Pendentes de Presença */}
-              {pendingWebinars && pendingWebinars.length > 0 && (
-                <Card className="bg-white border-2 border-amber-300 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-sm text-amber-700 flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Pendentes de Presença ({pendingWebinars.length})
-                    </CardTitle>
-                    <CardDescription className="text-gray-500">Marque sua presença e envie uma reflexão</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {pendingWebinars.map((w: any) => (
-                        <div key={w.eventId} className="p-4 rounded-lg bg-amber-50 border border-amber-200">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-900">{w.title}</h4>
-                              <p className="text-xs text-gray-500">
-                                {w.eventDate ? new Date(w.eventDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : ""}
-                              </p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setExpandedWebinar(expandedWebinar === w.eventId ? null : w.eventId)}
-                              className="text-amber-700 hover:text-amber-900"
-                            >
-                              {expandedWebinar === w.eventId ? "Fechar" : "Marcar Presença"}
-                            </Button>
-                          </div>
-                          {expandedWebinar === w.eventId && (
-                            <div className="mt-3 space-y-2">
-                              <p className="text-xs text-gray-600">Escreva uma reflexão sobre o webinário (mínimo 20 caracteres):</p>
-                              <Textarea
-                                placeholder="O que você aprendeu neste webinário? Como pretende aplicar no seu dia a dia?"
-                                value={reflexaoText[w.eventId] || ""}
-                                onChange={(e) => setReflexaoText(prev => ({ ...prev, [w.eventId]: e.target.value }))}
-                                className="border-gray-300 text-gray-900 text-sm min-h-[80px]"
-                              />
-                              <Button
-                                size="sm"
-                                onClick={() => markPresence.mutate({ eventId: w.eventId, reflexao: reflexaoText[w.eventId] || "" })}
-                                disabled={!reflexaoText[w.eventId] || reflexaoText[w.eventId].length < 20 || markPresence.isPending}
-                                className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
-                              >
-                                <Send className="h-3 w-3 mr-1" />
-                                {markPresence.isPending ? "Enviando..." : "Confirmar Presença"}
-                              </Button>
-                              {markPresence.isError && (
-                                <p className="text-xs text-red-600">{markPresence.error?.message || "Erro ao marcar presença"}</p>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Webinários Passados com Gravação */}
-              <Card className="bg-white border border-gray-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
-                    <Video className="h-4 w-4 text-purple-600" />
-                    Webinários Realizados
-                  </CardTitle>
-                  <CardDescription className="text-gray-500">Histórico de webinários com gravações disponíveis</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {pastWebinars && pastWebinars.length > 0 ? (
-                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                      {pastWebinars.map((w: any) => {
-                        const isConfirmed = confirmedEventIds.has(w.id);
-                        return (
-                          <div key={w.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors">
-                            <div className="flex-shrink-0">
-                              {isConfirmed ? (
-                                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                              ) : (
-                                <XCircle className="h-5 w-5 text-gray-400" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-gray-900 font-medium">{w.title}</p>
-                              <p className="text-xs text-gray-500">
-                                {new Date(w.eventDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
-                                {w.speaker && ` • ${w.speaker}`}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {isConfirmed && (
-                                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-xs">Presente</Badge>
-                              )}
-                              {w.youtubeLink && (
-                                <a href={w.youtubeLink} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-700">
-                                  <Play className="h-4 w-4" />
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Video className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                      <p>Nenhum webinário realizado ainda</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
           {/* === CURSOS === */}
           <TabsContent value="cursos" className="mt-4">
             <Card className="bg-white border border-gray-200 shadow-sm">
@@ -2066,5 +2207,310 @@ export default function DashboardMeuPerfil() {
         </Dialog>
       </div>
     </AlunoLayout>
+  );
+}
+
+
+function MentorProfileCard({ mentorId, mentorName }: { mentorId: number; mentorName: string }) {
+  const { data: profile } = trpc.mentor.getProfile.useQuery({ consultorId: mentorId });
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm mb-4">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-4">
+          {/* Foto */}
+          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-200 bg-white flex items-center justify-center shrink-0">
+            {profile?.photoUrl ? (
+              <img src={profile.photoUrl} alt={mentorName} className="w-full h-full object-cover" />
+            ) : (
+              <User className="h-8 w-8 text-blue-300" />
+            )}
+          </div>
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="font-semibold text-blue-900">{mentorName}</p>
+              <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">Mentor(a)</Badge>
+            </div>
+            {profile?.especialidade && (
+              <p className="text-sm text-blue-700 mt-0.5">{profile.especialidade}</p>
+            )}
+            {profile?.miniCurriculo && (
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="text-xs text-blue-600 hover:text-blue-800 mt-1 underline cursor-pointer"
+              >
+                {expanded ? 'Ocultar minicurrículo' : 'Ver minicurrículo'}
+              </button>
+            )}
+          </div>
+        </div>
+        {expanded && profile?.miniCurriculo && (
+          <div className="mt-3 pt-3 border-t border-blue-200">
+            <p className="text-sm text-blue-800 whitespace-pre-wrap">{profile.miniCurriculo}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
+function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId: number; consultorId: number; mentorName: string }) {
+  const { data: availability } = trpc.mentor.getAvailability.useQuery({ consultorId });
+  const { data: myAppointments } = trpc.mentor.getAppointments.useQuery({ consultorId });
+  const bookMutation = trpc.mentor.bookAppointment.useMutation();
+  const respondMutation = trpc.mentor.respondToInvite.useMutation();
+  const utils = trpc.useUtils();
+
+  const [showBooking, setShowBooking] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedSlot, setSelectedSlot] = useState<{ id?: number; startTime: string; endTime: string; googleMeetLink?: string | null } | null>(null);
+  const [bookingNotes, setBookingNotes] = useState('');
+
+  const DAYS_OF_WEEK = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+  // Filtrar convites de grupo pendentes para este aluno
+  const pendingInvites = (myAppointments || []).filter(
+    a => a.type === 'grupo' && a.participants.some((p: any) => p.alunoId === alunoId && p.status === 'convidado')
+  );
+
+  // Meus agendamentos (individuais e grupo confirmados)
+  const myBookings = (myAppointments || []).filter(
+    a => a.participants.some((p: any) => p.alunoId === alunoId && (p.status === 'confirmado' || p.status === 'agendado'))
+  );
+
+  const handleBook = async () => {
+    if (!selectedDate || !selectedSlot) {
+      toast.error('Selecione uma data e horário');
+      return;
+    }
+    try {
+      await bookMutation.mutateAsync({
+        consultorId,
+        availabilityId: selectedSlot.id || 0,
+        scheduledDate: selectedDate,
+        startTime: selectedSlot.startTime,
+        endTime: selectedSlot.endTime,
+        notes: bookingNotes || undefined,
+      });
+      utils.mentor.getAppointments.invalidate();
+      toast.success('Sessão agendada com sucesso!');
+      setShowBooking(false);
+      setSelectedDate('');
+      setSelectedSlot(null);
+      setBookingNotes('');
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao agendar sessão');
+    }
+  };
+
+  const handleRespond = async (appointmentId: number, response: 'confirmado' | 'recusado') => {
+    try {
+      await respondMutation.mutateAsync({ appointmentId, response });
+      utils.mentor.getAppointments.invalidate();
+      toast.success(response === 'confirmado' ? 'Presença confirmada!' : 'Convite recusado');
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao responder');
+    }
+  };
+
+  // Horários disponíveis do mentor agrupados por dia
+  const activeSlots = (availability || []).filter(a => a.isActive === 1);
+
+  return (
+    <div className="space-y-4 mb-4">
+      {/* Convites de Grupo Pendentes */}
+      {pendingInvites.length > 0 && (
+        <Card className="border-2 border-amber-300 bg-amber-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base text-amber-800">
+              <Bell className="h-5 w-5 animate-pulse" />
+              Convites de Sessão de Grupo ({pendingInvites.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {pendingInvites.map(invite => (
+              <div key={invite.id} className="p-4 bg-white rounded-lg border border-amber-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">{invite.title || 'Sessão de Grupo'}</p>
+                    <div className="flex items-center gap-3 text-sm text-gray-600 mt-1">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {new Date(invite.scheduledDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3.5 w-3.5" />
+                        {invite.startTime} — {invite.endTime}
+                      </span>
+                    </div>
+                    {invite.description && <p className="text-sm text-gray-500 mt-1">{invite.description}</p>}
+                    {invite.googleMeetLink && (
+                      <a href={invite.googleMeetLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline mt-1">
+                        <Video className="h-3.5 w-3.5" /> Link do Google Meet
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleRespond(invite.id, 'confirmado')}
+                      className="bg-green-600 hover:bg-green-700"
+                      disabled={respondMutation.isPending}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1" /> Confirmar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRespond(invite.id, 'recusado')}
+                      className="text-red-600 border-red-300 hover:bg-red-50"
+                      disabled={respondMutation.isPending}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" /> Recusar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Meus Agendamentos */}
+      {myBookings.length > 0 && (
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm text-gray-700">
+              <Calendar className="h-4 w-4 text-blue-600" />
+              Minhas Sessões Agendadas ({myBookings.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {myBookings.map(booking => (
+                <div key={booking.id} className="flex items-center justify-between p-3 rounded-lg bg-blue-50 border border-blue-100">
+                  <div className="flex items-center gap-3">
+                    <Badge variant={booking.type === 'grupo' ? 'default' : 'secondary'} className="text-xs">
+                      {booking.type === 'grupo' ? 'Grupo' : 'Individual'}
+                    </Badge>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {booking.title || `Sessão com ${mentorName}`}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(booking.scheduledDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })} • {booking.startTime} — {booking.endTime}
+                      </p>
+                    </div>
+                  </div>
+                  {booking.googleMeetLink && (
+                    <a href={booking.googleMeetLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                      <Video className="h-4 w-4" /> Entrar
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Botão para Agendar Nova Sessão */}
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-sm text-gray-700">
+              <Clock className="h-4 w-4 text-green-600" />
+              Agendar Sessão de Mentoria
+            </CardTitle>
+            <Button
+              size="sm"
+              variant={showBooking ? 'outline' : 'default'}
+              onClick={() => setShowBooking(!showBooking)}
+              className={showBooking ? '' : 'bg-[#1E3A5F] hover:bg-[#2a4f7f]'}
+            >
+              {showBooking ? 'Fechar' : 'Agendar Sessão'}
+            </Button>
+          </div>
+        </CardHeader>
+        {showBooking && (
+          <CardContent className="space-y-4">
+            {activeSlots.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                <p>O mentor ainda não configurou horários disponíveis.</p>
+              </div>
+            ) : (
+              <>
+                {/* Horários disponíveis do mentor */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Horários disponíveis do mentor:</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {DAYS_OF_WEEK.map((dayName, dayIdx) => {
+                      const daySlots = activeSlots.filter(a => a.dayOfWeek === dayIdx);
+                      if (daySlots.length === 0) return null;
+                      return (
+                        <div key={dayIdx} className="p-3 rounded-lg border border-gray-200 bg-gray-50">
+                          <p className="text-xs font-semibold text-gray-600 mb-1">{dayName}</p>
+                          {daySlots.map((slot, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setSelectedSlot(slot)}
+                              className={`block w-full text-left text-sm p-2 rounded mt-1 transition-colors ${
+                                selectedSlot?.startTime === slot.startTime && selectedSlot?.endTime === slot.endTime
+                                  ? 'bg-blue-100 border border-blue-300 text-blue-800'
+                                  : 'bg-white border border-gray-200 hover:bg-blue-50 text-gray-700'
+                              }`}
+                            >
+                              {slot.startTime} — {slot.endTime}
+                              {slot.googleMeetLink && <Video className="h-3 w-3 inline ml-2 text-blue-500" />}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {selectedSlot && (
+                  <>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Data da sessão:</Label>
+                      <Input
+                        type="date"
+                        value={selectedDate}
+                        onChange={e => setSelectedDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Observações (opcional):</Label>
+                      <Textarea
+                        placeholder="Descreva o tema que gostaria de abordar na sessão..."
+                        value={bookingNotes}
+                        onChange={e => setBookingNotes(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={handleBook}
+                        disabled={bookMutation.isPending || !selectedDate}
+                        className="bg-[#1E3A5F] hover:bg-[#2a4f7f]"
+                      >
+                        <Calendar className="h-4 w-4 mr-2" /> Confirmar Agendamento
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </CardContent>
+        )}
+      </Card>
+    </div>
   );
 }

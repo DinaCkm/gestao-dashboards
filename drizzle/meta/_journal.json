@@ -197,6 +197,20 @@
       "when": 1772752153988,
       "tag": "0027_careful_kang",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1772756693667,
+      "tag": "0028_keen_young_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1772757669057,
+      "tag": "0029_glorious_deathstrike",
+      "breakpoints": true
     }
   ]
 }

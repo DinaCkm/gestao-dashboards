@@ -1,0 +1,15 @@
+Análise do documento ajustes.docx - 7 itens:
+
+1. MICRO CICLO NA TRILHA BASIC: Na área do aluno Fabio Silva De Oliveira, a trilha Basic mostra as datas do micro ciclo (09/04/2025 - 29/10/2025 "Finalizado") no nível da competência "Basic - Atenção, Empatia +3". Porém na trilha MASTER essas datas NÃO aparecem - mostra apenas "Macro Jornada: 09/10/2024 a 29/10/2026" mas sem datas de micro ciclo nas competências individuais.
+
+2. TRILHA MASTER SEM MICRO CICLO: Confirmado no print - Trilha Master mostra "Foco em Resultados", "Presença Executiva", "Protagonismo" mas sem as datas de micro ciclo que aparecem na Basic.
+
+3. EVENTOS vs WEBINARS: Na área do aluno há abas separadas "Eventos" e "Webinários". Pergunta: qual a diferença? Por que não unificar?
+
+4. CAIXA DE DIÁLOGO NO PERFIL DO MENTOR: Print mostra a tela "Assessment / Jornada de Desenvolvimento" com aluno "Amaggeldo Barbosa" selecionado. Aparece um alerta amarelo: "Reavaliação de Competências Pendente - Este aluno já realizou 6 sessões de mentoria desde a última atualização de nível. Nenhuma atualização de nível foi registrada ainda. É recomendado atualizar os níveis das competências." com botão "Atualizar Níveis".
+
+5. PERFIL DO MENTOR - FOTO E MINICURRÍCULO: Mentor precisa de uma aba no perfil para incluir foto e minicurrículo (campo de texto com parágrafos).
+
+6. AGENDA DO MENTOR: Mentor precisa de um espaço nas configurações para disponibilizar agenda, selecionar datas/horários disponíveis e incluir link do Google Meet.
+
+7. VISUALIZAÇÃO TRUNCADA NA SELEÇÃO DE TRILHA: Print mostra que quando a mentora vai selecionar a trilha, o dropdown/lista fica truncado - os nomes dos alunos aparecem cortados (ex: "a Schmitz", "a Marques Righi Casemiro", "Figueiredo da Silva", "ernandes"). O modal "Test Turma Null" está sobrepondo a lista.

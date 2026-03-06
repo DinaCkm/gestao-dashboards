@@ -1,4 +1,4 @@
-import { eq, and, or, desc, asc, sql, not, gte, lt, lte, inArray, isNotNull } from "drizzle-orm";
+import { eq, and, or, desc, asc, sql, not, gte, lt, lte, ne, inArray, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -27,7 +27,10 @@ import {
   contratosAluno, InsertContratoAluno, ContratoAluno,
   historicoNivelCompetencia, InsertHistoricoNivelCompetencia, HistoricoNivelCompetencia,
   casesSucesso, InsertCaseSucesso, CaseSucesso,
-  practicalActivityComments, InsertPracticalActivityComment, PracticalActivityComment
+  practicalActivityComments, InsertPracticalActivityComment, PracticalActivityComment,
+  mentorAvailability, InsertMentorAvailability, MentorAvailability,
+  mentorAppointments, InsertMentorAppointment, MentorAppointment,
+  appointmentParticipants, InsertAppointmentParticipant, AppointmentParticipant
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1337,7 +1340,7 @@ export async function updateConsultorAccess(consultorId: number, loginId: string
 }
 
 // Update consultor (gerente/mentor) data
-export async function updateConsultor(consultorId: number, data: { name?: string; email?: string; especialidade?: string; cpf?: string; managedProgramId?: number; programId?: number }) {
+export async function updateConsultor(consultorId: number, data: { name?: string; email?: string; especialidade?: string; cpf?: string; managedProgramId?: number; programId?: number; photoUrl?: string; miniCurriculo?: string }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
   
@@ -1348,6 +1351,8 @@ export async function updateConsultor(consultorId: number, data: { name?: string
   if (data.cpf !== undefined) updateData.cpf = data.cpf;
   if (data.managedProgramId !== undefined) updateData.managedProgramId = data.managedProgramId;
   if (data.programId !== undefined) updateData.programId = data.programId;
+  if (data.photoUrl !== undefined) updateData.photoUrl = data.photoUrl;
+  if (data.miniCurriculo !== undefined) updateData.miniCurriculo = data.miniCurriculo;
   
   if (Object.keys(updateData).length > 0) {
     await db.update(consultors)
@@ -4713,4 +4718,335 @@ export async function getAlunoOnboardingStatus(user: {
     bypassOnboarding,
     alunoId: aluno.id,
   };
+}
+
+
+// ==================== AGENDA DO MENTOR ====================
+
+export async function getMentorAvailability(consultorId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(mentorAvailability)
+    .where(eq(mentorAvailability.consultorId, consultorId))
+    .orderBy(mentorAvailability.dayOfWeek, mentorAvailability.startTime);
+}
+
+export async function saveMentorAvailability(consultorId: number, slots: {
+  id?: number;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes: number;
+  googleMeetLink?: string;
+  isActive: number;
+}[]) {
+  const db = await getDb();
+  if (!db) return { success: false };
+
+  for (const slot of slots) {
+    if (slot.id) {
+      // Atualizar existente
+      await db.update(mentorAvailability)
+        .set({
+          dayOfWeek: slot.dayOfWeek,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          slotDurationMinutes: slot.slotDurationMinutes,
+          googleMeetLink: slot.googleMeetLink || null,
+          isActive: slot.isActive,
+        })
+        .where(eq(mentorAvailability.id, slot.id));
+    } else {
+      // Criar novo
+      await db.insert(mentorAvailability).values({
+        consultorId,
+        dayOfWeek: slot.dayOfWeek,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        slotDurationMinutes: slot.slotDurationMinutes,
+        googleMeetLink: slot.googleMeetLink || null,
+        isActive: slot.isActive,
+      });
+    }
+  }
+  return { success: true };
+}
+
+export async function removeMentorAvailability(id: number) {
+  const db = await getDb();
+  if (!db) return { success: false };
+  await db.delete(mentorAvailability).where(eq(mentorAvailability.id, id));
+  return { success: true };
+}
+
+export async function getMentorAppointments(consultorId: number, filters?: {
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(mentorAppointments.consultorId, consultorId)];
+  if (filters?.status) {
+    conditions.push(eq(mentorAppointments.status, filters.status as any));
+  }
+  if (filters?.dateFrom) {
+    conditions.push(gte(mentorAppointments.scheduledDate, filters.dateFrom));
+  }
+  if (filters?.dateTo) {
+    conditions.push(lte(mentorAppointments.scheduledDate, filters.dateTo));
+  }
+
+  const appointments = await db.select().from(mentorAppointments)
+    .where(and(...conditions))
+    .orderBy(desc(mentorAppointments.scheduledDate), mentorAppointments.startTime);
+
+  // Buscar participantes de cada agendamento
+  const result = [];
+  for (const appt of appointments) {
+    const participants = await db.select().from(appointmentParticipants)
+      .where(eq(appointmentParticipants.appointmentId, appt.id));
+
+    // Enriquecer com nomes dos alunos
+    const allAlunos = await getAlunos();
+    const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
+
+    const enrichedParticipants = participants.map(p => ({
+      ...p,
+      alunoName: alunoMap.get(p.alunoId)?.name || 'Desconhecido',
+      alunoEmail: alunoMap.get(p.alunoId)?.email || '',
+    }));
+
+    result.push({
+      ...appt,
+      participants: enrichedParticipants,
+    });
+  }
+
+  return result;
+}
+
+export async function getAppointmentsForDate(consultorId: number, date: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(mentorAppointments)
+    .where(and(
+      eq(mentorAppointments.consultorId, consultorId),
+      eq(mentorAppointments.scheduledDate, date),
+      ne(mentorAppointments.status, 'cancelado' as any),
+    ));
+}
+
+export async function checkAppointmentConflict(consultorId: number, date: string, startTime: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const results = await db.select().from(mentorAppointments)
+    .where(and(
+      eq(mentorAppointments.consultorId, consultorId),
+      eq(mentorAppointments.scheduledDate, date),
+      eq(mentorAppointments.startTime, startTime),
+      ne(mentorAppointments.status, 'cancelado' as any),
+    ))
+    .limit(1);
+  return results[0] || null;
+}
+
+export async function createGroupAppointment(data: {
+  consultorId: number;
+  title: string;
+  description: string | null;
+  scheduledDate: string;
+  startTime: string;
+  endTime: string;
+  googleMeetLink: string | null;
+  alunoIds: number[];
+  createdBy: number;
+}) {
+  const db = await getDb();
+  if (!db) return { success: false, id: 0 };
+
+  const [result] = await db.insert(mentorAppointments).values({
+    consultorId: data.consultorId,
+    scheduledDate: data.scheduledDate,
+    startTime: data.startTime,
+    endTime: data.endTime,
+    googleMeetLink: data.googleMeetLink,
+    type: 'grupo',
+    title: data.title,
+    description: data.description,
+    status: 'agendado',
+    createdBy: data.createdBy,
+  });
+
+  const appointmentId = result.insertId;
+
+  // Criar participantes (todos como "convidado")
+  for (const alunoId of data.alunoIds) {
+    await db.insert(appointmentParticipants).values({
+      appointmentId,
+      alunoId,
+      status: 'convidado',
+    });
+  }
+
+  return { success: true, id: appointmentId };
+}
+
+export async function createIndividualAppointment(data: {
+  consultorId: number;
+  availabilityId: number;
+  scheduledDate: string;
+  startTime: string;
+  endTime: string;
+  googleMeetLink: string | null;
+  alunoId: number;
+  notes: string | null;
+  createdBy: number;
+}) {
+  const db = await getDb();
+  if (!db) return { success: false, id: 0 };
+
+  // Buscar link do Meet da disponibilidade
+  const avail = await db.select().from(mentorAvailability)
+    .where(eq(mentorAvailability.id, data.availabilityId))
+    .limit(1);
+  const meetLink = avail[0]?.googleMeetLink || data.googleMeetLink;
+
+  const [result] = await db.insert(mentorAppointments).values({
+    consultorId: data.consultorId,
+    availabilityId: data.availabilityId,
+    scheduledDate: data.scheduledDate,
+    startTime: data.startTime,
+    endTime: data.endTime,
+    googleMeetLink: meetLink,
+    type: 'individual',
+    title: null,
+    description: null,
+    status: 'confirmado',
+    createdBy: data.createdBy,
+  });
+
+  const appointmentId = result.insertId;
+
+  // Criar participante (já confirmado para individual)
+  await db.insert(appointmentParticipants).values({
+    appointmentId,
+    alunoId: data.alunoId,
+    status: 'confirmado',
+    confirmedAt: new Date(),
+    notes: data.notes,
+  });
+
+  return { success: true, id: appointmentId };
+}
+
+export async function respondToAppointmentInvite(
+  appointmentId: number, alunoId: number, response: 'confirmado' | 'recusado', notes: string | null
+) {
+  const db = await getDb();
+  if (!db) return { success: false };
+
+  await db.update(appointmentParticipants)
+    .set({
+      status: response,
+      confirmedAt: response === 'confirmado' ? new Date() : null,
+      notes,
+    })
+    .where(and(
+      eq(appointmentParticipants.appointmentId, appointmentId),
+      eq(appointmentParticipants.alunoId, alunoId),
+    ));
+
+  // Se todos confirmaram, atualizar status do agendamento
+  const allParticipants = await db.select().from(appointmentParticipants)
+    .where(eq(appointmentParticipants.appointmentId, appointmentId));
+
+  const allConfirmed = allParticipants.every(p => p.status === 'confirmado');
+  if (allConfirmed) {
+    await db.update(mentorAppointments)
+      .set({ status: 'confirmado' })
+      .where(eq(mentorAppointments.id, appointmentId));
+  }
+
+  return { success: true };
+}
+
+export async function cancelAppointment(appointmentId: number) {
+  const db = await getDb();
+  if (!db) return { success: false };
+  await db.update(mentorAppointments)
+    .set({ status: 'cancelado' })
+    .where(eq(mentorAppointments.id, appointmentId));
+  return { success: true };
+}
+
+export async function getAlunoInvites(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const participations = await db.select().from(appointmentParticipants)
+    .where(and(
+      eq(appointmentParticipants.alunoId, alunoId),
+      eq(appointmentParticipants.status, 'convidado'),
+    ));
+
+  const result = [];
+  for (const p of participations) {
+    const [appt] = await db.select().from(mentorAppointments)
+      .where(eq(mentorAppointments.id, p.appointmentId));
+    if (appt && appt.status !== 'cancelado') {
+      // Buscar nome do mentor
+      const consultorsList = await getConsultors();
+      const mentor = consultorsList.find(c => c.id === appt.consultorId);
+      result.push({
+        ...appt,
+        mentorName: mentor?.name || 'Mentor',
+        participantId: p.id,
+      });
+    }
+  }
+
+  return result;
+}
+
+export async function getAlunoAppointments(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const participations = await db.select().from(appointmentParticipants)
+    .where(eq(appointmentParticipants.alunoId, alunoId));
+
+  const result = [];
+  for (const p of participations) {
+    const [appt] = await db.select().from(mentorAppointments)
+      .where(eq(mentorAppointments.id, p.appointmentId));
+    if (appt && appt.status !== 'cancelado') {
+      const consultorsList = await getConsultors();
+      const mentor = consultorsList.find(c => c.id === appt.consultorId);
+
+      // Buscar todos os participantes para sessões de grupo
+      let participants: { alunoId: number; alunoName: string; status: string }[] = [];
+      if (appt.type === 'grupo') {
+        const allP = await db.select().from(appointmentParticipants)
+          .where(eq(appointmentParticipants.appointmentId, appt.id));
+        const allAlunos = await getAlunos();
+        const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
+        participants = allP.map(pp => ({
+          alunoId: pp.alunoId,
+          alunoName: alunoMap.get(pp.alunoId)?.name || 'Desconhecido',
+          status: pp.status,
+        }));
+      }
+
+      result.push({
+        ...appt,
+        mentorName: mentor?.name || 'Mentor',
+        myStatus: p.status,
+        participants,
+      });
+    }
+  }
+
+  return result.sort((a, b) => b.scheduledDate.localeCompare(a.scheduledDate));
 }

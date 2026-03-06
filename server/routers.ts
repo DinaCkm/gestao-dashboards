@@ -1924,6 +1924,8 @@ export const appRouter = router({
           tipo: evento?.eventType || 'webinar',
           data: evento?.eventDate || null,
           status: ep.status,
+          reflexao: ep.reflexao || null,
+          selfReportedAt: ep.selfReportedAt || null,
         };
       });
 
@@ -2471,6 +2473,232 @@ export const appRouter = router({
           })
         );
         return result;
+      }),
+
+    // Perfil do mentor (foto + minicurrículo)
+    getProfile: protectedProcedure
+      .input(z.object({ consultorId: z.number() }))
+      .query(async ({ input }) => {
+        const consultor = await db.getConsultorById(input.consultorId);
+        if (!consultor) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Mentor não encontrado' });
+        }
+        return {
+          id: consultor.id,
+          name: consultor.name,
+          email: consultor.email,
+          especialidade: consultor.especialidade,
+          photoUrl: consultor.photoUrl,
+          miniCurriculo: consultor.miniCurriculo,
+        };
+      }),
+
+    // Atualizar perfil do mentor (foto + minicurrículo)
+    updateProfile: protectedProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        miniCurriculo: z.string().optional(),
+        especialidade: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { consultorId, ...data } = input;
+        const success = await db.updateConsultor(consultorId, data);
+        return { success };
+      }),
+
+    // Upload de foto do mentor
+    uploadPhoto: protectedProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        photoBase64: z.string(),
+        mimeType: z.string().default('image/jpeg'),
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.photoBase64, 'base64');
+        const ext = input.mimeType === 'image/png' ? 'png' : 'jpg';
+        const key = `mentors/${input.consultorId}/photo-${Date.now()}.${ext}`;
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        await db.updateConsultor(input.consultorId, { photoUrl: url });
+        return { url, success: true };
+      }),
+
+    // ==================== AGENDA DO MENTOR ====================
+    // Listar disponibilidade do mentor
+    getAvailability: protectedProcedure
+      .input(z.object({ consultorId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getMentorAvailability(input.consultorId);
+      }),
+
+    // Salvar/atualizar disponibilidade do mentor
+    saveAvailability: managerProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        slots: z.array(z.object({
+          id: z.number().optional(), // Se existir, atualiza; se não, cria
+          dayOfWeek: z.number().min(0).max(6),
+          startTime: z.string().regex(/^\d{2}:\d{2}$/),
+          endTime: z.string().regex(/^\d{2}:\d{2}$/),
+          slotDurationMinutes: z.number().min(15).max(240).default(60),
+          googleMeetLink: z.string().optional(),
+          isActive: z.number().default(1),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.saveMentorAvailability(input.consultorId, input.slots);
+      }),
+
+    // Remover slot de disponibilidade
+    removeAvailability: managerProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.removeMentorAvailability(input.id);
+      }),
+
+    // Listar agendamentos do mentor
+    getAppointments: protectedProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        status: z.string().optional(),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await db.getMentorAppointments(input.consultorId, input);
+      }),
+
+    // Criar sessão de grupo (mentor define data/hora, convida alunos)
+    createGroupSession: managerProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        title: z.string().min(3),
+        description: z.string().optional(),
+        scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        startTime: z.string().regex(/^\d{2}:\d{2}$/),
+        endTime: z.string().regex(/^\d{2}:\d{2}$/),
+        googleMeetLink: z.string().optional(),
+        alunoIds: z.array(z.number()).min(1),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await db.createGroupAppointment({
+          consultorId: input.consultorId,
+          title: input.title,
+          description: input.description || null,
+          scheduledDate: input.scheduledDate,
+          startTime: input.startTime,
+          endTime: input.endTime,
+          googleMeetLink: input.googleMeetLink || null,
+          alunoIds: input.alunoIds,
+          createdBy: ctx.user.id,
+        });
+      }),
+
+    // Aluno agenda sessão individual (escolhe horário disponível)
+    bookAppointment: protectedProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        availabilityId: z.number(),
+        scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        startTime: z.string().regex(/^\d{2}:\d{2}$/),
+        endTime: z.string().regex(/^\d{2}:\d{2}$/),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Verificar se o aluno está vinculado
+        const alunoId = (ctx.user as any).alunoId;
+        if (!alunoId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não é um aluno' });
+
+        // Verificar se o horário já não está ocupado
+        const existing = await db.checkAppointmentConflict(input.consultorId, input.scheduledDate, input.startTime);
+        if (existing) throw new TRPCError({ code: 'CONFLICT', message: 'Este horário já está ocupado. Escolha outro.' });
+
+        return await db.createIndividualAppointment({
+          consultorId: input.consultorId,
+          availabilityId: input.availabilityId,
+          scheduledDate: input.scheduledDate,
+          startTime: input.startTime,
+          endTime: input.endTime,
+          googleMeetLink: null, // Herda do availability
+          alunoId,
+          notes: input.notes || null,
+          createdBy: ctx.user.id,
+        });
+      }),
+
+    // Aluno confirma/recusa convite de grupo
+    respondToInvite: protectedProcedure
+      .input(z.object({
+        appointmentId: z.number(),
+        response: z.enum(['confirmado', 'recusado']),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const alunoId = (ctx.user as any).alunoId;
+        if (!alunoId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não é um aluno' });
+        return await db.respondToAppointmentInvite(input.appointmentId, alunoId, input.response, input.notes || null);
+      }),
+
+    // Cancelar agendamento
+    cancelAppointment: protectedProcedure
+      .input(z.object({ appointmentId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.cancelAppointment(input.appointmentId);
+      }),
+
+    // Listar convites pendentes do aluno
+    getMyInvites: protectedProcedure
+      .query(async ({ ctx }) => {
+        const alunoId = (ctx.user as any).alunoId;
+        if (!alunoId) return [];
+        return await db.getAlunoInvites(alunoId);
+      }),
+
+    // Listar agendamentos do aluno (individuais + grupo confirmados)
+    getMyAppointments: protectedProcedure
+      .query(async ({ ctx }) => {
+        const alunoId = (ctx.user as any).alunoId;
+        if (!alunoId) return [];
+        return await db.getAlunoAppointments(alunoId);
+      }),
+
+    // Obter slots disponíveis para uma data específica
+    getAvailableSlots: protectedProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      }))
+      .query(async ({ input }) => {
+        const dayOfWeek = new Date(input.date + 'T12:00:00').getDay();
+        const availability = await db.getMentorAvailability(input.consultorId);
+        const daySlots = availability.filter(a => a.dayOfWeek === dayOfWeek && a.isActive === 1);
+
+        // Gerar slots baseado na duração
+        const allSlots: { startTime: string; endTime: string; availabilityId: number; googleMeetLink: string | null }[] = [];
+        for (const slot of daySlots) {
+          const [sh, sm] = slot.startTime.split(':').map(Number);
+          const [eh, em] = slot.endTime.split(':').map(Number);
+          const startMin = sh * 60 + sm;
+          const endMin = eh * 60 + em;
+          const duration = slot.slotDurationMinutes;
+
+          for (let t = startMin; t + duration <= endMin; t += duration) {
+            const sH = String(Math.floor(t / 60)).padStart(2, '0');
+            const sM = String(t % 60).padStart(2, '0');
+            const eH = String(Math.floor((t + duration) / 60)).padStart(2, '0');
+            const eM = String((t + duration) % 60).padStart(2, '0');
+            allSlots.push({
+              startTime: `${sH}:${sM}`,
+              endTime: `${eH}:${eM}`,
+              availabilityId: slot.id,
+              googleMeetLink: slot.googleMeetLink,
+            });
+          }
+        }
+
+        // Remover slots já ocupados
+        const appointments = await db.getAppointmentsForDate(input.consultorId, input.date);
+        const occupiedTimes = new Set(appointments.map(a => a.startTime));
+        return allSlots.filter(s => !occupiedTimes.has(s.startTime));
       }),
 
     // Dashboard consolidado de todos os mentores
@@ -3220,7 +3448,7 @@ export const appRouter = router({
 
   // ==================== ATTENDANCE (Presença + Reflexão) ====================
   attendance: router({
-    // Aluno marca presença e envia reflexão (só após término do evento)
+    // Aluno marca presença e envia reflexão (funciona para webinários agendados e eventos importados)
     markPresence: protectedProcedure
       .input(z.object({
         eventId: z.number(),
@@ -3233,21 +3461,25 @@ export const appRouter = router({
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
         }
 
-        // Verificar se o evento já terminou
-        // Buscar o evento na tabela events para pegar o título
+        // Buscar o evento na tabela events
         const eventRecord = await db.getEventById(input.eventId);
         if (!eventRecord) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Evento não encontrado.' });
         }
-        // Buscar o webinar agendado correspondente pelo título para verificar endDate
+
+        // Verificar se é um webinário agendado (tem endDate) - só bloqueia se ainda não terminou
         const allWebinars = await db.listWebinars();
         const matchingWebinar = allWebinars.find((w: any) => 
           w.title?.toLowerCase().trim() === eventRecord.title?.toLowerCase().trim()
         );
-        const endDate = matchingWebinar?.endDate || matchingWebinar?.eventDate || eventRecord.eventDate;
-        if (endDate && new Date(endDate) > new Date()) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'A marcação de presença só é liberada após o término do evento.' });
+        if (matchingWebinar) {
+          // É um webinário agendado - verificar se já terminou
+          const endDate = matchingWebinar.endDate || matchingWebinar.eventDate;
+          if (endDate && new Date(endDate) > new Date()) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'A marcação de presença só é liberada após o término do evento.' });
+          }
         }
+        // Para eventos importados (sem webinar agendado correspondente), permite marcar presença a qualquer momento
 
         const result = await db.markWebinarAttendance(aluno.id, input.eventId, input.reflexao);
         return { success: true, ...result };

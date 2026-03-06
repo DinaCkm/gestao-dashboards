@@ -1531,3 +1531,28 @@
 - [x] Adicionar botão/link no menu lateral para Evoluir CKM (https://www.evoluirckm.com) - transit entre os dois sistemas
 - [x] Renomear botão Evoluir CKM para "P.D.I Evoluir" e ao clicar sair do sistema e redirecionar para https://www.evoluirckm.com
 - [x] BUG CORRIGIDO: Login com CPF - 30 CPFs com zeros à esquerda removidos corrigidos + 50 registros users sincronizados com CPF real da tabela alunos
+
+## Ajustes do Documento (05/03/2026)
+- [x] Item 1-2: Micro Ciclo na Trilha Master - já estava funcionando corretamente
+- [x] Item 3: Unificar abas Eventos e Webinários em aba única "Eventos" com visual redesenhado
+- [x] Item 3a: Permitir aluno marcar presença retroativa em eventos com status "Ausente" (reflexão obrigatória)
+- [x] Item 3b: Recalcular indicadores automaticamente ao marcar presença retroativa
+- [x] Item 4: Caixa de diálogo de reavaliação - já explicada (alerta automático após 6 sessões)
+- [x] Item 5: Perfil do Mentor - foto e minicurrículo implementados (aba no DashboardMentor + card na área do aluno)
+- [x] Item 6: Agenda do Mentor - já implementada anteriormente
+- [x] Item 7: Corrigir visualização truncada na seleção de trilha dentro do modal de Assessment (removido overflow-hidden do DialogContent no step 1)a Completo do Mentor (05/03/2026)
+- [x] Schema: tabela mentor_availability (dias, horários, link Google Meet, status)
+- [x] Schema: tabela mentor_appointments (agendamentos feitos pelos alunos)
+- [x] Backend: CRUD de disponibilidade do mentor
+- [x] Backend: Agendamento de sessão pelo aluno (escolher horário disponível)
+- [x] Backend: Listar agendamentos do mentor (visualizar agendas preenchidas pelos alunos)
+- [x] Frontend Mentor: Página de Configurações completa com abas:
+  - [x] Aba Perfil: currículo, foto
+  - [x] Aba Agenda: cadastrar dias/horários disponíveis + link Google Meet
+  - [x] Aba Mentorias: listar mentorias realizadas (já existia como Histórico de Sessões)
+  - [ ] Aba Relatórios: gerar relatório com suas mentorias
+  - [ ] Aba Avisos: visualizar avisos do administrador
+  - [x] Aba Agendamentos: visualizar agendas preenchidas pelos alunos + criar sessão de grupo
+- [x] Frontend Aluno: agendamento de sessão escolhendo horário disponível do mentor
+- [x] Agendamento de Grupo (Opção 2): Mentor define sessão de grupo com data/horário + alunos convidados, alunos confirmam presença (sim/não)
+- [x] Frontend Aluno: agendamento de sessão individual + confirmação de convites de grupo

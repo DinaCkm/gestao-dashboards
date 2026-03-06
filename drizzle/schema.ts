@@ -56,6 +56,8 @@ export const consultors = mysqlTable("consultors", {
   role: mysqlEnum("role", ["mentor", "gerente"]).default("mentor").notNull(),
   managedProgramId: int("managedProgramId"), // Para gerentes: qual empresa gerencia
   isActive: int("isActive").default(1).notNull(),
+  photoUrl: text("photoUrl"), // URL da foto do mentor (S3)
+  miniCurriculo: text("miniCurriculo"), // Minicurrículo / biografia do mentor
   canLogin: int("canLogin").default(0).notNull(), // 1 = pode fazer login
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -672,3 +674,62 @@ export const practicalActivityComments = mysqlTable("practical_activity_comments
 
 export type PracticalActivityComment = typeof practicalActivityComments.$inferSelect;
 export type InsertPracticalActivityComment = typeof practicalActivityComments.$inferInsert;
+
+
+/**
+ * Disponibilidade do Mentor - Horários disponíveis para agendamento
+ * O mentor cadastra seus dias/horários e link do Google Meet
+ */
+export const mentorAvailability = mysqlTable("mentor_availability", {
+  id: int("id").autoincrement().primaryKey(),
+  consultorId: int("consultorId").notNull(), // FK para consultors
+  dayOfWeek: int("dayOfWeek").notNull(), // 0=Domingo, 1=Segunda, ..., 6=Sábado
+  startTime: varchar("startTime", { length: 5 }).notNull(), // "09:00"
+  endTime: varchar("endTime", { length: 5 }).notNull(), // "10:00"
+  slotDurationMinutes: int("slotDurationMinutes").default(60).notNull(), // Duração de cada slot em minutos
+  googleMeetLink: varchar("googleMeetLink", { length: 500 }), // Link do Google Meet
+  isActive: int("isActive").default(1).notNull(), // 1 = ativo, 0 = inativo
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MentorAvailability = typeof mentorAvailability.$inferSelect;
+export type InsertMentorAvailability = typeof mentorAvailability.$inferInsert;
+
+/**
+ * Agendamentos de Mentoria - Sessões agendadas pelos alunos
+ * Pode ser individual ou de grupo
+ */
+export const mentorAppointments = mysqlTable("mentor_appointments", {
+  id: int("id").autoincrement().primaryKey(),
+  consultorId: int("consultorId").notNull(), // FK para consultors
+  availabilityId: int("availabilityId"), // FK para mentor_availability (null para grupo)
+  scheduledDate: varchar("scheduledDate", { length: 10 }).notNull(), // "2026-03-15"
+  startTime: varchar("startTime", { length: 5 }).notNull(), // "09:00"
+  endTime: varchar("endTime", { length: 5 }).notNull(), // "10:00"
+  googleMeetLink: varchar("googleMeetLink", { length: 500 }), // Link do Google Meet
+  type: mysqlEnum("type", ["individual", "grupo"]).default("individual").notNull(),
+  title: varchar("title", { length: 255 }), // Título da sessão (obrigatório para grupo)
+  description: text("description"), // Descrição/pauta da sessão
+  status: mysqlEnum("status", ["agendado", "confirmado", "realizado", "cancelado"]).default("agendado").notNull(),
+  createdBy: int("createdBy").notNull(), // Quem criou: alunoId (individual) ou consultorId (grupo)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MentorAppointment = typeof mentorAppointments.$inferSelect;
+export type InsertMentorAppointment = typeof mentorAppointments.$inferInsert;
+
+/**
+ * Participantes do Agendamento - Para sessões individuais e de grupo
+ * Cada aluno convidado/agendado tem um registro aqui
+ */
+export const appointmentParticipants = mysqlTable("appointment_participants", {
+  id: int("id").autoincrement().primaryKey(),
+  appointmentId: int("appointmentId").notNull(), // FK para mentor_appointments
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  status: mysqlEnum("status", ["convidado", "confirmado", "recusado", "presente", "ausente"]).default("convidado").notNull(),
+  confirmedAt: timestamp("confirmedAt"), // Quando o aluno confirmou
+  notes: text("notes"), // Observações do aluno
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AppointmentParticipant = typeof appointmentParticipants.$inferSelect;
+export type InsertAppointmentParticipant = typeof appointmentParticipants.$inferInsert;

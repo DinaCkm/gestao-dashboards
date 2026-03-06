@@ -902,7 +902,7 @@ function CreateAssessmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
@@ -917,7 +917,7 @@ function CreateAssessmentDialog({
         </DialogHeader>
 
         {step === 1 ? (
-          <div className="space-y-5 py-2">
+          <div className="space-y-5 py-2 overflow-visible">
             <div className="space-y-2">
               <Label className="font-medium">Trilha</Label>
               <Select value={selectedTrilhaId} onValueChange={setSelectedTrilhaId}>
