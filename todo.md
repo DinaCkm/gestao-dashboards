@@ -1600,3 +1600,6 @@
 ## Card ECO_EVOLUIR (05/03/2026)
 - [x] Adicionar card ECO_EVOLUIR no Mural com logo, título "ECO_EVOLUIR - Acesse aqui e realize seu PDI" e link para https://www.evoluirckm.com
 - [x] Adicionar acesso ao ECO_EVOLUIR na área do aluno (Portal do Aluno)
+
+## Card B.E.M. Área de Aulas (05/03/2026)
+- [x] Adicionar card B.E.M. "Acesse a Área de Aulas" com logo B.E.M. e link para https://sebraeto.competenciasdobem.com.br no Mural e Portal do Aluno

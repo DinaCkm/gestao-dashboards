@@ -673,6 +673,43 @@ export default function MuralAluno() {
             </div>
           </a>
 
+          {/* Card B.E.M. - Área de Aulas */}
+          <a
+            href="https://sebraeto.competenciasdobem.com.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block relative overflow-hidden rounded-2xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white via-blue-50/80 to-amber-50/60" />
+            <div className="absolute top-0 right-0 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
+            <div className="relative flex items-center gap-5 p-5 sm:p-6">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-blue-100 shadow-lg p-2">
+                <img
+                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/bem_logo_cf035dbb.svg"
+                  alt="B.E.M."
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#0A1E3E]">Plataforma de Aprendizagem</span>
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-[#0A1E3E] mb-1">
+                  B.E.M. - Área de Aulas
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Acesse a área de aulas e conteúdos do programa
+                </p>
+              </div>
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-[#0A1E3E] flex items-center justify-center group-hover:bg-[#0A1E3E]/80 transition-colors shadow-lg">
+                  <ExternalLink className="h-5 w-5 text-amber-400" />
+                </div>
+              </div>
+            </div>
+          </a>
+
           {/* Next Webinar Highlight */}
           {nextWebinar && <NextWebinarHighlight webinar={nextWebinar} />}
 
