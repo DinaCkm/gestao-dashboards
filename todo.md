@@ -1660,3 +1660,5 @@
 - [ ] Alterar texto do Relatório Individual para "Relatório Individual, mostra a performance do aluno"
 - [ ] Corrigir cards Templates Rápidos (Relatório Semanal e Performance da Equipe) que não estão funcionando
 - [x] Corrigir filtro de turma: TURMA = BS1, BS2, BS3 (jornada). TRILHA = Basic, Essential, Master, Visão de Futuro, etc. Filtro deve mostrar apenas BS1/BS2/BS3
+- [x] Adicionar filtro por trilha como segundo nível de filtro dentro da turma selecionada
+- [x] Ajustar cards de Engajamento por Turma para usar nomenclatura BS1/BS2/BS3

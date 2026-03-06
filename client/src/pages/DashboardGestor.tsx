@@ -29,6 +29,7 @@ const CLASSIFICATION_COLORS: Record<string, string> = {
 export default function DashboardGestor() {
   const { user } = useAuth();
   const [selectedTurmaGroup, setSelectedTurmaGroup] = useState<string>("todas");
+  const [selectedTrilha, setSelectedTrilha] = useState<string>("todas");
   const [selectedAlunoId, setSelectedAlunoId] = useState<string>("todos");
 
   // Get the empresa name from the user's programId
@@ -87,12 +88,42 @@ export default function DashboardGestor() {
     return Array.from(groupMap.values()).sort((a, b) => a.turmaCode.localeCompare(b.turmaCode));
   }, [turmas]);
 
-  // Get turma IDs for the selected group
+  // Extract available trilhas from turma names
+  const availableTrilhas = useMemo(() => {
+    if (!turmas) return [];
+    const trilhaSet = new Set<string>();
+    turmas.forEach(t => {
+      // Extract trilha from name like "[2025] SEBRAE Tocantins - Basic [BS1]" -> "Basic"
+      // or "[2025] SEBRAE Tocantins - Visão de Futuro [BS2]" -> "Visão de Futuro"
+      const match = t.name.match(/- (.+?) \[BS\d+\]/);
+      if (match) trilhaSet.add(match[1].trim());
+    });
+    return Array.from(trilhaSet).sort();
+  }, [turmas]);
+
+  // Get turma IDs for the selected group + trilha
   const selectedTurmaIds = useMemo(() => {
-    if (selectedTurmaGroup === "todas") return null;
-    const group = turmaGroups.find(g => g.turmaCode === selectedTurmaGroup);
-    return group ? group.turmaIds : null;
-  }, [selectedTurmaGroup, turmaGroups]);
+    if (selectedTurmaGroup === "todas" && selectedTrilha === "todas") return null;
+    let filteredTurmas = turmas || [];
+    
+    // Filter by turma code (BS1/BS2/BS3)
+    if (selectedTurmaGroup !== "todas") {
+      filteredTurmas = filteredTurmas.filter(t => {
+        const match = t.name.match(/\[(BS\d+)\]/);
+        return match && match[1] === selectedTurmaGroup;
+      });
+    }
+    
+    // Filter by trilha
+    if (selectedTrilha !== "todas") {
+      filteredTurmas = filteredTurmas.filter(t => {
+        const match = t.name.match(/- (.+?) \[BS\d+\]/);
+        return match && match[1].trim() === selectedTrilha;
+      });
+    }
+    
+    return filteredTurmas.map(t => String(t.id));
+  }, [selectedTurmaGroup, selectedTrilha, turmas, turmaGroups]);
 
   // Filter alunos by selected turma group
   const filteredAlunos = useMemo(() => {
@@ -190,15 +221,21 @@ export default function DashboardGestor() {
     return Array.from(ids);
   }, [data?.alunos]);
 
-  const isFiltered = selectedTurmaGroup !== "todas" || selectedAlunoId !== "todos";
+  const isFiltered = selectedTurmaGroup !== "todas" || selectedTrilha !== "todas" || selectedAlunoId !== "todos";
 
   const clearFilters = () => {
     setSelectedTurmaGroup("todas");
+    setSelectedTrilha("todas");
     setSelectedAlunoId("todos");
   };
 
   const handleTurmaChange = (value: string) => {
     setSelectedTurmaGroup(value);
+    setSelectedAlunoId("todos");
+  };
+
+  const handleTrilhaChange = (value: string) => {
+    setSelectedTrilha(value);
     setSelectedAlunoId("todos");
   };
 
@@ -310,6 +347,24 @@ export default function DashboardGestor() {
                     {turmaGroups.map(g => (
                       <SelectItem key={g.turmaCode} value={g.turmaCode}>
                         {g.turmaCode}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Filtro por Trilha */}
+              <div className="space-y-1.5 min-w-[200px]">
+                <label className="text-sm font-medium text-muted-foreground">Trilha</label>
+                <Select value={selectedTrilha} onValueChange={handleTrilhaChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas as trilhas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as trilhas</SelectItem>
+                    {availableTrilhas.map(trilha => (
+                      <SelectItem key={trilha} value={trilha}>
+                        {trilha}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -466,7 +521,7 @@ export default function DashboardGestor() {
         </Card>
 
         {/* Cards de Engajamento Final por Turma */}
-        {selectedTurmaGroup === "todas" && porTurma.length > 0 && (
+        {selectedTurmaGroup === "todas" && selectedTrilha === "todas" && porTurma.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               Engajamento por Turma
@@ -475,6 +530,11 @@ export default function DashboardGestor() {
             <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
               {porTurma.map((turma) => {
                 const turmaNome = turmaNames.get(String(turma.identificador)) || turma.identificador;
+                // Extract turma code (BS1/BS2/BS3) and trilha from the full name
+                const bsMatch = turmaNome.match(/\[(BS\d+)\]/);
+                const turmaCode = bsMatch ? bsMatch[1] : '';
+                const trilhaMatch = turmaNome.match(/- (.+?) \[BS\d+\]/);
+                const trilhaNome = trilhaMatch ? trilhaMatch[1].trim() : turmaNome;
                 return (
                   <Card key={turma.identificador} className="border border-gray-200">
                     <CardContent className="pt-5 pb-4">
@@ -483,7 +543,8 @@ export default function DashboardGestor() {
                           <Target className="h-5 w-5 text-[#0A1E3E]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-500 truncate" title={turmaNome}>{turmaNome}</p>
+                          <p className="text-sm font-semibold text-[#0A1E3E]">{turmaCode}</p>
+                          <p className="text-xs text-gray-500">{trilhaNome}</p>
                           <p className="text-2xl font-bold text-[#0A1E3E]">{turma.mediaInd7.toFixed(0)}%</p>
                         </div>
                         <Badge variant="outline" className="text-xs">
@@ -562,7 +623,7 @@ export default function DashboardGestor() {
         </div>
 
         {/* Performance por Turma (only when no turma filter) */}
-        {selectedTurmaGroup === "todas" && porTurma.length > 0 && (
+        {selectedTurmaGroup === "todas" && selectedTrilha === "todas" && porTurma.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-1">
@@ -577,17 +638,18 @@ export default function DashboardGestor() {
                   .sort((a, b) => b.mediaNotaFinal - a.mediaNotaFinal)
                   .map(t => {
                     const turmaNome = turmaNames.get(String(t.identificador)) || t.identificador;
-                    // Buscar ciclo dos alunos desta turma
-                    const alunosDaTurma = data?.alunos?.filter(a => String(a.turma) === String(t.identificador)) || [];
-                    const cicloInfo = alunosDaTurma[0]?.cicloAtual || '';
+                    // Extract BS code and trilha
+                    const bsMatch = turmaNome.match(/\[(BS\d+)\]/);
+                    const turmaCode = bsMatch ? bsMatch[1] : '';
+                    const trilhaMatch = turmaNome.match(/- (.+?) \[BS\d+\]/);
+                    const trilhaNome = trilhaMatch ? trilhaMatch[1].trim() : turmaNome;
                     const nota = t.mediaNotaFinal;
                     const cor = nota >= 9 ? 'text-green-600' : nota >= 7 ? 'text-blue-600' : nota >= 5 ? 'text-yellow-600' : 'text-red-500';
                     const bgCor = nota >= 9 ? 'bg-green-500' : nota >= 7 ? 'bg-blue-500' : nota >= 5 ? 'bg-yellow-500' : 'bg-red-500';
                     return (
                       <div key={t.identificador} className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate" title={turmaNome}>{turmaNome}</p>
-                          {cicloInfo && <p className="text-xs text-muted-foreground">{cicloInfo}</p>}
+                          <p className="font-medium text-sm"><span className="font-bold text-[#0A1E3E]">{turmaCode}</span> — {trilhaNome}</p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
                           <Badge variant="outline" className="text-xs">{t.totalAlunos} alunos</Badge>
@@ -725,8 +787,14 @@ export default function DashboardGestor() {
                         <div>
                           <p className="font-medium">{aluno.nomeAluno}</p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>Turma: {turmaNames.get(String(aluno.turma)) || aluno.turma || 'N/A'}</span>
-                            {aluno.trilha && <span>| Trilha: {aluno.trilha}</span>}
+                            {(() => {
+                              const fullName = turmaNames.get(String(aluno.turma)) || aluno.turma || 'N/A';
+                              const bsM = fullName.match?.(/\[(BS\d+)\]/);
+                              const trM = fullName.match?.(/- (.+?) \[BS\d+\]/);
+                              const bs = bsM ? bsM[1] : '';
+                              const tr = trM ? trM[1].trim() : '';
+                              return <span>Turma: {bs}{tr ? ` | Trilha: ${tr}` : ''}</span>;
+                            })()}
                           </div>
                         </div>
                       </div>
