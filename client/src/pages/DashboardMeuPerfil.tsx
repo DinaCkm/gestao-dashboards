@@ -609,23 +609,57 @@ export default function DashboardMeuPerfil() {
           </Card>
         </div>
 
-        {/* Alerta de Case de Sucesso Pendente */}
+        {/* Convite para Case de Sucesso */}
         {v2?.alertaCasePendente && v2.alertaCasePendente.length > 0 && (
-          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-6 w-6 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-amber-800">Entrega de Case de Sucesso Pendente</p>
-                  {v2.alertaCasePendente.map((alerta: any, idx: number) => (
-                    <p key={idx} className="text-sm text-amber-700 mt-1">
-                      O ciclo <strong>{alerta.trilhaNome}</strong> está finalizando
-                      {alerta.diasRestantes !== undefined && ` (${alerta.diasRestantes} dias restantes)`}.
-                      Lembre-se de entregar o <strong>Case de Sucesso</strong> para completar a avaliação do macrociclo.
-                    </p>
-                  ))}
+          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 shadow-md">
+            <CardContent className="p-5">
+              {v2.alertaCasePendente.map((alerta: any, idx: number) => (
+                <div key={idx} className={`${idx > 0 ? 'mt-4 pt-4 border-t border-amber-200' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-full bg-amber-100 shrink-0">
+                      <PartyPopper className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-amber-900 text-base">Compartilhe sua Experiência!</p>
+                      <p className="text-sm text-amber-800 mt-2">
+                        A trilha <strong>{alerta.trilhaNome}</strong> está chegando ao final! 
+                        Este é o momento de documentar tudo o que você aprendeu e como aplicou na prática.
+                      </p>
+                      <div className="mt-3 p-3 bg-white/70 rounded-lg border border-amber-200">
+                        <p className="text-sm font-semibold text-amber-900 flex items-center gap-2">
+                          <Trophy className="h-4 w-4 text-amber-600" />
+                          Bônus de +10% no Engajamento
+                        </p>
+                        <p className="text-xs text-amber-700 mt-1">
+                          Ao entregar o Case de Sucesso, você recebe um bônus de <strong>+10%</strong> no seu 
+                          Indicador 5 (Engajamento), aumentando sua nota final. É a sua chance de valorizar 
+                          ainda mais sua jornada de desenvolvimento!
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center gap-2 text-xs text-amber-700">
+                          <Calendar className="h-3.5 w-3.5" />
+                          <span>
+                            Entrega até <strong>{alerta.dataLimite ? new Date(alerta.dataLimite + 'T00:00:00').toLocaleDateString('pt-BR') : `${alerta.diasRestantes} dias`}</strong>
+                            {alerta.diasRestantes !== undefined && ` (${alerta.diasRestantes} dias restantes)`}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="bg-[#F5991F] hover:bg-[#e08a1a] text-white font-semibold"
+                          onClick={() => {
+                            const casesTab = document.querySelector('[data-state][value="cases"]') as HTMLElement;
+                            if (casesTab) casesTab.click();
+                          }}
+                        >
+                          <FileUp className="h-3.5 w-3.5 mr-1.5" />
+                          Enviar Case
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </CardContent>
           </Card>
         )}

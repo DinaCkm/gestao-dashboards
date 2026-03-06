@@ -1569,3 +1569,16 @@
 - [x] Lista unificada mostra: Nome do Evento | Data | Botão Assistir (link do vídeo) | Status (Presente/Ausente) | Botão Marcar Presença
 - [x] Ordenação: ausentes primeiro, depois por data decrescente
 - [x] Testes vitest para attendance.pending, attendance.updateVideoLink e attendance.markPresence
+
+## Bug: Alerta de Case de Sucesso Pendente duplicado (05/03/2026)
+- [x] Corrigir alerta "Entrega de Case de Sucesso Pendente" que aparece duplicado 6 vezes no Portal do Aluno
+
+## Bug Crítico: Lista de eventos vazia + Alerta duplicado (05/03/2026)
+- [x] Lista de eventos na aba Eventos do Portal do Aluno está vazia - dados não carregam
+- [x] Implementar tabela conforme layout: NOME DO WEBINÁRIO | DATA | PRESENTE/AUSENTE | LINK DO EVENTO | MARCAR PRESENÇA
+- [x] Corrigir alerta Case de Sucesso Pendente duplicado 6x (deduplicar por trilhaNome)
+
+## Reformular Case de Sucesso + Corrigir Eventos (05/03/2026)
+- [x] Reformular alerta Case de Sucesso: convite para compartilhar experiências + explicar bônus + data limite (final do ciclo) + botão upload arquivo
+- [x] Deduplicar alerta por trilha (aparece 6x, deveria ser 1x)
+- [x] Corrigir lista de eventos vazia (events.programId=NULL vs aluno.programId definido)

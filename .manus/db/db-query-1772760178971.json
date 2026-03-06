@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, name, programId, email, externalId FROM alunos WHERE name LIKE '%Bruno Martins%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, programId, email, externalId FROM alunos WHERE name LIKE '%Bruno Martins%';",
+  "rows": [
+    {
+      "id": "30057",
+      "name": "Bruno Martins Vieira",
+      "programId": "17",
+      "email": "bruno.vieira@to.sebrae.com.br",
+      "externalId": "667272"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tprogramId\temail\texternalId\n30057\tBruno Martins Vieira\t17\tbruno.vieira@to.sebrae.com.br\t667272\n",
+  "stderr": "",
+  "execution_time_ms": 368
+}

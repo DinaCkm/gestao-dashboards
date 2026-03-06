@@ -1,0 +1,40 @@
+{
+  "query": "SELECT 'alunos' as tabela, programId, COUNT(*) as qtd FROM alunos GROUP BY programId UNION ALL SELECT 'events' as tabela, programId, COUNT(*) as qtd FROM events GROUP BY programId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT 'alunos' as tabela, programId, COUNT(*) as qtd FROM alunos GROUP BY programId UNION ALL SELECT 'events' as tabela, programId, COUNT(*) as qtd FROM events GROUP BY programId;",
+  "rows": [
+    {
+      "tabela": "alunos",
+      "programId": "18",
+      "qtd": "18"
+    },
+    {
+      "tabela": "alunos",
+      "programId": "19",
+      "qtd": "28"
+    },
+    {
+      "tabela": "alunos",
+      "programId": "17",
+      "qtd": "50"
+    },
+    {
+      "tabela": "alunos",
+      "programId": "1",
+      "qtd": "40"
+    },
+    {
+      "tabela": "alunos",
+      "programId": "16",
+      "qtd": "37"
+    },
+    {
+      "tabela": "events",
+      "programId": "NULL",
+      "qtd": "32"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\tprogramId\tqtd\nalunos\t18\t18\nalunos\t19\t28\nalunos\t17\t50\nalunos\t1\t40\nalunos\t16\t37\nevents\tNULL\t32\n",
+  "stderr": "",
+  "execution_time_ms": 373
+}

@@ -1,0 +1,142 @@
+{
+  "query": "SELECT ep.eventId, ep.status, ep.selfReportedAt, e.title FROM event_participation ep JOIN events e ON e.id = ep.eventId JOIN alunos a ON a.id = ep.alunoId WHERE a.name LIKE '%Bruno Martins%' ORDER BY e.eventDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ep.eventId, ep.status, ep.selfReportedAt, e.title FROM event_participation ep JOIN events e ON e.id = ep.eventId JOIN alunos a ON a.id = ep.alunoId WHERE a.name LIKE '%Bruno Martins%' ORDER BY e.eventDate;",
+  "rows": [
+    {
+      "eventId": "30001",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/06 - Liderança Tóxica com Emerson Dias"
+    },
+    {
+      "eventId": "30002",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio"
+    },
+    {
+      "eventId": "30003",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/08 - LinkedIn e Carreira com Gislaine"
+    },
+    {
+      "eventId": "30004",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/09 - Foco x Procrastinação com Emerson Dias"
+    },
+    {
+      "eventId": "30005",
+      "status": "ausente",
+      "selfReportedAt": "NULL",
+      "title": "2025/10 - Do Talento ao Resultado com Fabio Barbosa"
+    },
+    {
+      "eventId": "30006",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/11 - A Conexão das Gerações com Cíntia Gandarely"
+    },
+    {
+      "eventId": "30007",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/12 - Feedback - com Sandra Pitman"
+    },
+    {
+      "eventId": "30008",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/13 - Saúde Mental, Estresse e Burnout com Otácia Azevedo"
+    },
+    {
+      "eventId": "30009",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/14 - Liderança colaborativa com Sergio David"
+    },
+    {
+      "eventId": "30010",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/15 - Mindfulness para o Gestor Com Otácia"
+    },
+    {
+      "eventId": "30011",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/16 - IA para Equipes Comerciais com Giovanna Vieira"
+    },
+    {
+      "eventId": "30012",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/17 - Neurocomunicação com Iza Nascimento"
+    },
+    {
+      "eventId": "30013",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/18 - Mindfulness na Comunicação e no Tempo com Otácia"
+    },
+    {
+      "eventId": "30014",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/19 - Aula 01 – Estrutura e Conceitos de Projetos de Inovação com Emerson Dias"
+    },
+    {
+      "eventId": "30015",
+      "status": "ausente",
+      "selfReportedAt": "NULL",
+      "title": "2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias"
+    },
+    {
+      "eventId": "30016",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/21 - Aula 03 – Planejamento e Implementação com Emerson Dias"
+    },
+    {
+      "eventId": "30017",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2025/22 - Aula 04 – Monitoramento, Avaliação e Encerramento com Emerson Dias"
+    },
+    {
+      "eventId": "30018",
+      "status": "ausente",
+      "selfReportedAt": "NULL",
+      "title": "2025/23 - Felicidade e Promessas de Final de Ano, com Emerson Dias"
+    },
+    {
+      "eventId": "30019",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2026/01 - Aula 01 – O Código de Aprendizagem - O Preparo"
+    },
+    {
+      "eventId": "30020",
+      "status": "ausente",
+      "selfReportedAt": "NULL",
+      "title": "2026/02 - Aula 02 – O Código de Aprendizagem - A Execução"
+    },
+    {
+      "eventId": "30021",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2026/03 - Aula 01 - Resiliência e Proatividade na Prática Organizacional"
+    },
+    {
+      "eventId": "30022",
+      "status": "presente",
+      "selfReportedAt": "NULL",
+      "title": "2026/04 - Aula 02 -  Resiliência e Proatividade na Prática Organizacional"
+    }
+  ],
+  "messages": [],
+  "stdout": "eventId\tstatus\tselfReportedAt\ttitle\n30001\tpresente\tNULL\t2025/06 - Liderança Tóxica com Emerson Dias\n30002\tpresente\tNULL\t2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio\n30003\tpresente\tNULL\t2025/08 - LinkedIn e Carreira com Gislaine\n30004\tpresente\tNULL\t2025/09 - Foco x Procrastinação com Emerson Dias\n30005\tausente\tNULL\t2025/10 - Do Talento ao Resultado com Fabio Barbosa\n30006\tpresente\tNULL\t2025/11 - A Conexão das Gerações com Cíntia Gandarely\n30007\tpresente\tNULL\t2025/12 - Feedback - com Sandra Pitman\n30008\tpresente\tNULL\t2025/13 - Saúde Mental, Estresse e Burnout com Otácia Azevedo\n30009\tpresente\tNULL\t2025/14 - Liderança colaborativa com Sergio David\n30010\tpresente\tNULL\t2025/15 - Mindfulness para o Gestor Com Otácia\n30011\tpresente\tNULL\t2025/16 - IA para Equipes Comerciais com Giovanna Vieira\n30012\tpresente\tNULL\t2025/17 - Neurocomunicação com Iza Nascimento\n30013\tpresente\tNULL\t2025/18 - Mindfulness na Comunicação e no Tempo com Otácia\n30014\tpresente\tNULL\t2025/19 - Aula 01 – Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\n30015\tausente\tNULL\t2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias\n30016\tpresente\tNULL\t2025/21 - Aula 03 – Planejamento e Implementação com Emerson Dias\n30017\tpresente\tNULL\t2025/22 - Aula 04 – Monitoramento, Avaliação e Encerramento com Emerson Dias\n30018\tausente\tNULL\t2025/23 - Felicidade e Promessas de Final de Ano, com Emerson Dias\n30019\tpresente\tNULL\t2026/01 - Aula 01 – O Código de Aprendizagem - O Preparo\n30020\tausente\tNULL\t2026/02 - Aula 02 – O Código de Aprendizagem - A Execução\n30021\tpresente\tNULL\t2026/03 - Aula 01 - Resiliência e Proatividade na Prática Organizacional\n30022\tpresente\tNULL\t2026/04 - Aula 02 -  Resiliência e Proatividade na Prática Organizacional\n",
+  "stderr": "",
+  "execution_time_ms": 368
+}

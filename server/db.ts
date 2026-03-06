@@ -1,4 +1,4 @@
-import { eq, and, or, desc, asc, sql, not, gte, lt, lte, ne, inArray, isNotNull } from "drizzle-orm";
+import { eq, and, or, desc, asc, sql, not, gte, lt, lte, ne, inArray, isNotNull, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -3867,8 +3867,12 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
   if (!aluno) return [];
 
   // Buscar todos os eventos do programa do aluno
+  // Se o aluno tem programId, buscar eventos do programa OU eventos sem programa (programId NULL)
+  // Se o aluno não tem programId, buscar todos os eventos
   const allEvents = aluno.programId
-    ? await db.select().from(events).where(eq(events.programId, aluno.programId))
+    ? await db.select().from(events).where(
+        or(eq(events.programId, aluno.programId), isNull(events.programId))
+      )
     : await db.select().from(events);
 
   // Buscar participações do aluno

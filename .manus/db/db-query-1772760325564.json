@@ -1,0 +1,40 @@
+{
+  "query": "SELECT ep.eventId, ep.status, e.title, e.programId as eventProgramId FROM event_participation ep JOIN events e ON e.id = ep.eventId JOIN alunos a ON a.id = ep.alunoId WHERE a.name LIKE '%Bruno Martins%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ep.eventId, ep.status, e.title, e.programId as eventProgramId FROM event_participation ep JOIN events e ON e.id = ep.eventId JOIN alunos a ON a.id = ep.alunoId WHERE a.name LIKE '%Bruno Martins%' LIMIT 5;",
+  "rows": [
+    {
+      "eventId": "30001",
+      "status": "presente",
+      "title": "2025/06 - Liderança Tóxica com Emerson Dias",
+      "eventProgramId": "NULL"
+    },
+    {
+      "eventId": "30002",
+      "status": "presente",
+      "title": "2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio",
+      "eventProgramId": "NULL"
+    },
+    {
+      "eventId": "30003",
+      "status": "presente",
+      "title": "2025/08 - LinkedIn e Carreira com Gislaine",
+      "eventProgramId": "NULL"
+    },
+    {
+      "eventId": "30004",
+      "status": "presente",
+      "title": "2025/09 - Foco x Procrastinação com Emerson Dias",
+      "eventProgramId": "NULL"
+    },
+    {
+      "eventId": "30005",
+      "status": "ausente",
+      "title": "2025/10 - Do Talento ao Resultado com Fabio Barbosa",
+      "eventProgramId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "eventId\tstatus\ttitle\teventProgramId\n30001\tpresente\t2025/06 - Liderança Tóxica com Emerson Dias\tNULL\n30002\tpresente\t2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio\tNULL\n30003\tpresente\t2025/08 - LinkedIn e Carreira com Gislaine\tNULL\n30004\tpresente\t2025/09 - Foco x Procrastinação com Emerson Dias\tNULL\n30005\tausente\t2025/10 - Do Talento ao Resultado com Fabio Barbosa\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 370
+}

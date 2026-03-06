@@ -1,0 +1,14 @@
+{
+  "query": "SELECT a.id, a.name FROM alunos a WHERE a.name LIKE '%Bruno Martins%' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name FROM alunos a WHERE a.name LIKE '%Bruno Martins%' LIMIT 1;",
+  "rows": [
+    {
+      "id": "30057",
+      "name": "Bruno Martins Vieira"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n30057\tBruno Martins Vieira\n",
+  "stderr": "",
+  "execution_time_ms": 360
+}

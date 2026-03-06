@@ -1,0 +1,73 @@
+{
+  "query": "SELECT ac.competenciaId, ac.peso, DATE(ac.microInicio) as inicio, DATE(ac.microTermino) as termino, c.nome as compNome FROM assessment_competencias ac JOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId JOIN alunos a ON a.id = ap.alunoId LEFT JOIN competencias c ON c.id = ac.competenciaId WHERE a.name LIKE '%Bruno Martins%' ORDER BY ac.microInicio, ac.microTermino;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ac.competenciaId, ac.peso, DATE(ac.microInicio) as inicio, DATE(ac.microTermino) as termino, c.nome as compNome FROM assessment_competencias ac JOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId JOIN alunos a ON a.id = ap.alunoId LEFT JOIN competencias c ON c.id = ac.competenciaId WHERE a.name LIKE '%Bruno Martins%' ORDER BY ac.microInicio, ac.microTermino;",
+  "rows": [
+    {
+      "competenciaId": "30022",
+      "peso": "opcional",
+      "inicio": "2025-04-20",
+      "termino": "2025-10-31",
+      "compNome": "Mindset Visionário"
+    },
+    {
+      "competenciaId": "30013",
+      "peso": "opcional",
+      "inicio": "2025-05-20",
+      "termino": "2025-11-30",
+      "compNome": "Arquitetura de Mudanças"
+    },
+    {
+      "competenciaId": "30028",
+      "peso": "obrigatoria",
+      "inicio": "2025-06-29",
+      "termino": "2025-12-31",
+      "compNome": "Radar de Cenários"
+    },
+    {
+      "competenciaId": "30021",
+      "peso": "obrigatoria",
+      "inicio": "2025-08-08",
+      "termino": "2026-03-31",
+      "compNome": "Mentalidade Sistêmica"
+    },
+    {
+      "competenciaId": "30016",
+      "peso": "obrigatoria",
+      "inicio": "2025-09-17",
+      "termino": "2026-03-31",
+      "compNome": "Estratégia de Longo Alcance"
+    },
+    {
+      "competenciaId": "30015",
+      "peso": "obrigatoria",
+      "inicio": "2025-10-27",
+      "termino": "2026-03-31",
+      "compNome": "Decisões Ágeis"
+    },
+    {
+      "competenciaId": "30034",
+      "peso": "obrigatoria",
+      "inicio": "2026-01-12",
+      "termino": "2026-03-31",
+      "compNome": "Adaptabilidade Dinâmica"
+    },
+    {
+      "competenciaId": "30035",
+      "peso": "obrigatoria",
+      "inicio": "2026-01-30",
+      "termino": "2026-03-31",
+      "compNome": "Gestão da Comunicação"
+    },
+    {
+      "competenciaId": "30036",
+      "peso": "obrigatoria",
+      "inicio": "2026-02-24",
+      "termino": "2026-03-31",
+      "compNome": "Inteligência Emocional Tática"
+    }
+  ],
+  "messages": [],
+  "stdout": "competenciaId\tpeso\tinicio\ttermino\tcompNome\n30022\topcional\t2025-04-20\t2025-10-31\tMindset Visionário\n30013\topcional\t2025-05-20\t2025-11-30\tArquitetura de Mudanças\n30028\tobrigatoria\t2025-06-29\t2025-12-31\tRadar de Cenários\n30021\tobrigatoria\t2025-08-08\t2026-03-31\tMentalidade Sistêmica\n30016\tobrigatoria\t2025-09-17\t2026-03-31\tEstratégia de Longo Alcance\n30015\tobrigatoria\t2025-10-27\t2026-03-31\tDecisões Ágeis\n30034\tobrigatoria\t2026-01-12\t2026-03-31\tAdaptabilidade Dinâmica\n30035\tobrigatoria\t2026-01-30\t2026-03-31\tGestão da Comunicação\n30036\tobrigatoria\t2026-02-24\t2026-03-31\tInteligência Emocional Tática\n",
+  "stderr": "",
+  "execution_time_ms": 385
+}

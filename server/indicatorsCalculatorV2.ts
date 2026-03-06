@@ -117,6 +117,7 @@ export interface StudentIndicatorsV2 {
     ativo: boolean;
     trilhaNome: string;
     diasRestantes: number;
+    dataLimite: string;
   }[];
 }
 
@@ -470,22 +471,28 @@ export function calcularIndicadoresAluno(
       });
   const consolidado = consolidarCiclos(ciclosParaConsolidar, trilha || 'Geral');
   
-  // Alertas de case pendente
-  const alertaCasePendente: { ativo: boolean; trilhaNome: string; diasRestantes: number }[] = [];
+  // Alertas de case pendente (deduplicado por trilhaNome)
+  const alertaCasePendente: { ativo: boolean; trilhaNome: string; diasRestantes: number; dataLimite: string }[] = [];
   const now = hoje || new Date();
+  const trilhasAlertadas = new Set<string>();
   
   for (const ciclo of ciclosEmAndamento) {
     const diasRestantes = diasEntre(ciclo.dataFim, now);
+    const trilhaKey = ciclo.trilhaNome?.toLowerCase() || '';
+    // Deduplicar: apenas 1 alerta por trilha
+    if (trilhasAlertadas.has(trilhaKey)) continue;
     // Alertar se faltam 30 dias ou menos para o fim do ciclo
     if (diasRestantes <= 30 && diasRestantes > 0) {
       const caseAluno = casesData.find(c => 
-        c.trilhaNome?.toLowerCase() === ciclo.trilhaNome?.toLowerCase()
+        c.trilhaNome?.toLowerCase() === trilhaKey
       );
       if (!caseAluno?.entregue) {
+        trilhasAlertadas.add(trilhaKey);
         alertaCasePendente.push({
           ativo: true,
           trilhaNome: ciclo.trilhaNome,
           diasRestantes,
+          dataLimite: ciclo.dataFim,
         });
       }
     }
