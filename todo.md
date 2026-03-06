@@ -1590,3 +1590,9 @@
 - [x] Quando evento não tem link de vídeo, mostrar "Link será disponibilizado em breve" em vez de esconder
 - [x] Botão Marcar Presença deve aparecer em TODOS os eventos Ausentes, independente de ter link (REVISADO: só aparece com link)
 - [x] Botão Marcar Presença só aparece quando o evento TEM link de vídeo (se não tem link, mostra apenas Ausente + "Link em breve")
+
+## Remover duplicidade de presença no Mural (05/03/2026)- [x] Remover modal de "Registrar Presença e Reflexão" do Mura- [x] Remover seção "Pendentes de Presença" com botões "Presença" do Mural
+- - [x] Manter alerta "Não deixe de marcar sua presença" com botão que redireciona para aba Eventos no Portal do AlunoAluno
+
+## Alerta de mentorias faltantes na aba Mentorias (05/03/2026)
+- [x] Adicionar pop-up/alerta "Faltam X mentorias para finalizar a sua jornada" na aba Mentorias do Portal do Aluno

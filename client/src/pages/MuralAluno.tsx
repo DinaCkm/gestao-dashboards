@@ -94,9 +94,8 @@ const VIEW_CONFIG: Record<Exclude<ViewType, "home">, {
 // ATTENDANCE BANNER
 // ============================================================
 
-function AttendanceBanner({ pendingCount, onOpenModal }: { pendingCount: number; onOpenModal: () => void }) {
+function AttendanceBanner({ pendingCount }: { pendingCount: number }) {
   if (pendingCount === 0) return null;
-
   return (
     <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200 shadow-sm">
       <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/30 rounded-full blur-2xl -translate-y-1/2 translate-x-1/4" />
@@ -113,7 +112,7 @@ function AttendanceBanner({ pendingCount, onOpenModal }: { pendingCount: number;
           </p>
         </div>
         <Button
-          onClick={onOpenModal}
+          onClick={() => window.location.href = "/portal-aluno?tab=eventos"}
           className="bg-amber-600 hover:bg-amber-700 text-white shadow-md flex-shrink-0"
           size="sm"
         >
@@ -125,173 +124,7 @@ function AttendanceBanner({ pendingCount, onOpenModal }: { pendingCount: number;
   );
 }
 
-// ============================================================
-// ATTENDANCE MODAL
-// ============================================================
 
-function AttendanceModal({
-  open,
-  onOpenChange,
-  pendingWebinars,
-  onMarkPresence,
-  isSubmitting,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  pendingWebinars: any[];
-  onMarkPresence: (eventId: number, reflexao: string) => void;
-  isSubmitting: boolean;
-}) {
-  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
-  const [reflexao, setReflexao] = useState("");
-  const [step, setStep] = useState<"list" | "reflexao">("list");
-
-  const handleSelectEvent = (eventId: number) => {
-    setSelectedEventId(eventId);
-    setReflexao("");
-    setStep("reflexao");
-  };
-
-  const handleBack = () => {
-    setStep("list");
-    setSelectedEventId(null);
-    setReflexao("");
-  };
-
-  const handleSubmit = () => {
-    if (!selectedEventId || reflexao.trim().length < 20) {
-      toast.error("A reflexão deve ter pelo menos 20 caracteres.");
-      return;
-    }
-    onMarkPresence(selectedEventId, reflexao.trim());
-  };
-
-  const selectedEvent = pendingWebinars.find((w: any) => w.eventId === selectedEventId);
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setStep("list"); setSelectedEventId(null); setReflexao(""); } }}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-[#0A1E3E]">
-            <CheckCircle2 className="h-5 w-5 text-[#F5991F]" />
-            {step === "list" ? "Confirmar Presença em Eventos" : "Registrar Presença e Reflexão"}
-          </DialogTitle>
-          <DialogDescription className="text-left">
-            {step === "list"
-              ? "Selecione o evento para registrar sua presença e compartilhar sua reflexão."
-              : `Evento: ${selectedEvent?.eventName || ""}`
-            }
-          </DialogDescription>
-        </DialogHeader>
-
-        {step === "list" && (
-          <div className="space-y-3 mt-2">
-            <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-              <div className="flex gap-3">
-                <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs sm:text-sm text-blue-800 leading-relaxed">
-                  Antes de registrar sua presença, compartilhe conosco suas percepções e insights sobre o evento.
-                  Lembre-se: a participação nos webinars é uma oportunidade valiosa para o seu desenvolvimento
-                  profissional e pessoal — o verdadeiro ganho está no aprendizado, não apenas no registro de presença.
-                  Registrar presença sem ter participado de fato significa abrir mão de uma oportunidade real de
-                  crescimento. <strong>O maior beneficiado — ou prejudicado — por essa escolha é você.</strong>
-                </p>
-              </div>
-            </div>
-
-            {pendingWebinars.length === 0 ? (
-              <div className="text-center py-8">
-                <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
-                <p className="text-sm font-medium text-gray-900">Tudo em dia!</p>
-                <p className="text-xs text-gray-500 mt-1">Você não tem eventos pendentes de confirmação.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {pendingWebinars.map((w: any) => (
-                  <button
-                    key={w.eventId}
-                    onClick={() => handleSelectEvent(w.eventId)}
-                    className="w-full text-left rounded-lg border border-gray-200 hover:border-[#F5991F] hover:bg-orange-50/50 p-3 transition-all group"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 group-hover:text-[#0A1E3E] truncate">
-                          {w.eventName}
-                        </h4>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(w.eventDate)}
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-[#F5991F] flex-shrink-0" />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {step === "reflexao" && selectedEvent && (
-          <div className="space-y-4 mt-2">
-            <div className="rounded-lg bg-gray-50 border p-3">
-              <div className="flex items-center gap-2">
-                <Video className="h-4 w-4 text-[#0A1E3E]" />
-                <span className="text-sm font-medium text-gray-900">{selectedEvent.eventName}</span>
-              </div>
-              <span className="text-xs text-gray-500 ml-6">{formatDate(selectedEvent.eventDate)}</span>
-            </div>
-
-            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
-              <div className="flex gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-800">
-                  Compartilhe o que aprendeu, o que mais chamou sua atenção e como pretende aplicar no seu dia a dia.
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Sua reflexão sobre o evento <span className="text-red-500">*</span>
-              </label>
-              <Textarea
-                value={reflexao}
-                onChange={(e) => setReflexao(e.target.value)}
-                placeholder="Escreva aqui suas percepções, insights e aprendizados do evento..."
-                className="min-h-[120px] resize-none"
-                maxLength={2000}
-              />
-              <div className="flex justify-between mt-1">
-                <span className={`text-xs ${reflexao.length < 20 ? "text-red-500" : "text-green-600"}`}>
-                  {reflexao.length < 20 ? `Mínimo 20 caracteres (${reflexao.length}/20)` : `${reflexao.length}/2000 caracteres`}
-                </span>
-              </div>
-            </div>
-
-            <DialogFooter className="flex gap-2 sm:gap-2">
-              <Button variant="outline" onClick={handleBack} className="flex-1 sm:flex-none">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Voltar
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={reflexao.trim().length < 20 || isSubmitting}
-                className="flex-1 sm:flex-none bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
-              >
-                {isSubmitting ? (
-                  <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Enviando...</>
-                ) : (
-                  <><Send className="h-4 w-4 mr-1" /> Confirmar Presença</>
-                )}
-              </Button>
-            </DialogFooter>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 // ============================================================
 // STAT CARD (clickable)
@@ -705,7 +538,7 @@ function DrillDownHeader({
 export default function MuralAluno() {
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>("home");
-  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+
 
   // Data hooks
   const { data: upcomingWebinars, isLoading: loadingUpcoming } = trpc.webinars.upcoming.useQuery({ limit: 20 });
@@ -714,17 +547,7 @@ export default function MuralAluno() {
   const { data: pendingAttendance, refetch: refetchPending } = trpc.attendance.pending.useQuery();
   const { data: myAttendance, refetch: refetchMyAttendance } = trpc.attendance.myAttendance.useQuery();
 
-  const markPresenceMutation = trpc.attendance.markPresence.useMutation({
-    onSuccess: () => {
-      toast.success("Presença registrada com sucesso! Obrigado pela sua reflexão.");
-      setAttendanceModalOpen(false);
-      refetchPending();
-      refetchMyAttendance();
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Erro ao registrar presença. Tente novamente.");
-    },
-  });
+
 
   const isLoading = loadingUpcoming || loadingPast || loadingAnnouncements;
 
@@ -808,19 +631,9 @@ export default function MuralAluno() {
             </div>
           </div>
 
-          {/* Attendance Modal */}
-          <AttendanceModal
-            open={attendanceModalOpen}
-            onOpenChange={setAttendanceModalOpen}
-            pendingWebinars={pendingAttendance || []}
-            onMarkPresence={(eventId, reflexao) => markPresenceMutation.mutate({ eventId, reflexao })}
-            isSubmitting={markPresenceMutation.isPending}
-          />
-
-          {/* Attendance Banner */}
+          {/* Attendance Banner - redireciona para Portal do Aluno aba Eventos */}
           <AttendanceBanner
             pendingCount={pendingCount}
-            onOpenModal={() => setAttendanceModalOpen(true)}
           />
 
           {/* Next Webinar Highlight */}
@@ -885,61 +698,7 @@ export default function MuralAluno() {
             </div>
           </div>
 
-          {/* Quick preview: recent recordings with pending attendance */}
-          {pendingCount > 0 && pendingAttendance && pendingAttendance.length > 0 && (
-            <div>
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                Pendentes de Presença
-              </h2>
-              <div className="space-y-3">
-                {pendingAttendance.slice(0, 3).map((w: any) => (
-                  <div
-                    key={w.eventId}
-                    className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/50 p-4 hover:shadow-sm transition-shadow"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                        <Video className="h-4 w-4 text-amber-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">{w.eventName}</h4>
-                        <span className="text-xs text-gray-500">{formatDate(w.eventDate)}</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 flex-shrink-0 ml-3">
-                      {w.youtubeLink && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-xs text-red-600 border-red-200 hover:bg-red-50"
-                          onClick={() => window.open(w.youtubeLink, "_blank")}
-                        >
-                          <Youtube className="h-3.5 w-3.5 mr-1" />
-                          Assistir
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        className="h-8 text-xs bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
-                        onClick={() => setAttendanceModalOpen(true)}
-                      >
-                        <MessageSquareText className="h-3.5 w-3.5 mr-1" />
-                        Presença
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {pendingAttendance.length > 3 && (
-                  <button
-                    onClick={() => setAttendanceModalOpen(true)}
-                    className="w-full text-center text-sm text-[#F5991F] hover:text-[#F5991F]/80 font-medium py-2"
-                  >
-                    Ver todos os {pendingAttendance.length} eventos pendentes
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+
         </div>
       </AlunoLayout>
     );
@@ -1027,14 +786,7 @@ export default function MuralAluno() {
   return (
     <AlunoLayout>
       <div className="animate-in fade-in duration-300">
-        {/* Attendance Modal (always available) */}
-        <AttendanceModal
-          open={attendanceModalOpen}
-          onOpenChange={setAttendanceModalOpen}
-          pendingWebinars={pendingAttendance || []}
-          onMarkPresence={(eventId, reflexao) => markPresenceMutation.mutate({ eventId, reflexao })}
-          isSubmitting={markPresenceMutation.isPending}
-        />
+
 
         {renderDrillDownContent()}
       </div>

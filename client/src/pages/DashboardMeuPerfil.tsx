@@ -777,7 +777,7 @@ export default function DashboardMeuPerfil() {
         )}
 
         {/* Tabs com seções detalhadas */}
-        <Tabs defaultValue="jornada" className="w-full">
+        <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'jornada'} className="w-full">
           <TabsList className="bg-gray-100 border border-gray-200 w-full flex flex-wrap h-auto gap-1 p-1 rounded-xl">
             <TabsTrigger value="jornada" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <Route className="h-4 w-4 mr-1" /> Minha Jornada
@@ -1299,6 +1299,42 @@ export default function DashboardMeuPerfil() {
 
           {/* === HISTÓRICO DE MENTORIAS === */}
           <TabsContent value="mentorias" className="mt-4">
+            {/* Alerta: Faltam X mentorias para finalizar */}
+            {jornadaData?.saldo && jornadaData.saldo.saldoRestante > 0 && (
+              <div className="mb-4 p-4 rounded-xl border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center gap-4">
+                <div className="p-3 rounded-full bg-blue-100">
+                  <Bell className="h-6 w-6 text-blue-700" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-base font-semibold text-blue-900">
+                    Faltam <span className="text-xl font-bold text-blue-700">{jornadaData.saldo.saldoRestante}</span> mentoria{jornadaData.saldo.saldoRestante !== 1 ? 's' : ''} para finalizar a sua jornada!
+                  </p>
+                  <p className="text-sm text-blue-700/80 mt-0.5">
+                    Você já realizou {jornadaData.saldo.sessoesRealizadas} de {jornadaData.saldo.totalContratadas} sessões contratadas ({jornadaData.saldo.percentualUsado}% concluído)
+                  </p>
+                </div>
+                <div className="w-16 h-16 flex-shrink-0">
+                  <svg viewBox="0 0 36 36" className="w-full h-full">
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e0e7ff" strokeWidth="3" />
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#3b82f6" strokeWidth="3" strokeDasharray={`${jornadaData.saldo.percentualUsado}, 100`} strokeLinecap="round" />
+                    <text x="18" y="20.5" textAnchor="middle" className="text-[0.5rem] font-bold fill-blue-700">{jornadaData.saldo.percentualUsado}%</text>
+                  </svg>
+                </div>
+              </div>
+            )}
+            {jornadaData?.saldo && jornadaData.saldo.saldoRestante === 0 && (
+              <div className="mb-4 p-4 rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-green-50 flex items-center gap-4">
+                <div className="p-3 rounded-full bg-emerald-100">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-700" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-base font-semibold text-emerald-900">
+                    Parabéns! Você completou todas as {jornadaData.saldo.totalContratadas} mentorias da sua jornada!
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Card do Perfil do Mentor */}
             {aluno.mentorId && <MentorProfileCard mentorId={aluno.mentorId} mentorName={aluno.mentor} />}
 
