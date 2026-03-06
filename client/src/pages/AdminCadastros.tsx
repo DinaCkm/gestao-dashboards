@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X } from "lucide-react";
+import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 function formatCpf(value: string): string {
@@ -172,6 +172,48 @@ export default function AdminCadastros() {
   const { data: mentoresList } = trpc.mentor.list.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: turmasList } = trpc.turmas.list.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
 
+  // Queries para Gerentes de Empresa (Visão Dupla)
+  const { data: gerentesEmpresa, refetch: refetchGerentesEmpresa, isLoading: loadingGerentesEmpresa } = trpc.admin.listGerentesEmpresa.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+
+  const promoteToGerente = trpc.admin.promoteToGerente.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || "Aluno promovido a gerente!");
+        refetchGerentesEmpresa();
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao promover aluno");
+      }
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const createGerentePuro = trpc.admin.createGerentePuro.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || "Gerente puro criado!");
+        refetchGerentesEmpresa();
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao criar gerente");
+      }
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const removeGerente = trpc.admin.removeGerente.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || "Papel de gerente removido!");
+        refetchGerentesEmpresa();
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao remover gerente");
+      }
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
   const createAlunoDireto = trpc.admin.createAlunoDireto.useMutation({
     onSuccess: (data) => {
       if (data.success) {
@@ -225,7 +267,7 @@ export default function AdminCadastros() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="acesso" className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
               Alunos
@@ -241,6 +283,10 @@ export default function AdminCadastros() {
             <TabsTrigger value="gerentes" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Gerentes
+            </TabsTrigger>
+            <TabsTrigger value="gerentes-empresa" className="flex items-center gap-2">
+              <Crown className="h-4 w-4" />
+              Visão Dupla
             </TabsTrigger>
           </TabsList>
 
@@ -296,6 +342,21 @@ export default function AdminCadastros() {
               onUpdateAcesso={updateAcessoGerente.mutate}
               isCreating={createGerente.isPending}
               onEdit={editGerente.mutate}
+            />
+          </TabsContent>
+
+          {/* Gerentes de Empresa - Visão Dupla Tab */}
+          <TabsContent value="gerentes-empresa">
+            <GerentesEmpresaTab
+              gerentesEmpresa={gerentesEmpresa || []}
+              empresas={empresas || []}
+              loading={loadingGerentesEmpresa}
+              onPromote={promoteToGerente.mutate}
+              onCreatePuro={createGerentePuro.mutate}
+              onRemove={removeGerente.mutate}
+              isPromoting={promoteToGerente.isPending}
+              isCreatingPuro={createGerentePuro.isPending}
+              isRemoving={removeGerente.isPending}
             />
           </TabsContent>
         </Tabs>
@@ -1507,6 +1568,311 @@ function GerentesTab({ gerentes, empresas, loading, onCreate, onUpdateAcesso, is
                 </form>
               </DialogContent>
             </Dialog>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
+// ============ GERENTES DE EMPRESA - VISÃO DUPLA ============
+function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onCreatePuro, onRemove, isPromoting, isCreatingPuro, isRemoving }: {
+  gerentesEmpresa: any[];
+  empresas: any[];
+  loading: boolean;
+  onPromote: (data: { alunoId: number; programId: number }) => void;
+  onCreatePuro: (data: { name: string; email: string; cpf?: string; programId: number }) => void;
+  onRemove: (data: { userId: number }) => void;
+  isPromoting: boolean;
+  isCreatingPuro: boolean;
+  isRemoving: boolean;
+}) {
+  const [promoteOpen, setPromoteOpen] = useState(false);
+  const [puroOpen, setPuroOpen] = useState(false);
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+  const [searchAluno, setSearchAluno] = useState("");
+  const [selectedAlunoId, setSelectedAlunoId] = useState("");
+
+  // Gerente Puro form
+  const [puroNome, setPuroNome] = useState("");
+  const [puroEmail, setPuroEmail] = useState("");
+  const [puroCpf, setPuroCpf] = useState("");
+  const [puroProgramId, setPuroProgramId] = useState("");
+
+  // Query alunos da empresa selecionada (para promoção)
+  const { data: alunosProgram } = trpc.admin.alunosByProgram.useQuery(
+    { programId: parseInt(selectedProgramId) },
+    { enabled: !!selectedProgramId && promoteOpen }
+  );
+
+  const filteredAlunos = (alunosProgram || []).filter((a: any) =>
+    !searchAluno || a.name.toLowerCase().includes(searchAluno.toLowerCase()) || a.email?.toLowerCase().includes(searchAluno.toLowerCase())
+  );
+
+  const handlePromote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAlunoId || !selectedProgramId) {
+      toast.error("Selecione a empresa e o aluno");
+      return;
+    }
+    onPromote({ alunoId: parseInt(selectedAlunoId), programId: parseInt(selectedProgramId) });
+    setSelectedAlunoId("");
+    setSearchAluno("");
+    setSelectedProgramId("");
+    setPromoteOpen(false);
+  };
+
+  const handleCreatePuro = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!puroProgramId) {
+      toast.error("Selecione a empresa");
+      return;
+    }
+    const cpfDigits = puroCpf.replace(/\D/g, '');
+    if (cpfDigits.length > 0 && cpfDigits.length !== 11) {
+      toast.error("CPF deve conter 11 dígitos");
+      return;
+    }
+    onCreatePuro({
+      name: puroNome,
+      email: puroEmail,
+      cpf: cpfDigits || undefined,
+      programId: parseInt(puroProgramId),
+    });
+    setPuroNome("");
+    setPuroEmail("");
+    setPuroCpf("");
+    setPuroProgramId("");
+    setPuroOpen(false);
+  };
+
+  const handleRemove = (userId: number, name: string) => {
+    if (window.confirm(`Tem certeza que deseja remover o papel de gerente de "${name}"? O usuário voltará a ser apenas aluno.`)) {
+      onRemove({ userId });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-amber-500" />
+              Gerentes de Empresa (Visão Dupla)
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Gerencie quem tem visão gerencial da empresa. Gerentes com perfil de aluno podem alternar entre as duas visões.
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Dialog open={promoteOpen} onOpenChange={setPromoteOpen}>
+              <DialogTrigger asChild>
+                <Button variant="default" size="sm">
+                  <ArrowLeftRight className="h-4 w-4 mr-2" />
+                  Promover Aluno
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <form onSubmit={handlePromote}>
+                  <DialogHeader>
+                    <DialogTitle>Promover Aluno a Gerente</DialogTitle>
+                    <DialogDescription>
+                      O aluno manterá seu perfil de aluno e ganhará acesso à visão gerencial da empresa.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Empresa *</Label>
+                      <Select value={selectedProgramId} onValueChange={(v) => { setSelectedProgramId(v); setSelectedAlunoId(""); setSearchAluno(""); }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a empresa" />
+                        </SelectTrigger>
+                        <SelectContentNoPortal>
+                          {empresas.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                          ))}
+                        </SelectContentNoPortal>
+                      </Select>
+                    </div>
+                    {selectedProgramId && (
+                      <div className="space-y-2">
+                        <Label>Buscar Aluno *</Label>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            className="pl-9"
+                            placeholder="Digite o nome ou email do aluno..."
+                            value={searchAluno}
+                            onChange={(e) => setSearchAluno(e.target.value)}
+                          />
+                        </div>
+                        <div className="max-h-48 overflow-y-auto border rounded-md">
+                          {filteredAlunos.length === 0 ? (
+                            <p className="text-sm text-muted-foreground p-3 text-center">
+                              {alunosProgram ? "Nenhum aluno encontrado" : "Carregando..."}
+                            </p>
+                          ) : (
+                            filteredAlunos.map((aluno: any) => (
+                              <button
+                                key={aluno.id}
+                                type="button"
+                                onClick={() => setSelectedAlunoId(aluno.id.toString())}
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between ${
+                                  selectedAlunoId === aluno.id.toString() ? "bg-primary/10 text-primary font-medium" : ""
+                                }`}
+                              >
+                                <div>
+                                  <p className="font-medium">{aluno.name}</p>
+                                  <p className="text-xs text-muted-foreground">{aluno.email || "Sem email"}</p>
+                                </div>
+                                {selectedAlunoId === aluno.id.toString() && (
+                                  <CheckCircle className="h-4 w-4 text-primary" />
+                                )}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={isPromoting || !selectedAlunoId}>
+                      {isPromoting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Promovendo...</> : "Promover a Gerente"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={puroOpen} onOpenChange={setPuroOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Gerente Puro
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <form onSubmit={handleCreatePuro}>
+                  <DialogHeader>
+                    <DialogTitle>Cadastrar Gerente Puro</DialogTitle>
+                    <DialogDescription>
+                      Este gerente NÃO será aluno do programa. Terá apenas a visão gerencial da empresa.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Nome Completo *</Label>
+                      <Input value={puroNome} onChange={(e) => setPuroNome(e.target.value)} placeholder="Nome do gerente" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email *</Label>
+                      <Input type="email" value={puroEmail} onChange={(e) => setPuroEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>CPF</Label>
+                      <Input value={puroCpf} onChange={(e) => setPuroCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
+                      <p className="text-xs text-muted-foreground">CPF é usado para login (Email + CPF)</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Empresa que Gerencia *</Label>
+                      <Select value={puroProgramId} onValueChange={setPuroProgramId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a empresa" />
+                        </SelectTrigger>
+                        <SelectContentNoPortal>
+                          {empresas.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                          ))}
+                        </SelectContentNoPortal>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={isCreatingPuro}>
+                      {isCreatingPuro ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Criando...</> : "Criar Gerente Puro"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : (
+          <>
+            {/* Info Banner */}
+            <Alert className="mb-4 border-amber-200 bg-amber-50">
+              <Crown className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                <strong>Promover Aluno:</strong> O aluno ganha visão gerencial e pode alternar entre Aluno e Gerente.{" "}
+                <strong>Gerente Puro:</strong> Pessoa que NÃO é aluno, só tem visão gerencial.
+              </AlertDescription>
+            </Alert>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {gerentesEmpresa.map((g: any) => (
+                  <TableRow key={g.id}>
+                    <TableCell className="font-medium">{g.name}</TableCell>
+                    <TableCell>{g.email || "-"}</TableCell>
+                    <TableCell>{g.programName || "-"}</TableCell>
+                    <TableCell>
+                      {g.isAlsoStudent ? (
+                        <Badge className="bg-blue-600">
+                          <ArrowLeftRight className="h-3 w-3 mr-1" />
+                          Aluno + Gerente
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          <Building2 className="h-3 w-3 mr-1" />
+                          Gerente Puro
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {g.id ? (
+                        <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
+                      ) : (
+                        <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" /> Inativo</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemove(g.id, g.name)}
+                        disabled={isRemoving}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Remover
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {gerentesEmpresa.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      Nenhum gerente de empresa com visão dupla cadastrado. Use "Promover Aluno" ou "Gerente Puro" para adicionar.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </>
         )}
       </CardContent>

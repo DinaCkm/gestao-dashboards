@@ -3046,6 +3046,49 @@ export const appRouter = router({
         return await db.toggleAccessUserStatus(input.userId);
       }),
 
+    // ============ GERENTES DE EMPRESA (VISÃO DUPLA) ============
+    
+    // Listar gerentes de empresa com info completa
+    listGerentesEmpresa: adminProcedure.query(async () => {
+      return await db.getGerentesEmpresa();
+    }),
+
+    // Buscar alunos de uma empresa (para select de promoção)
+    alunosByProgram: adminProcedure
+      .input(z.object({ programId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAlunosByProgram(input.programId);
+      }),
+
+    // Promover aluno a gerente de empresa
+    promoteToGerente: adminProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        programId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.promoteAlunoToGerente(input.alunoId, input.programId);
+      }),
+
+    // Criar gerente puro (sem perfil de aluno)
+    createGerentePuro: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        cpf: z.string().optional(),
+        programId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createGerentePuro(input);
+      }),
+
+    // Remover papel de gerente
+    removeGerente: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.removeGerenteRole(input.userId);
+      }),
+
     // Cadastro Direto de Aluno pelo Admin (com bypass de onboarding)
     createAlunoDireto: adminProcedure
       .input(z.object({

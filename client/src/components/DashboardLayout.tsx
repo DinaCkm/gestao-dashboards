@@ -52,6 +52,7 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import CustomLogin from "./CustomLogin";
+import RoleSwitcher from "@/components/RoleSwitcher";
 
 type MenuItem = {
   icon: React.ElementType;
@@ -298,6 +299,9 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3 border-t border-sidebar-border">
+            <div className="mb-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+              <RoleSwitcher />
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-sidebar-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -364,6 +368,7 @@ function DashboardLayoutContent({
                 </div>
               </div>
             </div>
+            <RoleSwitcher />
           </div>
         )}
         <main className="flex-1 p-4 md:p-6">{children}</main>

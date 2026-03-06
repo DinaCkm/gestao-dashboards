@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
 import { Compass, User, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList } from "lucide-react";
+import RoleSwitcher from "@/components/RoleSwitcher";
 
 const NAV_ITEMS = [
   { label: "Mural", path: "/mural", icon: Megaphone },
@@ -68,6 +69,9 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
                 );
               })}
             </nav>
+
+            {/* Alternância de Papel (Gerente ↔ Aluno) */}
+            <RoleSwitcher />
 
             {/* Perfil / Sair */}
             <DropdownMenu>

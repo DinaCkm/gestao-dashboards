@@ -1603,3 +1603,26 @@
 
 ## Card B.E.M. Área de Aulas (05/03/2026)
 - [x] Adicionar card B.E.M. "Acesse a Área de Aulas" com logo B.E.M. e link para https://sebraeto.competenciasdobem.com.br no Mural e Portal do Aluno
+
+## Visão do Gerente de Empresa - Papel Duplo (05/03/2026)
+- [ ] Analisar estrutura atual (schema, roles, routers) para definir arquitetura
+- [ ] Proposta técnica do papel duplo (Aluno + Gerente) aprovada pelo usuário
+- [ ] Backend: schema, role gerente, routers e lógica de acesso
+- [ ] Frontend: dashboard do Gerente com visão da empresa e empregados
+- [ ] Alternância de papel (Aluno ↔ Gerente) na interface
+- [ ] Testes vitest para funcionalidades do Gerente
+
+## Visão Dupla Gerente - Implementação Detalhada (05/03/2026)
+- [x] Backend: criar procedure para verificar se manager também é aluno (isAlsoStudent)
+- [x] Backend: ajustar procedures do aluno para aceitar managers com alunoId
+- [x] Frontend: criar RoleContext com estado activeRole (aluno/gerente)
+- [x] Frontend: criar componente RoleSwitcher (botão alternância no header)
+- [x] Frontend: ajustar Home.tsx para redirecionar gerente-aluno ao modo Aluno por padrão
+- [x] Frontend: ajustar AlunoLayout para mostrar RoleSwitcher quando user é manager+aluno
+- [x] Frontend: ajustar DashboardLayout para mostrar RoleSwitcher quando user é manager+aluno
+- [x] Vincular Vera Braga (SEBRAE TO) como manager com alunoId=30078
+- [x] Vincular Joseane (SEBRAE TO) como manager com alunoId=30066
+- [x] Criar user manager para Fabio (SEBRAE ACRE) com alunoId=30001
+- [x] Criar user manager para Carolina (EMBRAPII) com alunoId=30036
+- [x] Admin: seção "Gerentes de Empresa" nos Cadastros (atribuir aluno como gerente, cadastrar gerente puro, remover/alterar gerentes)
+- [x] Testes vitest para funcionalidades do papel duplo

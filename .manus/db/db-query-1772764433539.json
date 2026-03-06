@@ -1,0 +1,19 @@
+{
+  "query": "SELECT c.id, c.name, c.email, c.role, c.managedProgramId, c.programId, c.canLogin FROM consultors c WHERE c.role = 'gerente'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT c.id, c.name, c.email, c.role, c.managedProgramId, c.programId, c.canLogin FROM consultors c WHERE c.role = 'gerente'",
+  "rows": [
+    {
+      "id": "30001",
+      "name": "Joseane",
+      "email": "joseane@to.sebrae.com.br",
+      "role": "gerente",
+      "managedProgramId": "17",
+      "programId": "NULL",
+      "canLogin": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tmanagedProgramId\tprogramId\tcanLogin\n30001\tJoseane\tjoseane@to.sebrae.com.br\tgerente\t17\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 416
+}

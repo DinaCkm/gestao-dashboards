@@ -24,7 +24,7 @@ export default function Home() {
 
   // Verificar status de onboarding do aluno
   const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
-    enabled: !loading && !!user && user.role === 'user',
+    enabled: !loading && !!user && (user.role === 'user' || (user.role === 'manager' && !!(user as any).alunoId)),
   });
 
   // Redirect based on role
@@ -32,13 +32,28 @@ export default function Home() {
     if (loading || !user) return;
     
     if (user.role === "manager") {
-      // Diferenciar mentor de gestor de empresa
       const userAny = user as any;
-      if (userAny.consultorId) {
-        // É um mentor → vai para dashboard do mentor
+      if (userAny.consultorId && !userAny.alunoId) {
+        // É um mentor puro → vai para dashboard do mentor
         setLocation("/dashboard/mentor");
+      } else if (userAny.alunoId) {
+        // É gerente + aluno (visão dupla) → modo padrão é ALUNO
+        // Verificar se tem activeRole salvo no sessionStorage
+        const savedRole = sessionStorage.getItem('activeRole');
+        if (savedRole === 'gerente') {
+          setLocation("/dashboard/gestor");
+        } else {
+          // Modo padrão: aluno
+          if (onboardingStatus) {
+            if (onboardingStatus.needsOnboarding) {
+              setLocation("/onboarding");
+            } else {
+              setLocation("/meu-dashboard");
+            }
+          }
+        }
       } else {
-        // É um gestor de empresa → vai para dashboard da empresa
+        // É um gestor de empresa puro → vai para dashboard da empresa
         setLocation("/dashboard/gestor");
       }
       return;

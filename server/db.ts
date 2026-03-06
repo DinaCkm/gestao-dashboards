@@ -4692,8 +4692,8 @@ export async function getAlunoOnboardingStatus(user: {
   const db = await getDb();
   if (!db) return { needsOnboarding: false, hasMentor: false, bypassOnboarding: false, alunoId: null };
 
-  // Só se aplica a alunos (role === 'user')
-  if (user.role !== 'user') {
+  // Só se aplica a alunos (role === 'user') ou managers com alunoId (visão dupla)
+  if (user.role !== 'user' && !(user.role === 'manager' && user.alunoId)) {
     return { needsOnboarding: false, hasMentor: false, bypassOnboarding: false, alunoId: null };
   }
 
@@ -5064,4 +5064,208 @@ export async function getAlunoAppointments(alunoId: number) {
   }
 
   return result.sort((a, b) => b.scheduledDate.localeCompare(a.scheduledDate));
+}
+
+
+// ==================== GERENTES DE EMPRESA (VISÃO DUPLA) ====================
+
+/**
+ * Promover um aluno a gerente de empresa.
+ * Atualiza o user existente (se houver) para role='manager' e vincula programId.
+ * Se não existir user, cria um novo com role='manager'.
+ */
+export async function promoteAlunoToGerente(alunoId: number, programId: number): Promise<{ success: boolean; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+
+  // Verificar se o aluno existe
+  const [aluno] = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  if (!aluno) return { success: false, message: "Aluno não encontrado" };
+
+  // Verificar se já existe user vinculado a este aluno
+  const [existingUser] = await db.select().from(users).where(eq(users.alunoId, alunoId)).limit(1);
+
+  if (existingUser) {
+    // Atualizar user existente para manager
+    await db.update(users)
+      .set({ role: 'manager', programId, alunoId })
+      .where(eq(users.id, existingUser.id));
+    return { success: true, message: `${aluno.name} promovido a gerente com sucesso.` };
+  }
+
+  // Verificar se existe user pelo email
+  if (aluno.email) {
+    const [userByEmail] = await db.select().from(users).where(eq(users.email, aluno.email.toLowerCase())).limit(1);
+    if (userByEmail) {
+      await db.update(users)
+        .set({ role: 'manager', programId, alunoId })
+        .where(eq(users.id, userByEmail.id));
+      return { success: true, message: `${aluno.name} promovido a gerente com sucesso.` };
+    }
+  }
+
+  // Criar novo user manager
+  const openId = `gerente_aluno_${alunoId}`;
+  await db.insert(users).values({
+    openId,
+    name: aluno.name,
+    email: aluno.email?.toLowerCase() || null,
+    cpf: aluno.cpf || null,
+    role: 'manager' as const,
+    loginMethod: aluno.cpf ? 'email_cpf' : 'email_id',
+    isActive: 1,
+    alunoId,
+    programId,
+    lastSignedIn: new Date(),
+  });
+
+  return { success: true, message: `${aluno.name} promovido a gerente com sucesso.` };
+}
+
+/**
+ * Criar gerente puro (sem perfil de aluno).
+ * Cria registro na tabela consultors E na tabela users.
+ */
+export async function createGerentePuro(data: {
+  name: string;
+  email: string;
+  cpf?: string;
+  programId: number;
+}): Promise<{ success: boolean; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+
+  // Criar registro na tabela consultors
+  const [consultorResult] = await db.insert(consultors).values({
+    name: data.name,
+    email: data.email.toLowerCase(),
+    cpf: data.cpf?.replace(/\D/g, '') || null,
+    role: 'gerente' as const,
+    managedProgramId: data.programId,
+    canLogin: data.cpf ? 1 : 0,
+    isActive: 1,
+  });
+
+  const consultorId = consultorResult.insertId;
+
+  // Criar registro na tabela users para login
+  if (data.cpf) {
+    const normalizedCpf = data.cpf.replace(/\D/g, '');
+    const openId = `gerente_puro_${consultorId}`;
+
+    // Verificar CPF duplicado
+    const [existingCpf] = await db.select().from(users).where(eq(users.cpf, normalizedCpf)).limit(1);
+    if (existingCpf) {
+      return { success: false, message: "Este CPF já está cadastrado no sistema." };
+    }
+
+    await db.insert(users).values({
+      openId,
+      name: data.name,
+      email: data.email.toLowerCase(),
+      cpf: normalizedCpf,
+      role: 'manager' as const,
+      loginMethod: 'email_cpf',
+      isActive: 1,
+      consultorId: Number(consultorId),
+      programId: data.programId,
+      lastSignedIn: new Date(),
+    });
+  }
+
+  return { success: true, message: `Gerente ${data.name} criado com sucesso.` };
+}
+
+/**
+ * Remover papel de gerente de um user (voltar a ser aluno).
+ */
+export async function removeGerenteRole(userId: number): Promise<{ success: boolean; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) return { success: false, message: "Usuário não encontrado" };
+
+  if (user.alunoId) {
+    // Tem perfil de aluno → volta para role='user'
+    await db.update(users)
+      .set({ role: 'user' })
+      .where(eq(users.id, userId));
+    return { success: true, message: "Papel de gerente removido. Usuário voltou a ser aluno." };
+  } else {
+    // Gerente puro → desativar
+    await db.update(users)
+      .set({ isActive: 0 })
+      .where(eq(users.id, userId));
+    return { success: true, message: "Gerente desativado com sucesso." };
+  }
+}
+
+/**
+ * Listar gerentes de empresa com informações completas.
+ * Retorna dados do user + dados do aluno vinculado (se houver).
+ */
+export async function getGerentesEmpresa(): Promise<any[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const managerUsers = await db.select()
+    .from(users)
+    .where(and(
+      eq(users.role, 'manager'),
+      eq(users.isActive, 1)
+    ))
+    .orderBy(users.name);
+
+  const allAlunos = await db.select().from(alunos);
+  const allPrograms = await db.select().from(programs);
+  const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
+  const programMap = new Map(allPrograms.map(p => [p.id, p]));
+
+  return managerUsers
+    .filter(u => {
+      // Filtrar: só gerentes de empresa (sem consultorId) OU gerentes com alunoId
+      // Excluir mentores (que têm consultorId mas não são gerentes de empresa)
+      return !u.consultorId || u.alunoId;
+    })
+    .map(u => {
+      const aluno = u.alunoId ? alunoMap.get(u.alunoId) : null;
+      const program = u.programId ? programMap.get(u.programId) : null;
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        cpf: u.cpf,
+        role: u.role,
+        programId: u.programId,
+        programName: program?.name || null,
+        alunoId: u.alunoId,
+        alunoName: aluno?.name || null,
+        isAlsoStudent: !!u.alunoId,
+        consultorId: u.consultorId,
+        createdAt: u.createdAt,
+      };
+    });
+}
+
+/**
+ * Buscar alunos de uma empresa para o select de "Promover a Gerente"
+ */
+export async function getAlunosByProgram(programId: number): Promise<{ id: number; name: string; email: string | null }[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.select({
+    id: alunos.id,
+    name: alunos.name,
+    email: alunos.email,
+  })
+    .from(alunos)
+    .where(and(
+      eq(alunos.programId, programId),
+      eq(alunos.isActive, 1)
+    ))
+    .orderBy(alunos.name);
+
+  return result;
 }
