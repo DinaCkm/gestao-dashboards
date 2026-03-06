@@ -2956,7 +2956,11 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
       .trim();
   };
   const extractCoreDedup = (normalized: string): string => {
-    return normalized.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '').trim();
+    return normalized
+      .replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '')
+      .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')  // Remove "- 01 -" no meio do título
+      .replace(/\s+/g, ' ')
+      .trim();
   };
   const seenCoresDedup = new Map<string, Event>();
   const deduplicatedProgramEvents: Event[] = [];
@@ -3980,19 +3984,27 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
   };
   // Criar mapa com título normalizado
   const webinarByTitle = new Map(allScheduledWebinars.map(w => [normalizeTitle(w.title), w]));
-  // Também criar mapa secundário sem prefixo "aula XX - " para matching parcial
+    // Também criar mapa secundário sem prefixo "aula XX - " para matching parcial
   const webinarByTitleNoPrefix = new Map<string, typeof allScheduledWebinars[0]>();
   for (const w of allScheduledWebinars) {
     const normalized = normalizeTitle(w.title);
-    // Remover prefixo como "2025/19 - aula 01 - " para ficar só com o conteúdo principal
-    const withoutAula = normalized.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '').trim();
+    // Remover prefixo como "2025/19 - aula 01 - " e "- 01 -" no meio para ficar só com o conteúdo principal
+    const withoutAula = normalized
+      .replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '')
+      .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')
+      .replace(/\s+/g, ' ')
+      .trim();
     if (withoutAula) webinarByTitleNoPrefix.set(withoutAula, w);
   }
   const now = new Date();
 
-  // Função auxiliar para extrair o conteúdo principal do título (sem prefixo "aula XX")
+  // Função auxiliar para extrair o conteúdo principal do título (sem prefixo "aula XX" e sem "- 01 -" no meio)
   const extractCore = (normalized: string): string => {
-    return normalized.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '').trim();
+    return normalized
+      .replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '')
+      .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')  // Remove "- 01 -" no meio do título
+      .replace(/\s+/g, ' ')
+      .trim();
   };
 
   // DEDUPLICAR eventos por título normalizado (manter o que tem participação, ou o primeiro)
@@ -4025,9 +4037,33 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
     const normalizedEvtTitle = normalizeTitle(evt.title);
     let matchedWebinar = webinarByTitle.get(normalizedEvtTitle) || null;
     if (!matchedWebinar) {
-      // Tentar sem prefixo "aula XX - " (após normalização, traços já são hífen simples)
+      // Tentar sem prefixo "aula XX - " e sem "- 01 -" no meio
       const evtCore = extractCore(normalizedEvtTitle);
       matchedWebinar = webinarByTitleNoPrefix.get(evtCore) || null;
+    }
+    if (!matchedWebinar) {
+      // Fallback: matching por similaridade de palavras-chave (>= 70% de palavras em comum)
+      const evtCore = extractCore(normalizedEvtTitle);
+      const evtWords = new Set(evtCore.split(/\s+/).filter(w => w.length > 2));
+      let bestMatch: typeof allScheduledWebinars[0] | null = null;
+      let bestScore = 0;
+      for (const w of allScheduledWebinars) {
+        if (!w.youtubeLink) continue;
+        const wCore = extractCore(normalizeTitle(w.title));
+        const wWords = new Set(wCore.split(/\s+/).filter(word => word.length > 2));
+        let common = 0;
+        Array.from(evtWords).forEach(word => {
+          if (wWords.has(word)) common++;
+        });
+        const score = common / Math.max(evtWords.size, wWords.size);
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = w;
+        }
+      }
+      if (bestScore >= 0.7 && bestMatch) {
+        matchedWebinar = bestMatch;
+      }
     }
     const endDate = matchedWebinar?.endDate || matchedWebinar?.eventDate || evt.eventDate;
     const hasEnded = endDate ? new Date(endDate) < now : true;

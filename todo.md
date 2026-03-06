@@ -1750,3 +1750,10 @@
 - [x] Deduplicar eventos por título normalizado em getEventsByProgramOrGlobal (centralizado)
 - [x] Deduplicar eventos em getWebinarsPendingAttendance e getAlunoDetalheCompleto
 - [x] 32 eventos -> 28 após deduplicar (4 duplicados do 2025/19 viram 1)
+
+## Bug: Diversos webinars sem link no portal do aluno (06/03/2026)
+- [x] Auditoria completa: comparar TODOS os títulos de events vs scheduled_webinars para identificar falhas de matching
+- [x] Corrigir matching para que TODOS os webinars com link cadastrado mostrem o link no portal
+- [x] Causa raiz: extractCore não removia "- 01 -" no meio do título (ex: "O Código de Aprendizagem - 01 - O Preparo")
+- [x] Solução: regex melhorada + fallback de similaridade >= 70%
+- [x] Resultado: 32/32 eventos com link (29 exato + 3 parcial), 0 sem link
