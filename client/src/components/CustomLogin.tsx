@@ -213,9 +213,6 @@ export default function CustomLogin() {
             alt="B.E.M. - Competências do B.E.M."
             className="h-20 object-contain"
           />
-          <h1 className="text-2xl font-bold tracking-tight text-center text-gradient">
-            BEM VINDO AO
-          </h1>
           <h2 className="text-xl font-bold tracking-tight text-center">
             <span className="text-primary">ECOSSISTEMA DO </span>
             <span className="text-secondary">BEM</span>
