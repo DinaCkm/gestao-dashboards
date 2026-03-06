@@ -1596,3 +1596,7 @@
 
 ## Alerta de mentorias faltantes na aba Mentorias (05/03/2026)
 - [x] Adicionar pop-up/alerta "Faltam X mentorias para finalizar a sua jornada" na aba Mentorias do Portal do Aluno
+
+## Card ECO_EVOLUIR (05/03/2026)
+- [x] Adicionar card ECO_EVOLUIR no Mural com logo, título "ECO_EVOLUIR - Acesse aqui e realize seu PDI" e link para https://www.evoluirckm.com
+- [x] Adicionar acesso ao ECO_EVOLUIR na área do aluno (Portal do Aluno)

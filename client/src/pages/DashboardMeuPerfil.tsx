@@ -776,6 +776,39 @@ export default function DashboardMeuPerfil() {
           </div>
         )}
 
+        {/* Card ECO_EVOLUIR */}
+        <a
+          href="https://www.evoluirckm.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block relative overflow-hidden rounded-2xl border border-amber-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0A1E3E] via-[#0A1E3E]/95 to-[#0A1E3E]/80" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+          <div className="relative flex items-center gap-4 p-4 sm:p-5">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white/10 backdrop-blur-sm ring-2 ring-amber-400/30 shadow-lg">
+              <img
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_evoluir_logo_00dbbab4.png"
+                alt="ECO_EVOLUIR"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-bold text-white mb-0.5">
+                ECO_EVOLUIR
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-300">
+                Acesse aqui e realize seu PDI
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <div className="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center group-hover:bg-amber-400 transition-colors shadow-lg">
+                <ExternalLink className="h-4 w-4 text-white" />
+              </div>
+            </div>
+          </div>
+        </a>
+
         {/* Tabs com seções detalhadas */}
         <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'jornada'} className="w-full">
           <TabsList className="bg-gray-100 border border-gray-200 w-full flex flex-wrap h-auto gap-1 p-1 rounded-xl">
