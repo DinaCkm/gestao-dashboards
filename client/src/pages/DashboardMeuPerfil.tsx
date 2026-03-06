@@ -573,15 +573,7 @@ export default function DashboardMeuPerfil() {
                   </Badge>
                 </div>
               </div>
-              {ranking && ranking.posicao > 0 && (
-                <div className="flex items-center gap-3 mt-4 p-3 rounded-lg bg-white/10">
-                  <Trophy className="h-5 w-5 text-[#F5991F]" />
-                  <div>
-                    <span className="text-white font-semibold">{ranking.posicao}º lugar</span>
-                    <span className="text-white/70 text-sm ml-2">de {ranking.totalAlunos} alunos na empresa</span>
-                  </div>
-                </div>
-              )}
+
               {/* Explicação do Engajamento Final */}
               {v2Filtrado && (
                 <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">

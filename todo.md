@@ -1676,3 +1676,6 @@
 
 ## Relatório Gerencial com Indicadores V2 (06/03/2026)
 - [x] Incluir todos os 7 indicadores V2 (Webinars, Avaliações, Competências, Tarefas, Engajamento, Case, Engajamento Final) de cada aluno no Relatório Gerencial e Administrativo Excel (3 abas: Equipe/Indicadores, Mentorias, Indicadores por Ciclo)
+
+## Remoção do Ranking do Portal do Aluno (06/03/2026)
+- [x] Remover bloco de ranking (Xº lugar de Y alunos na empresa) da página DashboardMeuPerfil
