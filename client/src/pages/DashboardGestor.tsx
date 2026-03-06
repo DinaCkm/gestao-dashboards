@@ -4,8 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  Legend
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from "recharts";
 import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, HelpCircle, Filter, X, ChevronDown, Building2, Video, GraduationCap, ClipboardCheck, Star, Briefcase, Info } from "lucide-react";
 import { InfoTooltip, INDICADORES_INFO } from "@/components/InfoTooltip";
@@ -461,53 +460,68 @@ export default function DashboardGestor() {
           </CardContent>
         </Card>
 
-        {/* Gráficos */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Distribuição por Classificação */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-1">
-                Distribuição por Classificação
-                <InfoTooltip text="Distribuição dos alunos por faixa de classificação. Excelência (9-10), Avançado (7-8.9), Intermediário (5-6.9), Básico (3-4.9), Inicial (0-2.9). Baseado no Engajamento Final (Ind. 7)." />
-              </CardTitle>
-              <CardDescription>
-                {isFiltered ? "Alunos filtrados" : "Todos os alunos da empresa"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]" key={`pie-${selectedTurmaId}-${selectedAlunoId}`}>
-                {filteredKPIs.distribuicaoClassificacao.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={filteredKPIs.distribuicaoClassificacao}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ nome, percentual }) => `${nome}: ${percentual.toFixed(0)}%`}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="quantidade"
-                        nameKey="nome"
-                        isAnimationActive={false}
-                      >
-                        {filteredKPIs.distribuicaoClassificacao.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={CLASSIFICATION_COLORS[entry.nome] || COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-muted-foreground">
-                    Nenhum dado para exibir
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Cards de Engajamento Final por Turma */}
+        {selectedTurmaId === "todas" && porTurma.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              Engajamento por Turma
+              <InfoTooltip text="Engajamento Final de cada turma individualmente, com os mesmos indicadores do card geral acima." />
+            </h2>
+            <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+              {porTurma.map((turma) => {
+                const turmaNome = turmaNames.get(String(turma.identificador)) || turma.identificador;
+                return (
+                  <Card key={turma.identificador} className="border border-gray-200">
+                    <CardContent className="pt-5 pb-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="h-10 w-10 rounded-lg bg-[#0A1E3E]/10 flex items-center justify-center">
+                          <Target className="h-5 w-5 text-[#0A1E3E]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-500 truncate" title={turmaNome}>{turmaNome}</p>
+                          <p className="text-2xl font-bold text-[#0A1E3E]">{turma.mediaInd7.toFixed(0)}%</p>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {turma.totalAlunos} alunos
+                        </Badge>
+                      </div>
+                      <Progress value={turma.mediaInd7} className="h-2 mb-3" />
+                      <div className="grid grid-cols-3 md:grid-cols-6 gap-1">
+                        <div className="text-center p-1 bg-blue-50 rounded">
+                          <p className="text-sm font-bold text-blue-700">{turma.mediaInd1.toFixed(0)}%</p>
+                          <p className="text-[9px] text-gray-500">Webinars</p>
+                        </div>
+                        <div className="text-center p-1 bg-red-50 rounded">
+                          <p className="text-sm font-bold text-red-700">{turma.mediaInd2.toFixed(0)}%</p>
+                          <p className="text-[9px] text-gray-500">Avaliações</p>
+                        </div>
+                        <div className="text-center p-1 bg-purple-50 rounded">
+                          <p className="text-sm font-bold text-purple-700">{turma.mediaInd3.toFixed(0)}%</p>
+                          <p className="text-[9px] text-gray-500">Competências</p>
+                        </div>
+                        <div className="text-center p-1 bg-emerald-50 rounded">
+                          <p className="text-sm font-bold text-emerald-700">{turma.mediaInd4.toFixed(0)}%</p>
+                          <p className="text-[9px] text-gray-500">Tarefas</p>
+                        </div>
+                        <div className="text-center p-1 bg-amber-50 rounded">
+                          <p className="text-sm font-bold text-amber-700">{turma.mediaInd5.toFixed(0)}%</p>
+                          <p className="text-[9px] text-gray-500">Engajamento</p>
+                        </div>
+                        <div className="text-center p-1 bg-green-50 rounded">
+                          <p className="text-sm font-bold text-green-700">{turma.mediaInd6.toFixed(0)}%</p>
+                          <p className="text-[9px] text-gray-500">Case</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
+        {/* Gráficos */}
+        <div className="grid gap-6 md:grid-cols-1">
           {/* Radar dos Indicadores V2 */}
           <Card>
             <CardHeader>
@@ -556,11 +570,18 @@ export default function DashboardGestor() {
               <div className="h-[300px]" key="bar-turma">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart 
-                    data={porTurma.map(t => ({
-                      nome: turmaNames.get(String(t.identificador)) || t.identificador,
-                      nota: Number(t.mediaNotaFinal.toFixed(1)),
-                      alunos: t.totalAlunos
-                    }))} 
+                    data={porTurma.map(t => {
+                      const turmaNome = turmaNames.get(String(t.identificador)) || t.identificador;
+                      // Buscar ciclo dos alunos desta turma
+                      const alunosDaTurma = data?.alunos?.filter(a => String(a.turma) === String(t.identificador)) || [];
+                      const cicloInfo = alunosDaTurma[0]?.cicloAtual || '';
+                      const nomeComCiclo = cicloInfo ? `${turmaNome} (${cicloInfo})` : turmaNome;
+                      return {
+                        nome: nomeComCiclo,
+                        nota: Number(t.mediaNotaFinal.toFixed(1)),
+                        alunos: t.totalAlunos
+                      };
+                    })} 
                     layout="vertical"
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -733,7 +754,7 @@ export default function DashboardGestor() {
                             {aluno.classificacao}
                           </Badge>
                         </div>
-                        <Link href={`/dashboard/aluno?id=${aluno.idUsuario}`}>
+                        <Link href={`/dashboard/aluno?id=${aluno.alunoDbId || aluno.idUsuario}`}>
                           <Button variant="ghost" size="sm" className="text-xs">
                             Ver detalhes
                           </Button>

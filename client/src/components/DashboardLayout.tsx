@@ -76,9 +76,10 @@ const allMenuItems: MenuItemExtended[] = [
   // === MENTORES (admin vê como "Dashboard Mentores", mentor vê como "Meu Dashboard") ===
   { icon: UserCheck, label: "Painel de controle Mentores", path: "/dashboard/mentor", roles: ["admin"] },
   { icon: UserCheck, label: "Meu Dashboard", path: "/dashboard/mentor", roles: ["manager"], requireConsultorId: true },
-  { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria", roles: ["manager"] },
+  { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria", roles: ["manager"], requireConsultorId: true },
   { icon: ClipboardCheck, label: "Atividades Práticas", path: "/atividades-praticas", roles: ["admin"] },
-  { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment", roles: ["admin", "manager"] },
+  { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment", roles: ["admin"] },
+  { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment", roles: ["manager"], requireConsultorId: true },
   
   // === GERENTES DE EMPRESA ===
   { icon: Building2, label: "Por Empresa", path: "/dashboard/empresa", roles: ["admin"] },
@@ -95,7 +96,7 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager"] },
   { icon: GraduationCap, label: "Turmas", path: "/turmas", roles: ["admin"] },
   { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias", roles: ["admin"] },
-  { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["manager"] },
+  { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["manager"], requireConsultorId: true },
   { icon: Video, label: "Webinars", path: "/webinars", roles: ["admin"] },
   { icon: Megaphone, label: "Avisos e Comunicados", path: "/avisos", roles: ["admin"] },
   { icon: Calculator, label: "Fórmulas", path: "/formulas", roles: ["admin"] },

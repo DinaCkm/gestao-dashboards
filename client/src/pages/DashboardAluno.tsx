@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -253,6 +253,18 @@ export default function DashboardAluno() {
   const [selectedProgramId, setSelectedProgramId] = useState<string>("all");
   const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
   const [showGlossario, setShowGlossario] = useState(false);
+
+  // Ler query param ?id= da URL para pré-selecionar aluno (ex: vindo do Dashboard Gestor)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const idParam = params.get('id');
+    if (idParam) {
+      const id = parseInt(idParam);
+      if (!isNaN(id)) {
+        setSelectedAlunoId(id);
+      }
+    }
+  }, []);
 
   // Buscar lista de programas
   const { data: programs = [] } = trpc.programs.list.useQuery();

@@ -1640,3 +1640,10 @@
 - [x] Radar de Performance agregado por turma (reutilizar formato do aluno com 5 eixos V2)
 - [x] Tooltips de explicação em todos os cards
 - [x] Substituir banner de presença por aviso simples "Clique aqui e veja se não tem eventos pendentes" (sem contagem)
+- [x] Remover "Registro de Mentoria" do menu lateral da visão gerencial (é página de Mentor/Admin)
+- [x] Remover "Assessment / PDI" do menu lateral da visão gerencial (é página de Mentor/Admin)
+- [x] Card Engajamento Final no Dashboard Gestor: mostrar geral da empresa + um card por turma
+- [x] Plano Individual também deve sair do menu do gerente (é de Mentor/Admin)
+- [x] Remover gráfico pizza "Distribuição por Classificação" do Dashboard Gestor
+- [x] Gráfico "Performance por Turma" deve mostrar o ciclo junto com o nome da turma
+- [x] Botão "Ver detalhes" na lista de alunos do Dashboard Gestor não está funcionando - corrigir
