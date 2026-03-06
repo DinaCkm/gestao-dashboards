@@ -640,8 +640,12 @@ export default function DashboardMeuPerfil() {
                           size="sm"
                           className="bg-[#F5991F] hover:bg-[#e08a1a] text-white font-semibold"
                           onClick={() => {
-                            const casesTab = document.querySelector('[data-state][value="cases"]') as HTMLElement;
-                            if (casesTab) casesTab.click();
+                            setCaseTrilhaId(alerta.trilhaId);
+                            setCaseTrilhaNome(alerta.trilhaNome);
+                            setCaseTitulo('');
+                            setCaseDescricao('');
+                            setCaseFile(null);
+                            setCaseDialogOpen(true);
                           }}
                         >
                           <FileUp className="h-3.5 w-3.5 mr-1.5" />
@@ -2174,7 +2178,7 @@ export default function DashboardMeuPerfil() {
               <Button 
                 className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
                 onClick={handleCaseSubmit}
-                disabled={!caseTitulo || !caseFile || enviarCase.isPending}
+                disabled={!caseTitulo || !caseFile || !caseTrilhaId || enviarCase.isPending}
               >
                 {enviarCase.isPending ? (
                   <><Clock className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>

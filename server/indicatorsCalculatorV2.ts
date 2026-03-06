@@ -115,6 +115,7 @@ export interface StudentIndicatorsV2 {
   // Alerta de case pendente
   alertaCasePendente: {
     ativo: boolean;
+    trilhaId: number | null;
     trilhaNome: string;
     diasRestantes: number;
     dataLimite: string;
@@ -472,7 +473,7 @@ export function calcularIndicadoresAluno(
   const consolidado = consolidarCiclos(ciclosParaConsolidar, trilha || 'Geral');
   
   // Alertas de case pendente (deduplicado por trilhaNome)
-  const alertaCasePendente: { ativo: boolean; trilhaNome: string; diasRestantes: number; dataLimite: string }[] = [];
+  const alertaCasePendente: { ativo: boolean; trilhaId: number | null; trilhaNome: string; diasRestantes: number; dataLimite: string }[] = [];
   const now = hoje || new Date();
   const trilhasAlertadas = new Set<string>();
   
@@ -490,6 +491,7 @@ export function calcularIndicadoresAluno(
         trilhasAlertadas.add(trilhaKey);
         alertaCasePendente.push({
           ativo: true,
+          trilhaId: null, // Will be resolved in the endpoint with trilhaNome -> trilhaId mapping
           trilhaNome: ciclo.trilhaNome,
           diasRestantes,
           dataLimite: ciclo.dataFim,

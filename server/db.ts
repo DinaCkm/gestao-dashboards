@@ -5413,3 +5413,37 @@ export async function updateReport(id: number, data: { fileKey?: string; fileUrl
   if (!db) return;
   await db.update(reports).set(data).where(eq(reports.id, id));
 }
+
+
+// ============ TRILHAS REAIS POR ALUNO (via assessment_pdi) ============
+
+/**
+ * Retorna um Map de alunoId -> array de nomes de trilhas reais
+ * Baseado nos assessment_pdi de cada aluno, não no nome da turma
+ */
+export async function getTrilhasReaisPorAluno(): Promise<Map<number, string[]>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  
+  const allPdis = await db.select({
+    alunoId: assessmentPdi.alunoId,
+    trilhaId: assessmentPdi.trilhaId,
+  }).from(assessmentPdi);
+  
+  const allTrilhas = await db.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t.name]));
+  
+  const result = new Map<number, string[]>();
+  for (const pdi of allPdis) {
+    const trilhaNome = trilhaMap.get(pdi.trilhaId) || `Trilha ${pdi.trilhaId}`;
+    if (!result.has(pdi.alunoId)) {
+      result.set(pdi.alunoId, []);
+    }
+    const arr = result.get(pdi.alunoId)!;
+    if (!arr.includes(trilhaNome)) {
+      arr.push(trilhaNome);
+    }
+  }
+  
+  return result;
+}

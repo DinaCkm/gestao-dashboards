@@ -1,0 +1,70 @@
+{
+  "query": "\nSELECT ac.microInicio, ac.microTermino, COUNT(*) as cnt, COUNT(DISTINCT ap.alunoId) as alunos\nFROM assessment_competencias ac\nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id\nJOIN trilhas t ON ap.trilhaId = t.id\nWHERE t.name LIKE '%Vis%'\nGROUP BY ac.microInicio, ac.microTermino\nORDER BY ac.microInicio;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT ac.microInicio, ac.microTermino, COUNT(*) as cnt, COUNT(DISTINCT ap.alunoId) as alunos\nFROM assessment_competencias ac\nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id\nJOIN trilhas t ON ap.trilhaId = t.id\nWHERE t.name LIKE '%Vis%'\nGROUP BY ac.microInicio, ac.microTermino\nORDER BY ac.microInicio;\n",
+  "rows": [
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "cnt": "32",
+      "alunos": "32"
+    },
+    {
+      "microInicio": "2025-05-20",
+      "microTermino": "2025-11-30",
+      "cnt": "32",
+      "alunos": "32"
+    },
+    {
+      "microInicio": "2025-06-29",
+      "microTermino": "2025-12-31",
+      "cnt": "32",
+      "alunos": "32"
+    },
+    {
+      "microInicio": "2025-08-08",
+      "microTermino": "2026-03-31",
+      "cnt": "32",
+      "alunos": "32"
+    },
+    {
+      "microInicio": "2025-09-17",
+      "microTermino": "2026-03-31",
+      "cnt": "32",
+      "alunos": "32"
+    },
+    {
+      "microInicio": "2025-10-05",
+      "microTermino": "2026-03-30",
+      "cnt": "24",
+      "alunos": "8"
+    },
+    {
+      "microInicio": "2025-10-27",
+      "microTermino": "2026-03-31",
+      "cnt": "32",
+      "alunos": "32"
+    },
+    {
+      "microInicio": "2026-01-12",
+      "microTermino": "2026-03-31",
+      "cnt": "32",
+      "alunos": "32"
+    },
+    {
+      "microInicio": "2026-01-30",
+      "microTermino": "2026-03-31",
+      "cnt": "32",
+      "alunos": "32"
+    },
+    {
+      "microInicio": "2026-02-24",
+      "microTermino": "2026-03-31",
+      "cnt": "32",
+      "alunos": "32"
+    }
+  ],
+  "messages": [],
+  "stdout": "microInicio\tmicroTermino\tcnt\talunos\n2025-04-20\t2025-10-31\t32\t32\n2025-05-20\t2025-11-30\t32\t32\n2025-06-29\t2025-12-31\t32\t32\n2025-08-08\t2026-03-31\t32\t32\n2025-09-17\t2026-03-31\t32\t32\n2025-10-05\t2026-03-30\t24\t8\n2025-10-27\t2026-03-31\t32\t32\n2026-01-12\t2026-03-31\t32\t32\n2026-01-30\t2026-03-31\t32\t32\n2026-02-24\t2026-03-31\t32\t32\n",
+  "stderr": "",
+  "execution_time_ms": 355
+}

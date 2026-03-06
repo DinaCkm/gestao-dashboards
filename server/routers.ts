@@ -1616,6 +1616,9 @@ export const appRouter = router({
         const consultorsList = await db.getConsultors();
         const consultorMap = new Map(consultorsList.map(c => [c.id, c]));
         
+        // Buscar trilhas reais dos alunos via assessment_pdi
+        const trilhasReaisPorAluno = await db.getTrilhasReaisPorAluno();
+        
         const alunosEnriquecidos = dashboard.alunos.map(ind => {
           const alunoDb = alunosList.find(a => (a.externalId || String(a.id)) === ind.idUsuario);
           const turma = alunoDb?.turmaId ? turmaMap.get(alunoDb.turmaId) : null;
@@ -1646,11 +1649,15 @@ export const appRouter = router({
           const cicloAtual = ind.ciclosEmAndamento?.[0]?.nomeCiclo || 
             (ind.ciclosFinalizados?.length ? `${ind.ciclosFinalizados.length} ciclo(s) finalizado(s)` : 'Nenhum ciclo');
           
+          // Trilhas reais do aluno (via assessment_pdi)
+          const trilhasReais = alunoDb ? (trilhasReaisPorAluno.get(alunoDb.id) || [trilhaNome]) : [trilhaNome];
+          
           return {
             ...ind,
             alunoDbId: alunoDb?.id || 0,
             turmaNome: turma?.name || 'Não definida',
             trilhaNome,
+            trilhasReais,
             cicloAtual,
             mentorNome: mentor?.name || 'Não definido',
             competencias,
@@ -2325,7 +2332,15 @@ export const appRouter = router({
           ciclosFinalizados: indicadoresV2.ciclosFinalizados,
           ciclosEmAndamento: indicadoresV2.ciclosEmAndamento,
           consolidado: indicadoresV2.consolidado,
-          alertaCasePendente: indicadoresV2.alertaCasePendente,
+          alertaCasePendente: await (async () => {
+            // Enriquecer alertas com trilhaId (resolver trilhaNome -> trilhaId)
+            const allTrilhasForAlert = await db.getAllTrilhas();
+            const trilhaNameToId = new Map(allTrilhasForAlert.map(t => [t.name.toLowerCase(), t.id]));
+            return indicadoresV2.alertaCasePendente.map(a => ({
+              ...a,
+              trilhaId: trilhaNameToId.get(a.trilhaNome?.toLowerCase() || '') || null,
+            }));
+          })(),
         },
         // Cases de sucesso do aluno
         casesAluno: casesAluno.map(c => ({

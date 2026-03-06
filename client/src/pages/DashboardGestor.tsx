@@ -88,50 +88,73 @@ export default function DashboardGestor() {
     return Array.from(groupMap.values()).sort((a, b) => a.turmaCode.localeCompare(b.turmaCode));
   }, [turmas]);
 
-  // Extract available trilhas from turma names
+  // Extract available trilhas from alunos' real trilhas (via assessment_pdi)
+  // Falls back to turma name extraction if trilhasReais not available
   const availableTrilhas = useMemo(() => {
-    if (!turmas) return [];
     const trilhaSet = new Set<string>();
-    turmas.forEach(t => {
-      // Extract trilha from name like "[2025] SEBRAE Tocantins - Basic [BS1]" -> "Basic"
-      // or "[2025] SEBRAE Tocantins - Visão de Futuro [BS2]" -> "Visão de Futuro"
-      const match = t.name.match(/- (.+?) \[BS\d+\]/);
-      if (match) trilhaSet.add(match[1].trim());
-    });
-    return Array.from(trilhaSet).sort();
-  }, [turmas]);
-
-  // Get turma IDs for the selected group + trilha
-  const selectedTurmaIds = useMemo(() => {
-    if (selectedTurmaGroup === "todas" && selectedTrilha === "todas") return null;
-    let filteredTurmas = turmas || [];
     
-    // Filter by turma code (BS1/BS2/BS3)
-    if (selectedTurmaGroup !== "todas") {
-      filteredTurmas = filteredTurmas.filter(t => {
-        const match = t.name.match(/\[(BS\d+)\]/);
-        return match && match[1] === selectedTurmaGroup;
+    // First: extract from alunos' trilhasReais (real trilhas from assessment_pdi)
+    if (data?.alunos) {
+      // If turma filter is active, only show trilhas of alunos in that turma
+      let alunosParaTrilhas = data.alunos;
+      if (selectedTurmaGroup !== "todas" && turmas) {
+        const turmaIdsDoGrupo = turmas
+          .filter(t => {
+            const match = t.name.match(/\[(BS\d+)\]/);
+            return match && match[1] === selectedTurmaGroup;
+          })
+          .map(t => String(t.id));
+        alunosParaTrilhas = data.alunos.filter((a: any) => turmaIdsDoGrupo.includes(String(a.turma)));
+      }
+      
+      alunosParaTrilhas.forEach((a: any) => {
+        if (a.trilhasReais && Array.isArray(a.trilhasReais)) {
+          a.trilhasReais.forEach((t: string) => trilhaSet.add(t));
+        } else if (a.trilhaNome && a.trilhaNome !== 'Não definida') {
+          trilhaSet.add(a.trilhaNome);
+        }
       });
     }
     
-    // Filter by trilha
-    if (selectedTrilha !== "todas") {
-      filteredTurmas = filteredTurmas.filter(t => {
+    // Fallback: extract from turma names if no trilhas found from alunos
+    if (trilhaSet.size === 0 && turmas) {
+      turmas.forEach(t => {
         const match = t.name.match(/- (.+?) \[BS\d+\]/);
-        return match && match[1].trim() === selectedTrilha;
+        if (match) trilhaSet.add(match[1].trim());
       });
     }
     
-    return filteredTurmas.map(t => String(t.id));
-  }, [selectedTurmaGroup, selectedTrilha, turmas, turmaGroups]);
+    return Array.from(trilhaSet).sort();
+  }, [data?.alunos, turmas, selectedTurmaGroup]);
 
-  // Filter alunos by selected turma group
+  // Get turma IDs for the selected turma group (BS1/BS2/BS3)
+  const selectedTurmaIdsFromGroup = useMemo(() => {
+    if (selectedTurmaGroup === "todas") return null;
+    const filteredTurmas = (turmas || []).filter(t => {
+      const match = t.name.match(/\[(BS\d+)\]/);
+      return match && match[1] === selectedTurmaGroup;
+    });
+    return filteredTurmas.map(t => String(t.id));
+  }, [selectedTurmaGroup, turmas]);
+
+  // Filter alunos by selected turma group AND trilha
   const filteredAlunos = useMemo(() => {
     if (!data?.alunos) return [];
     let result = [...data.alunos];
     
-    if (selectedTurmaIds) {
-      result = result.filter(a => selectedTurmaIds.includes(String(a.turma)));
+    // Filter by turma group (BS1/BS2/BS3)
+    if (selectedTurmaIdsFromGroup) {
+      result = result.filter(a => selectedTurmaIdsFromGroup.includes(String(a.turma)));
+    }
+    
+    // Filter by trilha (using trilhasReais from assessment_pdi)
+    if (selectedTrilha !== "todas") {
+      result = result.filter((a: any) => {
+        if (a.trilhasReais && Array.isArray(a.trilhasReais)) {
+          return a.trilhasReais.includes(selectedTrilha);
+        }
+        return a.trilhaNome === selectedTrilha;
+      });
     }
     
     if (selectedAlunoId !== "todos") {
@@ -139,7 +162,7 @@ export default function DashboardGestor() {
     }
     
     return result;
-  }, [data?.alunos, selectedTurmaIds, selectedAlunoId]);
+  }, [data?.alunos, selectedTurmaIdsFromGroup, selectedTrilha, selectedAlunoId]);
 
   // Recalculate KPIs based on filtered alunos using V2 indicators
   const filteredKPIs = useMemo(() => {
@@ -204,12 +227,23 @@ export default function DashboardGestor() {
     };
   }, [filteredAlunos]);
 
-  // Available alunos for the dropdown (filtered by turma group)
+  // Available alunos for the dropdown (filtered by turma group + trilha)
   const availableAlunos = useMemo(() => {
     if (!data?.alunos) return [];
-    if (!selectedTurmaIds) return data.alunos;
-    return data.alunos.filter(a => selectedTurmaIds.includes(String(a.turma)));
-  }, [data?.alunos, selectedTurmaIds]);
+    let result = [...data.alunos];
+    if (selectedTurmaIdsFromGroup) {
+      result = result.filter(a => selectedTurmaIdsFromGroup.includes(String(a.turma)));
+    }
+    if (selectedTrilha !== "todas") {
+      result = result.filter((a: any) => {
+        if (a.trilhasReais && Array.isArray(a.trilhasReais)) {
+          return a.trilhasReais.includes(selectedTrilha);
+        }
+        return a.trilhaNome === selectedTrilha;
+      });
+    }
+    return result;
+  }, [data?.alunos, selectedTurmaIdsFromGroup, selectedTrilha]);
 
   // Unique turma IDs from alunos
   const uniqueTurmaIds = useMemo(() => {
@@ -248,6 +282,7 @@ export default function DashboardGestor() {
 
   const handleTurmaChange = (value: string) => {
     setSelectedTurmaGroup(value);
+    setSelectedTrilha("todas"); // Reset trilha when turma changes since available trilhas depend on turma
     setSelectedAlunoId("todos");
   };
 

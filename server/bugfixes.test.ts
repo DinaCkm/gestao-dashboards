@@ -242,3 +242,229 @@ describe("Bug fixes - Access user management", () => {
     });
   });
 });
+
+// ============ Bug 2: alertaCasePendente must include trilhaId ============
+import { calcularIndicadoresAluno } from "./indicatorsCalculatorV2";
+import type { CicloDataV2, CaseSucessoData } from "./indicatorsCalculatorV2";
+
+describe("Bug 2 - alertaCasePendente includes trilhaId", () => {
+  it("should include trilhaId field in alertaCasePendente when case is pending", () => {
+    const now = new Date();
+    const futureDate = new Date(now);
+    futureDate.setDate(futureDate.getDate() + 15); // 15 days from now
+    const pastDate = new Date(now);
+    pastDate.setDate(pastDate.getDate() - 30);
+
+    const ciclos: CicloDataV2[] = [
+      {
+        id: 1,
+        nomeCiclo: "Visão de Futuro - Ciclo 1",
+        trilhaNome: "Visão de Futuro",
+        dataInicio: pastDate.toISOString().split("T")[0],
+        dataFim: futureDate.toISOString().split("T")[0],
+        competenciaIds: [101, 102],
+      },
+    ];
+
+    const casesData: CaseSucessoData[] = [];
+
+    const result = calcularIndicadoresAluno(
+      "user-123",
+      [],
+      [],
+      [],
+      ciclos,
+      new Map(),
+      casesData,
+      now
+    );
+
+    expect(result.alertaCasePendente.length).toBeGreaterThan(0);
+
+    for (const alerta of result.alertaCasePendente) {
+      expect(alerta).toHaveProperty("trilhaId");
+      expect(alerta).toHaveProperty("trilhaNome");
+      expect(alerta).toHaveProperty("diasRestantes");
+      expect(alerta).toHaveProperty("dataLimite");
+      expect(alerta).toHaveProperty("ativo");
+    }
+  });
+
+  it("should not show alert when case is already submitted", () => {
+    const now = new Date();
+    const futureDate = new Date(now);
+    futureDate.setDate(futureDate.getDate() + 15);
+    const pastDate = new Date(now);
+    pastDate.setDate(pastDate.getDate() - 30);
+
+    const ciclos: CicloDataV2[] = [
+      {
+        id: 1,
+        nomeCiclo: "Visão de Futuro - Ciclo 1",
+        trilhaNome: "Visão de Futuro",
+        dataInicio: pastDate.toISOString().split("T")[0],
+        dataFim: futureDate.toISOString().split("T")[0],
+        competenciaIds: [101, 102],
+      },
+    ];
+
+    const casesData: CaseSucessoData[] = [
+      {
+        alunoId: 1,
+        trilhaId: 1,
+        trilhaNome: "Visão de Futuro",
+        entregue: true,
+      },
+    ];
+
+    const result = calcularIndicadoresAluno(
+      "user-123",
+      [],
+      [],
+      [],
+      ciclos,
+      new Map(),
+      casesData,
+      now
+    );
+
+    expect(result.alertaCasePendente.length).toBe(0);
+  });
+
+  it("should not show alert when ciclo ends more than 30 days from now", () => {
+    const now = new Date();
+    const futureDate = new Date(now);
+    futureDate.setDate(futureDate.getDate() + 60);
+    const pastDate = new Date(now);
+    pastDate.setDate(pastDate.getDate() - 30);
+
+    const ciclos: CicloDataV2[] = [
+      {
+        id: 1,
+        nomeCiclo: "Visão de Futuro - Ciclo 1",
+        trilhaNome: "Visão de Futuro",
+        dataInicio: pastDate.toISOString().split("T")[0],
+        dataFim: futureDate.toISOString().split("T")[0],
+        competenciaIds: [101, 102],
+      },
+    ];
+
+    const result = calcularIndicadoresAluno(
+      "user-123",
+      [],
+      [],
+      [],
+      ciclos,
+      new Map(),
+      [],
+      now
+    );
+
+    expect(result.alertaCasePendente.length).toBe(0);
+  });
+});
+
+describe("Bug 3-4 - V2 calculator preserves trilhaNome in ciclos", () => {
+  it("should preserve trilhaNome in ciclosFinalizados and ciclosEmAndamento", () => {
+    const now = new Date();
+    const pastDate1 = new Date(now);
+    pastDate1.setDate(pastDate1.getDate() - 90);
+    const pastDate2 = new Date(now);
+    pastDate2.setDate(pastDate2.getDate() - 30);
+    const futureDate = new Date(now);
+    futureDate.setDate(futureDate.getDate() + 30);
+
+    const ciclos: CicloDataV2[] = [
+      {
+        id: 1,
+        nomeCiclo: "Basic - Ciclo 1",
+        trilhaNome: "Basic",
+        dataInicio: pastDate1.toISOString().split("T")[0],
+        dataFim: pastDate2.toISOString().split("T")[0],
+        competenciaIds: [101],
+      },
+      {
+        id: 2,
+        nomeCiclo: "Essencial - Ciclo 1",
+        trilhaNome: "Essencial",
+        dataInicio: pastDate2.toISOString().split("T")[0],
+        dataFim: futureDate.toISOString().split("T")[0],
+        competenciaIds: [201],
+      },
+    ];
+
+    const result = calcularIndicadoresAluno(
+      "user-123",
+      [],
+      [],
+      [],
+      ciclos,
+      new Map(),
+      [],
+      now
+    );
+
+    const basicCiclos = result.ciclosFinalizados.filter(
+      (c) => c.trilhaNome === "Basic"
+    );
+    expect(basicCiclos.length).toBeGreaterThan(0);
+
+    const essencialCiclos = result.ciclosEmAndamento.filter(
+      (c) => c.trilhaNome === "Essencial"
+    );
+    expect(essencialCiclos.length).toBeGreaterThan(0);
+  });
+
+  it("should correctly identify multiple trilhas for the same aluno", () => {
+    const now = new Date();
+    const pastDate = new Date(now);
+    pastDate.setDate(pastDate.getDate() - 30);
+    const futureDate = new Date(now);
+    futureDate.setDate(futureDate.getDate() + 30);
+
+    const ciclos: CicloDataV2[] = [
+      {
+        id: 1,
+        nomeCiclo: "Basic - Ciclo 1",
+        trilhaNome: "Basic",
+        dataInicio: pastDate.toISOString().split("T")[0],
+        dataFim: futureDate.toISOString().split("T")[0],
+        competenciaIds: [101],
+      },
+      {
+        id: 2,
+        nomeCiclo: "Essencial - Ciclo 1",
+        trilhaNome: "Essencial",
+        dataInicio: pastDate.toISOString().split("T")[0],
+        dataFim: futureDate.toISOString().split("T")[0],
+        competenciaIds: [201],
+      },
+      {
+        id: 3,
+        nomeCiclo: "Visão de Futuro - Ciclo 1",
+        trilhaNome: "Visão de Futuro",
+        dataInicio: pastDate.toISOString().split("T")[0],
+        dataFim: futureDate.toISOString().split("T")[0],
+        competenciaIds: [301],
+      },
+    ];
+
+    const result = calcularIndicadoresAluno(
+      "user-123",
+      [],
+      [],
+      [],
+      ciclos,
+      new Map(),
+      [],
+      now
+    );
+
+    const trilhasEmAndamento = new Set(
+      result.ciclosEmAndamento.map((c) => c.trilhaNome)
+    );
+    expect(trilhasEmAndamento.has("Basic")).toBe(true);
+    expect(trilhasEmAndamento.has("Essencial")).toBe(true);
+    expect(trilhasEmAndamento.has("Visão de Futuro")).toBe(true);
+  });
+});

@@ -1692,3 +1692,9 @@
 - [x] Trocar logo na sidebar (DashboardLayout) (arquivo public/logo-bem-icon.d3b12449.png substituído)
 - [x] VITE_APP_LOGO não é usado diretamente no código (logo é referenciado via arquivos public/)
 - [x] Trocar logo em DashboardMeuPerfil.tsx e MuralAluno.tsx (CDN URL atualizada)
+
+## Bugs Reportados (06/03/2026 - Lote 2)
+- [x] Bug 1: Datas de fim de trilha incorretas no Portal do Aluno - INVESTIGADO: dados no banco estão corretos (ciclos V2 com datas variadas: 31/10, 30/11, 31/12/2025, 31/03/2026). Os ciclos em andamento realmente terminam em 31/03/2026. A data macro da trilha é 30/03/2026.
+- [x] Bug 2: Botão Enviar Case não funciona - CORRIGIDO: alertaCasePendente não incluía trilhaId, fazendo caseTrilhaId ficar null e handleCaseSubmit retornar silenciosamente. Adicionado trilhaId ao tipo e ao endpoint meuDashboard com mapeamento trilhaNome→trilhaId. Também adicionado !caseTrilhaId ao disabled do botão.
+- [x] Bug 3: Filtro BS1 no Dashboard Gestor não mostra trilha Essencial - CORRIGIDO: filtro de trilha agora extrai trilhas reais dos alunos via assessment_pdi (campo trilhasReais) em vez de extrair do nome da turma.
+- [x] Bug 4: Filtro BS3 no Dashboard Gestor não mostra trilha Essencial - CORRIGIDO: mesma correção do Bug 3 (trilhasReais via assessment_pdi).
