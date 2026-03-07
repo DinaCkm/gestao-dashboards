@@ -1,0 +1,27 @@
+{
+  "query": "SELECT * FROM alunos WHERE name LIKE '%Dina%' OR id = 90013",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT * FROM alunos WHERE name LIKE '%Dina%' OR id = 90013",
+  "rows": [
+    {
+      "id": "90013",
+      "externalId": "667997",
+      "name": "Dina Makiyama",
+      "email": "dina@ckmtalents.net",
+      "turmaId": "36",
+      "trilhaId": "NULL",
+      "consultorId": "39",
+      "programId": "19",
+      "isActive": "1",
+      "createdAt": "2026-03-05 18:50:32",
+      "updatedAt": "2026-03-07 17:27:02",
+      "canLogin": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1",
+      "cpf": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\texternalId\tname\temail\tturmaId\ttrilhaId\tconsultorId\tprogramId\tisActive\tcreatedAt\tupdatedAt\tcanLogin\tbypassOnboarding\tcadastradoPorAdmin\tcpf\n90013\t667997\tDina Makiyama\tdina@ckmtalents.net\t36\tNULL\t39\t19\t1\t2026-03-05 18:50:32\t2026-03-07 17:27:02\t1\t1\t1\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

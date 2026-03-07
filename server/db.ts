@@ -569,12 +569,13 @@ export async function getAlunosByConsultor(consultorId: number, programId?: numb
     .from(mentoringSessions)
     .where(eq(mentoringSessions.consultorId, consultorId));
   
-  const uniqueAlunoIds = Array.from(new Set(sessions.map(s => s.alunoId)));
-  if (uniqueAlunoIds.length === 0) return [];
+  const sessionAlunoIds = new Set(sessions.map(s => s.alunoId));
   
-  // Get alunos that match these IDs
+  // Get all active alunos
   const allAlunos = await db.select().from(alunos).where(eq(alunos.isActive, 1));
-  let result = allAlunos.filter(a => uniqueAlunoIds.includes(a.id));
+  
+  // Include alunos from sessions AND alunos directly linked via consultorId in alunos table
+  let result = allAlunos.filter(a => sessionAlunoIds.has(a.id) || a.consultorId === consultorId);
   
   // Optionally filter by programId
   if (programId) {
@@ -593,12 +594,14 @@ export async function getProgramsByConsultor(consultorId: number): Promise<{ id:
     .from(mentoringSessions)
     .where(eq(mentoringSessions.consultorId, consultorId));
   
-  const uniqueAlunoIds = Array.from(new Set(sessions.map(s => s.alunoId)));
-  if (uniqueAlunoIds.length === 0) return [];
+  const sessionAlunoIds = new Set(sessions.map(s => s.alunoId));
   
+  // Include alunos from sessions AND alunos directly linked via consultorId
   const allAlunos = await db.select().from(alunos).where(eq(alunos.isActive, 1));
-  const mentorAlunos = allAlunos.filter(a => uniqueAlunoIds.includes(a.id));
+  const mentorAlunos = allAlunos.filter(a => sessionAlunoIds.has(a.id) || a.consultorId === consultorId);
   const programIds = Array.from(new Set(mentorAlunos.map(a => a.programId).filter(Boolean))) as number[];
+  
+  if (programIds.length === 0) return [];
   
   const programsList = await getPrograms();
   return programsList.filter(p => programIds.includes(p.id)).map(p => ({ id: p.id, name: p.name }));

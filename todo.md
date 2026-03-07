@@ -1870,3 +1870,5 @@
 - [x] 05: Corrigir lookup de consultor por loginId/openId (corrigido: adicionado fallback por ctx.user.consultorId em 6 endpoints - mentor.create, validateTask, addComment, submissions, metas.create, metas.acompanhar)
 - [x] Deletar usuário de teste maria teste3 (id=90014)
 - [x] Corrigir possível erro getFullYear na função alertaAtualizacao (SQL MAX retorna string, não Date)
+- [x] Bug: Dina Makiyama não aparece na lista de alunos da Adriana na tela de Assessment/PDI (corrigido: getAlunosByConsultor e getProgramsByConsultor agora incluem alunos vinculados diretamente pelo consultorId, não apenas por sessões de mentoria)
+- [x] Limpeza: desativados registros de teste "Test Turma Null" e duplicata "Maria Dinamar" (id=240001)
