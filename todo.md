@@ -1855,3 +1855,10 @@
 - [x] Gráfico consolidado de evolução
 - [x] Adicionar link na sidebar do gestor
 - [x] Testar visualização
+
+## Filtro de Metas no Dashboard do Gestor + Alertas Trimestrais (07/03/2026)
+- [x] Adicionar filtro Com metas/Sem metas/Todos na página MetasGestor
+- [x] Criar endpoint backend para verificar necessidade de atualização de metas (3 sessões ou 3 meses)
+- [x] Alerta na tela de Registro de Mentoria para a mentora (atualizar metas a cada 3 meses/sessões)
+- [x] Alerta no dashboard/minhas metas do aluno (lembrete de atualizar metas com a mentora)
+- [x] Testar alertas e filtros

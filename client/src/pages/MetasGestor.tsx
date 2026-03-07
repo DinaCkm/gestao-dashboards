@@ -282,6 +282,7 @@ function VisaoIndividualAluno({
 export default function MetasGestor() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterMetas, setFilterMetas] = useState<'todos' | 'com_metas' | 'sem_metas'>('todos');
   const [selectedAlunoId, setSelectedAlunoId] = useState<number | null>(null);
   const [selectedAlunoNome, setSelectedAlunoNome] = useState<string>("");
 
@@ -549,15 +550,43 @@ export default function MetasGestor() {
           </div>
         )}
 
-        {/* Busca */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar aluno por nome ou email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        {/* Busca e Filtros */}
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar aluno por nome ou email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="flex gap-1 bg-muted rounded-lg p-1">
+            <Button
+              variant={filterMetas === 'todos' ? 'default' : 'ghost'}
+              size="sm"
+              className="text-xs h-8"
+              onClick={() => setFilterMetas('todos')}
+            >
+              Todos ({alunosFiltrados.length + alunosSemMetas.length})
+            </Button>
+            <Button
+              variant={filterMetas === 'com_metas' ? 'default' : 'ghost'}
+              size="sm"
+              className="text-xs h-8"
+              onClick={() => setFilterMetas('com_metas')}
+            >
+              Com metas ({alunosFiltrados.length})
+            </Button>
+            <Button
+              variant={filterMetas === 'sem_metas' ? 'default' : 'ghost'}
+              size="sm"
+              className="text-xs h-8"
+              onClick={() => setFilterMetas('sem_metas')}
+            >
+              Sem metas ({alunosSemMetas.length})
+            </Button>
+          </div>
         </div>
 
         {/* Tabela de alunos */}
@@ -589,7 +618,7 @@ export default function MetasGestor() {
                 </div>
 
                 {/* Alunos com metas */}
-                {alunosFiltrados.map((aluno) => (
+                {filterMetas !== 'sem_metas' && alunosFiltrados.map((aluno) => (
                   <div 
                     key={aluno.alunoId} 
                     className="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-muted/50 rounded-lg transition-colors border-b last:border-0"
@@ -634,7 +663,7 @@ export default function MetasGestor() {
                 ))}
 
                 {/* Alunos sem metas */}
-                {alunosSemMetas.map((aluno) => (
+                {filterMetas !== 'com_metas' && alunosSemMetas.map((aluno) => (
                   <div 
                     key={`sem-${aluno.id}`} 
                     className="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-muted/50 rounded-lg transition-colors border-b last:border-0 opacity-60"

@@ -5946,3 +5946,69 @@ export async function getMetasResumoTodos() {
     };
   });
 }
+
+// ============ ALERTA ATUALIZAÇÃO DE METAS ============
+
+export async function getAlertaAtualizacaoMetas(alunoId: number) {
+  const db = await getDb();
+  if (!db) return { precisaAtualizar: false, temMetas: false, sessoesDesdeUltimaAtualizacao: 0, mesesDesdeUltimaAtualizacao: 0, ultimaAtualizacao: null };
+
+  // Buscar a data do último acompanhamento de meta registrado
+  const ultimoAcompResult = await db
+    .select({ ultimaAtualizacao: sql<Date>`MAX(${metaAcompanhamento.createdAt})` })
+    .from(metaAcompanhamento)
+    .where(eq(metaAcompanhamento.alunoId, alunoId));
+
+  const ultimaAtualizacao = ultimoAcompResult[0]?.ultimaAtualizacao || null;
+
+  // Buscar quantas sessões de mentoria ocorreram desde a última atualização
+  let sessoesDesdeUltimaAtualizacao = 0;
+  if (ultimaAtualizacao) {
+    const sessoesResult = await db
+      .select({ total: sql<number>`COUNT(*)` })
+      .from(mentoringSessions)
+      .where(and(
+        eq(mentoringSessions.alunoId, alunoId),
+        sql`${mentoringSessions.sessionDate} > ${ultimaAtualizacao}`,
+        eq(mentoringSessions.presence, 'presente'),
+        eq(mentoringSessions.isAssessment, 0)
+      ));
+    sessoesDesdeUltimaAtualizacao = Number(sessoesResult[0]?.total) || 0;
+  } else {
+    // Se nunca houve acompanhamento, contar todas as sessões
+    const sessoesResult = await db
+      .select({ total: sql<number>`COUNT(*)` })
+      .from(mentoringSessions)
+      .where(and(
+        eq(mentoringSessions.alunoId, alunoId),
+        eq(mentoringSessions.presence, 'presente'),
+        eq(mentoringSessions.isAssessment, 0)
+      ));
+    sessoesDesdeUltimaAtualizacao = Number(sessoesResult[0]?.total) || 0;
+  }
+
+  // Verificar se tem metas definidas
+  const metasCountResult = await db
+    .select({ total: sql<number>`COUNT(*)` })
+    .from(metas)
+    .where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1)));
+  const temMetas = Number(metasCountResult[0]?.total) > 0;
+
+  // Calcular meses desde última atualização
+  let mesesDesdeUltimaAtualizacao = 0;
+  if (ultimaAtualizacao) {
+    const agora = new Date();
+    mesesDesdeUltimaAtualizacao = (agora.getFullYear() - ultimaAtualizacao.getFullYear()) * 12 + (agora.getMonth() - ultimaAtualizacao.getMonth());
+  }
+
+  // Alerta se: 3+ sessões desde última atualização OU 3+ meses desde última atualização
+  const precisaAtualizar = temMetas && (sessoesDesdeUltimaAtualizacao >= 3 || mesesDesdeUltimaAtualizacao >= 3 || !ultimaAtualizacao);
+
+  return {
+    precisaAtualizar,
+    temMetas,
+    sessoesDesdeUltimaAtualizacao,
+    mesesDesdeUltimaAtualizacao,
+    ultimaAtualizacao: ultimaAtualizacao ? ultimaAtualizacao.toISOString() : null,
+  };
+}

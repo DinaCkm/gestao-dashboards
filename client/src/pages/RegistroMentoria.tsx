@@ -100,6 +100,12 @@ export default function RegistroMentoria() {
   );
   const { data: taskLibrary = [] } = trpc.mentor.getTaskLibrary.useQuery();
 
+  // Alerta de atualização de metas
+  const { data: alertaMetas } = trpc.metas.alertaAtualizacao.useQuery(
+    { alunoId: selectedAlunoId! },
+    { enabled: !!selectedAlunoId }
+  );
+
   // Evidência / Validação / Comentários states
   const [commentText, setCommentText] = useState<string>("");
 
@@ -501,6 +507,38 @@ export default function RegistroMentoria() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Alerta de Atualização de Metas */}
+        {selectedAlunoId && alertaMetas?.precisaAtualizar && (
+          <Card className="border-amber-300 bg-amber-50">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-amber-100 rounded-full">
+                  <Target className="h-5 w-5 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-amber-800">Atualização de Metas Recomendada</h3>
+                  <p className="text-sm text-amber-700 mt-1">
+                    {alertaMetas.sessoesDesdeUltimaAtualizacao >= 3
+                      ? `Já foram realizadas ${alertaMetas.sessoesDesdeUltimaAtualizacao} sessões de mentoria desde a última atualização de metas.`
+                      : alertaMetas.mesesDesdeUltimaAtualizacao >= 3
+                      ? `Já se passaram ${alertaMetas.mesesDesdeUltimaAtualizacao} meses desde a última atualização de metas.`
+                      : `Nenhuma atualização de metas foi registrada ainda para este aluno.`
+                    }
+                    {" "}Lembre-se de revisar e atualizar as metas de desenvolvimento nesta sessão.
+                  </p>
+                </div>
+                <a
+                  href={`/metas?alunoId=${selectedAlunoId}`}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-sm font-medium whitespace-nowrap"
+                >
+                  <Target className="h-4 w-4" />
+                  Ver Metas
+                </a>
+              </div>
             </CardContent>
           </Card>
         )}

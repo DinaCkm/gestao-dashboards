@@ -4622,10 +4622,10 @@ export const appRouter = router({
           const aluno = await db.getAlunoByExternalId(ctx.user.openId);
           if (aluno) alunoId = aluno.id;
         }
-        if (!alunoId) return { metas: [], resumo: { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] } };
+        if (!alunoId) return { alunoId: null, metas: [], resumo: { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] } };
         const metasDetalhadas = await db.getMetasDetalhadas(alunoId);
         const resumo = await db.getMetasResumo(alunoId);
-        return { metas: metasDetalhadas, resumo };
+        return { alunoId, metas: metasDetalhadas, resumo };
       }),
 
     // Listar itens da biblioteca de ações (para seleção)
@@ -4639,6 +4639,14 @@ export const appRouter = router({
           return all.filter(t => t.competencia.toLowerCase().includes(input.competencia!.toLowerCase()));
         }
         return all;
+      }),
+
+    // Verificar se precisa atualizar metas (a cada 3 meses ou 3 sessões)
+    alertaAtualizacao: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const { alunoId } = input;
+        return await db.getAlertaAtualizacaoMetas(alunoId);
       }),
   }),
 });

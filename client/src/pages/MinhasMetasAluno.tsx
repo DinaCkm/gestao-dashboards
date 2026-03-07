@@ -62,16 +62,24 @@ export default function MinhasMetasAluno() {
   const [expandedCompetencias, setExpandedCompetencias] = useState<Set<string>>(new Set());
   const [expandedMetas, setExpandedMetas] = useState<Set<number>>(new Set());
 
+  // Alerta de atualização de metas
+  const alunoId = data?.alunoId;
+  const { data: alertaMetas } = trpc.metas.alertaAtualizacao.useQuery(
+    { alunoId: alunoId! },
+    { enabled: !!alunoId }
+  );
+
   // Agrupar metas por competência
   const metasPorCompetencia = useMemo(() => {
-    if (!data?.metas || data.metas.length === 0) return [];
-    const map = new Map<string, { competenciaNome: string; competenciaId: number; metas: typeof data.metas }>();
-    for (const meta of data.metas) {
+    const metasList = data?.metas;
+    if (!metasList || metasList.length === 0) return [];
+    const map = new Map<string, { competenciaNome: string; competenciaId: number; metas: typeof metasList }>();
+    for (const meta of metasList) {
       const key = meta.competenciaNome;
       if (!map.has(key)) {
-        map.set(key, { competenciaNome: key, competenciaId: meta.competenciaId, metas: [] });
+        map.set(key, { competenciaNome: key, competenciaId: meta.competenciaId, metas: [] as unknown as typeof metasList });
       }
-      map.get(key)!.metas.push(meta);
+      (map.get(key)!.metas as any[]).push(meta);
     }
     return Array.from(map.values());
   }, [data?.metas]);
@@ -164,6 +172,31 @@ export default function MinhasMetasAluno() {
             <p className="text-gray-500 text-sm">Acompanhe o progresso das metas definidas pela sua mentora</p>
           </div>
         </div>
+
+        {/* Alerta de Atualização de Metas */}
+        {alertaMetas?.precisaAtualizar && (
+          <Card className="border-amber-300 bg-amber-50">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-amber-100 rounded-full">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-amber-800">Lembrete: Atualização de Metas</h3>
+                  <p className="text-sm text-amber-700 mt-1">
+                    {alertaMetas.sessoesDesdeUltimaAtualizacao >= 3
+                      ? `Você já realizou ${alertaMetas.sessoesDesdeUltimaAtualizacao} sessões de mentoria desde a última atualização de metas.`
+                      : alertaMetas.mesesDesdeUltimaAtualizacao >= 3
+                      ? `Já se passaram ${alertaMetas.mesesDesdeUltimaAtualizacao} meses desde a última atualização de metas.`
+                      : `Suas metas ainda não tiveram nenhum registro de acompanhamento.`
+                    }
+                    {" "}Lembre-se de revisar suas metas de desenvolvimento com a sua mentora na próxima sessão.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Cards de Resumo */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
