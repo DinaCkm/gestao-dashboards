@@ -374,7 +374,7 @@ function DemonstrativoContent() {
             {hasActiveFilters && " com os filtros aplicados"}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3">
           {filteredData.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Users className="h-12 w-12 mx-auto mb-3 text-gray-300" />
@@ -382,21 +382,21 @@ function DemonstrativoContent() {
               <p className="text-sm mt-1">Tente ajustar os filtros</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto max-w-full" style={{ scrollbarWidth: 'thin' }}>
+              <Table className="text-xs">
                 <TableHeader>
                   <TableRow className="bg-gray-50">
-                    <TableHead className="font-semibold text-gray-700">Aluno</TableHead>
-                    {user?.role === "admin" && <TableHead className="font-semibold text-gray-700">Empresa</TableHead>}
-                    <TableHead className="font-semibold text-gray-700">Turma</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Trilha</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Mentor</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-center">Período</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-center">Realizadas</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-center">Esperadas</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-center">Faltantes</TableHead>
-                    <TableHead className="font-semibold text-gray-700 min-w-[180px]">Progresso</TableHead>
-                    <TableHead className="font-semibold text-gray-700 text-center">Status</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs py-1.5 px-2">Aluno</TableHead>
+                    {user?.role === "admin" && <TableHead className="font-semibold text-gray-700 text-xs py-1.5 px-2">Empresa</TableHead>}
+                    <TableHead className="font-semibold text-gray-700 text-xs py-1.5 px-2">Turma</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs py-1.5 px-2">Trilha</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs py-1.5 px-2">Mentor</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs text-center py-1.5 px-2">Período</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs text-center py-1.5 px-1">Real.</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs text-center py-1.5 px-1">Esp.</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs text-center py-1.5 px-1">Falt.</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs min-w-[120px] py-1.5 px-2">Progresso</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs text-center py-1.5 px-2">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -406,53 +406,53 @@ function DemonstrativoContent() {
                     
                     return (
                       <TableRow key={`${item.alunoId}-${item.assessmentPdiId}-${idx}`} className="hover:bg-gray-50/50">
-                        <TableCell className="font-medium text-gray-900 whitespace-nowrap">
+                        <TableCell className="font-medium text-gray-900 whitespace-nowrap py-1 px-2 text-xs">
                           {item.alunoNome}
                         </TableCell>
                         {user?.role === "admin" && (
-                          <TableCell className="text-gray-600 text-sm whitespace-nowrap">
+                          <TableCell className="text-gray-600 whitespace-nowrap py-1 px-2 text-xs">
                             {item.programaNome || "—"}
                           </TableCell>
                         )}
-                        <TableCell className="text-gray-600 text-sm">
-                          <Badge variant="outline" className="text-xs">{turmaCode}</Badge>
+                        <TableCell className="text-gray-600 py-1 px-2">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">{turmaCode}</Badge>
                         </TableCell>
-                        <TableCell className="text-gray-600 text-sm whitespace-nowrap">
+                        <TableCell className="text-gray-600 whitespace-nowrap py-1 px-2 text-xs">
                           {item.trilhaNome || "—"}
                         </TableCell>
-                        <TableCell className="text-gray-600 text-sm whitespace-nowrap">
+                        <TableCell className="text-gray-600 whitespace-nowrap py-1 px-2 text-xs">
                           {item.consultorNome || "—"}
                         </TableCell>
-                        <TableCell className="text-center text-xs text-gray-500 whitespace-nowrap">
+                        <TableCell className="text-center text-[10px] text-gray-500 whitespace-nowrap py-1 px-2">
                           {formatDate(item.macroInicio)} — {formatDate(item.macroTermino)}
                         </TableCell>
-                        <TableCell className="text-center">
-                          <span className="text-lg font-bold text-[#1E3A5F]">{item.sessoesRealizadas}</span>
+                        <TableCell className="text-center py-1 px-1">
+                          <span className="text-sm font-bold text-[#1E3A5F]">{item.sessoesRealizadas}</span>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <span className="text-gray-600">{item.totalSessoesEsperadas}</span>
+                        <TableCell className="text-center py-1 px-1">
+                          <span className="text-gray-600 text-xs">{item.totalSessoesEsperadas}</span>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <span className={`font-semibold ${item.sessoesFaltantes === 0 ? 'text-emerald-600' : item.faltaUmaSessao ? 'text-amber-600' : 'text-gray-700'}`}>
+                        <TableCell className="text-center py-1 px-1">
+                          <span className={`font-semibold text-xs ${item.sessoesFaltantes === 0 ? 'text-emerald-600' : item.faltaUmaSessao ? 'text-amber-600' : 'text-gray-700'}`}>
                             {item.sessoesFaltantes}
                           </span>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
+                        <TableCell className="py-1 px-2">
+                          <div className="flex items-center gap-1">
                             <div className="flex-1">
-                              <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                              <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
                                 <div 
                                   className={`h-full rounded-full transition-all ${getProgressColor(item.percentualProgresso)}`}
                                   style={{ width: `${Math.min(100, item.percentualProgresso)}%` }}
                                 />
                               </div>
                             </div>
-                            <span className="text-xs font-semibold text-gray-600 w-10 text-right">
+                            <span className="text-[10px] font-semibold text-gray-600 w-8 text-right">
                               {item.percentualProgresso}%
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center py-1 px-2">
                           {getStatusBadge(item)}
                         </TableCell>
                       </TableRow>

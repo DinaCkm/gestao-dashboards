@@ -1817,3 +1817,6 @@
 - [x] Corrigir para que ambas as telas mostrem o mesmo valor (74.4% em ambas)
 ## Bug: Linha "Hoje" no gráfico Timeline aparece em maio em vez de março (07/03/2026)
 - [x] Corrigir posição da linha "Hoje" no gráfico de Timeline de Execução (removido offset +4rem que deslocava a linha para a direita)
+## Ajuste: Tabela Sessões por Aluno (demonstrativo-mentorias)
+- [x] Reduzir tamanho da fonte e espaçamento da tabela Sessões por Aluno
+- [x] Adicionar barra de rolagem horizontal na tabela
