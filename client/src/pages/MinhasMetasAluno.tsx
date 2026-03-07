@@ -9,6 +9,7 @@ import {
   ChevronDown, ChevronRight, AlertCircle, Flag, Calendar,
   MessageSquare, Loader2, BookOpen, Trophy
 } from "lucide-react";
+import DualIndicators from "@/components/DualIndicators";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Cell
@@ -68,6 +69,9 @@ export default function MinhasMetasAluno() {
     { alunoId: alunoId! },
     { enabled: !!alunoId }
   );
+
+  // Indicadores V2 do aluno (para Engajamento)
+  const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
 
   // Agrupar metas por competência
   const metasPorCompetencia = useMemo(() => {
@@ -197,6 +201,33 @@ export default function MinhasMetasAluno() {
             </CardContent>
           </Card>
         )}
+
+        {/* === INDICADORES DE DESTAQUE === */}
+        <DualIndicators
+          engajamento={
+            dashData?.found
+              ? (dashData.indicadoresV2?.consolidado?.ind7_engajamentoFinal ??
+                 dashData.indicadores?.performanceGeral ??
+                 0)
+              : 0
+          }
+          desenvolvimento={resumo.percentual}
+          engajamentoDetalhes={
+            dashData?.found && dashData.indicadoresV2?.consolidado
+              ? {
+                  ind1_webinars: dashData.indicadoresV2.consolidado.ind1_webinars,
+                  ind2_avaliacoes: dashData.indicadoresV2.consolidado.ind2_avaliacoes,
+                  ind3_competencias: dashData.indicadoresV2.consolidado.ind3_competencias,
+                  ind4_tarefas: dashData.indicadoresV2.consolidado.ind4_tarefas,
+                  ind5_engajamento: dashData.indicadoresV2.consolidado.ind5_engajamento,
+                }
+              : undefined
+          }
+          desenvolvimentoDetalhes={{
+            total: resumo.total,
+            cumpridas: resumo.cumpridas,
+          }}
+        />
 
         {/* Cards de Resumo */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

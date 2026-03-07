@@ -1895,3 +1895,12 @@
 - [x] Adicionar botão "Sugerir com IA" que analisa a competência e sugere desafios de desenvolvimento
 - [x] Criar endpoint backend para sugestão de metas com IA (usando invokeLLM)
 - [x] Adicionar barra de rolagem ao diálogo de Nova Meta (max-h-[85vh] overflow-y-auto)
+
+## Indicadores de Destaque - Engajamento e Desenvolvimento (07/03/2026)
+- [x] Criar card de Indicador de Engajamento (meta 80%) com explicação - visão gestor e aluno
+- [x] Criar card de Indicador de Desenvolvimento (meta 100%) com explicação - visão gestor e aluno
+- [x] Posicionar indicadores no topo das páginas Assessment/Metas (gestor) e MinhasMetasAluno/Dashboard (aluno)
+- [x] Componente DualIndicators reutilizável com ProgressRing, StatusBadge e DetailBar
+- [x] Integrado em MetasDesenvolvimento.tsx (visão mentor/admin)
+- [x] Integrado em MinhasMetasAluno.tsx (visão aluno - metas)
+- [x] Integrado em DashboardMeuPerfil.tsx (visão aluno - dashboard principal)

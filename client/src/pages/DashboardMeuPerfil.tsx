@@ -25,6 +25,7 @@ import { InfoTooltip, GLOSSARIO, INDICADORES_INFO } from "@/components/InfoToolt
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import DualIndicators from "@/components/DualIndicators";
 
 function getClassificacaoColor(classificacao: string): string {
   switch (classificacao) {
@@ -142,6 +143,9 @@ export default function DashboardMeuPerfil() {
     consolidado: any;
     alertaCasePendente: any[];
   } | undefined) : undefined;
+
+  // Metas de desenvolvimento do aluno (para indicador de Desenvolvimento)
+  const { data: metasData } = trpc.metas.minhas.useQuery();
 
   // Queries para as novas abas
   const { data: myTasks } = trpc.attendance.myTasks.useQuery();
@@ -600,6 +604,37 @@ export default function DashboardMeuPerfil() {
             </CardContent>
           </Card>
         </div>
+
+        {/* === INDICADORES DE DESTAQUE: Engajamento e Desenvolvimento === */}
+        <DualIndicators
+          engajamento={
+            v2?.consolidado?.ind7_engajamentoFinal ??
+            performanceGeral ??
+            0
+          }
+          desenvolvimento={
+            metasData?.resumo?.percentual ?? 0
+          }
+          engajamentoDetalhes={
+            v2?.consolidado
+              ? {
+                  ind1_webinars: v2.consolidado.ind1_webinars,
+                  ind2_avaliacoes: v2.consolidado.ind2_avaliacoes,
+                  ind3_competencias: v2.consolidado.ind3_competencias,
+                  ind4_tarefas: v2.consolidado.ind4_tarefas,
+                  ind5_engajamento: v2.consolidado.ind5_engajamento,
+                }
+              : undefined
+          }
+          desenvolvimentoDetalhes={
+            metasData?.resumo
+              ? {
+                  total: metasData.resumo.total,
+                  cumpridas: metasData.resumo.cumpridas,
+                }
+              : undefined
+          }
+        />
 
         {/* Aviso de PDI Congelado */}
         {data.pdisCongelados && data.pdisCongelados.length > 0 && (

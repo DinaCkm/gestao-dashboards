@@ -21,6 +21,7 @@ import {
   Trash2, Edit3, MessageSquare, Calendar, TrendingUp,
   AlertCircle, Loader2, Library, Sparkles
 } from "lucide-react";
+import DualIndicators from "@/components/DualIndicators";
 
 // ============================================================
 // HELPERS
@@ -161,6 +162,12 @@ function MetasContent() {
   const { data: taskLibrary = [] } = trpc.metas.biblioteca.useQuery(undefined, {
     enabled: showAddMetaDialog
   });
+
+  // Indicadores V2 do aluno selecionado (para Engajamento)
+  const { data: performanceFiltrada } = trpc.indicadores.performanceFiltrada.useQuery(
+    { alunoId: selectedAlunoId! },
+    { enabled: !!selectedAlunoId }
+  );
 
   // Mutations
   const criarMeta = trpc.metas.criar.useMutation({
@@ -422,6 +429,33 @@ function MetasContent() {
           )}
         </CardContent>
       </Card>
+
+      {/* === INDICADORES DE DESTAQUE === */}
+      {selectedAlunoId && metasResumo && (
+        <DualIndicators
+          engajamento={
+            performanceFiltrada?.indicadoresV2?.consolidado?.ind7_engajamentoFinal ??
+            performanceFiltrada?.indicadores?.performanceGeral ??
+            0
+          }
+          desenvolvimento={metasResumo.percentual}
+          engajamentoDetalhes={
+            performanceFiltrada?.indicadoresV2?.consolidado
+              ? {
+                  ind1_webinars: performanceFiltrada.indicadoresV2.consolidado.ind1_webinars,
+                  ind2_avaliacoes: performanceFiltrada.indicadoresV2.consolidado.ind2_avaliacoes,
+                  ind3_competencias: performanceFiltrada.indicadoresV2.consolidado.ind3_competencias,
+                  ind4_tarefas: performanceFiltrada.indicadoresV2.consolidado.ind4_tarefas,
+                  ind5_engajamento: performanceFiltrada.indicadoresV2.consolidado.ind5_engajamento,
+                }
+              : undefined
+          }
+          desenvolvimentoDetalhes={{
+            total: metasResumo.total,
+            cumpridas: metasResumo.cumpridas,
+          }}
+        />
+      )}
 
       {/* Resumo de metas */}
       {selectedAlunoId && metasResumo && (
