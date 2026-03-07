@@ -1883,3 +1883,4 @@
 ## Ajuste 8 (07/03/2026)
 - [x] Corrigir diálogo "Novo Assessment" cortado na parte superior, sem barra de rolagem vertical e horizontal (adicionado ScrollArea com barras vertical/horizontal, max-h-[85vh], centralização correta)
 - [x] Corrigir formulário de edição de aluno (Cadastros) sem barra de rolagem lateral (adicionado overflow-y-auto, max-h-[85vh], footer fixo com borda)
+- [x] URGENTE: Corrigir diálogo Novo Assessment - removido style inline conflitante, restaurado posicionamento padrão do Radix Dialog, mantido max-h-[90vh] com overflow-hidden e ScrollArea com barras horizontal/vertical
