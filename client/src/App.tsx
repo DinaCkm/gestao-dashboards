@@ -29,6 +29,7 @@ import RegistroMentoria from "./pages/RegistroMentoria";
 import DashboardGestor from "./pages/DashboardGestor";
 import DashboardMeuPerfil from "./pages/DashboardMeuPerfil";
 import Assessment from "./pages/Assessment";
+import NovoAssessment from "./pages/NovoAssessment";
 // PortalAluno removido - unificado com DashboardMeuPerfil
 import Tutoriais from "./pages/Tutoriais";
 import PerformanceUpload from "./pages/PerformanceUpload";
@@ -68,6 +69,7 @@ function Router() {
       <Route path={"/registro-mentoria"} component={RegistroMentoria} />
       <Route path={"/dashboard/gestor"} component={DashboardGestor} />
       <Route path={"/assessment"} component={Assessment} />
+      <Route path={"/assessment/novo/:alunoId"} component={NovoAssessment} />
       <Route path={"/tutoriais"} component={Tutoriais} />
       <Route path={"/performance-upload"} component={PerformanceUpload} />
       <Route path={"/webinars"} component={WebinarsAdmin} />

@@ -255,7 +255,7 @@ function AssessmentContent() {
 
             <div className="space-y-2 flex items-end">
               <Button
-                onClick={() => setShowCreateDialog(true)}
+                onClick={() => selectedAlunoId && setLocation(`/assessment/novo/${selectedAlunoId}`)}
                 disabled={!selectedAlunoId}
                 className="w-full bg-secondary hover:bg-secondary/90"
               >
