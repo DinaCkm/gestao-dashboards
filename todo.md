@@ -1810,3 +1810,8 @@
 - [ ] Atualizar AdminDashboard para usar cálculo dinâmico V2 (remover hardcoded 81.8%)
 - [x] Escrever testes de consistência V1→V2 (7 testes passando)
 - [x] Publicar versão com migração V1→V2 completa (06/03/2026)
+## Bug: Divergência 73% vs 66% entre Dashboard Gestora e Portal do Aluno (06/03/2026)
+- [x] Investigar por que Dashboard Gestora mostra 73% e Portal do Aluno mostra 66% para Joseane
+  - Causa: endpoints porEmpresa/visaoGeral/dashboardGestor não incluíam dataSessao nas mentorias
+  - Sem dataSessao, TODAS as sessões eram incluídas em TODOS os ciclos (9 sessões por ciclo em vez de 1)
+- [x] Corrigir para que ambas as telas mostrem o mesmo valor (74.4% em ambas)

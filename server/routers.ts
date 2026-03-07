@@ -1618,6 +1618,7 @@ export const appRouter = router({
             nomeAluno: aluno.name,
             empresa: program?.name || 'Desconhecida',
             turma: String(aluno.turmaId || ''),
+            dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
             presenca: session.presence as 'presente' | 'ausente',
             atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
             engajamento: session.engagementScore || undefined
@@ -1813,6 +1814,7 @@ export const appRouter = router({
             nomeAluno: aluno.name,
             empresa: program?.name || 'Desconhecida',
             turma: String(aluno.turmaId || ''),
+            dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
             presenca: session.presence as 'presente' | 'ausente',
             atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
             engajamento: session.engagementScore || undefined
@@ -1931,6 +1933,7 @@ export const appRouter = router({
             nomeAluno: aluno.name,
             empresa: program?.name || 'Desconhecida',
             turma: String(aluno.turmaId || ''),
+            dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
             presenca: session.presence as 'presente' | 'ausente',
             atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
             engajamento: session.engagementScore || undefined
