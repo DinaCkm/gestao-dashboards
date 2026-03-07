@@ -5904,11 +5904,16 @@ export async function getMetasResumoTodos() {
   const allAcomp = await db.select().from(metaAcompanhamento)
     .where(inArray(metaAcompanhamento.metaId, metaIds));
   
+  // Buscar dados dos alunos para enriquecer o retorno
+  const alunoIds = Array.from(new Set(allMetas.map(m => m.alunoId)));
+  const alunosList = await db.select().from(alunos).where(inArray(alunos.id, alunoIds));
+  const alunosMap = new Map(alunosList.map(a => [a.id, a]));
+  
   // Agrupar por aluno
-  const porAluno = new Map<number, { total: number, cumpridas: number }>();
+  const porAluno = new Map<number, { total: number, cumpridas: number, naoCumpridas: number, emAndamento: number }>();
   for (const meta of allMetas) {
     if (!porAluno.has(meta.alunoId)) {
-      porAluno.set(meta.alunoId, { total: 0, cumpridas: 0 });
+      porAluno.set(meta.alunoId, { total: 0, cumpridas: 0, naoCumpridas: 0, emAndamento: 0 });
     }
     const entry = porAluno.get(meta.alunoId)!;
     entry.total++;
@@ -5917,15 +5922,27 @@ export async function getMetasResumoTodos() {
     const acomps = allAcomp
       .filter(a => a.metaId === meta.id)
       .sort((a, b) => (b.ano * 100 + b.mes) - (a.ano * 100 + a.mes));
-    if (acomps.length > 0 && acomps[0].status === 'cumprida') {
-      entry.cumpridas++;
+    if (acomps.length > 0) {
+      if (acomps[0].status === 'cumprida') entry.cumpridas++;
+      else if (acomps[0].status === 'nao_cumprida') entry.naoCumpridas++;
+      else entry.emAndamento++;
+    } else {
+      entry.emAndamento++; // Sem acompanhamento = em andamento
     }
   }
   
-  return Array.from(porAluno.entries()).map(([alunoId, data]) => ({
-    alunoId,
-    totalMetas: data.total,
-    metasCumpridas: data.cumpridas,
-    percentual: data.total > 0 ? Math.round((data.cumpridas / data.total) * 100) : 0
-  }));
+  return Array.from(porAluno.entries()).map(([alunoId, data]) => {
+    const aluno = alunosMap.get(alunoId);
+    return {
+      alunoId,
+      alunoNome: aluno?.name || 'Desconhecido',
+      alunoEmail: aluno?.email || '',
+      programId: aluno?.programId || null,
+      totalMetas: data.total,
+      metasCumpridas: data.cumpridas,
+      metasNaoCumpridas: data.naoCumpridas,
+      metasEmAndamento: data.emAndamento,
+      percentual: data.total > 0 ? Math.round((data.cumpridas / data.total) * 100) : 0
+    };
+  });
 }

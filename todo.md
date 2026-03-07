@@ -1846,3 +1846,12 @@
 - [x] Gráfico de evolução por competência (barras horizontais)
 - [x] Adicionar rota e link na sidebar do aluno
 - [x] Testar visualização
+
+## Seção de Metas no Dashboard do Gestor (07/03/2026)
+- [x] Criar endpoint backend para visão consolidada de metas de todos os alunos
+- [x] Criar página/seção de Metas no dashboard do gestor
+- [x] Visão consolidada: cards de resumo geral + tabela com todos os alunos e % atingimento
+- [x] Visão individual: ao clicar em um aluno, ver detalhes das metas por competência
+- [x] Gráfico consolidado de evolução
+- [x] Adicionar link na sidebar do gestor
+- [x] Testar visualização

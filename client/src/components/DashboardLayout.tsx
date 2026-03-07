@@ -102,6 +102,7 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias", roles: ["admin"] },
   { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["manager"], requireConsultorId: true },
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas", roles: ["manager"], requireConsultorId: true },
+  { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], hideIfConsultorId: true },
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas", roles: ["admin"] },
   { icon: Video, label: "Webinars", path: "/webinars", roles: ["admin"] },
   { icon: Megaphone, label: "Avisos e Comunicados", path: "/avisos", roles: ["admin"] },
