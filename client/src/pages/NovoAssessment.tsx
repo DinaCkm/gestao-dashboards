@@ -10,55 +10,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   ClipboardCheck,
   Calendar,
-  Target,
   CheckCircle2,
   AlertTriangle,
   ArrowLeft,
   ChevronRight,
   ListChecks,
-  BarChart3,
   User,
 } from "lucide-react";
-
-// ============ Progress Bar ============
-function ProgressBar({ value, meta }: { value: number; meta?: number }) {
-  const getColor = (v: number) => {
-    if (v >= 75) return "bg-emerald-500";
-    if (v >= 50) return "bg-amber-500";
-    return "bg-red-500";
-  };
-
-  return (
-    <div className="w-full">
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden relative">
-          <div className={`h-full rounded-full ${getColor(value)}`} style={{ width: `${Math.min(value, 100)}%` }} />
-          {meta && (
-            <div
-              className="absolute top-0 h-full w-0.5 bg-gray-400"
-              style={{ left: `${Math.min(meta, 100)}%` }}
-            />
-          )}
-        </div>
-        <span className="text-xs font-semibold w-10 text-right">{value}%</span>
-      </div>
-    </div>
-  );
-}
 
 // ============ Step Indicator ============
 function StepIndicator({ currentStep }: { currentStep: number }) {
   const steps = [
     { number: 1, title: "Configuração", icon: Calendar, description: "Trilha e período" },
     { number: 2, title: "Competências", icon: ListChecks, description: "Seleção e pesos" },
-    { number: 3, title: "Níveis e Metas", icon: BarChart3, description: "Definir metas" },
   ];
 
   return (
@@ -122,18 +92,13 @@ export default function NovoAssessment() {
   const [macroInicio, setMacroInicio] = useState("");
   const [macroTermino, setMacroTermino] = useState("");
 
-  // Step 2/3 state
+  // Step 2 state
   const [competenciasConfig, setCompetenciasConfig] = useState<Array<{
     competenciaId: number;
     nome: string;
     selected: boolean;
     peso: "obrigatoria" | "opcional";
     notaCorte: string;
-    nivelAtual: string;
-    metaCiclo1: string;
-    metaCiclo2: string;
-    metaFinal: string;
-    justificativa: string;
     microInicio: string;
     microTermino: string;
   }>>([]);
@@ -185,11 +150,6 @@ export default function NovoAssessment() {
           selected: true,
           peso: "obrigatoria" as const,
           notaCorte: "80",
-          nivelAtual: "",
-          metaCiclo1: "",
-          metaCiclo2: "",
-          metaFinal: "",
-          justificativa: "",
           microInicio: "",
           microTermino: "",
         }))
@@ -514,179 +474,24 @@ export default function NovoAssessment() {
                   {competenciasConfig.filter(c => c.selected).length} de {competenciasConfig.length} competências selecionadas
                 </div>
                 <Button
-                  onClick={() => setStep(3)}
-                  disabled={competenciasConfig.filter(c => c.selected).length === 0}
-                  className="bg-secondary hover:bg-secondary/90 gap-1.5"
+                  onClick={handleSubmit}
+                  disabled={competenciasConfig.filter(c => c.selected).length === 0 || criarMutation.isPending}
+                  className="bg-emerald-600 hover:bg-emerald-700 gap-1.5"
                   size="lg"
                 >
-                  Próximo: Níveis e Metas
-                  <ChevronRight className="h-4 w-4" />
+                  {criarMutation.isPending ? "Criando..." : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      Criar Assessment e Liberar Trilha
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* ============ STEP 3: Níveis e Metas ============ */}
-        {step === 3 && (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <BarChart3 className="h-5 w-5 text-secondary" />
-                  Definir Níveis e Metas
-                </CardTitle>
-                <CardDescription>
-                  <span className="font-medium text-foreground">{selectedTrilha?.name}</span>
-                  <span className="mx-2">•</span>
-                  {competenciasConfig.filter(c => c.selected).length} competências selecionadas
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            {competenciasConfig.filter(c => c.selected).map((comp) => {
-              const realIdx = competenciasConfig.findIndex(c => c.competenciaId === comp.competenciaId);
-              return (
-                <Card key={comp.competenciaId} className="border-l-4 border-l-secondary/50">
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-semibold flex items-center gap-2">
-                        <Target className="h-4 w-4 text-secondary" />
-                        {comp.nome}
-                      </h4>
-                      <Badge variant={comp.peso === "obrigatoria" ? "default" : "outline"}>
-                        {comp.peso === "obrigatoria" ? "Obrigatória" : "Opcional"}
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-sm text-muted-foreground">Nível Atual (%)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={comp.nivelAtual}
-                          onChange={(e) => {
-                            setCompetenciasConfig(prev => {
-                              const next = [...prev];
-                              next[realIdx] = { ...next[realIdx], nivelAtual: e.target.value };
-                              return next;
-                            });
-                          }}
-                          className="h-11"
-                          placeholder="Ex: 42"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-sm text-muted-foreground">Meta Ciclo 1 (%)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={comp.metaCiclo1}
-                          onChange={(e) => {
-                            setCompetenciasConfig(prev => {
-                              const next = [...prev];
-                              next[realIdx] = { ...next[realIdx], metaCiclo1: e.target.value };
-                              return next;
-                            });
-                          }}
-                          className="h-11"
-                          placeholder="Ex: 55"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-sm text-muted-foreground">Meta Ciclo 2 (%)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={comp.metaCiclo2}
-                          onChange={(e) => {
-                            setCompetenciasConfig(prev => {
-                              const next = [...prev];
-                              next[realIdx] = { ...next[realIdx], metaCiclo2: e.target.value };
-                              return next;
-                            });
-                          }}
-                          className="h-11"
-                          placeholder="Ex: 65"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-sm text-muted-foreground">Meta Final (%)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={comp.metaFinal}
-                          onChange={(e) => {
-                            setCompetenciasConfig(prev => {
-                              const next = [...prev];
-                              next[realIdx] = { ...next[realIdx], metaFinal: e.target.value };
-                              return next;
-                            });
-                          }}
-                          className="h-11"
-                          placeholder="Ex: 75"
-                        />
-                      </div>
-                    </div>
-
-                    {comp.nivelAtual && (
-                      <ProgressBar
-                        value={parseInt(comp.nivelAtual) || 0}
-                        meta={parseInt(comp.metaFinal) || undefined}
-                      />
-                    )}
-
-                    <div className="space-y-1.5">
-                      <Label className="text-sm text-muted-foreground">Justificativa da Mentora</Label>
-                      <Textarea
-                        value={comp.justificativa}
-                        onChange={(e) => {
-                          setCompetenciasConfig(prev => {
-                            const next = [...prev];
-                            next[realIdx] = { ...next[realIdx], justificativa: e.target.value };
-                            return next;
-                          });
-                        }}
-                        placeholder="Justificativa para a meta, observações..."
-                        className="resize-none"
-                        rows={2}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-center">
-                  <Button variant="outline" onClick={() => setStep(2)} className="gap-1.5">
-                    <ArrowLeft className="h-4 w-4" />
-                    Voltar
-                  </Button>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={criarMutation.isPending}
-                    className="bg-emerald-600 hover:bg-emerald-700 gap-1.5"
-                    size="lg"
-                  >
-                    {criarMutation.isPending ? "Criando..." : (
-                      <>
-                        <CheckCircle2 className="h-4 w-4" />
-                        Salvar e Liberar Trilha
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {/* Step 3 removido - progresso é calculado automaticamente pelas metas/desafios cumpridos */}
       </div>
     </DashboardLayout>
   );

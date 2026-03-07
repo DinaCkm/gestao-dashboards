@@ -1885,3 +1885,7 @@
 - [x] Corrigir formulário de edição de aluno (Cadastros) sem barra de rolagem lateral (adicionado overflow-y-auto, max-h-[85vh], footer fixo com borda)
 - [x] URGENTE: Corrigir diálogo Novo Assessment - removido style inline conflitante, restaurado posicionamento padrão do Radix Dialog, mantido max-h-[90vh] com overflow-hidden e ScrollArea com barras horizontal/vertical
 - [x] Transformar criação de Assessment de diálogo modal para página inteira dedicada (NovoAssessment.tsx com stepper visual de 3 steps em tela cheia, rota /assessment/novo/:alunoId)
+
+## Simplificação do Assessment (07/03/2026)
+- [x] Remover Step 3 do NovoAssessment (níveis numéricos subjetivos) - simplificado para 2 steps (Configuração + Competências)
+- [x] Progresso calculado automaticamente pelas metas/desafios cumpridos (já existia no sistema)
