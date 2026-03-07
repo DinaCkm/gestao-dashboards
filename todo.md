@@ -1815,3 +1815,5 @@
   - Causa: endpoints porEmpresa/visaoGeral/dashboardGestor não incluíam dataSessao nas mentorias
   - Sem dataSessao, TODAS as sessões eram incluídas em TODOS os ciclos (9 sessões por ciclo em vez de 1)
 - [x] Corrigir para que ambas as telas mostrem o mesmo valor (74.4% em ambas)
+## Bug: Linha "Hoje" no gráfico Timeline aparece em maio em vez de março (07/03/2026)
+- [x] Corrigir posição da linha "Hoje" no gráfico de Timeline de Execução (removido offset +4rem que deslocava a linha para a direita)

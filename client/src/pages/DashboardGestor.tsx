@@ -818,7 +818,7 @@ export default function DashboardGestor() {
                         })}
                       </div>
                       {/* Linha do hoje */}
-                      <div className="absolute top-0 bottom-0" style={{ left: `calc(${todayPct}% + 4rem)`, width: '2px' }}>
+                      <div className="absolute top-0 bottom-0" style={{ left: `${todayPct}%`, width: '2px' }}>
                         <div className="w-0.5 h-full bg-red-500 opacity-70" />
                         <span className="absolute -top-1 left-1 text-[9px] font-bold text-red-500">Hoje</span>
                       </div>
