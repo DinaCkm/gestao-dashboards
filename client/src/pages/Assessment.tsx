@@ -1079,9 +1079,10 @@ function CreateAssessmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col"
+      <DialogContent className="max-w-6xl max-h-[85vh] flex flex-col overflow-hidden my-4"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
+        style={{ top: '50%', transform: 'translate(-50%, -50%)' }}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -1094,7 +1095,8 @@ function CreateAssessmentDialog({
         </DialogHeader>
 
         {step === 1 ? (
-          <div className="space-y-5 py-2 overflow-visible">
+          <ScrollArea className="flex-1" type="always">
+          <div className="space-y-5 py-2 pr-4">
             <div className="space-y-2">
               <Label className="font-medium">Trilha</Label>
               <Select value={selectedTrilhaId} onValueChange={setSelectedTrilhaId}>
@@ -1162,6 +1164,8 @@ function CreateAssessmentDialog({
               </Button>
             </DialogFooter>
           </div>
+          <ScrollBar orientation="vertical" />
+          </ScrollArea>
         ) : step === 2 ? (
           <div className="flex-1 overflow-hidden flex flex-col">
             <div className="flex items-center justify-between mb-3">
@@ -1179,7 +1183,7 @@ function CreateAssessmentDialog({
               </div>
             </div>
 
-            <ScrollArea className="flex-1 border rounded-lg" type="always">
+            <ScrollArea className="flex-1 border rounded-lg min-h-0" type="always">
               <div className="p-1">
                 <Table className="min-w-[800px]">
                   <TableHeader>
@@ -1293,7 +1297,7 @@ function CreateAssessmentDialog({
               </span>
             </div>
 
-            <ScrollArea className="flex-1 border rounded-lg">
+            <ScrollArea className="flex-1 border rounded-lg min-h-0" type="always">
               <div className="p-4 space-y-4">
                 {competenciasConfig.filter(c => c.selected).map((comp, idx) => {
                   const realIdx = competenciasConfig.findIndex(c => c.competenciaId === comp.competenciaId);

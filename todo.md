@@ -1879,3 +1879,7 @@
 - [x] Lista de alunos sempre em ordem alfabética
 - [x] Adicionar busca/filtro de alunos por nome
 - [x] Limpar registros de teste do banco de dados (54 registros desativados: Aluno Direto Test, Test Turma Null/Number/Undefined, Maria Dinamar, Usuário Teste)
+
+## Ajuste 8 (07/03/2026)
+- [x] Corrigir diálogo "Novo Assessment" cortado na parte superior, sem barra de rolagem vertical e horizontal (adicionado ScrollArea com barras vertical/horizontal, max-h-[85vh], centralização correta)
+- [x] Corrigir formulário de edição de aluno (Cadastros) sem barra de rolagem lateral (adicionado overflow-y-auto, max-h-[85vh], footer fixo com borda)

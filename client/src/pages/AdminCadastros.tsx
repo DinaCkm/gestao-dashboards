@@ -594,13 +594,13 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
 
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent className="z-50 max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
-            <form onSubmit={handleEditSubmit}>
+          <DialogContent className="z-50 max-w-lg max-h-[85vh] flex flex-col overflow-hidden" onPointerDownOutside={(e) => e.preventDefault()}>
+            <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 min-h-0">
               <DialogHeader>
                 <DialogTitle>Editar Aluno</DialogTitle>
                 <DialogDescription>Altere os dados do aluno</DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
+              <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
                 <div className="space-y-2">
                   <Label>Nome Completo *</Label>
                   <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} required />
@@ -646,7 +646,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                   </select>
                 </div>
               </div>
-              <DialogFooter>
+              <DialogFooter className="pt-4 border-t">
                 <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
                 <Button type="submit" disabled={isUpdating}>
                   {isUpdating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar Alterações"}
