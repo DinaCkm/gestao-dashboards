@@ -607,7 +607,7 @@ function MetasContent() {
 
       {/* Dialog: Adicionar Meta */}
       <Dialog open={showAddMetaDialog} onOpenChange={(open) => { if (!open) { setShowAddMetaDialog(false); resetMetaForm(); } }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Flag className="h-5 w-5 text-primary" />

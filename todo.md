@@ -1894,3 +1894,4 @@
 - [x] Mostrar nome da competência no card/diálogo de Nova Meta (badge com ícone Target e nome da competência)
 - [x] Adicionar botão "Sugerir com IA" que analisa a competência e sugere desafios de desenvolvimento
 - [x] Criar endpoint backend para sugestão de metas com IA (usando invokeLLM)
+- [x] Adicionar barra de rolagem ao diálogo de Nova Meta (max-h-[85vh] overflow-y-auto)
