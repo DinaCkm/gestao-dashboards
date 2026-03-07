@@ -1809,3 +1809,4 @@
 - [x] Migrar PlanoIndividual de V1 para V2 (atualizar label "Média dos 6" → "Média dos 5")
 - [ ] Atualizar AdminDashboard para usar cálculo dinâmico V2 (remover hardcoded 81.8%)
 - [x] Escrever testes de consistência V1→V2 (7 testes passando)
+- [x] Publicar versão com migração V1→V2 completa (06/03/2026)
