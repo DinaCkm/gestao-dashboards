@@ -1794,3 +1794,11 @@
   - Agora retorna flag todosCongelados quando só há PDIs congelados
   - Mensagem diferenciada: "Trilhas congeladas" (azul) vs "PDI não cadastrado" (amarelo)
 - [x] Corrigir escapes Unicode (\\u00e3o, \\u00e1, etc.) nos textos de aviso de congelamento
+
+## Uniformização do Cálculo de Engajamento Final
+- [x] Investigar como cada tela calcula o Engajamento Final / nota
+  - Ambas as telas (Portal do Aluno e Gestora) já usam o calculador V2 com média dos 5 indicadores
+  - A diferença era causada pelos microTermino incorretos da turma BS2 (ciclos com datas de fim muito longas)
+- [x] Atualizar microTermino de 264 registros da turma BS2 conforme planilha
+- [x] Verificar consistência: ambos os cálculos agora retornam 74.4% (nota 7.44) para Joseane
+- [x] Garantir que a nota na visão da gestora (escala 0-10) corresponda ao mesmo cálculo

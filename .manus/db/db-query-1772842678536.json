@@ -1,0 +1,19 @@
+{
+  "query": "\nSELECT ap.id, ap.alunoId, a.name, ap.status, ap.macroInicio, ap.macroTermino, t.name as trilha\nFROM assessment_pdi ap\nJOIN alunos a ON ap.alunoId = a.id\nLEFT JOIN trilhas t ON ap.trilhaId = t.id\nWHERE a.name LIKE '%Vanessa Bertholdo%'\nORDER BY ap.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT ap.id, ap.alunoId, a.name, ap.status, ap.macroInicio, ap.macroTermino, t.name as trilha\nFROM assessment_pdi ap\nJOIN alunos a ON ap.alunoId = a.id\nLEFT JOIN trilhas t ON ap.trilhaId = t.id\nWHERE a.name LIKE '%Vanessa Bertholdo%'\nORDER BY ap.id;\n",
+  "rows": [
+    {
+      "id": "60369",
+      "alunoId": "30099",
+      "name": "Vanessa Bertholdo Vargas",
+      "status": "congelado",
+      "macroInicio": "2025-10-15",
+      "macroTermino": "2026-10-30",
+      "trilha": "Basic"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tname\tstatus\tmacroInicio\tmacroTermino\ttrilha\n60369\t30099\tVanessa Bertholdo Vargas\tcongelado\t2025-10-15\t2026-10-30\tBasic\n",
+  "stderr": "",
+  "execution_time_ms": 402
+}
