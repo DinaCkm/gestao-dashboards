@@ -1,0 +1,23 @@
+{
+  "query": "SELECT ap.id, ap.alunoId, ap.consultorId, ap.createdAt FROM assessment_pdi ap WHERE ap.alunoId = 30099; SELECT pi2.id, pi2.alunoId, pi2.competenciaId FROM plano_individual pi2 WHERE pi2.alunoId = 30099 LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id, ap.alunoId, ap.consultorId, ap.createdAt FROM assessment_pdi ap WHERE ap.alunoId = 30099; SELECT pi2.id, pi2.alunoId, pi2.competenciaId FROM plano_individual pi2 WHERE pi2.alunoId = 30099 LIMIT 5",
+  "rows": [
+    {
+      "id": "60369",
+      "alunoId": "30099",
+      "consultorId": "NULL",
+      "createdAt": "2026-03-05 20:45:08"
+    }
+  ],
+  "messages": [
+    "id\talunoId\tcompetenciaId",
+    "60244\t30099\t30004",
+    "60245\t30099\t30005",
+    "60246\t30099\t30006",
+    "60247\t30099\t30007",
+    "60248\t30099\t30008"
+  ],
+  "stdout": "id\talunoId\tconsultorId\tcreatedAt\n60369\t30099\tNULL\t2026-03-05 20:45:08\nid\talunoId\tcompetenciaId\n60244\t30099\t30004\n60245\t30099\t30005\n60246\t30099\t30006\n60247\t30099\t30007\n60248\t30099\t30008\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}

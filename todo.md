@@ -1862,3 +1862,11 @@
 - [x] Alerta na tela de Registro de Mentoria para a mentora (atualizar metas a cada 3 meses/sessões)
 - [x] Alerta no dashboard/minhas metas do aluno (lembrete de atualizar metas com a mentora)
 - [x] Testar alertas e filtros
+
+## Correções do Documento de Solicitações (07/03/2026)
+- [x] 01a: Renomeado Maria Teste da Silva (id=90013) para Dina Makiyama (email: dina@ckmtalents.net, programa: BANRISUL, mentora: Adriana/consultorId=39)
+- [x] 01b: Corrigido permissão endpoints plano individual (adminProcedure → protectedProcedure) - addCompetencia, addMultiple, remove, update, clear
+- [x] 04: Corrigir lista de ações da biblioteca que não abre (corrigido: nomes de colunas no schema Drizzle estavam em camelCase mas DB usa snake_case - oQueFazer→o_que_fazer, oQueGanha→o_que_ganha)
+- [x] 05: Corrigir lookup de consultor por loginId/openId (corrigido: adicionado fallback por ctx.user.consultorId em 6 endpoints - mentor.create, validateTask, addComment, submissions, metas.create, metas.acompanhar)
+- [x] Deletar usuário de teste maria teste3 (id=90014)
+- [x] Corrigir possível erro getFullYear na função alertaAtualizacao (SQL MAX retorna string, não Date)

@@ -5959,11 +5959,12 @@ export async function getAlertaAtualizacaoMetas(alunoId: number) {
     .from(metaAcompanhamento)
     .where(eq(metaAcompanhamento.alunoId, alunoId));
 
-  const ultimaAtualizacao = ultimoAcompResult[0]?.ultimaAtualizacao || null;
+  const rawUltimaAtualizacao = ultimoAcompResult[0]?.ultimaAtualizacao || null;
+  const ultimaAtualizacao = rawUltimaAtualizacao ? new Date(rawUltimaAtualizacao) : null;
 
   // Buscar quantas sessões de mentoria ocorreram desde a última atualização
   let sessoesDesdeUltimaAtualizacao = 0;
-  if (ultimaAtualizacao) {
+  if (ultimaAtualizacao && !isNaN(ultimaAtualizacao.getTime())) {
     const sessoesResult = await db
       .select({ total: sql<number>`COUNT(*)` })
       .from(mentoringSessions)
@@ -5996,7 +5997,7 @@ export async function getAlertaAtualizacaoMetas(alunoId: number) {
 
   // Calcular meses desde última atualização
   let mesesDesdeUltimaAtualizacao = 0;
-  if (ultimaAtualizacao) {
+  if (ultimaAtualizacao && !isNaN(ultimaAtualizacao.getTime())) {
     const agora = new Date();
     mesesDesdeUltimaAtualizacao = (agora.getFullYear() - ultimaAtualizacao.getFullYear()) * 12 + (agora.getMonth() - ultimaAtualizacao.getMonth());
   }

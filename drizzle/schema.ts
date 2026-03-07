@@ -524,10 +524,10 @@ export type InsertProcessedData = typeof processedData.$inferInsert;
 export const taskLibrary = mysqlTable("task_library", {
   id: int("id").autoincrement().primaryKey(),
   competencia: varchar("competencia", { length: 255 }).notNull(),
-  nome: varchar("nome", { length: 255 }).notNull(),
+  nome: varchar("nome", { length: 500 }).notNull(),
   resumo: text("resumo"),
-  oQueFazer: text("oQueFazer"),
-  oQueGanha: text("oQueGanha"),
+  oQueFazer: text("o_que_fazer"),
+  oQueGanha: text("o_que_ganha"),
   isActive: int("isActive").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

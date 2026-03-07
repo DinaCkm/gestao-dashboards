@@ -1350,7 +1350,7 @@ export const appRouter = router({
       }),
     
     // Adicionar competência ao plano
-    addCompetencia: adminProcedure
+    addCompetencia: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
         competenciaId: z.number(),
@@ -1363,7 +1363,7 @@ export const appRouter = router({
       }),
     
     // Adicionar múltiplas competências
-    addMultiple: adminProcedure
+    addMultiple: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
         competenciaIds: z.array(z.number())
@@ -1374,7 +1374,7 @@ export const appRouter = router({
       }),
     
     // Remover competência do plano
-    remove: adminProcedure
+    remove: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const success = await db.removeCompetenciaFromPlano(input.id);
@@ -1382,7 +1382,7 @@ export const appRouter = router({
       }),
     
     // Atualizar item do plano
-    update: adminProcedure
+    update: protectedProcedure
       .input(z.object({
         id: z.number(),
         isObrigatoria: z.number().optional(),
@@ -1397,7 +1397,7 @@ export const appRouter = router({
       }),
     
     // Limpar plano de um aluno
-    clear: adminProcedure
+    clear: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
         const success = await db.clearPlanoIndividual(input.alunoId);
@@ -2747,7 +2747,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         // Buscar consultor vinculado ao usuário logado
         const consultors = await db.getConsultors();
-        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId || (ctx.user.consultorId && c.id === ctx.user.consultorId));
         
         // Se não é consultor, verificar se é admin
         let consultorId = consultor?.id;
@@ -2818,7 +2818,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         // Verificar se é mentor (consultor)
         const consultors = await db.getConsultors();
-        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId || (ctx.user.consultorId && c.id === ctx.user.consultorId));
         if (!consultor && ctx.user.role !== 'admin') {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentores podem validar atividades' });
         }
@@ -2891,7 +2891,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const consultors = await db.getConsultors();
-        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId || (ctx.user.consultorId && c.id === ctx.user.consultorId));
         const authorRole = ctx.user.role === 'admin' ? 'admin' : 'mentor';
         const authorName = consultor?.name || ctx.user.name || 'Mentor';
 
@@ -2913,7 +2913,7 @@ export const appRouter = router({
       }).optional())
       .query(async ({ ctx, input }) => {
         const consultors = await db.getConsultors();
-        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId || (ctx.user.consultorId && c.id === ctx.user.consultorId));
         if (!consultor) return [];
 
         const sessions = await db.getMentoringSessionsByConsultor(consultor.id);
@@ -4535,9 +4535,9 @@ export const appRouter = router({
         descricao: z.string().nullable().optional()
       }))
       .mutation(async ({ input, ctx }) => {
-        // Buscar consultor pelo openId do usuário logado
+        // Buscar consultor pelo openId do usuário logado ou pelo consultorId
         const consultors = await db.getConsultors();
-        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId || (ctx.user.consultorId && c.id === ctx.user.consultorId));
         return await db.createMeta({
           ...input,
           taskLibraryId: input.taskLibraryId ?? null,
@@ -4577,7 +4577,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const consultors = await db.getConsultors();
-        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId || (ctx.user.consultorId && c.id === ctx.user.consultorId));
         return await db.upsertMetaAcompanhamento({
           ...input,
           observacao: input.observacao ?? null,

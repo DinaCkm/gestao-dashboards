@@ -232,6 +232,13 @@
       "when": 1772854871819,
       "tag": "0032_spotty_exodus",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1772904858168,
+      "tag": "0033_natural_red_ghost",
+      "breakpoints": true
     }
   ]
 }
