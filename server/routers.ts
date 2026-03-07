@@ -4656,6 +4656,62 @@ export const appRouter = router({
         return all;
       }),
 
+    // Sugerir meta/desafio com IA para uma competência
+    sugerirComIA: protectedProcedure
+      .input(z.object({
+        competencia: z.string(),
+        alunoNome: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { invokeLLM } = await import("./_core/llm");
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `Você é um especialista em desenvolvimento de lideranças e coaching executivo. Sua tarefa é sugerir desafios práticos e concretos que ajudem uma pessoa a desenvolver uma competência específica no ambiente de trabalho.
+
+Regras:
+- Sugira UM desafio prático, concreto e realizável em até 30 dias
+- O desafio deve ser uma ação que a pessoa possa exercitar no dia a dia do trabalho
+- Seja específico: inclua números, prazos ou contextos quando possível
+- O desafio deve ser desafiador mas alcançável
+- Foque em ações que gerem aprendizado pela prática
+
+Responda APENAS em JSON com o formato:
+{"titulo": "Título curto do desafio (máx 80 caracteres)", "descricao": "Descrição detalhada do desafio, explicando o que fazer, como fazer e o que se espera como resultado (2-3 frases)"}`
+            },
+            {
+              role: "user",
+              content: `Sugira um desafio prático para desenvolver a competência: "${input.competencia}"${input.alunoNome ? ` para o(a) profissional ${input.alunoNome}` : ''}.`
+            }
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "sugestao_meta",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  titulo: { type: "string", description: "Título curto do desafio" },
+                  descricao: { type: "string", description: "Descrição detalhada do desafio" }
+                },
+                required: ["titulo", "descricao"],
+                additionalProperties: false
+              }
+            }
+          }
+        });
+        const content = response.choices?.[0]?.message?.content;
+        if (!content) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao gerar sugestão com IA" });
+        const contentStr = typeof content === "string" ? content : JSON.stringify(content);
+        try {
+          return JSON.parse(contentStr) as { titulo: string; descricao: string };
+        } catch {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Resposta da IA em formato inválido" });
+        }
+      }),
+
     // Verificar se precisa atualizar metas (a cada 3 meses ou 3 sessões)
     alertaAtualizacao: protectedProcedure
       .input(z.object({ alunoId: z.number() }))

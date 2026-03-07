@@ -1889,3 +1889,8 @@
 ## Simplificação do Assessment (07/03/2026)
 - [x] Remover Step 3 do NovoAssessment (níveis numéricos subjetivos) - simplificado para 2 steps (Configuração + Competências)
 - [x] Progresso calculado automaticamente pelas metas/desafios cumpridos (já existia no sistema)
+
+## Melhoria no Diálogo de Nova Meta (07/03/2026)
+- [x] Mostrar nome da competência no card/diálogo de Nova Meta (badge com ícone Target e nome da competência)
+- [x] Adicionar botão "Sugerir com IA" que analisa a competência e sugere desafios de desenvolvimento
+- [x] Criar endpoint backend para sugestão de metas com IA (usando invokeLLM)

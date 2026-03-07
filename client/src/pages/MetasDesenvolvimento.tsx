@@ -19,7 +19,7 @@ import {
   Flag, Plus, Target, CheckCircle2, XCircle, Clock,
   ChevronDown, ChevronRight, Search, User, BookOpen,
   Trash2, Edit3, MessageSquare, Calendar, TrendingUp,
-  AlertCircle, Loader2, Library
+  AlertCircle, Loader2, Library, Sparkles
 } from "lucide-react";
 
 // ============================================================
@@ -192,6 +192,14 @@ function MetasContent() {
       setShowAcompDialog(false);
     },
     onError: (err) => toast.error(err.message),
+  });
+
+  const sugerirIAMutation = trpc.metas.sugerirComIA.useMutation({
+    onSuccess: (data) => {
+      setMetaFromLibrary(false);
+      toast.success("Sugestão gerada pela IA! Clique em 'Usar esta sugestão' para aplicar.");
+    },
+    onError: (err) => toast.error("Erro ao gerar sugestão: " + err.message),
   });
 
   // Filtered alunos
@@ -610,28 +618,88 @@ function MetasContent() {
             </DialogDescription>
           </DialogHeader>
 
+          {/* Badge com nome da competência */}
+          {(() => {
+            const comp = metasByCompetencia.find(c => c.competenciaId === addMetaCompId);
+            return comp ? (
+              <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <Target className="h-5 w-5 text-primary shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Competência</p>
+                  <p className="font-semibold text-primary">{comp.competenciaNome}</p>
+                </div>
+              </div>
+            ) : null;
+          })()}
+
           <div className="space-y-4">
             {/* Escolher fonte */}
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 variant={!metaFromLibrary ? "default" : "outline"}
                 size="sm"
                 onClick={() => { setMetaFromLibrary(false); setSelectedTaskLibraryId(null); }}
-                className="flex-1 gap-2"
+                className="gap-1.5"
               >
                 <Edit3 className="h-4 w-4" />
-                Meta Personalizada
+                Personalizada
               </Button>
               <Button
                 variant={metaFromLibrary ? "default" : "outline"}
                 size="sm"
                 onClick={() => setMetaFromLibrary(true)}
-                className="flex-1 gap-2"
+                className="gap-1.5"
               >
                 <Library className="h-4 w-4" />
-                Da Biblioteca
+                Biblioteca
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const comp = metasByCompetencia.find(c => c.competenciaId === addMetaCompId);
+                  if (!comp) { toast.error("Selecione uma competência"); return; }
+                  sugerirIAMutation.mutate({
+                    competencia: comp.competenciaNome,
+                    alunoNome: (selectedAluno as any)?.name || undefined,
+                  });
+                }}
+                disabled={sugerirIAMutation.isPending}
+                className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+              >
+                {sugerirIAMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                Sugerir com IA
               </Button>
             </div>
+
+            {/* Resultado da IA */}
+            {sugerirIAMutation.data && !metaFromLibrary && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+                <div className="flex items-center gap-1.5 text-amber-700">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="text-xs font-semibold">Sugestão da IA</span>
+                </div>
+                <p className="text-sm font-medium">{sugerirIAMutation.data.titulo}</p>
+                <p className="text-xs text-muted-foreground">{sugerirIAMutation.data.descricao}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setMetaTitulo(sugerirIAMutation.data!.titulo);
+                    setMetaDescricao(sugerirIAMutation.data!.descricao);
+                    toast.success("Sugestão aplicada! Você pode editar antes de criar.");
+                  }}
+                  className="w-full gap-1.5 mt-1"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Usar esta sugestão
+                </Button>
+              </div>
+            )}
 
             {metaFromLibrary ? (
               <>
