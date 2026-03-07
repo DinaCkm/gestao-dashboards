@@ -1837,3 +1837,12 @@
 - [x] Remover alerta de "Reavaliação de Competências Pendente" e botão "Atualizar Níveis"
 - [x] Substituir por resumo de metas do aluno (metas definidas, status, % atingimento)
 - [x] Adicionar botão para ir direto à página de Metas do aluno selecionado
+
+## Gráfico de Evolução de Metas no Dashboard do Aluno (07/03/2026)
+- [x] Criar endpoint backend metas.minhas para o aluno logado
+- [x] Criar página dedicada MinhasMetasAluno.tsx (visão somente leitura)
+- [x] Cards de resumo (Total, Cumpridas, Não Cumpridas, % Atingimento)
+- [x] Lista de competências com metas e histórico de acompanhamento
+- [x] Gráfico de evolução por competência (barras horizontais)
+- [x] Adicionar rota e link na sidebar do aluno
+- [x] Testar visualização

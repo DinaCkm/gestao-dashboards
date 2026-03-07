@@ -4608,6 +4608,26 @@ export const appRouter = router({
         return await db.getMetasResumoTodos();
       }),
 
+    // Minhas metas (para o aluno logado ver no seu dashboard)
+    minhas: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
+        // Encontrar alunoId do user logado
+        let alunoId: number | null = ctx.user.alunoId || null;
+        if (!alunoId && ctx.user.email) {
+          const aluno = await db.getAlunoByEmail(ctx.user.email);
+          if (aluno) alunoId = aluno.id;
+        }
+        if (!alunoId) {
+          const aluno = await db.getAlunoByExternalId(ctx.user.openId);
+          if (aluno) alunoId = aluno.id;
+        }
+        if (!alunoId) return { metas: [], resumo: { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] } };
+        const metasDetalhadas = await db.getMetasDetalhadas(alunoId);
+        const resumo = await db.getMetasResumo(alunoId);
+        return { metas: metasDetalhadas, resumo };
+      }),
+
     // Listar itens da biblioteca de ações (para seleção)
     biblioteca: protectedProcedure
       .input(z.object({
