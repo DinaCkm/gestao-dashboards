@@ -1404,10 +1404,80 @@ export async function updateConsultor(consultorId: number, data: { name?: string
 export async function getAllAlunosForAdmin() {
   const db = await getDb();
   if (!db) return [];
-  return await db.select()
+  const result = await db.select({
+    id: alunos.id,
+    name: alunos.name,
+    email: alunos.email,
+    cpf: alunos.cpf,
+    externalId: alunos.externalId,
+    consultorId: alunos.consultorId,
+    programId: alunos.programId,
+    turmaId: alunos.turmaId,
+    isActive: alunos.isActive,
+    canLogin: alunos.canLogin,
+    createdAt: alunos.createdAt,
+    programName: programs.name,
+    mentorName: consultors.name,
+    turmaName: turmas.name,
+  })
     .from(alunos)
-    .orderBy(alunos.name)
-    .limit(500);
+    .leftJoin(programs, eq(alunos.programId, programs.id))
+    .leftJoin(consultors, eq(alunos.consultorId, consultors.id))
+    .leftJoin(turmas, eq(alunos.turmaId, turmas.id))
+    .orderBy(alunos.name);
+  return result;
+}
+
+export async function updateAluno(alunoId: number, data: {
+  name?: string;
+  email?: string;
+  cpf?: string | null;
+  programId?: number | null;
+  consultorId?: number | null;
+  turmaId?: number | null;
+}): Promise<{ success: boolean; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+  
+  const updateData: Record<string, unknown> = {};
+  
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.email !== undefined) updateData.email = data.email.toLowerCase();
+  if (data.programId !== undefined) updateData.programId = data.programId;
+  if (data.consultorId !== undefined) updateData.consultorId = data.consultorId;
+  if (data.turmaId !== undefined) updateData.turmaId = data.turmaId;
+  
+  if (data.cpf !== undefined) {
+    if (data.cpf === null || data.cpf === '') {
+      updateData.cpf = null;
+    } else {
+      const normalizedCpf = data.cpf.replace(/[.\-]/g, '');
+      // Validar formato: 11 dígitos
+      if (normalizedCpf.length !== 11 || !/^\d{11}$/.test(normalizedCpf)) {
+        return { success: false, message: "CPF deve conter exatamente 11 dígitos numéricos." };
+      }
+      // Verificar CPF duplicado (excluindo o próprio aluno)
+      const [existing] = await db.select()
+        .from(alunos)
+        .where(and(
+          eq(alunos.cpf, normalizedCpf),
+          not(eq(alunos.id, alunoId))
+        ))
+        .limit(1);
+      if (existing) {
+        return { success: false, message: `Este CPF já está cadastrado para o aluno: ${existing.name}` };
+      }
+      updateData.cpf = normalizedCpf;
+    }
+  }
+  
+  if (Object.keys(updateData).length > 0) {
+    await db.update(alunos)
+      .set(updateData)
+      .where(eq(alunos.id, alunoId));
+  }
+  
+  return { success: true };
 }
 
 export async function createAluno(data: { name: string; email: string; externalId: string; programId?: number }) {

@@ -1872,3 +1872,10 @@
 - [x] Corrigir possível erro getFullYear na função alertaAtualizacao (SQL MAX retorna string, não Date)
 - [x] Bug: Dina Makiyama não aparece na lista de alunos da Adriana na tela de Assessment/PDI (corrigido: getAlunosByConsultor e getProgramsByConsultor agora incluem alunos vinculados diretamente pelo consultorId, não apenas por sessões de mentoria)
 - [x] Limpeza: desativados registros de teste "Test Turma Null" e duplicata "Maria Dinamar" (id=240001)
+- [x] Adicionar campo CPF no formulário de edição de aluno (Cadastros)
+- [x] Reformular aba Alunos no Cadastros: mostrar TODOS os alunos (não apenas email_cpf)
+- [x] Exibir dados completos dos alunos: Nome, Email, CPF, Empresa, Mentor, Turma, Status
+- [x] Adicionar campo CPF no formulário de edição de aluno com validação e formatação
+- [x] Lista de alunos sempre em ordem alfabética
+- [x] Adicionar busca/filtro de alunos por nome
+- [x] Limpar registros de teste do banco de dados (54 registros desativados: Aluno Direto Test, Test Turma Null/Number/Undefined, Maria Dinamar, Usuário Teste)

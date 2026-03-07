@@ -62,6 +62,7 @@ export default function AdminCadastros() {
   const { data: mentores, refetch: refetchMentores, isLoading: loadingMentores } = trpc.admin.listMentores.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: gerentes, refetch: refetchGerentes, isLoading: loadingGerentes } = trpc.admin.listGerentes.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: accessUsers, refetch: refetchAccessUsers, isLoading: loadingAccessUsers } = trpc.admin.listAccessUsers.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: allAlunos, refetch: refetchAllAlunos, isLoading: loadingAllAlunos } = trpc.admin.listAlunos.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
 
   // Mutations
   const createEmpresa = trpc.admin.createEmpresa.useMutation({
@@ -219,11 +220,24 @@ export default function AdminCadastros() {
       if (data.success) {
         toast.success("Aluno cadastrado com sucesso! Mentor vinculado e bypass de onboarding ativado.");
         refetchAccessUsers();
+        refetchAllAlunos();
       } else {
         toast.error(data.message || "Erro ao cadastrar aluno");
       }
     },
     onError: (err) => toast.error(`Erro ao cadastrar aluno: ${err.message}`),
+  });
+
+  const updateAluno = trpc.admin.updateAluno.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success("Aluno atualizado com sucesso!");
+        refetchAllAlunos();
+      } else {
+        toast.error(data.message || "Erro ao atualizar aluno");
+      }
+    },
+    onError: (err) => toast.error(`Erro ao atualizar aluno: ${err.message}`),
   });
 
   // Proteger página: apenas admin pode acessar — redirecionar para página correta do role
@@ -292,18 +306,16 @@ export default function AdminCadastros() {
 
           {/* Alunos Tab */}
           <TabsContent value="acesso">
-            <GestaoAcessoTab
-              accessUsers={(accessUsers || []).filter((u: any) => u.role === 'user')}
+            <AlunosTab
+              alunos={allAlunos || []}
               empresas={empresas || []}
               mentoresList={mentoresList || []}
               turmasList={turmasList || []}
-              loading={loadingAccessUsers}
-              onCreate={createAccessUser.mutate}
+              loading={loadingAllAlunos}
+              onUpdate={updateAluno.mutate}
               onCreateDireto={createAlunoDireto.mutate}
-              onToggleStatus={toggleAccessUserStatus.mutate}
-              onUpdate={updateAccessUser.mutate}
-              isCreating={createAccessUser.isPending}
               isCreatingDireto={createAlunoDireto.isPending}
+              isUpdating={updateAluno.isPending}
             />
           </TabsContent>
 
@@ -366,44 +378,59 @@ export default function AdminCadastros() {
 }
 
 // ============ ALUNOS TAB ============
-function GestaoAcessoTab({ accessUsers, empresas, mentoresList, turmasList, loading, onCreate, onCreateDireto, onToggleStatus, onUpdate, isCreating, isCreatingDireto }: {
-  accessUsers: any[];
+function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateDireto, isCreatingDireto, isUpdating }: {
+  alunos: any[];
   empresas: any[];
   mentoresList: any[];
   turmasList: any[];
   loading: boolean;
-  onCreate: (data: any) => void;
-  onCreateDireto: (data: any) => void;
-  onToggleStatus: (data: any) => void;
   onUpdate: (data: any) => void;
-  isCreating: boolean;
+  onCreateDireto: (data: any) => void;
   isCreatingDireto: boolean;
+  isUpdating: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editUser, setEditUser] = useState<any>(null);
+  const [editAluno, setEditAluno] = useState<any>(null);
 
   // Search/filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEmpresa, setFilterEmpresa] = useState("all");
   const [filterMentor, setFilterMentor] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("active");
 
   // Extrair lista única de mentores dos alunos
   const mentoresUnicos = useMemo(() => {
     const mentorSet = new Map<string, string>();
-    accessUsers.forEach((u: any) => {
-      if (u.mentorNome) {
-        mentorSet.set(u.mentorNome, u.mentorNome);
+    alunos.forEach((a: any) => {
+      if (a.mentorName) {
+        mentorSet.set(a.mentorName, a.mentorName);
       }
     });
     return Array.from(mentorSet.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  }, [accessUsers]);
-  
-  // Create form (Novo Aluno - fluxo normal)
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [programId, setProgramId] = useState("");
+  }, [alunos]);
+
+  // Filtered and sorted alunos
+  const filteredAlunos = useMemo(() => {
+    return alunos
+      .filter((a: any) => {
+        const term = searchTerm.toLowerCase().trim();
+        const matchesSearch = !term ||
+          (a.name || "").toLowerCase().includes(term) ||
+          (a.email || "").toLowerCase().includes(term) ||
+          (a.externalId || "").toLowerCase().includes(term) ||
+          (a.programName || "").toLowerCase().includes(term) ||
+          (a.mentorName || "").toLowerCase().includes(term) ||
+          (a.turmaName || "").toLowerCase().includes(term);
+        const matchesEmpresa = filterEmpresa === "all" ||
+          (a.programId && a.programId.toString() === filterEmpresa);
+        const matchesMentor = filterMentor === "all" ||
+          (filterMentor === "sem_mentor" ? !a.mentorName : a.mentorName === filterMentor);
+        const matchesStatus = filterStatus === "all" ||
+          (filterStatus === "active" ? a.isActive === 1 : a.isActive !== 1);
+        return matchesSearch && matchesEmpresa && matchesMentor && matchesStatus;
+      })
+      .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || "", 'pt-BR'));
+  }, [alunos, searchTerm, filterEmpresa, filterMentor, filterStatus]);
 
   // Create form (Cadastro Direto - com mentor vinculado)
   const [diretoOpen, setDiretoOpen] = useState(false);
@@ -450,66 +477,43 @@ function GestaoAcessoTab({ accessUsers, empresas, mentoresList, turmasList, load
   const [editNome, setEditNome] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editCpf, setEditCpf] = useState("");
+  const [editExternalId, setEditExternalId] = useState("");
   const [editProgramId, setEditProgramId] = useState("");
   const [editConsultorId, setEditConsultorId] = useState("");
+  const [editTurmaId, setEditTurmaId] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const credentialDigits = cpf.replace(/\D/g, '');
-    if (credentialDigits.length === 0) {
-      toast.error("ID do aluno deve ser informado");
-      return;
-    }
-    if (!programId) {
-      toast.error("Selecione a empresa vinculada");
-      return;
-    }
-    onCreate({ 
-      name: nome, 
-      email, 
-      cpf: credentialDigits,
-      role: "user" as "user" | "admin" | "manager",
-      programId: parseInt(programId),
-      isMentor: false,
-    });
-    setNome("");
-    setEmail("");
-    setCpf("");
-    setProgramId("");
-    setOpen(false);
-  };
-
-  const handleEditOpen = (user: any) => {
-    setEditUser(user);
-    setEditNome(user.name || "");
-    setEditEmail(user.email || "");
-    setEditCpf(user.cpf || "");
-    setEditProgramId(user.programId ? user.programId.toString() : "");
-    // Encontrar o consultorId do aluno a partir do mentorNome
-    const mentorMatch = mentoresList.find((m: any) => m.name === user.mentorNome);
-    setEditConsultorId(mentorMatch ? mentorMatch.id.toString() : "");
+  const handleEditOpen = (aluno: any) => {
+    setEditAluno(aluno);
+    setEditNome(aluno.name || "");
+    setEditEmail(aluno.email || "");
+    setEditCpf(aluno.cpf ? formatCpf(aluno.cpf) : "");
+    setEditExternalId(aluno.externalId || "");
+    setEditProgramId(aluno.programId ? aluno.programId.toString() : "");
+    setEditConsultorId(aluno.consultorId ? aluno.consultorId.toString() : "");
+    setEditTurmaId(aluno.turmaId ? aluno.turmaId.toString() : "");
     setEditOpen(true);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editUser) return;
-    const editCredentialDigits = editCpf.replace(/\D/g, '');
-    if (editCredentialDigits.length === 0) {
-      toast.error("ID do aluno deve ser informado");
+    if (!editAluno) return;
+    const cpfDigits = editCpf.replace(/\D/g, '');
+    // CPF validation: must be 11 digits if provided
+    if (cpfDigits && cpfDigits.length !== 11) {
+      toast.error("CPF deve conter exatamente 11 dígitos");
       return;
     }
     onUpdate({
-      userId: editUser.id,
+      alunoId: editAluno.id,
       name: editNome,
       email: editEmail,
-      cpf: editCredentialDigits,
-      role: "user" as "user" | "admin" | "manager",
+      cpf: cpfDigits || null,
       programId: editProgramId ? parseInt(editProgramId) : null,
       consultorId: editConsultorId ? parseInt(editConsultorId) : null,
+      turmaId: editTurmaId ? parseInt(editTurmaId) : null,
     });
     setEditOpen(false);
-    setEditUser(null);
+    setEditAluno(null);
   };
 
   return (
@@ -521,160 +525,76 @@ function GestaoAcessoTab({ accessUsers, empresas, mentoresList, turmasList, load
             Alunos
           </CardTitle>
           <CardDescription>
-            Cadastro e gerenciamento dos alunos que acessam a plataforma por Email + ID.
+            Visualização e gerenciamento de todos os alunos cadastrados no sistema.
           </CardDescription>
         </div>
         <div className="flex gap-2">
-        <Dialog open={open} onOpenChange={(v) => { if (!v) setOpen(false); else setOpen(true); }}>
-          <DialogTrigger asChild>
-            <Button variant="outline"><Plus className="h-4 w-4 mr-2" /> Novo Aluno</Button>
-          </DialogTrigger>
-          <DialogContent className="z-50" onPointerDownOutside={(e) => e.preventDefault()}>
-            <form onSubmit={handleSubmit}>
-              <DialogHeader>
-                <DialogTitle>Cadastrar Novo Aluno</DialogTitle>
-                <DialogDescription>
-                  Preencha os dados do aluno. Ele fará login com Email + ID.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="access-nome">Nome Completo *</Label>
-                  <Input id="access-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome completo" required />
+          {/* Cadastro Direto Dialog */}
+          <Dialog open={diretoOpen} onOpenChange={setDiretoOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-emerald-600 hover:bg-emerald-700"><UserCheck className="h-4 w-4 mr-2" /> Cadastro Direto</Button>
+            </DialogTrigger>
+            <DialogContent className="z-50 max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
+              <form onSubmit={handleDiretoSubmit}>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <UserCheck className="h-5 w-5 text-emerald-600" />
+                    Cadastro Direto de Aluno
+                  </DialogTitle>
+                  <DialogDescription>
+                    Cadastre o aluno e vincule o mentor diretamente.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Nome Completo *</Label>
+                    <Input value={diretoNome} onChange={(e) => setDiretoNome(e.target.value)} placeholder="Nome completo" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email *</Label>
+                    <Input type="email" value={diretoEmail} onChange={(e) => setDiretoEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>ID do Aluno *</Label>
+                    <Input value={diretoCpf} onChange={(e) => setDiretoCpf(e.target.value.replace(/\D/g, ''))} placeholder="Ex: 667306" required maxLength={10} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Empresa Vinculada *</Label>
+                    <select value={diretoProgramId} onChange={(e) => setDiretoProgramId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" required>
+                      <option value="">Selecione a empresa</option>
+                      {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Turma (Opcional)</Label>
+                    <select value={diretoTurmaId} onChange={(e) => setDiretoTurmaId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <option value="">Nenhuma turma</option>
+                      {turmasList.map((t: any) => (<option key={t.id} value={t.id.toString()}>{t.name}</option>))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-emerald-700 font-semibold">Vincular Mentor(a) *</Label>
+                    <select value={diretoConsultorId} onChange={(e) => setDiretoConsultorId(e.target.value)} className="flex h-9 w-full rounded-md border-2 border-emerald-300 bg-emerald-50 px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" required>
+                      <option value="">Selecione o mentor(a)</option>
+                      {mentoresList.map((m: any) => (<option key={m.id} value={m.id.toString()}>{m.name}</option>))}
+                    </select>
+                    <p className="text-xs text-muted-foreground">O aluno será vinculado a este mentor e pulará o fluxo de onboarding.</p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="access-email">Email *</Label>
-                  <Input id="access-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="access-cpf">ID do Aluno *</Label>
-                  <Input 
-                    id="access-cpf" 
-                    value={cpf} 
-                    onChange={(e) => setCpf(e.target.value.replace(/\D/g, ''))} 
-                    placeholder="Ex: 667306" 
-                    required 
-                    maxLength={10}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="access-empresa">Empresa Vinculada *</Label>
-                  <select
-                    id="access-empresa"
-                    value={programId}
-                    onChange={(e) => setProgramId(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    <option value="">Selecione a empresa</option>
-                    {empresas.map((emp) => (
-                      <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit" disabled={isCreating}>
-                  {isCreating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Cadastro Direto Dialog */}
-        <Dialog open={diretoOpen} onOpenChange={setDiretoOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-emerald-600 hover:bg-emerald-700"><UserCheck className="h-4 w-4 mr-2" /> Cadastro Direto</Button>
-          </DialogTrigger>
-          <DialogContent className="z-50 max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
-            <form onSubmit={handleDiretoSubmit}>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5 text-emerald-600" />
-                  Cadastro Direto de Aluno
-                </DialogTitle>
-                <DialogDescription>
-                  Cadastre o aluno e vincule o mentor diretamente. O aluno pulará o assessment e a vitrine de mentores, indo direto para o dashboard de agendamento no primeiro login.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Nome Completo *</Label>
-                  <Input value={diretoNome} onChange={(e) => setDiretoNome(e.target.value)} placeholder="Nome completo" required />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email *</Label>
-                  <Input type="email" value={diretoEmail} onChange={(e) => setDiretoEmail(e.target.value)} placeholder="email@exemplo.com" required />
-                </div>
-                <div className="space-y-2">
-                  <Label>ID do Aluno *</Label>
-                  <Input 
-                    value={diretoCpf} 
-                    onChange={(e) => setDiretoCpf(e.target.value.replace(/\D/g, ''))} 
-                    placeholder="Ex: 667306" 
-                    required 
-                    maxLength={10}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Empresa Vinculada *</Label>
-                  <select
-                    value={diretoProgramId}
-                    onChange={(e) => setDiretoProgramId(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    required
-                  >
-                    <option value="">Selecione a empresa</option>
-                    {empresas.map((emp) => (
-                      <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Turma (Opcional)</Label>
-                  <select
-                    value={diretoTurmaId}
-                    onChange={(e) => setDiretoTurmaId(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    <option value="">Nenhuma turma</option>
-                    {turmasList.map((t: any) => (
-                      <option key={t.id} value={t.id.toString()}>{t.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-emerald-700 font-semibold">Vincular Mentor(a) *</Label>
-                  <select
-                    value={diretoConsultorId}
-                    onChange={(e) => setDiretoConsultorId(e.target.value)}
-                    className="flex h-9 w-full rounded-md border-2 border-emerald-300 bg-emerald-50 px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
-                    required
-                  >
-                    <option value="">Selecione o mentor(a)</option>
-                    {mentoresList.map((m: any) => (
-                      <option key={m.id} value={m.id.toString()}>{m.name}</option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-muted-foreground">
-                    O aluno será vinculado a este mentor e pulará o fluxo de onboarding.
-                  </p>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setDiretoOpen(false)}>Cancelar</Button>
-                <Button type="submit" disabled={isCreatingDireto} className="bg-emerald-600 hover:bg-emerald-700">
-                  {isCreatingDireto ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Cadastrando...</> : "Cadastrar com Mentor"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setDiretoOpen(false)}>Cancelar</Button>
+                  <Button type="submit" disabled={isCreatingDireto} className="bg-emerald-600 hover:bg-emerald-700">
+                    {isCreatingDireto ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Cadastrando...</> : "Cadastrar com Mentor"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent className="z-50" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogContent className="z-50 max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
             <form onSubmit={handleEditSubmit}>
               <DialogHeader>
                 <DialogTitle>Editar Aluno</DialogTitle>
@@ -690,44 +610,47 @@ function GestaoAcessoTab({ accessUsers, empresas, mentoresList, turmasList, load
                   <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>ID do Aluno *</Label>
+                  <Label>CPF</Label>
                   <Input 
                     value={editCpf} 
-                    onChange={(e) => setEditCpf(e.target.value.replace(/\D/g, ''))} 
-                    required 
-                    maxLength={10}
+                    onChange={(e) => setEditCpf(formatCpf(e.target.value))} 
+                    placeholder="000.000.000-00"
+                    maxLength={14}
                   />
+                  <p className="text-xs text-muted-foreground">Formato: 000.000.000-00 (11 dígitos). Deixe vazio se não houver CPF.</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Empresa Vinculada *</Label>
-                  <select
-                    value={editProgramId}
-                    onChange={(e) => setEditProgramId(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    <option value="">Selecione a empresa</option>
-                    {empresas.map((emp) => (
-                      <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
-                    ))}
+                  <Label>ID Externo</Label>
+                  <Input value={editExternalId} disabled className="bg-muted" />
+                  <p className="text-xs text-muted-foreground">ID importado da planilha (somente leitura).</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Empresa Vinculada</Label>
+                  <select value={editProgramId} onChange={(e) => setEditProgramId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    <option value="">Sem empresa</option>
+                    {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <Label>Mentor(a) Vinculado(a)</Label>
-                  <select
-                    value={editConsultorId}
-                    onChange={(e) => setEditConsultorId(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
+                  <select value={editConsultorId} onChange={(e) => setEditConsultorId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                     <option value="">Sem mentor atribuído</option>
-                    {mentoresList.map((m: any) => (
-                      <option key={m.id} value={m.id.toString()}>{m.name}</option>
-                    ))}
+                    {mentoresList.map((m: any) => (<option key={m.id} value={m.id.toString()}>{m.name}</option>))}
                   </select>
-                  <p className="text-xs text-muted-foreground">Alterar o mentor aqui não afeta sessões de mentoria já realizadas.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Turma</Label>
+                  <select value={editTurmaId} onChange={(e) => setEditTurmaId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    <option value="">Sem turma</option>
+                    {turmasList.map((t: any) => (<option key={t.id} value={t.id.toString()}>{t.name}</option>))}
+                  </select>
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit">Salvar Alterações</Button>
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+                <Button type="submit" disabled={isUpdating}>
+                  {isUpdating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar Alterações"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -743,77 +666,52 @@ function GestaoAcessoTab({ accessUsers, empresas, mentoresList, turmasList, load
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por nome, e-mail ou ID..."
+                  placeholder="Buscar por nome, e-mail, CPF, empresa, mentor ou turma..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 pr-9"
                 />
                 {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
+                  <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     <X className="h-4 w-4" />
                   </button>
                 )}
               </div>
-              <select
-                value={filterEmpresa}
-                onChange={(e) => setFilterEmpresa(e.target.value)}
-                className="flex h-9 min-w-[180px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
+              <select value={filterEmpresa} onChange={(e) => setFilterEmpresa(e.target.value)} className="flex h-9 min-w-[180px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                 <option value="all">Todas as Empresas</option>
-                {empresas.map((emp) => (
-                  <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
-                ))}
+                {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
               </select>
-              <select
-                value={filterMentor}
-                onChange={(e) => setFilterMentor(e.target.value)}
-                className="flex h-9 min-w-[200px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
+              <select value={filterMentor} onChange={(e) => setFilterMentor(e.target.value)} className="flex h-9 min-w-[200px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                 <option value="all">Todos os Mentores</option>
                 <option value="sem_mentor">Sem mentor atribuído</option>
-                {mentoresUnicos.map((nome) => (
-                  <option key={nome} value={nome}>{nome}</option>
-                ))}
+                {mentoresUnicos.map((nome) => (<option key={nome} value={nome}>{nome}</option>))}
+              </select>
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="flex h-9 min-w-[120px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
+                <option value="all">Todos</option>
               </select>
             </div>
 
             {/* Filtered count indicator */}
-            {(searchTerm || filterEmpresa !== "all" || filterMentor !== "all") && (
-              <div className="text-sm text-muted-foreground mb-3">
-                Mostrando {[...accessUsers].filter((user) => {
-                  const term = searchTerm.toLowerCase().trim();
-                  const matchesSearch = !term || 
-                    (user.name || "").toLowerCase().includes(term) ||
-                    (user.email || "").toLowerCase().includes(term) ||
-                    (user.cpf || "").includes(term) ||
-                    (user.programName || "").toLowerCase().includes(term) ||
-                    (user.mentorNome || "").toLowerCase().includes(term);
-                  const matchesEmpresa = filterEmpresa === "all" || 
-                    (user.programId && user.programId.toString() === filterEmpresa);
-                  const matchesMentor = filterMentor === "all" ||
-                    (filterMentor === "sem_mentor" ? !user.mentorNome : user.mentorNome === filterMentor);
-                  return matchesSearch && matchesEmpresa && matchesMentor;
-                }).length} de {accessUsers.length} alunos
-                {filterMentor !== "all" && filterMentor !== "sem_mentor" && (
-                  <span className="ml-1">| Mentor(a): <strong>{filterMentor}</strong></span>
-                )}
-                {filterMentor === "sem_mentor" && (
-                  <span className="ml-1">| <strong>Sem mentor atribuído</strong></span>
-                )}
-              </div>
-            )}
+            <div className="text-sm text-muted-foreground mb-3">
+              Mostrando {filteredAlunos.length} de {alunos.length} alunos (ordem alfabética)
+              {filterMentor !== "all" && filterMentor !== "sem_mentor" && (
+                <span className="ml-1">| Mentor(a): <strong>{filterMentor}</strong></span>
+              )}
+              {filterMentor === "sem_mentor" && (
+                <span className="ml-1">| <strong>Sem mentor atribuído</strong></span>
+              )}
+            </div>
 
             {/* Summary cards - por empresa */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
               <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
                 <p className="text-sm text-muted-foreground">Total de Alunos</p>
-                <p className="text-2xl font-bold">{accessUsers.length}</p>
+                <p className="text-2xl font-bold">{alunos.filter(a => a.isActive === 1).length}</p>
               </div>
               {empresas.map((emp: any) => {
-                const count = accessUsers.filter(u => u.programId === emp.id).length;
+                const count = alunos.filter(a => a.programId === emp.id && a.isActive === 1).length;
                 if (count === 0) return null;
                 return (
                   <div key={emp.id} className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
@@ -824,104 +722,55 @@ function GestaoAcessoTab({ accessUsers, empresas, mentoresList, turmasList, load
               })}
             </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>Mentor(a)</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[...accessUsers]
-                .filter((user) => {
-                  const term = searchTerm.toLowerCase().trim();
-                  const matchesSearch = !term || 
-                    (user.name || "").toLowerCase().includes(term) ||
-                    (user.email || "").toLowerCase().includes(term) ||
-                    (user.cpf || "").includes(term) ||
-                    (user.programName || "").toLowerCase().includes(term) ||
-                    (user.mentorNome || "").toLowerCase().includes(term);
-                  const matchesEmpresa = filterEmpresa === "all" || 
-                    (user.programId && user.programId.toString() === filterEmpresa);
-                  const matchesMentor = filterMentor === "all" ||
-                    (filterMentor === "sem_mentor" ? !user.mentorNome : user.mentorNome === filterMentor);
-                  return matchesSearch && matchesEmpresa && matchesMentor;
-                })
-                .sort((a, b) => (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0))
-                .map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email || "-"}</TableCell>
-                    <TableCell className="font-mono text-sm">{user.cpf || "-"}</TableCell>
-                    <TableCell>
-{user.programName || "-"}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {user.mentorNome ? user.mentorNome : <span className="text-muted-foreground">-</span>}
-                    </TableCell>
-                    <TableCell>
-                      {user.isActive ? (
-                        <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
-                      ) : (
-                        <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" /> Inativo</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditOpen(user)}
-                        >
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>CPF</TableHead>
+                    <TableHead>ID Externo</TableHead>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Mentor(a)</TableHead>
+                    <TableHead>Turma</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAlunos.map((aluno: any) => (
+                    <TableRow key={aluno.id} className={aluno.isActive !== 1 ? "opacity-50" : ""}>
+                      <TableCell className="font-medium whitespace-nowrap">{aluno.name}</TableCell>
+                      <TableCell className="text-sm">{aluno.email || "-"}</TableCell>
+                      <TableCell className="font-mono text-sm">{aluno.cpf ? displayCpf(aluno.cpf) : <span className="text-muted-foreground">-</span>}</TableCell>
+                      <TableCell className="font-mono text-sm">{aluno.externalId || "-"}</TableCell>
+                      <TableCell className="whitespace-nowrap">{aluno.programName || <span className="text-muted-foreground">-</span>}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{aluno.mentorName || <span className="text-muted-foreground">-</span>}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">{aluno.turmaName || <span className="text-muted-foreground">-</span>}</TableCell>
+                      <TableCell>
+                        {aluno.isActive === 1 ? (
+                          <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
+                        ) : (
+                          <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" /> Inativo</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" onClick={() => handleEditOpen(aluno)}>
                           <Pencil className="h-3 w-3 mr-1" /> Editar
                         </Button>
-                        <Button 
-                          variant={user.isActive ? "destructive" : "default"} 
-                          size="sm"
-                          onClick={() => onToggleStatus({ userId: user.id })}
-                        >
-                          <Power className="h-3 w-3 mr-1" />
-                          {user.isActive ? "Desativar" : "Ativar"}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {accessUsers.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      Nenhum aluno cadastrado. Clique em "Novo Aluno" para começar.
-                    </TableCell>
-                  </TableRow>
-                )}
-                {accessUsers.length > 0 && [...accessUsers]
-                  .filter((user) => {
-                    const term = searchTerm.toLowerCase().trim();
-                    const matchesSearch = !term || 
-                      (user.name || "").toLowerCase().includes(term) ||
-                      (user.email || "").toLowerCase().includes(term) ||
-                      (user.cpf || "").includes(term) ||
-                      (user.programName || "").toLowerCase().includes(term) ||
-                      (user.mentorNome || "").toLowerCase().includes(term);
-                    const matchesEmpresa = filterEmpresa === "all" || 
-                      (user.programId && user.programId.toString() === filterEmpresa);
-                    const matchesMentor = filterMentor === "all" ||
-                      (filterMentor === "sem_mentor" ? !user.mentorNome : user.mentorNome === filterMentor);
-                    return matchesSearch && matchesEmpresa && matchesMentor;
-                  }).length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      Nenhum aluno encontrado com os filtros aplicados.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredAlunos.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                        {alunos.length === 0 ? "Nenhum aluno cadastrado." : "Nenhum aluno encontrado com os filtros aplicados."}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </>
         )}
       </CardContent>

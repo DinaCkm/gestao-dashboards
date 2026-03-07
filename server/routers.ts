@@ -3456,6 +3456,21 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.createAluno(input);
       }),
+
+    updateAluno: adminProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        name: z.string().optional(),
+        email: z.string().email().optional(),
+        cpf: z.string().nullable().optional(),
+        programId: z.number().nullable().optional(),
+        consultorId: z.number().nullable().optional(),
+        turmaId: z.number().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { alunoId, ...data } = input;
+        return await db.updateAluno(alunoId, data);
+      }),
     
     // Gestão de Acesso (Email + CPF)
     listAccessUsers: adminProcedure.query(async () => {
