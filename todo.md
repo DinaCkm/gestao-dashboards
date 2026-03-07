@@ -1832,3 +1832,8 @@
 
 ## Bug Reportado (07/03/2026) - Perfil da Mentora Andressa
 - [x] Bug: Mentora Andressa não consegue atualizar perfil - erro 404 (link 'Meu Perfil' no dropdown da sidebar apontava para /individual que não existe; corrigido para direcionar conforme role do usuário)
+
+## Substituir Atualização de Nível por Resumo de Metas (07/03/2026)
+- [x] Remover alerta de "Reavaliação de Competências Pendente" e botão "Atualizar Níveis"
+- [x] Substituir por resumo de metas do aluno (metas definidas, status, % atingimento)
+- [x] Adicionar botão para ir direto à página de Metas do aluno selecionado

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,11 +122,12 @@ function AssessmentContent() {
     { enabled: !!selectedAlunoId }
   );
 
-  // Gatilho de reavaliação a cada 3 sessões
-  const { data: reavaliacao } = trpc.jornada.checkReavaliacao.useQuery(
+  // Resumo de metas do aluno (substituiu reavaliação de nível)
+  const { data: metasResumo } = trpc.metas.resumo.useQuery(
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
   );
+  const [, setLocation] = useLocation();
 
   // ---- Congelar: diálogo de confirmação com motivo obrigatório ----
   const [congelarDialogOpen, setCongelarDialogOpen] = useState(false);
@@ -265,8 +267,59 @@ function AssessmentContent() {
         </CardContent>
       </Card>
 
-      {/* Banner de Reavaliação */}
-      {selectedAlunoId && reavaliacao?.precisaReavaliar && (
+      {/* Resumo de Metas de Desenvolvimento */}
+      {selectedAlunoId && metasResumo && metasResumo.total > 0 && (
+        <Card className="border-[#0A1E3E]/20 bg-gradient-to-r from-[#0A1E3E]/5 to-transparent border-2">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <h4 className="font-semibold text-[#0A1E3E] mb-2 flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Metas de Desenvolvimento
+                </h4>
+                <div className="flex items-center gap-6">
+                  <div className="text-center">
+                    <span className="text-2xl font-bold text-[#0A1E3E]">{metasResumo.total}</span>
+                    <p className="text-[10px] text-muted-foreground">Total</p>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-2xl font-bold text-emerald-600">{metasResumo.cumpridas}</span>
+                    <p className="text-[10px] text-muted-foreground">Cumpridas</p>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-2xl font-bold text-red-500">{metasResumo.total - metasResumo.cumpridas}</span>
+                    <p className="text-[10px] text-muted-foreground">Pendentes</p>
+                  </div>
+                  <div className="flex-1 max-w-[200px]">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-muted-foreground">Atingimento</span>
+                      <span className="text-sm font-bold text-[#0A1E3E]">{metasResumo.percentual}%</span>
+                    </div>
+                    <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          metasResumo.percentual >= 75 ? 'bg-emerald-500' :
+                          metasResumo.percentual >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${metasResumo.percentual}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white flex-shrink-0"
+                onClick={() => setLocation(`/metas?alunoId=${selectedAlunoId}`)}
+              >
+                <Eye className="h-3.5 w-3.5 mr-1" />
+                Ver Metas
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {selectedAlunoId && metasResumo && metasResumo.total === 0 && assessments.length > 0 && (
         <Card className="border-amber-300 bg-amber-50 border-2">
           <CardContent className="py-4">
             <div className="flex items-center gap-3">
@@ -274,26 +327,19 @@ function AssessmentContent() {
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-amber-800">Reavaliação de Competências Pendente</h4>
+                <h4 className="font-semibold text-amber-800">Nenhuma Meta Definida</h4>
                 <p className="text-sm text-amber-700">
-                  Este aluno já realizou <strong>{reavaliacao.sessoesDesdeUltimaAtualizacao} sessões</strong> de mentoria desde a última atualização de nível.
-                  {reavaliacao.ultimaAtualizacao 
-                    ? ` Última atualização em ${new Date(reavaliacao.ultimaAtualizacao).toLocaleDateString('pt-BR')}.`
-                    : ' Nenhuma atualização de nível foi registrada ainda.'}
-                  É recomendado atualizar os níveis das competências.
+                  Este aluno possui assessment mas ainda não tem metas de desenvolvimento definidas.
+                  Defina metas para acompanhar a evolução das competências.
                 </p>
               </div>
               <Button
                 size="sm"
                 className="bg-amber-600 hover:bg-amber-700 text-white flex-shrink-0"
-                onClick={() => {
-                  if (assessments.length > 0) {
-                    setExpandedPdiId(assessments[0].id);
-                  }
-                }}
+                onClick={() => setLocation(`/metas?alunoId=${selectedAlunoId}`)}
               >
-                <Pencil className="h-3.5 w-3.5 mr-1" />
-                Atualizar Níveis
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Definir Metas
               </Button>
             </div>
           </CardContent>

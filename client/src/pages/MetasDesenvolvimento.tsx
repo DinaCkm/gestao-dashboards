@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -81,9 +81,16 @@ function MetasContent() {
   const isGestor = user?.role === "manager" && !userConsultorId; // Gestor de empresa (sem consultorId)
   const isMentor = user?.role === "manager" && !!userConsultorId; // Mentor (com consultorId)
 
+  // Ler alunoId da URL (query param) para pré-selecionar aluno vindo do Assessment
+  const urlAlunoId = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('alunoId');
+    return id ? parseInt(id) : null;
+  }, []);
+
   // States
   const [selectedProgramId, setSelectedProgramId] = useState<string>("all");
-  const [selectedAlunoId, setSelectedAlunoId] = useState<number | null>(null);
+  const [selectedAlunoId, setSelectedAlunoId] = useState<number | null>(urlAlunoId);
   const [expandedCompId, setExpandedCompId] = useState<number | null>(null);
   const [showAddMetaDialog, setShowAddMetaDialog] = useState(false);
   const [addMetaCompId, setAddMetaCompId] = useState<number | null>(null);
