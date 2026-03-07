@@ -2471,6 +2471,7 @@ export const appRouter = router({
           })(),
           cicloAtual: indicadores.ciclosEmAndamento?.[0]?.nomeCiclo || (indicadores.ciclosFinalizados?.length ? `${indicadores.ciclosFinalizados.length + (indicadores.ciclosEmAndamento?.length || 0)} ciclo(s)` : 'Nenhum ciclo'),
           mentor: mentorAluno?.name || 'Não definido',
+          mentorEmail: mentorAluno?.email || null,
           mentorEspecialidade: mentorAluno?.especialidade || null,
           mentorId: mentorAluno?.id || null,
         },

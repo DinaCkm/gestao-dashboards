@@ -1904,3 +1904,15 @@
 - [x] Integrado em MetasDesenvolvimento.tsx (visão mentor/admin)
 - [x] Integrado em MinhasMetasAluno.tsx (visão aluno - metas)
 - [x] Integrado em DashboardMeuPerfil.tsx (visão aluno - dashboard principal)
+
+## Bug: Desenvolvimento mostra 100% sem metas (07/03/2026)
+- [x] Investigado: não era bug - Joseane tinha 1 meta lançada por engano (excluída via limpeza de dados)
+
+## Limpeza de Dados (07/03/2026)
+- [x] Excluir meta lançada por engano da Joseane (meta id=1, alunoId=30066) e acompanhamento associado
+
+## Detalhamento de Tarefas na visão do aluno (07/03/2026)
+- [x] Exibir lista detalhada de atividades por sessão com número, data e status (Entregue/Não Entregue)
+- [x] Funcionalidade de envio de link da tarefa na nuvem (Google Drive, OneDrive, etc.)
+- [x] Explicação de que a tarefa deve estar salva na nuvem e compartilhada com o email do mentor
+- [x] Integrar com o email do mentor para exibir na instrução de compartilhamento

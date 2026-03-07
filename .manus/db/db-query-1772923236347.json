@@ -1,0 +1,15 @@
+{
+  "query": "SELECT a.name, a.email, COUNT(m.id) as total_metas\nFROM metas m\nJOIN alunos a ON a.id = m.alunoId\nWHERE m.isActive = 1\nGROUP BY a.id, a.name, a.email\nORDER BY a.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.name, a.email, COUNT(m.id) as total_metas\nFROM metas m\nJOIN alunos a ON a.id = m.alunoId\nWHERE m.isActive = 1\nGROUP BY a.id, a.name, a.email\nORDER BY a.name;",
+  "rows": [
+    {
+      "name": "Dina Makiyama",
+      "email": "dina@ckmtalents.net",
+      "total_metas": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\temail\ttotal_metas\nDina Makiyama\tdina@ckmtalents.net\t1\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

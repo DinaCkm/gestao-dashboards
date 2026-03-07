@@ -14,6 +14,7 @@ import {
   Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
   ClipboardCheck, Play, ExternalLink, FileText, Send, Route, FileBarChart,
   AlertTriangle, Briefcase, HelpCircle, Upload, Paperclip, FileUp, Bell, Lock, Snowflake,
+  Cloud, Link2, Share2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -1749,18 +1750,241 @@ export default function DashboardMeuPerfil() {
 
           {/* === TAREFAS PRÁTICAS === */}
           <TabsContent value="tarefas" className="mt-4">
+            {/* Instrução sobre envio de tarefas na nuvem */}
+            <Card className="bg-blue-50 border border-blue-200 shadow-sm mb-4">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-start gap-3">
+                  <Cloud className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900 mb-1 flex items-center gap-2">
+                      <Share2 className="h-4 w-4" /> Como enviar suas atividades
+                    </p>
+                    <p className="text-xs text-blue-800 leading-relaxed">
+                      Salve sua atividade na nuvem (Google Drive, OneDrive, Dropbox ou outro serviço de armazenamento) e 
+                      <strong> compartilhe o arquivo com o e-mail do(a) seu(sua) mentor(a)</strong> para que ele(a) possa abrir e analisar.
+                      {aluno.mentorEmail && (
+                        <span className="block mt-1.5 p-2 bg-white/60 rounded border border-blue-200">
+                          <strong>E-mail do(a) mentor(a):</strong>{" "}
+                          <a href={`mailto:${aluno.mentorEmail}`} className="text-blue-700 font-medium hover:underline">{aluno.mentorEmail}</a>
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1.5 italic">
+                      Depois de compartilhar, cole o link do arquivo no campo abaixo para registrar a entrega.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Resumo de atividades por sessão */}
+            <Card className="bg-white border border-gray-200 shadow-sm mb-4">
+              <CardHeader>
+                <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4 text-[#F5991F]" />
+                  Atividades por Sessão de Mentoria
+                </CardTitle>
+                <CardDescription className="text-gray-500">
+                  {(() => {
+                    const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && s.sessionNumber !== 1);
+                    const entregues = sessoesComTarefa.filter((s: any) => s.taskStatus === 'entregue' || s.taskStatus === 'validada');
+                    return `${entregues.length} de ${sessoesComTarefa.length} atividades entregues`;
+                  })()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {sessoes && sessoes.length > 0 ? (
+                  <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
+                    {sessoes.map((sessao: any, idx: number) => {
+                      const isAssessment = sessao.sessionNumber === 1;
+                      const taskStatusConfig = sessao.taskStatus === 'validada'
+                        ? { label: 'Validada', className: 'bg-purple-50 text-purple-700 border-purple-300', icon: <Award className="h-3 w-3" />, color: 'border-l-purple-500' }
+                        : sessao.taskStatus === 'entregue'
+                        ? { label: 'Entregue', className: 'bg-emerald-50 text-emerald-700 border-emerald-300', icon: <CheckCircle2 className="h-3 w-3" />, color: 'border-l-emerald-500' }
+                        : sessao.taskStatus === 'nao_entregue'
+                        ? { label: 'Não Entregue', className: 'bg-red-50 text-red-700 border-red-300', icon: <XCircle className="h-3 w-3" />, color: 'border-l-red-500' }
+                        : { label: 'Sem Tarefa', className: 'bg-gray-100 text-gray-600 border-gray-300', icon: <Minus className="h-3 w-3" />, color: 'border-l-gray-300' };
+
+                      return (
+                        <div key={sessao.id || idx} className={`p-3 rounded-lg bg-gray-50 border border-gray-100 border-l-4 ${taskStatusConfig.color} hover:bg-gray-100 transition-colors`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-bold">
+                                {sessao.sessionNumber || idx + 1}
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-900 font-medium">
+                                  Sessão {sessao.sessionNumber || idx + 1}
+                                  {isAssessment && <Badge className="ml-2 text-xs bg-amber-100 text-amber-700 border-amber-300">Assessment</Badge>}
+                                  {sessao.ciclo && <span className="text-gray-500 ml-2 text-xs">• Ciclo {sessao.ciclo}</span>}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {sessao.sessionDate ? new Date(sessao.sessionDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : "Data não registrada"}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className={taskStatusConfig.className}>
+                                <span className="flex items-center gap-1">{taskStatusConfig.icon} {isAssessment ? 'Assessment' : taskStatusConfig.label}</span>
+                              </Badge>
+                              {/* Botão de envio de link para sessões pendentes */}
+                              {!isAssessment && sessao.taskStatus === 'nao_entregue' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setTaskDetailOpen(sessao.id)}
+                                  className="text-[#F5991F] border-[#F5991F] hover:bg-[#F5991F]/10 text-xs"
+                                >
+                                  <Link2 className="h-3 w-3 mr-1" /> Enviar Link
+                                </Button>
+                              )}
+                              {!isAssessment && (sessao.taskStatus === 'entregue' || sessao.taskStatus === 'validada') && sessao.evidenceLink && (
+                                <a href={sessao.evidenceLink} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800 text-xs">
+                                    <ExternalLink className="h-3 w-3 mr-1" /> Ver Link
+                                  </Button>
+                                </a>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Dialog de envio de link para a sessão */}
+                          <Dialog open={taskDetailOpen === sessao.id} onOpenChange={(open) => { if (!open) setTimeout(() => setTaskDetailOpen(null), 100); }}>
+                            <DialogContent className="max-w-lg">
+                              <DialogHeader>
+                                <DialogTitle className="text-gray-900 flex items-center gap-2">
+                                  <Link2 className="h-5 w-5 text-[#F5991F]" />
+                                  Enviar Atividade — Sessão {sessao.sessionNumber}
+                                </DialogTitle>
+                                <DialogDescription className="text-gray-500">
+                                  {sessao.sessionDate ? new Date(sessao.sessionDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : ""}
+                                </DialogDescription>
+                              </DialogHeader>
+
+                              <div className="space-y-4">
+                                {/* Instrução de compartilhamento na nuvem */}
+                                <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                                  <p className="text-xs font-semibold text-blue-900 mb-1 flex items-center gap-2">
+                                    <Cloud className="h-4 w-4" /> Instruções de envio
+                                  </p>
+                                  <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
+                                    <li>Salve sua atividade na nuvem (Google Drive, OneDrive, Dropbox, etc.)</li>
+                                    <li>Compartilhe o arquivo com o e-mail do(a) seu(sua) mentor(a){aluno.mentorEmail ? `: ` : ''}
+                                      {aluno.mentorEmail && <strong className="text-blue-900">{aluno.mentorEmail}</strong>}
+                                    </li>
+                                    <li>Copie o link de compartilhamento e cole no campo abaixo</li>
+                                  </ol>
+                                </div>
+
+                                {/* Campo de link */}
+                                <div className="space-y-2">
+                                  <Label className="text-xs text-gray-700 flex items-center gap-1">
+                                    <Link2 className="h-3 w-3" /> Link do arquivo na nuvem
+                                  </Label>
+                                  <Input
+                                    type="url"
+                                    placeholder="https://drive.google.com/... ou https://onedrive.live.com/..."
+                                    value={evidenceLink[sessao.id] || ''}
+                                    onChange={(e) => setEvidenceLink(prev => ({ ...prev, [sessao.id]: e.target.value }))}
+                                    className="text-sm"
+                                  />
+                                </div>
+
+                                {/* Campo de imagem opcional */}
+                                <div className="space-y-2">
+                                  <Label className="text-xs text-gray-700">Imagem de evidência (opcional, máx 5MB: JPG, PNG, WebP)</Label>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        const input = document.createElement('input');
+                                        input.type = 'file';
+                                        input.accept = 'image/jpeg,image/png,image/webp';
+                                        input.onchange = (e: any) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            if (file.size > 5 * 1024 * 1024) {
+                                              alert('Imagem deve ter no máximo 5MB');
+                                              return;
+                                            }
+                                            setEvidenceFile(prev => ({ ...prev, [sessao.id]: file }));
+                                          }
+                                        };
+                                        input.click();
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      <Paperclip className="h-3 w-3 mr-1" /> Anexar Imagem
+                                    </Button>
+                                    {evidenceFile[sessao.id] && (
+                                      <span className="text-xs text-gray-600 flex items-center gap-1">
+                                        <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                                        {evidenceFile[sessao.id]!.name}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Relato opcional */}
+                                <div className="space-y-2">
+                                  <Label className="text-xs text-gray-700">Relato (opcional)</Label>
+                                  <Textarea
+                                    placeholder="Descreva como foi a realização desta atividade..."
+                                    value={relatoText[sessao.id] || ''}
+                                    onChange={(e) => setRelatoText(prev => ({ ...prev, [sessao.id]: e.target.value }))}
+                                    className="text-sm min-h-[60px] overflow-auto"
+                                  />
+                                </div>
+
+                                {/* Botão de envio */}
+                                <Button
+                                  onClick={async () => {
+                                    if (relatoText[sessao.id]) {
+                                      await submitRelato.mutateAsync({ sessionId: sessao.id, relatoAluno: relatoText[sessao.id] });
+                                    }
+                                    await handleEvidenceSubmit(sessao.id);
+                                    toast.success('Atividade enviada com sucesso!');
+                                    setTimeout(() => setTaskDetailOpen(null), 100);
+                                  }}
+                                  disabled={(!evidenceLink[sessao.id] && !evidenceFile[sessao.id]) || submitEvidence.isPending}
+                                  className="w-full bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
+                                >
+                                  <Send className="h-4 w-4 mr-2" />
+                                  {submitEvidence.isPending ? 'Enviando...' : 'Enviar Atividade'}
+                                </Button>
+                                {submitEvidence.isError && (
+                                  <p className="text-xs text-red-600">{submitEvidence.error?.message}</p>
+                                )}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <ClipboardCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Nenhuma sessão de mentoria registrada ainda</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tarefas Práticas atribuídas (da biblioteca de tarefas) */}
+            {myTasks && myTasks.length > 0 && (
             <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
                   <ClipboardCheck className="h-4 w-4 text-[#F5991F]" />
-                  Tarefas Práticas
+                  Tarefas Práticas Atribuídas
                 </CardTitle>
                 <CardDescription className="text-gray-500">
-                  Atividades atribuídas pela sua mentora durante as sessões de mentoria
+                  Atividades específicas atribuídas pela sua mentora com detalhes e instruções
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {myTasks && myTasks.length > 0 ? (
                   <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                     {myTasks.map((task: any) => {
                       const statusConfig = task.taskStatus === 'validada'
@@ -1849,7 +2073,7 @@ export default function DashboardMeuPerfil() {
                           )}
 
                           {/* Dialog de Detalhe da Tarefa */}
-                          <Dialog open={taskDetailOpen === task.sessionId} onOpenChange={(open) => { if (!open) setTaskDetailOpen(null); }}>
+                          <Dialog open={taskDetailOpen === task.sessionId} onOpenChange={(open) => { if (!open) setTimeout(() => setTaskDetailOpen(null), 100); }}>
                             <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
                               <DialogHeader>
                                 <DialogTitle className="text-gray-900 flex items-center gap-2">
@@ -1871,6 +2095,18 @@ export default function DashboardMeuPerfil() {
                                   </div>
                                 )}
 
+                                {/* Instrução de compartilhamento na nuvem */}
+                                {task.taskStatus === 'nao_entregue' && (
+                                  <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                                    <p className="text-xs font-semibold text-blue-900 mb-1 flex items-center gap-2">
+                                      <Cloud className="h-4 w-4" /> Lembre-se
+                                    </p>
+                                    <p className="text-xs text-blue-800">
+                                      Salve o arquivo na nuvem e compartilhe com {aluno.mentorEmail ? <strong>{aluno.mentorEmail}</strong> : 'o e-mail do(a) seu(sua) mentor(a)'}.
+                                    </p>
+                                  </div>
+                                )}
+
                                 {/* Status */}
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-medium text-gray-700">Status:</span>
@@ -1885,12 +2121,13 @@ export default function DashboardMeuPerfil() {
                                     <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                                       <Upload className="h-4 w-4 text-[#F5991F]" /> Enviar Evidência
                                     </h4>
-                                    <p className="text-xs text-gray-500">Envie pelo menos um link ou uma imagem como evidência da atividade.</p>
                                     <div className="space-y-2">
-                                      <Label className="text-xs text-gray-700">Link (opcional)</Label>
+                                      <Label className="text-xs text-gray-700 flex items-center gap-1">
+                                        <Link2 className="h-3 w-3" /> Link do arquivo na nuvem
+                                      </Label>
                                       <Input
                                         type="url"
-                                        placeholder="https://..."
+                                        placeholder="https://drive.google.com/... ou https://onedrive.live.com/..."
                                         value={evidenceLink[task.sessionId] || ''}
                                         onChange={(e) => setEvidenceLink(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
                                         className="text-sm"
@@ -2031,15 +2268,9 @@ export default function DashboardMeuPerfil() {
                       );
                     })}
                   </div>
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    <ClipboardCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Nenhuma tarefa prática atribuída ainda</p>
-                    <p className="text-xs mt-1">As tarefas serão atribuídas pela sua mentora durante as sessões</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
+            )}
           </TabsContent>
 
           {/* === CURSOS === */}
