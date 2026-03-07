@@ -225,6 +225,13 @@
       "when": 1772837308518,
       "tag": "0031_lean_moira_mactaggert",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1772854871819,
+      "tag": "0032_spotty_exodus",
+      "breakpoints": true
     }
   ]
 }

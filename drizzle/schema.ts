@@ -737,3 +737,46 @@ export const appointmentParticipants = mysqlTable("appointment_participants", {
 });
 export type AppointmentParticipant = typeof appointmentParticipants.$inferSelect;
 export type InsertAppointmentParticipant = typeof appointmentParticipants.$inferInsert;
+
+/**
+ * Metas de Desenvolvimento - Metas concretas vinculadas a competências do assessment
+ * A mentora define metas para cada competência que o aluno precisa desenvolver.
+ * Pode selecionar da biblioteca de ações (taskLibrary) ou criar meta personalizada.
+ */
+export const metas = mysqlTable("metas", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  assessmentCompetenciaId: int("assessmentCompetenciaId").notNull(), // FK para assessment_competencias
+  competenciaId: int("competenciaId").notNull(), // FK para competencias (desnormalizado para queries rápidas)
+  assessmentPdiId: int("assessmentPdiId").notNull(), // FK para assessment_pdi
+  taskLibraryId: int("taskLibraryId"), // FK para task_library (null se meta personalizada)
+  titulo: varchar("titulo", { length: 500 }).notNull(), // Título da meta (da biblioteca ou personalizado)
+  descricao: text("descricao"), // Descrição detalhada da meta
+  definidaPor: int("definidaPor"), // FK para consultors (mentora que definiu)
+  isActive: int("isActive").default(1).notNull(), // 1 = ativa, 0 = removida
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Meta = typeof metas.$inferSelect;
+export type InsertMeta = typeof metas.$inferInsert;
+
+/**
+ * Acompanhamento de Metas - Registro mensal do status de cada meta
+ * A mentora marca mensalmente se a meta foi cumprida ou não.
+ */
+export const metaAcompanhamento = mysqlTable("meta_acompanhamento", {
+  id: int("id").autoincrement().primaryKey(),
+  metaId: int("metaId").notNull(), // FK para metas
+  alunoId: int("alunoId").notNull(), // FK para alunos (desnormalizado)
+  mes: int("mes").notNull(), // Mês (1-12)
+  ano: int("ano").notNull(), // Ano (ex: 2026)
+  status: mysqlEnum("status", ["cumprida", "nao_cumprida", "parcial"]).notNull(),
+  observacao: text("observacao"), // Observação da mentora
+  registradoPor: int("registradoPor"), // FK para consultors (mentora)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MetaAcompanhamento = typeof metaAcompanhamento.$inferSelect;
+export type InsertMetaAcompanhamento = typeof metaAcompanhamento.$inferInsert;

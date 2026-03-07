@@ -30,7 +30,9 @@ import {
   practicalActivityComments, InsertPracticalActivityComment, PracticalActivityComment,
   mentorAvailability, InsertMentorAvailability, MentorAvailability,
   mentorAppointments, InsertMentorAppointment, MentorAppointment,
-  appointmentParticipants, InsertAppointmentParticipant, AppointmentParticipant
+  appointmentParticipants, InsertAppointmentParticipant, AppointmentParticipant,
+  metas, InsertMeta, Meta,
+  metaAcompanhamento, InsertMetaAcompanhamento, MetaAcompanhamento
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -5677,4 +5679,253 @@ export async function getAllAssessmentPdis() {
   if (!db) return [];
   
   return await db.select().from(assessmentPdi);
+}
+
+
+// ============ METAS DE DESENVOLVIMENTO ============
+
+/**
+ * Listar metas de um aluno (opcionalmente filtrar por competência ou assessment)
+ */
+export async function getMetasByAluno(alunoId: number, assessmentPdiId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  if (assessmentPdiId) {
+    return await db.select().from(metas)
+      .where(and(eq(metas.alunoId, alunoId), eq(metas.assessmentPdiId, assessmentPdiId), eq(metas.isActive, 1)))
+      .orderBy(metas.competenciaId, metas.createdAt);
+  }
+  
+  return await db.select().from(metas)
+    .where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1)))
+    .orderBy(metas.competenciaId, metas.createdAt);
+}
+
+/**
+ * Listar metas de um aluno por competência específica
+ */
+export async function getMetasByCompetencia(alunoId: number, assessmentCompetenciaId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(metas)
+    .where(and(
+      eq(metas.alunoId, alunoId),
+      eq(metas.assessmentCompetenciaId, assessmentCompetenciaId),
+      eq(metas.isActive, 1)
+    ))
+    .orderBy(metas.createdAt);
+}
+
+/**
+ * Criar uma nova meta
+ */
+export async function createMeta(data: InsertMeta) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(metas).values(data);
+  return { id: Number(result[0].insertId) };
+}
+
+/**
+ * Atualizar uma meta existente
+ */
+export async function updateMeta(id: number, data: Partial<InsertMeta>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(metas).set(data).where(eq(metas.id, id));
+  return { success: true };
+}
+
+/**
+ * Desativar (soft delete) uma meta
+ */
+export async function deleteMeta(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(metas).set({ isActive: 0 }).where(eq(metas.id, id));
+  return { success: true };
+}
+
+/**
+ * Listar acompanhamentos de metas de um aluno
+ */
+export async function getMetaAcompanhamentos(alunoId: number, metaId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  if (metaId) {
+    return await db.select().from(metaAcompanhamento)
+      .where(and(eq(metaAcompanhamento.alunoId, alunoId), eq(metaAcompanhamento.metaId, metaId)))
+      .orderBy(desc(metaAcompanhamento.ano), desc(metaAcompanhamento.mes));
+  }
+  
+  return await db.select().from(metaAcompanhamento)
+    .where(eq(metaAcompanhamento.alunoId, alunoId))
+    .orderBy(desc(metaAcompanhamento.ano), desc(metaAcompanhamento.mes));
+}
+
+/**
+ * Registrar ou atualizar acompanhamento mensal de uma meta
+ */
+export async function upsertMetaAcompanhamento(data: InsertMetaAcompanhamento) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Verificar se já existe registro para este mês/ano/meta
+  const existing = await db.select().from(metaAcompanhamento)
+    .where(and(
+      eq(metaAcompanhamento.metaId, data.metaId),
+      eq(metaAcompanhamento.mes, data.mes),
+      eq(metaAcompanhamento.ano, data.ano)
+    ))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    await db.update(metaAcompanhamento)
+      .set({ status: data.status, observacao: data.observacao, registradoPor: data.registradoPor })
+      .where(eq(metaAcompanhamento.id, existing[0].id));
+    return { id: existing[0].id, updated: true };
+  }
+  
+  const result = await db.insert(metaAcompanhamento).values(data);
+  return { id: Number(result[0].insertId), updated: false };
+}
+
+/**
+ * Obter resumo de metas por aluno (total, cumpridas, % por competência)
+ */
+export async function getMetasResumo(alunoId: number) {
+  const db = await getDb();
+  if (!db) return { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
+  
+  // Buscar todas as metas ativas do aluno
+  const allMetas = await db.select().from(metas)
+    .where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1)));
+  
+  if (allMetas.length === 0) return { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
+  
+  // Buscar todos os acompanhamentos do aluno
+  const allAcomp = await db.select().from(metaAcompanhamento)
+    .where(eq(metaAcompanhamento.alunoId, alunoId));
+  
+  // Para cada meta, verificar se o último acompanhamento é "cumprida"
+  const metasComStatus = allMetas.map(meta => {
+    const acomps = allAcomp
+      .filter(a => a.metaId === meta.id)
+      .sort((a, b) => (b.ano * 100 + b.mes) - (a.ano * 100 + a.mes));
+    const ultimoStatus = acomps.length > 0 ? acomps[0].status : 'nao_cumprida';
+    return { ...meta, ultimoStatus };
+  });
+  
+  const cumpridas = metasComStatus.filter(m => m.ultimoStatus === 'cumprida').length;
+  
+  // Agrupar por competência
+  const porCompetenciaMap = new Map<number, { competenciaId: number, assessmentCompetenciaId: number, total: number, cumpridas: number }>();
+  for (const meta of metasComStatus) {
+    const key = meta.assessmentCompetenciaId;
+    if (!porCompetenciaMap.has(key)) {
+      porCompetenciaMap.set(key, { competenciaId: meta.competenciaId, assessmentCompetenciaId: key, total: 0, cumpridas: 0 });
+    }
+    const entry = porCompetenciaMap.get(key)!;
+    entry.total++;
+    if (meta.ultimoStatus === 'cumprida') entry.cumpridas++;
+  }
+  
+  const porCompetencia = Array.from(porCompetenciaMap.values()).map(c => ({
+    ...c,
+    percentual: c.total > 0 ? Math.round((c.cumpridas / c.total) * 100) : 0
+  }));
+  
+  return {
+    total: allMetas.length,
+    cumpridas,
+    percentual: Math.round((cumpridas / allMetas.length) * 100),
+    porCompetencia
+  };
+}
+
+/**
+ * Obter metas com detalhes completos (meta + último acompanhamento + nome competência)
+ */
+export async function getMetasDetalhadas(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const allMetas = await db.select().from(metas)
+    .where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1)))
+    .orderBy(metas.competenciaId, metas.createdAt);
+  
+  if (allMetas.length === 0) return [];
+  
+  const metaIds = allMetas.map(m => m.id);
+  const allAcomp = await db.select().from(metaAcompanhamento)
+    .where(inArray(metaAcompanhamento.metaId, metaIds));
+  
+  // Buscar nomes das competências
+  const compIds = Array.from(new Set(allMetas.map(m => m.competenciaId)));
+  const comps = compIds.length > 0 
+    ? await db.select({ id: competencias.id, nome: competencias.nome }).from(competencias).where(inArray(competencias.id, compIds))
+    : [];
+  const compMap = new Map(comps.map(c => [c.id, c.nome]));
+  
+  return allMetas.map(meta => {
+    const acomps = allAcomp
+      .filter(a => a.metaId === meta.id)
+      .sort((a, b) => (b.ano * 100 + b.mes) - (a.ano * 100 + a.mes));
+    const ultimoAcompanhamento = acomps.length > 0 ? acomps[0] : null;
+    return {
+      ...meta,
+      competenciaNome: compMap.get(meta.competenciaId) || 'Desconhecida',
+      ultimoStatus: ultimoAcompanhamento?.status || null,
+      ultimoMes: ultimoAcompanhamento?.mes || null,
+      ultimoAno: ultimoAcompanhamento?.ano || null,
+      ultimaObservacao: ultimoAcompanhamento?.observacao || null,
+      historicoAcompanhamento: acomps
+    };
+  });
+}
+
+/**
+ * Obter resumo de metas para todos os alunos (para Dashboard Gestor)
+ */
+export async function getMetasResumoTodos() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const allMetas = await db.select().from(metas).where(eq(metas.isActive, 1));
+  if (allMetas.length === 0) return [];
+  
+  const metaIds = allMetas.map(m => m.id);
+  const allAcomp = await db.select().from(metaAcompanhamento)
+    .where(inArray(metaAcompanhamento.metaId, metaIds));
+  
+  // Agrupar por aluno
+  const porAluno = new Map<number, { total: number, cumpridas: number }>();
+  for (const meta of allMetas) {
+    if (!porAluno.has(meta.alunoId)) {
+      porAluno.set(meta.alunoId, { total: 0, cumpridas: 0 });
+    }
+    const entry = porAluno.get(meta.alunoId)!;
+    entry.total++;
+    
+    // Verificar último acompanhamento
+    const acomps = allAcomp
+      .filter(a => a.metaId === meta.id)
+      .sort((a, b) => (b.ano * 100 + b.mes) - (a.ano * 100 + a.mes));
+    if (acomps.length > 0 && acomps[0].status === 'cumprida') {
+      entry.cumpridas++;
+    }
+  }
+  
+  return Array.from(porAluno.entries()).map(([alunoId, data]) => ({
+    alunoId,
+    totalMetas: data.total,
+    metasCumpridas: data.cumpridas,
+    percentual: data.total > 0 ? Math.round((data.cumpridas / data.total) * 100) : 0
+  }));
 }

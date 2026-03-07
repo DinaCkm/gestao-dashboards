@@ -46,7 +46,8 @@ import {
   Video,
   Megaphone,
   ExternalLink,
-  Calendar
+  Calendar,
+  Flag
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -100,6 +101,8 @@ const allMenuItems: MenuItemExtended[] = [
   { icon: GraduationCap, label: "Turmas", path: "/turmas", roles: ["admin"] },
   { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias", roles: ["admin"] },
   { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["manager"], requireConsultorId: true },
+  { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas", roles: ["manager"], requireConsultorId: true },
+  { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas", roles: ["admin"] },
   { icon: Video, label: "Webinars", path: "/webinars", roles: ["admin"] },
   { icon: Megaphone, label: "Avisos e Comunicados", path: "/avisos", roles: ["admin"] },
   { icon: Calculator, label: "Fórmulas", path: "/formulas", roles: ["admin"] },
@@ -334,7 +337,16 @@ function DashboardLayoutContent({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem
-                  onClick={() => setLocation("/individual")}
+                  onClick={() => {
+                    const hasConsultor = !!(user as any)?.consultorId;
+                    if (hasConsultor) {
+                      setLocation("/dashboard/mentor");
+                    } else if (user?.role === 'user') {
+                      setLocation("/meu-dashboard");
+                    } else {
+                      setLocation("/dashboard/individual");
+                    }
+                  }}
                   className="cursor-pointer"
                 >
                   <User className="mr-2 h-4 w-4" />

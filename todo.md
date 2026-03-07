@@ -1820,3 +1820,15 @@
 ## Ajuste: Tabela Sessões por Aluno (demonstrativo-mentorias)
 - [x] Reduzir tamanho da fonte e espaçamento da tabela Sessões por Aluno
 - [x] Adicionar barra de rolagem horizontal na tabela
+## Sistema de Metas por Competência
+- [ ] Criar tabelas no banco: metas (vinculadas a competência/aluno), acompanhamento_metas (mensal)
+- [ ] Endpoint tRPC para CRUD de metas (criar, listar, atualizar status)
+- [ ] Tela da mentora: definir metas por competência (selecionar da biblioteca de ações ou campo livre)
+- [ ] Tela de acompanhamento mensal: mentora marca cumprida/não cumprida
+- [ ] Card de metas no Portal do Aluno (holofote com lista de metas e progresso)
+- [ ] Card de metas no Mural do aluno
+- [ ] Cálculo automático: % atingida por competência e % total do aluno
+- [ ] Exibição do progresso de metas no Dashboard do Gestor
+
+## Bug Reportado (07/03/2026) - Perfil da Mentora Andressa
+- [x] Bug: Mentora Andressa não consegue atualizar perfil - erro 404 (link 'Meu Perfil' no dropdown da sidebar apontava para /individual que não existe; corrigido para direcionar conforme role do usuário)

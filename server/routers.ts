@@ -4500,6 +4500,127 @@ export const appRouter = router({
         }
       }),
   }),
+
+  // ============ METAS DE DESENVOLVIMENTO ============
+  metas: router({
+    // Listar metas de um aluno (para mentora e gestor)
+    listar: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        assessmentPdiId: z.number().optional()
+      }))
+      .query(async ({ input }) => {
+        return await db.getMetasDetalhadas(input.alunoId);
+      }),
+
+    // Listar metas por competência específica
+    porCompetencia: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        assessmentCompetenciaId: z.number()
+      }))
+      .query(async ({ input }) => {
+        return await db.getMetasByCompetencia(input.alunoId, input.assessmentCompetenciaId);
+      }),
+
+    // Criar nova meta (mentora)
+    criar: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        assessmentCompetenciaId: z.number(),
+        competenciaId: z.number(),
+        assessmentPdiId: z.number(),
+        taskLibraryId: z.number().nullable().optional(),
+        titulo: z.string().min(1),
+        descricao: z.string().nullable().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Buscar consultor pelo openId do usuário logado
+        const consultors = await db.getConsultors();
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        return await db.createMeta({
+          ...input,
+          taskLibraryId: input.taskLibraryId ?? null,
+          descricao: input.descricao ?? null,
+          definidaPor: consultor?.id ?? null
+        });
+      }),
+
+    // Atualizar meta existente
+    atualizar: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        titulo: z.string().min(1).optional(),
+        descricao: z.string().nullable().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return await db.updateMeta(id, data);
+      }),
+
+    // Remover meta (soft delete)
+    remover: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteMeta(input.id);
+      }),
+
+    // Registrar acompanhamento mensal
+    registrarAcompanhamento: protectedProcedure
+      .input(z.object({
+        metaId: z.number(),
+        alunoId: z.number(),
+        mes: z.number().min(1).max(12),
+        ano: z.number().min(2024).max(2030),
+        status: z.enum(['cumprida', 'nao_cumprida', 'parcial']),
+        observacao: z.string().nullable().optional()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const consultors = await db.getConsultors();
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId);
+        return await db.upsertMetaAcompanhamento({
+          ...input,
+          observacao: input.observacao ?? null,
+          registradoPor: consultor?.id ?? null
+        });
+      }),
+
+    // Listar acompanhamentos de uma meta
+    acompanhamentos: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        metaId: z.number().optional()
+      }))
+      .query(async ({ input }) => {
+        return await db.getMetaAcompanhamentos(input.alunoId, input.metaId);
+      }),
+
+    // Resumo de metas de um aluno (para cards e dashboards)
+    resumo: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getMetasResumo(input.alunoId);
+      }),
+
+    // Resumo de metas de todos os alunos (para Dashboard Gestor)
+    resumoTodos: protectedProcedure
+      .query(async () => {
+        return await db.getMetasResumoTodos();
+      }),
+
+    // Listar itens da biblioteca de ações (para seleção)
+    biblioteca: protectedProcedure
+      .input(z.object({
+        competencia: z.string().optional()
+      }).optional())
+      .query(async ({ input }) => {
+        const all = await db.getAllTaskLibrary();
+        if (input?.competencia) {
+          return all.filter(t => t.competencia.toLowerCase().includes(input.competencia!.toLowerCase()));
+        }
+        return all;
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
