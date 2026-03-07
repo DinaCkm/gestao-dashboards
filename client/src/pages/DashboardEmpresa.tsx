@@ -28,7 +28,7 @@ const CLASSIFICATION_COLORS: Record<string, string> = {
 
 function AlunoExpandido({ aluno }: { aluno: any }) {
   const [expanded, setExpanded] = useState(false);
-  const perf = aluno.performanceGeral || aluno.notaFinal * 10;
+  const perf = aluno.consolidado?.ind7_engajamentoFinal || aluno.performanceGeral || aluno.notaFinal * 10;
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -105,32 +105,28 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
           {/* 6 Indicadores em mini-cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
             <div className="p-2 rounded bg-background border text-center">
-              <p className="text-xs text-muted-foreground">Mentorias</p>
-              <p className="text-sm font-bold">{aluno.participacaoMentorias?.toFixed(0) || 0}%</p>
-              <p className="text-xs text-muted-foreground">{aluno.mentoriasPresente}/{aluno.totalMentorias}</p>
+              <p className="text-xs text-muted-foreground">1. Webinars</p>
+              <p className="text-sm font-bold">{(aluno.consolidado?.ind1_webinars ?? aluno.participacaoMentorias ?? 0).toFixed(0)}%</p>
             </div>
             <div className="p-2 rounded bg-background border text-center">
-              <p className="text-xs text-muted-foreground">Atividades</p>
-              <p className="text-sm font-bold">{aluno.atividadesPraticas?.toFixed(0) || 0}%</p>
-              <p className="text-xs text-muted-foreground">{aluno.atividadesEntregues}/{aluno.totalAtividades}</p>
+              <p className="text-xs text-muted-foreground">2. Avaliações</p>
+              <p className="text-sm font-bold">{(aluno.consolidado?.ind2_avaliacoes ?? aluno.atividadesPraticas ?? 0).toFixed(0)}%</p>
             </div>
             <div className="p-2 rounded bg-background border text-center">
-              <p className="text-xs text-muted-foreground">Engajamento</p>
-              <p className="text-sm font-bold">{aluno.engajamento?.toFixed(0) || 0}%</p>
+              <p className="text-xs text-muted-foreground">3. Competências</p>
+              <p className="text-sm font-bold">{(aluno.consolidado?.ind3_competencias ?? aluno.engajamento ?? 0).toFixed(0)}%</p>
             </div>
             <div className="p-2 rounded bg-background border text-center">
-              <p className="text-xs text-muted-foreground">Competências</p>
-              <p className="text-sm font-bold">{aluno.performanceCompetencias?.toFixed(0) || 0}%</p>
-              <p className="text-xs text-muted-foreground">{aluno.competenciasAprovadas}/{aluno.totalCompetencias}</p>
+              <p className="text-xs text-muted-foreground">4. Tarefas</p>
+              <p className="text-sm font-bold">{(aluno.consolidado?.ind4_tarefas ?? aluno.performanceCompetencias ?? 0).toFixed(0)}%</p>
             </div>
             <div className="p-2 rounded bg-background border text-center">
-              <p className="text-xs text-muted-foreground">Aprendizado</p>
-              <p className="text-sm font-bold">{(aluno.performanceAprendizado || 0).toFixed(0)}%</p>
+              <p className="text-xs text-muted-foreground">5. Engajamento</p>
+              <p className="text-sm font-bold">{(aluno.consolidado?.ind5_engajamento ?? aluno.performanceAprendizado ?? 0).toFixed(0)}%</p>
             </div>
             <div className="p-2 rounded bg-background border text-center">
-              <p className="text-xs text-muted-foreground">Eventos</p>
-              <p className="text-sm font-bold">{aluno.participacaoEventos?.toFixed(0) || 0}%</p>
-              <p className="text-xs text-muted-foreground">{aluno.eventosPresente}/{aluno.totalEventos}</p>
+              <p className="text-xs text-muted-foreground">6. Case (Bônus)</p>
+              <p className="text-sm font-bold">{(aluno.consolidado?.ind6_aplicabilidade ?? 0).toFixed(0)}%</p>
             </div>
           </div>
 
@@ -292,12 +288,11 @@ export default function DashboardEmpresa() {
   const META_EXCELENCIA = 9.0;
 
   const radarData = [
-    { indicador: 'Mentorias', valor: visaoEmpresa.mediaParticipacaoMentorias },
-    { indicador: 'Atividades', valor: visaoEmpresa.mediaAtividadesPraticas },
-    { indicador: 'Engajamento', valor: visaoEmpresa.mediaEngajamento },
-    { indicador: 'Competências', valor: visaoEmpresa.mediaPerformanceCompetencias },
-    { indicador: 'Aprendizado', valor: visaoEmpresa.mediaPerformanceAprendizado || 0 },
-    { indicador: 'Eventos', valor: visaoEmpresa.mediaParticipacaoEventos },
+    { indicador: 'Webinars', valor: visaoEmpresa.mediaInd1 || visaoEmpresa.mediaParticipacaoMentorias },
+    { indicador: 'Avaliações', valor: visaoEmpresa.mediaInd2 || visaoEmpresa.mediaAtividadesPraticas },
+    { indicador: 'Competências', valor: visaoEmpresa.mediaInd3 || visaoEmpresa.mediaEngajamento },
+    { indicador: 'Tarefas', valor: visaoEmpresa.mediaInd4 || visaoEmpresa.mediaPerformanceCompetencias },
+    { indicador: 'Engajamento', valor: visaoEmpresa.mediaInd5 || visaoEmpresa.mediaPerformanceAprendizado || 0 },
   ];
 
   // Extrair opções de filtro dos alunos
@@ -353,12 +348,12 @@ export default function DashboardEmpresa() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Performance Geral</CardTitle>
+              <CardTitle className="text-sm font-medium">Engajamento Final</CardTitle>
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoEmpresa.mediaPerformanceGeral || visaoEmpresa.mediaNotaFinal * 10 || 0).toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Média dos 6 indicadores</p>
+              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd7 || visaoEmpresa.mediaPerformanceGeral || visaoEmpresa.mediaNotaFinal * 10 || 0).toFixed(0)}%</div>
+              <p className="text-xs text-muted-foreground">Engajamento Final (Média dos 5 indicadores)</p>
             </CardContent>
           </Card>
 
@@ -399,85 +394,85 @@ export default function DashboardEmpresa() {
           <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4" /> Ind. 1: Mentorias
+                <Calendar className="h-4 w-4" /> Ind. 1: Webinars / Eventos
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{visaoEmpresa.mediaParticipacaoMentorias.toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Participação</p>
+              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd1 || visaoEmpresa.mediaParticipacaoMentorias).toFixed(0)}%</div>
+              <p className="text-xs text-muted-foreground">Presença</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-secondary/10 to-secondary/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <BookOpen className="h-4 w-4" /> Ind. 2: Atividades
+                <BookOpen className="h-4 w-4" /> Ind. 2: Avaliações
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{visaoEmpresa.mediaAtividadesPraticas.toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Entregues</p>
+              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd2 || visaoEmpresa.mediaAtividadesPraticas).toFixed(0)}%</div>
+              <p className="text-xs text-muted-foreground">Notas</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Zap className="h-4 w-4" /> Ind. 3: Engajamento
+                <Zap className="h-4 w-4" /> Ind. 3: Competências
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{visaoEmpresa.mediaEngajamento.toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Média</p>
+              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd3 || visaoEmpresa.mediaEngajamento).toFixed(0)}%</div>
+              <p className="text-xs text-muted-foreground">Concluídas</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-purple-500/10 to-purple-500/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Award className="h-4 w-4" /> Ind. 4: Competências
+                <Award className="h-4 w-4" /> Ind. 4: Tarefas
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{visaoEmpresa.mediaPerformanceCompetencias.toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Aprovadas</p>
+              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd4 || visaoEmpresa.mediaPerformanceCompetencias).toFixed(0)}%</div>
+              <p className="text-xs text-muted-foreground">Entregues</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <GraduationCap className="h-4 w-4" /> Ind. 5: Aprendizado
+                <GraduationCap className="h-4 w-4" /> Ind. 5: Engajamento
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoEmpresa.mediaPerformanceAprendizado || 0).toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Notas das avaliações</p>
+              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd5 || visaoEmpresa.mediaPerformanceAprendizado || 0).toFixed(0)}%</div>
+              <p className="text-xs text-muted-foreground">Evolução</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <PartyPopper className="h-4 w-4" /> Ind. 6: Eventos
+                <PartyPopper className="h-4 w-4" /> Ind. 6: Aplicabilidade (Bônus)
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{visaoEmpresa.mediaParticipacaoEventos.toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Presença</p>
+              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd6 || visaoEmpresa.mediaParticipacaoEventos).toFixed(0)}%</div>
+              <p className="text-xs text-muted-foreground">Case de Sucesso</p>
             </CardContent>
           </Card>
 
           <Card className="border-2 border-primary bg-gradient-to-br from-primary/5 to-primary/10">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Target className="h-4 w-4" /> Ind. 7: Performance Geral
+                <Target className="h-4 w-4" /> Ind. 7: Engajamento Final
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{(visaoEmpresa.mediaPerformanceGeral || 0).toFixed(0)}%</div>
-              <Progress value={visaoEmpresa.mediaPerformanceGeral || 0} className="h-2 mt-1" />
-              <p className="text-xs text-muted-foreground mt-1">Média dos 6 indicadores</p>
+              <div className="text-2xl font-bold text-primary">{(visaoEmpresa.mediaInd7 || visaoEmpresa.mediaPerformanceGeral || 0).toFixed(0)}%</div>
+              <Progress value={visaoEmpresa.mediaInd7 || visaoEmpresa.mediaPerformanceGeral || 0} className="h-2 mt-1" />
+              <p className="text-xs text-muted-foreground mt-1">Média dos 5 indicadores</p>
             </CardContent>
           </Card>
         </div>
@@ -514,7 +509,7 @@ export default function DashboardEmpresa() {
           <Card>
             <CardHeader>
               <CardTitle>Radar de Indicadores</CardTitle>
-              <CardDescription>Média dos 6 indicadores da empresa</CardDescription>
+              <CardDescription>Média dos 5 indicadores da empresa</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -536,8 +531,8 @@ export default function DashboardEmpresa() {
         {porTurma.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Performance por Turma</CardTitle>
-              <CardDescription>Nota média e quantidade de alunos por turma</CardDescription>
+              <CardTitle>Engajamento Final por Turma</CardTitle>
+              <CardDescription>Engajamento Final médio e quantidade de alunos por turma</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -545,16 +540,16 @@ export default function DashboardEmpresa() {
                   <BarChart 
                     data={porTurma.map((t: any) => ({
                       nome: t.identificador,
-                      nota: t.mediaNotaFinal.toFixed(1),
+                      nota: ((t.mediaInd7 || t.mediaNotaFinal * 10) || 0).toFixed(1),
                       alunos: t.totalAlunos
                     }))} 
                     layout="vertical"
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" domain={[0, 10]} />
+                    <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
                     <YAxis dataKey="nome" type="category" width={120} />
                     <Tooltip />
-                    <Bar dataKey="nota" fill="#F5A623" name="Nota Média" isAnimationActive={false} />
+                    <Bar dataKey="nota" fill="#F5A623" name="Engajamento Final" isAnimationActive={false} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -614,54 +609,54 @@ export default function DashboardEmpresa() {
                     </DialogHeader>
                     <div className="space-y-4 text-sm">
                       <p className="text-muted-foreground">
-                        A Performance Geral de cada aluno é calculada com base em <strong>6 indicadores</strong>, cada um com peso igual:
+                        O Engajamento Final de cada aluno é calculado com base em <strong>5 indicadores</strong>, cada um com peso igual (o Ind. 6 é bônus):
                       </p>
                       <div className="space-y-3">
                         <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
                           <span className="font-bold text-blue-600">1.</span>
                           <div>
-                            <p className="font-medium">Participação nas Mentorias</p>
-                            <p className="text-xs text-muted-foreground">Presente/Ausente nas sessões</p>
+                            <p className="font-medium">Webinars / Eventos</p>
+                            <p className="text-xs text-muted-foreground">Presença em webinars e eventos coletivos</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
                           <span className="font-bold text-green-600">2.</span>
                           <div>
-                            <p className="font-medium">Atividades Práticas</p>
-                            <p className="text-xs text-muted-foreground">Entregue/Não entregue (excluindo Assessment)</p>
+                            <p className="font-medium">Avaliações</p>
+                            <p className="text-xs text-muted-foreground">Notas das avaliações por competência</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg">
                           <span className="font-bold text-yellow-600">3.</span>
                           <div>
-                            <p className="font-medium">Engajamento</p>
-                            <p className="text-xs text-muted-foreground">Média base 100: Presença (100/0) + Tarefa (100/0) + Nota Evolução (nota/10×100)</p>
+                            <p className="font-medium">Competências</p>
+                            <p className="text-xs text-muted-foreground">% de conteúdos concluídos por competência</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg">
                           <span className="font-bold text-purple-600">4.</span>
                           <div>
-                            <p className="font-medium">Performance de Competências</p>
-                            <p className="text-xs text-muted-foreground">% de conteúdos concluídos (aulas, filmes, livros, podcasts, vídeos) — somente ciclos finalizados</p>
+                            <p className="font-medium">Tarefas</p>
+                            <p className="text-xs text-muted-foreground">Entrega de atividades práticas (excluindo Assessment)</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
                           <span className="font-bold text-red-600">5.</span>
                           <div>
-                            <p className="font-medium">Performance de Aprendizado</p>
-                            <p className="text-xs text-muted-foreground">Nota obtida na avaliação de cada aula (filmes, vídeos, livros, podcasts, EAD) — somente ciclos finalizados</p>
+                            <p className="font-medium">Engajamento</p>
+                            <p className="text-xs text-muted-foreground">Média de presença, tarefas e nota de evolução (base 100)</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
                           <span className="font-bold text-orange-600">6.</span>
                           <div>
-                            <p className="font-medium">Participação em Eventos</p>
-                            <p className="text-xs text-muted-foreground">Presente/Ausente nos eventos e webinários</p>
+                            <p className="font-medium">Aplicabilidade (Bônus)</p>
+                            <p className="text-xs text-muted-foreground">Case de Sucesso (+10% no Engajamento) — não entra na média</p>
                           </div>
                         </div>
                       </div>
                       <div className="border-t pt-4">
-                        <p className="font-medium mb-2">Classificação por Estágio (Performance Geral %):</p>
+                        <p className="font-medium mb-2">Classificação por Estágio (Engajamento Final %):</p>
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-600"></span><span><strong>Excelência:</strong> 90-100%</span></div>
                           <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-600"></span><span><strong>Avançado:</strong> 70-89%</span></div>

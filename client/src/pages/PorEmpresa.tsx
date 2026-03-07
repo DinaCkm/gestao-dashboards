@@ -78,13 +78,13 @@ export default function PorEmpresa() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Nota Média Geral</CardTitle>
+                <CardTitle className="text-sm font-medium">Engajamento Final</CardTitle>
                 <Target className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{visaoGeral.visaoGeral.mediaNotaFinal.toFixed(1)}</div>
+                <div className="text-2xl font-bold">{(visaoGeral.visaoGeral.mediaInd7 || visaoGeral.visaoGeral.mediaPerformanceGeral || visaoGeral.visaoGeral.mediaNotaFinal * 10 || 0).toFixed(0)}%</div>
                 <p className="text-xs text-muted-foreground">
-                  De 0 a 10 pontos
+                  Média dos 5 indicadores
                 </p>
               </CardContent>
             </Card>
@@ -138,12 +138,12 @@ export default function PorEmpresa() {
                                 <span className="font-medium">{empresaData.totalAlunos}</span>
                               </div>
                               <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Nota Média:</span>
-                                <span className="font-medium">{empresaData.mediaNotaFinal.toFixed(1)}</span>
+                                <span className="text-muted-foreground">Engajamento:</span>
+                                <span className="font-medium">{(empresaData.mediaInd7 || empresaData.mediaPerformanceGeral || empresaData.mediaNotaFinal * 10 || 0).toFixed(0)}%</span>
                               </div>
                               <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Mentorias:</span>
-                                <span className="font-medium">{empresaData.mediaParticipacaoMentorias.toFixed(0)}%</span>
+                                <span className="text-muted-foreground">Webinars:</span>
+                                <span className="font-medium">{(empresaData.mediaInd1 || empresaData.mediaParticipacaoMentorias).toFixed(0)}%</span>
                               </div>
                             </div>
                           ) : (

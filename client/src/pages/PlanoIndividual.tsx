@@ -819,12 +819,12 @@ export default function PlanoIndividual() {
                                       <span>{ciclo.competencias?.length || 0} competência(s)</span>
                                       {status.label === "Finalizado" && (
                                         <span className="text-green-600 font-medium">
-                                          Entra no cálculo da Performance Geral
+                                          Entra no cálculo do Engajamento Final
                                         </span>
                                       )}
                                       {status.label === "Em Andamento" && (
                                         <span className="text-blue-600 font-medium">
-                                          Não entra na Performance Geral (ciclo em andamento)
+                                          Não entra no Engajamento Final (ciclo em andamento)
                                         </span>
                                       )}
                                       {status.label === "Futuro" && (
@@ -843,7 +843,7 @@ export default function PlanoIndividual() {
                           <div className="flex items-center gap-6 text-xs text-slate-500 pt-2 border-t">
                             <div className="flex items-center gap-1.5">
                               <div className="w-3 h-3 rounded-full bg-green-500" />
-                              <span>Finalizado (entra na Performance Geral)</span>
+                              <span>Finalizado (entra no Engajamento Final)</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <div className="w-3 h-3 rounded-full bg-blue-500" />
@@ -873,7 +873,7 @@ export default function PlanoIndividual() {
               </DialogTitle>
               <DialogDescription>
                 Defina o período e as competências que o aluno deve cumprir neste ciclo.
-                Após o período finalizar, as competências deste ciclo entrarão no cálculo da Performance Geral.
+                Após o período finalizar, as competências deste ciclo entrarão no cálculo do Engajamento Final.
               </DialogDescription>
             </DialogHeader>
 
@@ -1002,10 +1002,10 @@ export default function PlanoIndividual() {
                 <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <Award className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-800">Performance Geral</span>
+                    <span className="text-sm font-medium text-blue-800">Engajamento Final</span>
                   </div>
                   <p className="text-3xl font-bold text-blue-900">
-                    {performanceFiltrada.indicadores.notaFinal.toFixed(1)}%
+                    {(performanceFiltrada.indicadoresV2?.consolidado?.ind7_engajamentoFinal ?? performanceFiltrada.indicadores.notaFinal).toFixed(1)}%
                   </p>
                   <Badge className={`mt-2 ${
                     performanceFiltrada.indicadores.classificacao === 'Excelência' ? 'bg-green-500' :
@@ -1044,68 +1044,68 @@ export default function PlanoIndividual() {
                 <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="w-5 h-5 text-orange-600" />
-                    <span className="text-sm font-medium text-orange-800">Mentorias</span>
+                    <span className="text-sm font-medium text-orange-800">Webinars / Eventos</span>
                   </div>
                   <p className="text-3xl font-bold text-orange-900">
-                    {performanceFiltrada.indicadores.participacaoMentorias.toFixed(0)}%
+                    {(performanceFiltrada.indicadoresV2?.consolidado?.ind1_webinars ?? performanceFiltrada.indicadores.participacaoMentorias).toFixed(0)}%
                   </p>
                   <p className="text-sm text-orange-700 mt-1">
-                    {performanceFiltrada.indicadores.mentoriasPresente}/{performanceFiltrada.indicadores.totalMentorias} presenças
+                    Presença em eventos
                   </p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-semibold text-slate-700">7 Indicadores de Performance</h4>
+                <h4 className="font-semibold text-slate-700">Indicadores de Performance V2</h4>
                 <div className="space-y-3">
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">1. Participação nas Mentorias</span>
-                      <span className="text-sm font-medium">{performanceFiltrada.indicadores.participacaoMentorias.toFixed(0)}%</span>
+                      <span className="text-sm text-slate-600">1. Webinars / Eventos</span>
+                      <span className="text-sm font-medium">{(performanceFiltrada.indicadoresV2?.consolidado?.ind1_webinars ?? performanceFiltrada.indicadores.participacaoMentorias).toFixed(0)}%</span>
                     </div>
-                    <Progress value={performanceFiltrada.indicadores.participacaoMentorias} className="h-2" />
+                    <Progress value={performanceFiltrada.indicadoresV2?.consolidado?.ind1_webinars ?? performanceFiltrada.indicadores.participacaoMentorias} className="h-2" />
                   </div>
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">2. Atividades Práticas</span>
-                      <span className="text-sm font-medium">{performanceFiltrada.indicadores.atividadesPraticas.toFixed(0)}%</span>
+                      <span className="text-sm text-slate-600">2. Avaliações</span>
+                      <span className="text-sm font-medium">{(performanceFiltrada.indicadoresV2?.consolidado?.ind2_avaliacoes ?? performanceFiltrada.indicadores.atividadesPraticas).toFixed(0)}%</span>
                     </div>
-                    <Progress value={performanceFiltrada.indicadores.atividadesPraticas} className="h-2" />
+                    <Progress value={performanceFiltrada.indicadoresV2?.consolidado?.ind2_avaliacoes ?? performanceFiltrada.indicadores.atividadesPraticas} className="h-2" />
                   </div>
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">3. Engajamento (média base 100: presença + tarefa + nota evolução)</span>
-                      <span className="text-sm font-medium">{performanceFiltrada.indicadores.engajamento.toFixed(0)}%</span>
+                      <span className="text-sm text-slate-600">3. Competências</span>
+                      <span className="text-sm font-medium">{(performanceFiltrada.indicadoresV2?.consolidado?.ind3_competencias ?? performanceFiltrada.indicadores.engajamento).toFixed(0)}%</span>
                     </div>
-                    <Progress value={performanceFiltrada.indicadores.engajamento} className="h-2" />
+                    <Progress value={performanceFiltrada.indicadoresV2?.consolidado?.ind3_competencias ?? performanceFiltrada.indicadores.engajamento} className="h-2" />
                   </div>
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">4. Performance das Competências</span>
-                      <span className="text-sm font-medium">{performanceFiltrada.indicadores.performanceCompetencias.toFixed(0)}%</span>
+                      <span className="text-sm text-slate-600">4. Tarefas</span>
+                      <span className="text-sm font-medium">{(performanceFiltrada.indicadoresV2?.consolidado?.ind4_tarefas ?? performanceFiltrada.indicadores.performanceCompetencias).toFixed(0)}%</span>
                     </div>
-                    <Progress value={performanceFiltrada.indicadores.performanceCompetencias} className="h-2" />
+                    <Progress value={performanceFiltrada.indicadoresV2?.consolidado?.ind4_tarefas ?? performanceFiltrada.indicadores.performanceCompetencias} className="h-2" />
                   </div>
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">5. Performance de Aprendizado</span>
-                      <span className="text-sm font-medium">{(performanceFiltrada.indicadores as any).performanceAprendizado?.toFixed(0) ?? performanceFiltrada.indicadores.performanceCompetencias.toFixed(0)}%</span>
+                      <span className="text-sm text-slate-600">5. Engajamento</span>
+                      <span className="text-sm font-medium">{(performanceFiltrada.indicadoresV2?.consolidado?.ind5_engajamento ?? (performanceFiltrada.indicadores as any).performanceAprendizado ?? 0).toFixed(0)}%</span>
                     </div>
-                    <Progress value={(performanceFiltrada.indicadores as any).performanceAprendizado ?? performanceFiltrada.indicadores.performanceCompetencias} className="h-2" />
+                    <Progress value={performanceFiltrada.indicadoresV2?.consolidado?.ind5_engajamento ?? (performanceFiltrada.indicadores as any).performanceAprendizado ?? 0} className="h-2" />
                   </div>
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-slate-600">6. Participação em Eventos</span>
-                      <span className="text-sm font-medium">{performanceFiltrada.indicadores.participacaoEventos.toFixed(0)}%</span>
+                      <span className="text-sm text-slate-600">6. Aplicabilidade (Bônus)</span>
+                      <span className="text-sm font-medium">{(performanceFiltrada.indicadoresV2?.consolidado?.ind6_aplicabilidade ?? performanceFiltrada.indicadores.participacaoEventos).toFixed(0)}%</span>
                     </div>
-                    <Progress value={performanceFiltrada.indicadores.participacaoEventos} className="h-2" />
+                    <Progress value={performanceFiltrada.indicadoresV2?.consolidado?.ind6_aplicabilidade ?? performanceFiltrada.indicadores.participacaoEventos} className="h-2" />
                   </div>
                   <div className="pt-3 border-t">
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm font-semibold text-slate-800">7. Performance Geral (Média dos 6)</span>
-                      <span className="text-sm font-bold text-primary">{performanceFiltrada.indicadores.notaFinal.toFixed(1)}%</span>
+                      <span className="text-sm font-semibold text-slate-800">7. Engajamento Final (Média dos 5)</span>
+                      <span className="text-sm font-bold text-primary">{(performanceFiltrada.indicadoresV2?.consolidado?.ind7_engajamentoFinal ?? performanceFiltrada.indicadores.notaFinal).toFixed(1)}%</span>
                     </div>
-                    <Progress value={performanceFiltrada.indicadores.notaFinal} className="h-3" />
+                    <Progress value={performanceFiltrada.indicadoresV2?.consolidado?.ind7_engajamentoFinal ?? performanceFiltrada.indicadores.notaFinal} className="h-3" />
                   </div>
                 </div>
               </div>

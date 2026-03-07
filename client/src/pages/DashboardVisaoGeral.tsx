@@ -126,7 +126,7 @@ export default function DashboardVisaoGeral() {
   // Dados para o gráfico de barras por empresa
   const empresaData = porEmpresa.map(emp => ({
     nome: emp.identificador,
-    nota: parseFloat((emp.mediaNotaFinal || 0).toFixed(1)),
+    nota: parseFloat(((emp.mediaInd7 || emp.mediaPerformanceGeral || emp.mediaNotaFinal * 10) || 0).toFixed(1)),
     alunos: emp.totalAlunos
   }));
 
@@ -222,12 +222,12 @@ export default function DashboardVisaoGeral() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Performance Geral</CardTitle>
+              <CardTitle className="text-sm font-medium">Engajamento Final</CardTitle>
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoGeral.mediaPerformanceGeral || visaoGeral.mediaNotaFinal * 10 || 0).toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Média dos 6 indicadores</p>
+              <div className="text-2xl font-bold">{(visaoGeral.mediaInd7 || visaoGeral.mediaPerformanceGeral || visaoGeral.mediaNotaFinal * 10 || 0).toFixed(0)}%</div>
+              <p className="text-xs text-muted-foreground">Engajamento Final (Média dos 5 indicadores)</p>
             </CardContent>
           </Card>
 
@@ -264,30 +264,56 @@ export default function DashboardVisaoGeral() {
         <div>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
-            7 Indicadores de Performance
+            Indicadores de Performance V2
             <Badge variant="outline" className="ml-2">Clique no ℹ️ para ver a explicação</Badge>
           </h2>
           
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <IndicadorCard
               numero={1}
-              titulo="Mentorias"
-              valor={visaoGeral.mediaParticipacaoMentorias}
+              titulo="Webinars / Eventos"
+              valor={visaoGeral.mediaInd1 || visaoGeral.mediaParticipacaoMentorias}
               icone={<Calendar className="h-4 w-4" />}
               cor="#1E3A5F"
-              descricao="Participação nas sessões de mentoria"
+              descricao="Participação em webinars e eventos coletivos"
               regras={[
-                "Fórmula: (Sessões presentes / Total de sessões) × 100",
+                "Fórmula: (Eventos presentes / Total de eventos) × 100",
                 "Presente = 100%, Ausente = 0%",
                 "Média de todos os alunos"
               ]}
             />
             <IndicadorCard
               numero={2}
-              titulo="Atividades"
-              valor={visaoGeral.mediaAtividadesPraticas}
+              titulo="Avaliações"
+              valor={visaoGeral.mediaInd2 || visaoGeral.mediaAtividadesPraticas}
               icone={<BookOpen className="h-4 w-4" />}
               cor="#F5A623"
+              descricao="Notas das avaliações por competência"
+              regras={[
+                "Fórmula: Nota obtida na avaliação de cada aula",
+                "Somente ciclos finalizados entram no cálculo",
+                "Notas são convertidas para percentual (base 100)"
+              ]}
+            />
+            <IndicadorCard
+              numero={3}
+              titulo="Competências"
+              valor={visaoGeral.mediaInd3 || visaoGeral.mediaEngajamento}
+              icone={<Zap className="h-4 w-4" />}
+              cor="#2E7D32"
+              descricao="% de conteúdos concluídos por competência"
+              regras={[
+                "Fórmula: (Conteúdos concluídos / Total de conteúdos) × 100",
+                "Somente ciclos finalizados entram no cálculo",
+                "Competências não liberadas são ignoradas"
+              ]}
+            />
+            <IndicadorCard
+              numero={4}
+              titulo="Tarefas"
+              valor={visaoGeral.mediaInd4 || visaoGeral.mediaPerformanceCompetencias}
+              icone={<Award className="h-4 w-4" />}
+              cor="#7B1FA2"
               descricao="Entrega de atividades práticas"
               regras={[
                 "Fórmula: (Atividades entregues / Total de atividades) × 100",
@@ -296,74 +322,44 @@ export default function DashboardVisaoGeral() {
               ]}
             />
             <IndicadorCard
-              numero={3}
+              numero={5}
               titulo="Engajamento"
-              valor={visaoGeral.mediaEngajamento}
-              icone={<Zap className="h-4 w-4" />}
-              cor="#2E7D32"
+              valor={visaoGeral.mediaInd5 || visaoGeral.mediaPerformanceAprendizado || 0}
+              icone={<GraduationCap className="h-4 w-4" />}
+              cor="#D32F2F"
               descricao="Evolução e engajamento geral"
               regras={[
                 "Média de 3 componentes, todos convertidos para base 100:",
-                "1) Presença nas Mentorias (Ind.1): presente=100, ausente=0",
-                "2) Entrega de Tarefas (Ind.2): entregue=100, não entregue=0",
-                "3) Nota de Evolução da Mentora (0 a 10, convertida: nota/10 × 100)",
+                "1) Presença nas Mentorias: presente=100, ausente=0",
+                "2) Entrega de Tarefas: entregue=100, não entregue=0",
+                "3) Nota de Evolução da Mentora (0-10, convertida para base 100)",
                 "Fórmula: (Comp.1 + Comp.2 + Comp.3) / 3"
               ]}
             />
             <IndicadorCard
-              numero={4}
-              titulo="Competências"
-              valor={visaoGeral.mediaPerformanceCompetencias}
-              icone={<Award className="h-4 w-4" />}
-              cor="#7B1FA2"
-              descricao="% de conteúdos concluídos por competência"
-              regras={[
-                "Fórmula: (Conteúdos concluídos / Total de conteúdos) × 100",
-                "Conteúdos incluem: aulas, filmes, livros, podcasts e vídeos",
-                "Somente ciclos com período finalizado entram no cálculo",
-                "Ciclos em andamento são mostrados separadamente",
-                "Competências não liberadas são ignoradas"
-              ]}
-            />
-            <IndicadorCard
-              numero={5}
-              titulo="Aprendizado"
-              valor={visaoGeral.mediaPerformanceAprendizado || 0}
-              icone={<GraduationCap className="h-4 w-4" />}
-              cor="#D32F2F"
-              descricao="Notas das avaliações por aula/competência"
-              regras={[
-                "Fórmula: Nota obtida na avaliação de cada aula (filmes, vídeos, livros, podcasts, EAD)",
-                "Somente ciclos com período finalizado entram no cálculo",
-                "Ciclos em andamento são visualizados em separado",
-                "Notas são convertidas para percentual (base 100)",
-                "Competências sem nota não entram na média"
-              ]}
-            />
-            <IndicadorCard
               numero={6}
-              titulo="Eventos"
-              valor={visaoGeral.mediaParticipacaoEventos}
+              titulo="Aplicabilidade (Bônus)"
+              valor={visaoGeral.mediaInd6 || visaoGeral.mediaParticipacaoEventos}
               icone={<PartyPopper className="h-4 w-4" />}
               cor="#1976D2"
-              descricao="Presença em eventos coletivos"
+              descricao="Case de Sucesso (bônus de +10% no Engajamento)"
               regras={[
-                "Fórmula: (Eventos presentes / Total de eventos) × 100",
-                "Inclui webinários, encontros coletivos, aulas online",
-                "Presente = 100%, Não presente = 0%"
+                "Case entregue = +10% no indicador de Engajamento",
+                "Não entra na média dos 5 indicadores",
+                "É um bônus adicional"
               ]}
             />
-            {/* Indicador 7: Performance Geral (destaque) */}
+            {/* Indicador 7: Engajamento Final (destaque) */}
             <IndicadorCard
               numero={7}
-              titulo="Performance Geral"
-              valor={visaoGeral.mediaPerformanceGeral || 0}
+              titulo="Engajamento Final"
+              valor={visaoGeral.mediaInd7 || visaoGeral.mediaPerformanceGeral || 0}
               icone={<Target className="h-4 w-4" />}
               cor="#1565C0"
-              descricao="Média dos 6 indicadores acima"
+              descricao="Média dos 5 indicadores (exceto bônus)"
               regras={[
-                "Fórmula: (Ind.1 + Ind.2 + Ind.3 + Ind.4 + Ind.5 + Ind.6) / 6",
-                "Todos os indicadores têm peso igual",
+                "Fórmula: (Ind.1 + Ind.2 + Ind.3 + Ind.4 + Ind.5) / 5",
+                "Ind.6 (Aplicabilidade) é bônus, não entra na média",
                 "Resultado em percentual (0-100%)"
               ]}
             />
@@ -376,7 +372,7 @@ export default function DashboardVisaoGeral() {
         <Card>
           <CardHeader>
             <CardTitle>Performance por Empresa</CardTitle>
-            <CardDescription>Performance Geral média por empresa</CardDescription>
+            <CardDescription>Engajamento Final médio por empresa</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -388,10 +384,10 @@ export default function DashboardVisaoGeral() {
                   <Tooltip 
                     formatter={(value: number, name: string) => [
                       name === 'nota' ? `${value}%` : `${value} alunos`,
-                      name === 'nota' ? 'Performance Geral' : 'Total de Alunos'
+                      name === 'nota' ? 'Engajamento Final' : 'Total de Alunos'
                     ]}
                   />
-                  <Bar dataKey="nota" fill="#1E3A5F" name="Performance Geral" isAnimationActive={false} />
+                  <Bar dataKey="nota" fill="#1E3A5F" name="Engajamento Final" isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -453,7 +449,7 @@ export default function DashboardVisaoGeral() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-green-600">{(aluno.performanceGeral || aluno.notaFinal * 10).toFixed(0)}%</p>
+                        <p className="font-bold text-green-600">{(aluno.consolidado?.ind7_engajamentoFinal || aluno.performanceGeral || aluno.notaFinal * 10).toFixed(0)}%</p>
                         <p className="text-xs text-muted-foreground">{aluno.classificacao}</p>
                       </div>
                     </div>
@@ -484,7 +480,7 @@ export default function DashboardVisaoGeral() {
                         {aluno.turma && <p className="text-xs text-muted-foreground">Turma: {aluno.turma} {aluno.trilha ? `| ${aluno.trilha}` : ''}</p>}
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-orange-500">{(aluno.performanceGeral || aluno.notaFinal * 10).toFixed(0)}%</p>
+                        <p className="font-bold text-orange-500">{(aluno.consolidado?.ind7_engajamentoFinal || aluno.performanceGeral || aluno.notaFinal * 10).toFixed(0)}%</p>
                         <p className="text-xs text-muted-foreground">{aluno.classificacao}</p>
                       </div>
                     </div>
@@ -502,7 +498,7 @@ export default function DashboardVisaoGeral() {
               <Info className="h-5 w-5 text-muted-foreground" />
               Tabela de Classificação
             </CardTitle>
-            <CardDescription>Faixas de classificação da Performance Geral</CardDescription>
+            <CardDescription>Faixas de classificação do Engajamento Final</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-5 gap-3">

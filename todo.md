@@ -1802,3 +1802,10 @@
 - [x] Atualizar microTermino de 264 registros da turma BS2 conforme planilha
 - [x] Verificar consistência: ambos os cálculos agora retornam 74.4% (nota 7.44) para Joseane
 - [x] Garantir que a nota na visão da gestora (escala 0-10) corresponda ao mesmo cálculo
+## Migração V1 → V2: Unificar cálculo de performance em todas as telas (06/03/2026)
+- [x] Migrar DashboardVisaoGeral de V1 para V2 (média de 5 indicadores)
+- [x] Migrar DashboardEmpresa de V1 para V2 (média de 5 indicadores)
+- [x] Migrar PorEmpresa de V1 para V2 (média de 5 indicadores)
+- [x] Migrar PlanoIndividual de V1 para V2 (atualizar label "Média dos 6" → "Média dos 5")
+- [ ] Atualizar AdminDashboard para usar cálculo dinâmico V2 (remover hardcoded 81.8%)
+- [x] Escrever testes de consistência V1→V2 (7 testes passando)
