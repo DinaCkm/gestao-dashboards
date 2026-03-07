@@ -1,0 +1,73 @@
+{
+  "query": "SELECT sessionNumber, sessionDate, taskStatus, ciclo, isAssessment FROM mentoring_sessions WHERE alunoId = 30066 ORDER BY sessionNumber",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT sessionNumber, sessionDate, taskStatus, ciclo, isAssessment FROM mentoring_sessions WHERE alunoId = 30066 ORDER BY sessionNumber",
+  "rows": [
+    {
+      "sessionNumber": "1",
+      "sessionDate": "2025-04-28",
+      "taskStatus": "nao_entregue",
+      "ciclo": "IV",
+      "isAssessment": "1"
+    },
+    {
+      "sessionNumber": "2",
+      "sessionDate": "2025-05-29",
+      "taskStatus": "entregue",
+      "ciclo": "IV",
+      "isAssessment": "0"
+    },
+    {
+      "sessionNumber": "3",
+      "sessionDate": "2025-06-27",
+      "taskStatus": "entregue",
+      "ciclo": "IV",
+      "isAssessment": "0"
+    },
+    {
+      "sessionNumber": "4",
+      "sessionDate": "2025-07-25",
+      "taskStatus": "entregue",
+      "ciclo": "IV",
+      "isAssessment": "0"
+    },
+    {
+      "sessionNumber": "5",
+      "sessionDate": "2025-08-25",
+      "taskStatus": "entregue",
+      "ciclo": "IV",
+      "isAssessment": "0"
+    },
+    {
+      "sessionNumber": "6",
+      "sessionDate": "2025-09-25",
+      "taskStatus": "entregue",
+      "ciclo": "IV",
+      "isAssessment": "0"
+    },
+    {
+      "sessionNumber": "7",
+      "sessionDate": "2025-11-04",
+      "taskStatus": "entregue",
+      "ciclo": "IV",
+      "isAssessment": "0"
+    },
+    {
+      "sessionNumber": "8",
+      "sessionDate": "2025-12-10",
+      "taskStatus": "entregue",
+      "ciclo": "IV",
+      "isAssessment": "0"
+    },
+    {
+      "sessionNumber": "9",
+      "sessionDate": "2026-02-02",
+      "taskStatus": "nao_entregue",
+      "ciclo": "IV",
+      "isAssessment": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "sessionNumber\tsessionDate\ttaskStatus\tciclo\tisAssessment\n1\t2025-04-28\tnao_entregue\tIV\t1\n2\t2025-05-29\tentregue\tIV\t0\n3\t2025-06-27\tentregue\tIV\t0\n4\t2025-07-25\tentregue\tIV\t0\n5\t2025-08-25\tentregue\tIV\t0\n6\t2025-09-25\tentregue\tIV\t0\n7\t2025-11-04\tentregue\tIV\t0\n8\t2025-12-10\tentregue\tIV\t0\n9\t2026-02-02\tnao_entregue\tIV\t0\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}

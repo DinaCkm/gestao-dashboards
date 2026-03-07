@@ -1,0 +1,38 @@
+{
+  "query": "SELECT * FROM mentoring_sessions LIMIT 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT * FROM mentoring_sessions LIMIT 1",
+  "rows": [
+    {
+      "id": "30001",
+      "alunoId": "199",
+      "consultorId": "14",
+      "turmaId": "36",
+      "trilhaId": "NULL",
+      "ciclo": "I",
+      "sessionNumber": "1",
+      "sessionDate": "2024-08-15",
+      "presence": "presente",
+      "taskStatus": "entregue",
+      "engagementScore": "3",
+      "feedback": "Dados históricos - informações de mentoria não disponíveis",
+      "batchId": "NULL",
+      "createdAt": "2026-02-12 23:12:14",
+      "notaEvolucao": "3",
+      "mensagemAluno": "NULL",
+      "taskId": "NULL",
+      "taskDeadline": "NULL",
+      "relatoAluno": "NULL",
+      "isAssessment": "1",
+      "evidenceLink": "NULL",
+      "evidenceImageUrl": "NULL",
+      "evidenceImageKey": "NULL",
+      "submittedAt": "NULL",
+      "validatedBy": "NULL",
+      "validatedAt": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tconsultorId\tturmaId\ttrilhaId\tciclo\tsessionNumber\tsessionDate\tpresence\ttaskStatus\tengagementScore\tfeedback\tbatchId\tcreatedAt\tnotaEvolucao\tmensagemAluno\ttaskId\ttaskDeadline\trelatoAluno\tisAssessment\tevidenceLink\tevidenceImageUrl\tevidenceImageKey\tsubmittedAt\tvalidatedBy\tvalidatedAt\n30001\t199\t14\t36\tNULL\tI\t1\t2024-08-15\tpresente\tentregue\t3\tDados históricos - informações de mentoria não disponíveis\tNULL\t2026-02-12 23:12:14\t3\tNULL\tNULL\tNULL\tNULL\t1\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

@@ -618,7 +618,15 @@ function consolidarCiclos(ciclos: IndicadoresCiclo[], trilhaNome: string): Indic
   const algumCaseEntregue = ciclos.some(c => c.detalhes.case.entregue);
   const algumCaseObrigatorio = ciclos.some(c => c.detalhes.case.obrigatorio);
   
-  const ind7 = avg('ind7_engajamentoFinal');
+  // Ind. 1 e Ind. 4: calculados pelo MACROCICLO (totais somados, não média por microciclo)
+  const consolidadoInd1 = totalWebinars > 0 ? Math.round((totalPresentes / totalWebinars) * 100 * 100) / 100 : 0;
+  const consolidadoInd4 = totalTarefas > 0 ? Math.round((tarefasEntregues / totalTarefas) * 100 * 100) / 100 : 0;
+  const consolidadoInd2 = avg('ind2_avaliacoes');
+  const consolidadoInd3 = avg('ind3_competencias');
+  const consolidadoInd5 = avg('ind5_engajamento');
+  
+  // Ind. 7: recalcular com os valores consolidados corretos (macrociclo para ind1/ind4)
+  const ind7 = Math.round(((consolidadoInd1 + consolidadoInd2 + consolidadoInd3 + consolidadoInd4 + consolidadoInd5) / 5) * 100) / 100;
   
   return {
     cicloId: 0,
@@ -627,11 +635,11 @@ function consolidarCiclos(ciclos: IndicadoresCiclo[], trilhaNome: string): Indic
     status: ciclos.every(c => c.status === 'finalizado') ? 'finalizado' : 'em_andamento',
     dataInicio: ciclos[0]?.dataInicio || '',
     dataFim: ciclos[ciclos.length - 1]?.dataFim || '',
-    ind1_webinars: avg('ind1_webinars'),
-    ind2_avaliacoes: avg('ind2_avaliacoes'),
-    ind3_competencias: avg('ind3_competencias'),
-    ind4_tarefas: avg('ind4_tarefas'),
-    ind5_engajamento: avg('ind5_engajamento'),
+    ind1_webinars: consolidadoInd1,
+    ind2_avaliacoes: consolidadoInd2,
+    ind3_competencias: consolidadoInd3,
+    ind4_tarefas: consolidadoInd4,
+    ind5_engajamento: consolidadoInd5,
     ind6_aplicabilidade: avg('ind6_aplicabilidade'),
     ind7_engajamentoFinal: ind7,
     detalhes: {

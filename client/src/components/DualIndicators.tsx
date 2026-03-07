@@ -176,10 +176,15 @@ export default function DualIndicators({
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
-                      <p className="text-xs">
-                        <strong>Indicador de Engajamento</strong> mede a participação ativa do aluno no programa:
-                        presença em webinars, avaliações, competências, tarefas e notas de mentoria.
-                        A meta é atingir <strong>80%</strong> de engajamento.
+                      <p className="text-xs leading-relaxed">
+                        <strong>Indicador de Engajamento (meta: 80%)</strong><br />
+                        Média aritmética dos 5 indicadores:<br />
+                        • Ind. 1: Presença nos Webinars (total acumulado da trilha)<br />
+                        • Ind. 2: Média das notas nas Avaliações<br />
+                        • Ind. 3: Competências finalizadas<br />
+                        • Ind. 4: Tarefas práticas entregues (total acumulado da trilha, exclui assessment)<br />
+                        • Ind. 5: Nota de engajamento da mentora<br />
+                        Fórmula: (Ind.1 + Ind.2 + Ind.3 + Ind.4 + Ind.5) / 5
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -187,8 +192,8 @@ export default function DualIndicators({
                 <StatusBadge value={engajamento} target={80} />
                 {!compact && (
                   <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                    Mede a participação, estudo e atividade na plataforma.
-                    Média dos 5 indicadores de acompanhamento.
+                    Média dos 5 indicadores: Webinars, Avaliações, Competências, Tarefas e Nota da Mentora.
+                    Webinars e Tarefas são calculados pelo total acumulado de toda a trilha.
                   </p>
                 )}
                 {engajamentoDetalhes && !compact && (
@@ -246,10 +251,12 @@ export default function DualIndicators({
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
-                      <p className="text-xs">
-                        <strong>Indicador de Desenvolvimento</strong> mede o cumprimento dos desafios e metas
-                        atribuídos pelo mentor. Calcula a porcentagem de metas com status "cumprida"
-                        em relação ao total. A meta é atingir <strong>100%</strong> de conclusão.
+                      <p className="text-xs leading-relaxed">
+                        <strong>Indicador de Desenvolvimento (meta: 100%)</strong><br />
+                        Mede o cumprimento dos desafios e metas de desenvolvimento
+                        atribuídos pelo mentor para cada competência trabalhada.<br />
+                        O mentor lança metas específicas e acompanha se foram cumpridas.<br />
+                        Fórmula: (Metas cumpridas / Total de metas lançadas) × 100
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -257,8 +264,8 @@ export default function DualIndicators({
                 <StatusBadge value={desenvolvimento} target={100} />
                 {!compact && (
                   <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                    Mede o cumprimento dos desafios e metas de desenvolvimento
-                    atribuídos pelo mentor para cada competência.
+                    Metas de desenvolvimento lançadas pelo mentor para cada competência.
+                    O aluno deve cumprir todas as metas atribuídas para atingir 100%.
                   </p>
                 )}
                 {desenvolvimentoDetalhes && !compact && (

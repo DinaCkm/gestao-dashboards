@@ -1916,3 +1916,26 @@
 - [x] Funcionalidade de envio de link da tarefa na nuvem (Google Drive, OneDrive, etc.)
 - [x] Explicação de que a tarefa deve estar salva na nuvem e compartilhada com o email do mentor
 - [x] Integrar com o email do mentor para exibir na instrução de compartilhamento
+
+## Visualização de Tarefas na visão do Mentor (07/03/2026)
+- [ ] Adicionar aba/seção de tarefas por sessão na visão do mentor ao visualizar um aluno
+- [ ] Mostrar número da sessão, data, status de entrega (Entregue/Não Entregue) para cada aluno
+- [ ] Exibir link da tarefa enviado pelo aluno (quando disponível)
+- [ ] Resumo de entregas por aluno (X de Y atividades entregues)
+
+## Bug: Ind. 4 Tarefas mostra 50% mas deveria ser ~87,5% (07/03/2026)
+- [ ] Investigar discrepância no cálculo do Ind. 4: Tarefas da Joseane (7 de 8 entregues = 87,5%, mas mostra 50%)
+- [ ] Corrigir lógica de cálculo se necessário
+
+## Cálculo Ind. 1 e Ind. 4 por Macrociclo (07/03/2026)
+- [ ] Alterar Ind. 4 (Tarefas) para calcular pelo macrociclo em vez de microciclo
+- [ ] Alterar Ind. 1 (Webinars) para calcular pelo macrociclo em vez de microciclo
+- [x] Atualizar explicação/tooltip dos cards de Ind. 1 e Ind. 4 no frontend para refletir cálculo por macrociclo
+- [x] Testar que o cálculo da Joseane reflete corretamente as entregas pelo macrociclo
+
+## Correção Ind. 4: Ignorar sessões de assessment (07/03/2026)
+- [x] Alterar conversão de sessões para MentoringRecord: forçar sem_tarefa quando isAssessment=1
+
+## Explicação detalhada do cálculo nos cards (07/03/2026)
+- [x] Adicionar explicação clara de como cada indicador é calculado nos tooltips/cards do aluno (InfoTooltip.tsx + DualIndicators.tsx)
+- [x] Adicionar explicação clara de como cada indicador é calculado nos tooltips/cards do gestor (INDICADORES_INFO propagado automaticamente)

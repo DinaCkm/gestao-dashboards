@@ -1032,7 +1032,7 @@ export const appRouter = router({
                 sessao: session.sessionNumber || 0,
                 dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
                 presenca: session.presence as 'presente' | 'ausente',
-                atividadeEntregue: (session.taskStatus || 'sem_tarefa') as 'entregue' | 'nao_entregue' | 'sem_tarefa',
+                atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus || 'sem_tarefa') as 'entregue' | 'nao_entregue' | 'sem_tarefa'),
                 engajamento: session.engagementScore || undefined,
                 feedback: session.feedback || '',
               });
@@ -1495,8 +1495,8 @@ export const appRouter = router({
           empresa: program?.name || 'Desconhecida',
           turma: String(aluno.turmaId || ''),
           presenca: session.presence as 'presente' | 'ausente',
-          atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
-          engajamento: session.engagementScore || undefined
+atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa'),
+           engajamento: session.engagementScore || undefined
         });
       }
       
@@ -1620,7 +1620,7 @@ export const appRouter = router({
             turma: String(aluno.turmaId || ''),
             dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
             presenca: session.presence as 'presente' | 'ausente',
-            atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
+            atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa'),
             engajamento: session.engagementScore || undefined
           });
         }
@@ -1816,7 +1816,7 @@ export const appRouter = router({
             turma: String(aluno.turmaId || ''),
             dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
             presenca: session.presence as 'presente' | 'ausente',
-            atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
+            atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa'),
             engajamento: session.engagementScore || undefined
           });
         }
@@ -1935,7 +1935,7 @@ export const appRouter = router({
             turma: String(aluno.turmaId || ''),
             dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
             presenca: session.presence as 'presente' | 'ausente',
-            atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
+            atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa'),
             engajamento: session.engagementScore || undefined
           });
         }
@@ -2090,7 +2090,7 @@ export const appRouter = router({
             empresa: program?.name || 'Desconhecida',
             turma: String(sessionAluno.turmaId || ''),
             presenca: session.presence as 'presente' | 'ausente',
-            atividadeEntregue: (session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa',
+            atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa'),
             engajamento: session.engagementScore || undefined
           });
         }
@@ -2271,7 +2271,7 @@ export const appRouter = router({
           sessao: session.sessionNumber || 0,
           dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
           presenca: session.presence as 'presente' | 'ausente',
-          atividadeEntregue: (session.taskStatus || 'sem_tarefa') as 'entregue' | 'nao_entregue' | 'sem_tarefa',
+          atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus || 'sem_tarefa') as 'entregue' | 'nao_entregue' | 'sem_tarefa'),
           engajamento: session.engagementScore || undefined,
           feedback: session.feedback || '',
         });
