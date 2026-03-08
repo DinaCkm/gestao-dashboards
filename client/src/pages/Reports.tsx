@@ -33,6 +33,8 @@ export default function ReportsPage() {
 
   const isAdmin = user?.role === "admin";
   const isManager = user?.role === "manager" || isAdmin;
+  const isMentor = !!(user as any)?.consultorId; // Mentor = manager com consultorId
+  const isGestorEmpresa = user?.role === "manager" && !isMentor; // Gestor = manager sem consultorId
 
   // Fetch alunos list for individual report filter
   const { data: alunos } = trpc.alunos.list.useQuery(undefined, {
@@ -44,14 +46,25 @@ export default function ReportsPage() {
     enabled: isManager,
   });
 
-  // Filter alunos by manager's company
+  // Fetch mentor's own alunos if user is a mentor
+  const consultorId = (user as any)?.consultorId;
+  const { data: mentorAlunos } = trpc.alunos.byConsultor.useQuery(
+    { consultorId: consultorId! },
+    { enabled: !!consultorId && reportType === "individual" }
+  );
+
+  // Filter alunos by manager's company or mentor's linked alunos
   const filteredAlunos = useMemo(() => {
+    // Mentor: show only their linked alunos
+    if (isMentor && mentorAlunos) {
+      return mentorAlunos;
+    }
     if (!alunos) return [];
     if (user?.role === "manager" && user.programId) {
       return alunos.filter((a: any) => a.programId === user.programId);
     }
     return alunos;
-  }, [alunos, user]);
+  }, [alunos, mentorAlunos, user, isMentor]);
 
   // Fetch reports history - refetch every 5 seconds to catch status updates
   const { data: reports, refetch } = trpc.reports.list.useQuery({ limit: 20 }, {
@@ -164,7 +177,7 @@ export default function ReportsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="individual">Individual</SelectItem>
-                    {isManager && <SelectItem value="manager">Gerencial</SelectItem>}
+                    {isManager && !isMentor && <SelectItem value="manager">Gerencial</SelectItem>}
                     {isAdmin && <SelectItem value="admin">Administrativo</SelectItem>}
                   </SelectContent>
                 </Select>

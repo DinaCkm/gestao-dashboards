@@ -2039,6 +2039,6 @@
 - [x] Item 6: Jose da Silva não aparece na lista de mentorados da Adriana (consultorId=null) - CORRIGIDO: UPDATE consultorId=39
 - [ ] Item 7: Adicionar notificação in-app (sino/badge) além do email
 - [x] Item 8: Corrigir inconsistência de contagem de alunos da Adriana (5 vs 6 vs 7) - CORRIGIDO: getConsultorStats agora unifica alunos de sessões + consultorId
-- [ ] Item 11: Remover relatório gerencial (visão de todos os alunos) da área do mentor
+- [x] Item 11: Remover relatório gerencial (visão de todos os alunos) da área do mentor - CORRIGIDO: mentor só vê relatório Individual dos seus alunos, sem opção Gerencial
 - [ ] Item 12: Relatório de mentorias realizadas por período com valor de cada mentoria
 - [ ] Item 13: Campo de valor por sessão de mentoria no cadastro do mentor (admin)

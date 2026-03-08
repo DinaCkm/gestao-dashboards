@@ -97,7 +97,9 @@ const allMenuItems: MenuItemExtended[] = [
   // === RELATÓRIOS E GESTÃO ===
   { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["admin"] },
   { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], hideIfConsultorId: true },
-  { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin", "manager"] },
+  { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["admin"] },
+  { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], hideIfConsultorId: true },
+  { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorId: true },
   { icon: GraduationCap, label: "Turmas", path: "/turmas", roles: ["admin"] },
   { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias", roles: ["admin"] },
   { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["manager"], requireConsultorId: true },
