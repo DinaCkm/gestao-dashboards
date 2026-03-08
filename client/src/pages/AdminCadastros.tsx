@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,7 +54,18 @@ function getDisplayRole(user: any): string {
 export default function AdminCadastros() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState("acesso");
+  const searchString = useSearch();
+  const tabFromUrl = new URLSearchParams(searchString).get("tab");
+  const validTabs = ["acesso", "empresas", "mentores", "gerentes", "gerentes-empresa"];
+  const initialTab = tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : "acesso";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Sincronizar tab quando URL muda
+  useEffect(() => {
+    if (tabFromUrl && validTabs.includes(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
 
   // ALL hooks must be called before any early return (React rules of hooks)
   // Queries

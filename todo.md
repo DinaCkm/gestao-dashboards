@@ -2070,3 +2070,13 @@
 - [x] Bug na rota de relatórios (exportação Excel): argumentos passados na ordem errada para calcularIndicadoresTodosAlunos (competenciasPorAlunoReport no lugar de compIdToCodigoMap, e compIdToCodigoMapReport no lugar de casesData)
 - [x] Verificar que todas as 7 chamadas de calcularIndicadoresTodosAlunos usam a mesma assinatura correta (mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData)
 - [x] Confirmar que calcularIndicadoresAlunoV2 (individual) e calcularIndicadoresTodosAlunos (batch) produzem resultados idênticos para a mesma entrada
+
+## Reorganização da Área Administrativa (16 itens → 7 áreas) (08/03/2026)
+- [x] Reestruturar menu lateral (sidebar) com 7 áreas e submenus colapsáveis
+- [x] Área Mentores: unificar cadastro + dashboard + sessões + financeiro
+- [x] Área Alunos: unificar cadastro + assessment + metas + atividades
+- [x] Área Empresas e Resultados: unificar Visão Geral + Por Empresa
+- [x] Área Parametrização: turmas + trilhas + fórmulas + empresas + acesso + biblioteca tarefas
+- [x] Área Conteúdo e Comunicação: webinars + avisos + placeholders cursos/atividades extras
+- [ ] Simplificar Upload: remover cards mentorias/eventos/desempenho, manter só performance
+- [x] Testar navegação completa e consistência (TypeScript OK, LSP OK, menu renderiza corretamente)
