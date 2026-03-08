@@ -2818,6 +2818,25 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           taskDeadline: input.taskDeadline ?? null,
         });
 
+        // Notificar o aluno sobre a nova sessão registrada (Item 7)
+        try {
+          const allUsers = await db.getAllUsers();
+          const alunoUser = allUsers.find((u: any) => u.alunoId === input.alunoId);
+          if (alunoUser) {
+            const hasTask = input.taskId || input.taskDeadline;
+            await db.createNotification({
+              userId: alunoUser.id,
+              title: `Sessão de Mentoria #${nextSessionNumber} Registrada`,
+              message: hasTask 
+                ? `Sua mentora registrou a sessão #${nextSessionNumber}. Você tem uma nova tarefa para realizar!`
+                : `Sua mentora registrou a sessão #${nextSessionNumber}. Confira o feedback no seu portal.`,
+              type: hasTask ? 'action' : 'info',
+              category: 'mentoria',
+              link: '/meu-dashboard',
+            });
+          }
+        } catch (e) { /* notificação não deve bloquear registro */ }
+
         return { success: true, sessionId, sessionNumber: nextSessionNumber };
       }),
 
@@ -3753,6 +3772,28 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         }
         
         const pdiId = await db.createAssessmentPdi(pdiData, competencias);
+        
+        // Notificar o aluno que o assessment foi criado (Item 7)
+        try {
+          // Buscar o userId do aluno pelo alunoId
+          const alunoInfo = await db.getAlunoById(input.alunoId);
+          if (alunoInfo) {
+            // Buscar user vinculado ao aluno
+            const allUsers = await db.getAllUsers();
+            const alunoUser = allUsers.find((u: any) => u.alunoId === input.alunoId);
+            if (alunoUser) {
+              await db.createNotification({
+                userId: alunoUser.id,
+                title: 'Assessment PDI Criado',
+                message: `Sua mentora criou um novo Assessment PDI para você. Seu portal completo já está disponível!`,
+                type: 'success',
+                category: 'assessment',
+                link: '/meu-dashboard',
+              });
+            }
+          }
+        } catch (e) { /* notificação não deve bloquear criação */ }
+        
         return { success: true, pdiId };
       }),
 
@@ -5211,6 +5252,57 @@ Responda APENAS em JSON com o formato:
           contratoTermino,
           cicloAtual,
         };
+      }),
+  }),
+
+  // ============ IN-APP NOTIFICATIONS ============
+  notifications: router({
+    // Listar notificações do usuário logado
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        return await db.getNotificationsByUser(ctx.user.id, input?.limit || 50);
+      }),
+
+    // Contar notificações não lidas
+    unreadCount: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUnreadNotificationCount(ctx.user.id);
+    }),
+
+    // Marcar uma notificação como lida
+    markRead: protectedProcedure
+      .input(z.object({ notificationId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.markNotificationRead(input.notificationId, ctx.user.id);
+        return { success: true };
+      }),
+
+    // Marcar todas como lidas
+    markAllRead: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.markAllNotificationsRead(ctx.user.id);
+      return { success: true };
+    }),
+
+    // Criar notificação (admin only - para testes e envio manual)
+    create: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        title: z.string().min(1),
+        message: z.string().min(1),
+        type: z.enum(["info", "warning", "success", "action"]).optional(),
+        category: z.string().optional(),
+        link: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createNotification({
+          userId: input.userId,
+          title: input.title,
+          message: input.message,
+          type: input.type || "info",
+          category: input.category || "sistema",
+          link: input.link,
+        });
+        return { id, success: true };
       }),
   }),
 });

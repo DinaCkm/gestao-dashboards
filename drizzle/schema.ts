@@ -858,3 +858,23 @@ export const mentoraContribuicoes = mysqlTable("mentora_contribuicoes", {
 
 export type MentoraContribuicao = typeof mentoraContribuicoes.$inferSelect;
 export type InsertMentoraContribuicao = typeof mentoraContribuicoes.$inferInsert;
+
+
+/**
+ * In-App Notifications - Notificações internas do sistema (sino/badge)
+ * Cada notificação é direcionada a um usuário específico
+ */
+export const inAppNotifications = mysqlTable("in_app_notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // FK para users
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: mysqlEnum("type", ["info", "warning", "success", "action"]).default("info").notNull(),
+  category: varchar("category", { length: 100 }), // Ex: "assessment", "mentoria", "evento", "sistema"
+  link: varchar("link", { length: 512 }), // Link para navegar ao clicar
+  isRead: int("isRead").default(0).notNull(), // 0 = não lida, 1 = lida
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type InAppNotification = typeof inAppNotifications.$inferSelect;
+export type InsertInAppNotification = typeof inAppNotifications.$inferInsert;

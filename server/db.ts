@@ -36,7 +36,8 @@ import {
   discRespostas, InsertDiscResposta, DiscResposta,
   discResultados, InsertDiscResultado, DiscResultado,
   autopercepcoesCompetencias, InsertAutopercepcaoCompetencia, AutopercepcaoCompetencia,
-  mentoraContribuicoes, InsertMentoraContribuicao, MentoraContribuicao
+  mentoraContribuicoes, InsertMentoraContribuicao, MentoraContribuicao,
+  inAppNotifications, InsertInAppNotification, InAppNotification
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -6279,3 +6280,63 @@ export async function getAllDiscResultados(alunoId: number) {
     .orderBy(discResultados.createdAt);
 }
 
+
+
+// ============ IN-APP NOTIFICATIONS FUNCTIONS ============
+
+export async function createNotification(notification: InsertInAppNotification) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(inAppNotifications).values(notification);
+  return result[0].insertId;
+}
+
+export async function createNotifications(notifications: InsertInAppNotification[]) {
+  const db = await getDb();
+  if (!db) return;
+  if (notifications.length === 0) return;
+  await db.insert(inAppNotifications).values(notifications);
+}
+
+export async function getNotificationsByUser(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(inAppNotifications)
+    .where(eq(inAppNotifications.userId, userId))
+    .orderBy(desc(inAppNotifications.createdAt))
+    .limit(limit);
+}
+
+export async function getUnreadNotificationCount(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select({ count: sql<number>`COUNT(*)` })
+    .from(inAppNotifications)
+    .where(and(
+      eq(inAppNotifications.userId, userId),
+      eq(inAppNotifications.isRead, 0)
+    ));
+  return result[0]?.count || 0;
+}
+
+export async function markNotificationRead(notificationId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(inAppNotifications)
+    .set({ isRead: 1 })
+    .where(and(
+      eq(inAppNotifications.id, notificationId),
+      eq(inAppNotifications.userId, userId)
+    ));
+}
+
+export async function markAllNotificationsRead(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(inAppNotifications)
+    .set({ isRead: 1 })
+    .where(and(
+      eq(inAppNotifications.userId, userId),
+      eq(inAppNotifications.isRead, 0)
+    ));
+}

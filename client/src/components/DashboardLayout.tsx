@@ -55,6 +55,7 @@ import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import CustomLogin from "./CustomLogin";
 import RoleSwitcher from "@/components/RoleSwitcher";
+import NotificationBell from "@/components/NotificationBell";
 
 type MenuItem = {
   icon: React.ElementType;
@@ -313,7 +314,10 @@ function DashboardLayoutContent({
 
           <SidebarFooter className="p-3 border-t border-sidebar-border">
             <div className="mb-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
-              <RoleSwitcher />
+              <div className="flex items-center gap-2 justify-between">
+                <RoleSwitcher />
+                <NotificationBell />
+              </div>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -390,7 +394,10 @@ function DashboardLayoutContent({
                 </div>
               </div>
             </div>
-            <RoleSwitcher />
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <RoleSwitcher />
+            </div>
           </div>
         )}
         <main className="flex-1 p-4 md:p-6">{children}</main>

@@ -260,6 +260,13 @@
       "when": 1772989996112,
       "tag": "0036_complete_adam_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1772993395979,
+      "tag": "0037_quick_natasha_romanoff",
+      "breakpoints": true
     }
   ]
 }

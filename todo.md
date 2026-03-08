@@ -2037,7 +2037,7 @@
 - [x] Item 3: Investigar Jackeline com 0% na visão gerencial - INVESTIGADO: mediaAvaliacoesFinais=0 para todas competencias vem da planilha de performance (dados originais). Não é bug de código. Confirmar com usuário qual aluna específica.
 - [x] Item 4: Incluir filtro de relatório por período - IMPLEMENTADO: campos De/Até no frontend + filtro de sessões e eventos no backend
 - [x] Item 6: Jose da Silva não aparece na lista de mentorados da Adriana (consultorId=null) - CORRIGIDO: UPDATE consultorId=39
-- [ ] Item 7: Adicionar notificação in-app (sino/badge) além do email
+- [x] Item 7: Adicionar notificação in-app (sino/badge) além do email - IMPLEMENTADO: tabela in_app_notifications, componente NotificationBell com badge, notificações automáticas em assessment e mentoria
 - [x] Item 8: Corrigir inconsistência de contagem de alunos da Adriana (5 vs 6 vs 7) - CORRIGIDO: getConsultorStats agora unifica alunos de sessões + consultorId
 - [x] Item 11: Remover relatório gerencial (visão de todos os alunos) da área do mentor - CORRIGIDO: mentor só vê relatório Individual dos seus alunos, sem opção Gerencial
 - [ ] Item 12: Relatório de mentorias realizadas por período com valor de cada mentoria
