@@ -194,6 +194,7 @@ const otherMenuItems: MenuItemExtended[] = [
   
   // === ALUNO ===
   { icon: Compass, label: "Portal do Aluno", path: "/meu-dashboard", roles: ["user"] },
+  { icon: GraduationCap, label: "Cursos Disponíveis", path: "/meus-cursos", roles: ["user"] },
   { icon: PlayCircle, label: "Tutoriais", path: "/tutoriais", roles: ["user"] },
 ];
 

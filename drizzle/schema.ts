@@ -880,3 +880,30 @@ export const inAppNotifications = mysqlTable("in_app_notifications", {
 
 export type InAppNotification = typeof inAppNotifications.$inferSelect;
 export type InsertInAppNotification = typeof inAppNotifications.$inferInsert;
+
+/**
+ * Courses - Cursos disponíveis para os alunos
+ * Fase 1: Cursos gratuitos com link para YouTube/externos
+ * Preparado para futuro: cursos pagos online e presenciais
+ */
+export const courses = mysqlTable("courses", {
+  id: int("id").autoincrement().primaryKey(),
+  titulo: varchar("titulo", { length: 500 }).notNull(),
+  descricao: text("descricao"),
+  categoria: varchar("categoria", { length: 255 }), // Ex: Liderança, Comunicação, Gestão, etc.
+  competenciaRelacionada: varchar("competenciaRelacionada", { length: 255 }), // Competência vinculada (opcional)
+  tipo: mysqlEnum("tipo", ["gratuito", "online_pago", "presencial"]).default("gratuito").notNull(),
+  youtubeUrl: varchar("youtubeUrl", { length: 500 }), // Link do YouTube (para cursos gratuitos)
+  thumbnailUrl: text("thumbnailUrl"), // URL da thumbnail (auto-extraída do YouTube ou upload)
+  duracao: varchar("duracao", { length: 100 }), // Ex: "2h30", "45min", "8 aulas"
+  instrutor: varchar("instrutor", { length: 255 }), // Nome do instrutor/canal
+  nivel: mysqlEnum("nivel", ["iniciante", "intermediario", "avancado"]).default("iniciante"),
+  programId: int("programId"), // Empresa específica ou null para todos
+  isActive: int("isActive").default(1).notNull(),
+  ordem: int("ordem").default(0).notNull(), // Para ordenação manual
+  createdBy: int("createdBy").notNull(), // FK para users (admin que criou)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Course = typeof courses.$inferSelect;
+export type InsertCourse = typeof courses.$inferInsert;

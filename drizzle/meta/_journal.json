@@ -281,6 +281,13 @@
       "when": 1772997885040,
       "tag": "0039_slimy_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1773012942450,
+      "tag": "0040_yellow_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }

@@ -43,6 +43,8 @@ import MetasDesenvolvimento from "./pages/MetasDesenvolvimento";
 import MinhasMetasAluno from "./pages/MinhasMetasAluno";
 import MetasGestor from "./pages/MetasGestor";
 import BibliotecaTarefas from "./pages/BibliotecaTarefas";
+import CursosDisponiveis from "./pages/admin/CursosDisponiveis";
+import CursosAluno from "./pages/aluno/CursosAluno";
 
 function Router() {
   return (
@@ -83,6 +85,8 @@ function Router() {
       <Route path={"/minhas-metas"} component={MinhasMetasAluno} />
       <Route path={"/metas-gestor"} component={MetasGestor} />
       <Route path={"/biblioteca-tarefas"} component={BibliotecaTarefas} />
+      <Route path={"/cursos"} component={CursosDisponiveis} />
+      <Route path={"/meus-cursos"} component={CursosAluno} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

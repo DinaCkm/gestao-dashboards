@@ -5441,6 +5441,118 @@ Responda APENAS em JSON com o formato especificado.`
         }
       }),
   }),
+
+  // ============ CURSOS DISPONÍVEIS ============
+  courses: router({
+    // Lista todos os cursos (admin)
+    list: adminProcedure.query(async () => {
+      return await db.getAllCourses();
+    }),
+
+    // Lista cursos ativos (para alunos)
+    listActive: protectedProcedure.query(async () => {
+      return await db.getActiveCourses();
+    }),
+
+    // Buscar curso por ID
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const course = await db.getCourseById(input.id);
+        if (!course) throw new TRPCError({ code: 'NOT_FOUND', message: 'Curso não encontrado' });
+        return course;
+      }),
+
+    // Criar curso
+    create: adminProcedure
+      .input(z.object({
+        titulo: z.string().min(1, 'Título é obrigatório'),
+        descricao: z.string().nullable().optional(),
+        categoria: z.string().nullable().optional(),
+        competenciaRelacionada: z.string().nullable().optional(),
+        tipo: z.enum(['gratuito', 'online_pago', 'presencial']).default('gratuito'),
+        youtubeUrl: z.string().nullable().optional(),
+        thumbnailUrl: z.string().nullable().optional(),
+        duracao: z.string().nullable().optional(),
+        instrutor: z.string().nullable().optional(),
+        nivel: z.enum(['iniciante', 'intermediario', 'avancado']).default('iniciante'),
+        programId: z.number().nullable().optional(),
+        ordem: z.number().default(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createCourse({
+          titulo: input.titulo,
+          descricao: input.descricao ?? null,
+          categoria: input.categoria ?? null,
+          competenciaRelacionada: input.competenciaRelacionada ?? null,
+          tipo: input.tipo,
+          youtubeUrl: input.youtubeUrl ?? null,
+          thumbnailUrl: input.thumbnailUrl ?? null,
+          duracao: input.duracao ?? null,
+          instrutor: input.instrutor ?? null,
+          nivel: input.nivel,
+          programId: input.programId ?? null,
+          ordem: input.ordem,
+          createdBy: ctx.user.id,
+        });
+        return { id, success: true };
+      }),
+
+    // Atualizar curso
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        titulo: z.string().min(1, 'Título é obrigatório'),
+        descricao: z.string().nullable().optional(),
+        categoria: z.string().nullable().optional(),
+        competenciaRelacionada: z.string().nullable().optional(),
+        tipo: z.enum(['gratuito', 'online_pago', 'presencial']).default('gratuito'),
+        youtubeUrl: z.string().nullable().optional(),
+        thumbnailUrl: z.string().nullable().optional(),
+        duracao: z.string().nullable().optional(),
+        instrutor: z.string().nullable().optional(),
+        nivel: z.enum(['iniciante', 'intermediario', 'avancado']).default('iniciante'),
+        programId: z.number().nullable().optional(),
+        ordem: z.number().default(0),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateCourse(id, {
+          titulo: data.titulo,
+          descricao: data.descricao ?? null,
+          categoria: data.categoria ?? null,
+          competenciaRelacionada: data.competenciaRelacionada ?? null,
+          tipo: data.tipo,
+          youtubeUrl: data.youtubeUrl ?? null,
+          thumbnailUrl: data.thumbnailUrl ?? null,
+          duracao: data.duracao ?? null,
+          instrutor: data.instrutor ?? null,
+          nivel: data.nivel,
+          programId: data.programId ?? null,
+          ordem: data.ordem,
+        });
+        return { success: true };
+      }),
+
+    // Ativar/desativar curso
+    toggleActive: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        isActive: z.number().min(0).max(1),
+      }))
+      .mutation(async ({ input }) => {
+        await db.toggleCourseActive(input.id, input.isActive);
+        return { success: true };
+      }),
+
+    // Deletar curso
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteCourse(input.id);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

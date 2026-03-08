@@ -37,7 +37,8 @@ import {
   discResultados, InsertDiscResultado, DiscResultado,
   autopercepcoesCompetencias, InsertAutopercepcaoCompetencia, AutopercepcaoCompetencia,
   mentoraContribuicoes, InsertMentoraContribuicao, MentoraContribuicao,
-  inAppNotifications, InsertInAppNotification, InAppNotification
+  inAppNotifications, InsertInAppNotification, InAppNotification,
+  courses, InsertCourse, Course
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -6505,4 +6506,49 @@ export async function getAllCompetenciasPorAluno(): Promise<Map<string, { compet
   }
   
   return map;
+}
+
+// ============ COURSES FUNCTIONS ============
+export async function getAllCourses(): Promise<Course[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(courses).orderBy(courses.ordem, courses.titulo);
+}
+
+export async function getActiveCourses(): Promise<Course[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(courses).where(eq(courses.isActive, 1)).orderBy(courses.ordem, courses.titulo);
+}
+
+export async function getCourseById(id: number): Promise<Course | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(courses).where(eq(courses.id, id));
+  return result[0];
+}
+
+export async function createCourse(data: InsertCourse): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const result = await db.insert(courses).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateCourse(id: number, data: Partial<InsertCourse>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(courses).set(data).where(eq(courses.id, id));
+}
+
+export async function toggleCourseActive(id: number, isActive: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(courses).set({ isActive }).where(eq(courses.id, id));
+}
+
+export async function deleteCourse(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.delete(courses).where(eq(courses.id, id));
 }

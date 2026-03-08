@@ -1,0 +1,20 @@
+CREATE TABLE `courses` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`titulo` varchar(500) NOT NULL,
+	`descricao` text,
+	`categoria` varchar(255),
+	`competenciaRelacionada` varchar(255),
+	`tipo` enum('gratuito','online_pago','presencial') NOT NULL DEFAULT 'gratuito',
+	`youtubeUrl` varchar(500),
+	`thumbnailUrl` text,
+	`duracao` varchar(100),
+	`instrutor` varchar(255),
+	`nivel` enum('iniciante','intermediario','avancado') DEFAULT 'iniciante',
+	`programId` int,
+	`isActive` int NOT NULL DEFAULT 1,
+	`ordem` int NOT NULL DEFAULT 0,
+	`createdBy` int NOT NULL,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `courses_id` PRIMARY KEY(`id`)
+);

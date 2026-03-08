@@ -2089,3 +2089,14 @@
 - [x] Adicionar botão 'Criar com IA' no frontend da Biblioteca de Tarefas com geração automática e edição
 - [x] Mudar campo Competência para select com competências das trilhas (não texto livre)
 - [x] Implementar leque de tarefas por competência no fluxo do mentor (RegistroMentoria: accordion por competência; MetasDesenvolvimento: já filtra por competência selecionada)
+- [ ] Bug: Ao criar nova tarefa na Biblioteca, a tarefa anterior da mesma competência é apagada/substituída em vez de ser adicionada
+
+## Cursos Gratuitos (YouTube/Externos)
+- [x] Criar tabela courses no schema.ts (tipo gratuito, título, descrição, thumbnail, link YouTube, categoria, competência)
+- [x] Migrar banco de dados com pnpm db:push
+- [x] Criar helpers no db.ts para CRUD de cursos
+- [x] Criar endpoints tRPC para cursos (list, create, update, toggleActive)
+- [x] Criar interface admin para gerenciar cursos (listar, criar, editar, ativar/desativar)
+- [x] Criar catálogo de cursos no portal do aluno (cards com thumbnail, título, link YouTube)
+- [x] Adicionar rotas e menus (admin: Conteúdo e Comunicação > Cursos; aluno: Cursos Disponíveis)
+- [x] Escrever testes vitest para os endpoints de cursos (13 testes passando)
