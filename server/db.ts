@@ -771,6 +771,31 @@ export async function getTaskLibraryById(id: number): Promise<TaskLibrary | unde
   return result[0];
 }
 
+export async function getAllTaskLibraryIncludingInactive(): Promise<TaskLibrary[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(taskLibrary).orderBy(taskLibrary.competencia, taskLibrary.nome);
+}
+
+export async function createTaskLibraryItem(data: InsertTaskLibrary): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const result = await db.insert(taskLibrary).values(data);
+  return Number(result[0].insertId);
+}
+
+export async function updateTaskLibraryItem(id: number, data: Partial<InsertTaskLibrary>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(taskLibrary).set(data).where(eq(taskLibrary.id, id));
+}
+
+export async function toggleTaskLibraryActive(id: number, isActive: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(taskLibrary).set({ isActive }).where(eq(taskLibrary.id, id));
+}
+
 export async function getAllMentoringSessions(): Promise<MentoringSession[]> {
   const db = await getDb();
   if (!db) return [];

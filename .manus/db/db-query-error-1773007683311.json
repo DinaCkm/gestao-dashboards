@@ -1,0 +1,12 @@
+{
+  "query": "\nSELECT COUNT(*) as total FROM alunos;\nSELECT COUNT(DISTINCT externalId) as alunos_unicos FROM alunos;\nSELECT programaId, COUNT(*) as qtd FROM alunos GROUP BY programaId;\nSELECT ativo, COUNT(*) as qtd FROM alunos GROUP BY ativo;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT COUNT(*) as total FROM alunos;\nSELECT COUNT(DISTINCT externalId) as alunos_unicos FROM alunos;\nSELECT programaId, COUNT(*) as qtd FROM alunos GROUP BY programaId;\nSELECT ativo, COUNT(*) as qtd FROM alunos GROUP BY ativo;\n",
+  "returncode": 1,
+  "logs": [
+    "total",
+    "211",
+    "alunos_unicos",
+    "206",
+    "ERROR 1054 (42S22) at line 4: Unknown column 'programaid' in 'group statement'"
+  ]
+}

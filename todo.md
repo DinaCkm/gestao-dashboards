@@ -2081,3 +2081,7 @@
 - [ ] Simplificar Upload: remover cards mentorias/eventos/desempenho, manter só performance
 - [x] Testar navegação completa e consistência (TypeScript OK, LSP OK, menu renderiza corretamente)
 - [x] Adicionar "Atividades Práticas" ao menu do mentor (ele atribui tarefas nas sessões de mentoria)
+- [x] Limpar alunos de teste do banco de dados (60 registros com email @test.com removidos, total de 211 → 135 alunos reais)
+- [x] Criar procedimentos tRPC para CRUD da Biblioteca de Tarefas (listar, criar, editar, ativar/desativar)
+- [x] Criar página BibliotecaTarefas.tsx com visualização por competência e tarefa
+- [x] Registrar rota /biblioteca-tarefas no App.tsx e remover placeholder do menu

@@ -5317,6 +5317,71 @@ Responda APENAS em JSON com o formato:
         return { id, success: true };
       }),
   }),
+
+  // ============ BIBLIOTECA DE TAREFAS ============
+  taskLibrary: router({
+    list: adminProcedure.query(async () => {
+      return await db.getAllTaskLibraryIncludingInactive();
+    }),
+
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const item = await db.getTaskLibraryById(input.id);
+        if (!item) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tarefa não encontrada' });
+        return item;
+      }),
+
+    create: adminProcedure
+      .input(z.object({
+        competencia: z.string().min(1, 'Competência é obrigatória'),
+        nome: z.string().min(1, 'Nome é obrigatório'),
+        resumo: z.string().nullable().optional(),
+        oQueFazer: z.string().nullable().optional(),
+        oQueGanha: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createTaskLibraryItem({
+          competencia: input.competencia,
+          nome: input.nome,
+          resumo: input.resumo ?? null,
+          oQueFazer: input.oQueFazer ?? null,
+          oQueGanha: input.oQueGanha ?? null,
+        });
+        return { id, success: true };
+      }),
+
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        competencia: z.string().min(1, 'Competência é obrigatória'),
+        nome: z.string().min(1, 'Nome é obrigatório'),
+        resumo: z.string().nullable().optional(),
+        oQueFazer: z.string().nullable().optional(),
+        oQueGanha: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateTaskLibraryItem(id, {
+          competencia: data.competencia,
+          nome: data.nome,
+          resumo: data.resumo ?? null,
+          oQueFazer: data.oQueFazer ?? null,
+          oQueGanha: data.oQueGanha ?? null,
+        });
+        return { success: true };
+      }),
+
+    toggleActive: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        isActive: z.number().min(0).max(1),
+      }))
+      .mutation(async ({ input }) => {
+        await db.toggleTaskLibraryActive(input.id, input.isActive);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
