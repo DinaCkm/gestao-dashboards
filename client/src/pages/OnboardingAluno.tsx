@@ -269,7 +269,7 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
     return mentoresData.map((c: any) => ({
       id: c.id,
       nome: c.name,
-      foto: undefined,
+      foto: c.photoUrl || undefined,
       especialidade: c.especialidade || "Mentoria e Desenvolvimento",
       miniCurriculo: c.especialidade ? `Especialista em ${c.especialidade}` : "Mentora do programa B.E.M.",
       areasAtuacao: c.especialidade ? c.especialidade.split(",").map((a: string) => a.trim()) : ["Mentoria"],
@@ -296,11 +296,19 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
           >
             <CardContent className="p-0">
               <div className="relative h-52 overflow-hidden">
-                <img
-                  src={mentora.foto}
-                  alt={mentora.nome}
-                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                />
+                {mentora.foto ? (
+                  <img
+                    src={mentora.foto}
+                    alt={mentora.nome}
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-[#0A1E3E] to-[#1a3a6e] flex items-center justify-center">
+                    <span className="text-4xl font-bold text-white/80">
+                      {mentora.nome.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                    </span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-3 left-3 right-3">
                   <h3 className="text-white font-bold text-lg">{mentora.nome}</h3>

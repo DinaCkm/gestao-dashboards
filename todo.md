@@ -1982,3 +1982,6 @@
 
 ## Bug: Onboarding perde estado ao atualizar página (08/03/2026)
 - [x] Corrigir persistência do estado do Onboarding - ao atualizar a página (F5), volta ao início desconsiderando teste DISC e dados salvos
+
+## Bug: Fotos das mentoras não aparecem nos cards de Escolha sua Mentora (08/03/2026)
+- [x] Investigar e corrigir fotos das mentoras que não carregam nos cards do Onboarding

@@ -1,0 +1,65 @@
+{
+  "query": "SELECT * FROM consultors LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT * FROM consultors LIMIT 3;",
+  "rows": [
+    {
+      "id": "14",
+      "name": "Equipe CKM Talents",
+      "email": "NULL",
+      "programId": "NULL",
+      "isActive": "1",
+      "createdAt": "2026-01-27 23:03:03",
+      "updatedAt": "2026-02-13 18:02:22",
+      "loginId": "M0014",
+      "role": "mentor",
+      "managedProgramId": "NULL",
+      "canLogin": "1",
+      "cpf": "NULL",
+      "especialidade": "NULL",
+      "photoUrl": "NULL",
+      "miniCurriculo": "NULL"
+    },
+    {
+      "id": "28",
+      "name": "Ana Carolina Cardoso Viana Rocha",
+      "email": "anaccvrocha@gmail.com",
+      "programId": "NULL",
+      "isActive": "1",
+      "createdAt": "2026-01-27 23:03:40",
+      "updatedAt": "2026-03-06 02:15:30",
+      "loginId": "M0028",
+      "role": "mentor",
+      "managedProgramId": "NULL",
+      "canLogin": "1",
+      "cpf": "00000000022",
+      "especialidade": "Gestão e Liderança",
+      "photoUrl": "NULL",
+      "miniCurriculo": "Ana Carolina Cardoso Viana Rocha é uma psicóloga altamente especializada, formada em 2010, com uma trajetória sólida e consistente na área de Recursos Humanos desde 2008. Ela possui múltiplas pós-graduações em Gestão Estratégica de Pessoas, Psicologia Positiva e Coaching, Terapia Cognitivo-Comportamental e Neurolinguística, que reforçam sua expertise e a posicionam como referência em sua área. "
+    },
+    {
+      "id": "29",
+      "name": "Marcia Rocha Fernandes",
+      "email": "NULL",
+      "programId": "NULL",
+      "isActive": "1",
+      "createdAt": "2026-01-27 23:03:41",
+      "updatedAt": "2026-02-13 18:16:59",
+      "loginId": "M0029",
+      "role": "mentor",
+      "managedProgramId": "NULL",
+      "canLogin": "1",
+      "cpf": "NULL",
+      "especialidade": "NULL",
+      "photoUrl": "NULL",
+      "miniCurriculo": "NULL"
+    }
+  ],
+  "messages": [
+    " Com vasta experiência nos setores de Recrutamento & Seleção e Desenvolvimento de Pessoas, Ana Carolina destaca-se por sua atuação em Avaliação Psicológica para Concursos Públicos e Processos Seletivos Internos, contribuindo para a promoção de servidores a funções gerenciais. ",
+    "Sua excelência em Mentoria e processos de Coaching Profissional evidencia seu compromisso em capacitar indivíduos para alcançarem seus objetivos profissionais. ",
+    "Com uma abordagem empática e focada no desenvolvimento pessoal, Ana Carolina é uma profissional dedicada a transformar vidas através da psicologia. Sua combinação de conhecimento profundo e prática especializada oferece confiança e resultados comprovados para aqueles que buscam evolução pessoal e profissional."
+  ],
+  "stdout": "id\tname\temail\tprogramId\tisActive\tcreatedAt\tupdatedAt\tloginId\trole\tmanagedProgramId\tcanLogin\tcpf\tespecialidade\tphotoUrl\tminiCurriculo\n14\tEquipe CKM Talents\tNULL\tNULL\t1\t2026-01-27 23:03:03\t2026-02-13 18:02:22\tM0014\tmentor\tNULL\t1\tNULL\tNULL\tNULL\tNULL\n28\tAna Carolina Cardoso Viana Rocha\tanaccvrocha@gmail.com\tNULL\t1\t2026-01-27 23:03:40\t2026-03-06 02:15:30\tM0028\tmentor\tNULL\t1\t00000000022\tGestão e Liderança\tNULL\tAna Carolina Cardoso Viana Rocha é uma psicóloga altamente especializada, formada em 2010, com uma trajetória sólida e consistente na área de Recursos Humanos desde 2008. Ela possui múltiplas pós-graduações em Gestão Estratégica de Pessoas, Psicologia Positiva e Coaching, Terapia Cognitivo-Comportamental e Neurolinguística, que reforçam sua expertise e a posicionam como referência em sua área. \n\n Com vasta experiência nos setores de Recrutamento & Seleção e Desenvolvimento de Pessoas, Ana Carolina destaca-se por sua atuação em Avaliação Psicológica para Concursos Públicos e Processos Seletivos Internos, contribuindo para a promoção de servidores a funções gerenciais. \nSua excelência em Mentoria e processos de Coaching Profissional evidencia seu compromisso em capacitar indivíduos para alcançarem seus objetivos profissionais. \n\nCom uma abordagem empática e focada no desenvolvimento pessoal, Ana Carolina é uma profissional dedicada a transformar vidas através da psicologia. Sua combinação de conhecimento profundo e prática especializada oferece confiança e resultados comprovados para aqueles que buscam evolução pessoal e profissional.\n29\tMarcia Rocha Fernandes\tNULL\tNULL\t1\t2026-01-27 23:03:41\t2026-02-13 18:16:59\tM0029\tmentor\tNULL\t1\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}
