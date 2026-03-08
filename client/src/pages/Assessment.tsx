@@ -38,6 +38,9 @@ import {
   Save,
   Route,
   Users,
+  PlayCircle,
+  Video,
+  ChevronRight,
 } from "lucide-react";
 
 // ============ Progress Bar Component ============
@@ -549,6 +552,86 @@ function AssessmentContent() {
           )}
         </>
       )}
+
+      {/* Guia do Mentor - Vídeo e Resumo */}
+      <Card className="border-secondary/30 overflow-hidden">
+        <div className="bg-gradient-to-r from-[#0A1E3E] to-[#1a3a5c] px-6 py-4">
+          <h3 className="text-white font-bold text-lg flex items-center gap-2">
+            <Video className="h-5 w-5 text-secondary" />
+            Guia do Mentor
+          </h3>
+          <p className="text-white/70 text-sm mt-0.5">
+            Assista ao vídeo antes de iniciar a mentoria com seu aluno
+          </p>
+        </div>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Vídeo Player */}
+            <div className="rounded-xl overflow-hidden bg-black shadow-lg">
+              <video
+                controls
+                className="w-full aspect-video"
+                poster=""
+                preload="metadata"
+              >
+                <source src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/O_Guia_do_Mentor_9a814982.mp4" type="video/mp4" />
+                Seu navegador não suporta a reprodução de vídeo.
+              </video>
+            </div>
+
+            {/* Resumo do Conteúdo */}
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-bold text-[#0A1E3E] text-base flex items-center gap-2 mb-3">
+                  <BookOpen className="h-4 w-4 text-secondary" />
+                  Como definir as competências de desenvolvimento
+                </h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Leia com atenção os resultados dos testes que o aluno realizou no onboarding, assim como as percepções que ele registrou sobre o próprio desenvolvimento. Essas informações são o ponto de partida para a conversa de mentoria.
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed mt-2">
+                  Converse com o aluno para entender suas necessidades e prioridades. Juntos, definam quais competências farão parte da trilha de desenvolvimento, sempre em comum acordo.
+                </p>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h4 className="font-bold text-[#0A1E3E] text-base flex items-center gap-2 mb-3">
+                  <Target className="h-4 w-4 text-secondary" />
+                  Depois das competências: definição de metas
+                </h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Após trabalhar as competências, acessem a página de Metas para definir desafios práticos que comprovem que o desenvolvimento realmente aconteceu.
+                </p>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h4 className="font-bold text-[#0A1E3E] text-base flex items-center gap-2 mb-2">
+                  <PlayCircle className="h-4 w-4 text-secondary" />
+                  Seu papel como mentor(a)
+                </h4>
+                <ul className="space-y-1.5">
+                  {[
+                    'Ler os resultados dos testes realizados no onboarding',
+                    'Analisar as percepções de desenvolvimento do aluno',
+                    'Conduzir a conversa para definição das competências',
+                    'Alinhar prazos realistas para as atividades',
+                    'Apoiar na definição de metas e desafios práticos',
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <ChevronRight className="h-3.5 w-3.5 text-secondary mt-0.5 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {!selectedAlunoId && (
         <Card>

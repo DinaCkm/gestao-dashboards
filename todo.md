@@ -2026,3 +2026,8 @@
 - [x] Enviar notificação por email à mentora quando aluno faz agendamento
 - [x] Incluir nome do aluno, email e dados do encontro na notificação
 - [x] Notificar owner também quando aluno escolhe mentora
+
+## Funcionalidade: Vídeo "O Guia do Mentor" na página de Assessment (08/03/2026)
+- [x] Upload do vídeo "O Guia do Mentor" para CDN
+- [x] Ler documento de resumo do vídeo
+- [x] Criar seção com vídeo player e resumo na página de Assessment do mentor
