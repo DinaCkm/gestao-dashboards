@@ -6434,3 +6434,50 @@ export async function getRelatorioFinanceiroMentorias(dateFrom?: string, dateTo?
     totalMentores: mentores.length,
   };
 }
+
+
+// ==================== COMPETENCIAS POR ALUNO (para calculador V2) ====================
+
+/**
+ * Retorna um Map<string, CompetenciaObrigatoria[]> onde a chave é o externalId do aluno.
+ * Usado pelo calcularIndicadoresTodosAlunos para passar competências obrigatórias de cada aluno.
+ */
+export async function getAllCompetenciasPorAluno(): Promise<Map<string, { competenciaId: number; codigoIntegracao: string | null; notaAtual: string | null; metaNota: string | null; status: string }[]>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  
+  const result = await db.select({
+    alunoId: planoIndividual.alunoId,
+    competenciaId: planoIndividual.competenciaId,
+    codigoIntegracao: competencias.codigoIntegracao,
+    notaAtual: planoIndividual.notaAtual,
+    metaNota: planoIndividual.metaNota,
+    status: planoIndividual.status,
+    isObrigatoria: planoIndividual.isObrigatoria,
+  })
+  .from(planoIndividual)
+  .leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id))
+  .where(eq(planoIndividual.isObrigatoria, 1));
+  
+  // Buscar alunos para mapear alunoId -> externalId
+  const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
+  const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId || String(a.id)]));
+  
+  const map = new Map<string, { competenciaId: number; codigoIntegracao: string | null; notaAtual: string | null; metaNota: string | null; status: string }[]>();
+  
+  for (const r of result) {
+    const externalId = alunoMap.get(r.alunoId) || String(r.alunoId);
+    if (!map.has(externalId)) {
+      map.set(externalId, []);
+    }
+    map.get(externalId)!.push({
+      competenciaId: r.competenciaId,
+      codigoIntegracao: r.codigoIntegracao,
+      notaAtual: r.notaAtual,
+      metaNota: r.metaNota,
+      status: r.status || 'pendente',
+    });
+  }
+  
+  return map;
+}

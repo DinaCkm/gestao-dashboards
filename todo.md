@@ -2053,3 +2053,20 @@
 - [x] Ajuste10-1: Trocar campo "Experiência Profissional" por "Minicurrículo" no cadastro/onboarding do aluno - IMPLEMENTADO
 - [x] Ajuste10-2: Adicionar campo "Quem é você? Conte um pouco como você se define como pessoa" no cadastro/onboarding do aluno - IMPLEMENTADO
 - [x] Ajuste10-3: Exibir relatório completo no Assessment do mentor com 4 itens: DISC + Percepção Pessoal + Minicurrículo + Quem é Você - IMPLEMENTADO
+
+## Ajustes11 - Bugs Críticos (Regressões na visão da Mentora)
+- [x] Ajuste11-1: Relatório do mentor não possibilita geral pelo grupo, só abre Individual - CONFIRMADO OK pelo usuário
+- [x] Ajuste11-2: Botão "Gerar Relatório" não está funcionando - CONFIRMADO OK pelo usuário
+- [x] Ajuste11-3: Consulta de alunos para metas parou de funcionar - CONFIRMADO OK pelo usuário
+- [x] Ajuste11-4: Dashboard do mentor parou de funcionar - CONFIRMADO OK pelo usuário
+- [x] Ajuste11-5: Registro de mentoria parou de funcionar - CONFIRMADO OK pelo usuário
+- [x] Ajuste11-6: Plano Individual parou de mostrar alunos - CONFIRMADO OK pelo usuário
+
+## Bug Importação - Jaqueline com 0% (Ajuste9 Item 3)
+- [ ] Corrigir bug de importação: campos mediaAvaliacoesFinais e avaliacoesRespondidas importados como 0 quando dados reais têm valores (ex: 100, 86, 90, 93). Campos corretos são "Média em avaliações disponíveis" e "Média em avaliações respondidas" (colunas 29 e 30 da planilha)
+- [ ] Atualizar dados da Jaqueline e verificar se outros alunos foram afetados
+
+## Consistência de Lógica de Cálculo (08/03/2026)
+- [x] Bug na rota de relatórios (exportação Excel): argumentos passados na ordem errada para calcularIndicadoresTodosAlunos (competenciasPorAlunoReport no lugar de compIdToCodigoMap, e compIdToCodigoMapReport no lugar de casesData)
+- [x] Verificar que todas as 7 chamadas de calcularIndicadoresTodosAlunos usam a mesma assinatura correta (mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData)
+- [x] Confirmar que calcularIndicadoresAlunoV2 (individual) e calcularIndicadoresTodosAlunos (batch) produzem resultados idênticos para a mesma entrada

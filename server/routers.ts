@@ -1600,11 +1600,8 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
       const compIdToCodigoMap = await db.getCompIdToCodigoMap();
       const casesMap = await db.getCasesForCalculator();
-      // Flatten cases to array
       const casesData: CaseSucessoData[] = [];
-      for (const [, cases] of Array.from(casesMap.entries())) {
-        casesData.push(...cases);
-      }
+      for (const [, cases] of Array.from(casesMap.entries())) { casesData.push(...cases); }
       
       // Calcular indicadores (V2)
       const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData);
