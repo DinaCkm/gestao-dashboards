@@ -4884,10 +4884,34 @@ Responda APENAS em JSON com o formato:
 
         // Verificar se tem agendamento
         let agendamentoFeito = false;
+        let agendamentoData: string | null = null;
+        let agendamentoHora: string | null = null;
+        let agendamentoMeetLink: string | null = null;
         if (mentoraEscolhida) {
           const agendamentos = await db.getAlunoAppointments(alunoId);
           agendamentoFeito = agendamentos.length > 0;
+          if (agendamentoFeito && agendamentos[0]) {
+            agendamentoData = agendamentos[0].scheduledDate;
+            agendamentoHora = agendamentos[0].startTime;
+            agendamentoMeetLink = agendamentos[0].googleMeetLink || null;
+          }
         }
+
+        // Verificar se a mentora registrou presença (sessão de mentoria)
+        const sessoes = await db.getMentoringSessionsByAluno(alunoId);
+        const presencaRegistrada = sessoes.some(s => s.presence === 'presente');
+
+        // Verificar se a mentora fez o assessment/PDI do aluno
+        const assessments = await db.getAssessmentsByAluno(alunoId);
+        const assessmentFeito = assessments.length > 0;
+
+        // Verificar se a mentora fez o relatório (sessão com feedback preenchido)
+        const relatorioFeito = sessoes.some(s => s.presence === 'presente' && (s.feedback || s.notaEvolucao));
+
+        // O encontro só é considerado realizado quando a mentora:
+        // 1. Registrou presença do aluno
+        // 2. Fez o assessment/PDI
+        const encontroRealizado = presencaRegistrada && assessmentFeito;
 
         // Determinar step atual
         let step = 1;
@@ -4895,7 +4919,20 @@ Responda APENAS em JSON com o formato:
         if (discCompleto && autopercepCompleta && mentoraEscolhida) step = 4; // Pula para agendamento
         if (discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito) step = 5; // Pula para 1º encontro
 
-        return { step, discCompleto, autopercepCompleta, mentoraEscolhida, agendamentoFeito };
+        return {
+          step,
+          discCompleto,
+          autopercepCompleta,
+          mentoraEscolhida,
+          agendamentoFeito,
+          agendamentoData,
+          agendamentoHora,
+          agendamentoMeetLink,
+          presencaRegistrada,
+          assessmentFeito,
+          relatorioFeito,
+          encontroRealizado,
+        };
       }),
   }),
 });

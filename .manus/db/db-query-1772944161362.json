@@ -1,0 +1,35 @@
+{
+  "query": "SELECT a.id, a.name, a.consultorId FROM alunos a WHERE a.consultorId IS NOT NULL LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.consultorId FROM alunos a WHERE a.consultorId IS NOT NULL LIMIT 5",
+  "rows": [
+    {
+      "id": "30001",
+      "name": "Fabio Silva De Oliveira",
+      "consultorId": "28"
+    },
+    {
+      "id": "30002",
+      "name": "Marcos Paulo Maciente",
+      "consultorId": "28"
+    },
+    {
+      "id": "30003",
+      "name": "Hellen Kelma Araújo Chaves",
+      "consultorId": "28"
+    },
+    {
+      "id": "30004",
+      "name": "Joelma Da Silva Mourão",
+      "consultorId": "28"
+    },
+    {
+      "id": "30005",
+      "name": "Miriam Nazareth Cardenas Moreno",
+      "consultorId": "28"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tconsultorId\n30001\tFabio Silva De Oliveira\t28\n30002\tMarcos Paulo Maciente\t28\n30003\tHellen Kelma Araújo Chaves\t28\n30004\tJoelma Da Silva Mourão\t28\n30005\tMiriam Nazareth Cardenas Moreno\t28\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

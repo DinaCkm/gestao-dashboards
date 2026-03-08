@@ -1,0 +1,26 @@
+{
+  "query": "SELECT ma.id, ma.consultorId, ma.status, ma.scheduledDate, ma.startTime, ma.type FROM mentor_appointments ma LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ma.id, ma.consultorId, ma.status, ma.scheduledDate, ma.startTime, ma.type FROM mentor_appointments ma LIMIT 5",
+  "rows": [
+    {
+      "id": "1",
+      "consultorId": "39",
+      "status": "cancelado",
+      "scheduledDate": "2026-03-10",
+      "startTime": "09:00",
+      "type": "grupo"
+    },
+    {
+      "id": "30001",
+      "consultorId": "39",
+      "status": "cancelado",
+      "scheduledDate": "2026-03-06",
+      "startTime": "10:00",
+      "type": "grupo"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tconsultorId\tstatus\tscheduledDate\tstartTime\ttype\n1\t39\tcancelado\t2026-03-10\t09:00\tgrupo\n30001\t39\tcancelado\t2026-03-06\t10:00\tgrupo\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

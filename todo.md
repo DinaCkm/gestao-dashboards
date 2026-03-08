@@ -1990,3 +1990,9 @@
 - [x] Corrigir modal "Ver Currículo" no Onboarding para exibir miniCurriculo e especialidade da mentora (dados já existentes no banco)
 - [x] Textos acolhedores e avatar de mentora guia em cada etapa do Onboarding
 - [x] Gerar novo avatar de mentora guia baseado na foto de referência fornecida pela usuária
+
+## Bug: Banner da mentora guia não aparece no Onboarding (08/03/2026)
+- [x] Investigar e corrigir por que o banner MentoraGuiaBanner não aparece nas etapas do Onboarding do aluno (era erro antigo de log, banner já funcionava)
+
+## Bug: Etapa 5 mostra "Encontro Realizado" sem verificar presença real (08/03/2026)
+- [x] Corrigir etapa 5 do Onboarding: agora verifica no banco se a mentora registrou presença, fez assessment e relatório antes de mostrar como realizado

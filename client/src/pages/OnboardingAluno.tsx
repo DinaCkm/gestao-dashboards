@@ -692,8 +692,32 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
 // ETAPA 5: 1º ENCONTRO
 // ============================================================
 
-function EtapaPrimeiroEncontro({ mentora, onComplete }: { mentora: Mentora | null; onComplete: () => void }) {
-  const [encontroRealizado] = useState(true);
+function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData }: {
+  mentora: Mentora | null;
+  onComplete: () => void;
+  progressoData?: {
+    presencaRegistrada?: boolean;
+    assessmentFeito?: boolean;
+    relatorioFeito?: boolean;
+    encontroRealizado?: boolean;
+    agendamentoData?: string | null;
+    agendamentoHora?: string | null;
+    agendamentoMeetLink?: string | null;
+  };
+}) {
+  const encontroRealizado = progressoData?.encontroRealizado ?? false;
+  const presencaRegistrada = progressoData?.presencaRegistrada ?? false;
+  const assessmentFeito = progressoData?.assessmentFeito ?? false;
+  const relatorioFeito = progressoData?.relatorioFeito ?? false;
+
+  // Formatar data do agendamento
+  const dataFormatada = useMemo(() => {
+    if (!progressoData?.agendamentoData) return null;
+    try {
+      const [year, month, day] = progressoData.agendamentoData.split('-');
+      return `${day}/${month}/${year}`;
+    } catch { return progressoData.agendamentoData; }
+  }, [progressoData?.agendamentoData]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -726,16 +750,14 @@ function EtapaPrimeiroEncontro({ mentora, onComplete }: { mentora: Mentora | nul
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-emerald-500" />
-                    <span className="text-sm text-gray-700">Trilha de competências definida</span>
+                    <span className="text-sm text-gray-700">Assessment realizado pela mentora</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-500" />
-                    <span className="text-sm text-gray-700">Primeira tarefa prática atribuída: <strong>Mapeamento de Stakeholders</strong></span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-500" />
-                    <span className="text-sm text-gray-700">Relatório de Assessment disponibilizado</span>
-                  </div>
+                  {relatorioFeito && (
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-emerald-500" />
+                      <span className="text-sm text-gray-700">Relatório da sessão disponibilizado</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-amber-50 rounded-lg p-4">
@@ -748,21 +770,71 @@ function EtapaPrimeiroEncontro({ mentora, onComplete }: { mentora: Mentora | nul
             ) : (
               <>
                 <div className="w-20 h-20 mx-auto rounded-full bg-blue-100 flex items-center justify-center">
-                  <VideoIcon className="h-10 w-10 text-blue-600" />
+                  <CalendarDays className="h-10 w-10 text-blue-600" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Seu Encontro Está Agendado</h3>
-                  <p className="text-gray-500 text-sm">
-                    Acesse o link abaixo no horário agendado para participar da reunião.
+                  <p className="text-gray-500 text-sm max-w-md mx-auto">
+                    Aguarde o dia do seu primeiro encontro com {mentora?.nome || "sua mentora"}.
+                    Após a reunião, sua mentora registrará a presença, fará o assessment e o relatório.
                   </p>
                 </div>
-                <Button className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white px-8 py-3">
-                  <Play className="h-4 w-4 mr-2" />
-                  Entrar na Reunião (Google Meet)
-                </Button>
-                <p className="text-xs text-gray-400">
-                  Após a reunião, sua mentora registrará a sessão e você avançará automaticamente.
-                </p>
+
+                {/* Informações do agendamento */}
+                {dataFormatada && (
+                  <div className="bg-blue-50 rounded-lg p-4 text-left space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-5 w-5 text-blue-600" />
+                      <span className="text-sm text-gray-700">Data: <strong>{dataFormatada}</strong></span>
+                    </div>
+                    {progressoData?.agendamentoHora && (
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-5 w-5 text-blue-600" />
+                        <span className="text-sm text-gray-700">Horário: <strong>{progressoData.agendamentoHora}</strong></span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Checklist de pendências */}
+                <div className="bg-gray-50 rounded-lg p-4 text-left space-y-3">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Status do encontro</p>
+                  <div className="flex items-center gap-3">
+                    {presencaRegistrada
+                      ? <CheckCircle className="h-5 w-5 text-emerald-500" />
+                      : <Circle className="h-5 w-5 text-gray-300" />}
+                    <span className={`text-sm ${presencaRegistrada ? 'text-gray-700' : 'text-gray-400'}`}>Presença registrada pela mentora</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {assessmentFeito
+                      ? <CheckCircle className="h-5 w-5 text-emerald-500" />
+                      : <Circle className="h-5 w-5 text-gray-300" />}
+                    <span className={`text-sm ${assessmentFeito ? 'text-gray-700' : 'text-gray-400'}`}>Assessment realizado pela mentora</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {relatorioFeito
+                      ? <CheckCircle className="h-5 w-5 text-emerald-500" />
+                      : <Circle className="h-5 w-5 text-gray-300" />}
+                    <span className={`text-sm ${relatorioFeito ? 'text-gray-700' : 'text-gray-400'}`}>Relatório da sessão</span>
+                  </div>
+                </div>
+
+                {progressoData?.agendamentoMeetLink && (
+                  <Button
+                    className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white px-8 py-3"
+                    onClick={() => window.open(progressoData.agendamentoMeetLink!, '_blank')}
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Entrar na Reunião (Google Meet)
+                  </Button>
+                )}
+
+                <div className="bg-amber-50 rounded-lg p-4">
+                  <p className="text-sm text-amber-700 flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    Após a reunião, sua mentora registrará a sessão e você avançará automaticamente.
+                  </p>
+                </div>
               </>
             )}
           </div>
@@ -867,7 +939,7 @@ export default function OnboardingAluno() {
           />
         )}
         {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} />}
-        {currentStep === 5 && <EtapaPrimeiroEncontro mentora={selectedMentora} onComplete={handleStepComplete} />}
+        {currentStep === 5 && <EtapaPrimeiroEncontro mentora={selectedMentora} onComplete={handleStepComplete} progressoData={progressoData ?? undefined} />}
       </div>
     </AlunoLayout>
   );
