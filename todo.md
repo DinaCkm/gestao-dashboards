@@ -2042,3 +2042,9 @@
 - [x] Item 11: Remover relatório gerencial (visão de todos os alunos) da área do mentor - CORRIGIDO: mentor só vê relatório Individual dos seus alunos, sem opção Gerencial
 - [x] Item 12: Relatório de mentorias realizadas por período com valor de cada mentoria - IMPLEMENTADO: aba Financeiro no Demonstrativo com filtro de período, KPIs e tabela por mentor
 - [x] Item 13: Campo de valor por sessão de mentoria no cadastro do mentor (admin) - IMPLEMENTADO: campo valorSessao na tabela consultors + formulários de criação/edição + coluna na tabela
+
+## Bug Reportado - Item 5 DISC no Assessment do Mentor
+- [x] Item 5: Mentor não consegue visualizar relatório DISC do aluno na tela de Assessment/PDI - CORRIGIDO: card DISC agora sempre aparece quando aluno selecionado (com dados ou mensagem 'não realizado')
+
+## Item 5 Completo - Relatório do Aluno no Assessment do Mentor
+- [ ] Exibir relatório COMPLETO do aluno no Assessment: DISC + percepções pessoais do onboarding + descrição do trabalho do cadastro
