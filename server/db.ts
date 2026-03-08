@@ -1484,26 +1484,68 @@ export async function createAluno(data: { name: string; email: string; externalI
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
   
+  const normalizedId = data.externalId.replace(/\D/g, '');
+  
   // Verificar se já existe aluno com este externalId
   const [existing] = await db.select()
     .from(alunos)
-    .where(eq(alunos.externalId, data.externalId))
+    .where(eq(alunos.externalId, normalizedId))
     .limit(1);
   
   if (existing) {
-    throw new Error(`Já existe um aluno com o ID ${data.externalId}`);
+    throw new Error(`Já existe um aluno com o ID ${normalizedId}`);
+  }
+
+  // Verificar se já existe aluno com este email
+  const [existingEmail] = await db.select()
+    .from(alunos)
+    .where(eq(alunos.email, data.email.toLowerCase()))
+    .limit(1);
+
+  if (existingEmail) {
+    throw new Error(`Já existe um aluno com o email ${data.email}`);
+  }
+
+  // Verificar se já existe user com este ID
+  const [existingUser] = await db.select()
+    .from(users)
+    .where(eq(users.cpf, normalizedId))
+    .limit(1);
+
+  if (existingUser) {
+    throw new Error(`Este ID já está cadastrado no sistema.`);
   }
   
+  // 1. Criar registro na tabela alunos (sem mentor - vai para Onboarding)
   const [result] = await db.insert(alunos).values({
     name: data.name,
     email: data.email.toLowerCase(),
-    externalId: data.externalId,
+    externalId: normalizedId,
     programId: data.programId || null,
     canLogin: 1,
     isActive: 1,
   });
+
+  const alunoId = result.insertId;
   
-  return { id: result.insertId, ...data };
+  // 2. Criar registro na tabela users para login (Email + ID)
+  const openId = `access_user_${normalizedId}`;
+  await db.insert(users).values({
+    openId,
+    name: data.name,
+    email: data.email.toLowerCase(),
+    cpf: normalizedId,
+    role: 'user',
+    programId: data.programId || null,
+    alunoId: Number(alunoId),
+    loginMethod: 'email_cpf',
+    isActive: 1,
+    lastSignedIn: new Date(),
+  });
+
+  console.log(`[Cadastro Onboarding] Aluno criado: ${data.name} (ID: ${normalizedId}, Email: ${data.email}) - alunoId: ${alunoId}`);
+  
+  return { id: alunoId, ...data };
 }
 
 

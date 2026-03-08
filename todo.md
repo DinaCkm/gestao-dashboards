@@ -1956,3 +1956,8 @@
 
 ## Bug: Botão de cadastrar aluno para Onboarding sumiu (07/03/2026)
 - [x] Botão de cadastrar aluno para Onboarding desapareceu da página de Cadastros - restaurar
+
+## Feature: Envio de email de convite ao cadastrar aluno via Onboarding (07/03/2026)
+- [ ] Configurar Resend API e DNS (ADIADO - aguardando configuração DNS pelo usuário)
+- [ ] Integrar envio de email no endpoint createAluno (ADIADO)
+- [x] Corrigir createAluno para também criar registro na tabela users (login)
