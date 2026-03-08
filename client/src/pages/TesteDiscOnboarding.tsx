@@ -46,6 +46,161 @@ interface DiscPerfil {
 type SubEtapa = "disc" | "autopercepção" | "relatorio";
 
 // ============================================================
+// DESCRIÇÕES DAS COMPETÊNCIAS (o que é + impacto no dia a dia)
+// ============================================================
+
+const COMPETENCIA_DESCRICOES: Record<string, { oQueE: string; impacto: string }> = {
+  // === BASIC ===
+  "Gestão do Tempo": {
+    oQueE: "Capacidade de organizar, priorizar e utilizar o tempo de forma eficiente para cumprir tarefas e metas.",
+    impacto: "No dia a dia, quem domina essa competência consegue entregar mais com menos estresse, cumpre prazos com consistência e equilibra melhor vida pessoal e profissional."
+  },
+  "Atenção": {
+    oQueE: "Habilidade de manter o foco em tarefas e informações relevantes, evitando distrações e erros por descuido.",
+    impacto: "Profissionais atentos cometem menos erros, captam detalhes importantes em reuniões e documentos, e são mais confiáveis na execução de tarefas críticas."
+  },
+  "Autopercepção": {
+    oQueE: "Consciência sobre seus próprios sentimentos, comportamentos, pontos fortes e limitações.",
+    impacto: "Quem se conhece bem toma decisões mais alinhadas com seus valores, reconhece quando precisa de ajuda e evolui mais rápido no desenvolvimento pessoal e profissional."
+  },
+  "Disciplina": {
+    oQueE: "Capacidade de manter rotinas, seguir planos e persistir em tarefas mesmo quando a motivação diminui.",
+    impacto: "A disciplina é o que transforma intenções em resultados. No trabalho, garante consistência na entrega, confiabilidade e progresso contínuo em projetos de longo prazo."
+  },
+  "Empatia": {
+    oQueE: "Habilidade de compreender e se colocar no lugar do outro, reconhecendo sentimentos e perspectivas diferentes das suas.",
+    impacto: "Pessoas empáticas constroem relações mais fortes, resolvem conflitos com mais facilidade e criam ambientes de trabalho mais colaborativos e acolhedores."
+  },
+  "Escuta Ativa": {
+    oQueE: "Prática de ouvir com atenção plena, buscando compreender a mensagem completa antes de responder.",
+    impacto: "A escuta ativa evita mal-entendidos, fortalece relacionamentos profissionais e permite tomar decisões mais informadas com base no que os outros realmente comunicam."
+  },
+  "Memória": {
+    oQueE: "Capacidade de reter, organizar e recuperar informações relevantes quando necessário.",
+    impacto: "Uma boa memória permite lembrar compromissos, detalhes de projetos e aprendizados anteriores, aumentando a eficiência e a credibilidade profissional."
+  },
+  "Raciocínio Lógico e Espacial": {
+    oQueE: "Habilidade de analisar problemas de forma estruturada, identificar padrões e pensar em soluções de maneira sequencial e visual.",
+    impacto: "Essencial para resolver problemas complexos, planejar estratégias e tomar decisões baseadas em análise, não apenas em intuição."
+  },
+  // === ESSENTIAL ===
+  "Adaptabilidade": {
+    oQueE: "Capacidade de se ajustar a novas situações, mudanças de planos e ambientes diferentes com flexibilidade.",
+    impacto: "Em um mundo em constante mudança, profissionais adaptáveis lidam melhor com imprevistos, aprendem novas ferramentas rapidamente e se mantêm produtivos em cenários de incerteza."
+  },
+  "Comunicação Assertiva": {
+    oQueE: "Habilidade de expressar ideias, opiniões e necessidades de forma clara, direta e respeitosa.",
+    impacto: "A comunicação assertiva evita conflitos desnecessários, garante que suas contribuições sejam ouvidas e fortalece sua presença em reuniões e negociações."
+  },
+  "Inteligência Emocional": {
+    oQueE: "Capacidade de reconhecer, compreender e gerenciar suas próprias emoções e as dos outros.",
+    impacto: "Profissionais com alta inteligência emocional mantêm a calma sob pressão, constroem relações mais saudáveis e tomam decisões mais equilibradas."
+  },
+  "Leitura de Cenário": {
+    oQueE: "Habilidade de observar e interpretar o contexto ao redor — pessoas, dinâmicas e situações — para agir de forma adequada.",
+    impacto: "Quem lê bem o cenário sabe quando falar e quando ouvir, identifica oportunidades antes dos outros e evita decisões precipitadas."
+  },
+  "Planejamento e Organização": {
+    oQueE: "Capacidade de definir objetivos, criar planos de ação e organizar recursos para alcançar resultados.",
+    impacto: "Pessoas organizadas entregam projetos no prazo, gerenciam múltiplas demandas sem perder qualidade e transmitem confiança à equipe e liderança."
+  },
+  "Proatividade": {
+    oQueE: "Atitude de antecipar necessidades e agir por iniciativa própria, sem esperar que alguém peça.",
+    impacto: "Profissionais proativos se destacam por resolver problemas antes que se agravem, propor melhorias e assumir responsabilidades que geram impacto positivo."
+  },
+  "Resiliência": {
+    oQueE: "Capacidade de enfrentar adversidades, superar frustrações e se recuperar de situações difíceis.",
+    impacto: "A resiliência permite manter a motivação diante de fracassos, aprender com erros e seguir em frente com mais força e sabedoria."
+  },
+  // === MASTER ===
+  "Gestão de Conflitos": {
+    oQueE: "Habilidade de identificar, mediar e resolver divergências entre pessoas ou grupos de forma construtiva.",
+    impacto: "Líderes que gerenciam conflitos bem mantêm equipes coesas, evitam desgastes desnecessários e transformam desacordos em oportunidades de crescimento."
+  },
+  "Gestão de Equipes": {
+    oQueE: "Capacidade de coordenar, motivar e desenvolver pessoas para alcançar objetivos coletivos.",
+    impacto: "Uma boa gestão de equipe resulta em maior produtividade, engajamento dos membros e um ambiente onde todos contribuem com seu melhor."
+  },
+  "Accountability": {
+    oQueE: "Postura de assumir responsabilidade pelos seus resultados, decisões e compromissos — tanto nos acertos quanto nos erros.",
+    impacto: "Profissionais com accountability geram confiança, cumprem o que prometem e inspiram os outros a fazerem o mesmo, elevando o padrão de toda a equipe."
+  },
+  "Foco em Resultados": {
+    oQueE: "Orientação para definir metas claras e trabalhar com determinação para alcançá-las.",
+    impacto: "Quem tem foco em resultados prioriza o que realmente importa, mede seu progresso e não se perde em atividades que não geram valor."
+  },
+  "Influência": {
+    oQueE: "Capacidade de persuadir e inspirar pessoas a adotarem ideias, comportamentos ou decisões.",
+    impacto: "A influência é essencial para liderar sem autoridade formal, vender ideias em reuniões e mobilizar pessoas em torno de um objetivo comum."
+  },
+  "Negociação": {
+    oQueE: "Habilidade de conduzir conversas e acordos buscando soluções que atendam aos interesses de todas as partes.",
+    impacto: "Bons negociadores conseguem melhores condições em contratos, resolvem impasses com elegância e constroem parcerias duradouras."
+  },
+  "Presença Executiva": {
+    oQueE: "Combinação de postura, comunicação e confiança que transmite credibilidade e autoridade natural.",
+    impacto: "Profissionais com presença executiva são ouvidos com mais atenção, inspiram confiança em stakeholders e são lembrados para oportunidades de liderança."
+  },
+  "Protagonismo": {
+    oQueE: "Atitude de ser o agente principal da própria carreira e dos projetos, assumindo a liderança das situações.",
+    impacto: "Protagonistas não esperam que as coisas aconteçam — fazem acontecer. São reconhecidos por sua iniciativa e capacidade de gerar mudanças positivas."
+  },
+  "Relacionamentos Conectivos": {
+    oQueE: "Habilidade de construir e manter redes de relacionamento genuínas e mutuamente benéficas.",
+    impacto: "Relacionamentos fortes abrem portas para oportunidades, parcerias e apoio mútuo, sendo um dos maiores ativos de qualquer carreira."
+  },
+  "Responsabilidade Social": {
+    oQueE: "Consciência e compromisso com o impacto das suas ações na comunidade e na sociedade.",
+    impacto: "Profissionais socialmente responsáveis tomam decisões mais éticas, inspiram confiança e contribuem para organizações com propósito e reputação positiva."
+  },
+  "Tomada de Decisão": {
+    oQueE: "Capacidade de avaliar opções, considerar riscos e escolher o melhor caminho de ação com agilidade.",
+    impacto: "Decisões bem tomadas economizam tempo e recursos, evitam problemas maiores e demonstram maturidade profissional para assumir cargos de liderança."
+  },
+  "Visão Estratégica": {
+    oQueE: "Habilidade de enxergar o panorama geral, conectar pontos e planejar ações de longo prazo alinhadas com objetivos maiores.",
+    impacto: "Profissionais com visão estratégica antecipam tendências, tomam decisões que beneficiam o futuro e são valorizados por sua capacidade de pensar além do operacional."
+  },
+  // === VISÃO DE FUTURO ===
+  "Arquitetura de Mudanças": {
+    oQueE: "Capacidade de planejar e conduzir processos de transformação organizacional de forma estruturada.",
+    impacto: "Quem domina essa competência lidera transições com menos resistência, engaja equipes na mudança e garante que inovações sejam implementadas com sucesso."
+  },
+  "Decisões Ágeis": {
+    oQueE: "Habilidade de tomar decisões rápidas e eficazes em ambientes de alta velocidade e incerteza.",
+    impacto: "Em mercados dinâmicos, a agilidade decisória é um diferencial competitivo — permite aproveitar oportunidades antes da concorrência e corrigir rotas rapidamente."
+  },
+  "Estratégia de Longo Alcance": {
+    oQueE: "Capacidade de pensar e planejar considerando horizontes de tempo amplos e impactos de grande escala.",
+    impacto: "Profissionais com essa visão constroem legados, fazem investimentos inteligentes de tempo e energia, e posicionam suas organizações para o sucesso sustentável."
+  },
+  "Mentalidade Sistêmica": {
+    oQueE: "Habilidade de compreender como diferentes partes de um sistema se conectam e se influenciam mutuamente.",
+    impacto: "Pensar sistemicamente permite identificar causas raízes de problemas, prever efeitos colaterais de decisões e criar soluções mais completas e duradouras."
+  },
+  "Mindset Visionário": {
+    oQueE: "Capacidade de imaginar possibilidades futuras e inspirar outros a trabalhar em direção a essa visão.",
+    impacto: "Visionários criam movimentos, inspiram inovação e dão direção clara para equipes, mesmo em cenários de incerteza e complexidade."
+  },
+  "Radar de Cenários": {
+    oQueE: "Habilidade de monitorar tendências, sinais fracos e mudanças no ambiente externo para antecipar oportunidades e ameaças.",
+    impacto: "Quem tem esse radar identifica mudanças de mercado antes dos outros, prepara-se para crises e posiciona-se estrategicamente para o futuro."
+  },
+  "Adaptabilidade Dinâmica": {
+    oQueE: "Capacidade avançada de se reinventar continuamente, abraçando mudanças como oportunidades de crescimento.",
+    impacto: "Vai além da adaptabilidade básica — profissionais com essa competência prosperam em ambientes de transformação constante e lideram outros através da mudança."
+  },
+  "Gestão da Comunicação": {
+    oQueE: "Habilidade de planejar, executar e otimizar a comunicação em diferentes canais e para diferentes públicos.",
+    impacto: "Uma comunicação bem gerida alinha equipes, evita ruídos, fortalece a cultura organizacional e garante que mensagens estratégicas cheguem com clareza."
+  },
+  "Inteligência Emocional Tática": {
+    oQueE: "Uso estratégico da inteligência emocional para influenciar situações, negociações e dinâmicas de grupo.",
+    impacto: "Vai além de gerenciar emoções — permite ler ambientes complexos, calibrar abordagens e usar a empatia como ferramenta estratégica de liderança."
+  },
+};
+
+// ============================================================
 // COMPONENTE: TESTE DISC
 // ============================================================
 
@@ -260,9 +415,14 @@ function ReguaAutopercepção({
   const [notas, setNotas] = useState<Record<number, number>>({});
   const [trilhaAtual, setTrilhaAtual] = useState(0);
 
+  // Filtrar apenas Basic, Essential e Master (excluir Jornada Personalizada, Alinhamento Inicial, etc.)
+  const TRILHAS_PERMITIDAS = ["Basic", "Essential", "Master"];
+
   const trilhasOrdenadas = useMemo(() => {
     if (!trilhasData) return [];
-    return [...trilhasData].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+    return [...trilhasData]
+      .filter((t) => TRILHAS_PERMITIDAS.includes(t.name))
+      .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
   }, [trilhasData]);
 
   const competenciasPorTrilha = useMemo(() => {
@@ -274,7 +434,8 @@ function ReguaAutopercepção({
   }, [competenciasData, trilhasOrdenadas]);
 
   const trilhaAtualData = competenciasPorTrilha[trilhaAtual];
-  const totalCompetencias = competenciasData?.length || 0;
+  // Contar apenas competências das trilhas filtradas (Basic, Essential, Master)
+  const totalCompetencias = competenciasPorTrilha.reduce((acc, item) => acc + item.competencias.length, 0);
   const totalRespondidas = Object.keys(notas).length;
   const progresso = totalCompetencias > 0 ? Math.round((totalRespondidas / totalCompetencias) * 100) : 0;
 
@@ -413,15 +574,14 @@ function ReguaAutopercepção({
             Trilha {trilhaAtualData.trilha.name} — {trilhaAtualData.competencias.length} competências
           </div>
 
-          {trilhaAtualData.competencias.map((comp: any) => (
+          {trilhaAtualData.competencias.map((comp: any) => {
+            const descInfo = COMPETENCIA_DESCRICOES[comp.nome];
+            return (
             <Card key={comp.id} className={`transition-all duration-300 ${notas[comp.id] ? "border-[#0A1E3E]/20" : ""}`}>
               <CardContent className="pt-5 pb-5">
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2">
                   <div>
                     <h4 className="font-semibold text-gray-900">{comp.nome}</h4>
-                    {comp.descricao && (
-                      <p className="text-xs text-gray-500 mt-1 max-w-md">{comp.descricao}</p>
-                    )}
                   </div>
                   {notas[comp.id] && (
                     <Badge className={`${notaCores[notas[comp.id]]} text-white border-0 text-xs`}>
@@ -429,6 +589,24 @@ function ReguaAutopercepção({
                     </Badge>
                   )}
                 </div>
+
+                {/* Explicação da competência */}
+                {descInfo && (
+                  <div className="mb-4 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <div className="flex items-start gap-2 mb-1.5">
+                      <BookOpen className="h-3.5 w-3.5 text-[#0A1E3E] mt-0.5 shrink-0" />
+                      <p className="text-xs text-gray-700 leading-relaxed">
+                        <strong className="text-[#0A1E3E]">O que é:</strong> {descInfo.oQueE}
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Target className="h-3.5 w-3.5 text-[#F5991F] mt-0.5 shrink-0" />
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        <strong className="text-[#F5991F]">Impacto no dia a dia:</strong> {descInfo.impacto}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Slider visual */}
                 <div className="space-y-2">
@@ -453,7 +631,8 @@ function ReguaAutopercepção({
                 </div>
               </CardContent>
             </Card>
-          ))}
+          );
+          })}
         </div>
       )}
 
@@ -523,10 +702,13 @@ function RelatorioAutoconhecimento({
   const perfilPrincipal = perfis && perfilPredominante ? perfis[perfilPredominante] : null;
   const perfilSec = perfis && perfilSecundario ? perfis[perfilSecundario] : null;
 
-  // Agrupar autopercepções por trilha
+  // Agrupar autopercepções por trilha (apenas Basic, Essential e Master)
+  const TRILHAS_RELATORIO = ["Basic", "Essential", "Master"];
   const autopercepçãoPorTrilha = useMemo(() => {
     if (!autopercepcoesData || !competenciasData || !trilhasData) return [];
-    const trilhasOrdenadas = [...trilhasData].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+    const trilhasOrdenadas = [...trilhasData]
+      .filter((t) => TRILHAS_RELATORIO.includes(t.name))
+      .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
     return trilhasOrdenadas.map((trilha) => {
       const comps = competenciasData.filter((c: any) => c.trilhaId === trilha.id);
       const avaliacoes = comps.map((c: any) => {

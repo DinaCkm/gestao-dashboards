@@ -1971,3 +1971,7 @@
 - [x] Opção de download do relatório em PDF
 - [x] Painel de contribuições da mentora no Assessment (complementos ao relatório do aluno)
 - [x] Contribuições da mentora aparecem no relatório do aluno no Portal
+
+## Melhoria: Explicação das competências na Régua de Autopercepção (08/03/2026)
+- [x] Adicionar descrição explicativa de cada competência (o que é e como impacta no dia a dia) na Régua de Autopercepção
+- [x] Filtrar Régua de Autopercepção para mostrar apenas Basic, Essential e Master (remover Jornada Personalizada, Alinhamento Inicial, Jornada do Futuro I.A, Visão de Futuro)
