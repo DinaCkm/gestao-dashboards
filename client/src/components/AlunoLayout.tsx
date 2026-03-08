@@ -11,10 +11,10 @@ import { Compass, User, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardLis
 import RoleSwitcher from "@/components/RoleSwitcher";
 
 const NAV_ITEMS = [
+  { label: "Onboarding", path: "/onboarding", icon: ClipboardList },
   { label: "Mural", path: "/mural", icon: Megaphone },
   { label: "Portal do Aluno", path: "/meu-dashboard", icon: Compass },
   { label: "Minhas Metas", path: "/minhas-metas", icon: Flag },
-  { label: "Integração", path: "/onboarding", icon: ClipboardList },
   { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle },
 ];
 

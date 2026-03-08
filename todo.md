@@ -1939,3 +1939,7 @@
 ## Explicação detalhada do cálculo nos cards (07/03/2026)
 - [x] Adicionar explicação clara de como cada indicador é calculado nos tooltips/cards do aluno (InfoTooltip.tsx + DualIndicators.tsx)
 - [x] Adicionar explicação clara de como cada indicador é calculado nos tooltips/cards do gestor (INDICADORES_INFO propagado automaticamente)
+
+## Menu do Aluno (07/03/2026)
+- [x] Mover "Integração" para primeira posição no menu do aluno
+- [x] Renomear "Integração" para "Onboarding"
