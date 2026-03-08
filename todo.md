@@ -2085,3 +2085,7 @@
 - [x] Criar procedimentos tRPC para CRUD da Biblioteca de Tarefas (listar, criar, editar, ativar/desativar)
 - [x] Criar página BibliotecaTarefas.tsx com visualização por competência e tarefa
 - [x] Registrar rota /biblioteca-tarefas no App.tsx e remover placeholder do menu
+- [x] Criar procedimento tRPC que usa LLM para gerar conteúdo da tarefa com base na competência
+- [x] Adicionar botão 'Criar com IA' no frontend da Biblioteca de Tarefas com geração automática e edição
+- [x] Mudar campo Competência para select com competências das trilhas (não texto livre)
+- [x] Implementar leque de tarefas por competência no fluxo do mentor (RegistroMentoria: accordion por competência; MetasDesenvolvimento: já filtra por competência selecionada)

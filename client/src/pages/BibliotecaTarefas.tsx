@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +16,13 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Accordion,
   AccordionContent,
@@ -34,6 +41,8 @@ import {
   Lightbulb,
   Target,
   Gift,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 
 type TaskItem = {
@@ -69,9 +78,12 @@ export default function BibliotecaTarefas() {
   const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm);
   const [showInactive, setShowInactive] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"manual" | "ai">("manual");
 
   const utils = trpc.useUtils();
   const { data: tasks, isLoading } = trpc.taskLibrary.list.useQuery();
+  const { data: competenciasData } = trpc.competencias.listWithTrilha.useQuery();
 
   const createMutation = trpc.taskLibrary.create.useMutation({
     onSuccess: () => {
@@ -99,6 +111,36 @@ export default function BibliotecaTarefas() {
     onError: (err) => toast.error(err.message),
   });
 
+  const generateAIMutation = trpc.taskLibrary.generateWithAI.useMutation({
+    onSuccess: (data) => {
+      setForm((f) => ({
+        ...f,
+        nome: data.nome,
+        resumo: data.resumo,
+        oQueFazer: data.oQueFazer,
+        oQueGanha: data.oQueGanha,
+      }));
+      setIsGeneratingAI(false);
+      toast.success("Conteúdo gerado pela IA! Revise e edite antes de salvar.");
+    },
+    onError: (err) => {
+      setIsGeneratingAI(false);
+      toast.error("Erro ao gerar com IA: " + err.message);
+    },
+  });
+
+  // Agrupar competências por trilha para o select
+  const competenciasByTrilha = useMemo(() => {
+    if (!competenciasData) return {};
+    const groups: Record<string, { id: number; nome: string }[]> = {};
+    competenciasData.forEach((c: any) => {
+      const trilhaNome = c.trilhaNome || "Sem Trilha";
+      if (!groups[trilhaNome]) groups[trilhaNome] = [];
+      groups[trilhaNome].push({ id: c.id, nome: c.nome });
+    });
+    return groups;
+  }, [competenciasData]);
+
   // Agrupar tarefas por competência
   const groupedTasks = useMemo(() => {
     if (!tasks) return {};
@@ -117,7 +159,6 @@ export default function BibliotecaTarefas() {
       groups[t.competencia].push(t);
     });
 
-    // Ordenar por nome da competência
     const sorted: Record<string, TaskItem[]> = {};
     Object.keys(groups)
       .sort((a, b) => a.localeCompare(b, "pt-BR"))
@@ -131,14 +172,16 @@ export default function BibliotecaTarefas() {
   const totalTarefas = tasks?.length ?? 0;
   const tarefasAtivas = tasks?.filter((t: TaskItem) => t.isActive === 1).length ?? 0;
 
-  function handleOpenCreate() {
+  function handleOpenCreate(mode: "manual" | "ai") {
     setEditingTask(null);
     setForm(emptyForm);
+    setDialogMode(mode);
     setShowDialog(true);
   }
 
   function handleOpenEdit(task: TaskItem) {
     setEditingTask(task);
+    setDialogMode("manual");
     setForm({
       competencia: task.competencia,
       nome: task.nome,
@@ -154,7 +197,18 @@ export default function BibliotecaTarefas() {
       setShowDialog(false);
       setEditingTask(null);
       setForm(emptyForm);
+      setIsGeneratingAI(false);
+      setDialogMode("manual");
     }, 100);
+  }
+
+  function handleGenerateAI() {
+    if (!form.competencia) {
+      toast.error("Selecione uma competência primeiro");
+      return;
+    }
+    setIsGeneratingAI(true);
+    generateAIMutation.mutate({ competencia: form.competencia });
   }
 
   function handleSubmit() {
@@ -212,10 +266,16 @@ export default function BibliotecaTarefas() {
             Gerencie as ações e desafios disponíveis para atribuição nas mentorias e assessments
           </p>
         </div>
-        <Button onClick={handleOpenCreate} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Tarefa
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => handleOpenCreate("ai")} className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            Criar com IA
+          </Button>
+          <Button onClick={() => handleOpenCreate("manual")} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nova Tarefa
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -413,31 +473,84 @@ export default function BibliotecaTarefas() {
       <Dialog open={showDialog} onOpenChange={(open) => !open && handleCloseDialog()}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingTask ? "Editar Tarefa" : "Nova Tarefa"}
+            <DialogTitle className="flex items-center gap-2">
+              {editingTask ? (
+                "Editar Tarefa"
+              ) : dialogMode === "ai" ? (
+                <>
+                  <Sparkles className="h-5 w-5 text-purple-500" />
+                  Criar Tarefa com IA
+                </>
+              ) : (
+                "Nova Tarefa"
+              )}
             </DialogTitle>
             <DialogDescription>
               {editingTask
                 ? "Atualize os dados da tarefa abaixo"
+                : dialogMode === "ai"
+                ? "Selecione a competência e a IA vai gerar todos os campos automaticamente. Você pode revisar e editar antes de salvar."
                 : "Preencha os dados para criar uma nova tarefa na biblioteca"}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            {/* Competência - Select */}
             <div className="space-y-2">
               <Label htmlFor="competencia">
                 Competência <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="competencia"
-                placeholder="Ex: Liderança, Comunicação, Gestão do Tempo..."
+              <Select
                 value={form.competencia}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, competencia: e.target.value }))
+                onValueChange={(value) =>
+                  setForm((f) => ({ ...f, competencia: value }))
                 }
-              />
+                disabled={!!editingTask}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma competência..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(competenciasByTrilha).map(([trilha, comps]) => (
+                    <div key={trilha}>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/50">
+                        {trilha}
+                      </div>
+                      {comps.map((c) => (
+                        <SelectItem key={c.id} value={c.nome}>
+                          {c.nome}
+                        </SelectItem>
+                      ))}
+                    </div>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
+            {/* Botão Gerar com IA (só no modo IA e quando não está editando) */}
+            {dialogMode === "ai" && !editingTask && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGenerateAI}
+                disabled={!form.competencia || isGeneratingAI}
+                className="w-full gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                {isGeneratingAI ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Gerando conteúdo com IA...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Gerar Conteúdo com IA
+                  </>
+                )}
+              </Button>
+            )}
+
+            {/* Nome da Tarefa */}
             <div className="space-y-2">
               <Label htmlFor="nome">
                 Nome da Tarefa <span className="text-red-500">*</span>
@@ -452,6 +565,7 @@ export default function BibliotecaTarefas() {
               />
             </div>
 
+            {/* Resumo */}
             <div className="space-y-2">
               <Label htmlFor="resumo">Resumo</Label>
               <Textarea
@@ -466,6 +580,7 @@ export default function BibliotecaTarefas() {
               />
             </div>
 
+            {/* O que fazer */}
             <div className="space-y-2">
               <Label htmlFor="oQueFazer">O que fazer</Label>
               <Textarea
@@ -480,6 +595,7 @@ export default function BibliotecaTarefas() {
               />
             </div>
 
+            {/* O que ganha */}
             <div className="space-y-2">
               <Label htmlFor="oQueGanha">O que ganha</Label>
               <Textarea

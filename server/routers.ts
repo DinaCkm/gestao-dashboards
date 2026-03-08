@@ -5381,6 +5381,65 @@ Responda APENAS em JSON com o formato:
         await db.toggleTaskLibraryActive(input.id, input.isActive);
         return { success: true };
       }),
+
+    generateWithAI: adminProcedure
+      .input(z.object({
+        competencia: z.string().min(1, 'Competência é obrigatória'),
+      }))
+      .mutation(async ({ input }) => {
+        const { invokeLLM } = await import("./_core/llm");
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `Você é um especialista em desenvolvimento de lideranças, coaching executivo e programas de mentoria corporativa. Sua tarefa é criar uma tarefa prática para a biblioteca de tarefas de um programa de desenvolvimento de líderes.
+
+A tarefa deve ajudar o participante a desenvolver a competência informada através de uma ação prática no ambiente de trabalho.
+
+Regras:
+- O nome deve ser curto e descritivo (máx 80 caracteres)
+- O resumo deve explicar brevemente o objetivo da tarefa (1-2 frases)
+- O "oQueFazer" deve detalhar passo a passo o que o participante deve fazer (3-5 passos concretos)
+- O "oQueGanha" deve explicar os benefícios e aprendizados que o participante terá ao realizar a tarefa (2-3 frases)
+- Seja específico, prático e orientado à ação
+- A tarefa deve ser realizável em até 30 dias
+- Foque em ações que gerem aprendizado pela prática no ambiente corporativo
+
+Responda APENAS em JSON com o formato especificado.`
+            },
+            {
+              role: "user",
+              content: `Crie uma tarefa prática completa para desenvolver a competência: "${input.competencia}".`
+            }
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "tarefa_biblioteca",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  nome: { type: "string", description: "Nome curto e descritivo da tarefa" },
+                  resumo: { type: "string", description: "Resumo breve do objetivo da tarefa" },
+                  oQueFazer: { type: "string", description: "Descrição detalhada passo a passo do que fazer" },
+                  oQueGanha: { type: "string", description: "Benefícios e aprendizados ao realizar a tarefa" }
+                },
+                required: ["nome", "resumo", "oQueFazer", "oQueGanha"],
+                additionalProperties: false
+              }
+            }
+          }
+        });
+        const content = response.choices?.[0]?.message?.content;
+        if (!content) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao gerar tarefa com IA" });
+        const contentStr = typeof content === "string" ? content : JSON.stringify(content);
+        try {
+          return JSON.parse(contentStr) as { nome: string; resumo: string; oQueFazer: string; oQueGanha: string };
+        } catch {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Resposta da IA em formato inválido" });
+        }
+      }),
   }),
 });
 

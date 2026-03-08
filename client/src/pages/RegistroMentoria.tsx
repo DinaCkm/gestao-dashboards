@@ -170,15 +170,25 @@ export default function RegistroMentoria() {
     return sessions.find(s => s.id === viewingSession) || null;
   }, [sessions, viewingSession]);
 
-  // Filtered task library
-  const filteredTasks = useMemo(() => {
-    if (!taskSearch.trim()) return taskLibrary;
-    const search = taskSearch.toLowerCase();
-    return taskLibrary.filter(t => 
-      t.competencia?.toLowerCase().includes(search) || 
-      t.nome?.toLowerCase().includes(search)
-    );
+  // Group task library by competencia
+  const groupedTasks = useMemo(() => {
+    const tasks = taskSearch.trim()
+      ? taskLibrary.filter(t => 
+          t.competencia?.toLowerCase().includes(taskSearch.toLowerCase()) || 
+          t.nome?.toLowerCase().includes(taskSearch.toLowerCase())
+        )
+      : taskLibrary;
+    const groups: Record<string, typeof taskLibrary> = {};
+    tasks.forEach(t => {
+      const comp = t.competencia || "Sem competência";
+      if (!groups[comp]) groups[comp] = [];
+      groups[comp].push(t);
+    });
+    return groups;
   }, [taskLibrary, taskSearch]);
+
+  const competenciaNames = useMemo(() => Object.keys(groupedTasks).sort(), [groupedTasks]);
+  const [expandedComp, setExpandedComp] = useState<string | null>(null);
 
   // Handlers
   const handleEdit = (session: any) => {
@@ -311,7 +321,7 @@ export default function RegistroMentoria() {
     </div>
   );
 
-  // Task selector component
+  // Task selector component - grouped by competência in accordion/leque
   const TaskSelector = ({ value, onChange, deadline, onDeadlineChange }: { 
     value: number | null; onChange: (v: number | null) => void;
     deadline: string; onDeadlineChange: (v: string) => void;
@@ -332,33 +342,80 @@ export default function RegistroMentoria() {
             className="pl-10"
           />
         </div>
-        <div className="max-h-48 overflow-y-auto border rounded-lg divide-y">
+        <div className="max-h-64 overflow-y-auto border rounded-lg">
+          {/* Sem tarefa */}
           <button
             type="button"
-            onClick={() => onChange(null)}
-            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${!value ? 'bg-blue-50 font-medium' : ''}`}
+            onClick={() => { onChange(null); setExpandedComp(null); }}
+            className={`w-full text-left px-3 py-2 text-sm border-b hover:bg-gray-50 ${!value ? 'bg-blue-50 font-medium' : ''}`}
           >
             Sem tarefa
           </button>
-          {filteredTasks.map(task => (
-            <button
-              key={task.id}
-              type="button"
-              onClick={() => onChange(task.id)}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${value === task.id ? 'bg-blue-50 font-medium' : ''}`}
-            >
-              <span className="font-medium text-[#0A1E3E]">{task.competencia}</span>
-              <span className="text-gray-400 mx-1">—</span>
-              <span>{task.nome}</span>
-            </button>
-          ))}
+          {/* Competências em accordion */}
+          {competenciaNames.map(comp => {
+            const tasks = groupedTasks[comp];
+            const isExpanded = expandedComp === comp;
+            const hasSelected = tasks.some(t => t.id === value);
+            return (
+              <div key={comp}>
+                <button
+                  type="button"
+                  onClick={() => setExpandedComp(isExpanded ? null : comp)}
+                  className={`w-full text-left px-3 py-2.5 text-sm border-b flex items-center justify-between hover:bg-gray-50 transition-colors ${
+                    hasSelected ? 'bg-blue-50/50' : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                    <span className="font-semibold text-[#0A1E3E]">{comp}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {tasks.length} {tasks.length === 1 ? 'ação' : 'ações'}
+                    </Badge>
+                  </div>
+                  {hasSelected && <CheckCircle2 className="h-4 w-4 text-blue-600" />}
+                </button>
+                {isExpanded && (
+                  <div className="bg-gray-50/50">
+                    {tasks.map(task => (
+                      <button
+                        key={task.id}
+                        type="button"
+                        onClick={() => onChange(task.id)}
+                        className={`w-full text-left pl-8 pr-3 py-2 text-sm border-b hover:bg-blue-50/50 transition-colors ${
+                          value === task.id ? 'bg-blue-100 font-medium border-l-2 border-l-blue-500' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {value === task.id ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                          ) : (
+                            <Target className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                          )}
+                          <span>{task.nome}</span>
+                        </div>
+                        {task.resumo && (
+                          <p className="text-xs text-gray-500 mt-0.5 pl-5.5 line-clamp-1">{task.resumo}</p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {competenciaNames.length === 0 && (
+            <div className="p-4 text-center text-sm text-gray-500">
+              Nenhuma tarefa encontrada
+            </div>
+          )}
         </div>
+        {/* Detalhes da tarefa selecionada */}
         {selectedTask && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
             <p className="font-medium text-sm text-[#0A1E3E]">{selectedTask.competencia}: {selectedTask.nome}</p>
-            <p className="text-xs text-gray-600"><strong>Resumo:</strong> {selectedTask.resumo}</p>
-            <p className="text-xs text-gray-600"><strong>O que fazer:</strong> {selectedTask.oQueFazer}</p>
-            <p className="text-xs text-gray-600"><strong>O que o aluno ganha:</strong> {selectedTask.oQueGanha}</p>
+            {selectedTask.resumo && <p className="text-xs text-gray-600"><strong>Resumo:</strong> {selectedTask.resumo}</p>}
+            {selectedTask.oQueFazer && <p className="text-xs text-gray-600"><strong>O que fazer:</strong> {selectedTask.oQueFazer}</p>}
+            {selectedTask.oQueGanha && <p className="text-xs text-gray-600"><strong>O que o aluno ganha:</strong> {selectedTask.oQueGanha}</p>}
           </div>
         )}
         {value && (
