@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/table";
 import { 
   Users, Calendar, CheckCircle2, AlertTriangle, Search, 
-  Download, Filter, X, TrendingUp, Clock, UserCheck
+  Download, Filter, X, TrendingUp, Clock, UserCheck, DollarSign, FileText
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
 
 type StatusFilter = "todos" | "completo" | "em_andamento" | "atencao";
@@ -22,7 +23,29 @@ type StatusFilter = "todos" | "completo" | "em_andamento" | "atencao";
 export default function DemonstrativoMentorias() {
   return (
     <DashboardLayout>
-      <DemonstrativoContent />
+      <div className="container py-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Calendar className="h-7 w-7 text-[#1E3A5F]" />
+            Demonstrativo de Sessões de Mentoria
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Acompanhe o progresso e financeiro das sessões de mentoria
+          </p>
+        </div>
+        <Tabs defaultValue="progresso">
+          <TabsList>
+            <TabsTrigger value="progresso" className="gap-2"><FileText className="h-4 w-4" /> Progresso</TabsTrigger>
+            <TabsTrigger value="financeiro" className="gap-2"><DollarSign className="h-4 w-4" /> Financeiro</TabsTrigger>
+          </TabsList>
+          <TabsContent value="progresso">
+            <DemonstrativoContent />
+          </TabsContent>
+          <TabsContent value="financeiro">
+            <RelatorioFinanceiro />
+          </TabsContent>
+        </Tabs>
+      </div>
     </DashboardLayout>
   );
 }
@@ -192,8 +215,7 @@ function DemonstrativoContent() {
 
   if (isLoading) {
     return (
-      <div className="container py-6 space-y-6">
-        <Skeleton className="h-10 w-64" />
+      <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28" />)}
         </div>
@@ -203,18 +225,9 @@ function DemonstrativoContent() {
   }
 
   return (
-    <div className="container py-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Calendar className="h-7 w-7 text-[#1E3A5F]" />
-            Demonstrativo de Sessões de Mentoria
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Acompanhe o progresso de sessões de mentoria de cada aluno
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Export button */}
+      <div className="flex justify-end">
         <Button onClick={handleExportCSV} variant="outline" className="gap-2" disabled={!filteredData.length}>
           <Download className="h-4 w-4" /> Exportar CSV
         </Button>
@@ -458,6 +471,183 @@ function DemonstrativoContent() {
                       </TableRow>
                     );
                   })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ============ RELATÓRIO FINANCEIRO ============
+
+function RelatorioFinanceiro() {
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [appliedFrom, setAppliedFrom] = useState<string | undefined>();
+  const [appliedTo, setAppliedTo] = useState<string | undefined>();
+
+  const { data, isLoading } = trpc.mentor.relatorioFinanceiro.useQuery(
+    appliedFrom || appliedTo ? { dateFrom: appliedFrom, dateTo: appliedTo } : undefined
+  );
+
+  const handleFilter = () => {
+    setAppliedFrom(dateFrom || undefined);
+    setAppliedTo(dateTo || undefined);
+  };
+
+  const handleClear = () => {
+    setDateFrom("");
+    setDateTo("");
+    setAppliedFrom(undefined);
+    setAppliedTo(undefined);
+  };
+
+  const handleExportCSV = () => {
+    if (!data?.mentores.length) return;
+    const headers = ["Mentor", "Valor/Sessão (R$)", "Sessões Realizadas", "Total (R$)"];
+    const rows = data.mentores.map(m => [
+      m.consultorNome,
+      m.valorSessao.toFixed(2),
+      m.totalSessoes,
+      m.totalValor.toFixed(2),
+    ]);
+    rows.push(["", "", String(data.totalSessoesGeral), data.totalGeral.toFixed(2)]);
+    const csvContent = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `relatorio-financeiro-mentorias-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Filtros de período */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">De</label>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-44" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Até</label>
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-44" />
+            </div>
+            <Button onClick={handleFilter} className="gap-2">
+              <Filter className="h-4 w-4" /> Filtrar
+            </Button>
+            {(appliedFrom || appliedTo) && (
+              <Button variant="ghost" onClick={handleClear} className="gap-2">
+                <X className="h-4 w-4" /> Limpar
+              </Button>
+            )}
+            <div className="ml-auto">
+              <Button onClick={handleExportCSV} variant="outline" className="gap-2" disabled={!data?.mentores.length}>
+                <Download className="h-4 w-4" /> Exportar CSV
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* KPIs */}
+      {data && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-l-4 border-l-[#1E3A5F]">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Users className="h-4 w-4 text-[#1E3A5F]" />
+                <span className="text-xs text-gray-500">Mentores Ativos</span>
+              </div>
+              <p className="text-2xl font-bold text-[#1E3A5F]">{data.totalMentores}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Calendar className="h-4 w-4 text-blue-600" />
+                <span className="text-xs text-gray-500">Total de Sessões</span>
+              </div>
+              <p className="text-2xl font-bold text-blue-600">{data.totalSessoesGeral}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-emerald-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <DollarSign className="h-4 w-4 text-emerald-600" />
+                <span className="text-xs text-gray-500">Total Geral</span>
+              </div>
+              <p className="text-2xl font-bold text-emerald-600">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.totalGeral)}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Tabela por Mentor */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Demonstrativo Financeiro por Mentor</CardTitle>
+          <CardDescription>
+            {appliedFrom || appliedTo
+              ? `Período: ${appliedFrom ? new Date(appliedFrom + 'T12:00:00').toLocaleDateString('pt-BR') : 'Início'} a ${appliedTo ? new Date(appliedTo + 'T12:00:00').toLocaleDateString('pt-BR') : 'Hoje'}`
+              : 'Todas as sessões (sem filtro de período)'
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-12" />)}
+            </div>
+          ) : !data?.mentores.length ? (
+            <div className="text-center py-12 text-gray-500">
+              <DollarSign className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p>Nenhuma sessão encontrada no período selecionado</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Mentor</TableHead>
+                    <TableHead className="text-right">Valor/Sessão</TableHead>
+                    <TableHead className="text-right">Sessões Realizadas</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.mentores.map((m) => (
+                    <TableRow key={m.consultorId}>
+                      <TableCell className="font-medium">{m.consultorNome}</TableCell>
+                      <TableCell className="text-right font-mono">
+                        {m.valorSessao > 0
+                          ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(m.valorSessao)
+                          : <span className="text-muted-foreground italic">Não definido</span>
+                        }
+                      </TableCell>
+                      <TableCell className="text-right font-mono">{m.totalSessoes}</TableCell>
+                      <TableCell className="text-right font-mono font-semibold">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(m.totalValor)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* Linha de Total */}
+                  <TableRow className="bg-gray-50 font-bold border-t-2">
+                    <TableCell>TOTAL GERAL</TableCell>
+                    <TableCell></TableCell>
+                    <TableCell className="text-right font-mono">{data.totalSessoesGeral}</TableCell>
+                    <TableCell className="text-right font-mono text-emerald-700">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.totalGeral)}
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </div>

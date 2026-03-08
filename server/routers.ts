@@ -3247,6 +3247,16 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         mentores: allStats.sort((a, b) => b.totalMentorias - a.totalMentorias)
       };
     }),
+
+    // Relatório financeiro de mentorias por período
+    relatorioFinanceiro: managerProcedure
+      .input(z.object({
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getRelatorioFinanceiroMentorias(input?.dateFrom, input?.dateTo);
+      }),
   }),
 
   // ==================== ATIVIDADES PRÁTICAS (ADMIN) ====================
@@ -3402,7 +3412,8 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         cpf: z.string().min(11, "CPF deve conter 11 dígitos"),
         especialidade: z.string().optional(),
         loginId: z.string().optional(),
-        programId: z.number().optional()
+        programId: z.number().optional(),
+        valorSessao: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.createMentor(input);
@@ -3426,6 +3437,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         cpf: z.string().optional(),
         especialidade: z.string().optional(),
         programId: z.number().optional(),
+        valorSessao: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const { consultorId, ...data } = input;

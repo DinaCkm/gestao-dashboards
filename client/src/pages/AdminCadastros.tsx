@@ -1062,10 +1062,12 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
   const [cpfMentor, setCpfMentor] = useState("");
   const [loginId, setLoginId] = useState("");
   const [especialidade, setEspecialidade] = useState("");
+  const [valorSessao, setValorSessao] = useState("");
   const [editNome, setEditNome] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editCpf, setEditCpf] = useState("");
   const [editEspecialidade, setEditEspecialidade] = useState("");
+  const [editValorSessao, setEditValorSessao] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1094,7 +1096,8 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
       email: trimmedEmail, 
       cpf: cpfDigits,
       especialidade: especialidade || undefined,
-      loginId: loginId || undefined
+      loginId: loginId || undefined,
+      valorSessao: valorSessao ? valorSessao : undefined
     });
     setNome("");
     setEmail("");
@@ -1119,6 +1122,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
     setEditEmail(mentor.email || "");
     setEditCpf(mentor.cpf ? formatCpf(mentor.cpf) : "");
     setEditEspecialidade(mentor.especialidade || "");
+    setEditValorSessao(mentor.valorSessao || "");
     setEditOpen(true);
   };
 
@@ -1131,7 +1135,8 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
       name: editNome, 
       email: editEmail || undefined,
       cpf: cpfDigits || undefined,
-      especialidade: editEspecialidade || undefined
+      especialidade: editEspecialidade || undefined,
+      valorSessao: editValorSessao ? editValorSessao : undefined
     });
     setEditOpen(false);
   };
@@ -1177,6 +1182,11 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                   <Input id="loginId-mentor" value={loginId} onChange={(e) => setLoginId(e.target.value)} placeholder="Ex: M0001" />
                   <p className="text-xs text-muted-foreground">Se não informado, será gerado automaticamente ao ativar o acesso</p>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="valor-sessao-mentor">Valor por Sessão (R$)</Label>
+                  <Input id="valor-sessao-mentor" type="number" step="0.01" min="0" value={valorSessao} onChange={(e) => setValorSessao(e.target.value)} placeholder="Ex: 150.00" />
+                  <p className="text-xs text-muted-foreground">Valor cobrado por sessão de mentoria individual</p>
+                </div>
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={isCreating}>
@@ -1200,6 +1210,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                 <TableHead>Email</TableHead>
                 <TableHead>CPF</TableHead>
                 <TableHead>ID Login</TableHead>
+                <TableHead>Valor/Sessão</TableHead>
                 <TableHead>Acesso</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
@@ -1213,6 +1224,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                   <TableCell>{mentor.email || "-"}</TableCell>
                   <TableCell className="font-mono text-sm">{mentor.cpf ? displayCpf(mentor.cpf) : "-"}</TableCell>
                   <TableCell>{mentor.loginId || "-"}</TableCell>
+                  <TableCell className="font-mono">{mentor.valorSessao ? `R$ ${Number(mentor.valorSessao).toFixed(2)}` : <span className="text-muted-foreground italic">-</span>}</TableCell>
                   <TableCell>
                     {mentor.canLogin ? (
                       <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
@@ -1242,7 +1254,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
               ))}
               {mentores.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     Nenhum mentor cadastrado
                   </TableCell>
                 </TableRow>
@@ -1275,6 +1287,10 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                 <div className="space-y-2">
                   <Label htmlFor="edit-especialidade-mentor">Especialidade</Label>
                   <Input id="edit-especialidade-mentor" value={editEspecialidade} onChange={(e) => setEditEspecialidade(e.target.value)} placeholder="Ex: Gestão, Finanças, Marketing, Liderança" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-valor-sessao-mentor">Valor por Sessão (R$)</Label>
+                  <Input id="edit-valor-sessao-mentor" type="number" step="0.01" min="0" value={editValorSessao} onChange={(e) => setEditValorSessao(e.target.value)} placeholder="Ex: 150.00" />
                 </div>
               </div>
               <DialogFooter>
@@ -1822,7 +1838,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                 ))}
                 {gerentesEmpresa.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       Nenhum gerente de empresa com visão dupla cadastrado. Use "Promover Aluno" ou "Gerente Puro" para adicionar.
                     </TableCell>
                   </TableRow>

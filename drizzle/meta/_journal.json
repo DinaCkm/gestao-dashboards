@@ -267,6 +267,13 @@
       "when": 1772993395979,
       "tag": "0037_quick_natasha_romanoff",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1772993987789,
+      "tag": "0038_numerous_wolfsbane",
+      "breakpoints": true
     }
   ]
 }

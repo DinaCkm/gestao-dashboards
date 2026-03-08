@@ -1,0 +1,1 @@
+ALTER TABLE `consultors` ADD `valorSessao` decimal(10,2);

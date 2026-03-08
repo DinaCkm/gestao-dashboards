@@ -59,6 +59,7 @@ export const consultors = mysqlTable("consultors", {
   photoUrl: text("photoUrl"), // URL da foto do mentor (S3)
   miniCurriculo: text("miniCurriculo"), // Minicurrículo / biografia do mentor
   canLogin: int("canLogin").default(0).notNull(), // 1 = pode fazer login
+  valorSessao: decimal("valorSessao", { precision: 10, scale: 2 }), // Valor por sessão de mentoria (R$)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

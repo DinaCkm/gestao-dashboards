@@ -2040,5 +2040,5 @@
 - [x] Item 7: Adicionar notificação in-app (sino/badge) além do email - IMPLEMENTADO: tabela in_app_notifications, componente NotificationBell com badge, notificações automáticas em assessment e mentoria
 - [x] Item 8: Corrigir inconsistência de contagem de alunos da Adriana (5 vs 6 vs 7) - CORRIGIDO: getConsultorStats agora unifica alunos de sessões + consultorId
 - [x] Item 11: Remover relatório gerencial (visão de todos os alunos) da área do mentor - CORRIGIDO: mentor só vê relatório Individual dos seus alunos, sem opção Gerencial
-- [ ] Item 12: Relatório de mentorias realizadas por período com valor de cada mentoria
-- [ ] Item 13: Campo de valor por sessão de mentoria no cadastro do mentor (admin)
+- [x] Item 12: Relatório de mentorias realizadas por período com valor de cada mentoria - IMPLEMENTADO: aba Financeiro no Demonstrativo com filtro de período, KPIs e tabela por mentor
+- [x] Item 13: Campo de valor por sessão de mentoria no cadastro do mentor (admin) - IMPLEMENTADO: campo valorSessao na tabela consultors + formulários de criação/edição + coluna na tabela

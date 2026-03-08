@@ -6340,3 +6340,95 @@ export async function markAllNotificationsRead(userId: number) {
       eq(inAppNotifications.isRead, 0)
     ));
 }
+
+
+// ============ RELATÓRIO FINANCEIRO DE MENTORIAS ============
+
+export async function getRelatorioFinanceiroMentorias(dateFrom?: string, dateTo?: string) {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+
+  // Get all sessions with mentor info
+  const sessions = await dbConn
+    .select({
+      sessionId: mentoringSessions.id,
+      sessionDate: mentoringSessions.sessionDate,
+      sessionNumber: mentoringSessions.sessionNumber,
+      alunoId: mentoringSessions.alunoId,
+      consultorId: mentoringSessions.consultorId,
+      turmaId: mentoringSessions.turmaId,
+      consultorNome: consultors.name,
+      valorSessao: consultors.valorSessao,
+      alunoNome: alunos.name,
+    })
+    .from(mentoringSessions)
+    .leftJoin(consultors, eq(mentoringSessions.consultorId, consultors.id))
+    .leftJoin(alunos, eq(mentoringSessions.alunoId, alunos.id));
+
+  // Filter by date range if provided
+  let filtered = sessions;
+  if (dateFrom) {
+    const from = new Date(dateFrom);
+    filtered = filtered.filter(s => {
+      if (!s.sessionDate) return false;
+      return new Date(s.sessionDate) >= from;
+    });
+  }
+  if (dateTo) {
+    const to = new Date(dateTo);
+    to.setHours(23, 59, 59, 999);
+    filtered = filtered.filter(s => {
+      if (!s.sessionDate) return false;
+      return new Date(s.sessionDate) <= to;
+    });
+  }
+
+  // Group by mentor
+  const byMentor: Record<number, {
+    consultorId: number;
+    consultorNome: string;
+    valorSessao: number;
+    sessoes: Array<{
+      sessionId: number;
+      sessionDate: string | null;
+      sessionNumber: number | null;
+      alunoId: number | null;
+      alunoNome: string | null;
+    }>;
+  }> = {};
+
+  for (const s of filtered) {
+    if (!s.consultorId) continue;
+    if (!byMentor[s.consultorId]) {
+      byMentor[s.consultorId] = {
+        consultorId: s.consultorId,
+        consultorNome: s.consultorNome || 'Desconhecido',
+        valorSessao: s.valorSessao ? Number(s.valorSessao) : 0,
+        sessoes: [],
+      };
+    }
+    byMentor[s.consultorId].sessoes.push({
+      sessionId: s.sessionId,
+      sessionDate: s.sessionDate ? String(s.sessionDate) : null,
+      sessionNumber: s.sessionNumber,
+      alunoId: s.alunoId,
+      alunoNome: s.alunoNome || null,
+    });
+  }
+
+  const mentores = Object.values(byMentor).map(m => ({
+    ...m,
+    totalSessoes: m.sessoes.length,
+    totalValor: m.sessoes.length * m.valorSessao,
+  }));
+
+  const totalGeral = mentores.reduce((sum, m) => sum + m.totalValor, 0);
+  const totalSessoesGeral = mentores.reduce((sum, m) => sum + m.totalSessoes, 0);
+
+  return {
+    mentores: mentores.sort((a, b) => b.totalValor - a.totalValor),
+    totalGeral,
+    totalSessoesGeral,
+    totalMentores: mentores.length,
+  };
+}
