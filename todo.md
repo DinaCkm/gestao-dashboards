@@ -1953,3 +1953,6 @@
 - [x] Modal "Nova Meta" abre com dados preenchidos da meta anterior quando já existe meta para a competência - deve abrir em branco
 - [x] Adicionar instrução clara para a mentora: meta é um desafio maior, não confundir com tarefa
 - [x] Orientar que metas devem ser inseridas conforme assessment realizado, não sendo obrigatório para todas as competências
+
+## Bug: Botão de cadastrar aluno para Onboarding sumiu (07/03/2026)
+- [x] Botão de cadastrar aluno para Onboarding desapareceu da página de Cadastros - restaurar

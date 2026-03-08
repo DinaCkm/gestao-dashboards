@@ -215,6 +215,15 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro: ${err.message}`),
   });
 
+  const createAluno = trpc.admin.createAluno.useMutation({
+    onSuccess: () => {
+      toast.success("Aluno cadastrado! Ele receberá acesso ao Onboarding para iniciar sua participação no programa.");
+      refetchAllAlunos();
+      refetchAccessUsers();
+    },
+    onError: (err) => toast.error(`Erro ao cadastrar aluno: ${err.message}`),
+  });
+
   const createAlunoDireto = trpc.admin.createAlunoDireto.useMutation({
     onSuccess: (data) => {
       if (data.success) {
@@ -313,6 +322,8 @@ export default function AdminCadastros() {
               turmasList={turmasList || []}
               loading={loadingAllAlunos}
               onUpdate={updateAluno.mutate}
+              onCreateAluno={createAluno.mutate}
+              isCreatingAluno={createAluno.isPending}
               onCreateDireto={createAlunoDireto.mutate}
               isCreatingDireto={createAlunoDireto.isPending}
               isUpdating={updateAluno.isPending}
@@ -378,13 +389,15 @@ export default function AdminCadastros() {
 }
 
 // ============ ALUNOS TAB ============
-function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateDireto, isCreatingDireto, isUpdating }: {
+function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, onCreateDireto, isCreatingDireto, isUpdating }: {
   alunos: any[];
   empresas: any[];
   mentoresList: any[];
   turmasList: any[];
   loading: boolean;
   onUpdate: (data: any) => void;
+  onCreateAluno: (data: any) => void;
+  isCreatingAluno: boolean;
   onCreateDireto: (data: any) => void;
   isCreatingDireto: boolean;
   isUpdating: boolean;
@@ -431,6 +444,37 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       })
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || "", 'pt-BR'));
   }, [alunos, searchTerm, filterEmpresa, filterMentor, filterStatus]);
+
+  // Create form (Convite Onboarding - sem mentor)
+  const [onboardOpen, setOnboardOpen] = useState(false);
+  const [onboardNome, setOnboardNome] = useState("");
+  const [onboardEmail, setOnboardEmail] = useState("");
+  const [onboardId, setOnboardId] = useState("");
+  const [onboardProgramId, setOnboardProgramId] = useState("");
+
+  const handleOnboardSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const idDigits = onboardId.replace(/\D/g, '');
+    if (idDigits.length === 0) {
+      toast.error("ID do aluno deve ser informado");
+      return;
+    }
+    if (!onboardProgramId) {
+      toast.error("Selecione a empresa vinculada");
+      return;
+    }
+    onCreateAluno({
+      name: onboardNome,
+      email: onboardEmail,
+      externalId: idDigits,
+      programId: parseInt(onboardProgramId),
+    });
+    setOnboardNome("");
+    setOnboardEmail("");
+    setOnboardId("");
+    setOnboardProgramId("");
+    setOnboardOpen(false);
+  };
 
   // Create form (Cadastro Direto - com mentor vinculado)
   const [diretoOpen, setDiretoOpen] = useState(false);
@@ -529,6 +573,56 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           </CardDescription>
         </div>
         <div className="flex gap-2">
+          {/* Convite Onboarding Dialog */}
+          <Dialog open={onboardOpen} onOpenChange={setOnboardOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50"><UserPlus className="h-4 w-4 mr-2" /> Convite Onboarding</Button>
+            </DialogTrigger>
+            <DialogContent className="z-50 max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
+              <form onSubmit={handleOnboardSubmit}>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5 text-blue-600" />
+                    Cadastrar Aluno para Onboarding
+                  </DialogTitle>
+                  <DialogDescription>
+                    Cadastre o aluno com os dados básicos. Ele receberá acesso ao Onboarding onde poderá iniciar sua participação no programa e escolher o mentor.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-700"><strong>Fluxo:</strong> O aluno fará login com Email + ID, acessará a área de Onboarding e iniciará sua participação no programa. O mentor <strong>não</strong> é vinculado neste momento — será definido posteriormente.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nome Completo *</Label>
+                    <Input value={onboardNome} onChange={(e) => setOnboardNome(e.target.value)} placeholder="Nome completo" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email *</Label>
+                    <Input type="email" value={onboardEmail} onChange={(e) => setOnboardEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>ID do Aluno *</Label>
+                    <Input value={onboardId} onChange={(e) => setOnboardId(e.target.value.replace(/\D/g, ''))} placeholder="Ex: 667306" required maxLength={10} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Empresa Vinculada *</Label>
+                    <select value={onboardProgramId} onChange={(e) => setOnboardProgramId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" required>
+                      <option value="">Selecione a empresa</option>
+                      {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
+                    </select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setOnboardOpen(false)}>Cancelar</Button>
+                  <Button type="submit" disabled={isCreatingAluno} className="bg-blue-600 hover:bg-blue-700">
+                    {isCreatingAluno ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Cadastrando...</> : "Cadastrar e Enviar Convite"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
           {/* Cadastro Direto Dialog */}
           <Dialog open={diretoOpen} onOpenChange={setDiretoOpen}>
             <DialogTrigger asChild>
