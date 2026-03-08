@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO __drizzle_migrations (hash, created_at) SELECT '0033_natural_red_ghost', UNIX_TIMESTAMP() * 1000 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM __drizzle_migrations WHERE hash = '0033_natural_red_ghost');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute INSERT INTO __drizzle_migrations (hash, created_at) SELECT '0033_natural_red_ghost', UNIX_TIMESTAMP() * 1000 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM __drizzle_migrations WHERE hash = '0033_natural_red_ghost');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 71
+}

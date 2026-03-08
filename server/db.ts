@@ -32,7 +32,11 @@ import {
   mentorAppointments, InsertMentorAppointment, MentorAppointment,
   appointmentParticipants, InsertAppointmentParticipant, AppointmentParticipant,
   metas, InsertMeta, Meta,
-  metaAcompanhamento, InsertMetaAcompanhamento, MetaAcompanhamento
+  metaAcompanhamento, InsertMetaAcompanhamento, MetaAcompanhamento,
+  discRespostas, InsertDiscResposta, DiscResposta,
+  discResultados, InsertDiscResultado, DiscResultado,
+  autopercepcoesCompetencias, InsertAutopercepcaoCompetencia, AutopercepcaoCompetencia,
+  mentoraContribuicoes, InsertMentoraContribuicao, MentoraContribuicao
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -6127,4 +6131,91 @@ export async function getAlertaAtualizacaoMetas(alunoId: number) {
     mesesDesdeUltimaAtualizacao,
     ultimaAtualizacao: ultimaAtualizacao ? ultimaAtualizacao.toISOString() : null,
   };
+}
+
+
+// ============ DISC TEST FUNCTIONS ============
+
+export async function saveDiscRespostas(alunoId: number, respostas: InsertDiscResposta[]) {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+  
+  // Deletar respostas anteriores do aluno (permite refazer o teste)
+  await dbConn.delete(discRespostas).where(eq(discRespostas.alunoId, alunoId));
+  
+  // Inserir novas respostas
+  if (respostas.length > 0) {
+    await dbConn.insert(discRespostas).values(respostas);
+  }
+}
+
+export async function getDiscRespostas(alunoId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  return dbConn.select().from(discRespostas).where(eq(discRespostas.alunoId, alunoId));
+}
+
+export async function saveDiscResultado(data: InsertDiscResultado) {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+  
+  // Deletar resultado anterior do aluno
+  await dbConn.delete(discResultados).where(eq(discResultados.alunoId, data.alunoId));
+  
+  // Inserir novo resultado
+  await dbConn.insert(discResultados).values(data);
+}
+
+export async function getDiscResultado(alunoId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return null;
+  const result = await dbConn.select().from(discResultados).where(eq(discResultados.alunoId, alunoId)).limit(1);
+  return result[0] || null;
+}
+
+// ============ AUTOPERCEPÇÃO FUNCTIONS ============
+
+export async function saveAutopercepcoes(alunoId: number, avaliacoes: InsertAutopercepcaoCompetencia[]) {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+  
+  // Deletar avaliações anteriores do aluno
+  await dbConn.delete(autopercepcoesCompetencias).where(eq(autopercepcoesCompetencias.alunoId, alunoId));
+  
+  // Inserir novas avaliações
+  if (avaliacoes.length > 0) {
+    await dbConn.insert(autopercepcoesCompetencias).values(avaliacoes);
+  }
+}
+
+export async function getAutopercepcoes(alunoId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  return dbConn.select().from(autopercepcoesCompetencias).where(eq(autopercepcoesCompetencias.alunoId, alunoId));
+}
+
+// ============ MENTORA CONTRIBUIÇÕES FUNCTIONS ============
+
+export async function saveContribuicaoMentora(data: InsertMentoraContribuicao) {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+  await dbConn.insert(mentoraContribuicoes).values(data);
+}
+
+export async function updateContribuicaoMentora(id: number, conteudo: string) {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+  await dbConn.update(mentoraContribuicoes).set({ conteudo }).where(eq(mentoraContribuicoes.id, id));
+}
+
+export async function deleteContribuicaoMentora(id: number) {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+  await dbConn.delete(mentoraContribuicoes).where(eq(mentoraContribuicoes.id, id));
+}
+
+export async function getContribuicoesMentora(alunoId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  return dbConn.select().from(mentoraContribuicoes).where(eq(mentoraContribuicoes.alunoId, alunoId));
 }

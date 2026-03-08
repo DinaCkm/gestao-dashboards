@@ -780,3 +780,76 @@ export const metaAcompanhamento = mysqlTable("meta_acompanhamento", {
 
 export type MetaAcompanhamento = typeof metaAcompanhamento.$inferSelect;
 export type InsertMetaAcompanhamento = typeof metaAcompanhamento.$inferInsert;
+
+
+/**
+ * Teste DISC - Respostas do aluno às 28 afirmações DISC
+ * Cada afirmação pertence a uma dimensão (D, I, S, C) e o aluno responde de 1 a 5
+ */
+export const discRespostas = mysqlTable("disc_respostas", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  perguntaIndex: int("perguntaIndex").notNull(), // Índice da pergunta (0-27)
+  dimensao: mysqlEnum("dimensao", ["D", "I", "S", "C"]).notNull(), // Dimensão DISC
+  resposta: int("resposta").notNull(), // Valor 1-5 (escala Likert)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DiscResposta = typeof discRespostas.$inferSelect;
+export type InsertDiscResposta = typeof discRespostas.$inferInsert;
+
+/**
+ * Teste DISC - Resultado calculado do perfil DISC do aluno
+ * Armazena os scores por dimensão e o perfil predominante
+ */
+export const discResultados = mysqlTable("disc_resultados", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  scoreD: decimal("scoreD", { precision: 5, scale: 2 }).notNull(), // Score Dominância (0-100)
+  scoreI: decimal("scoreI", { precision: 5, scale: 2 }).notNull(), // Score Influência (0-100)
+  scoreS: decimal("scoreS", { precision: 5, scale: 2 }).notNull(), // Score Estabilidade (0-100)
+  scoreC: decimal("scoreC", { precision: 5, scale: 2 }).notNull(), // Score Conformidade (0-100)
+  perfilPredominante: mysqlEnum("perfilPredominante", ["D", "I", "S", "C"]).notNull(),
+  perfilSecundario: mysqlEnum("perfilSecundario", ["D", "I", "S", "C"]),
+  completedAt: timestamp("completedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DiscResultado = typeof discResultados.$inferSelect;
+export type InsertDiscResultado = typeof discResultados.$inferInsert;
+
+/**
+ * Autopercepção de Competências - O aluno se autoavalia em cada competência (régua 1-5)
+ * Feito durante o Onboarding, antes da sessão de mentoria
+ */
+export const autopercepcoesCompetencias = mysqlTable("autopercepcoes_competencias", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  competenciaId: int("competenciaId").notNull(), // FK para competencias
+  trilhaId: int("trilhaId").notNull(), // FK para trilhas (desnormalizado)
+  nota: int("nota").notNull(), // Autoavaliação 1-5
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AutopercepcaoCompetencia = typeof autopercepcoesCompetencias.$inferSelect;
+export type InsertAutopercepcaoCompetencia = typeof autopercepcoesCompetencias.$inferInsert;
+
+/**
+ * Contribuições da Mentora ao Relatório de Autoconhecimento
+ * A mentora pode adicionar observações/complementos ao relatório do aluno
+ */
+export const mentoraContribuicoes = mysqlTable("mentora_contribuicoes", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  consultorId: int("consultorId").notNull(), // FK para consultors (mentora)
+  tipo: mysqlEnum("tipo", ["disc", "competencia", "geral"]).notNull(), // Tipo de contribuição
+  competenciaId: int("competenciaId"), // FK para competencias (null se tipo = disc ou geral)
+  conteudo: text("conteudo").notNull(), // Texto da contribuição da mentora
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MentoraContribuicao = typeof mentoraContribuicoes.$inferSelect;
+export type InsertMentoraContribuicao = typeof mentoraContribuicoes.$inferInsert;

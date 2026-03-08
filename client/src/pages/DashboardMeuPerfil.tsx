@@ -27,6 +27,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DualIndicators from "@/components/DualIndicators";
+import { lazy, Suspense } from "react";
+const RelatorioAutoconhecimentoTab = lazy(() => import("./TesteDiscOnboarding").then(m => ({ default: m.default })));
 
 function getClassificacaoColor(classificacao: string): string {
   switch (classificacao) {
@@ -943,6 +945,9 @@ export default function DashboardMeuPerfil() {
             </TabsTrigger>
             <TabsTrigger value="cases" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <Briefcase className="h-4 w-4 mr-1" /> Cases de Sucesso
+            </TabsTrigger>
+            <TabsTrigger value="meu-perfil-disc" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
+              <Activity className="h-4 w-4 mr-1" /> Meu Perfil
             </TabsTrigger>
           </TabsList>
 
@@ -2414,6 +2419,20 @@ export default function DashboardMeuPerfil() {
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          {/* === MEU PERFIL DISC === */}
+          <TabsContent value="meu-perfil-disc" className="mt-4">
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin h-8 w-8 border-4 border-[#0A1E3E] border-t-transparent rounded-full" />
+              </div>
+            }>
+              <RelatorioAutoconhecimentoTab
+                alunoId={aluno.id}
+                onComplete={() => {}}
+              />
+            </Suspense>
           </TabsContent>
         </Tabs>
 

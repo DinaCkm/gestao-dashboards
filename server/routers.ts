@@ -4721,6 +4721,145 @@ Responda APENAS em JSON com o formato:
         return await db.getAlertaAtualizacaoMetas(alunoId);
       }),
   }),
+
+  // ============ TESTE DISC + AUTOPERCEPÇÃO ============
+  disc: router({
+    // Buscar perguntas do teste DISC
+    perguntas: publicProcedure.query(() => {
+      const { DISC_PERGUNTAS, DISC_ESCALA_LABELS } = require('../shared/discData');
+      return { perguntas: DISC_PERGUNTAS, escalaLabels: DISC_ESCALA_LABELS };
+    }),
+
+    // Salvar respostas e calcular resultado DISC
+    salvarRespostas: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        respostas: z.array(z.object({
+          perguntaIndex: z.number(),
+          dimensao: z.enum(["D", "I", "S", "C"]),
+          resposta: z.number().min(1).max(5),
+        }))
+      }))
+      .mutation(async ({ input }) => {
+        const { calcularDiscScores } = require('../shared/discData');
+        
+        // Salvar respostas
+        await db.saveDiscRespostas(input.alunoId, input.respostas.map(r => ({
+          alunoId: input.alunoId,
+          perguntaIndex: r.perguntaIndex,
+          dimensao: r.dimensao,
+          resposta: r.resposta,
+        })));
+
+        // Calcular scores
+        const resultado = calcularDiscScores(input.respostas);
+
+        // Salvar resultado
+        await db.saveDiscResultado({
+          alunoId: input.alunoId,
+          scoreD: String(resultado.scores.D),
+          scoreI: String(resultado.scores.I),
+          scoreS: String(resultado.scores.S),
+          scoreC: String(resultado.scores.C),
+          perfilPredominante: resultado.perfilPredominante,
+          perfilSecundario: resultado.perfilSecundario,
+        });
+
+        return resultado;
+      }),
+
+    // Buscar resultado DISC de um aluno
+    resultado: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getDiscResultado(input.alunoId);
+      }),
+
+    // Buscar perfis DISC (descrições)
+    perfis: publicProcedure.query(() => {
+      const { DISC_PERFIS } = require('../shared/discData');
+      return DISC_PERFIS;
+    }),
+  }),
+
+  // ============ AUTOPERCEPÇÃO DE COMPETÊNCIAS ============
+  autopercepção: router({
+    // Salvar autoavaliação de competências
+    salvar: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        avaliacoes: z.array(z.object({
+          competenciaId: z.number(),
+          trilhaId: z.number(),
+          nota: z.number().min(1).max(5),
+        }))
+      }))
+      .mutation(async ({ input }) => {
+        await db.saveAutopercepcoes(input.alunoId, input.avaliacoes.map(a => ({
+          alunoId: input.alunoId,
+          competenciaId: a.competenciaId,
+          trilhaId: a.trilhaId,
+          nota: a.nota,
+        })));
+        return { success: true };
+      }),
+
+    // Buscar autoavaliação de um aluno
+    porAluno: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAutopercepcoes(input.alunoId);
+      }),
+  }),
+
+  // ============ CONTRIBUIÇÕES DA MENTORA ============
+  contribuicoesMentora: router({
+    // Adicionar contribuição
+    adicionar: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        consultorId: z.number(),
+        tipo: z.enum(["disc", "competencia", "geral"]),
+        competenciaId: z.number().nullable().optional(),
+        conteudo: z.string().min(1),
+      }))
+      .mutation(async ({ input }) => {
+        await db.saveContribuicaoMentora({
+          alunoId: input.alunoId,
+          consultorId: input.consultorId,
+          tipo: input.tipo,
+          competenciaId: input.competenciaId ?? null,
+          conteudo: input.conteudo,
+        });
+        return { success: true };
+      }),
+
+    // Atualizar contribuição
+    atualizar: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        conteudo: z.string().min(1),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateContribuicaoMentora(input.id, input.conteudo);
+        return { success: true };
+      }),
+
+    // Remover contribuição
+    remover: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteContribuicaoMentora(input.id);
+        return { success: true };
+      }),
+
+    // Listar contribuições de um aluno
+    porAluno: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getContribuicoesMentora(input.alunoId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

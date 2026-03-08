@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
+import EtapaAssessmentCompleta from "./TesteDiscOnboarding";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -249,87 +250,9 @@ function EtapaCadastro({ onComplete }: { onComplete: () => void }) {
 }
 
 // ============================================================
-// ETAPA 2: ASSESSMENT
+// ETAPA 2: ASSESSMENT (DISC + Autopercepção + Relatório)
+// Componente importado de TesteDiscOnboarding.tsx
 // ============================================================
-
-function EtapaAssessment({ onComplete }: { onComplete: () => void }) {
-  const [status] = useState<"pendente" | "em_andamento" | "concluido">("concluido");
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Assessment de Perfil</h2>
-        <p className="text-gray-500 mt-1">Avaliação comportamental e de competências para direcionar sua jornada</p>
-      </div>
-
-      <Card className="max-w-2xl mx-auto">
-        <CardContent className="pt-8 pb-8">
-          <div className="text-center space-y-6">
-            <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-[#0A1E3E]/10 to-[#F5991F]/10 flex items-center justify-center">
-              <ClipboardCheck className="h-10 w-10 text-[#0A1E3E]" />
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Avaliação de Perfil Comportamental</h3>
-              <p className="text-gray-500 text-sm max-w-md mx-auto">
-                O Assessment é uma ferramenta que identifica seu perfil comportamental, pontos fortes e áreas de desenvolvimento.
-                O resultado será analisado pela sua mentora para definir sua trilha personalizada.
-              </p>
-            </div>
-
-            <div className="flex justify-center">
-              {status === "concluido" ? (
-                <Badge className="bg-emerald-100 text-emerald-700 border-0 px-4 py-2 text-sm">
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Assessment Concluído
-                </Badge>
-              ) : status === "em_andamento" ? (
-                <Badge className="bg-amber-100 text-amber-700 border-0 px-4 py-2 text-sm">
-                  <Clock className="h-4 w-4 mr-2" />
-                  Em Andamento
-                </Badge>
-              ) : (
-                <Badge className="bg-gray-100 text-gray-600 border-0 px-4 py-2 text-sm">
-                  <Circle className="h-4 w-4 mr-2" />
-                  Pendente
-                </Badge>
-              )}
-            </div>
-
-            {status !== "concluido" && (
-              <Button
-                className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white px-8 py-3"
-                onClick={() => toast.info("Você será redirecionado para a plataforma de assessment")}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Realizar Assessment
-              </Button>
-            )}
-
-            <div className="bg-blue-50 rounded-lg p-4 text-left">
-              <p className="text-sm text-blue-700 flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                Após concluir o assessment, sua mentora fará a análise do relatório e disponibilizará os resultados na seção "Relatório de Perfil".
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button
-          className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
-          onClick={() => {
-            toast.success("Assessment registrado! Avançando para escolha da mentora.");
-            onComplete();
-          }}
-        >
-          Continuar <ChevronRight className="h-5 w-5 ml-2" />
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 // ============================================================
 // ETAPA 3: ESCOLHA DA MENTORA
@@ -814,6 +737,7 @@ export default function OnboardingAluno() {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
+  const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
 
   const handleStepComplete = () => {
     if (currentStep < 5) {
@@ -855,7 +779,12 @@ export default function OnboardingAluno() {
 
         {/* Etapas */}
         {currentStep === 1 && <EtapaCadastro onComplete={handleStepComplete} />}
-        {currentStep === 2 && <EtapaAssessment onComplete={handleStepComplete} />}
+        {currentStep === 2 && (
+          <EtapaAssessmentCompleta
+            alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
+            onComplete={handleStepComplete}
+          />
+        )}
         {currentStep === 3 && (
           <EtapaMentora
             onComplete={handleStepComplete}

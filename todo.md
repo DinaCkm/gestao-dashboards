@@ -1961,3 +1961,13 @@
 - [ ] Configurar Resend API e DNS (ADIADO - aguardando configuração DNS pelo usuário)
 - [ ] Integrar envio de email no endpoint createAluno (ADIADO)
 - [x] Corrigir createAluno para também criar registro na tabela users (login)
+
+## Feature: Teste DISC + Régua de Autopercepção no Onboarding (07/03/2026)
+- [x] Criar tabelas no banco: disc_respostas, disc_resultados, autopercepção_competencias
+- [x] Criar endpoints backend: salvar respostas DISC, calcular perfil, salvar autopercepção, buscar resultados
+- [x] Implementar tela do teste DISC no Onboarding (28 afirmações, escala 1-5)
+- [x] Implementar tela da Régua de Autopercepção no Onboarding (36 competências, slider 1-5)
+- [x] Implementar Relatório de Autoconhecimento visual na plataforma (perfil DISC + mapa competências)
+- [x] Opção de download do relatório em PDF
+- [x] Painel de contribuições da mentora no Assessment (complementos ao relatório do aluno)
+- [x] Contribuições da mentora aparecem no relatório do aluno no Portal
