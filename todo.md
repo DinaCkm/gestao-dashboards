@@ -2080,3 +2080,4 @@
 - [x] Área Conteúdo e Comunicação: webinars + avisos + placeholders cursos/atividades extras
 - [ ] Simplificar Upload: remover cards mentorias/eventos/desempenho, manter só performance
 - [x] Testar navegação completa e consistência (TypeScript OK, LSP OK, menu renderiza corretamente)
+- [x] Adicionar "Atividades Práticas" ao menu do mentor (ele atribui tarefas nas sessões de mentoria)

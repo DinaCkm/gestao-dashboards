@@ -183,6 +183,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment", roles: ["manager"], requireConsultorId: true },
   { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["manager"], requireConsultorId: true },
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas", roles: ["manager"], requireConsultorId: true },
+  { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas", roles: ["manager"], requireConsultorId: true },
   { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorId: true },
   
   // === GERENTE DE EMPRESA ===
