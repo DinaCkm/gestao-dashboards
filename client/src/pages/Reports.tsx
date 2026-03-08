@@ -28,6 +28,8 @@ export default function ReportsPage() {
   const [reportFormat, setReportFormat] = useState<"pdf" | "excel">("excel");
   const [reportName, setReportName] = useState("");
   const [selectedAlunoId, setSelectedAlunoId] = useState<string>("");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [historyExpanded, setHistoryExpanded] = useState(true);
 
@@ -93,6 +95,8 @@ export default function ReportsPage() {
     const type = overrides?.type || reportType;
     const format = overrides?.format || reportFormat;
     const scopeId = overrides?.scopeId || (selectedAlunoId ? parseInt(selectedAlunoId) : undefined);
+    const reportDateFrom = dateFrom || undefined;
+    const reportDateTo = dateTo || undefined;
 
     if (!name.trim()) {
       toast.error("Digite um nome para o relatório");
@@ -111,6 +115,8 @@ export default function ReportsPage() {
         type,
         format,
         scopeId,
+        dateFrom: reportDateFrom,
+        dateTo: reportDateTo,
       });
     } finally {
       setIsGenerating(false);
@@ -204,6 +210,26 @@ export default function ReportsPage() {
                   </Select>
                 </div>
               )}
+
+              {/* Filtro de Período */}
+              <div className="space-y-2">
+                <Label>Período - De</Label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="bg-input"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Período - Até</Label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="bg-input"
+                />
+              </div>
 
               <div className="space-y-2">
                 <Label>Formato</Label>

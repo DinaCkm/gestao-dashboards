@@ -912,6 +912,8 @@ export const appRouter = router({
         type: z.enum(["admin", "manager", "individual"]),
         format: z.enum(["pdf", "excel"]),
         scopeId: z.number().optional(),
+        dateFrom: z.string().optional(), // YYYY-MM-DD
+        dateTo: z.string().optional(), // YYYY-MM-DD
         parameters: z.record(z.string(), z.unknown()).optional()
       }))
       .mutation(async ({ ctx, input }) => {
@@ -931,13 +933,33 @@ export const appRouter = router({
         
         // Generate actual report file
         try {
-          const mentoringSessions = await db.getAllMentoringSessions();
-          const eventParticipations = await db.getAllEventParticipationWithDate();
+          let mentoringSessions = await db.getAllMentoringSessions();
+          let eventParticipations = await db.getAllEventParticipationWithDate();
           const alunosList = await db.getAlunos();
           const programsList = await db.getPrograms();
           const allPlanoItems = await db.getAllPlanoIndividual();
           const turmasList = await db.getTurmas();
           const consultorsList = await db.getConsultors();
+          
+          // Filtro por período (Item 4)
+          const dateFrom = input.dateFrom ? new Date(input.dateFrom + 'T00:00:00') : null;
+          const dateTo = input.dateTo ? new Date(input.dateTo + 'T23:59:59') : null;
+          if (dateFrom || dateTo) {
+            mentoringSessions = mentoringSessions.filter(s => {
+              if (!s.sessionDate) return true;
+              const d = new Date(s.sessionDate);
+              if (dateFrom && d < dateFrom) return false;
+              if (dateTo && d > dateTo) return false;
+              return true;
+            });
+            eventParticipations = eventParticipations.filter(ep => {
+              if (!ep.eventDate) return true;
+              const d = new Date(ep.eventDate);
+              if (dateFrom && d < dateFrom) return false;
+              if (dateTo && d > dateTo) return false;
+              return true;
+            });
+          }
           
           const alunoMap = new Map(alunosList.map(a => [a.id, a]));
           const programMap = new Map(programsList.map(p => [p.id, p]));
