@@ -977,14 +977,21 @@ export async function getConsultorStats(consultorId: number) {
   // Get all sessions for this consultor
   const sessions = await getMentoringSessionsByConsultor(consultorId);
   
-  // Get unique alunos
-  const alunoIds = Array.from(new Set(sessions.map(s => s.alunoId)));
+  // Get all alunos
   const alunosList = await getAlunos();
   const alunoMap = new Map(alunosList.map(a => [a.id, a]));
   
   // Filter only valid sessions (aluno exists in alunos table)
   const validSessions = sessions.filter(s => alunoMap.has(s.alunoId));
-  const validAlunoIds = Array.from(new Set(validSessions.map(s => s.alunoId)));
+  const sessionAlunoIds = new Set(validSessions.map(s => s.alunoId));
+  
+  // Also get alunos directly linked via consultorId (e.g., from onboarding)
+  const directAlunos = alunosList.filter(a => a.consultorId === consultorId && a.isActive === 1);
+  const directAlunoIds = new Set(directAlunos.map(a => a.id));
+  
+  // Merge both sources: alunos from sessions + alunos linked directly
+  const allAlunoIds = new Set([...Array.from(sessionAlunoIds), ...Array.from(directAlunoIds)]);
+  const validAlunoIds = Array.from(allAlunoIds);
   
   // Get programs
   const programsList = await getPrograms();
@@ -1011,7 +1018,17 @@ export async function getConsultorStats(consultorId: number) {
     }
   }
   
-  // Get aluno details (only valid alunos)
+  // Also add directly linked alunos to porEmpresa stats (even without sessions)
+  for (const aluno of directAlunos) {
+    const program = aluno.programId ? programMap.get(aluno.programId) : null;
+    const programName = program?.name || 'Sem Programa';
+    if (!statsByProgram[programName]) {
+      statsByProgram[programName] = { mentorias: 0, alunos: new Set(), datas: new Set() };
+    }
+    statsByProgram[programName].alunos.add(aluno.id);
+  }
+  
+  // Get aluno details (all alunos: from sessions + directly linked)
   const alunosAtendidos = validAlunoIds.map(id => {
     const aluno = alunoMap.get(id);
     if (!aluno) return null;
