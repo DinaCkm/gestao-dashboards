@@ -1996,3 +1996,14 @@
 
 ## Bug: Etapa 5 mostra "Encontro Realizado" sem verificar presença real (08/03/2026)
 - [x] Corrigir etapa 5 do Onboarding: agora verifica no banco se a mentora registrou presença, fez assessment e relatório antes de mostrar como realizado
+
+## Bug: Aluno do Onboarding não aparece para mentora no Assessment (08/03/2026)
+- [x] Aluno José da Silva cadastrado pelo onboarding e que escolheu a mentora Adriana não aparece na lista de alunos dela no assessment (corrigido: onboarding agora salva consultorId)
+- [x] Relatório do teste DISC do aluno visível para a mentora ao acessar o assessment (card DISC adicionado)
+- [x] Mentora acessa o relatório DISC do aluno ao atribuir metas/PDI (card DISC adicionado na página de Metas)
+
+## Bug: Dados do onboarding não persistem (cadastro, mentora, DISC) (08/03/2026)
+- [x] Dados do cadastro do aluno no onboarding agora são salvos no banco (endpoint salvarCadastro criado)
+- [x] Escolha da mentora no onboarding agora vincula o aluno à mentora (endpoint escolherMentora criado)
+- [x] Agendamento do onboarding agora é salvo no banco (endpoint criarAgendamento criado)
+- [x] Relatório DISC visível para mentora no assessment e nas metas

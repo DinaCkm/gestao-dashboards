@@ -144,6 +144,12 @@ function MetasContent() {
     { enabled: !!selectedAlunoId }
   );
 
+  // Buscar resultado do teste DISC do aluno
+  const { data: discResultado } = trpc.disc.resultado.useQuery(
+    { alunoId: selectedAlunoId! },
+    { enabled: !!selectedAlunoId }
+  );
+
   const { data: metasDetalhadas = [], refetch: refetchMetas } = trpc.metas.listar.useQuery(
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
@@ -455,6 +461,46 @@ function MetasContent() {
           )}
         </CardContent>
       </Card>
+
+      {/* Relatório DISC do Aluno */}
+      {selectedAlunoId && discResultado && (
+        <Card className="border-[#F5991F]/30 bg-gradient-to-r from-[#F5991F]/5 to-transparent border-2">
+          <CardContent className="py-4">
+            <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              Perfil Comportamental DISC
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+              {[
+                { label: 'Dominância (D)', score: discResultado.scoreD, color: 'bg-red-500' },
+                { label: 'Influência (I)', score: discResultado.scoreI, color: 'bg-yellow-500' },
+                { label: 'Estabilidade (S)', score: discResultado.scoreS, color: 'bg-green-500' },
+                { label: 'Conformidade (C)', score: discResultado.scoreC, color: 'bg-blue-500' },
+              ].map(dim => (
+                <div key={dim.label} className="text-center">
+                  <div className="text-xs text-muted-foreground mb-1">{dim.label}</div>
+                  <div className="relative h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${dim.color}`} style={{ width: `${Math.min(Number(dim.score), 100)}%` }} />
+                  </div>
+                  <div className="text-sm font-bold mt-1">{Number(dim.score).toFixed(0)}%</div>
+                </div>
+              ))}
+            </div>
+            {discResultado.perfilPredominante && (
+              <div className="flex items-center gap-2">
+                <Badge className="bg-[#0A1E3E] text-white">
+                  Perfil Primário: {discResultado.perfilPredominante}
+                </Badge>
+                {discResultado.perfilSecundario && (
+                  <Badge variant="outline" className="border-[#0A1E3E] text-[#0A1E3E]">
+                    Secundário: {discResultado.perfilSecundario}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* === INDICADORES DE DESTAQUE === */}
       {selectedAlunoId && metasResumo && (

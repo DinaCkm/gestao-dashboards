@@ -169,26 +169,59 @@ function OnboardingStepper({ currentStep, onStepClick }: { currentStep: number; 
 // ETAPA 1: CADASTRO / PERFIL
 // ============================================================
 
-function EtapaCadastro({ onComplete }: { onComplete: () => void }) {
+function EtapaCadastro({ onComplete, alunoId }: { onComplete: () => void; alunoId: number }) {
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
   const alunoReal = dashData?.found ? dashData.aluno : null;
+  const salvarCadastro = trpc.onboarding.salvarCadastro.useMutation();
+  const utils = trpc.useUtils();
 
   const [perfil, setPerfil] = useState({
     nome: "", email: "", telefone: "", empresa: "", cargo: "",
     areaAtuacao: "", experiencia: "", programa: "", turma: "", foto: null as string | null,
   });
   const [initialized, setInitialized] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   if (alunoReal && !initialized) {
     setPerfil(prev => ({
       ...prev,
       nome: alunoReal.name || prev.nome,
       email: alunoReal.email || prev.email,
+      telefone: (alunoReal as any).telefone || prev.telefone,
+      cargo: (alunoReal as any).cargo || prev.cargo,
+      areaAtuacao: (alunoReal as any).areaAtuacao || prev.areaAtuacao,
+      experiencia: (alunoReal as any).experiencia || prev.experiencia,
       programa: alunoReal.programa || prev.programa,
       turma: alunoReal.turma || prev.turma,
     }));
     setInitialized(true);
   }
+
+  const handleSalvar = async () => {
+    if (!alunoId || alunoId === 0) {
+      toast.error("Erro: aluno não identificado. Tente recarregar a página.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await salvarCadastro.mutateAsync({
+        alunoId,
+        nome: perfil.nome || undefined,
+        email: perfil.email || undefined,
+        telefone: perfil.telefone || undefined,
+        cargo: perfil.cargo || undefined,
+        areaAtuacao: perfil.areaAtuacao || undefined,
+        experiencia: perfil.experiencia || undefined,
+      });
+      utils.indicadores.meuDashboard.invalidate();
+      toast.success("Cadastro salvo com sucesso!");
+      onComplete();
+    } catch (err: any) {
+      toast.error(err?.message || "Erro ao salvar cadastro. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -288,12 +321,10 @@ function EtapaCadastro({ onComplete }: { onComplete: () => void }) {
       <div className="flex justify-end">
         <Button
           className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
-          onClick={() => {
-            toast.success("Cadastro salvo com sucesso!");
-            onComplete();
-          }}
+          onClick={handleSalvar}
+          disabled={saving}
         >
-          Salvar e Continuar <ChevronRight className="h-5 w-5 ml-2" />
+          {saving ? "Salvando..." : "Salvar e Continuar"} <ChevronRight className="h-5 w-5 ml-2" />
         </Button>
       </div>
     </div>
@@ -309,10 +340,12 @@ function EtapaCadastro({ onComplete }: { onComplete: () => void }) {
 // ETAPA 3: ESCOLHA DA MENTORA
 // ============================================================
 
-function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void; onSelectMentora: (m: Mentora) => void }) {
+function EtapaMentora({ onComplete, onSelectMentora, alunoId }: { onComplete: () => void; onSelectMentora: (m: Mentora) => void; alunoId: number }) {
   const { data: mentoresData } = trpc.mentor.list.useQuery();
+  const escolherMentora = trpc.onboarding.escolherMentora.useMutation();
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
   const [detailMentora, setDetailMentora] = useState<Mentora | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // Converter consultores do banco para o formato Mentora
   const mentoras: Mentora[] = useMemo(() => {
@@ -523,13 +556,29 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
         <div className="flex justify-end">
           <Button
             className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
-            onClick={() => {
-              onSelectMentora(selectedMentora);
-              toast.success(`${selectedMentora.nome} selecionada como sua mentora!`);
-              onComplete();
+            disabled={saving}
+            onClick={async () => {
+              if (!alunoId || alunoId === 0) {
+                toast.error("Erro: aluno não identificado. Tente recarregar a página.");
+                return;
+              }
+              setSaving(true);
+              try {
+                await escolherMentora.mutateAsync({
+                  alunoId,
+                  consultorId: selectedMentora.id,
+                });
+                onSelectMentora(selectedMentora);
+                toast.success(`${selectedMentora.nome} selecionada como sua mentora!`);
+                onComplete();
+              } catch (err: any) {
+                toast.error(err?.message || "Erro ao salvar escolha da mentora.");
+              } finally {
+                setSaving(false);
+              }
             }}
           >
-            Confirmar Escolha e Continuar <ChevronRight className="h-5 w-5 ml-2" />
+            {saving ? "Salvando..." : "Confirmar Escolha e Continuar"} <ChevronRight className="h-5 w-5 ml-2" />
           </Button>
         </div>
       )}
@@ -541,8 +590,10 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
 // ETAPA 4: AGENDAMENTO
 // ============================================================
 
-function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; onComplete: () => void }) {
+function EtapaAgendamento({ mentora, onComplete, alunoId }: { mentora: Mentora | null; onComplete: () => void; alunoId: number }) {
+  const criarAgendamento = trpc.onboarding.criarAgendamento.useMutation();
   const [selectedSlot, setSelectedSlot] = useState<SlotAgenda | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const slotsDisponiveis = useMemo(() => {
     if (!mentora) return [];
@@ -675,12 +726,34 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
         <div className="flex justify-end">
           <Button
             className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
-            onClick={() => {
-              toast.success("Encontro Inicial agendado com sucesso!");
-              onComplete();
+            disabled={saving}
+            onClick={async () => {
+              if (!alunoId || alunoId === 0 || !mentora) {
+                toast.error("Erro: dados insuficientes. Tente recarregar a página.");
+                return;
+              }
+              setSaving(true);
+              try {
+                const endHour = parseInt(selectedSlot.horario.split(':')[0]) + 1;
+                const endTime = `${String(endHour).padStart(2, '0')}:${selectedSlot.horario.split(':')[1]}`;
+                await criarAgendamento.mutateAsync({
+                  alunoId,
+                  consultorId: mentora.id,
+                  scheduledDate: selectedSlot.data,
+                  startTime: selectedSlot.horario,
+                  endTime,
+                  googleMeetLink: selectedSlot.linkMeet || undefined,
+                });
+                toast.success("Encontro Inicial agendado com sucesso!");
+                onComplete();
+              } catch (err: any) {
+                toast.error(err?.message || "Erro ao salvar agendamento.");
+              } finally {
+                setSaving(false);
+              }
             }}
           >
-            Confirmar Agendamento <ChevronRight className="h-5 w-5 ml-2" />
+            {saving ? "Agendando..." : "Confirmar Agendamento"} <ChevronRight className="h-5 w-5 ml-2" />
           </Button>
         </div>
       )}
@@ -925,7 +998,7 @@ export default function OnboardingAluno() {
         <OnboardingStepper currentStep={currentStep} onStepClick={setCurrentStep} />
 
         {/* Etapas */}
-        {currentStep === 1 && <EtapaCadastro onComplete={handleStepComplete} />}
+        {currentStep === 1 && <EtapaCadastro onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} />}
         {currentStep === 2 && (
           <EtapaAssessmentCompleta
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
@@ -936,9 +1009,10 @@ export default function OnboardingAluno() {
           <EtapaMentora
             onComplete={handleStepComplete}
             onSelectMentora={setSelectedMentora}
+            alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
           />
         )}
-        {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} />}
+        {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} />}
         {currentStep === 5 && <EtapaPrimeiroEncontro mentora={selectedMentora} onComplete={handleStepComplete} progressoData={progressoData ?? undefined} />}
       </div>
     </AlunoLayout>

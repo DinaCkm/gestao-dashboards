@@ -1439,6 +1439,10 @@ export async function updateAluno(alunoId: number, data: {
   programId?: number | null;
   consultorId?: number | null;
   turmaId?: number | null;
+  telefone?: string | null;
+  cargo?: string | null;
+  areaAtuacao?: string | null;
+  experiencia?: string | null;
 }): Promise<{ success: boolean; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
@@ -1450,6 +1454,10 @@ export async function updateAluno(alunoId: number, data: {
   if (data.programId !== undefined) updateData.programId = data.programId;
   if (data.consultorId !== undefined) updateData.consultorId = data.consultorId;
   if (data.turmaId !== undefined) updateData.turmaId = data.turmaId;
+  if (data.telefone !== undefined) updateData.telefone = data.telefone;
+  if (data.cargo !== undefined) updateData.cargo = data.cargo;
+  if (data.areaAtuacao !== undefined) updateData.areaAtuacao = data.areaAtuacao;
+  if (data.experiencia !== undefined) updateData.experiencia = data.experiencia;
   
   if (data.cpf !== undefined) {
     if (data.cpf === null || data.cpf === '') {

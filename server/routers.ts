@@ -2458,6 +2458,10 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           id: aluno.id,
           name: aluno.name,
           email: aluno.email,
+          telefone: (aluno as any).telefone || null,
+          cargo: (aluno as any).cargo || null,
+          areaAtuacao: (aluno as any).areaAtuacao || null,
+          experiencia: (aluno as any).experiencia || null,
           programa: programa?.name || 'Não definido',
           turma: turmaAluno?.name || 'Não definida',
           trilha: (() => {
@@ -4863,6 +4867,70 @@ Responda APENAS em JSON com o formato:
 
   // ============ PROGRESSO DO ONBOARDING ============
   onboarding: router({
+    // Salvar dados do cadastro (etapa 1)
+    salvarCadastro: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        nome: z.string().optional(),
+        email: z.string().optional(),
+        telefone: z.string().optional(),
+        cargo: z.string().optional(),
+        areaAtuacao: z.string().optional(),
+        experiencia: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { alunoId, nome, email, telefone, cargo, areaAtuacao, experiencia } = input;
+        const result = await db.updateAluno(alunoId, {
+          name: nome,
+          email,
+          telefone: telefone || null,
+          cargo: cargo || null,
+          areaAtuacao: areaAtuacao || null,
+          experiencia: experiencia || null,
+        });
+        return result;
+      }),
+
+    // Escolher mentora (etapa 3)
+    escolherMentora: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        consultorId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const { alunoId, consultorId } = input;
+        const result = await db.updateAluno(alunoId, { consultorId });
+        return result;
+      }),
+
+    // Criar agendamento (etapa 4)
+    criarAgendamento: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        consultorId: z.number(),
+        scheduledDate: z.string(),
+        startTime: z.string(),
+        endTime: z.string(),
+        googleMeetLink: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { alunoId, consultorId, scheduledDate, startTime, endTime, googleMeetLink, notes } = input;
+        // Criar o agendamento na tabela mentor_appointments
+        const result = await db.createGroupAppointment({
+          consultorId,
+          title: 'Encontro Inicial - Onboarding',
+          description: notes || 'Primeiro encontro de mentoria agendado pelo onboarding',
+          scheduledDate,
+          startTime,
+          endTime,
+          googleMeetLink: googleMeetLink || null,
+          alunoIds: [alunoId],
+          createdBy: ctx.user.id,
+        });
+        return { success: result.success, appointmentId: result.id };
+      }),
+
     // Retorna o step atual do onboarding baseado nos dados do banco
     progresso: protectedProcedure
       .input(z.object({ alunoId: z.number() }))

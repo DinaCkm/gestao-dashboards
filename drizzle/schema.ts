@@ -186,6 +186,10 @@ export const alunos = mysqlTable("alunos", {
   canLogin: int("canLogin").default(1).notNull(), // 1 = pode fazer login
   bypassOnboarding: int("bypassOnboarding").default(0).notNull(), // 1 = pular assessment/vitrine, ir direto ao dashboard
   cadastradoPorAdmin: int("cadastradoPorAdmin").default(0).notNull(), // 1 = cadastrado diretamente pelo admin
+  telefone: varchar("telefone", { length: 20 }),
+  cargo: varchar("cargo", { length: 255 }),
+  areaAtuacao: varchar("areaAtuacao", { length: 255 }),
+  experiencia: text("experiencia"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

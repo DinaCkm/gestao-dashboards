@@ -1,0 +1,42 @@
+{
+  "query": "SELECT a.id, a.name, a.email, a.consultorId, a.turmaId, a.programId FROM alunos a WHERE a.name LIKE '%Jos%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.email, a.consultorId, a.turmaId, a.programId FROM alunos a WHERE a.name LIKE '%Jos%'",
+  "rows": [
+    {
+      "id": "208",
+      "name": "JOSIANE CLAIRE SCHNEIDER LEMOS",
+      "email": "Josiane_Schneider@banrisul.com.br",
+      "consultorId": "NULL",
+      "turmaId": "36",
+      "programId": "19"
+    },
+    {
+      "id": "30066",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "consultorId": "35",
+      "turmaId": "30003",
+      "programId": "17"
+    },
+    {
+      "id": "30092",
+      "name": "Antonio Luis Ferreira dos Anjos Filho",
+      "email": "antonio.filho@to.sebrae.com.br",
+      "consultorId": "32",
+      "turmaId": "30008",
+      "programId": "17"
+    },
+    {
+      "id": "330001",
+      "name": "Jose da Silva",
+      "email": "jose@teste.com",
+      "consultorId": "NULL",
+      "turmaId": "NULL",
+      "programId": "19"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tconsultorId\tturmaId\tprogramId\n208\tJOSIANE CLAIRE SCHNEIDER LEMOS\tJosiane_Schneider@banrisul.com.br\tNULL\t36\t19\n30066\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\t35\t30003\t17\n30092\tAntonio Luis Ferreira dos Anjos Filho\tantonio.filho@to.sebrae.com.br\t32\t30008\t17\n330001\tJose da Silva\tjose@teste.com\tNULL\tNULL\t19\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}
