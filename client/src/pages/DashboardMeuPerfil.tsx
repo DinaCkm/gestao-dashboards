@@ -529,7 +529,10 @@ export default function DashboardMeuPerfil() {
                                         {a.totalCompetencias} comp. ({a.obrigatorias} obrig. / {a.opcionais} opc.)
                                       </span>
                                       {a.status === 'congelado' && (
-                                        <Badge className="bg-amber-500/30 text-amber-300 border-amber-400/40 text-[9px] px-1 py-0">Em Andamento</Badge>
+                                        <Badge className="bg-gray-500/30 text-gray-300 border-gray-400/40 text-[9px] px-1 py-0">Finalizada</Badge>
+                                      )}
+                                      {a.status === 'ativo' && (
+                                        <Badge className="bg-emerald-500/30 text-emerald-300 border-emerald-400/40 text-[9px] px-1 py-0">Em Andamento</Badge>
                                       )}
                                     </div>
                                     {/* Tabela de competências */}
@@ -1061,7 +1064,7 @@ export default function DashboardMeuPerfil() {
                       ativo: isActive ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
                       congelado: isActive ? "bg-gray-500 text-white border-gray-500" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
                     };
-                    const labelMap = { todos: "Todos", ativo: "Finalizada", congelado: "Em Andamento" };
+                    const labelMap = { todos: "Todos", ativo: "Em Andamento", congelado: "Finalizada" };
                     return (
                       <button
                         key={status}
@@ -1105,7 +1108,7 @@ export default function DashboardMeuPerfil() {
                             </div>
                           )}
                           <Badge variant="outline" className={macroJornada.status === "ativo" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
-                            {macroJornada.status === "ativo" ? "Finalizada" : "Em Andamento"}
+                            {macroJornada.status === "ativo" ? "Em Andamento" : "Finalizada"}
                           </Badge>
                         </div>
                       </div>

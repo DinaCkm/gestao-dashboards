@@ -281,6 +281,13 @@ function MetasContent() {
   }
 
   function handleAddMeta(compId: number, assCompId: number, pdiId: number) {
+    // Limpar todos os campos do formulário antes de abrir
+    setMetaTitulo("");
+    setMetaDescricao("");
+    setMetaFromLibrary(false);
+    setSelectedTaskLibraryId(null);
+    sugerirIAMutation.reset();
+    // Definir a competência selecionada
     setAddMetaCompId(compId);
     setAddMetaAssCompId(assCompId);
     setAddMetaPdiId(pdiId);
@@ -349,6 +356,25 @@ function MetasContent() {
           </p>
         </div>
       </div>
+
+      {/* Orientação para a mentora */}
+      <Card className="bg-amber-50 border-amber-200">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-amber-800">Orientação sobre Metas de Desenvolvimento</p>
+              <ul className="text-xs text-amber-700 space-y-1 list-disc ml-4">
+                <li><strong>Meta não é tarefa.</strong> Meta é um desafio maior de desenvolvimento, algo que o aluno precisa conquistar ao longo da jornada. Tarefas são atividades pontuais realizadas entre as sessões de mentoria.</li>
+                <li><strong>Insira metas conforme o Assessment realizado.</strong> Não é obrigatório criar metas para todas as competências listadas. Foque nas competências priorizadas durante o Assessment com o aluno.</li>
+                <li><strong>Cada competência pode ter mais de uma meta.</strong> Você pode adicionar quantas metas forem necessárias para cada competência priorizada.</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filtros */}
       <Card>
@@ -648,7 +674,7 @@ function MetasContent() {
               Nova Meta
             </DialogTitle>
             <DialogDescription>
-              Defina uma meta concreta para o desenvolvimento desta competência
+              Defina um <strong>desafio de desenvolvimento</strong> para esta competência. Lembre-se: meta é algo maior, um desafio que o aluno deve conquistar — não confundir com tarefa (atividade pontual entre sessões).
             </DialogDescription>
           </DialogHeader>
 

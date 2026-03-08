@@ -1943,3 +1943,13 @@
 ## Menu do Aluno (07/03/2026)
 - [x] Mover "Integração" para primeira posição no menu do aluno
 - [x] Renomear "Integração" para "Onboarding"
+
+## Bug: Trilhas mostrando "Finalizada" incorretamente (07/03/2026)
+- [x] Investigar lógica que determina status "Finalizada" das trilhas - labels estavam invertidos
+- [x] Corrigir DashboardMeuPerfil.tsx: ativo="Em Andamento", congelado="Finalizada"
+- [x] Corrigir Assessment.tsx: congelado="Finalizada", default="Em Andamento"
+
+## Bug: Modal Nova Meta abre com dados da meta anterior (07/03/2026)
+- [x] Modal "Nova Meta" abre com dados preenchidos da meta anterior quando já existe meta para a competência - deve abrir em branco
+- [x] Adicionar instrução clara para a mentora: meta é um desafio maior, não confundir com tarefa
+- [x] Orientar que metas devem ser inseridas conforme assessment realizado, não sendo obrigatório para todas as competências
