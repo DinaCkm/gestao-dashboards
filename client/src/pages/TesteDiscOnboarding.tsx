@@ -1087,9 +1087,11 @@ function RelatorioAutoconhecimento({
 export default function EtapaAssessmentCompleta({
   alunoId,
   onComplete,
+  readOnly = false,
 }: {
   alunoId: number;
   onComplete: () => void;
+  readOnly?: boolean;
 }) {
   // Verificar se já fez o teste
   const { data: discResultado } = trpc.disc.resultado.useQuery({ alunoId }, { enabled: !!alunoId });

@@ -6167,18 +6167,37 @@ export async function saveDiscResultado(data: InsertDiscResultado) {
   const dbConn = await getDb();
   if (!dbConn) throw new Error("Database not available");
   
-  // Deletar resultado anterior do aluno
-  await dbConn.delete(discResultados).where(eq(discResultados.alunoId, data.alunoId));
+  // Buscar o ciclo mais recente do aluno para determinar o próximo
+  const existing = await dbConn.select({ ciclo: discResultados.ciclo })
+    .from(discResultados)
+    .where(eq(discResultados.alunoId, data.alunoId))
+    .orderBy(desc(discResultados.ciclo))
+    .limit(1);
   
-  // Inserir novo resultado
-  await dbConn.insert(discResultados).values(data);
+  const nextCiclo = existing.length > 0 ? (existing[0].ciclo + 1) : 1;
+  
+  // Inserir novo resultado com ciclo
+  await dbConn.insert(discResultados).values({ ...data, ciclo: nextCiclo });
 }
 
 export async function getDiscResultado(alunoId: number) {
   const dbConn = await getDb();
   if (!dbConn) return null;
-  const result = await dbConn.select().from(discResultados).where(eq(discResultados.alunoId, alunoId)).limit(1);
+  // Retornar o resultado mais recente (maior ciclo)
+  const result = await dbConn.select().from(discResultados)
+    .where(eq(discResultados.alunoId, alunoId))
+    .orderBy(desc(discResultados.ciclo))
+    .limit(1);
   return result[0] || null;
+}
+
+export async function getAllDiscResultadosByAluno(alunoId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  // Retornar todos os resultados DISC do aluno, ordenados por ciclo
+  return await dbConn.select().from(discResultados)
+    .where(eq(discResultados.alunoId, alunoId))
+    .orderBy(discResultados.ciclo);
 }
 
 // ============ AUTOPERCEPÇÃO FUNCTIONS ============
@@ -6227,3 +6246,19 @@ export async function getContribuicoesMentora(alunoId: number) {
   if (!dbConn) return [];
   return dbConn.select().from(mentoraContribuicoes).where(eq(mentoraContribuicoes.alunoId, alunoId));
 }
+
+
+// ============ REASSESSMENT / CICLO DISC FUNCTIONS ============
+
+/**
+ * Retorna TODOS os resultados DISC de um aluno (para comparativo de evolução)
+ * Ordenados por data de criação (mais antigo primeiro)
+ */
+export async function getAllDiscResultados(alunoId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  return dbConn.select().from(discResultados)
+    .where(eq(discResultados.alunoId, alunoId))
+    .orderBy(discResultados.createdAt);
+}
+

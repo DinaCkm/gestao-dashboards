@@ -809,6 +809,7 @@ export type InsertDiscResposta = typeof discRespostas.$inferInsert;
 export const discResultados = mysqlTable("disc_resultados", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  ciclo: int("ciclo").default(1).notNull(), // Ciclo do assessment (1 = inicial, 2 = reassessment, etc.)
   scoreD: decimal("scoreD", { precision: 5, scale: 2 }).notNull(), // Score Dominância (0-100)
   scoreI: decimal("scoreI", { precision: 5, scale: 2 }).notNull(), // Score Influência (0-100)
   scoreS: decimal("scoreS", { precision: 5, scale: 2 }).notNull(), // Score Estabilidade (0-100)

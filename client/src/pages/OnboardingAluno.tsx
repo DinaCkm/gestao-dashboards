@@ -169,7 +169,7 @@ function OnboardingStepper({ currentStep, onStepClick }: { currentStep: number; 
 // ETAPA 1: CADASTRO / PERFIL
 // ============================================================
 
-function EtapaCadastro({ onComplete, alunoId }: { onComplete: () => void; alunoId: number }) {
+function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
   const alunoReal = dashData?.found ? dashData.aluno : null;
   const salvarCadastro = trpc.onboarding.salvarCadastro.useMutation();
@@ -268,19 +268,19 @@ function EtapaCadastro({ onComplete, alunoId }: { onComplete: () => void; alunoI
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">Nome Completo</label>
-                <Input value={perfil.nome} onChange={(e) => setPerfil({...perfil, nome: e.target.value})} />
+                <Input value={perfil.nome} onChange={(e) => setPerfil({...perfil, nome: e.target.value})} disabled={readOnly} />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Email</label>
-                <Input value={perfil.email} onChange={(e) => setPerfil({...perfil, email: e.target.value})} />
+                <Input value={perfil.email} onChange={(e) => setPerfil({...perfil, email: e.target.value})} disabled={readOnly} />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Telefone</label>
-                <Input value={perfil.telefone} onChange={(e) => setPerfil({...perfil, telefone: e.target.value})} />
+                <Input value={perfil.telefone} onChange={(e) => setPerfil({...perfil, telefone: e.target.value})} disabled={readOnly} />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Empresa</label>
-                <Input value={perfil.empresa} onChange={(e) => setPerfil({...perfil, empresa: e.target.value})} />
+                <Input value={perfil.empresa} onChange={(e) => setPerfil({...perfil, empresa: e.target.value})} disabled={readOnly} />
               </div>
             </div>
           </CardContent>
@@ -298,11 +298,11 @@ function EtapaCadastro({ onComplete, alunoId }: { onComplete: () => void; alunoI
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">Cargo</label>
-                <Input value={perfil.cargo} onChange={(e) => setPerfil({...perfil, cargo: e.target.value})} />
+                <Input value={perfil.cargo} onChange={(e) => setPerfil({...perfil, cargo: e.target.value})} disabled={readOnly} />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Área de Atuação</label>
-                <Input value={perfil.areaAtuacao} onChange={(e) => setPerfil({...perfil, areaAtuacao: e.target.value})} />
+                <Input value={perfil.areaAtuacao} onChange={(e) => setPerfil({...perfil, areaAtuacao: e.target.value})} disabled={readOnly} />
               </div>
             </div>
             <div>
@@ -312,21 +312,31 @@ function EtapaCadastro({ onComplete, alunoId }: { onComplete: () => void; alunoI
                 onChange={(e) => setPerfil({...perfil, experiencia: e.target.value})}
                 rows={4}
                 className="resize-none"
+                disabled={readOnly}
               />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex justify-end">
-        <Button
-          className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
-          onClick={handleSalvar}
-          disabled={saving}
-        >
-          {saving ? "Salvando..." : "Salvar e Continuar"} <ChevronRight className="h-5 w-5 ml-2" />
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end">
+          <Button
+            className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
+            onClick={handleSalvar}
+            disabled={saving}
+          >
+            {saving ? "Salvando..." : "Salvar e Continuar"} <ChevronRight className="h-5 w-5 ml-2" />
+          </Button>
+        </div>
+      )}
+      {readOnly && (
+        <div className="flex justify-center">
+          <Badge className="bg-green-100 text-green-700 border-green-200 px-4 py-2 text-sm">
+            <CheckCircle2 className="h-4 w-4 mr-2" /> Cadastro concluído
+          </Badge>
+        </div>
+      )}
     </div>
   );
 }
@@ -340,7 +350,7 @@ function EtapaCadastro({ onComplete, alunoId }: { onComplete: () => void; alunoI
 // ETAPA 3: ESCOLHA DA MENTORA
 // ============================================================
 
-function EtapaMentora({ onComplete, onSelectMentora, alunoId }: { onComplete: () => void; onSelectMentora: (m: Mentora) => void; alunoId: number }) {
+function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }: { onComplete: () => void; onSelectMentora: (m: Mentora) => void; alunoId: number; readOnly?: boolean }) {
   const { data: mentoresData } = trpc.mentor.list.useQuery();
   const escolherMentora = trpc.onboarding.escolherMentora.useMutation();
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
@@ -439,7 +449,7 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId }: { onComplete: ()
                   >
                     <Eye className="h-3 w-3 mr-1" /> Ver Currículo
                   </Button>
-                  {mentora.disponivel ? (
+                  {mentora.disponivel && !readOnly ? (
                     <Button
                       size="sm"
                       className={`flex-1 text-xs ${
@@ -458,11 +468,11 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId }: { onComplete: ()
                         <><Heart className="h-3 w-3 mr-1" /> Escolher</>
                       )}
                     </Button>
-                  ) : (
+                  ) : !readOnly ? (
                     <Button size="sm" variant="outline" className="flex-1 text-xs" disabled>
                       Indisponível
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </CardContent>
@@ -552,7 +562,7 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId }: { onComplete: ()
         </DialogContent>
       </Dialog>
 
-      {selectedMentora && (
+      {selectedMentora && !readOnly && (
         <div className="flex justify-end">
           <Button
             className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
@@ -582,6 +592,13 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId }: { onComplete: ()
           </Button>
         </div>
       )}
+      {readOnly && (
+        <div className="flex justify-center">
+          <Badge className="bg-green-100 text-green-700 border-green-200 px-4 py-2 text-sm">
+            <CheckCircle2 className="h-4 w-4 mr-2" /> Mentora escolhida
+          </Badge>
+        </div>
+      )}
     </div>
   );
 }
@@ -590,7 +607,7 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId }: { onComplete: ()
 // ETAPA 4: AGENDAMENTO
 // ============================================================
 
-function EtapaAgendamento({ mentora, onComplete, alunoId }: { mentora: Mentora | null; onComplete: () => void; alunoId: number }) {
+function EtapaAgendamento({ mentora, onComplete, alunoId, readOnly = false }: { mentora: Mentora | null; onComplete: () => void; alunoId: number; readOnly?: boolean }) {
   const criarAgendamento = trpc.onboarding.criarAgendamento.useMutation();
   const [selectedSlot, setSelectedSlot] = useState<SlotAgenda | null>(null);
   const [saving, setSaving] = useState(false);
@@ -679,11 +696,14 @@ function EtapaAgendamento({ mentora, onComplete, alunoId }: { mentora: Mentora |
                       {slots.map((slot) => (
                         <button
                           key={slot.id}
-                          onClick={() => setSelectedSlot(slot)}
+                          onClick={() => !readOnly && setSelectedSlot(slot)}
+                          disabled={readOnly}
                           className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
                             selectedSlot?.id === slot.id
                               ? "bg-[#F5991F] text-white border-[#F5991F] shadow-md"
-                              : "bg-white text-gray-700 border-gray-200 hover:border-[#F5991F] hover:text-[#F5991F]"
+                              : readOnly
+                                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                : "bg-white text-gray-700 border-gray-200 hover:border-[#F5991F] hover:text-[#F5991F]"
                           }`}
                         >
                           <Clock className="h-3 w-3 inline mr-1" />
@@ -722,7 +742,7 @@ function EtapaAgendamento({ mentora, onComplete, alunoId }: { mentora: Mentora |
         </Card>
       </div>
 
-      {selectedSlot && (
+      {selectedSlot && !readOnly && (
         <div className="flex justify-end">
           <Button
             className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
@@ -757,6 +777,13 @@ function EtapaAgendamento({ mentora, onComplete, alunoId }: { mentora: Mentora |
           </Button>
         </div>
       )}
+      {readOnly && (
+        <div className="flex justify-center">
+          <Badge className="bg-green-100 text-green-700 border-green-200 px-4 py-2 text-sm">
+            <CheckCircle2 className="h-4 w-4 mr-2" /> Agendamento realizado
+          </Badge>
+        </div>
+      )}
     </div>
   );
 }
@@ -765,7 +792,7 @@ function EtapaAgendamento({ mentora, onComplete, alunoId }: { mentora: Mentora |
 // ETAPA 5: 1º ENCONTRO
 // ============================================================
 
-function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData }: {
+function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData, readOnly = false }: {
   mentora: Mentora | null;
   onComplete: () => void;
   progressoData?: {
@@ -777,6 +804,7 @@ function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData }: {
     agendamentoHora?: string | null;
     agendamentoMeetLink?: string | null;
   };
+  readOnly?: boolean;
 }) {
   const encontroRealizado = progressoData?.encontroRealizado ?? false;
   const presencaRegistrada = progressoData?.presencaRegistrada ?? false;
@@ -959,6 +987,10 @@ export default function OnboardingAluno() {
     }
   }, [progressoData, stepInitialized]);
 
+  // Modo somente leitura quando onboarding já foi completo
+  const readOnly = !!(progressoData?.onboardingCompleto);
+  const reassessmentElegivel = !!(progressoData?.reassessmentElegivel);
+
   const handleStepComplete = () => {
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
@@ -997,12 +1029,35 @@ export default function OnboardingAluno() {
         {/* Stepper */}
         <OnboardingStepper currentStep={currentStep} onStepClick={setCurrentStep} />
 
+        {/* Banner de modo somente leitura */}
+        {readOnly && !reassessmentElegivel && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
+            <Lock className="h-5 w-5 text-blue-600 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-blue-800">Onboarding Concluído</p>
+              <p className="text-xs text-blue-600">Suas etapas estão em modo de visualização. As alterações serão liberadas ao final do seu programa para um novo assessment.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Banner de reassessment elegível */}
+        {readOnly && reassessmentElegivel && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+            <Sparkles className="h-5 w-5 text-green-600 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-green-800">Novo Assessment Disponível!</p>
+              <p className="text-xs text-green-600">Seu programa chegou ao fim. Você pode refazer o assessment para avaliar sua evolução. Clique na etapa "Assessment" para começar.</p>
+            </div>
+          </div>
+        )}
+
         {/* Etapas */}
-        {currentStep === 1 && <EtapaCadastro onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} />}
+        {currentStep === 1 && <EtapaCadastro onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
         {currentStep === 2 && (
           <EtapaAssessmentCompleta
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
             onComplete={handleStepComplete}
+            readOnly={readOnly && !reassessmentElegivel}
           />
         )}
         {currentStep === 3 && (
@@ -1010,10 +1065,11 @@ export default function OnboardingAluno() {
             onComplete={handleStepComplete}
             onSelectMentora={setSelectedMentora}
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
+            readOnly={readOnly}
           />
         )}
-        {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} />}
-        {currentStep === 5 && <EtapaPrimeiroEncontro mentora={selectedMentora} onComplete={handleStepComplete} progressoData={progressoData ?? undefined} />}
+        {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
+        {currentStep === 5 && <EtapaPrimeiroEncontro mentora={selectedMentora} onComplete={handleStepComplete} progressoData={progressoData ?? undefined} readOnly={readOnly} />}
       </div>
     </AlunoLayout>
   );

@@ -253,6 +253,13 @@
       "when": 1772985756124,
       "tag": "0035_minor_the_initiative",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "5",
+      "when": 1772989996112,
+      "tag": "0036_complete_adam_warlock",
+      "breakpoints": true
     }
   ]
 }

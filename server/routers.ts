@@ -4784,6 +4784,90 @@ Responda APENAS em JSON com o formato:
       const { DISC_PERFIS } = require('../shared/discData');
       return DISC_PERFIS;
     }),
+
+    // Buscar histórico completo de resultados DISC de um aluno (todos os ciclos)
+    historico: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAllDiscResultadosByAluno(input.alunoId);
+      }),
+
+    // Comparativo de evolução entre ciclos DISC
+    comparativo: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const resultados = await db.getAllDiscResultadosByAluno(input.alunoId);
+        if (resultados.length < 2) return null;
+
+        const primeiro = resultados[0];
+        const ultimo = resultados[resultados.length - 1];
+
+        const evolucao = {
+          D: Number(ultimo.scoreD) - Number(primeiro.scoreD),
+          I: Number(ultimo.scoreI) - Number(primeiro.scoreI),
+          S: Number(ultimo.scoreS) - Number(primeiro.scoreS),
+          C: Number(ultimo.scoreC) - Number(primeiro.scoreC),
+        };
+
+        return {
+          cicloInicial: {
+            ciclo: primeiro.ciclo,
+            data: primeiro.completedAt,
+            scores: { D: Number(primeiro.scoreD), I: Number(primeiro.scoreI), S: Number(primeiro.scoreS), C: Number(primeiro.scoreC) },
+            perfilPredominante: primeiro.perfilPredominante,
+          },
+          cicloAtual: {
+            ciclo: ultimo.ciclo,
+            data: ultimo.completedAt,
+            scores: { D: Number(ultimo.scoreD), I: Number(ultimo.scoreI), S: Number(ultimo.scoreS), C: Number(ultimo.scoreC) },
+            perfilPredominante: ultimo.perfilPredominante,
+          },
+          evolucao,
+          totalCiclos: resultados.length,
+          todosResultados: resultados.map(r => ({
+            ciclo: r.ciclo,
+            data: r.completedAt,
+            scores: { D: Number(r.scoreD), I: Number(r.scoreI), S: Number(r.scoreS), C: Number(r.scoreC) },
+            perfilPredominante: r.perfilPredominante,
+          })),
+        };
+      }),
+
+    // Verificar se o aluno é elegível para reassessment (contrato vencido ou próximo do vencimento)
+    verificarReassessment: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        // Buscar contrato do aluno
+        const contratos = await db.getContratosByAluno(input.alunoId);
+        if (!contratos || contratos.length === 0) {
+          return { elegivel: false, motivo: 'Sem contrato ativo' };
+        }
+
+        const contratoAtivo = contratos.find((c: any) => c.status === 'ativo') || contratos[contratos.length - 1];
+        const termino = contratoAtivo.periodoTermino ? new Date(contratoAtivo.periodoTermino) : null;
+        const agora = new Date();
+
+        if (!termino) {
+          return { elegivel: false, motivo: 'Contrato sem data de término definida' };
+        }
+
+        // Elegível se o contrato já venceu ou está a menos de 30 dias do vencimento
+        const diasParaVencimento = Math.ceil((termino.getTime() - agora.getTime()) / (1000 * 60 * 60 * 24));
+        const elegivel = diasParaVencimento <= 30;
+
+        // Buscar resultado DISC mais recente
+        const discAtual = await db.getDiscResultado(input.alunoId);
+
+        return {
+          elegivel,
+          motivo: elegivel
+            ? (diasParaVencimento <= 0 ? 'Contrato finalizado' : `Faltam ${diasParaVencimento} dias para o término`)
+            : `Faltam ${diasParaVencimento} dias para o término (mínimo 30 dias)`,
+          contratoTermino: termino.toISOString(),
+          diasParaVencimento,
+          cicloAtual: discAtual?.ciclo || 1,
+        };
+      }),
   }),
 
   // ============ AUTOPERCEPÇÃO DE COMPETÊNCIAS ============
@@ -4897,9 +4981,55 @@ Responda APENAS em JSON com o formato:
         alunoId: z.number(),
         consultorId: z.number(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { alunoId, consultorId } = input;
         const result = await db.updateAluno(alunoId, { consultorId });
+
+        // Notificar a mentora por email
+        try {
+          const consultor = await db.getConsultorById(consultorId);
+          const aluno = await db.getAlunoById(alunoId);
+          if (consultor?.email && aluno) {
+            const { sendEmail } = await import('./emailService');
+            await sendEmail({
+              to: consultor.email,
+              subject: `Novo aluno vinculado: ${aluno.name}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="background: #0A1E3E; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0;">Novo Aluno Vinculado</h2>
+                  </div>
+                  <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p>Olá, <strong>${consultor.name}</strong>!</p>
+                    <p>O aluno <strong>${aluno.name}</strong> escolheu você como mentora durante o onboarding do programa de mentoria.</p>
+                    <p>Em breve ele fará o agendamento do primeiro encontro. Fique atenta às notificações!</p>
+                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-top: 16px;">
+                      <p style="margin: 0; font-size: 14px; color: #6b7280;"><strong>Aluno:</strong> ${aluno.name}</p>
+                      ${aluno.email ? `<p style="margin: 4px 0 0; font-size: 14px; color: #6b7280;"><strong>Email:</strong> ${aluno.email}</p>` : ''}
+                    </div>
+                    <p style="margin-top: 16px; font-size: 13px; color: #9ca3af;">Sistema do Bem - Programa de Mentoria</p>
+                  </div>
+                </div>
+              `,
+            });
+          }
+        } catch (emailErr) {
+          console.warn('[Onboarding] Erro ao enviar notificação de novo aluno para mentora:', emailErr);
+        }
+
+        // Notificar o owner também
+        try {
+          const { notifyOwner } = await import('./_core/notification');
+          const aluno = await db.getAlunoById(alunoId);
+          const consultor = await db.getConsultorById(consultorId);
+          await notifyOwner({
+            title: 'Novo aluno escolheu mentora',
+            content: `O aluno ${aluno?.name || 'N/A'} escolheu a mentora ${consultor?.name || 'N/A'} durante o onboarding.`,
+          });
+        } catch (notifErr) {
+          console.warn('[Onboarding] Erro ao notificar owner:', notifErr);
+        }
+
         return result;
       }),
 
@@ -4928,6 +5058,39 @@ Responda APENAS em JSON com o formato:
           alunoIds: [alunoId],
           createdBy: ctx.user.id,
         });
+        // Notificar a mentora por email sobre o agendamento
+        try {
+          const consultor = await db.getConsultorById(consultorId);
+          const aluno = await db.getAlunoById(alunoId);
+          if (consultor?.email && aluno) {
+            const { sendEmail } = await import('./emailService');
+            await sendEmail({
+              to: consultor.email,
+              subject: `Agendamento de encontro: ${aluno.name}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="background: #0A1E3E; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0;">Encontro Inicial Agendado</h2>
+                  </div>
+                  <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p>Olá, <strong>${consultor.name}</strong>!</p>
+                    <p>O aluno <strong>${aluno.name}</strong> agendou o primeiro encontro de mentoria.</p>
+                    <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin-top: 16px; border: 1px solid #bbf7d0;">
+                      <p style="margin: 0 0 8px; font-weight: bold; color: #166534;">Detalhes do Encontro:</p>
+                      <p style="margin: 4px 0; font-size: 14px;">Data: <strong>${scheduledDate}</strong></p>
+                      <p style="margin: 4px 0; font-size: 14px;">Horário: <strong>${startTime} - ${endTime}</strong></p>
+                      ${googleMeetLink ? `<p style="margin: 4px 0; font-size: 14px;">Link: <a href="${googleMeetLink}">${googleMeetLink}</a></p>` : ''}
+                    </div>
+                    <p style="margin-top: 16px; font-size: 13px; color: #9ca3af;">Sistema do Bem - Programa de Mentoria</p>
+                  </div>
+                </div>
+              `,
+            });
+          }
+        } catch (emailErr) {
+          console.warn('[Onboarding] Erro ao enviar notificação de agendamento para mentora:', emailErr);
+        }
+
         return { success: result.success, appointmentId: result.id };
       }),
 
@@ -4981,6 +5144,27 @@ Responda APENAS em JSON com o formato:
         // 2. Fez o assessment/PDI
         const encontroRealizado = presencaRegistrada && assessmentFeito;
 
+        // Verificar se o onboarding está completo (aluno já tem trilha/PDI definido)
+        // Quando completo, o onboarding entra em modo somente leitura
+        const onboardingCompleto = encontroRealizado;
+
+        // Verificar contrato do aluno para reassessment
+        const contratos = await db.getContratosByAluno(alunoId);
+        const contratoAtivo = contratos.find((c: any) => c.isActive === 1);
+        let reassessmentElegivel = false;
+        let contratoTermino: string | null = null;
+        if (contratoAtivo) {
+          contratoTermino = contratoAtivo.periodoTermino ? String(contratoAtivo.periodoTermino) : null;
+          // Elegível para reassessment se a data de término do contrato já passou
+          const hoje = new Date();
+          const termino = new Date(contratoAtivo.periodoTermino);
+          reassessmentElegivel = hoje >= termino;
+        }
+
+        // Contar quantos ciclos de DISC o aluno já fez
+        const todosDisc = await db.getAllDiscResultados(alunoId);
+        const cicloAtual = todosDisc.length;
+
         // Determinar step atual
         let step = 1;
         if (discCompleto && autopercepCompleta) step = 3; // Pula para mentora
@@ -5000,6 +5184,10 @@ Responda APENAS em JSON com o formato:
           assessmentFeito,
           relatorioFeito,
           encontroRealizado,
+          onboardingCompleto,
+          reassessmentElegivel,
+          contratoTermino,
+          cicloAtual,
         };
       }),
   }),

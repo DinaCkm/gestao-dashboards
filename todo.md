@@ -2007,3 +2007,22 @@
 - [x] Escolha da mentora no onboarding agora vincula o aluno à mentora (endpoint escolherMentora criado)
 - [x] Agendamento do onboarding agora é salvo no banco (endpoint criarAgendamento criado)
 - [x] Relatório DISC visível para mentora no assessment e nas metas
+
+## Funcionalidade: Bloqueio do Onboarding para alunos que já completaram (08/03/2026)
+- [x] Detectar se aluno já completou onboarding (tem trilha definida/mentora vinculada/presença registrada)
+- [x] Colocar todas as etapas em modo somente leitura (campos desabilitados, botões ocultos)
+- [x] Exibir badge/aviso visual "Onboarding Concluído" indicando que é apenas visualização
+
+## Funcionalidade: Reassessment por ciclo com comparativo de evolução (08/03/2026)
+- [x] Usar campo periodoTermino da tabela contratosAluno para controlar fim do contrato
+- [x] Criar endpoint verificarReassessment para checar elegibilidade (30 dias antes do término)
+- [x] Exibir banner de convite para refazer assessment quando elegível
+- [x] Campo ciclo adicionado na tabela disc_resultados para suportar múltiplos assessments
+- [x] Endpoint disc.comparativo criado para gerar relatório de evolução DISC
+- [x] Endpoint disc.historico criado para buscar todos os ciclos
+
+## Funcionalidade: Notificação automática à mentora quando aluno a escolhe (08/03/2026)
+- [x] Enviar notificação por email à mentora quando aluno confirma escolha no onboarding
+- [x] Enviar notificação por email à mentora quando aluno faz agendamento
+- [x] Incluir nome do aluno, email e dados do encontro na notificação
+- [x] Notificar owner também quando aluno escolhe mentora
