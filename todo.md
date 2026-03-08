@@ -2047,4 +2047,9 @@
 - [x] Item 5: Mentor não consegue visualizar relatório DISC do aluno na tela de Assessment/PDI - CORRIGIDO: card DISC agora sempre aparece quando aluno selecionado (com dados ou mensagem 'não realizado')
 
 ## Item 5 Completo - Relatório do Aluno no Assessment do Mentor
-- [ ] Exibir relatório COMPLETO do aluno no Assessment: DISC + percepções pessoais do onboarding + descrição do trabalho do cadastro
+- [x] Exibir relatório COMPLETO do aluno no Assessment: DISC + percepções pessoais do onboarding + descrição do trabalho do cadastro - IMPLEMENTADO
+
+## Ajustes10 - Cadastro do Aluno e Relatório Assessment
+- [x] Ajuste10-1: Trocar campo "Experiência Profissional" por "Minicurrículo" no cadastro/onboarding do aluno - IMPLEMENTADO
+- [x] Ajuste10-2: Adicionar campo "Quem é você? Conte um pouco como você se define como pessoa" no cadastro/onboarding do aluno - IMPLEMENTADO
+- [x] Ajuste10-3: Exibir relatório completo no Assessment do mentor com 4 itens: DISC + Percepção Pessoal + Minicurrículo + Quem é Você - IMPLEMENTADO

@@ -177,7 +177,7 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
 
   const [perfil, setPerfil] = useState({
     nome: "", email: "", telefone: "", empresa: "", cargo: "",
-    areaAtuacao: "", experiencia: "", programa: "", turma: "", foto: null as string | null,
+    areaAtuacao: "", minicurriculo: "", quemEVoce: "", programa: "", turma: "", foto: null as string | null,
   });
   const [initialized, setInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -190,7 +190,8 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
       telefone: (alunoReal as any).telefone || prev.telefone,
       cargo: (alunoReal as any).cargo || prev.cargo,
       areaAtuacao: (alunoReal as any).areaAtuacao || prev.areaAtuacao,
-      experiencia: (alunoReal as any).experiencia || prev.experiencia,
+      minicurriculo: (alunoReal as any).minicurriculo || prev.minicurriculo,
+      quemEVoce: (alunoReal as any).quemEVoce || prev.quemEVoce,
       programa: alunoReal.programa || prev.programa,
       turma: alunoReal.turma || prev.turma,
     }));
@@ -211,7 +212,8 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
         telefone: perfil.telefone || undefined,
         cargo: perfil.cargo || undefined,
         areaAtuacao: perfil.areaAtuacao || undefined,
-        experiencia: perfil.experiencia || undefined,
+        minicurriculo: perfil.minicurriculo || undefined,
+        quemEVoce: perfil.quemEVoce || undefined,
       });
       utils.indicadores.meuDashboard.invalidate();
       toast.success("Cadastro salvo com sucesso!");
@@ -306,12 +308,24 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700">Experiência Profissional</label>
+              <label className="text-sm font-medium text-gray-700">Minicurrículo</label>
               <Textarea
-                value={perfil.experiencia}
-                onChange={(e) => setPerfil({...perfil, experiencia: e.target.value})}
+                value={perfil.minicurriculo}
+                onChange={(e) => setPerfil({...perfil, minicurriculo: e.target.value})}
+                placeholder="Descreva brevemente sua formação, experiências e habilidades profissionais..."
                 rows={4}
-                className="resize-none"
+                className="resize-none overflow-y-auto"
+                disabled={readOnly}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Quem é você? Conte um pouco como você se define como pessoa.</label>
+              <Textarea
+                value={perfil.quemEVoce}
+                onChange={(e) => setPerfil({...perfil, quemEVoce: e.target.value})}
+                placeholder="Conte sobre seus valores, interesses, o que te motiva e como você se vê como pessoa..."
+                rows={4}
+                className="resize-none overflow-y-auto"
                 disabled={readOnly}
               />
             </div>

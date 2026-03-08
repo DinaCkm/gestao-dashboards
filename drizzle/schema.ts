@@ -190,7 +190,8 @@ export const alunos = mysqlTable("alunos", {
   telefone: varchar("telefone", { length: 20 }),
   cargo: varchar("cargo", { length: 255 }),
   areaAtuacao: varchar("areaAtuacao", { length: 255 }),
-  experiencia: text("experiencia"),
+  minicurriculo: text("minicurriculo"),
+  quemEVoce: text("quemEVoce"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

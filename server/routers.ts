@@ -2483,7 +2483,8 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           telefone: (aluno as any).telefone || null,
           cargo: (aluno as any).cargo || null,
           areaAtuacao: (aluno as any).areaAtuacao || null,
-          experiencia: (aluno as any).experiencia || null,
+          minicurriculo: (aluno as any).minicurriculo || null,
+          quemEVoce: (aluno as any).quemEVoce || null,
           programa: programa?.name || 'Não definido',
           turma: turmaAluno?.name || 'Não definida',
           trilha: (() => {
@@ -5035,17 +5036,19 @@ Responda APENAS em JSON com o formato:
         telefone: z.string().optional(),
         cargo: z.string().optional(),
         areaAtuacao: z.string().optional(),
-        experiencia: z.string().optional(),
+        minicurriculo: z.string().optional(),
+        quemEVoce: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { alunoId, nome, email, telefone, cargo, areaAtuacao, experiencia } = input;
+        const { alunoId, nome, email, telefone, cargo, areaAtuacao, minicurriculo, quemEVoce } = input;
         const result = await db.updateAluno(alunoId, {
           name: nome,
           email,
           telefone: telefone || null,
           cargo: cargo || null,
           areaAtuacao: areaAtuacao || null,
-          experiencia: experiencia || null,
+          minicurriculo: minicurriculo || null,
+          quemEVoce: quemEVoce || null,
         });
         return result;
       }),

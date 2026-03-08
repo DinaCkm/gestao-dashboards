@@ -3,7 +3,7 @@ import * as db from "./db";
 
 describe("Onboarding data persistence", () => {
   // Test that updateAluno accepts the new fields
-  it("should accept telefone, cargo, areaAtuacao, experiencia in updateAluno", async () => {
+  it("should accept telefone, cargo, areaAtuacao, minicurriculo, quemEVoce in updateAluno", async () => {
     // Get any existing aluno to test update
     const alunos = await db.getAlunos();
     expect(alunos.length).toBeGreaterThan(0);
@@ -14,7 +14,8 @@ describe("Onboarding data persistence", () => {
       telefone: testAluno.telefone || "(11) 99999-0000",
       cargo: testAluno.cargo || "Analista",
       areaAtuacao: testAluno.areaAtuacao || "Tecnologia",
-      experiencia: testAluno.experiencia || "5 anos",
+      minicurriculo: (testAluno as any).minicurriculo || "Formado em Administração, 5 anos de experiência",
+      quemEVoce: (testAluno as any).quemEVoce || "Sou uma pessoa dedicada e apaixonada por aprender",
     });
     
     expect(result).toBeTruthy();
@@ -47,7 +48,8 @@ describe("Onboarding data persistence", () => {
     expect(aluno).toHaveProperty("telefone");
     expect(aluno).toHaveProperty("cargo");
     expect(aluno).toHaveProperty("areaAtuacao");
-    expect(aluno).toHaveProperty("experiencia");
+    expect(aluno).toHaveProperty("minicurriculo");
+    expect(aluno).toHaveProperty("quemEVoce");
   });
 });
 

@@ -1460,7 +1460,8 @@ export async function updateAluno(alunoId: number, data: {
   telefone?: string | null;
   cargo?: string | null;
   areaAtuacao?: string | null;
-  experiencia?: string | null;
+  minicurriculo?: string | null;
+  quemEVoce?: string | null;
 }): Promise<{ success: boolean; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
@@ -1475,7 +1476,8 @@ export async function updateAluno(alunoId: number, data: {
   if (data.telefone !== undefined) updateData.telefone = data.telefone;
   if (data.cargo !== undefined) updateData.cargo = data.cargo;
   if (data.areaAtuacao !== undefined) updateData.areaAtuacao = data.areaAtuacao;
-  if (data.experiencia !== undefined) updateData.experiencia = data.experiencia;
+  if (data.minicurriculo !== undefined) updateData.minicurriculo = data.minicurriculo;
+  if (data.quemEVoce !== undefined) updateData.quemEVoce = data.quemEVoce;
   
   if (data.cpf !== undefined) {
     if (data.cpf === null || data.cpf === '') {

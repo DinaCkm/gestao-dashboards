@@ -41,6 +41,10 @@ import {
   PlayCircle,
   Video,
   ChevronRight,
+  FileText,
+  Heart,
+  Briefcase,
+  Star,
 } from "lucide-react";
 
 // ============ Progress Bar Component ============
@@ -130,6 +134,15 @@ function AssessmentContent() {
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
   );
+
+  // Buscar autopercepções de competências do aluno
+  const { data: autopercepcoesAluno = [] } = trpc.autopercepção.porAluno.useQuery(
+    { alunoId: selectedAlunoId! },
+    { enabled: !!selectedAlunoId }
+  );
+
+  // Buscar lista de competências para nomes
+  const { data: competenciasList = [] } = trpc.competencias.list.useQuery();
 
   // Resumo de metas do aluno (substituiu reavaliação de nível)
   const { data: metasResumo } = trpc.metas.resumo.useQuery(
@@ -355,57 +368,152 @@ function AssessmentContent() {
         </Card>
       )}
 
-      {/* Relatório DISC do Aluno */}
-      {selectedAlunoId && (
-        <Card className="border-[#F5991F]/30 bg-gradient-to-r from-[#F5991F]/5 to-transparent border-2">
-          <CardContent className="py-4">
-            <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
-              <BookOpen className="h-4 w-4" />
-              Perfil Comportamental DISC (Teste do Onboarding)
-            </h4>
-            {discResultado ? (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-                  {[
-                    { label: 'Dominância (D)', score: discResultado.scoreD, color: 'bg-red-500' },
-                    { label: 'Influência (I)', score: discResultado.scoreI, color: 'bg-yellow-500' },
-                    { label: 'Estabilidade (S)', score: discResultado.scoreS, color: 'bg-green-500' },
-                    { label: 'Conformidade (C)', score: discResultado.scoreC, color: 'bg-blue-500' },
-                  ].map(dim => (
-                    <div key={dim.label} className="text-center">
-                      <div className="text-xs text-muted-foreground mb-1">{dim.label}</div>
-                      <div className="relative h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${dim.color}`} style={{ width: `${Math.min(Number(dim.score), 100)}%` }} />
+      {/* ===== RELATÓRIO COMPLETO DO ALUNO ===== */}
+      {selectedAlunoId && selectedAluno && (
+        <Card className="border-[#F5991F]/30 bg-gradient-to-br from-[#F5991F]/5 via-transparent to-[#0A1E3E]/5 border-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2 text-[#0A1E3E]">
+              <FileText className="h-5 w-5" />
+              Relatório Completo do Aluno
+            </CardTitle>
+            <CardDescription>Visão consolidada: DISC, Autopercepção, Minicurrículo e Perfil Pessoal</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+
+            {/* 1. DISC */}
+            <div className="border rounded-lg p-4 bg-white/60">
+              <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-[#F5991F]" />
+                1. Perfil Comportamental DISC
+              </h4>
+              {discResultado ? (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                    {[
+                      { label: 'Dominância (D)', score: discResultado.scoreD, color: 'bg-red-500' },
+                      { label: 'Influência (I)', score: discResultado.scoreI, color: 'bg-yellow-500' },
+                      { label: 'Estabilidade (S)', score: discResultado.scoreS, color: 'bg-green-500' },
+                      { label: 'Conformidade (C)', score: discResultado.scoreC, color: 'bg-blue-500' },
+                    ].map(dim => (
+                      <div key={dim.label} className="text-center">
+                        <div className="text-xs text-muted-foreground mb-1">{dim.label}</div>
+                        <div className="relative h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${dim.color}`} style={{ width: `${Math.min(Number(dim.score), 100)}%` }} />
+                        </div>
+                        <div className="text-sm font-bold mt-1">{Number(dim.score).toFixed(0)}%</div>
                       </div>
-                      <div className="text-sm font-bold mt-1">{Number(dim.score).toFixed(0)}%</div>
-                    </div>
-                  ))}
-                </div>
-                {discResultado.perfilPredominante && (
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-[#0A1E3E] text-white">
-                      Perfil Primário: {discResultado.perfilPredominante}
-                    </Badge>
-                    {discResultado.perfilSecundario && (
-                      <Badge variant="outline" className="border-[#0A1E3E] text-[#0A1E3E]">
-                        Secundário: {discResultado.perfilSecundario}
-                      </Badge>
-                    )}
+                    ))}
                   </div>
-                )}
-              </>
-            ) : (
-              <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-amber-800">Teste DISC não realizado</p>
-                  <p className="text-xs text-amber-600 mt-0.5">
-                    Este aluno ainda não completou o teste de perfil comportamental DISC no Onboarding.
-                    O teste DISC é preenchido pelo aluno ao acessar o portal pela primeira vez.
-                  </p>
+                  {discResultado.perfilPredominante && (
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-[#0A1E3E] text-white">
+                        Perfil Primário: {discResultado.perfilPredominante}
+                      </Badge>
+                      {discResultado.perfilSecundario && (
+                        <Badge variant="outline" className="border-[#0A1E3E] text-[#0A1E3E]">
+                          Secundário: {discResultado.perfilSecundario}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">Teste DISC não realizado</p>
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      Este aluno ainda não completou o teste de perfil comportamental DISC no Onboarding.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* 2. Autopercepção de Competências */}
+            <div className="border rounded-lg p-4 bg-white/60">
+              <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                <Star className="h-4 w-4 text-[#F5991F]" />
+                2. Autopercepção de Competências (Percepção Pessoal)
+              </h4>
+              {autopercepcoesAluno.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {autopercepcoesAluno.map((ap: any) => {
+                    const comp = competenciasList.find((c: any) => c.id === ap.competenciaId);
+                    return (
+                      <div key={ap.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                        <span className="text-sm text-gray-700">{comp?.nome || `Competência #${ap.competenciaId}`}</span>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map(n => (
+                            <div
+                              key={n}
+                              className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                                n <= ap.nota ? 'bg-[#F5991F] text-white' : 'bg-gray-200 text-gray-400'
+                              }`}
+                            >
+                              {n}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">Autopercepção não realizada</p>
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      Este aluno ainda não preencheu a autoavaliação de competências no Onboarding.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3. Minicurrículo */}
+            <div className="border rounded-lg p-4 bg-white/60">
+              <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-[#F5991F]" />
+                3. Minicurrículo
+              </h4>
+              {(selectedAluno as any).minicurriculo ? (
+                <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-gray-50 p-3 rounded-md">
+                  {(selectedAluno as any).minicurriculo}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 italic">Aluno ainda não preencheu o minicurrículo.</p>
+              )}
+              {(selectedAluno as any).cargo && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    Cargo: {(selectedAluno as any).cargo}
+                  </Badge>
+                  {(selectedAluno as any).areaAtuacao && (
+                    <Badge variant="outline" className="text-xs">
+                      Área: {(selectedAluno as any).areaAtuacao}
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 4. Quem é Você */}
+            <div className="border rounded-lg p-4 bg-white/60">
+              <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                <Heart className="h-4 w-4 text-[#F5991F]" />
+                4. Quem é Você?
+              </h4>
+              {(selectedAluno as any).quemEVoce ? (
+                <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-gray-50 p-3 rounded-md">
+                  {(selectedAluno as any).quemEVoce}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 italic">Aluno ainda não preencheu o campo "Quem é Você".</p>
+              )}
+            </div>
+
           </CardContent>
         </Card>
       )}
