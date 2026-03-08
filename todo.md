@@ -1985,3 +1985,8 @@
 
 ## Bug: Fotos das mentoras não aparecem nos cards de Escolha sua Mentora (08/03/2026)
 - [x] Investigar e corrigir fotos das mentoras que não carregam nos cards do Onboarding
+
+## Perfil Completo da Mentora (08/03/2026)
+- [x] Corrigir modal "Ver Currículo" no Onboarding para exibir miniCurriculo e especialidade da mentora (dados já existentes no banco)
+- [x] Textos acolhedores e avatar de mentora guia em cada etapa do Onboarding
+- [x] Gerar novo avatar de mentora guia baseado na foto de referência fornecida pela usuária

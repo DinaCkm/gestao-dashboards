@@ -42,6 +42,56 @@ type SlotAgenda = {
 import { useLocation } from "wouter";
 
 // ============================================================
+// AVATAR DA MENTORA GUIA
+// ============================================================
+const MENTORA_GUIA_AVATAR = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/mentora-guia-avatar_ad26e4e6.png";
+
+const MENSAGENS_GUIA: Record<number, { titulo: string; mensagem: string }> = {
+  1: {
+    titulo: "Que bom ter voc\u00ea aqui!",
+    mensagem: "Gostaria de te conhecer um pouco mais, por isso vou te guiar nesta jornada. Vamos come\u00e7ar preenchendo seus dados? Assim consigo entender melhor quem voc\u00ea \u00e9 e como posso te ajudar.",
+  },
+  2: {
+    titulo: "Hora de se conhecer melhor!",
+    mensagem: "Agora vamos descobrir juntos o seu perfil comportamental e suas compet\u00eancias. Responda com sinceridade \u2014 n\u00e3o existem respostas certas ou erradas. Esse \u00e9 um momento s\u00f3 seu!",
+  },
+  3: {
+    titulo: "Chegou a hora de escolher sua mentora!",
+    mensagem: "Conhe\u00e7a as profissionais incr\u00edveis que est\u00e3o prontas para te acompanhar. Leia o perfil de cada uma e escolha aquela que mais combina com voc\u00ea e seus objetivos.",
+  },
+  4: {
+    titulo: "Vamos marcar seu primeiro encontro!",
+    mensagem: "Estamos quase l\u00e1! Agora \u00e9 s\u00f3 escolher o melhor hor\u00e1rio para conversar com sua mentora. Esse primeiro encontro \u00e9 especial \u2014 \u00e9 onde tudo come\u00e7a!",
+  },
+  5: {
+    titulo: "Parab\u00e9ns, voc\u00ea chegou at\u00e9 aqui!",
+    mensagem: "Seu primeiro encontro com a mentora est\u00e1 marcado. Prepare-se para uma conversa transformadora. Estou muito orgulhosa de voc\u00ea por ter chegado at\u00e9 aqui!",
+  },
+};
+
+function MentoraGuiaBanner({ etapa }: { etapa: number }) {
+  const msg = MENSAGENS_GUIA[etapa];
+  if (!msg) return null;
+  return (
+    <div className="flex items-start gap-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-[#F5991F]/20 rounded-xl p-5 mb-6 shadow-sm animate-in fade-in slide-in-from-left-4 duration-500">
+      <img
+        src={MENTORA_GUIA_AVATAR}
+        alt="Mentora Guia"
+        className="w-20 h-24 object-cover object-top rounded-lg border-2 border-[#F5991F]/30 shadow-md shrink-0"
+      />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-sm font-semibold text-[#0A1E3E]">Sua Guia</span>
+          <Sparkles className="h-3.5 w-3.5 text-[#F5991F]" />
+        </div>
+        <h3 className="text-base font-bold text-[#0A1E3E] mb-1">{msg.titulo}</h3>
+        <p className="text-sm text-gray-600 leading-relaxed">{msg.mensagem}</p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // STEPPER DE ONBOARDING
 // ============================================================
 
@@ -142,6 +192,7 @@ function EtapaCadastro({ onComplete }: { onComplete: () => void }) {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <MentoraGuiaBanner etapa={1} />
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-gray-900">Complete seu Cadastro</h2>
         <p className="text-gray-500 mt-1">Atualize seus dados pessoais e profissionais para iniciar sua jornada</p>
@@ -271,7 +322,8 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
       nome: c.name,
       foto: c.photoUrl || undefined,
       especialidade: c.especialidade || "Mentoria e Desenvolvimento",
-      miniCurriculo: c.especialidade ? `Especialista em ${c.especialidade}` : "Mentora do programa B.E.M.",
+      miniCurriculo: c.miniCurriculo || (c.especialidade ? `Especialista em ${c.especialidade}` : "Mentora do programa B.E.M."),
+      curriculoCompleto: c.miniCurriculo || undefined,
       areasAtuacao: c.especialidade ? c.especialidade.split(",").map((a: string) => a.trim()) : ["Mentoria"],
       disponivel: c.isActive === 1,
     }));
@@ -279,6 +331,7 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <MentoraGuiaBanner etapa={3} />
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-gray-900">Escolha sua Mentora</h2>
         <p className="text-gray-500 mt-1">Conheça as profissionais disponíveis e escolha quem vai acompanhar sua jornada</p>
@@ -391,11 +444,19 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
             <>
               <DialogHeader>
                 <div className="flex items-center gap-4">
-                  <img
-                    src={detailMentora.foto}
-                    alt={detailMentora.nome}
-                    className="w-20 h-20 rounded-full object-cover object-top border-2 border-[#0A1E3E]/20"
-                  />
+                  {detailMentora.foto ? (
+                    <img
+                      src={detailMentora.foto}
+                      alt={detailMentora.nome}
+                      className="w-20 h-20 rounded-full object-cover object-top border-2 border-[#0A1E3E]/20"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#0A1E3E] to-[#1a3a6e] flex items-center justify-center border-2 border-[#0A1E3E]/20">
+                      <span className="text-xl font-bold text-white/80">
+                        {detailMentora.nome.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <DialogTitle className="text-xl">{detailMentora.nome}</DialogTitle>
                     <DialogDescription className="text-[#F5991F] font-medium">
@@ -406,40 +467,21 @@ function EtapaMentora({ onComplete, onSelectMentora }: { onComplete: () => void;
               </DialogHeader>
 
               <div className="space-y-5 mt-4">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <User className="h-4 w-4 text-[#0A1E3E]" /> Sobre
-                  </h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">{detailMentora.curriculoCompleto}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4 text-[#0A1E3E]" /> Formação
-                  </h4>
-                  <p className="text-sm text-gray-600">{detailMentora.formacao}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-[#0A1E3E]" /> Experiência
-                  </h4>
-                  <p className="text-sm text-gray-600">{detailMentora.experiencia}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                    <Award className="h-4 w-4 text-[#F5991F]" /> Certificações
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {(detailMentora.certificacoes || []).map((cert) => (
-                      <Badge key={cert} variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-                        {cert}
-                      </Badge>
-                    ))}
+                {/* Sobre / Minicurrículo */}
+                {detailMentora.curriculoCompleto ? (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                      <User className="h-4 w-4 text-[#0A1E3E]" /> Sobre
+                    </h4>
+                    <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{detailMentora.curriculoCompleto}</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-500 italic">Esta mentora ainda não preencheu seu perfil completo.</p>
+                  </div>
+                )}
 
+                {/* Áreas de Atuação */}
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
                     <Target className="h-4 w-4 text-[#0A1E3E]" /> Áreas de Atuação
@@ -533,6 +575,7 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <MentoraGuiaBanner etapa={4} />
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-gray-900">Agende seu 1º Encontro</h2>
         <p className="text-gray-500 mt-1">Escolha um horário disponível com {mentora.nome}</p>
@@ -542,11 +585,19 @@ function EtapaAgendamento({ mentora, onComplete }: { mentora: Mentora | null; on
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center text-center">
-              <img
-                src={mentora.foto}
-                alt={mentora.nome}
-                className="w-24 h-24 rounded-full object-cover object-top border-3 border-[#F5991F]/30 mb-3"
-              />
+              {mentora.foto ? (
+                <img
+                  src={mentora.foto}
+                  alt={mentora.nome}
+                  className="w-24 h-24 rounded-full object-cover object-top border-3 border-[#F5991F]/30 mb-3"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#0A1E3E] to-[#1a3a6e] flex items-center justify-center border-3 border-[#F5991F]/30 mb-3">
+                  <span className="text-2xl font-bold text-white/80">
+                    {mentora.nome.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                  </span>
+                </div>
+              )}
               <h3 className="font-semibold text-gray-900">{mentora.nome}</h3>
               <p className="text-sm text-[#F5991F]">{mentora.especialidade}</p>
               <Badge className="mt-2 bg-emerald-100 text-emerald-700 border-0">
@@ -646,6 +697,7 @@ function EtapaPrimeiroEncontro({ mentora, onComplete }: { mentora: Mentora | nul
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <MentoraGuiaBanner etapa={5} />
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-gray-900">1º Encontro — Encontro Inicial</h2>
         <p className="text-gray-500 mt-1">Participe da sua primeira sessão de mentoria</p>

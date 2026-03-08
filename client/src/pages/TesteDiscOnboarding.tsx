@@ -12,6 +12,34 @@ import {
 } from "lucide-react";
 
 // ============================================================
+// AVATAR DA MENTORA GUIA (compartilhado com OnboardingAluno)
+// ============================================================
+const MENTORA_GUIA_AVATAR = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/mentora-guia-avatar_ad26e4e6.png";
+
+function MentoraGuiaBannerAssessment() {
+  return (
+    <div className="flex items-start gap-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-[#F5991F]/20 rounded-xl p-5 mb-6 shadow-sm animate-in fade-in slide-in-from-left-4 duration-500">
+      <img
+        src={MENTORA_GUIA_AVATAR}
+        alt="Mentora Guia"
+        className="w-20 h-24 object-cover object-top rounded-lg border-2 border-[#F5991F]/30 shadow-md shrink-0"
+      />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-sm font-semibold text-[#0A1E3E]">Sua Guia</span>
+          <Sparkles className="h-3.5 w-3.5 text-[#F5991F]" />
+        </div>
+        <h3 className="text-base font-bold text-[#0A1E3E] mb-1">Hora de se conhecer melhor!</h3>
+        <p className="text-sm text-gray-600 leading-relaxed">
+          Agora vamos descobrir juntos o seu perfil comportamental e suas compet\u00eancias. 
+          Responda com sinceridade \u2014 n\u00e3o existem respostas certas ou erradas. Esse \u00e9 um momento s\u00f3 seu!
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // TIPOS
 // ============================================================
 
@@ -1108,6 +1136,9 @@ export default function EtapaAssessmentCompleta({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Banner da Mentora Guia */}
+      <MentoraGuiaBannerAssessment />
+
       {/* Sub-stepper */}
       <div className="max-w-xl mx-auto">
         <div className="flex items-center justify-between relative">

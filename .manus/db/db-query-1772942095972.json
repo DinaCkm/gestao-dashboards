@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, name, SUBSTRING(especialidade, 1, 80) as especialidade, SUBSTRING(miniCurriculo, 1, 100) as miniCurriculo FROM consultors WHERE role = 'mentor' AND isActive = 1 ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, SUBSTRING(especialidade, 1, 80) as especialidade, SUBSTRING(miniCurriculo, 1, 100) as miniCurriculo FROM consultors WHERE role = 'mentor' AND isActive = 1 ORDER BY name;",
+  "rows": [
+    {
+      "id": "39",
+      "name": "Adriana Deus",
+      "especialidade": "Gestão e Liderança",
+      "miniCurriculo": "Adriana Deus é Coach e Mentora, está há mais de 5 anos realizando mentorias, coaching e treinamentos"
+    },
+    {
+      "id": "28",
+      "name": "Ana Carolina Cardoso Viana Rocha",
+      "especialidade": "Gestão e Liderança",
+      "miniCurriculo": "Ana Carolina Cardoso Viana Rocha é uma psicóloga altamente especializada, formada em 2010, com uma t"
+    },
+    {
+      "id": "35",
+      "name": "Andressa Santos",
+      "especialidade": "Gestão de Projetos",
+      "miniCurriculo": "xxxxxxxxxx"
+    },
+    {
+      "id": "31",
+      "name": "Deborah Franco",
+      "especialidade": "NULL",
+      "miniCurriculo": "NULL"
+    },
+    {
+      "id": "37",
+      "name": "Dina Makiyama",
+      "especialidade": "NULL",
+      "miniCurriculo": "NULL"
+    },
+    {
+      "id": "14",
+      "name": "Equipe CKM Talents",
+      "especialidade": "NULL",
+      "miniCurriculo": "NULL"
+    },
+    {
+      "id": "30",
+      "name": "Giovanna Braga Schmitz",
+      "especialidade": "NULL",
+      "miniCurriculo": "NULL"
+    },
+    {
+      "id": "36",
+      "name": "Gislaine Fabiola Marques Righi Cassemiro",
+      "especialidade": "NULL",
+      "miniCurriculo": "NULL"
+    },
+    {
+      "id": "32",
+      "name": "Luciana Pereira Figueiredo da Silva",
+      "especialidade": "NULL",
+      "miniCurriculo": "NULL"
+    },
+    {
+      "id": "29",
+      "name": "Marcia Rocha Fernandes",
+      "especialidade": "NULL",
+      "miniCurriculo": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tespecialidade\tminiCurriculo\n39\tAdriana Deus\tGestão e Liderança\tAdriana Deus é Coach e Mentora, está há mais de 5 anos realizando mentorias, coaching e treinamentos\n28\tAna Carolina Cardoso Viana Rocha\tGestão e Liderança\tAna Carolina Cardoso Viana Rocha é uma psicóloga altamente especializada, formada em 2010, com uma t\n35\tAndressa Santos\tGestão de Projetos\txxxxxxxxxx\n31\tDeborah Franco\tNULL\tNULL\n37\tDina Makiyama\tNULL\tNULL\n14\tEquipe CKM Talents\tNULL\tNULL\n30\tGiovanna Braga Schmitz\tNULL\tNULL\n36\tGislaine Fabiola Marques Righi Cassemiro\tNULL\tNULL\n32\tLuciana Pereira Figueiredo da Silva\tNULL\tNULL\n29\tMarcia Rocha Fernandes\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}
