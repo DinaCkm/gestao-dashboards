@@ -2033,7 +2033,7 @@
 - [x] Criar seção com vídeo player e resumo na página de Assessment do mentor
 
 ## Ajustes9 - Solicitações (08/03/2026)
-- [ ] Item 1: Habilitar portal completo do aluno só após mentora fazer assessment
+- [x] Item 1: Habilitar portal completo do aluno só após mentora fazer assessment - IMPLEMENTADO: tela de bloqueio com mensagem + DISC visível
 - [x] Item 3: Investigar Jackeline com 0% na visão gerencial - INVESTIGADO: mediaAvaliacoesFinais=0 para todas competencias vem da planilha de performance (dados originais). Não é bug de código. Confirmar com usuário qual aluna específica.
 - [ ] Item 4: Incluir filtro de relatório por período
 - [x] Item 6: Jose da Silva não aparece na lista de mentorados da Adriana (consultorId=null) - CORRIGIDO: UPDATE consultorId=39

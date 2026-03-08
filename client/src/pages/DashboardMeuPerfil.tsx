@@ -425,6 +425,86 @@ export default function DashboardMeuPerfil() {
   // v2 já declarado acima
   const engComp = indicadores.engajamentoComponentes || { presenca: indicadores.participacaoMentorias, atividades: indicadores.atividadesPraticas, notaMentora: indicadores.engajamento };
 
+  // Item 1: Bloquear portal completo até mentora fazer assessment
+  const hasAssessment = assessments && assessments.length > 0;
+  const hasActiveAssessment = assessments && assessments.some((a: any) => a.status === 'ativo');
+
+  if (!hasAssessment) {
+    return (
+      <AlunoLayout>
+        <div className="space-y-6">
+          {/* Header básico com informações do aluno */}
+          <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h1 className="text-2xl font-bold">{aluno.name}</h1>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge className="bg-white/20 text-white border-white/30">
+                      <GraduationCap className="h-3 w-3 mr-1" />{aluno.programa}
+                    </Badge>
+                    {aluno.mentor && aluno.mentor !== 'Não definido' && (
+                      <Badge className="bg-white/20 text-white border-white/30">
+                        <User className="h-3 w-3 mr-1" />Mentor: {aluno.mentor}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Mensagem de bloqueio */}
+          <Card className="border-2 border-amber-200 bg-amber-50">
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Lock className="h-10 w-10 text-amber-600" />
+                </div>
+                <h2 className="text-xl font-bold text-amber-900">Portal em Preparação</h2>
+                <p className="text-amber-800 max-w-lg">
+                  Seu portal completo será liberado assim que sua mentora realizar o <strong>Assessment inicial</strong> e definir seu plano de desenvolvimento.
+                </p>
+                <div className="mt-4 p-4 rounded-lg bg-white border border-amber-200 max-w-md">
+                  <p className="text-sm text-gray-600">
+                    <strong>O que acontece agora?</strong>
+                  </p>
+                  <ul className="text-sm text-gray-500 mt-2 space-y-1 text-left">
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" /> Seu cadastro foi realizado com sucesso</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" /> Seu perfil DISC foi preenchido</li>
+                    <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-amber-500 shrink-0" /> Aguardando assessment da mentora</li>
+                    <li className="flex items-center gap-2"><Lock className="h-4 w-4 text-gray-400 shrink-0" /> Portal completo será liberado após o assessment</li>
+                  </ul>
+                </div>
+                {aluno.mentor && aluno.mentor !== 'Não definido' && (
+                  <p className="text-sm text-amber-700 mt-2">
+                    Sua mentora <strong>{aluno.mentor}</strong> será notificada para realizar o assessment.
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Aba de Autoconhecimento (DISC) - permitir acesso mesmo sem assessment */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileBarChart className="h-5 w-5 text-primary" />
+                Relatório de Autoconhecimento (DISC)
+              </CardTitle>
+              <CardDescription>Visualize seu perfil DISC preenchido durante o onboarding</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Suspense fallback={<div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <RelatorioAutoconhecimentoTab alunoId={aluno.id} onComplete={() => {}} readOnly />
+              </Suspense>
+            </CardContent>
+          </Card>
+        </div>
+      </AlunoLayout>
+    );
+  }
+
   return (
     <AlunoLayout>
       <div className="space-y-6">
