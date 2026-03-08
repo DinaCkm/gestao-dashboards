@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import {
   ChevronRight, ChevronLeft, CheckCircle2, Target, Brain,
   BarChart3, Sparkles, AlertCircle, Download, ArrowRight,
-  CircleDot, Gauge, BookOpen, Eye, MessageSquare, Info
+  CircleDot, Gauge, BookOpen, Eye, MessageSquare, Info,
+  Heart, Lightbulb
 } from "lucide-react";
 
 // ============================================================
@@ -771,9 +772,33 @@ function RelatorioAutoconhecimento({
           <BarChart3 className="h-8 w-8 text-[#0A1E3E]" />
         </div>
         <h2 className="text-xl font-bold text-gray-900">Relatório de Autoconhecimento</h2>
-        <p className="text-gray-500 mt-1 max-w-lg mx-auto">
-          Seu perfil comportamental e mapa de competências — leve essas informações para sua sessão de mentoria.
+      </div>
+
+      {/* Texto introdutório incentivador */}
+      <div className="max-w-3xl mx-auto bg-gradient-to-br from-[#0A1E3E]/5 to-[#F5991F]/5 border border-[#F5991F]/20 rounded-xl p-6">
+        <div className="flex items-start gap-3 mb-3">
+          <Lightbulb className="h-6 w-6 text-[#F5991F] shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-[#0A1E3E] text-base">Sobre este relatório</h3>
+          </div>
+        </div>
+        <p className="text-gray-700 leading-relaxed mb-3">
+          Este teste reflete o seu nível de <strong>sinceridade nas respostas</strong> e de <strong>autoconhecimento</strong>. 
+          Quanto mais honesto(a) você foi ao responder, mais preciso será o retrato das suas competências e do seu perfil comportamental.
         </p>
+        <p className="text-gray-700 leading-relaxed mb-3">
+          Esperamos que este resultado te leve a uma <strong>autorreflexão genuína</strong>. Analise com calma seus pontos fortes 
+          e as áreas que merecem atenção. Reconhecer onde você está hoje é o primeiro passo para chegar onde deseja estar amanhã.
+        </p>
+        <p className="text-gray-700 leading-relaxed">
+          No próximo passo, você poderá <strong>agendar uma sessão com sua mentora</strong>. Juntos, vocês irão discutir o seu perfil, 
+          identificar oportunidades e traçar uma <strong>trilha de desenvolvimento personalizada</strong> que potencialize sua carreira 
+          e o seu desempenho. Chegue preparado(a) — reflita sobre os resultados abaixo e leve suas dúvidas e percepções para essa conversa.
+        </p>
+        <div className="mt-4 flex items-center gap-2 text-sm text-[#0A1E3E]/70">
+          <Heart className="h-4 w-4 text-[#F5991F]" />
+          <span className="italic">"O autoconhecimento é a base de toda evolução profissional."</span>
+        </div>
       </div>
 
       {/* Botão Download */}

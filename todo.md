@@ -1975,3 +1975,10 @@
 ## Melhoria: Explicação das competências na Régua de Autopercepção (08/03/2026)
 - [x] Adicionar descrição explicativa de cada competência (o que é e como impacta no dia a dia) na Régua de Autopercepção
 - [x] Filtrar Régua de Autopercepção para mostrar apenas Basic, Essential e Master (remover Jornada Personalizada, Alinhamento Inicial, Jornada do Futuro I.A, Visão de Futuro)
+
+## Melhoria: Relatório de Autoconhecimento - texto introdutório e régua visual (08/03/2026)
+- [x] Adicionar texto introdutório incentivador sobre sinceridade, autoconhecimento e reflexão antes do encontro com a mentora
+- [x] Mostrar régua de autopercepção visual (barras das competências) abaixo do texto do perfil DISC no relatório
+
+## Bug: Onboarding perde estado ao atualizar página (08/03/2026)
+- [x] Corrigir persistência do estado do Onboarding - ao atualizar a página (F5), volta ao início desconsiderando teste DISC e dados salvos

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
@@ -736,8 +736,23 @@ export default function OnboardingAluno() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
+  const [stepInitialized, setStepInitialized] = useState(false);
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
+
+  const alunoId = dashData?.found ? dashData.aluno?.id || 0 : 0;
+  const { data: progressoData } = trpc.onboarding.progresso.useQuery(
+    { alunoId },
+    { enabled: alunoId > 0 }
+  );
+
+  // Restaurar o step correto ao carregar a página
+  useEffect(() => {
+    if (progressoData && !stepInitialized) {
+      setCurrentStep(progressoData.step);
+      setStepInitialized(true);
+    }
+  }, [progressoData, stepInitialized]);
 
   const handleStepComplete = () => {
     if (currentStep < 5) {

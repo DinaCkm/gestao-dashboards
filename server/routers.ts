@@ -4860,6 +4860,44 @@ Responda APENAS em JSON com o formato:
         return await db.getContribuicoesMentora(input.alunoId);
       }),
   }),
+
+  // ============ PROGRESSO DO ONBOARDING ============
+  onboarding: router({
+    // Retorna o step atual do onboarding baseado nos dados do banco
+    progresso: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const { alunoId } = input;
+        if (!alunoId || alunoId === 0) return { step: 1, discCompleto: false, mentoraEscolhida: false, agendamentoFeito: false };
+
+        // Verificar se fez o teste DISC
+        const discResult = await db.getDiscResultado(alunoId);
+        const discCompleto = !!discResult;
+
+        // Verificar se fez a autopercepção
+        const autopercepcoes = await db.getAutopercepcoes(alunoId);
+        const autopercepCompleta = autopercepcoes.length > 0;
+
+        // Verificar se tem mentora vinculada
+        const aluno = await db.getAlunoById(alunoId);
+        const mentoraEscolhida = !!(aluno?.consultorId);
+
+        // Verificar se tem agendamento
+        let agendamentoFeito = false;
+        if (mentoraEscolhida) {
+          const agendamentos = await db.getAlunoAppointments(alunoId);
+          agendamentoFeito = agendamentos.length > 0;
+        }
+
+        // Determinar step atual
+        let step = 1;
+        if (discCompleto && autopercepCompleta) step = 3; // Pula para mentora
+        if (discCompleto && autopercepCompleta && mentoraEscolhida) step = 4; // Pula para agendamento
+        if (discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito) step = 5; // Pula para 1º encontro
+
+        return { step, discCompleto, autopercepCompleta, mentoraEscolhida, agendamentoFeito };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
