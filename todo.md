@@ -2159,3 +2159,9 @@
 - [x] B3: Criar área de Configurações do Mentor (Perfil, Agenda, Agendamentos, Notificações)
 - [x] B4: Simplificar Dashboard do Mentor (remover abas redundantes, layout limpo com cards, gráficos, próximos agendamentos e alertas)
 - [x] B5: Relatório Gerencial para o mentor (resumo geral, sessões por mês, indicadores V2 + atalhos rápidos)
+
+## Fase 0 - Correção de Bugs Críticos (A2-A5)
+- [x] A2: Competências aparecem com 0% mesmo com trilha concluída (fix V3: matching robusto por nome base + aceitar 0% como valor válido)
+- [x] A3: Horário disponível do mentor mostra hora fim errada no Portal do Aluno (fix: auto-calcular endTime + validar no backend + corrigir dado existente)
+- [x] A4: Agendamento no Portal do Aluno não valida disponibilidade real do mentor (fix: validação frontend dia da semana + validação backend contra mentor_availability)
+- [x] A5: Relatório Excel: falta coluna "Data da Mentoria" na aba Dados do Aluno + filtro Gerencial não abre para mentor (fix: colunas Total Sessões e Última Mentoria no relatório gerencial + isManager inclui mentores)

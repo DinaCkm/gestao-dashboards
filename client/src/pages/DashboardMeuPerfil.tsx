@@ -2879,10 +2879,27 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
                       <Input
                         type="date"
                         value={selectedDate}
-                        onChange={e => setSelectedDate(e.target.value)}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setSelectedDate(val);
+                        }}
                         min={new Date().toISOString().split('T')[0]}
                         className="mt-1"
                       />
+                      {/* A4 FIX: Validar dia da semana */}
+                      {selectedDate && (() => {
+                        const dateObj = new Date(selectedDate + 'T12:00:00');
+                        const dayOfWeek = dateObj.getDay();
+                        const slotDay = (activeSlots.find(s => s.startTime === selectedSlot.startTime && s.endTime === selectedSlot.endTime) as any)?.dayOfWeek;
+                        if (slotDay !== undefined && dayOfWeek !== slotDay) {
+                          return (
+                            <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                              <span>&#9888;</span> O horário selecionado é para <strong>{DAYS_OF_WEEK[slotDay]}</strong>, mas a data escolhida é <strong>{DAYS_OF_WEEK[dayOfWeek]}</strong>. Selecione uma data que caia em {DAYS_OF_WEEK[slotDay]}.
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-gray-700">Observações (opcional):</Label>
@@ -2896,7 +2913,14 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
                     <div className="flex justify-end">
                       <Button
                         onClick={handleBook}
-                        disabled={bookMutation.isPending || !selectedDate}
+                        disabled={bookMutation.isPending || !selectedDate || (() => {
+                          // A4 FIX: Desabilitar se dia da semana não corresponde ao slot
+                          if (!selectedDate) return true;
+                          const dateObj = new Date(selectedDate + 'T12:00:00');
+                          const dayOfWeek = dateObj.getDay();
+                          const slotDay = (activeSlots.find(s => s.startTime === selectedSlot.startTime && s.endTime === selectedSlot.endTime) as any)?.dayOfWeek;
+                          return slotDay !== undefined && dayOfWeek !== slotDay;
+                        })()}
                         className="bg-[#1E3A5F] hover:bg-[#2a4f7f]"
                       >
                         <Calendar className="h-4 w-4 mr-2" /> Confirmar Agendamento

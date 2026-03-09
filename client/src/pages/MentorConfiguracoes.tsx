@@ -298,6 +298,15 @@ function MentorAgendaTab({ consultorId }: { consultorId: number }) {
   const removeMutation = trpc.mentor.removeAvailability.useMutation();
   const utils = trpc.useUtils();
 
+  // A3 FIX: Helper para calcular endTime baseado em startTime + duração
+  const calcEndTime = (start: string, durationMin: number) => {
+    const [h, m] = start.split(':').map(Number);
+    const totalMin = h * 60 + m + durationMin;
+    const endH = Math.floor(totalMin / 60) % 24;
+    const endM = totalMin % 60;
+    return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+  };
+
   const [newSlot, setNewSlot] = useState({
     dayOfWeek: 1,
     startTime: '09:00',
@@ -414,15 +423,21 @@ function MentorAgendaTab({ consultorId }: { consultorId: number }) {
             </div>
             <div>
               <Label>Início</Label>
-              <Input type="time" value={newSlot.startTime} onChange={e => setNewSlot(p => ({ ...p, startTime: e.target.value }))} />
+              <Input type="time" value={newSlot.startTime} onChange={e => {
+                const start = e.target.value;
+                setNewSlot(p => ({ ...p, startTime: start, endTime: calcEndTime(start, p.slotDurationMinutes) }));
+              }} />
             </div>
             <div>
-              <Label>Fim</Label>
-              <Input type="time" value={newSlot.endTime} onChange={e => setNewSlot(p => ({ ...p, endTime: e.target.value }))} />
+              <Label>Fim <span className="text-xs text-muted-foreground">(auto)</span></Label>
+              <Input type="time" value={newSlot.endTime} readOnly className="bg-muted/50" />
             </div>
             <div>
               <Label>Duração (min)</Label>
-              <Select value={String(newSlot.slotDurationMinutes)} onValueChange={v => setNewSlot(p => ({ ...p, slotDurationMinutes: Number(v) }))}>
+              <Select value={String(newSlot.slotDurationMinutes)} onValueChange={v => {
+                const dur = Number(v);
+                setNewSlot(p => ({ ...p, slotDurationMinutes: dur, endTime: calcEndTime(p.startTime, dur) }));
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="30">30 min</SelectItem>

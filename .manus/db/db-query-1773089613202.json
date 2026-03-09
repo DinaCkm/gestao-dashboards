@@ -1,0 +1,9 @@
+{
+  "query": "SELECT ap.id, ap.alunoId, ap.trilhaId, ap.turmaId, ap.status, ap.createdAt \nFROM assessment_pdi ap \nWHERE ap.alunoId = 676283;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id, ap.alunoId, ap.trilhaId, ap.turmaId, ap.status, ap.createdAt \nFROM assessment_pdi ap \nWHERE ap.alunoId = 676283;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 369
+}

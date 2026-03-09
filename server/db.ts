@@ -3393,20 +3393,39 @@ export async function getAssessmentsByAluno(alunoId: number) {
   }).from(studentPerformance)
     .where(eq(studentPerformance.alunoId, alunoId));
   
-  // Criar mapa por competenciaId e por nome (normalizado) para fallback
+  // A2 FIX V3: Criar mapas robustos para matching de competências
+  // O student_performance usa IDs da série 60xxx e nomes como "Atenção - Básica"
+  // O assessment_competencias usa IDs da série 30xxx e nomes como "Atenção"
+  // Precisamos fazer match por nome normalizado (sem sufixo de trilha)
+  // IMPORTANTE: 0% é um valor válido (aluno não completou nenhuma aula)
+  // Usamos undefined como sentinel para "sem dados" vs 0 para "0% progresso"
   const perfByCompId = new Map<number, number>();
   const perfByCompName = new Map<string, number>();
+  // Mapa adicional: nome completo (lowercase) para fallback
+  const perfByFullName = new Map<string, number>();
+  
   for (const p of perfRecords) {
     if (p.competenciaId && p.progressoTotal !== null) {
-      perfByCompId.set(p.competenciaId, p.progressoTotal);
+      // Manter o maior progresso se houver múltiplas entradas
+      const existing = perfByCompId.get(p.competenciaId);
+      if (existing === undefined || p.progressoTotal > existing) {
+        perfByCompId.set(p.competenciaId, p.progressoTotal);
+      }
     }
     if (p.competenciaName && p.progressoTotal !== null) {
-      // Nome pode ser "Atenção - Básica", extrair só o nome base
+      // Nome pode ser "Atenção - Básica", "Comunicação Assertiva - Essencial", etc.
+      // Extrair o nome base (antes do " - ")
       const baseName = p.competenciaName.split(' - ')[0].trim().toLowerCase();
-      // Manter o maior progresso se houver múltiplas entradas
-      const existing = perfByCompName.get(baseName) || 0;
-      if (p.progressoTotal > existing) {
+      // Manter o maior progresso se houver múltiplas entradas para o mesmo nome base
+      const existing = perfByCompName.get(baseName);
+      if (existing === undefined || p.progressoTotal > existing) {
         perfByCompName.set(baseName, p.progressoTotal);
+      }
+      // Também guardar o nome completo normalizado
+      const fullName = p.competenciaName.trim().toLowerCase();
+      const existingFull = perfByFullName.get(fullName);
+      if (existingFull === undefined || p.progressoTotal > existingFull) {
+        perfByFullName.set(fullName, p.progressoTotal);
       }
     }
   }
@@ -3431,22 +3450,41 @@ export async function getAssessmentsByAluno(alunoId: number) {
         const notaNum = notaAtual ? parseFloat(notaAtual) : null;
         const notaCorteNum = parseFloat(c.notaCorte);
         
-        // A2 FIX: Se nivelAtual é NULL, tentar preencher com progressoTotal do student_performance
+        // A2 FIX V3: Se nivelAtual é NULL, tentar preencher com progressoTotal do student_performance
+        // Estratégia de matching em 3 níveis:
+        // 1. Por competenciaId direto (raro funcionar entre séries diferentes)
+        // 2. Por nome exato da competência (lowercase) no mapa de nomes base
+        // 3. Por nome parcial (contains) no mapa de nomes completos
+        // IMPORTANTE: 0% é valor válido (match encontrado, aluno não completou)
         let nivelAtualEfetivo = c.nivelAtual ? parseFloat(c.nivelAtual) : null;
         let nivelAutomatico = false;
         if (nivelAtualEfetivo === null) {
-          // Tentar por competenciaId
+          const compNome = comp?.nome?.toLowerCase()?.trim() || '';
+          
+          // 1. Tentar por competenciaId direto
           const perfById = perfByCompId.get(c.competenciaId);
-          if (perfById !== undefined && perfById > 0) {
+          if (perfById !== undefined) {
             nivelAtualEfetivo = perfById;
             nivelAutomatico = true;
-          } else {
-            // Tentar por nome da competência
-            const compNome = comp?.nome?.toLowerCase() || '';
+          }
+          // 2. Tentar por nome exato no mapa de nomes base
+          if (nivelAtualEfetivo === null && compNome) {
             const perfByName = perfByCompName.get(compNome);
-            if (perfByName !== undefined && perfByName > 0) {
+            if (perfByName !== undefined) {
               nivelAtualEfetivo = perfByName;
               nivelAutomatico = true;
+            }
+          }
+          // 3. Tentar por nome parcial - buscar no mapa de nomes completos
+          if (nivelAtualEfetivo === null && compNome) {
+            for (const [fullName, progresso] of Array.from(perfByFullName.entries())) {
+              // Verificar se o nome da competência está contido no nome completo do student_performance
+              // ou se o nome base do student_performance contém o nome da competência
+              if (fullName.includes(compNome) || compNome.includes(fullName.split(' - ')[0].trim())) {
+                nivelAtualEfetivo = progresso;
+                nivelAutomatico = true;
+                break;
+              }
             }
           }
         }
@@ -5240,13 +5278,23 @@ export async function saveMentorAvailability(consultorId: number, slots: {
   if (!db) return { success: false };
 
   for (const slot of slots) {
+    // A3 FIX: Auto-calcular endTime se for igual ao startTime ou vazio
+    let endTime = slot.endTime;
+    if (!endTime || endTime === slot.startTime) {
+      const [h, m] = slot.startTime.split(':').map(Number);
+      const totalMin = h * 60 + m + slot.slotDurationMinutes;
+      const endH = Math.floor(totalMin / 60) % 24;
+      const endM = totalMin % 60;
+      endTime = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+    }
+    
     if (slot.id) {
       // Atualizar existente
       await db.update(mentorAvailability)
         .set({
           dayOfWeek: slot.dayOfWeek,
           startTime: slot.startTime,
-          endTime: slot.endTime,
+          endTime: endTime,
           slotDurationMinutes: slot.slotDurationMinutes,
           googleMeetLink: slot.googleMeetLink || null,
           isActive: slot.isActive,
@@ -5258,7 +5306,7 @@ export async function saveMentorAvailability(consultorId: number, slots: {
         consultorId,
         dayOfWeek: slot.dayOfWeek,
         startTime: slot.startTime,
-        endTime: slot.endTime,
+        endTime: endTime,
         slotDurationMinutes: slot.slotDurationMinutes,
         googleMeetLink: slot.googleMeetLink || null,
         isActive: slot.isActive,

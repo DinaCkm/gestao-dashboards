@@ -1187,12 +1187,23 @@ export const appRouter = router({
               const mentor = a.consultorId ? consultorMap.get(a.consultorId) : null;
               const idUsr = a.externalId || String(a.id);
               const ind = indicadoresMap.get(idUsr);
+              // A5 FIX: Adicionar data da última mentoria e total de sessões
+              const alunoSessoes = mentoringSessions
+                .filter(s => s.alunoId === a.id && s.sessionDate)
+                .sort((sa, sb) => {
+                  const da = sa.sessionDate ? new Date(sa.sessionDate).getTime() : 0;
+                  const db2 = sb.sessionDate ? new Date(sb.sessionDate).getTime() : 0;
+                  return db2 - da;
+                });
+              const ultimaMentoria = alunoSessoes[0];
               return {
                 'Nome': a.name || '',
                 'Email': a.email || '',
                 'Empresa': prog?.name || '',
                 'Turma': turma?.name || '',
                 'Mentor(a)': mentor?.name || '',
+                'Total Sessões': alunoSessoes.length,
+                'Última Mentoria': ultimaMentoria?.sessionDate ? new Date(ultimaMentoria.sessionDate).toLocaleDateString('pt-BR') : 'Sem sessões',
                 'Ind.1 Webinars (%)': ind ? Math.round(ind.consolidado.ind1_webinars) : 0,
                 'Ind.2 Avaliações (%)': ind ? Math.round(ind.consolidado.ind2_avaliacoes) : 0,
                 'Ind.3 Competências (%)': ind ? Math.round(ind.consolidado.ind3_competencias) : 0,
@@ -3200,6 +3211,15 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         // Verificar se o aluno está vinculado
         const alunoId = (ctx.user as any).alunoId;
         if (!alunoId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Usuário não é um aluno' });
+
+        // A4 FIX: Validar dia da semana contra a disponibilidade do mentor
+        const avail = await db.getMentorAvailability(input.consultorId);
+        const dateObj = new Date(input.scheduledDate + 'T12:00:00');
+        const dayOfWeek = dateObj.getDay();
+        const matchingSlot = avail.find(a => a.dayOfWeek === dayOfWeek && a.startTime === input.startTime && a.isActive === 1);
+        if (!matchingSlot) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'O mentor não tem disponibilidade neste dia/horário. Verifique a agenda.' });
+        }
 
         // Verificar se o horário já não está ocupado
         const existing = await db.checkAppointmentConflict(input.consultorId, input.scheduledDate, input.startTime);

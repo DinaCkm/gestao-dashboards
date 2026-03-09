@@ -34,8 +34,9 @@ export default function ReportsPage() {
   const [historyExpanded, setHistoryExpanded] = useState(true);
 
   const isAdmin = user?.role === "admin";
-  const isManager = user?.role === "manager" || isAdmin;
-  const isMentor = !!(user as any)?.consultorId; // Mentor = manager com consultorId
+  const isMentor = !!(user as any)?.consultorId; // Mentor = user com consultorId
+  // A5 FIX: Mentores (com consultorId) também devem ver a opção Gerencial
+  const isManager = user?.role === "manager" || isAdmin || isMentor;
   const isGestorEmpresa = user?.role === "manager" && !isMentor; // Gestor = manager sem consultorId
 
   // Fetch alunos list for individual report filter
