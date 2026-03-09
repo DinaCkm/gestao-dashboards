@@ -40,7 +40,8 @@ import {
   inAppNotifications, InsertInAppNotification, InAppNotification,
   courses, InsertCourse, Course,
   activities, InsertActivity, Activity,
-  activityRegistrations, InsertActivityRegistration, ActivityRegistration,} from "../drizzle/schema";
+  activityRegistrations, InsertActivityRegistration, ActivityRegistration,
+  activityTurmas, InsertActivityTurma, ActivityTurma,} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -648,6 +649,16 @@ export async function getAlunoById(alunoId: number): Promise<Aluno | undefined> 
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  return result[0];
+}
+
+export async function getAlunoByUserId(userId: number): Promise<Aluno | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  // O user tem alunoId que referencia a tabela alunos
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user[0]?.alunoId) return undefined;
+  const result = await db.select().from(alunos).where(eq(alunos.id, user[0].alunoId)).limit(1);
   return result[0];
 }
 
@@ -6631,4 +6642,66 @@ export async function countRegistrations(activityId: number): Promise<number> {
     .from(activityRegistrations)
     .where(and(eq(activityRegistrations.activityId, activityId), sql`${activityRegistrations.status} != 'cancelado'`));
   return Number(rows[0]?.count ?? 0);
+}
+
+// ============================================================
+// ACTIVITY TURMAS (vinculação atividade-turma)
+// ============================================================
+
+export async function getActivityTurmas(activityId: number): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({ turmaId: activityTurmas.turmaId })
+    .from(activityTurmas)
+    .where(eq(activityTurmas.activityId, activityId));
+  return rows.map(r => r.turmaId);
+}
+
+export async function setActivityTurmas(activityId: number, turmaIds: number[]): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  // Deletar vinculações existentes
+  await db.delete(activityTurmas).where(eq(activityTurmas.activityId, activityId));
+  // Inserir novas vinculações
+  if (turmaIds.length > 0) {
+    await db.insert(activityTurmas).values(
+      turmaIds.map(turmaId => ({ activityId, turmaId }))
+    );
+  }
+}
+
+export async function getActivitiesForTurma(turmaId: number): Promise<Activity[]> {
+  const db = await getDb();
+  if (!db) return [];
+  // Retorna atividades que estão vinculadas a esta turma OU que não têm nenhuma turma vinculada (visível para todos)
+  const allActivities = await db.select().from(activities).where(eq(activities.isActive, 1));
+  const allLinks = await db.select().from(activityTurmas);
+  
+  // Agrupar turmas por atividade
+  const turmasByActivity = new Map<number, number[]>();
+  for (const link of allLinks) {
+    const existing = turmasByActivity.get(link.activityId) || [];
+    existing.push(link.turmaId);
+    turmasByActivity.set(link.activityId, existing);
+  }
+  
+  // Filtrar: sem turmas vinculadas (todos) OU turma do aluno está na lista
+  return allActivities.filter(a => {
+    const linkedTurmas = turmasByActivity.get(a.id);
+    if (!linkedTurmas || linkedTurmas.length === 0) return true; // Visível para todos
+    return linkedTurmas.includes(turmaId);
+  });
+}
+
+export async function getAllActivityTurmasMap(): Promise<Map<number, number[]>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  const allLinks = await db.select().from(activityTurmas);
+  const map = new Map<number, number[]>();
+  for (const link of allLinks) {
+    const existing = map.get(link.activityId) || [];
+    existing.push(link.turmaId);
+    map.set(link.activityId, existing);
+  }
+  return map;
 }

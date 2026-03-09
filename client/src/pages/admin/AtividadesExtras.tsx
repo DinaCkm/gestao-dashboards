@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ import {
   Plus,
   Search,
   Pencil,
+  Trash2,
   Calendar,
   MapPin,
   Users,
@@ -40,6 +42,7 @@ import {
   UserX,
   Monitor,
   Building2,
+  GraduationCap,
 } from "lucide-react";
 
 type ActivityItem = {
@@ -75,6 +78,7 @@ type FormData = {
   instrutor: string;
   imagemUrl: string;
   competenciaRelacionada: string;
+  turmaIds: number[];
 };
 
 const emptyForm: FormData = {
@@ -89,6 +93,7 @@ const emptyForm: FormData = {
   instrutor: "",
   imagemUrl: "",
   competenciaRelacionada: "",
+  turmaIds: [],
 };
 
 const tipoLabels: Record<string, string> = {
@@ -127,15 +132,19 @@ export default function AtividadesExtrasAdmin() {
   const [showInactive, setShowInactive] = useState(false);
   const [filterTipo, setFilterTipo] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
   const { data: activitiesData, isLoading } = trpc.activities.list.useQuery();
   const { data: competenciasData } = trpc.competencias.listWithTrilha.useQuery();
+  const { data: turmasData } = trpc.turmas.list.useQuery();
+  const { data: turmasMapData } = trpc.activities.getAllTurmasMap.useQuery();
 
   const createMutation = trpc.activities.create.useMutation({
     onSuccess: () => {
       toast.success("Atividade criada com sucesso!");
       utils.activities.list.invalidate();
+      utils.activities.getAllTurmasMap.invalidate();
       handleCloseDialog();
     },
     onError: (err) => toast.error(err.message),
@@ -145,6 +154,7 @@ export default function AtividadesExtrasAdmin() {
     onSuccess: () => {
       toast.success("Atividade atualizada com sucesso!");
       utils.activities.list.invalidate();
+      utils.activities.getAllTurmasMap.invalidate();
       handleCloseDialog();
     },
     onError: (err) => toast.error(err.message),
@@ -158,10 +168,22 @@ export default function AtividadesExtrasAdmin() {
     onError: (err) => toast.error(err.message),
   });
 
+  const deleteMutation = trpc.activities.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Atividade excluída!");
+      utils.activities.list.invalidate();
+      utils.activities.getAllTurmasMap.invalidate();
+      setDeleteConfirm(null);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
   const handleCloseDialog = () => {
-    setShowDialog(false);
-    setEditingActivity(null);
-    setForm(emptyForm);
+    setTimeout(() => {
+      setShowDialog(false);
+      setEditingActivity(null);
+      setForm(emptyForm);
+    }, 100);
   };
 
   const handleOpenCreate = () => {
@@ -172,6 +194,8 @@ export default function AtividadesExtrasAdmin() {
 
   const handleOpenEdit = (activity: ActivityItem) => {
     setEditingActivity(activity);
+    // Buscar turmas vinculadas
+    const linkedTurmas = turmasMapData ? (turmasMapData as Record<number, number[]>)[activity.id] || [] : [];
     setForm({
       titulo: activity.titulo,
       descricao: activity.descricao || "",
@@ -184,6 +208,7 @@ export default function AtividadesExtrasAdmin() {
       instrutor: activity.instrutor || "",
       imagemUrl: activity.imagemUrl || "",
       competenciaRelacionada: activity.competenciaRelacionada || "",
+      turmaIds: linkedTurmas,
     });
     setShowDialog(true);
   };
@@ -205,7 +230,8 @@ export default function AtividadesExtrasAdmin() {
       vagas: form.vagas ? parseInt(form.vagas) : undefined,
       instrutor: form.instrutor.trim() || undefined,
       imagemUrl: form.imagemUrl.trim() || undefined,
-      competenciaRelacionada: form.competenciaRelacionada || undefined,
+      competenciaRelacionada: form.competenciaRelacionada === "nenhuma" ? undefined : form.competenciaRelacionada || undefined,
+      turmaIds: form.turmaIds,
     };
 
     if (editingActivity) {
@@ -215,10 +241,31 @@ export default function AtividadesExtrasAdmin() {
     }
   };
 
+  const toggleTurma = (turmaId: number) => {
+    setForm((f) => {
+      const newIds = f.turmaIds.includes(turmaId)
+        ? f.turmaIds.filter((id) => id !== turmaId)
+        : [...f.turmaIds, turmaId];
+      return { ...f, turmaIds: newIds };
+    });
+  };
+
   const allCompetencias = useMemo(() => {
     if (!competenciasData) return [];
     return (competenciasData as any[]).map((c: any) => c.nome).sort();
   }, [competenciasData]);
+
+  const turmasList = useMemo(() => {
+    if (!turmasData) return [];
+    return (turmasData as any[]).sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""));
+  }, [turmasData]);
+
+  // Mapa de turma ID -> nome
+  const turmaNameMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    turmasList.forEach((t: any) => { map[t.id] = t.name || `Turma ${t.id}`; });
+    return map;
+  }, [turmasList]);
 
   const filteredActivities = useMemo(() => {
     if (!activitiesData) return [];
@@ -330,14 +377,14 @@ export default function AtividadesExtrasAdmin() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por título, instrutor ou local..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
+                placeholder="Buscar por título, instrutor ou local..."
+                className="pl-9"
               />
             </div>
             <Select value={filterTipo} onValueChange={setFilterTipo}>
@@ -355,7 +402,7 @@ export default function AtividadesExtrasAdmin() {
             </Select>
             <div className="flex items-center gap-2">
               <Switch checked={showInactive} onCheckedChange={setShowInactive} />
-              <Label className="text-sm whitespace-nowrap">Mostrar inativas</Label>
+              <Label className="text-sm">Mostrar inativas</Label>
             </div>
           </div>
         </CardContent>
@@ -365,18 +412,22 @@ export default function AtividadesExtrasAdmin() {
       {filteredActivities.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <Zap className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-            <p className="text-muted-foreground">Nenhuma atividade encontrada</p>
-            <Button variant="outline" className="mt-4" onClick={handleOpenCreate}>
-              Criar primeira atividade
-            </Button>
+            <Zap className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+            <p className="text-lg font-medium text-muted-foreground">
+              {search || filterTipo !== "all" ? "Nenhuma atividade encontrada" : "Nenhuma atividade cadastrada"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {!search && filterTipo === "all" && "Clique em 'Nova Atividade' para criar a primeira"}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {filteredActivities.map((activity) => {
             const isExpanded = expandedId === activity.id;
-            const isPast = activity.dataInicio && new Date(activity.dataInicio) < new Date();
+            const isPast = activity.dataFim && new Date(activity.dataFim) < new Date();
+            const linkedTurmaIds = turmasMapData ? (turmasMapData as Record<number, number[]>)[activity.id] || [] : [];
+
             return (
               <Card key={activity.id} className={`transition-all ${activity.isActive === 0 ? "opacity-60" : ""}`}>
                 <CardContent className="pt-6">
@@ -422,6 +473,23 @@ export default function AtividadesExtrasAdmin() {
                             </span>
                           )}
                         </div>
+                        {/* Turmas vinculadas */}
+                        {linkedTurmaIds.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            <GraduationCap className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
+                            {linkedTurmaIds.map((tId: number) => (
+                              <Badge key={tId} variant="outline" className="text-xs">
+                                {turmaNameMap[tId] || `Turma ${tId}`}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        {linkedTurmaIds.length === 0 && (
+                          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                            <GraduationCap className="h-3.5 w-3.5" />
+                            Visível para todas as turmas
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <Switch
@@ -432,6 +500,15 @@ export default function AtividadesExtrasAdmin() {
                         />
                         <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(activity)}>
                           <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setDeleteConfirm(activity.id)}
+                          title="Excluir"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -473,6 +550,30 @@ export default function AtividadesExtrasAdmin() {
           })}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirm !== null} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir esta atividade? Todas as inscrições associadas também serão removidas. Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteConfirm && deleteMutation.mutate({ id: deleteConfirm })}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Excluindo..." : "Excluir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Create/Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={(open) => { if (!open) handleCloseDialog(); }}>
@@ -609,6 +710,55 @@ export default function AtividadesExtrasAdmin() {
                 onChange={(e) => setForm((f) => ({ ...f, imagemUrl: e.target.value }))}
                 placeholder="https://..."
               />
+            </div>
+
+            {/* Seleção de Turmas */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                Turmas que podem ver esta atividade
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Se nenhuma turma for selecionada, a atividade será visível para todos os alunos.
+              </p>
+              <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+                {turmasList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhuma turma cadastrada</p>
+                ) : (
+                  turmasList.map((turma: any) => (
+                    <div key={turma.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`turma-${turma.id}`}
+                        checked={form.turmaIds.includes(turma.id)}
+                        onCheckedChange={() => toggleTurma(turma.id)}
+                      />
+                      <label
+                        htmlFor={`turma-${turma.id}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        {turma.name || `Turma ${turma.id}`}
+                      </label>
+                    </div>
+                  ))
+                )}
+              </div>
+              {form.turmaIds.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {form.turmaIds.map((tId) => (
+                    <Badge key={tId} variant="secondary" className="text-xs">
+                      {turmaNameMap[tId] || `Turma ${tId}`}
+                    </Badge>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 text-xs text-muted-foreground"
+                    onClick={() => setForm((f) => ({ ...f, turmaIds: [] }))}
+                  >
+                    Limpar seleção
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 

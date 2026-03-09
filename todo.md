@@ -2114,3 +2114,9 @@
 - [x] Remover placeholder 'Em breve' do item Atividades Extras no menu admin e aluno
 - [x] Adicionar rotas no App.tsx (/atividades-extras admin, /minhas-atividades aluno)
 - [x] Escrever testes vitest para os endpoints de atividades (todos passando)
+- [x] Adicionar botão de excluir na interface admin de Cursos (backend já existia, frontend já tinha)
+- [x] Adicionar botão de excluir na interface admin de Atividades Extras com dialog de confirmação
+- [x] Vincular atividades extras a turmas: tabela activity_turmas + endpoints getAllTurmasMap, setActivityTurmas, getActivitiesForTurma
+- [x] Adicionar seleção de turma (checkboxes) no formulário de criar/editar atividade extra
+- [x] Filtrar atividades no portal do aluno pela turma do aluno (listForStudent)
+- [x] Testes vitest atualizados com testes de vinculação de turmas (438 testes passando)

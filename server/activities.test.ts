@@ -275,6 +275,46 @@ describe("Activities Router", () => {
     });
   });
 
+  // ---- TURMA VINCULAÇÃO ----
+  describe("activities.turma linking", () => {
+    it("should create activity with turmaIds", async () => {
+      const { ctx } = createAdminContext();
+      const result = await caller(ctx).activities.create({
+        titulo: "Atividade com Turmas",
+        tipo: "workshop",
+        modalidade: "presencial",
+        turmaIds: [1, 2],
+      });
+      expect(result).toHaveProperty("id");
+    });
+
+    it("should get all turmas map", async () => {
+      const { ctx } = createAdminContext();
+      const map = await caller(ctx).activities.getAllTurmasMap();
+      expect(typeof map).toBe("object");
+    });
+
+    it("should update activity turmaIds", async () => {
+      const { ctx } = createAdminContext();
+      const created = await caller(ctx).activities.create({
+        titulo: "Atividade Turma Update",
+        tipo: "treinamento",
+        modalidade: "online",
+        turmaIds: [1],
+      });
+      const result = await caller(ctx).activities.update({
+        id: created.id,
+        turmaIds: [2, 3],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject getAllTurmasMap for non-admin", async () => {
+      const { ctx } = createNonAdminContext();
+      await expect(caller(ctx).activities.getAllTurmasMap()).rejects.toThrow();
+    });
+  });
+
   // ---- UNREGISTER ----
   describe("activities.unregister", () => {
     it("should unregister a user from an activity", async () => {

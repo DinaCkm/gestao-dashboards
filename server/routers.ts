@@ -5587,16 +5587,22 @@ Responda APENAS em JSON com o formato especificado.`
         imagemUrl: z.string().optional(),
         competenciaRelacionada: z.string().optional(),
         programId: z.number().optional(),
+        turmaIds: z.array(z.number()).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        const { turmaIds, ...rest } = input;
         const id = await db.createActivity({
-          ...input,
-          dataInicio: input.dataInicio ? new Date(input.dataInicio) : null,
-          dataFim: input.dataFim ? new Date(input.dataFim) : null,
-          vagas: input.vagas ?? null,
-          programId: input.programId ?? null,
+          ...rest,
+          dataInicio: rest.dataInicio ? new Date(rest.dataInicio) : null,
+          dataFim: rest.dataFim ? new Date(rest.dataFim) : null,
+          vagas: rest.vagas ?? null,
+          programId: rest.programId ?? null,
           createdBy: ctx.user.id,
         });
+        // Vincular turmas se informadas
+        if (turmaIds && turmaIds.length > 0) {
+          await db.setActivityTurmas(id, turmaIds);
+        }
         return { id };
       }),
 
@@ -5616,13 +5622,21 @@ Responda APENAS em JSON com o formato especificado.`
         imagemUrl: z.string().optional(),
         competenciaRelacionada: z.string().optional(),
         programId: z.number().optional().nullable(),
+        turmaIds: z.array(z.number()).optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, dataInicio, dataFim, ...rest } = input;
+        const { id, dataInicio, dataFim, turmaIds, ...rest } = input;
         const updateData: any = { ...rest };
         if (dataInicio !== undefined) updateData.dataInicio = dataInicio ? new Date(dataInicio) : null;
         if (dataFim !== undefined) updateData.dataFim = dataFim ? new Date(dataFim) : null;
-        await db.updateActivity(id, updateData);
+        // Só chama updateActivity se houver campos para atualizar
+        if (Object.keys(updateData).length > 0) {
+          await db.updateActivity(id, updateData);
+        }
+        // Atualizar turmas vinculadas se informadas
+        if (turmaIds !== undefined) {
+          await db.setActivityTurmas(id, turmaIds);
+        }
         return { success: true };
       }),
 
@@ -5637,13 +5651,42 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true };
       }),
 
-    // Deletar atividade (admin)
+    // Deletar atividade (admin) - também remove vinculações de turmas
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
+        await db.setActivityTurmas(input.id, []); // Limpar vinculações
         await db.deleteActivity(input.id);
         return { success: true };
       }),
+
+    // Obter turmas vinculadas a uma atividade
+    getTurmas: protectedProcedure
+      .input(z.object({ activityId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getActivityTurmas(input.activityId);
+      }),
+
+    // Obter mapa de todas as vinculações atividade-turma (admin)
+    getAllTurmasMap: adminProcedure.query(async () => {
+      const map = await db.getAllActivityTurmasMap();
+      // Converter Map para objeto serializável
+      const obj: Record<number, number[]> = {};
+      map.forEach((v, k) => { obj[k] = v; });
+      return obj;
+    }),
+
+    // Listar atividades filtradas por turma do aluno
+    listForStudent: protectedProcedure.query(async ({ ctx }) => {
+      // Buscar o aluno vinculado ao usuário
+      const aluno = await db.getAlunoByUserId(ctx.user.id);
+      if (aluno && aluno.turmaId) {
+        return db.getActivitiesForTurma(aluno.turmaId);
+      }
+      // Se não tem turma, retorna todas as ativas
+      const all = await db.listActivities();
+      return all.filter(a => a.isActive === 1);
+    }),
 
     // Contar inscrições de uma atividade
     countRegistrations: protectedProcedure

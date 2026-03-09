@@ -79,7 +79,8 @@ export default function AtividadesExtrasAluno() {
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
 
-  const { data: activitiesData, isLoading } = trpc.activities.list.useQuery();
+  // Usa listForStudent que filtra por turma do aluno
+  const { data: activitiesData, isLoading } = trpc.activities.listForStudent.useQuery();
   const utils = trpc.useUtils();
 
   const registerMutation = trpc.activities.register.useMutation({

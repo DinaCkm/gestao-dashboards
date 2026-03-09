@@ -948,3 +948,16 @@ export const activityRegistrations = mysqlTable("activity_registrations", {
 });
 export type ActivityRegistration = typeof activityRegistrations.$inferSelect;
 export type InsertActivityRegistration = typeof activityRegistrations.$inferInsert;
+
+/**
+ * Activity Turmas - Vinculação muitos-para-muitos entre atividades e turmas
+ * Se uma atividade não tiver turmas vinculadas, ela é visível para todos
+ */
+export const activityTurmas = mysqlTable("activity_turmas", {
+  id: int("id").autoincrement().primaryKey(),
+  activityId: int("activityId").notNull(),
+  turmaId: int("turmaId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ActivityTurma = typeof activityTurmas.$inferSelect;
+export type InsertActivityTurma = typeof activityTurmas.$inferInsert;
