@@ -2100,3 +2100,6 @@
 - [x] Criar catálogo de cursos no portal do aluno (cards com thumbnail, título, link YouTube)
 - [x] Adicionar rotas e menus (admin: Conteúdo e Comunicação > Cursos; aluno: Cursos Disponíveis)
 - [x] Escrever testes vitest para os endpoints de cursos (13 testes passando)
+- [x] Bug: Página Biblioteca de Tarefas não tem sidebar/DashboardLayout - sem navegação para sair
+- [x] Adicionar DashboardLayout na página CursosDisponiveis (admin)
+- [x] Adicionar AlunoLayout na página CursosAluno (aluno)

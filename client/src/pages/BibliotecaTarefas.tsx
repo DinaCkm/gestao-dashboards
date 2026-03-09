@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -254,6 +255,7 @@ export default function BibliotecaTarefas() {
   }
 
   return (
+    <DashboardLayout>
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -629,5 +631,6 @@ export default function BibliotecaTarefas() {
         </DialogContent>
       </Dialog>
     </div>
+    </DashboardLayout>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,6 +118,7 @@ export default function CursosAluno() {
   }
 
   return (
+    <AlunoLayout>
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
@@ -312,5 +314,6 @@ export default function CursosAluno() {
         </div>
       )}
     </div>
+    </AlunoLayout>
   );
 }
