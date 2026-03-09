@@ -1,0 +1,8 @@
+{
+  "query": "SELECT dr.*, a.nome as aluno_nome FROM disc_resultados dr LEFT JOIN alunos a ON dr.alunoId = a.id WHERE dr.scoreD = '100.00' AND dr.scoreI = '100.00' AND dr.scoreS = '100.00' AND dr.scoreC = '100.00'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT dr.*, a.nome as aluno_nome FROM disc_resultados dr LEFT JOIN alunos a ON dr.alunoId = a.id WHERE dr.scoreD = '100.00' AND dr.scoreI = '100.00' AND dr.scoreS = '100.00' AND dr.scoreC = '100.00'",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'a.nome' in 'field list'"
+  ]
+}

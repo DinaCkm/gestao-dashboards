@@ -4801,45 +4801,53 @@ Responda APENAS em JSON com o formato:
 
   // ============ TESTE DISC + AUTOPERCEPÇÃO ============
   disc: router({
-    // Buscar perguntas do teste DISC
+    // Buscar blocos do teste DISC (escolha forçada)
     perguntas: publicProcedure.query(() => {
-      const { DISC_PERGUNTAS, DISC_ESCALA_LABELS } = require('../shared/discData');
-      return { perguntas: DISC_PERGUNTAS, escalaLabels: DISC_ESCALA_LABELS };
+      const { DISC_BLOCOS, DISC_PERFIS } = require('../shared/discData');
+      return { blocos: DISC_BLOCOS, totalBlocos: DISC_BLOCOS.length };
     }),
 
-    // Salvar respostas e calcular resultado DISC
+    // Salvar respostas e calcular resultado DISC (escolha forçada)
     salvarRespostas: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
         respostas: z.array(z.object({
-          perguntaIndex: z.number(),
-          dimensao: z.enum(["D", "I", "S", "C"]),
-          resposta: z.number().min(1).max(5),
+          blocoIndex: z.number(),
+          maisId: z.string(),
+          menosId: z.string(),
+          maisDimensao: z.enum(["D", "I", "S", "C"]),
+          menosDimensao: z.enum(["D", "I", "S", "C"]),
         }))
       }))
       .mutation(async ({ input }) => {
         const { calcularDiscScores } = require('../shared/discData');
         
-        // Salvar respostas
-        await db.saveDiscRespostas(input.alunoId, input.respostas.map(r => ({
-          alunoId: input.alunoId,
-          perguntaIndex: r.perguntaIndex,
-          dimensao: r.dimensao,
-          resposta: r.resposta,
-        })));
+        // Determinar ciclo
+        const existingResult = await db.getDiscResultado(input.alunoId);
+        const ciclo = existingResult ? existingResult.ciclo + 1 : 1;
+        
+        // Salvar respostas no formato escolha forçada
+        await db.saveDiscRespostas(input.alunoId, ciclo, input.respostas);
 
-        // Calcular scores
+        // Calcular scores ipsativos
         const resultado = calcularDiscScores(input.respostas);
 
-        // Salvar resultado
+        // Salvar resultado com novos campos
         await db.saveDiscResultado({
           alunoId: input.alunoId,
           scoreD: String(resultado.scores.D),
           scoreI: String(resultado.scores.I),
           scoreS: String(resultado.scores.S),
           scoreC: String(resultado.scores.C),
+          scoreBrutoD: resultado.scoresBrutos.D,
+          scoreBrutoI: resultado.scoresBrutos.I,
+          scoreBrutoS: resultado.scoresBrutos.S,
+          scoreBrutoC: resultado.scoresBrutos.C,
           perfilPredominante: resultado.perfilPredominante,
           perfilSecundario: resultado.perfilSecundario,
+          indiceConsistencia: resultado.indiceConsistencia,
+          alertaBaixaDiferenciacao: resultado.alertaBaixaDiferenciacao,
+          metodoCalculo: 'ipsativo',
         });
 
         return resultado;

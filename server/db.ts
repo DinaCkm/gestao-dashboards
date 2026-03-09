@@ -6202,16 +6202,28 @@ export async function getAlertaAtualizacaoMetas(alunoId: number) {
 
 // ============ DISC TEST FUNCTIONS ============
 
-export async function saveDiscRespostas(alunoId: number, respostas: InsertDiscResposta[]) {
+export async function saveDiscRespostas(alunoId: number, ciclo: number, respostas: { blocoIndex: number; maisId: string; menosId: string; maisDimensao: string; menosDimensao: string }[]) {
   const dbConn = await getDb();
   if (!dbConn) throw new Error("Database not available");
   
-  // Deletar respostas anteriores do aluno (permite refazer o teste)
-  await dbConn.delete(discRespostas).where(eq(discRespostas.alunoId, alunoId));
+  // Deletar respostas anteriores do aluno para este ciclo (permite refazer o teste)
+  await dbConn.delete(discRespostas).where(
+    and(eq(discRespostas.alunoId, alunoId), eq(discRespostas.ciclo, ciclo))
+  );
   
-  // Inserir novas respostas
+  // Inserir novas respostas no formato escolha forçada
   if (respostas.length > 0) {
-    await dbConn.insert(discRespostas).values(respostas);
+    await dbConn.insert(discRespostas).values(
+      respostas.map(r => ({
+        alunoId,
+        ciclo,
+        blocoIndex: r.blocoIndex,
+        maisId: r.maisId,
+        menosId: r.menosId,
+        maisDimensao: r.maisDimensao as any,
+        menosDimensao: r.menosDimensao as any,
+      }))
+    );
   }
 }
 
@@ -6221,7 +6233,22 @@ export async function getDiscRespostas(alunoId: number) {
   return dbConn.select().from(discRespostas).where(eq(discRespostas.alunoId, alunoId));
 }
 
-export async function saveDiscResultado(data: InsertDiscResultado) {
+export async function saveDiscResultado(data: {
+  alunoId: number;
+  scoreD: string;
+  scoreI: string;
+  scoreS: string;
+  scoreC: string;
+  scoreBrutoD?: number;
+  scoreBrutoI?: number;
+  scoreBrutoS?: number;
+  scoreBrutoC?: number;
+  perfilPredominante: string;
+  perfilSecundario?: string;
+  indiceConsistencia?: number;
+  alertaBaixaDiferenciacao?: boolean;
+  metodoCalculo?: string;
+}) {
   const dbConn = await getDb();
   if (!dbConn) throw new Error("Database not available");
   
@@ -6235,7 +6262,13 @@ export async function saveDiscResultado(data: InsertDiscResultado) {
   const nextCiclo = existing.length > 0 ? (existing[0].ciclo + 1) : 1;
   
   // Inserir novo resultado com ciclo
-  await dbConn.insert(discResultados).values({ ...data, ciclo: nextCiclo });
+  await dbConn.insert(discResultados).values({
+    ...data,
+    ciclo: nextCiclo,
+    perfilPredominante: data.perfilPredominante as any,
+    perfilSecundario: data.perfilSecundario as any,
+    metodoCalculo: data.metodoCalculo || 'ipsativo',
+  } as any);
 }
 
 export async function getDiscResultado(alunoId: number) {

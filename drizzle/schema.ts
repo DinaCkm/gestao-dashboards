@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, date } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, date, boolean } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -789,15 +789,18 @@ export type InsertMetaAcompanhamento = typeof metaAcompanhamento.$inferInsert;
 
 
 /**
- * Teste DISC - Respostas do aluno às 28 afirmações DISC
- * Cada afirmação pertence a uma dimensão (D, I, S, C) e o aluno responde de 1 a 5
+ * Teste DISC - Respostas de Escolha Forçada (Ipsativo)
+ * Cada bloco tem 4 opções (D, I, S, C). O aluno escolhe "mais" e "menos" parecido.
  */
 export const discRespostas = mysqlTable("disc_respostas", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
-  perguntaIndex: int("perguntaIndex").notNull(), // Índice da pergunta (0-27)
-  dimensao: mysqlEnum("dimensao", ["D", "I", "S", "C"]).notNull(), // Dimensão DISC
-  resposta: int("resposta").notNull(), // Valor 1-5 (escala Likert)
+  ciclo: int("ciclo").default(1).notNull(), // Ciclo do assessment
+  blocoIndex: int("blocoIndex").notNull(), // Índice do bloco (0-27)
+  maisId: varchar("maisId", { length: 20 }).notNull(), // ID da opção "mais parecido" (ex: b1_D)
+  menosId: varchar("menosId", { length: 20 }).notNull(), // ID da opção "menos parecido" (ex: b1_S)
+  maisDimensao: mysqlEnum("maisDimensao", ["D", "I", "S", "C"]).notNull(), // Dimensão do "mais"
+  menosDimensao: mysqlEnum("menosDimensao", ["D", "I", "S", "C"]).notNull(), // Dimensão do "menos"
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -806,18 +809,25 @@ export type InsertDiscResposta = typeof discRespostas.$inferInsert;
 
 /**
  * Teste DISC - Resultado calculado do perfil DISC do aluno
- * Armazena os scores por dimensão e o perfil predominante
+ * Armazena scores normalizados, brutos, índice de consistência e perfil
  */
 export const discResultados = mysqlTable("disc_resultados", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
   ciclo: int("ciclo").default(1).notNull(), // Ciclo do assessment (1 = inicial, 2 = reassessment, etc.)
-  scoreD: decimal("scoreD", { precision: 5, scale: 2 }).notNull(), // Score Dominância (0-100)
-  scoreI: decimal("scoreI", { precision: 5, scale: 2 }).notNull(), // Score Influência (0-100)
-  scoreS: decimal("scoreS", { precision: 5, scale: 2 }).notNull(), // Score Estabilidade (0-100)
-  scoreC: decimal("scoreC", { precision: 5, scale: 2 }).notNull(), // Score Conformidade (0-100)
+  scoreD: decimal("scoreD", { precision: 5, scale: 2 }).notNull(), // Score Dominância normalizado (0-100)
+  scoreI: decimal("scoreI", { precision: 5, scale: 2 }).notNull(), // Score Influência normalizado (0-100)
+  scoreS: decimal("scoreS", { precision: 5, scale: 2 }).notNull(), // Score Estabilidade normalizado (0-100)
+  scoreC: decimal("scoreC", { precision: 5, scale: 2 }).notNull(), // Score Conformidade normalizado (0-100)
+  scoreBrutoD: int("scoreBrutoD"), // Score bruto D (-28 a +28)
+  scoreBrutoI: int("scoreBrutoI"), // Score bruto I (-28 a +28)
+  scoreBrutoS: int("scoreBrutoS"), // Score bruto S (-28 a +28)
+  scoreBrutoC: int("scoreBrutoC"), // Score bruto C (-28 a +28)
   perfilPredominante: mysqlEnum("perfilPredominante", ["D", "I", "S", "C"]).notNull(),
   perfilSecundario: mysqlEnum("perfilSecundario", ["D", "I", "S", "C"]),
+  indiceConsistencia: int("indiceConsistencia"), // 0-100 (quanto maior, mais consistente)
+  alertaBaixaDiferenciacao: boolean("alertaBaixaDiferenciacao").default(false), // true se scores muito próximos
+  metodoCalculo: varchar("metodoCalculo", { length: 20 }).default("ipsativo").notNull(), // 'ipsativo' ou 'likert' (legado)
   completedAt: timestamp("completedAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

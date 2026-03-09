@@ -1,66 +1,358 @@
 /**
- * Dados do Teste DISC - 28 afirmações (7 por dimensão)
- * Escala Likert: 1 (Discordo totalmente) a 5 (Concordo totalmente)
+ * Teste DISC - Formato de Escolha Forçada (Ipsativo)
  * 
- * D = Dominância: foco em resultados, decisão, controle
- * I = Influência: foco em pessoas, comunicação, entusiasmo
- * S = Estabilidade: foco em cooperação, paciência, consistência
- * C = Conformidade: foco em qualidade, precisão, análise
+ * 28 blocos com 4 afirmações cada (uma por dimensão D, I, S, C).
+ * O participante escolhe:
+ *   - "MAIS parecido comigo" (+1 ponto para o fator)
+ *   - "MENOS parecido comigo" (-1 ponto para o fator)
+ * 
+ * Isso cria equilíbrio matemático interno: se soma em um fator,
+ * automaticamente reduz em outro. Impossível ter 100% em tudo.
+ * 
+ * D = Dominância: decisão, controle, desafio, resultados
+ * I = Influência: comunicação, entusiasmo, persuasão, sociabilidade
+ * S = Estabilidade: cooperação, paciência, harmonia, consistência
+ * C = Conformidade: precisão, método, análise, qualidade
  */
 
 export type DiscDimensao = "D" | "I" | "S" | "C";
 
-export interface DiscPergunta {
-  index: number;
+export interface DiscOpcao {
+  id: string;        // ex: "b1_D" (bloco 1, dimensão D)
   dimensao: DiscDimensao;
   texto: string;
 }
 
-export const DISC_PERGUNTAS: DiscPergunta[] = [
-  // === DOMINÂNCIA (D) - 7 perguntas ===
-  { index: 0, dimensao: "D", texto: "Eu gosto de assumir o controle das situações e tomar decisões rapidamente." },
-  { index: 1, dimensao: "D", texto: "Quando enfrento um desafio, minha primeira reação é agir imediatamente." },
-  { index: 2, dimensao: "D", texto: "Prefiro liderar do que seguir instruções de outras pessoas." },
-  { index: 3, dimensao: "D", texto: "Sou direto(a) ao comunicar minhas opiniões, mesmo que possam gerar desconforto." },
-  { index: 4, dimensao: "D", texto: "Resultados concretos são mais importantes para mim do que o processo para alcançá-los." },
-  { index: 5, dimensao: "D", texto: "Sinto-me motivado(a) por competição e pela busca de metas ambiciosas." },
-  { index: 6, dimensao: "D", texto: "Tenho facilidade em tomar decisões difíceis, mesmo sob pressão." },
+export interface DiscBloco {
+  index: number;      // 0-27
+  instrucao: string;  // instrução do bloco
+  opcoes: DiscOpcao[];
+}
 
-  // === INFLUÊNCIA (I) - 7 perguntas ===
-  { index: 7, dimensao: "I", texto: "Gosto de interagir com pessoas e criar novas conexões sociais." },
-  { index: 8, dimensao: "I", texto: "Consigo motivar e entusiasmar as pessoas ao meu redor com facilidade." },
-  { index: 9, dimensao: "I", texto: "Prefiro trabalhar em equipe do que sozinho(a)." },
-  { index: 10, dimensao: "I", texto: "Sou otimista e costumo ver o lado positivo das situações." },
-  { index: 11, dimensao: "I", texto: "Tenho facilidade para me expressar e comunicar minhas ideias." },
-  { index: 12, dimensao: "I", texto: "Gosto de ambientes dinâmicos e criativos, onde posso compartilhar ideias." },
-  { index: 13, dimensao: "I", texto: "As pessoas costumam me procurar quando precisam de apoio emocional ou motivação." },
-
-  // === ESTABILIDADE (S) - 7 perguntas ===
-  { index: 14, dimensao: "S", texto: "Valorizo a estabilidade e prefiro ambientes previsíveis e organizados." },
-  { index: 15, dimensao: "S", texto: "Sou paciente e consigo manter a calma mesmo em situações de conflito." },
-  { index: 16, dimensao: "S", texto: "Prefiro ouvir e entender todos os lados antes de me posicionar." },
-  { index: 17, dimensao: "S", texto: "Sou leal às pessoas e aos compromissos que assumo." },
-  { index: 18, dimensao: "S", texto: "Mudanças repentinas me deixam desconfortável; prefiro transições graduais." },
-  { index: 19, dimensao: "S", texto: "Gosto de ajudar os outros e me sinto bem quando contribuo para o bem-estar da equipe." },
-  { index: 20, dimensao: "S", texto: "Prefiro manter a harmonia do grupo, mesmo que isso signifique ceder em algumas situações." },
-
-  // === CONFORMIDADE (C) - 7 perguntas ===
-  { index: 21, dimensao: "C", texto: "Antes de tomar uma decisão, preciso analisar todos os dados e informações disponíveis." },
-  { index: 22, dimensao: "C", texto: "Sou detalhista e me preocupo com a qualidade e a precisão do meu trabalho." },
-  { index: 23, dimensao: "C", texto: "Prefiro seguir regras e procedimentos estabelecidos." },
-  { index: 24, dimensao: "C", texto: "Costumo questionar informações e buscar evidências antes de aceitar algo." },
-  { index: 25, dimensao: "C", texto: "Organização e planejamento são essenciais para mim antes de iniciar qualquer tarefa." },
-  { index: 26, dimensao: "C", texto: "Sinto-me desconfortável quando o trabalho é feito de forma improvisada ou sem padrão." },
-  { index: 27, dimensao: "C", texto: "Valorizo a lógica e a razão acima das emoções na tomada de decisões." },
+/**
+ * 28 blocos de escolha forçada.
+ * Cada bloco tem exatamente 4 opções: uma D, uma I, uma S, uma C.
+ * Todas são afirmações positivas e socialmente equivalentes.
+ */
+export const DISC_BLOCOS: DiscBloco[] = [
+  // --- Bloco 1 ---
+  {
+    index: 0,
+    instrucao: "Escolha a alternativa que MAIS e a que MENOS descreve você:",
+    opcoes: [
+      { id: "b1_D", dimensao: "D", texto: "Sou direto e gosto de assumir decisões." },
+      { id: "b1_I", dimensao: "I", texto: "Gosto de conversar e influenciar pessoas." },
+      { id: "b1_S", dimensao: "S", texto: "Prefiro manter harmonia e cooperação no grupo." },
+      { id: "b1_C", dimensao: "C", texto: "Valorizo precisão e seguir procedimentos." },
+    ],
+  },
+  // --- Bloco 2 ---
+  {
+    index: 1,
+    instrucao: "Entre as opções abaixo, escolha a MAIS e a MENOS parecida com você:",
+    opcoes: [
+      { id: "b2_D", dimensao: "D", texto: "Assumo desafios com rapidez." },
+      { id: "b2_I", dimensao: "I", texto: "Animo o ambiente com entusiasmo." },
+      { id: "b2_S", dimensao: "S", texto: "Sou paciente ao lidar com pessoas." },
+      { id: "b2_C", dimensao: "C", texto: "Analiso detalhes antes de agir." },
+    ],
+  },
+  // --- Bloco 3 ---
+  {
+    index: 2,
+    instrucao: "Selecione a que MAIS e a que MENOS se aproxima de você:",
+    opcoes: [
+      { id: "b3_D", dimensao: "D", texto: "Prefiro controlar o rumo das atividades." },
+      { id: "b3_I", dimensao: "I", texto: "Gosto de persuadir e motivar os outros." },
+      { id: "b3_S", dimensao: "S", texto: "Busco estabilidade e previsibilidade." },
+      { id: "b3_C", dimensao: "C", texto: "Procuro seguir padrões e métodos definidos." },
+    ],
+  },
+  // --- Bloco 4 ---
+  {
+    index: 3,
+    instrucao: "Escolha a descrição que MAIS e a que MENOS se aplica a você:",
+    opcoes: [
+      { id: "b4_D", dimensao: "D", texto: "Competitivo." },
+      { id: "b4_I", dimensao: "I", texto: "Comunicativo." },
+      { id: "b4_S", dimensao: "S", texto: "Leal." },
+      { id: "b4_C", dimensao: "C", texto: "Cuidadoso." },
+    ],
+  },
+  // --- Bloco 5 ---
+  {
+    index: 4,
+    instrucao: "Marque a MAIS e a MENOS semelhante ao seu comportamento:",
+    opcoes: [
+      { id: "b5_D", dimensao: "D", texto: "Gosto de desafios e resultados rápidos." },
+      { id: "b5_I", dimensao: "I", texto: "Tenho facilidade para me expressar e convencer." },
+      { id: "b5_S", dimensao: "S", texto: "Sou consistente e persistente nas tarefas." },
+      { id: "b5_C", dimensao: "C", texto: "Prefiro trabalhar com planejamento e análise." },
+    ],
+  },
+  // --- Bloco 6 ---
+  {
+    index: 5,
+    instrucao: "Escolha a alternativa MAIS e MENOS parecida com você:",
+    opcoes: [
+      { id: "b6_D", dimensao: "D", texto: "Determinado." },
+      { id: "b6_I", dimensao: "I", texto: "Sociável." },
+      { id: "b6_S", dimensao: "S", texto: "Colaborativo." },
+      { id: "b6_C", dimensao: "C", texto: "Metódico." },
+    ],
+  },
+  // --- Bloco 7 ---
+  {
+    index: 6,
+    instrucao: "Escolha a que MAIS e a que MENOS descreve você:",
+    opcoes: [
+      { id: "b7_D", dimensao: "D", texto: "Tomo iniciativa e ajo com firmeza." },
+      { id: "b7_I", dimensao: "I", texto: "Crio conexões e inspiro confiança." },
+      { id: "b7_S", dimensao: "S", texto: "Mantenho a calma mesmo sob pressão." },
+      { id: "b7_C", dimensao: "C", texto: "Verifico os fatos antes de decidir." },
+    ],
+  },
+  // --- Bloco 8 ---
+  {
+    index: 7,
+    instrucao: "Selecione a MAIS e a MENOS parecida com você:",
+    opcoes: [
+      { id: "b8_D", dimensao: "D", texto: "Foco em resultados concretos." },
+      { id: "b8_I", dimensao: "I", texto: "Foco em relacionamentos e pessoas." },
+      { id: "b8_S", dimensao: "S", texto: "Foco em manter a equipe unida." },
+      { id: "b8_C", dimensao: "C", texto: "Foco em qualidade e excelência." },
+    ],
+  },
+  // --- Bloco 9 ---
+  {
+    index: 8,
+    instrucao: "Escolha a que MAIS e a que MENOS se aplica a você:",
+    opcoes: [
+      { id: "b9_D", dimensao: "D", texto: "Enfrento obstáculos de frente." },
+      { id: "b9_I", dimensao: "I", texto: "Convenço os outros com entusiasmo." },
+      { id: "b9_S", dimensao: "S", texto: "Ouço atentamente antes de responder." },
+      { id: "b9_C", dimensao: "C", texto: "Planejo cada etapa com cuidado." },
+    ],
+  },
+  // --- Bloco 10 ---
+  {
+    index: 9,
+    instrucao: "Marque a MAIS e a MENOS semelhante ao seu comportamento:",
+    opcoes: [
+      { id: "b10_D", dimensao: "D", texto: "Assertivo." },
+      { id: "b10_I", dimensao: "I", texto: "Entusiasmado." },
+      { id: "b10_S", dimensao: "S", texto: "Confiável." },
+      { id: "b10_C", dimensao: "C", texto: "Preciso." },
+    ],
+  },
+  // --- Bloco 11 ---
+  {
+    index: 10,
+    instrucao: "Escolha a alternativa que MAIS e a que MENOS descreve você:",
+    opcoes: [
+      { id: "b11_D", dimensao: "D", texto: "Gosto de liderar e definir o caminho." },
+      { id: "b11_I", dimensao: "I", texto: "Gosto de interagir e trocar ideias." },
+      { id: "b11_S", dimensao: "S", texto: "Gosto de apoiar e ajudar os colegas." },
+      { id: "b11_C", dimensao: "C", texto: "Gosto de organizar e estruturar processos." },
+    ],
+  },
+  // --- Bloco 12 ---
+  {
+    index: 11,
+    instrucao: "Selecione a que MAIS e a que MENOS se aproxima de você:",
+    opcoes: [
+      { id: "b12_D", dimensao: "D", texto: "Decidido." },
+      { id: "b12_I", dimensao: "I", texto: "Otimista." },
+      { id: "b12_S", dimensao: "S", texto: "Paciente." },
+      { id: "b12_C", dimensao: "C", texto: "Analítico." },
+    ],
+  },
+  // --- Bloco 13 ---
+  {
+    index: 12,
+    instrucao: "Escolha a descrição que MAIS e a que MENOS se aplica a você:",
+    opcoes: [
+      { id: "b13_D", dimensao: "D", texto: "Busco vencer e superar metas." },
+      { id: "b13_I", dimensao: "I", texto: "Busco reconhecimento e aprovação." },
+      { id: "b13_S", dimensao: "S", texto: "Busco segurança e continuidade." },
+      { id: "b13_C", dimensao: "C", texto: "Busco perfeição e exatidão." },
+    ],
+  },
+  // --- Bloco 14 ---
+  {
+    index: 13,
+    instrucao: "Marque a MAIS e a MENOS parecida com você:",
+    opcoes: [
+      { id: "b14_D", dimensao: "D", texto: "Não tenho medo de confrontos necessários." },
+      { id: "b14_I", dimensao: "I", texto: "Transformo ambientes tensos em descontraídos." },
+      { id: "b14_S", dimensao: "S", texto: "Evito conflitos e busco consenso." },
+      { id: "b14_C", dimensao: "C", texto: "Resolvo problemas com lógica e dados." },
+    ],
+  },
+  // --- Bloco 15 ---
+  {
+    index: 14,
+    instrucao: "Escolha a que MAIS e a que MENOS descreve você:",
+    opcoes: [
+      { id: "b15_D", dimensao: "D", texto: "Sou objetivo e vou direto ao ponto." },
+      { id: "b15_I", dimensao: "I", texto: "Sou expressivo e gosto de compartilhar." },
+      { id: "b15_S", dimensao: "S", texto: "Sou acolhedor e valorizo as pessoas." },
+      { id: "b15_C", dimensao: "C", texto: "Sou criterioso e atento aos detalhes." },
+    ],
+  },
+  // --- Bloco 16 ---
+  {
+    index: 15,
+    instrucao: "Selecione a MAIS e a MENOS semelhante ao seu comportamento:",
+    opcoes: [
+      { id: "b16_D", dimensao: "D", texto: "Independente." },
+      { id: "b16_I", dimensao: "I", texto: "Persuasivo." },
+      { id: "b16_S", dimensao: "S", texto: "Compreensivo." },
+      { id: "b16_C", dimensao: "C", texto: "Disciplinado." },
+    ],
+  },
+  // --- Bloco 17 ---
+  {
+    index: 16,
+    instrucao: "Escolha a alternativa que MAIS e a que MENOS se aplica a você:",
+    opcoes: [
+      { id: "b17_D", dimensao: "D", texto: "Prefiro agir do que ficar esperando." },
+      { id: "b17_I", dimensao: "I", texto: "Prefiro conversar do que trabalhar sozinho." },
+      { id: "b17_S", dimensao: "S", texto: "Prefiro rotina do que mudanças constantes." },
+      { id: "b17_C", dimensao: "C", texto: "Prefiro planejar do que improvisar." },
+    ],
+  },
+  // --- Bloco 18 ---
+  {
+    index: 17,
+    instrucao: "Marque a MAIS e a MENOS parecida com você:",
+    opcoes: [
+      { id: "b18_D", dimensao: "D", texto: "Corajoso." },
+      { id: "b18_I", dimensao: "I", texto: "Carismático." },
+      { id: "b18_S", dimensao: "S", texto: "Gentil." },
+      { id: "b18_C", dimensao: "C", texto: "Rigoroso." },
+    ],
+  },
+  // --- Bloco 19 ---
+  {
+    index: 18,
+    instrucao: "Escolha a que MAIS e a que MENOS descreve você:",
+    opcoes: [
+      { id: "b19_D", dimensao: "D", texto: "Quando vejo um problema, quero resolver logo." },
+      { id: "b19_I", dimensao: "I", texto: "Quando vejo um problema, reúno as pessoas para discutir." },
+      { id: "b19_S", dimensao: "S", texto: "Quando vejo um problema, avalio o impacto nas pessoas." },
+      { id: "b19_C", dimensao: "C", texto: "Quando vejo um problema, investigo as causas com cuidado." },
+    ],
+  },
+  // --- Bloco 20 ---
+  {
+    index: 19,
+    instrucao: "Selecione a que MAIS e a que MENOS se aproxima de você:",
+    opcoes: [
+      { id: "b20_D", dimensao: "D", texto: "Ambicioso." },
+      { id: "b20_I", dimensao: "I", texto: "Inspirador." },
+      { id: "b20_S", dimensao: "S", texto: "Dedicado." },
+      { id: "b20_C", dimensao: "C", texto: "Sistemático." },
+    ],
+  },
+  // --- Bloco 21 ---
+  {
+    index: 20,
+    instrucao: "Escolha a descrição que MAIS e a que MENOS se aplica a você:",
+    opcoes: [
+      { id: "b21_D", dimensao: "D", texto: "Gosto de ter autonomia para decidir." },
+      { id: "b21_I", dimensao: "I", texto: "Gosto de trabalhar em grupo animado." },
+      { id: "b21_S", dimensao: "S", texto: "Gosto de ambientes tranquilos e estáveis." },
+      { id: "b21_C", dimensao: "C", texto: "Gosto de ter regras claras e definidas." },
+    ],
+  },
+  // --- Bloco 22 ---
+  {
+    index: 21,
+    instrucao: "Marque a MAIS e a MENOS semelhante ao seu comportamento:",
+    opcoes: [
+      { id: "b22_D", dimensao: "D", texto: "Prático." },
+      { id: "b22_I", dimensao: "I", texto: "Criativo." },
+      { id: "b22_S", dimensao: "S", texto: "Solidário." },
+      { id: "b22_C", dimensao: "C", texto: "Perfeccionista." },
+    ],
+  },
+  // --- Bloco 23 ---
+  {
+    index: 22,
+    instrucao: "Escolha a alternativa que MAIS e a que MENOS descreve você:",
+    opcoes: [
+      { id: "b23_D", dimensao: "D", texto: "Sou rápido para tomar decisões." },
+      { id: "b23_I", dimensao: "I", texto: "Sou bom em negociar e convencer." },
+      { id: "b23_S", dimensao: "S", texto: "Sou bom ouvinte e conselheiro." },
+      { id: "b23_C", dimensao: "C", texto: "Sou bom em encontrar erros e melhorias." },
+    ],
+  },
+  // --- Bloco 24 ---
+  {
+    index: 23,
+    instrucao: "Selecione a MAIS e a MENOS parecida com você:",
+    opcoes: [
+      { id: "b24_D", dimensao: "D", texto: "Resoluto." },
+      { id: "b24_I", dimensao: "I", texto: "Animado." },
+      { id: "b24_S", dimensao: "S", texto: "Tolerante." },
+      { id: "b24_C", dimensao: "C", texto: "Exigente." },
+    ],
+  },
+  // --- Bloco 25 ---
+  {
+    index: 24,
+    instrucao: "Escolha a que MAIS e a que MENOS se aplica a você:",
+    opcoes: [
+      { id: "b25_D", dimensao: "D", texto: "Minha motivação vem de vencer desafios." },
+      { id: "b25_I", dimensao: "I", texto: "Minha motivação vem do contato com pessoas." },
+      { id: "b25_S", dimensao: "S", texto: "Minha motivação vem de fazer parte de um time." },
+      { id: "b25_C", dimensao: "C", texto: "Minha motivação vem de fazer um trabalho bem feito." },
+    ],
+  },
+  // --- Bloco 26 ---
+  {
+    index: 25,
+    instrucao: "Marque a MAIS e a MENOS semelhante ao seu comportamento:",
+    opcoes: [
+      { id: "b26_D", dimensao: "D", texto: "Firme." },
+      { id: "b26_I", dimensao: "I", texto: "Empolgante." },
+      { id: "b26_S", dimensao: "S", texto: "Atencioso." },
+      { id: "b26_C", dimensao: "C", texto: "Cauteloso." },
+    ],
+  },
+  // --- Bloco 27 ---
+  {
+    index: 26,
+    instrucao: "Escolha a alternativa que MAIS e a que MENOS descreve você:",
+    opcoes: [
+      { id: "b27_D", dimensao: "D", texto: "Sob pressão, eu acelero e busco soluções." },
+      { id: "b27_I", dimensao: "I", texto: "Sob pressão, eu converso e busco apoio." },
+      { id: "b27_S", dimensao: "S", texto: "Sob pressão, eu mantenho a calma e espero." },
+      { id: "b27_C", dimensao: "C", texto: "Sob pressão, eu analiso e reviso os dados." },
+    ],
+  },
+  // --- Bloco 28 ---
+  {
+    index: 27,
+    instrucao: "Selecione a que MAIS e a que MENOS se aproxima de você:",
+    opcoes: [
+      { id: "b28_D", dimensao: "D", texto: "Valorizo eficiência e rapidez." },
+      { id: "b28_I", dimensao: "I", texto: "Valorizo alegria e bom humor." },
+      { id: "b28_S", dimensao: "S", texto: "Valorizo lealdade e confiança." },
+      { id: "b28_C", dimensao: "C", texto: "Valorizo ordem e organização." },
+    ],
+  },
 ];
 
-export const DISC_ESCALA_LABELS: Record<number, string> = {
-  1: "Discordo totalmente",
-  2: "Discordo parcialmente",
-  3: "Neutro",
-  4: "Concordo parcialmente",
-  5: "Concordo totalmente",
-};
+/**
+ * Resposta de um bloco: qual opção é "mais" e qual é "menos"
+ */
+export interface DiscRespostaBloco {
+  blocoIndex: number;
+  maisId: string;    // id da opção escolhida como "mais parecido"
+  menosId: string;   // id da opção escolhida como "menos parecido"
+}
 
 export interface DiscScores {
   D: number;
@@ -70,41 +362,120 @@ export interface DiscScores {
 }
 
 export interface DiscResultadoCalc {
-  scores: DiscScores;
+  scores: DiscScores;                    // scores normalizados (0-100)
+  scoresBrutos: DiscScores;              // scores brutos (soma +1/-1)
   perfilPredominante: DiscDimensao;
   perfilSecundario: DiscDimensao;
+  indiceConsistencia: number;            // 0-100 (quanto maior, mais consistente)
+  alertaBaixaDiferenciacao: boolean;     // true se scores muito próximos
 }
 
 /**
- * Calcula os scores DISC a partir das respostas
- * Cada dimensão: soma das 7 respostas (7-35), normalizada para 0-100
+ * Calcula os scores DISC a partir das respostas de escolha forçada.
+ * 
+ * Algoritmo ipsativo:
+ * - "Mais parecido" → +1 ponto para o fator
+ * - "Menos parecido" → -1 ponto para o fator
+ * - Os outros dois fatores do bloco → 0 pontos
+ * 
+ * Depois normaliza os scores brutos para escala 0-100.
+ * Range bruto: mínimo -28 (sempre "menos"), máximo +28 (sempre "mais")
  */
-export function calcularDiscScores(respostas: { dimensao: DiscDimensao; resposta: number }[]): DiscResultadoCalc {
-  const somas: DiscScores = { D: 0, I: 0, S: 0, C: 0 };
-  const contagens: DiscScores = { D: 0, I: 0, S: 0, C: 0 };
+export function calcularDiscScores(respostas: DiscRespostaBloco[]): DiscResultadoCalc {
+  const scoresBrutos: DiscScores = { D: 0, I: 0, S: 0, C: 0 };
 
-  for (const r of respostas) {
-    somas[r.dimensao] += r.resposta;
-    contagens[r.dimensao]++;
+  // Mapear ids para dimensões
+  const idToDimensao: Record<string, DiscDimensao> = {};
+  for (const bloco of DISC_BLOCOS) {
+    for (const opcao of bloco.opcoes) {
+      idToDimensao[opcao.id] = opcao.dimensao;
+    }
   }
 
-  // Normalizar para 0-100 (min=7, max=35 por dimensão)
+  // Calcular scores brutos
+  for (const resp of respostas) {
+    const maisDim = idToDimensao[resp.maisId];
+    const menosDim = idToDimensao[resp.menosId];
+    
+    if (maisDim) scoresBrutos[maisDim] += 1;
+    if (menosDim) scoresBrutos[menosDim] -= 1;
+  }
+
+  // Normalizar para 0-100
+  // Range bruto: -28 a +28 (56 pontos de range)
+  // Fórmula: ((bruto + 28) / 56) * 100
+  const normalizar = (bruto: number): number => {
+    return Math.round(Math.max(0, Math.min(100, ((bruto + 28) / 56) * 100)));
+  };
+
   const scores: DiscScores = {
-    D: contagens.D > 0 ? Math.round(((somas.D - contagens.D) / (contagens.D * 4)) * 100) : 0,
-    I: contagens.I > 0 ? Math.round(((somas.I - contagens.I) / (contagens.I * 4)) * 100) : 0,
-    S: contagens.S > 0 ? Math.round(((somas.S - contagens.S) / (contagens.S * 4)) * 100) : 0,
-    C: contagens.C > 0 ? Math.round(((somas.C - contagens.C) / (contagens.C * 4)) * 100) : 0,
+    D: normalizar(scoresBrutos.D),
+    I: normalizar(scoresBrutos.I),
+    S: normalizar(scoresBrutos.S),
+    C: normalizar(scoresBrutos.C),
   };
 
   // Determinar perfil predominante e secundário
   const sorted = (Object.entries(scores) as [DiscDimensao, number][])
     .sort((a, b) => b[1] - a[1]);
 
+  // Calcular índice de consistência
+  // Baseado na dispersão dos scores: quanto mais diferenciados, mais consistente
+  const media = (scores.D + scores.I + scores.S + scores.C) / 4;
+  const variancia = (
+    Math.pow(scores.D - media, 2) +
+    Math.pow(scores.I - media, 2) +
+    Math.pow(scores.S - media, 2) +
+    Math.pow(scores.C - media, 2)
+  ) / 4;
+  const desvioPadrao = Math.sqrt(variancia);
+  
+  // Normalizar índice de consistência (0-100)
+  // Desvio padrão máximo teórico ~43.3 (quando um fator é 100 e outro 0)
+  // Desvio padrão 0 = todos iguais = baixa consistência
+  const indiceConsistencia = Math.round(Math.min(100, (desvioPadrao / 43.3) * 100));
+
+  // Alerta de baixa diferenciação: quando desvio padrão < 8 (scores muito próximos)
+  const alertaBaixaDiferenciacao = desvioPadrao < 8;
+
   return {
     scores,
+    scoresBrutos,
     perfilPredominante: sorted[0][0],
     perfilSecundario: sorted[1][0],
+    indiceConsistencia,
+    alertaBaixaDiferenciacao,
   };
+}
+
+/**
+ * Valida se as respostas estão completas e consistentes
+ */
+export function validarRespostas(respostas: DiscRespostaBloco[]): {
+  valido: boolean;
+  erros: string[];
+} {
+  const erros: string[] = [];
+
+  if (respostas.length !== 28) {
+    erros.push(`Esperado 28 blocos respondidos, encontrado ${respostas.length}.`);
+  }
+
+  for (const resp of respostas) {
+    if (resp.maisId === resp.menosId) {
+      erros.push(`Bloco ${resp.blocoIndex + 1}: "mais" e "menos" não podem ser a mesma opção.`);
+    }
+  }
+
+  // Verificar se todos os blocos foram respondidos
+  const blocosRespondidos = new Set(respostas.map(r => r.blocoIndex));
+  for (let i = 0; i < 28; i++) {
+    if (!blocosRespondidos.has(i)) {
+      erros.push(`Bloco ${i + 1} não foi respondido.`);
+    }
+  }
+
+  return { valido: erros.length === 0, erros };
 }
 
 /**

@@ -45,10 +45,16 @@ function MentoraGuiaBannerAssessment() {
 
 type DiscDimensao = "D" | "I" | "S" | "C";
 
-interface DiscPergunta {
-  index: number;
+interface DiscOpcao {
+  id: string;
   dimensao: DiscDimensao;
   texto: string;
+}
+
+interface DiscBloco {
+  index: number;
+  instrucao: string;
+  opcoes: DiscOpcao[];
 }
 
 interface DiscScores {
@@ -66,6 +72,14 @@ interface DiscPerfil {
   areasDesenvolvimento: string[];
   comoSeRelaciona: string;
   cor: string;
+}
+
+interface DiscRespostaBloco {
+  blocoIndex: number;
+  maisId: string;
+  menosId: string;
+  maisDimensao: DiscDimensao;
+  menosDimensao: DiscDimensao;
 }
 
 // ============================================================
@@ -230,7 +244,7 @@ const COMPETENCIA_DESCRICOES: Record<string, { oQueE: string; impacto: string }>
 };
 
 // ============================================================
-// COMPONENTE: TESTE DISC
+// COMPONENTE: TESTE DISC (Escolha Forçada / Ipsativo)
 // ============================================================
 
 function TesteDisc({
@@ -243,43 +257,78 @@ function TesteDisc({
   const { data: perguntasData } = trpc.disc.perguntas.useQuery();
   const salvarMutation = trpc.disc.salvarRespostas.useMutation();
 
-  const perguntas: DiscPergunta[] = perguntasData?.perguntas || [];
-  const escalaLabels: Record<number, string> = perguntasData?.escalaLabels || {};
+  const blocos: DiscBloco[] = perguntasData?.blocos || [];
 
-  const [respostas, setRespostas] = useState<Record<number, number>>({});
-  const [paginaAtual, setPaginaAtual] = useState(0);
+  // Estado: para cada bloco, qual opção é "mais" e qual é "menos"
+  const [respostas, setRespostas] = useState<Record<number, { maisId: string | null; menosId: string | null }>>({});
+  const [blocoAtual, setBlocoAtual] = useState(0);
   const topRef = useRef<HTMLDivElement>(null);
 
-  const PERGUNTAS_POR_PAGINA = 7;
-  const totalPaginas = Math.ceil(perguntas.length / PERGUNTAS_POR_PAGINA);
+  const BLOCOS_POR_PAGINA = 4;
+  const totalPaginas = Math.ceil(blocos.length / BLOCOS_POR_PAGINA);
+  const paginaAtual = Math.floor(blocoAtual / BLOCOS_POR_PAGINA);
 
-  const perguntasPagina = useMemo(() => {
-    const start = paginaAtual * PERGUNTAS_POR_PAGINA;
-    return perguntas.slice(start, start + PERGUNTAS_POR_PAGINA);
-  }, [perguntas, paginaAtual]);
+  const blocosPagina = useMemo(() => {
+    const start = paginaAtual * BLOCOS_POR_PAGINA;
+    return blocos.slice(start, start + BLOCOS_POR_PAGINA);
+  }, [blocos, paginaAtual]);
 
-  const totalRespondidas = Object.keys(respostas).length;
-  const progresso = perguntas.length > 0 ? Math.round((totalRespondidas / perguntas.length) * 100) : 0;
+  const totalRespondidos = Object.values(respostas).filter(r => r.maisId && r.menosId).length;
+  const progresso = blocos.length > 0 ? Math.round((totalRespondidos / blocos.length) * 100) : 0;
 
-  const paginaCompleta = perguntasPagina.every((p) => respostas[p.index] !== undefined);
-  const todasRespondidas = totalRespondidas === perguntas.length;
+  const paginaCompleta = blocosPagina.every((b) => {
+    const r = respostas[b.index];
+    return r && r.maisId && r.menosId;
+  });
+  const todosRespondidos = totalRespondidos === blocos.length;
 
-  const handleResponder = (index: number, valor: number) => {
-    setRespostas((prev) => ({ ...prev, [index]: valor }));
+  const handleSelecionar = (blocoIndex: number, tipo: "mais" | "menos", opcaoId: string) => {
+    setRespostas((prev) => {
+      const atual = prev[blocoIndex] || { maisId: null, menosId: null };
+      // Se já está selecionado, desmarcar
+      if (tipo === "mais" && atual.maisId === opcaoId) {
+        return { ...prev, [blocoIndex]: { ...atual, maisId: null } };
+      }
+      if (tipo === "menos" && atual.menosId === opcaoId) {
+        return { ...prev, [blocoIndex]: { ...atual, menosId: null } };
+      }
+      // Não pode selecionar a mesma opção como "mais" e "menos"
+      if (tipo === "mais" && atual.menosId === opcaoId) {
+        return { ...prev, [blocoIndex]: { ...atual, maisId: opcaoId, menosId: null } };
+      }
+      if (tipo === "menos" && atual.maisId === opcaoId) {
+        return { ...prev, [blocoIndex]: { ...atual, menosId: opcaoId, maisId: null } };
+      }
+      return {
+        ...prev,
+        [blocoIndex]: {
+          ...atual,
+          [tipo === "mais" ? "maisId" : "menosId"]: opcaoId,
+        },
+      };
+    });
   };
 
   const handleFinalizar = async () => {
-    if (!todasRespondidas) {
-      toast.error("Responda todas as perguntas antes de finalizar.");
+    if (!todosRespondidos) {
+      toast.error("Responda todos os blocos antes de finalizar.");
       return;
     }
 
     try {
-      const respostasArray = perguntas.map((p) => ({
-        perguntaIndex: p.index,
-        dimensao: p.dimensao,
-        resposta: respostas[p.index],
-      }));
+      // Montar array de respostas
+      const respostasArray: DiscRespostaBloco[] = blocos.map((bloco) => {
+        const r = respostas[bloco.index]!;
+        const maisOpcao = bloco.opcoes.find(o => o.id === r.maisId)!;
+        const menosOpcao = bloco.opcoes.find(o => o.id === r.menosId)!;
+        return {
+          blocoIndex: bloco.index,
+          maisId: r.maisId!,
+          menosId: r.menosId!,
+          maisDimensao: maisOpcao.dimensao,
+          menosDimensao: menosOpcao.dimensao,
+        };
+      });
 
       const resultado = await salvarMutation.mutateAsync({
         alunoId,
@@ -287,7 +336,7 @@ function TesteDisc({
       });
 
       toast.success("Teste DISC concluído com sucesso!");
-      onComplete(resultado.scores, resultado.perfilPredominante, resultado.perfilSecundario);
+      onComplete(resultado.scores, resultado.perfilPredominante as DiscDimensao, resultado.perfilSecundario as DiscDimensao);
     } catch {
       toast.error("Erro ao salvar respostas. Tente novamente.");
     }
@@ -295,17 +344,6 @@ function TesteDisc({
 
   const scrollToTop = () => {
     topRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const dimensaoAtual = perguntasPagina[0]?.dimensao;
-  const dimensaoNomes: Record<DiscDimensao, string> = {
-    D: "Dominância", I: "Influência", S: "Estabilidade", C: "Conformidade"
-  };
-  const dimensaoCores: Record<DiscDimensao, string> = {
-    D: "text-red-600 bg-red-50 border-red-200",
-    I: "text-amber-600 bg-amber-50 border-amber-200",
-    S: "text-green-600 bg-green-50 border-green-200",
-    C: "text-blue-600 bg-blue-50 border-blue-200",
   };
 
   if (!perguntasData) {
@@ -325,14 +363,32 @@ function TesteDisc({
         </div>
         <h2 className="text-xl font-bold text-gray-900">Teste de Perfil DISC</h2>
         <p className="text-gray-500 mt-1 max-w-lg mx-auto">
-          Responda com sinceridade — não existem respostas certas ou erradas. Escolha o quanto cada afirmação representa você no dia a dia.
+          Em cada bloco, escolha a afirmação que <strong>MAIS</strong> descreve você e a que <strong>MENOS</strong> descreve você. Não existem respostas certas ou erradas.
         </p>
+      </div>
+
+      {/* Legenda */}
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center justify-center gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+              <ChevronRight className="h-3 w-3 text-white" />
+            </div>
+            <span className="text-gray-600">= Mais parecido comigo</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full bg-red-400 flex items-center justify-center">
+              <ChevronLeft className="h-3 w-3 text-white" />
+            </div>
+            <span className="text-gray-600">= Menos parecido comigo</span>
+          </div>
+        </div>
       </div>
 
       {/* Barra de progresso */}
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-          <span>{totalRespondidas} de {perguntas.length} respondidas</span>
+          <span>{totalRespondidos} de {blocos.length} blocos respondidos</span>
           <span>{progresso}%</span>
         </div>
         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -343,43 +399,87 @@ function TesteDisc({
         </div>
       </div>
 
-      {/* Indicador de dimensão */}
-      {dimensaoAtual && (
-        <div className="max-w-2xl mx-auto">
-          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-medium ${dimensaoCores[dimensaoAtual]}`}>
-            <CircleDot className="h-3.5 w-3.5" />
-            Bloco {paginaAtual + 1} de {totalPaginas} — {dimensaoNomes[dimensaoAtual]}
-          </div>
+      {/* Página indicador */}
+      <div className="max-w-2xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#0A1E3E]/20 bg-[#0A1E3E]/5 text-sm font-medium text-[#0A1E3E]">
+          <CircleDot className="h-3.5 w-3.5" />
+          Página {paginaAtual + 1} de {totalPaginas}
         </div>
-      )}
+      </div>
 
-      {/* Perguntas */}
-      <div className="max-w-2xl mx-auto space-y-4">
-        {perguntasPagina.map((pergunta, idx) => {
-          const globalNum = paginaAtual * PERGUNTAS_POR_PAGINA + idx + 1;
+      {/* Blocos de escolha forçada */}
+      <div className="max-w-2xl mx-auto space-y-6">
+        {blocosPagina.map((bloco) => {
+          const resp = respostas[bloco.index] || { maisId: null, menosId: null };
+          const blocoCompleto = resp.maisId && resp.menosId;
           return (
-            <Card key={pergunta.index} className={`transition-all duration-300 ${respostas[pergunta.index] ? "border-[#0A1E3E]/20 bg-[#0A1E3E]/[0.02]" : ""}`}>
-              <CardContent className="pt-5 pb-5">
-                <p className="font-medium text-gray-800 mb-4">
-                  <span className="text-[#F5991F] font-bold mr-2">{globalNum}.</span>
-                  {pergunta.texto}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {[1, 2, 3, 4, 5].map((valor) => (
-                    <button
-                      key={valor}
-                      onClick={() => handleResponder(pergunta.index, valor)}
-                      className={`flex-1 min-w-[100px] px-3 py-2.5 rounded-lg border text-sm font-medium transition-all duration-200 ${
-                        respostas[pergunta.index] === valor
-                          ? "bg-[#0A1E3E] text-white border-[#0A1E3E] shadow-md"
-                          : "bg-white text-gray-600 border-gray-200 hover:border-[#0A1E3E]/30 hover:bg-[#0A1E3E]/5"
-                      }`}
-                    >
-                      <span className="block text-xs opacity-70">{valor}</span>
-                      <span className="block text-[11px] leading-tight mt-0.5">{escalaLabels[valor]}</span>
-                    </button>
-                  ))}
+            <Card key={bloco.index} className={`transition-all duration-300 ${blocoCompleto ? "border-green-300 bg-green-50/30" : ""}`}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <span className="w-7 h-7 rounded-full bg-[#0A1E3E] text-white text-xs flex items-center justify-center font-bold">
+                    {bloco.index + 1}
+                  </span>
+                  {bloco.instrucao}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-2">
+                  {bloco.opcoes.map((opcao) => {
+                    const isMais = resp.maisId === opcao.id;
+                    const isMenos = resp.menosId === opcao.id;
+                    return (
+                      <div
+                        key={opcao.id}
+                        className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 ${
+                          isMais
+                            ? "border-green-400 bg-green-50 shadow-sm"
+                            : isMenos
+                            ? "border-red-300 bg-red-50 shadow-sm"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        }`}
+                      >
+                        {/* Botão MAIS */}
+                        <button
+                          onClick={() => handleSelecionar(bloco.index, "mais", opcao.id)}
+                          className={`shrink-0 w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-200 text-xs font-bold ${
+                            isMais
+                              ? "bg-green-500 border-green-500 text-white shadow-md"
+                              : "border-green-300 text-green-400 hover:bg-green-50 hover:border-green-400"
+                          }`}
+                          title="Mais parecido comigo"
+                        >
+                          +
+                        </button>
+
+                        {/* Texto da afirmação */}
+                        <span className={`flex-1 text-sm ${
+                          isMais ? "text-green-800 font-medium" : isMenos ? "text-red-700 font-medium" : "text-gray-700"
+                        }`}>
+                          {opcao.texto}
+                        </span>
+
+                        {/* Botão MENOS */}
+                        <button
+                          onClick={() => handleSelecionar(bloco.index, "menos", opcao.id)}
+                          className={`shrink-0 w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-200 text-xs font-bold ${
+                            isMenos
+                              ? "bg-red-400 border-red-400 text-white shadow-md"
+                              : "border-red-200 text-red-300 hover:bg-red-50 hover:border-red-300"
+                          }`}
+                          title="Menos parecido comigo"
+                        >
+                          −
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
+                {blocoCompleto && (
+                  <div className="mt-2 flex items-center gap-1 text-xs text-green-600">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Bloco respondido
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
@@ -390,7 +490,7 @@ function TesteDisc({
       <div className="max-w-2xl mx-auto flex items-center justify-between pt-4">
         <Button
           variant="outline"
-          onClick={() => { setPaginaAtual((p) => p - 1); scrollToTop(); }}
+          onClick={() => { setBlocoAtual((b) => Math.max(0, b - BLOCOS_POR_PAGINA)); scrollToTop(); }}
           disabled={paginaAtual === 0}
           className="gap-2"
         >
@@ -401,10 +501,10 @@ function TesteDisc({
           <Button
             onClick={() => {
               if (!paginaCompleta) {
-                toast.warning("Responda todas as perguntas desta página antes de avançar.");
+                toast.warning("Responda todos os blocos desta página antes de avançar. Em cada bloco, selecione MAIS (+) e MENOS (−).");
                 return;
               }
-              setPaginaAtual((p) => p + 1);
+              setBlocoAtual((b) => b + BLOCOS_POR_PAGINA);
               scrollToTop();
             }}
             className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white gap-2"
@@ -414,7 +514,7 @@ function TesteDisc({
         ) : (
           <Button
             onClick={handleFinalizar}
-            disabled={!todasRespondidas || salvarMutation.isPending}
+            disabled={!todosRespondidos || salvarMutation.isPending}
             className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white gap-2"
           >
             {salvarMutation.isPending ? "Salvando..." : "Finalizar Teste DISC"}

@@ -2120,3 +2120,12 @@
 - [x] Adicionar seleção de turma (checkboxes) no formulário de criar/editar atividade extra
 - [x] Filtrar atividades no portal do aluno pela turma do aluno (listForStudent)
 - [x] Testes vitest atualizados com testes de vinculação de turmas (438 testes passando)
+- [x] Analisar e corrigir algoritmo de cálculo DISC: aluno com 100% em D, I, S e C simultaneamente (causa: Likert sem normalização)
+- [x] Reformular DISC: Criar novo questionário com escolha forçada (ipsativo) do zero - 28 blocos
+- [x] Reformular DISC: Criar blocos de 4 afirmações (D, I, S, C) socialmente equivalentes
+- [x] Reformular DISC: Novo algoritmo de pontuação ipsativo (mais/menos) com normalização 0-100
+- [x] Reformular DISC: Atualizar schema do banco para novo formato (blocoIndex, maisId, menosId, maisDimensao, menosDimensao, ciclo)
+- [x] Reformular DISC: Nova interface de teste (escolha forçada: mais/menos parecido com cards interativos)
+- [x] Reformular DISC: Gráficos de resultado compatíveis com novo formato normalizado
+- [x] Reformular DISC: Índice de consistência + alerta de baixa diferenciação implementados
+- [x] Reformular DISC: 450 testes vitest passando (incluindo novos testes de escolha forçada)
