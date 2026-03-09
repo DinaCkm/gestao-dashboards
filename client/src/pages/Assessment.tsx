@@ -45,6 +45,8 @@ import {
   Heart,
   Briefcase,
   Star,
+  RotateCcw,
+  Trash2,
 } from "lucide-react";
 
 // ============ Progress Bar Component ============
@@ -130,7 +132,7 @@ function AssessmentContent() {
   );
 
   // Buscar resultado do teste DISC do aluno
-  const { data: discResultado } = trpc.disc.resultado.useQuery(
+  const { data: discResultado, refetch: refetchDisc } = trpc.disc.resultado.useQuery(
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
   );
@@ -150,6 +152,17 @@ function AssessmentContent() {
     { enabled: !!selectedAlunoId }
   );
   const [, setLocation] = useLocation();
+
+  // ---- Reset DISC: diálogo de confirmação ----
+  const [resetDiscDialogOpen, setResetDiscDialogOpen] = useState(false);
+  const resetDiscMutation = trpc.disc.resetAluno.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Teste DISC de ${data.alunoNome} foi resetado. O aluno poderá refazer o teste.`);
+      setResetDiscDialogOpen(false);
+      refetchDisc();
+    },
+    onError: (err: { message: string }) => toast.error(err.message),
+  });
 
   // ---- Congelar: diálogo de confirmação com motivo obrigatório ----
   const [congelarDialogOpen, setCongelarDialogOpen] = useState(false);
@@ -382,10 +395,23 @@ function AssessmentContent() {
 
             {/* 1. DISC */}
             <div className="border rounded-lg p-4 bg-white/60">
-              <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-[#F5991F]" />
-                1. Perfil Comportamental DISC
-              </h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-[#0A1E3E] flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-[#F5991F]" />
+                  1. Perfil Comportamental DISC
+                </h4>
+                {isAdmin && discResultado && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                    onClick={() => setResetDiscDialogOpen(true)}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                    Solicitar Refazer
+                  </Button>
+                )}
+              </div>
               {discResultado ? (
                 <>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
@@ -413,6 +439,16 @@ function AssessmentContent() {
                         <Badge variant="outline" className="border-[#0A1E3E] text-[#0A1E3E]">
                           Secundário: {discResultado.perfilSecundario}
                         </Badge>
+                      )}
+                    </div>
+                  )}
+                  {discResultado.indiceConsistencia !== null && discResultado.indiceConsistencia !== undefined && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Índice de consistência: {discResultado.indiceConsistencia}%
+                      {discResultado.alertaBaixaDiferenciacao && (
+                        <span className="ml-2 text-amber-600 font-medium">
+                          ⚠ Baixa diferenciação entre dimensões
+                        </span>
                       )}
                     </div>
                   )}
@@ -839,6 +875,52 @@ function AssessmentContent() {
             >
               <Lock className="h-3.5 w-3.5 mr-1" />
               {congelarMutation.isPending ? "Congelando..." : "Confirmar Congelamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Confirmação de Reset DISC */}
+      <Dialog open={resetDiscDialogOpen} onOpenChange={(open) => { if (!open) setResetDiscDialogOpen(false); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <RotateCcw className="h-5 w-5" />
+              Solicitar que Aluno Refaça o Teste DISC
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação irá <strong>remover todas as respostas e resultados DISC</strong> do aluno <strong>{selectedAluno?.name}</strong>.
+              O aluno verá o teste DISC novamente no Onboarding e poderá refazê-lo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-800">
+                <p className="font-medium mb-1">Atenção:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>O histórico de resultados anteriores será removido</li>
+                  <li>O aluno precisará completar o teste novamente</li>
+                  <li>Esta ação não pode ser desfeita</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setResetDiscDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (selectedAlunoId) {
+                  resetDiscMutation.mutate({ alunoId: selectedAlunoId });
+                }
+              }}
+              disabled={resetDiscMutation.isPending}
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1" />
+              {resetDiscMutation.isPending ? "Resetando..." : "Confirmar Reset"}
             </Button>
           </DialogFooter>
         </DialogContent>

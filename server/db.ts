@@ -6339,6 +6339,31 @@ export async function getContribuicoesMentora(alunoId: number) {
 }
 
 
+/**
+ * Reseta o teste DISC de um aluno: remove todas as respostas e resultados.
+ * Isso permite que o aluno refaça o teste do zero.
+ * Retorna o número de registros removidos.
+ */
+export async function resetDiscAluno(alunoId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) throw new Error("Database not available");
+  
+  // Deletar todas as respostas DISC do aluno
+  const respostasRemovidas = await dbConn.delete(discRespostas).where(
+    eq(discRespostas.alunoId, alunoId)
+  );
+  
+  // Deletar todos os resultados DISC do aluno
+  const resultadosRemovidos = await dbConn.delete(discResultados).where(
+    eq(discResultados.alunoId, alunoId)
+  );
+  
+  return {
+    respostasRemovidas: (respostasRemovidas as any)[0]?.affectedRows || 0,
+    resultadosRemovidos: (resultadosRemovidos as any)[0]?.affectedRows || 0,
+  };
+}
+
 // ============ REASSESSMENT / CICLO DISC FUNCTIONS ============
 
 /**

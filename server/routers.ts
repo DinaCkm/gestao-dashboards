@@ -4914,6 +4914,27 @@ Responda APENAS em JSON com o formato:
         };
       }),
 
+    // Admin: resetar teste DISC de um aluno (permite refazer)
+    resetAluno: adminProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input }) => {
+        // Verificar se o aluno existe
+        const aluno = await db.getAlunoById(input.alunoId);
+        if (!aluno) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+        }
+        
+        // Resetar respostas e resultados DISC
+        const resultado = await db.resetDiscAluno(input.alunoId);
+        
+        return {
+          success: true,
+          alunoNome: aluno.name,
+          respostasRemovidas: resultado.respostasRemovidas,
+          resultadosRemovidos: resultado.resultadosRemovidos,
+        };
+      }),
+
     // Verificar se o aluno é elegível para reassessment (contrato vencido ou próximo do vencimento)
     verificarReassessment: protectedProcedure
       .input(z.object({ alunoId: z.number() }))

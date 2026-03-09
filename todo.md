@@ -2129,3 +2129,8 @@
 - [x] Reformular DISC: Gráficos de resultado compatíveis com novo formato normalizado
 - [x] Reformular DISC: Índice de consistência + alerta de baixa diferenciação implementados
 - [x] Reformular DISC: 450 testes vitest passando (incluindo novos testes de escolha forçada)
+
+## Reset DISC - Admin solicitar que aluno refaça o teste
+- [x] Backend: endpoint tRPC para resetar respostas e resultados DISC de um aluno específico
+- [x] Frontend: botão de reset DISC na interface admin (área de assessment/alunos)
+- [x] Testes vitest para reset DISC (5 testes passando)
