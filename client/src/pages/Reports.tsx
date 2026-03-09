@@ -183,7 +183,7 @@ export default function ReportsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="individual">Individual</SelectItem>
-                    {isManager && !isMentor && <SelectItem value="manager">Gerencial</SelectItem>}
+                    {isManager && <SelectItem value="manager">Gerencial</SelectItem>}
                     {isAdmin && <SelectItem value="admin">Administrativo</SelectItem>}
                   </SelectContent>
                 </Select>

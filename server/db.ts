@@ -3364,6 +3364,32 @@ export async function getAssessmentsByAluno(alunoId: number) {
     .where(eq(planoIndividual.alunoId, alunoId));
   const notaByComp = new Map(planoItems.map(p => [p.competenciaId, p.notaAtual]));
   
+  // A2 FIX: Buscar student_performance para preencher nível automático quando nivelAtual é NULL
+  const perfRecords = await db.select({
+    competenciaId: studentPerformance.competenciaId,
+    competenciaName: studentPerformance.competenciaName,
+    progressoTotal: studentPerformance.progressoTotal,
+  }).from(studentPerformance)
+    .where(eq(studentPerformance.alunoId, alunoId));
+  
+  // Criar mapa por competenciaId e por nome (normalizado) para fallback
+  const perfByCompId = new Map<number, number>();
+  const perfByCompName = new Map<string, number>();
+  for (const p of perfRecords) {
+    if (p.competenciaId && p.progressoTotal !== null) {
+      perfByCompId.set(p.competenciaId, p.progressoTotal);
+    }
+    if (p.competenciaName && p.progressoTotal !== null) {
+      // Nome pode ser "Atenção - Básica", extrair só o nome base
+      const baseName = p.competenciaName.split(' - ')[0].trim().toLowerCase();
+      // Manter o maior progresso se houver múltiplas entradas
+      const existing = perfByCompName.get(baseName) || 0;
+      if (p.progressoTotal > existing) {
+        perfByCompName.set(baseName, p.progressoTotal);
+      }
+    }
+  }
+  
   return pdis.map(pdi => {
     const comps = allComps.filter(c => c.assessmentPdiId === pdi.id);
     const trilha = trilhaMap.get(pdi.trilhaId);
@@ -3383,10 +3409,33 @@ export async function getAssessmentsByAluno(alunoId: number) {
         const notaAtual = notaByComp.get(c.competenciaId);
         const notaNum = notaAtual ? parseFloat(notaAtual) : null;
         const notaCorteNum = parseFloat(c.notaCorte);
+        
+        // A2 FIX: Se nivelAtual é NULL, tentar preencher com progressoTotal do student_performance
+        let nivelAtualEfetivo = c.nivelAtual ? parseFloat(c.nivelAtual) : null;
+        let nivelAutomatico = false;
+        if (nivelAtualEfetivo === null) {
+          // Tentar por competenciaId
+          const perfById = perfByCompId.get(c.competenciaId);
+          if (perfById !== undefined && perfById > 0) {
+            nivelAtualEfetivo = perfById;
+            nivelAutomatico = true;
+          } else {
+            // Tentar por nome da competência
+            const compNome = comp?.nome?.toLowerCase() || '';
+            const perfByName = perfByCompName.get(compNome);
+            if (perfByName !== undefined && perfByName > 0) {
+              nivelAtualEfetivo = perfByName;
+              nivelAutomatico = true;
+            }
+          }
+        }
+        
         return {
           ...c,
           competenciaNome: comp?.nome || 'Desconhecida',
           notaAtual: notaNum,
+          nivelAtualEfetivo, // Nível real (manual ou automático)
+          nivelAutomatico, // Flag para indicar que veio do student_performance
           atingiuMeta: notaNum !== null && notaNum >= notaCorteNum,
         };
       }),

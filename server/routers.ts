@@ -981,12 +981,23 @@ export const appRouter = router({
             const planoItems = allPlanoItems.filter((p: any) => p.alunoId === aluno.id);
             
             // Sheet 1: Dados do Aluno
+            // Buscar a data da última mentoria realizada para este aluno
+            const alunoSessoes = mentoringSessions
+              .filter(s => s.alunoId === aluno.id && s.sessionDate)
+              .sort((a, b) => {
+                const da = a.sessionDate ? new Date(a.sessionDate).getTime() : 0;
+                const db2 = b.sessionDate ? new Date(b.sessionDate).getTime() : 0;
+                return db2 - da;
+              });
+            const ultimaMentoria = alunoSessoes[0];
             const dadosAluno = [{
               'Nome': aluno.name || '',
               'Email': aluno.email || '',
               'Empresa': program?.name || '',
               'Turma': turma?.name || '',
               'Mentor(a)': consultor?.name || '',
+              'Data da Última Mentoria': ultimaMentoria?.sessionDate ? new Date(ultimaMentoria.sessionDate).toLocaleDateString('pt-BR') : 'Sem sessões',
+              'Total de Sessões': alunoSessoes.length,
               'Data do Relatório': new Date().toLocaleDateString('pt-BR'),
             }];
             const ws1 = XLSX.utils.json_to_sheet(dadosAluno);
@@ -1034,9 +1045,20 @@ export const appRouter = router({
             }
           } else if (input.type === 'manager' || input.type === 'admin') {
             // Manager/Admin report - team or all data with V2 indicators
-            const reportAlunos = (input.type === 'manager' && ctx.user.programId)
-              ? alunosList.filter(a => a.programId === ctx.user.programId)
-              : alunosList;
+            let reportAlunos: typeof alunosList;
+            if (input.type === 'manager') {
+              // Se é mentor (tem consultorId), filtrar apenas seus alunos vinculados
+              const userConsultorId = (ctx.user as any).consultorId;
+              if (userConsultorId) {
+                reportAlunos = alunosList.filter(a => a.consultorId === userConsultorId);
+              } else if (ctx.user.programId) {
+                reportAlunos = alunosList.filter(a => a.programId === ctx.user.programId);
+              } else {
+                reportAlunos = alunosList;
+              }
+            } else {
+              reportAlunos = alunosList;
+            }
             
             // Calculate V2 indicators for all students (same logic as Dashboard Gestor)
             const mentoriasV2: import('./excelProcessor').MentoringRecord[] = [];

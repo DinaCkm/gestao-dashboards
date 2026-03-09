@@ -35,9 +35,11 @@ type SlotAgenda = {
   mentoraId: number;
   data: string;
   horario: string;
+  horarioFim: string;
   duracao: number;
   linkMeet: string;
   disponivel: boolean;
+  availabilityId: number;
 };
 import { useLocation } from "wouter";
 
@@ -624,34 +626,37 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
 function EtapaAgendamento({ mentora, onComplete, alunoId, readOnly = false }: { mentora: Mentora | null; onComplete: () => void; alunoId: number; readOnly?: boolean }) {
   const criarAgendamento = trpc.onboarding.criarAgendamento.useMutation();
   const [selectedSlot, setSelectedSlot] = useState<SlotAgenda | null>(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [bookingNotes, setBookingNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const slotsDisponiveis = useMemo(() => {
-    if (!mentora) return [];
-    // Slots de agenda serão implementados quando houver tabela de agenda no banco
-    // Por enquanto, gerar slots genéricos para a mentora selecionada
-    const baseDate = new Date();
-    const slots: SlotAgenda[] = [];
-    for (let d = 1; d <= 5; d++) {
-      const date = new Date(baseDate);
-      date.setDate(date.getDate() + d + (d <= 2 ? 0 : 1)); // pular fim de semana
-      if (date.getDay() === 0) date.setDate(date.getDate() + 1);
-      if (date.getDay() === 6) date.setDate(date.getDate() + 2);
-      const dateStr = date.toISOString().split('T')[0];
-      slots.push({ id: d * 2 - 1, mentoraId: mentora.id, data: dateStr, horario: "09:00", duracao: 60, linkMeet: "https://meet.google.com/", disponivel: true });
-      slots.push({ id: d * 2, mentoraId: mentora.id, data: dateStr, horario: "14:00", duracao: 60, linkMeet: "https://meet.google.com/", disponivel: true });
-    }
-    return slots;
-  }, [mentora]);
+  // Buscar disponibilidade REAL do mentor
+  const { data: availability } = trpc.mentor.getAvailability.useQuery(
+    { consultorId: mentora?.id || 0 },
+    { enabled: !!mentora?.id }
+  );
+  // Buscar agendamentos existentes para filtrar slots ocupados
+  const { data: existingAppointments } = trpc.mentor.getAppointments.useQuery(
+    { consultorId: mentora?.id || 0 },
+    { enabled: !!mentora?.id }
+  );
 
-  const slotsByDate = useMemo(() => {
-    const grouped: Record<string, SlotAgenda[]> = {};
-    slotsDisponiveis.forEach(slot => {
-      if (!grouped[slot.data]) grouped[slot.data] = [];
-      grouped[slot.data].push(slot);
-    });
-    return grouped;
-  }, [slotsDisponiveis]);
+  const DAYS_OF_WEEK = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const activeSlots = useMemo(() => (availability || []).filter(a => a.isActive === 1), [availability]);
+
+  // Verificar se uma data+horário já está ocupada
+  const isSlotOccupied = (date: string, startTime: string) => {
+    if (!existingAppointments) return false;
+    return existingAppointments.some(appt =>
+      appt.scheduledDate === date && appt.startTime === startTime && appt.status !== 'cancelado'
+    );
+  };
+
+  // Verificar se a data selecionada corresponde ao dia da semana do slot
+  const getDateDayOfWeek = (dateStr: string) => {
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.getDay();
+  };
 
   if (!mentora) return null;
 
@@ -698,84 +703,137 @@ function EtapaAgendamento({ mentora, onComplete, alunoId, readOnly = false }: { 
             <CardDescription>Selecione a data e horário para o Encontro Inicial</CardDescription>
           </CardHeader>
           <CardContent>
-            {Object.keys(slotsByDate).length > 0 ? (
+            {activeSlots.length > 0 ? (
               <div className="space-y-4">
-                {Object.entries(slotsByDate).map(([data, slots]) => (
-                  <div key={data}>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4 text-[#0A1E3E]" />
-                      {new Date(data + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {slots.map((slot) => (
-                        <button
-                          key={slot.id}
-                          onClick={() => !readOnly && setSelectedSlot(slot)}
-                          disabled={readOnly}
-                          className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
-                            selectedSlot?.id === slot.id
-                              ? "bg-[#F5991F] text-white border-[#F5991F] shadow-md"
-                              : readOnly
-                                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                                : "bg-white text-gray-700 border-gray-200 hover:border-[#F5991F] hover:text-[#F5991F]"
-                          }`}
-                        >
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          {slot.horario} ({slot.duracao}min)
-                        </button>
-                      ))}
+                {/* Passo 1: Selecionar horário disponível do mentor */}
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Horários disponíveis do mentor:</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {DAYS_OF_WEEK.map((dayName, dayIdx) => {
+                      const daySlots = activeSlots.filter(a => a.dayOfWeek === dayIdx);
+                      if (daySlots.length === 0) return null;
+                      return (
+                        <div key={dayIdx} className="p-3 rounded-lg border border-gray-200 bg-gray-50">
+                          <p className="text-xs font-semibold text-gray-600 mb-1">{dayName}</p>
+                          {daySlots.map((slot, i) => (
+                            <button
+                              key={i}
+                              onClick={() => {
+                                if (!readOnly) {
+                                  setSelectedSlot({
+                                    id: slot.id,
+                                    mentoraId: mentora?.id || 0,
+                                    data: '',
+                                    horario: slot.startTime,
+                                    horarioFim: slot.endTime,
+                                    duracao: slot.slotDurationMinutes,
+                                    linkMeet: slot.googleMeetLink || '',
+                                    disponivel: true,
+                                    availabilityId: slot.id,
+                                  });
+                                  setSelectedDate('');
+                                }
+                              }}
+                              disabled={readOnly}
+                              className={`block w-full text-left text-sm p-2 rounded mt-1 transition-colors ${
+                                selectedSlot?.availabilityId === slot.id
+                                  ? 'bg-[#F5991F]/10 border border-[#F5991F] text-[#0A1E3E] font-medium'
+                                  : readOnly
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white border border-gray-200 hover:border-[#F5991F] hover:text-[#F5991F] text-gray-700'
+                              }`}
+                            >
+                              <Clock className="h-3 w-3 inline mr-1" />
+                              {slot.startTime} — {slot.endTime}
+                              <span className="text-xs text-gray-400 ml-2">({slot.slotDurationMinutes}min)</span>
+                              {slot.googleMeetLink && <VideoIcon className="h-3 w-3 inline ml-2 text-blue-500" />}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Passo 2: Selecionar data (só aparece após escolher horário) */}
+                {selectedSlot && (
+                  <div className="mt-4 p-4 bg-[#0A1E3E]/5 rounded-lg border border-[#0A1E3E]/10">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Selecione a data para a sessão:</p>
+                    <Input
+                      type="date"
+                      value={selectedDate}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val) {
+                          // Verificar se o dia da semana corresponde ao slot selecionado
+                          const dayOfWeek = getDateDayOfWeek(val);
+                          const slotDay = activeSlots.find(s => s.id === selectedSlot.availabilityId)?.dayOfWeek;
+                          if (slotDay !== undefined && dayOfWeek !== slotDay) {
+                            toast.error(`Este horário só está disponível às ${DAYS_OF_WEEK[slotDay]}s. Selecione uma ${DAYS_OF_WEEK[slotDay]}.`);
+                            return;
+                          }
+                          if (isSlotOccupied(val, selectedSlot.horario)) {
+                            toast.error('Este horário já está ocupado nesta data. Escolha outra data.');
+                            return;
+                          }
+                        }
+                        setSelectedDate(val);
+                      }}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="mt-1 max-w-xs"
+                    />
+                    {selectedDate && (
+                      <div className="mt-3 text-sm text-gray-600">
+                        <p><strong>Resumo:</strong></p>
+                        <p>Data: {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</p>
+                        <p>Horário: {selectedSlot.horario} — {selectedSlot.horarioFim}</p>
+                        <p>Duração: {selectedSlot.duracao} minutos</p>
+                        {selectedSlot.linkMeet && <p>Link: <a href={selectedSlot.linkMeet} target="_blank" rel="noopener noreferrer" className="text-[#0A1E3E] hover:underline">Google Meet <ExternalLink className="h-3 w-3 inline" /></a></p>}
+                      </div>
+                    )}
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-gray-700 mb-1">Observações (opcional):</p>
+                      <Textarea
+                        placeholder="Descreva o tema que gostaria de abordar na sessão..."
+                        value={bookingNotes}
+                        onChange={e => setBookingNotes(e.target.value)}
+                        className="mt-1"
+                        rows={2}
+                      />
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p>Nenhum horário disponível nos próximos dias</p>
+                <p>O mentor ainda não configurou horários disponíveis.</p>
+                <p className="text-xs mt-1">Entre em contato com a coordenação.</p>
               </div>
             )}
 
-            {selectedSlot && (
-              <div className="mt-6 p-4 bg-[#0A1E3E]/5 rounded-lg border border-[#0A1E3E]/10">
-                <h4 className="font-medium text-gray-900 mb-2">Resumo do Agendamento</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <span className="text-gray-500">Data:</span>
-                  <span className="font-medium">{new Date(selectedSlot.data + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}</span>
-                  <span className="text-gray-500">Horário:</span>
-                  <span className="font-medium">{selectedSlot.horario}</span>
-                  <span className="text-gray-500">Duração:</span>
-                  <span className="font-medium">{selectedSlot.duracao} minutos</span>
-                  <span className="text-gray-500">Link da Reunião:</span>
-                  <a href={selectedSlot.linkMeet} target="_blank" rel="noopener noreferrer" className="font-medium text-[#0A1E3E] hover:underline flex items-center gap-1">
-                    Google Meet <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
 
-      {selectedSlot && !readOnly && (
+      {selectedSlot && selectedDate && !readOnly && (
         <div className="flex justify-end">
           <Button
             className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
             disabled={saving}
             onClick={async () => {
-              if (!alunoId || alunoId === 0 || !mentora) {
-                toast.error("Erro: dados insuficientes. Tente recarregar a página.");
+              if (!alunoId || alunoId === 0 || !mentora || !selectedDate) {
+                toast.error("Erro: selecione uma data para o agendamento.");
                 return;
               }
               setSaving(true);
               try {
-                const endHour = parseInt(selectedSlot.horario.split(':')[0]) + 1;
-                const endTime = `${String(endHour).padStart(2, '0')}:${selectedSlot.horario.split(':')[1]}`;
                 await criarAgendamento.mutateAsync({
                   alunoId,
                   consultorId: mentora.id,
-                  scheduledDate: selectedSlot.data,
+                  scheduledDate: selectedDate,
                   startTime: selectedSlot.horario,
-                  endTime,
+                  endTime: selectedSlot.horarioFim,
                   googleMeetLink: selectedSlot.linkMeet || undefined,
                 });
                 toast.success("Encontro Inicial agendado com sucesso!");

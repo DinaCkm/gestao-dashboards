@@ -972,7 +972,7 @@ function AssessmentCard({
 
   const startEdit = (comp: any) => {
     setEditingCompId(comp.id);
-    setEditNivelAtual(comp.nivelAtual?.toString() || "");
+    setEditNivelAtual(comp.nivelAtualEfetivo?.toString() || comp.nivelAtual?.toString() || "");
     setEditMetaCiclo1(comp.metaCiclo1?.toString() || "");
     setEditMetaCiclo2(comp.metaCiclo2?.toString() || "");
     setEditMetaFinal(comp.metaFinal?.toString() || "");
@@ -990,10 +990,10 @@ function AssessmentCard({
     });
   };
 
-  // Calcular médias gerais
-  const compsComNivel = pdi.competencias?.filter((c: any) => c.nivelAtual !== null && c.nivelAtual !== undefined) || [];
+  // Calcular médias gerais (A2 FIX: usar nivelAtualEfetivo que inclui dados do student_performance)
+  const compsComNivel = pdi.competencias?.filter((c: any) => c.nivelAtualEfetivo !== null && c.nivelAtualEfetivo !== undefined) || [];
   const mediaAtual = compsComNivel.length > 0
-    ? Math.round(compsComNivel.reduce((sum: number, c: any) => sum + (parseFloat(c.nivelAtual) || 0), 0) / compsComNivel.length)
+    ? Math.round(compsComNivel.reduce((sum: number, c: any) => sum + (c.nivelAtualEfetivo || 0), 0) / compsComNivel.length)
     : 0;
   const compsComMeta = pdi.competencias?.filter((c: any) => c.metaFinal !== null && c.metaFinal !== undefined) || [];
   const mediaMetaFinal = compsComMeta.length > 0
@@ -1114,7 +1114,9 @@ function AssessmentCard({
           {/* Competencias - Card layout instead of table */}
           <div className="space-y-3">
             {pdi.competencias.map((comp: any) => {
-              const nivelAtual = comp.nivelAtual !== null && comp.nivelAtual !== undefined ? parseFloat(comp.nivelAtual) : null;
+              // A2 FIX: usar nivelAtualEfetivo (inclui dados automáticos do student_performance)
+              const nivelAtual = comp.nivelAtualEfetivo !== null && comp.nivelAtualEfetivo !== undefined ? Number(comp.nivelAtualEfetivo) : null;
+              const isNivelAutomatico = comp.nivelAutomatico === true;
               const metaFinal = comp.metaFinal !== null && comp.metaFinal !== undefined ? parseFloat(comp.metaFinal) : null;
               const metaCiclo1 = comp.metaCiclo1 !== null && comp.metaCiclo1 !== undefined ? parseFloat(comp.metaCiclo1) : null;
               const metaCiclo2 = comp.metaCiclo2 !== null && comp.metaCiclo2 !== undefined ? parseFloat(comp.metaCiclo2) : null;
@@ -1223,6 +1225,11 @@ function AssessmentCard({
                             <Badge variant={comp.peso === "obrigatoria" ? "default" : "outline"} className="text-[10px]">
                               {comp.peso === "obrigatoria" ? "Obrigatória" : "Opcional"}
                             </Badge>
+                            {isNivelAutomatico && (
+                              <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-300 text-blue-600 bg-blue-50">
+                                Automático
+                              </Badge>
+                            )}
                             {nivelAtual !== null && metaFinal !== null && nivelAtual >= metaFinal && (
                               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                             )}

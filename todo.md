@@ -2134,3 +2134,28 @@
 - [x] Backend: endpoint tRPC para resetar respostas e resultados DISC de um aluno específico
 - [x] Frontend: botão de reset DISC na interface admin (área de assessment/alunos)
 - [x] Testes vitest para reset DISC (5 testes passando)
+
+## Bug: Aba "Meu Perfil" sumiu do Dashboard de Mentor (tabs)
+- [ ] Encontrar a tab Meu Perfil no DashboardMentor.tsx e entender por que sumiu
+- [ ] Restaurar a tab Meu Perfil no Dashboard de Mentor
+- [ ] Testar correção
+
+## Redesign: Seleção de Tarefa no Registro de Mentoria
+- [ ] Busca unificada por competência e por conteúdo da tarefa
+- [ ] Resultados em lista plana com botão "Selecionar" (sem accordion)
+- [ ] Opção de personalizar tarefa (texto livre) separada da biblioteca
+- [ ] Ao selecionar da biblioteca, permitir ajustar o texto sem alterar a original
+
+## Fase 0 - Bugs Críticos
+- [x] A3: Corrigir hora fim errada no agendamento do Portal do Aluno
+- [x] A5: Adicionar coluna "Data da Mentoria" no Excel + corrigir filtro Gerencial
+- [x] A2: Corrigir competências com 0% no Assessment (usa student_performance automático)
+- [x] A4: Validar disponibilidade real do mentor no agendamento
+
+## Fase 1 - Melhorias e Otimização
+- [ ] A6: Sistema de precificação flexível por sessão no cadastro do mentor
+- [ ] A7: Campos Tempo de Contrato e Turma nos 2 formatos de cadastro do aluno
+- [ ] B1: Redesign da seleção de tarefa no Registro de Mentoria
+- [ ] B3: Criar área de Configurações do Mentor (Perfil, Agenda, Agendamentos, Notificações)
+- [ ] B4: Simplificar Dashboard do Mentor (remover abas redundantes)
+- [ ] B5: Relatório Gerencial para o mentor
