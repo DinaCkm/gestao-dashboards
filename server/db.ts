@@ -38,8 +38,9 @@ import {
   autopercepcoesCompetencias, InsertAutopercepcaoCompetencia, AutopercepcaoCompetencia,
   mentoraContribuicoes, InsertMentoraContribuicao, MentoraContribuicao,
   inAppNotifications, InsertInAppNotification, InAppNotification,
-  courses, InsertCourse, Course
-} from "../drizzle/schema";
+  courses, InsertCourse, Course,
+  activities, InsertActivity, Activity,
+  activityRegistrations, InsertActivityRegistration, ActivityRegistration,} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -6551,4 +6552,83 @@ export async function deleteCourse(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
   await db.delete(courses).where(eq(courses.id, id));
+}
+
+
+// ============================================================
+// Activities (Atividades Extras) helpers
+// ============================================================
+export async function listActivities(): Promise<Activity[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(activities).orderBy(desc(activities.dataInicio));
+}
+export async function getActivityById(id: number): Promise<Activity | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(activities).where(eq(activities.id, id)).limit(1);
+  return rows[0];
+}
+export async function createActivity(data: InsertActivity): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const result = await db.insert(activities).values(data);
+  return Number(result[0].insertId);
+}
+export async function updateActivity(id: number, data: Partial<InsertActivity>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(activities).set(data).where(eq(activities.id, id));
+}
+export async function toggleActivityActive(id: number, isActive: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(activities).set({ isActive }).where(eq(activities.id, id));
+}
+export async function deleteActivity(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.delete(activities).where(eq(activities.id, id));
+}
+
+// ============================================================
+// Activity Registrations (Inscrições) helpers
+// ============================================================
+export async function listActivityRegistrations(activityId: number): Promise<ActivityRegistration[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(activityRegistrations).where(eq(activityRegistrations.activityId, activityId));
+}
+export async function getRegistrationByUserAndActivity(userId: number, activityId: number): Promise<ActivityRegistration | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(activityRegistrations)
+    .where(and(eq(activityRegistrations.userId, userId), eq(activityRegistrations.activityId, activityId)))
+    .limit(1);
+  return rows[0];
+}
+export async function registerForActivity(data: InsertActivityRegistration): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const result = await db.insert(activityRegistrations).values(data);
+  return Number(result[0].insertId);
+}
+export async function updateRegistrationStatus(id: number, status: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(activityRegistrations).set({ status: status as any }).where(eq(activityRegistrations.id, id));
+}
+export async function cancelRegistration(userId: number, activityId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.delete(activityRegistrations)
+    .where(and(eq(activityRegistrations.userId, userId), eq(activityRegistrations.activityId, activityId)));
+}
+export async function countRegistrations(activityId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select({ count: sql<number>`COUNT(*)` })
+    .from(activityRegistrations)
+    .where(and(eq(activityRegistrations.activityId, activityId), sql`${activityRegistrations.status} != 'cancelado'`));
+  return Number(rows[0]?.count ?? 0);
 }

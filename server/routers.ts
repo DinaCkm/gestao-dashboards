@@ -5553,6 +5553,160 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true };
       }),
   }),
+
+  // ============================================================
+  // Activities (Atividades Extras) router
+  // ============================================================
+  activities: router({
+    // Listar atividades (admin vê todas, aluno vê só ativas)
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const all = await db.listActivities();
+      if (ctx.user.role === 'admin') return all;
+      return all.filter(a => a.isActive === 1);
+    }),
+
+    // Obter atividade por ID
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getActivityById(input.id);
+      }),
+
+    // Criar atividade (admin)
+    create: adminProcedure
+      .input(z.object({
+        titulo: z.string().min(1),
+        descricao: z.string().optional(),
+        tipo: z.enum(["workshop", "treinamento", "palestra", "evento", "outro"]),
+        modalidade: z.enum(["presencial", "online", "hibrido"]),
+        dataInicio: z.string().optional(),
+        dataFim: z.string().optional(),
+        local: z.string().optional(),
+        vagas: z.number().optional(),
+        instrutor: z.string().optional(),
+        imagemUrl: z.string().optional(),
+        competenciaRelacionada: z.string().optional(),
+        programId: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await db.createActivity({
+          ...input,
+          dataInicio: input.dataInicio ? new Date(input.dataInicio) : null,
+          dataFim: input.dataFim ? new Date(input.dataFim) : null,
+          vagas: input.vagas ?? null,
+          programId: input.programId ?? null,
+          createdBy: ctx.user.id,
+        });
+        return { id };
+      }),
+
+    // Atualizar atividade (admin)
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        titulo: z.string().min(1).optional(),
+        descricao: z.string().optional(),
+        tipo: z.enum(["workshop", "treinamento", "palestra", "evento", "outro"]).optional(),
+        modalidade: z.enum(["presencial", "online", "hibrido"]).optional(),
+        dataInicio: z.string().optional().nullable(),
+        dataFim: z.string().optional().nullable(),
+        local: z.string().optional(),
+        vagas: z.number().optional().nullable(),
+        instrutor: z.string().optional(),
+        imagemUrl: z.string().optional(),
+        competenciaRelacionada: z.string().optional(),
+        programId: z.number().optional().nullable(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, dataInicio, dataFim, ...rest } = input;
+        const updateData: any = { ...rest };
+        if (dataInicio !== undefined) updateData.dataInicio = dataInicio ? new Date(dataInicio) : null;
+        if (dataFim !== undefined) updateData.dataFim = dataFim ? new Date(dataFim) : null;
+        await db.updateActivity(id, updateData);
+        return { success: true };
+      }),
+
+    // Toggle ativo/inativo (admin)
+    toggleActive: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        isActive: z.number().min(0).max(1),
+      }))
+      .mutation(async ({ input }) => {
+        await db.toggleActivityActive(input.id, input.isActive);
+        return { success: true };
+      }),
+
+    // Deletar atividade (admin)
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteActivity(input.id);
+        return { success: true };
+      }),
+
+    // Contar inscrições de uma atividade
+    countRegistrations: protectedProcedure
+      .input(z.object({ activityId: z.number() }))
+      .query(async ({ input }) => {
+        return db.countRegistrations(input.activityId);
+      }),
+
+    // Listar inscrições de uma atividade (admin)
+    listRegistrations: adminProcedure
+      .input(z.object({ activityId: z.number() }))
+      .query(async ({ input }) => {
+        return db.listActivityRegistrations(input.activityId);
+      }),
+
+    // Verificar se o usuário está inscrito
+    myRegistration: protectedProcedure
+      .input(z.object({ activityId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        return db.getRegistrationByUserAndActivity(ctx.user.id, input.activityId);
+      }),
+
+    // Inscrever-se em uma atividade
+    register: protectedProcedure
+      .input(z.object({ activityId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        // Verificar se já está inscrito
+        const existing = await db.getRegistrationByUserAndActivity(ctx.user.id, input.activityId);
+        if (existing) throw new TRPCError({ code: 'CONFLICT', message: 'Você já está inscrito nesta atividade' });
+        // Verificar vagas
+        const activity = await db.getActivityById(input.activityId);
+        if (!activity) throw new TRPCError({ code: 'NOT_FOUND', message: 'Atividade não encontrada' });
+        if (activity.vagas) {
+          const count = await db.countRegistrations(input.activityId);
+          if (count >= activity.vagas) throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'Vagas esgotadas' });
+        }
+        const id = await db.registerForActivity({
+          activityId: input.activityId,
+          userId: ctx.user.id,
+          status: 'inscrito',
+        });
+        return { id };
+      }),
+
+    // Cancelar inscrição
+    unregister: protectedProcedure
+      .input(z.object({ activityId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.cancelRegistration(ctx.user.id, input.activityId);
+        return { success: true };
+      }),
+
+    // Atualizar status de inscrição (admin)
+    updateRegistrationStatus: adminProcedure
+      .input(z.object({
+        registrationId: z.number(),
+        status: z.enum(["inscrito", "confirmado", "cancelado", "presente", "ausente"]),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateRegistrationStatus(input.registrationId, input.status);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

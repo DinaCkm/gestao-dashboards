@@ -907,3 +907,44 @@ export const courses = mysqlTable("courses", {
 });
 export type Course = typeof courses.$inferSelect;
 export type InsertCourse = typeof courses.$inferInsert;
+
+/**
+ * Activities - Atividades Extras (workshops, treinamentos presenciais, eventos)
+ * Convites para participação dos alunos com sistema de inscrição
+ */
+export const activities = mysqlTable("activities", {
+  id: int("id").autoincrement().primaryKey(),
+  titulo: varchar("titulo", { length: 500 }).notNull(),
+  descricao: text("descricao"),
+  tipo: mysqlEnum("tipo", ["workshop", "treinamento", "palestra", "evento", "outro"]).default("workshop").notNull(),
+  modalidade: mysqlEnum("modalidade", ["presencial", "online", "hibrido"]).default("presencial").notNull(),
+  dataInicio: timestamp("dataInicio"), // Data e hora de início
+  dataFim: timestamp("dataFim"), // Data e hora de fim (opcional)
+  local: varchar("local", { length: 500 }), // Endereço ou link da sala virtual
+  vagas: int("vagas"), // Número máximo de vagas (null = ilimitado)
+  instrutor: varchar("instrutor", { length: 255 }),
+  imagemUrl: text("imagemUrl"), // Imagem de capa do evento
+  competenciaRelacionada: varchar("competenciaRelacionada", { length: 255 }),
+  programId: int("programId"), // Empresa específica ou null para todos
+  isActive: int("isActive").default(1).notNull(),
+  ordem: int("ordem").default(0).notNull(),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Activity = typeof activities.$inferSelect;
+export type InsertActivity = typeof activities.$inferInsert;
+
+/**
+ * Activity Registrations - Inscrições dos alunos nas atividades extras
+ */
+export const activityRegistrations = mysqlTable("activity_registrations", {
+  id: int("id").autoincrement().primaryKey(),
+  activityId: int("activityId").notNull(),
+  userId: int("userId").notNull(),
+  status: mysqlEnum("status", ["inscrito", "confirmado", "cancelado", "presente", "ausente"]).default("inscrito").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ActivityRegistration = typeof activityRegistrations.$inferSelect;
+export type InsertActivityRegistration = typeof activityRegistrations.$inferInsert;

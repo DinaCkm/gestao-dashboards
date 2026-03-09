@@ -2104,3 +2104,13 @@
 - [x] Adicionar DashboardLayout na página CursosDisponiveis (admin)
 - [x] Adicionar AlunoLayout na página CursosAluno (aluno)
 - [x] Bug: Item 'Cursos' no menu lateral mostra badge 'Em breve' e toast placeholder em vez de navegar para /cursos
+- [x] Criar tabela activities no schema.ts (tipo: workshop/treinamento/palestra/evento/outro, modalidade: presencial/online/híbrido, título, descrição, data, local, vagas, instrutor, imagem)
+- [x] Criar tabela activity_registrations para inscrições dos alunos (status: inscrito/confirmado/cancelado/presente/ausente)
+- [x] Migrar banco de dados com pnpm db:push
+- [x] Criar helpers no db.ts para CRUD de atividades e inscrições
+- [x] Criar endpoints tRPC para atividades (list, create, update, toggleActive, delete, register, unregister, listRegistrations, countRegistrations, myRegistration, updateRegistrationStatus)
+- [x] Criar interface admin para gerenciar atividades extras (listar, criar, editar, ver inscritos, confirmar/cancelar inscrições)
+- [x] Criar catálogo de atividades extras no portal do aluno (cards com inscrição, detalhes, filtros)
+- [x] Remover placeholder 'Em breve' do item Atividades Extras no menu admin e aluno
+- [x] Adicionar rotas no App.tsx (/atividades-extras admin, /minhas-atividades aluno)
+- [x] Escrever testes vitest para os endpoints de atividades (todos passando)

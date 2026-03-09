@@ -195,6 +195,7 @@ const otherMenuItems: MenuItemExtended[] = [
   // === ALUNO ===
   { icon: Compass, label: "Portal do Aluno", path: "/meu-dashboard", roles: ["user"] },
   { icon: GraduationCap, label: "Cursos Disponíveis", path: "/meus-cursos", roles: ["user"] },
+  { icon: Zap, label: "Atividades Extras", path: "/minhas-atividades", roles: ["user"] },
   { icon: PlayCircle, label: "Tutoriais", path: "/tutoriais", roles: ["user"] },
 ];
 
@@ -508,8 +509,8 @@ function DashboardLayoutContent({
                               <SidebarMenuSub>
                                 {group.items.map(item => {
                                   const isActive = isPathActive(item.path);
-                                  // Placeholder items (atividades extras)
-                                  const isPlaceholder = item.path === "/atividades-extras";
+                                  // No more placeholders - all items are functional
+                                  const isPlaceholder = false;
                                   return (
                                     <SidebarMenuSubItem key={item.path}>
                                       <SidebarMenuSubButton

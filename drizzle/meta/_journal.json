@@ -288,6 +288,13 @@
       "when": 1773012942450,
       "tag": "0040_yellow_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1773016626757,
+      "tag": "0041_confused_landau",
+      "breakpoints": true
     }
   ]
 }
