@@ -41,7 +41,8 @@ import {
   courses, InsertCourse, Course,
   activities, InsertActivity, Activity,
   activityRegistrations, InsertActivityRegistration, ActivityRegistration,
-  activityTurmas, InsertActivityTurma, ActivityTurma,} from "../drizzle/schema";
+  activityTurmas, InsertActivityTurma, ActivityTurma,
+  mentorSessionPricing, InsertMentorSessionPricing, MentorSessionPricing,} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1476,6 +1477,8 @@ export async function getAllAlunosForAdmin() {
     isActive: alunos.isActive,
     canLogin: alunos.canLogin,
     createdAt: alunos.createdAt,
+    contratoInicio: alunos.contratoInicio,
+    contratoFim: alunos.contratoFim,
     programName: programs.name,
     mentorName: consultors.name,
     turmaName: turmas.name,
@@ -1500,6 +1503,8 @@ export async function updateAluno(alunoId: number, data: {
   areaAtuacao?: string | null;
   minicurriculo?: string | null;
   quemEVoce?: string | null;
+  contratoInicio?: Date | null;
+  contratoFim?: Date | null;
 }): Promise<{ success: boolean; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
@@ -1516,6 +1521,8 @@ export async function updateAluno(alunoId: number, data: {
   if (data.areaAtuacao !== undefined) updateData.areaAtuacao = data.areaAtuacao;
   if (data.minicurriculo !== undefined) updateData.minicurriculo = data.minicurriculo;
   if (data.quemEVoce !== undefined) updateData.quemEVoce = data.quemEVoce;
+  if (data.contratoInicio !== undefined) updateData.contratoInicio = data.contratoInicio;
+  if (data.contratoFim !== undefined) updateData.contratoFim = data.contratoFim;
   
   if (data.cpf !== undefined) {
     if (data.cpf === null || data.cpf === '') {
@@ -1550,7 +1557,7 @@ export async function updateAluno(alunoId: number, data: {
   return { success: true };
 }
 
-export async function createAluno(data: { name: string; email: string; externalId: string; programId?: number }) {
+export async function createAluno(data: { name: string; email: string; externalId: string; programId?: number; contratoInicio?: string; contratoFim?: string }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
   
@@ -1594,6 +1601,8 @@ export async function createAluno(data: { name: string; email: string; externalI
     programId: data.programId || null,
     canLogin: 1,
     isActive: 1,
+    contratoInicio: data.contratoInicio ? new Date(data.contratoInicio) : null,
+    contratoFim: data.contratoFim ? new Date(data.contratoFim) : null,
   });
 
   const alunoId = result.insertId;
@@ -5071,6 +5080,8 @@ export async function createAlunoDireto(data: {
   programId: number;
   consultorId: number;
   turmaId?: number | null;
+  contratoInicio?: string;
+  contratoFim?: string;
 }): Promise<{ success: boolean; alunoId?: number; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
@@ -5109,6 +5120,8 @@ export async function createAlunoDireto(data: {
     cadastradoPorAdmin: 1,
     canLogin: 1,
     isActive: 1,
+    contratoInicio: data.contratoInicio ? new Date(data.contratoInicio) : null,
+    contratoFim: data.contratoFim ? new Date(data.contratoFim) : null,
   });
 
   const alunoId = alunoResult.insertId;
@@ -6530,43 +6543,56 @@ export async function getRelatorioFinanceiroMentorias(dateFrom?: string, dateTo?
     });
   }
 
+  // Buscar regras de precificação flexível de todos os mentores
+  const pricingMap = await getAllMentorSessionPricing();
+
   // Group by mentor
   const byMentor: Record<number, {
     consultorId: number;
     consultorNome: string;
-    valorSessao: number;
+    valorSessaoPadrao: number;
     sessoes: Array<{
       sessionId: number;
       sessionDate: string | null;
       sessionNumber: number | null;
       alunoId: number | null;
       alunoNome: string | null;
+      valorSessao: number;
     }>;
   }> = {};
 
   for (const s of filtered) {
     if (!s.consultorId) continue;
+    const valorPadrao = s.valorSessao ? Number(s.valorSessao) : 0;
     if (!byMentor[s.consultorId]) {
       byMentor[s.consultorId] = {
         consultorId: s.consultorId,
         consultorNome: s.consultorNome || 'Desconhecido',
-        valorSessao: s.valorSessao ? Number(s.valorSessao) : 0,
+        valorSessaoPadrao: valorPadrao,
         sessoes: [],
       };
     }
+    // Calcular valor da sessão usando precificação flexível
+    const rules = pricingMap.get(s.consultorId) || [];
+    const sessionNum = s.sessionNumber || 0;
+    const matchingRule = rules.find(r => sessionNum >= r.sessionFrom && sessionNum <= r.sessionTo);
+    const valorSessao = matchingRule ? Number(matchingRule.valor) : valorPadrao;
+
     byMentor[s.consultorId].sessoes.push({
       sessionId: s.sessionId,
       sessionDate: s.sessionDate ? String(s.sessionDate) : null,
       sessionNumber: s.sessionNumber,
       alunoId: s.alunoId,
       alunoNome: s.alunoNome || null,
+      valorSessao,
     });
   }
 
   const mentores = Object.values(byMentor).map(m => ({
     ...m,
+    valorSessao: m.valorSessaoPadrao, // compatibilidade
     totalSessoes: m.sessoes.length,
-    totalValor: m.sessoes.length * m.valorSessao,
+    totalValor: m.sessoes.reduce((sum, s) => sum + s.valorSessao, 0),
   }));
 
   const totalGeral = mentores.reduce((sum, m) => sum + m.totalValor, 0);
@@ -6809,6 +6835,75 @@ export async function getAllActivityTurmasMap(): Promise<Map<number, number[]>> 
     const existing = map.get(link.activityId) || [];
     existing.push(link.turmaId);
     map.set(link.activityId, existing);
+  }
+  return map;
+}
+
+// ============ PRECIFICAÇÃO FLEXÍVEL DE SESSÕES DO MENTOR ============
+
+// Buscar regras de precificação de um mentor
+export async function getMentorSessionPricing(consultorId: number): Promise<MentorSessionPricing[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(mentorSessionPricing)
+    .where(eq(mentorSessionPricing.consultorId, consultorId))
+    .orderBy(mentorSessionPricing.sessionFrom);
+}
+
+// Criar/atualizar regras de precificação (substitui todas as regras existentes)
+export async function setMentorSessionPricing(consultorId: number, rules: Array<{
+  sessionFrom: number;
+  sessionTo: number;
+  valor: string;
+  descricao?: string;
+}>): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  // Remover regras existentes
+  await db.delete(mentorSessionPricing).where(eq(mentorSessionPricing.consultorId, consultorId));
+  // Inserir novas regras
+  if (rules.length > 0) {
+    await db.insert(mentorSessionPricing).values(
+      rules.map(r => ({
+        consultorId,
+        sessionFrom: r.sessionFrom,
+        sessionTo: r.sessionTo,
+        valor: r.valor,
+        descricao: r.descricao || null,
+      }))
+    );
+  }
+}
+
+// Buscar o valor de uma sessão específica pelo número
+export async function getSessionPrice(consultorId: number, sessionNumber: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  // Buscar regra que cobre esse número de sessão
+  const rules = await db.select().from(mentorSessionPricing)
+    .where(eq(mentorSessionPricing.consultorId, consultorId));
+  
+  const matchingRule = rules.find(r => sessionNumber >= r.sessionFrom && sessionNumber <= r.sessionTo);
+  if (matchingRule) {
+    return Number(matchingRule.valor);
+  }
+  
+  // Fallback: usar valorSessao do consultor
+  const consultor = await db.select({ valorSessao: consultors.valorSessao })
+    .from(consultors).where(eq(consultors.id, consultorId)).limit(1);
+  return consultor[0]?.valorSessao ? Number(consultor[0].valorSessao) : 0;
+}
+
+// Buscar todas as regras de precificação de todos os mentores (para demonstrativo)
+export async function getAllMentorSessionPricing(): Promise<Map<number, MentorSessionPricing[]>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  const allRules = await db.select().from(mentorSessionPricing).orderBy(mentorSessionPricing.sessionFrom);
+  const map = new Map<number, MentorSessionPricing[]>();
+  for (const rule of allRules) {
+    const existing = map.get(rule.consultorId) || [];
+    existing.push(rule);
+    map.set(rule.consultorId, existing);
   }
   return map;
 }

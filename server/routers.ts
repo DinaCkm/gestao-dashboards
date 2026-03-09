@@ -3464,6 +3464,41 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         return await db.updateConsultor(consultorId, data);
       }),
     
+    // Precificação flexível de sessões do mentor
+    getMentorPricing: adminProcedure
+      .input(z.object({ consultorId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getMentorSessionPricing(input.consultorId);
+      }),
+
+    setMentorPricing: adminProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        rules: z.array(z.object({
+          sessionFrom: z.number().min(1),
+          sessionTo: z.number().min(1),
+          valor: z.string(),
+          descricao: z.string().optional(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        // Validar que sessionTo >= sessionFrom
+        for (const rule of input.rules) {
+          if (rule.sessionTo < rule.sessionFrom) {
+            throw new Error(`Sessão final (${rule.sessionTo}) não pode ser menor que sessão inicial (${rule.sessionFrom})`);
+          }
+        }
+        // Validar que não há sobreposição de faixas
+        const sorted = [...input.rules].sort((a, b) => a.sessionFrom - b.sessionFrom);
+        for (let i = 1; i < sorted.length; i++) {
+          if (sorted[i].sessionFrom <= sorted[i - 1].sessionTo) {
+            throw new Error(`Faixas de sessão não podem se sobrepor: sessões ${sorted[i - 1].sessionFrom}-${sorted[i - 1].sessionTo} e ${sorted[i].sessionFrom}-${sorted[i].sessionTo}`);
+          }
+        }
+        await db.setMentorSessionPricing(input.consultorId, input.rules);
+        return { success: true };
+      }),
+
     // Gerentes
     listGerentes: adminProcedure.query(async () => {
       return await db.getAllGerentes();
@@ -3529,7 +3564,9 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         name: z.string().min(1),
         email: z.string().email(),
         externalId: z.string().min(1),
-        programId: z.number().optional()
+        programId: z.number().optional(),
+        contratoInicio: z.string().optional(),
+        contratoFim: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.createAluno(input);
@@ -3544,10 +3581,15 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         programId: z.number().nullable().optional(),
         consultorId: z.number().nullable().optional(),
         turmaId: z.number().nullable().optional(),
+        contratoInicio: z.string().nullable().optional(),
+        contratoFim: z.string().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { alunoId, ...data } = input;
-        return await db.updateAluno(alunoId, data);
+        const { alunoId, contratoInicio, contratoFim, ...data } = input;
+        const updateData: any = { ...data };
+        if (contratoInicio !== undefined) updateData.contratoInicio = contratoInicio ? new Date(contratoInicio) : null;
+        if (contratoFim !== undefined) updateData.contratoFim = contratoFim ? new Date(contratoFim) : null;
+        return await db.updateAluno(alunoId, updateData);
       }),
     
     // Gestão de Acesso (Email + CPF)
@@ -3667,6 +3709,8 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         programId: z.number(),
         consultorId: z.number(), // mentor vinculado
         turmaId: z.number().nullable().optional(),
+        contratoInicio: z.string().optional(),
+        contratoFim: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.createAlunoDireto(input);

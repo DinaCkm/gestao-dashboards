@@ -2153,8 +2153,8 @@
 - [x] A4: Validar disponibilidade real do mentor no agendamento
 
 ## Fase 1 - Melhorias e Otimização
-- [ ] A6: Sistema de precificação flexível por sessão no cadastro do mentor
-- [ ] A7: Campos Tempo de Contrato e Turma nos 2 formatos de cadastro do aluno
+- [x] A6: Sistema de precificação flexível por sessão no cadastro do mentor
+- [x] A7: Campos Tempo de Contrato e Turma nos 2 formatos de cadastro do aluno + formulário de edição
 - [ ] B1: Redesign da seleção de tarefa no Registro de Mentoria
 - [ ] B3: Criar área de Configurações do Mentor (Perfil, Agenda, Agendamentos, Notificações)
 - [ ] B4: Simplificar Dashboard do Mentor (remover abas redundantes)

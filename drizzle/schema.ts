@@ -187,6 +187,8 @@ export const alunos = mysqlTable("alunos", {
   canLogin: int("canLogin").default(1).notNull(), // 1 = pode fazer login
   bypassOnboarding: int("bypassOnboarding").default(0).notNull(), // 1 = pular assessment/vitrine, ir direto ao dashboard
   cadastradoPorAdmin: int("cadastradoPorAdmin").default(0).notNull(), // 1 = cadastrado diretamente pelo admin
+  contratoInicio: timestamp("contratoInicio"), // Data início do período contratual
+  contratoFim: timestamp("contratoFim"), // Data fim do período contratual
   telefone: varchar("telefone", { length: 20 }),
   cargo: varchar("cargo", { length: 255 }),
   areaAtuacao: varchar("areaAtuacao", { length: 255 }),
@@ -971,3 +973,22 @@ export const activityTurmas = mysqlTable("activity_turmas", {
 });
 export type ActivityTurma = typeof activityTurmas.$inferSelect;
 export type InsertActivityTurma = typeof activityTurmas.$inferInsert;
+
+/**
+ * Precificação Flexível de Sessões do Mentor
+ * Permite definir valores diferentes por número de sessão (individual ou agrupado)
+ * Ex: Sessões 1-4 = R$100, Sessão 5 = R$150, Sessões 6-12 = R$120
+ * O campo valorSessao na tabela consultors serve como valor padrão (fallback)
+ */
+export const mentorSessionPricing = mysqlTable("mentor_session_pricing", {
+  id: int("id").autoincrement().primaryKey(),
+  consultorId: int("consultorId").notNull(), // FK para consultors
+  sessionFrom: int("sessionFrom").notNull(), // Número da sessão inicial (ex: 1)
+  sessionTo: int("sessionTo").notNull(), // Número da sessão final (ex: 4) — igual a sessionFrom se individual
+  valor: decimal("valor", { precision: 10, scale: 2 }).notNull(), // Valor em R$
+  descricao: varchar("descricao", { length: 255 }), // Descrição opcional (ex: "Sessões iniciais")
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MentorSessionPricing = typeof mentorSessionPricing.$inferSelect;
+export type InsertMentorSessionPricing = typeof mentorSessionPricing.$inferInsert;

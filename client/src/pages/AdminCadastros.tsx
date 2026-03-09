@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation, useSearch } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 
 function formatCpf(value: string): string {
@@ -462,6 +462,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [onboardEmail, setOnboardEmail] = useState("");
   const [onboardId, setOnboardId] = useState("");
   const [onboardProgramId, setOnboardProgramId] = useState("");
+  const [onboardContratoInicio, setOnboardContratoInicio] = useState("");
+  const [onboardContratoFim, setOnboardContratoFim] = useState("");
 
   const handleOnboardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -479,11 +481,15 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       email: onboardEmail,
       externalId: idDigits,
       programId: parseInt(onboardProgramId),
+      contratoInicio: onboardContratoInicio || undefined,
+      contratoFim: onboardContratoFim || undefined,
     });
     setOnboardNome("");
     setOnboardEmail("");
     setOnboardId("");
     setOnboardProgramId("");
+    setOnboardContratoInicio("");
+    setOnboardContratoFim("");
     setOnboardOpen(false);
   };
 
@@ -495,6 +501,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [diretoProgramId, setDiretoProgramId] = useState("");
   const [diretoConsultorId, setDiretoConsultorId] = useState("");
   const [diretoTurmaId, setDiretoTurmaId] = useState("");
+  const [diretoContratoInicio, setDiretoContratoInicio] = useState("");
+  const [diretoContratoFim, setDiretoContratoFim] = useState("");
 
   const handleDiretoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -518,6 +526,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       programId: parseInt(diretoProgramId),
       consultorId: parseInt(diretoConsultorId),
       turmaId: diretoTurmaId ? parseInt(diretoTurmaId) : null,
+      contratoInicio: diretoContratoInicio || undefined,
+      contratoFim: diretoContratoFim || undefined,
     });
     setDiretoNome("");
     setDiretoEmail("");
@@ -525,6 +535,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     setDiretoProgramId("");
     setDiretoConsultorId("");
     setDiretoTurmaId("");
+    setDiretoContratoInicio("");
+    setDiretoContratoFim("");
     setDiretoOpen(false);
   };
 
@@ -536,6 +548,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [editProgramId, setEditProgramId] = useState("");
   const [editConsultorId, setEditConsultorId] = useState("");
   const [editTurmaId, setEditTurmaId] = useState("");
+  const [editContratoInicio, setEditContratoInicio] = useState("");
+  const [editContratoFim, setEditContratoFim] = useState("");
 
   const handleEditOpen = (aluno: any) => {
     setEditAluno(aluno);
@@ -546,6 +560,9 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     setEditProgramId(aluno.programId ? aluno.programId.toString() : "");
     setEditConsultorId(aluno.consultorId ? aluno.consultorId.toString() : "");
     setEditTurmaId(aluno.turmaId ? aluno.turmaId.toString() : "");
+    // Formatar datas de contrato para input type="date" (YYYY-MM-DD)
+    setEditContratoInicio(aluno.contratoInicio ? new Date(aluno.contratoInicio).toISOString().split('T')[0] : "");
+    setEditContratoFim(aluno.contratoFim ? new Date(aluno.contratoFim).toISOString().split('T')[0] : "");
     setEditOpen(true);
   };
 
@@ -566,6 +583,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       programId: editProgramId ? parseInt(editProgramId) : null,
       consultorId: editConsultorId ? parseInt(editConsultorId) : null,
       turmaId: editTurmaId ? parseInt(editTurmaId) : null,
+      contratoInicio: editContratoInicio || null,
+      contratoFim: editContratoFim || null,
     });
     setEditOpen(false);
     setEditAluno(null);
@@ -623,6 +642,19 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                       {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
                     </select>
                   </div>
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><CalendarDays className="h-3.5 w-3.5" /> Período do Contrato (Opcional)</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Início</Label>
+                        <Input type="date" value={onboardContratoInicio} onChange={(e) => setOnboardContratoInicio(e.target.value)} className="text-sm" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Fim</Label>
+                        <Input type="date" value={onboardContratoFim} onChange={(e) => setOnboardContratoFim(e.target.value)} className="text-sm" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setOnboardOpen(false)}>Cancelar</Button>
@@ -676,6 +708,19 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                       <option value="">Nenhuma turma</option>
                       {turmasList.map((t: any) => (<option key={t.id} value={t.id.toString()}>{t.name}</option>))}
                     </select>
+                  </div>
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><CalendarDays className="h-3.5 w-3.5" /> Período do Contrato (Opcional)</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Início</Label>
+                        <Input type="date" value={diretoContratoInicio} onChange={(e) => setDiretoContratoInicio(e.target.value)} className="text-sm" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Fim</Label>
+                        <Input type="date" value={diretoContratoFim} onChange={(e) => setDiretoContratoFim(e.target.value)} className="text-sm" />
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-emerald-700 font-semibold">Vincular Mentor(a) *</Label>
@@ -749,6 +794,19 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                     <option value="">Sem turma</option>
                     {turmasList.map((t: any) => (<option key={t.id} value={t.id.toString()}>{t.name}</option>))}
                   </select>
+                </div>
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><CalendarDays className="h-3.5 w-3.5" /> Período do Contrato</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Início</Label>
+                      <Input type="date" value={editContratoInicio} onChange={(e) => setEditContratoInicio(e.target.value)} className="text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Fim</Label>
+                      <Input type="date" value={editContratoFim} onChange={(e) => setEditContratoFim(e.target.value)} className="text-sm" />
+                    </div>
+                  </div>
                 </div>
               </div>
               <DialogFooter className="pt-4 border-t">
@@ -838,6 +896,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                     <TableHead>Empresa</TableHead>
                     <TableHead>Mentor(a)</TableHead>
                     <TableHead>Turma</TableHead>
+                    <TableHead>Contrato</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
@@ -852,6 +911,17 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                       <TableCell className="whitespace-nowrap">{aluno.programName || <span className="text-muted-foreground">-</span>}</TableCell>
                       <TableCell className="text-sm whitespace-nowrap">{aluno.mentorName || <span className="text-muted-foreground">-</span>}</TableCell>
                       <TableCell className="text-sm whitespace-nowrap">{aluno.turmaName || <span className="text-muted-foreground">-</span>}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">
+                        {aluno.contratoInicio || aluno.contratoFim ? (
+                          <span className="text-muted-foreground">
+                            {aluno.contratoInicio ? new Date(aluno.contratoInicio).toLocaleDateString('pt-BR') : '?'}
+                            {' - '}
+                            {aluno.contratoFim ? new Date(aluno.contratoFim).toLocaleDateString('pt-BR') : '?'}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {aluno.isActive === 1 ? (
                           <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
@@ -868,7 +938,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                   ))}
                   {filteredAlunos.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                         {alunos.length === 0 ? "Nenhum aluno cadastrado." : "Nenhum aluno encontrado com os filtros aplicados."}
                       </TableCell>
                     </TableRow>
@@ -1079,6 +1149,22 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
   const [editCpf, setEditCpf] = useState("");
   const [editEspecialidade, setEditEspecialidade] = useState("");
   const [editValorSessao, setEditValorSessao] = useState("");
+  // Precificação flexível
+  const [pricingOpen, setPricingOpen] = useState(false);
+  const [pricingMentor, setPricingMentor] = useState<any>(null);
+  const [pricingRules, setPricingRules] = useState<Array<{ sessionFrom: string; sessionTo: string; valor: string; descricao: string }>>([]);
+  const pricingQuery = trpc.admin.getMentorPricing.useQuery(
+    { consultorId: pricingMentor?.id || 0 },
+    { enabled: !!pricingMentor }
+  );
+  const setPricingMutation = trpc.admin.setMentorPricing.useMutation({
+    onSuccess: () => {
+      toast.success("Precificação salva com sucesso!");
+      pricingQuery.refetch();
+      setPricingOpen(false);
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1125,6 +1211,52 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
       const newLoginId = `M${mentorId.toString().padStart(4, '0')}`;
       onUpdateAcesso({ consultorId: mentorId, loginId: newLoginId, canLogin: true });
     }
+  };
+
+  const handlePricingOpen = (mentor: any) => {
+    setPricingMentor(mentor);
+    setPricingOpen(true);
+  };
+
+  // Sincronizar regras quando dados carregam
+  React.useEffect(() => {
+    if (pricingQuery.data && pricingOpen) {
+      if (pricingQuery.data.length > 0) {
+        setPricingRules(pricingQuery.data.map(r => ({
+          sessionFrom: String(r.sessionFrom),
+          sessionTo: String(r.sessionTo),
+          valor: String(r.valor),
+          descricao: r.descricao || '',
+        })));
+      } else {
+        setPricingRules([{ sessionFrom: '1', sessionTo: '12', valor: pricingMentor?.valorSessao || '0', descricao: '' }]);
+      }
+    }
+  }, [pricingQuery.data, pricingOpen]);
+
+  const addPricingRule = () => {
+    const lastTo = pricingRules.length > 0 ? Number(pricingRules[pricingRules.length - 1].sessionTo) : 0;
+    setPricingRules([...pricingRules, { sessionFrom: String(lastTo + 1), sessionTo: String(lastTo + 4), valor: '', descricao: '' }]);
+  };
+
+  const removePricingRule = (index: number) => {
+    setPricingRules(pricingRules.filter((_, i) => i !== index));
+  };
+
+  const updatePricingRule = (index: number, field: string, value: string) => {
+    const updated = [...pricingRules];
+    (updated[index] as any)[field] = value;
+    setPricingRules(updated);
+  };
+
+  const handlePricingSave = () => {
+    const rules = pricingRules.filter(r => r.valor && r.sessionFrom && r.sessionTo).map(r => ({
+      sessionFrom: Number(r.sessionFrom),
+      sessionTo: Number(r.sessionTo),
+      valor: r.valor,
+      descricao: r.descricao || undefined,
+    }));
+    setPricingMutation.mutate({ consultorId: pricingMentor.id, rules });
   };
 
   const handleEditOpen = (mentor: any) => {
@@ -1259,6 +1391,14 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                       >
                         {mentor.canLogin ? "Desativar" : "Ativar Acesso"}
                       </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handlePricingOpen(mentor)}
+                        title="Precificação por sessão"
+                      >
+                        <DollarSign className="h-3 w-3 mr-1" /> Preços
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -1273,6 +1413,80 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
             </TableBody>
           </Table>
         )}
+
+        {/* Dialog de Precificação Flexível */}
+        <Dialog open={pricingOpen} onOpenChange={setPricingOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Precificação por Sessão</DialogTitle>
+              <DialogDescription>
+                Defina valores diferentes por número de sessão para {pricingMentor?.name}.
+                Valor padrão: R$ {pricingMentor?.valorSessao ? Number(pricingMentor.valorSessao).toFixed(2) : '0.00'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+              {pricingQuery.isLoading ? (
+                <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin" /></div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center text-sm font-medium text-muted-foreground">
+                    <span>Sessão De</span>
+                    <span>Sessão Até</span>
+                    <span>Valor (R$)</span>
+                    <span></span>
+                  </div>
+                  {pricingRules.map((rule, index) => (
+                    <div key={index} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={rule.sessionFrom}
+                        onChange={(e) => updatePricingRule(index, 'sessionFrom', e.target.value)}
+                        placeholder="1"
+                      />
+                      <Input
+                        type="number"
+                        min="1"
+                        value={rule.sessionTo}
+                        onChange={(e) => updatePricingRule(index, 'sessionTo', e.target.value)}
+                        placeholder="12"
+                      />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={rule.valor}
+                        onChange={(e) => updatePricingRule(index, 'valor', e.target.value)}
+                        placeholder="150.00"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removePricingRule(index)}
+                        disabled={pricingRules.length <= 1}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={addPricingRule} className="w-full">
+                    <Plus className="h-4 w-4 mr-2" /> Adicionar Faixa
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Sessões não cobertas por nenhuma faixa usarão o valor padrão (R$ {pricingMentor?.valorSessao ? Number(pricingMentor.valorSessao).toFixed(2) : '0.00'}).
+                    Exemplo: Sessões 1 e 12 = R$ 150, Sessões 2 a 11 = R$ 100.
+                  </p>
+                </>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setPricingOpen(false)}>Cancelar</Button>
+              <Button onClick={handlePricingSave} disabled={setPricingMutation.isPending}>
+                {setPricingMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar Precificação"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Dialog de Edição de Mentor */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
