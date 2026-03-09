@@ -2155,7 +2155,7 @@
 ## Fase 1 - Melhorias e Otimização
 - [x] A6: Sistema de precificação flexível por sessão no cadastro do mentor
 - [x] A7: Campos Tempo de Contrato e Turma nos 2 formatos de cadastro do aluno + formulário de edição
-- [ ] B1: Redesign da seleção de tarefa no Registro de Mentoria
-- [ ] B3: Criar área de Configurações do Mentor (Perfil, Agenda, Agendamentos, Notificações)
-- [ ] B4: Simplificar Dashboard do Mentor (remover abas redundantes)
-- [ ] B5: Relatório Gerencial para o mentor
+- [x] B1: Redesign da seleção de tarefa no Registro de Mentoria (4 modos: Biblioteca, Personalizar, Livre, Sem Tarefa)
+- [x] B3: Criar área de Configurações do Mentor (Perfil, Agenda, Agendamentos, Notificações)
+- [x] B4: Simplificar Dashboard do Mentor (remover abas redundantes, layout limpo com cards, gráficos, próximos agendamentos e alertas)
+- [x] B5: Relatório Gerencial para o mentor (resumo geral, sessões por mês, indicadores V2 + atalhos rápidos)

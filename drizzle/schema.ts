@@ -222,6 +222,9 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   mensagemAluno: text("mensagemAluno"),
   taskId: int("taskId"),
   taskDeadline: date("taskDeadline"),
+  customTaskTitle: varchar("customTaskTitle", { length: 500 }), // Título da tarefa personalizada/livre
+  customTaskDescription: text("customTaskDescription"), // Descrição da tarefa personalizada/livre
+  taskMode: mysqlEnum("taskMode", ["biblioteca", "personalizada", "livre", "sem_tarefa"]).default("sem_tarefa"), // Modo de seleção da tarefa
   relatoAluno: text("relatoAluno"),
   batchId: int("batchId"),
   // Campos de evidência (aluno envia link/imagem como prova da atividade)

@@ -47,6 +47,7 @@ import CursosDisponiveis from "./pages/admin/CursosDisponiveis";
 import CursosAluno from "./pages/aluno/CursosAluno";
 import AtividadesExtrasAdmin from "./pages/admin/AtividadesExtras";
 import AtividadesExtrasAluno from "./pages/aluno/AtividadesExtrasAluno";
+import MentorConfiguracoes from "./pages/MentorConfiguracoes";
 
 function Router() {
   return (
@@ -91,6 +92,7 @@ function Router() {
       <Route path={"/meus-cursos"} component={CursosAluno} />
       <Route path={"/atividades-extras"} component={AtividadesExtrasAdmin} />
       <Route path={"/minhas-atividades"} component={AtividadesExtrasAluno} />
+      <Route path={"/mentor/configuracoes"} component={MentorConfiguracoes} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -1137,6 +1137,48 @@ export const appRouter = router({
             const todosIndicadores = calcularIndicadoresTodosAlunos(mentoriasV2, eventosV2, performanceV2, ciclosPorAlunoReport, compIdToCodigoMapReport, casesDataReport);
             const indicadoresMap = new Map(todosIndicadores.map(i => [i.idUsuario, i]));
             
+            // Sheet 0: Resumo do Mentor (apenas para relatório gerencial de mentor)
+            const userConsultorIdForSheet = (ctx.user as any).consultorId;
+            if (input.type === 'manager' && userConsultorIdForSheet) {
+              const mentorInfo = consultorMap.get(userConsultorIdForSheet);
+              const mentorSessions = mentoringSessions.filter(s => reportAlunos.some(a => a.id === s.alunoId));
+              const totalPresente = mentorSessions.filter(s => s.presence === 'presente').length;
+              const totalAusente = mentorSessions.filter(s => s.presence === 'ausente').length;
+              const taxaPresenca = mentorSessions.length > 0 ? ((totalPresente / mentorSessions.length) * 100).toFixed(1) : '0.0';
+              
+              // Sessões por mês
+              const sessoesPorMes = new Map<string, number>();
+              for (const s of mentorSessions) {
+                if (s.sessionDate) {
+                  const d = new Date(s.sessionDate);
+                  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                  sessoesPorMes.set(key, (sessoesPorMes.get(key) || 0) + 1);
+                }
+              }
+              
+              const resumoData = [{
+                'Mentor': mentorInfo?.name || ctx.user.name || '',
+                'Total de Alunos': reportAlunos.length,
+                'Total de Sessões': mentorSessions.length,
+                'Sessões com Presença': totalPresente,
+                'Sessões com Ausência': totalAusente,
+                'Taxa de Presença (%)': taxaPresenca,
+                'Período': `${input.dateFrom || 'Início'} a ${input.dateTo || 'Atual'}`,
+                'Data de Emissão': dataEmissao,
+              }];
+              const wsResumo = XLSX.utils.json_to_sheet(resumoData);
+              XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo Geral');
+              
+              // Aba extra: Sessões por Mês
+              if (sessoesPorMes.size > 0) {
+                const sessoesMesData = Array.from(sessoesPorMes.entries())
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([mes, qtd]) => ({ 'Mês': mes, 'Sessões Realizadas': qtd }));
+                const wsMes = XLSX.utils.json_to_sheet(sessoesMesData);
+                XLSX.utils.book_append_sheet(wb, wsMes, 'Sessões por Mês');
+              }
+            }
+            
             // Sheet 1: Alunos com Indicadores V2
             const sheetName1 = input.type === 'manager' ? 'Equipe' : 'Todos os Alunos';
             const alunosComIndicadores = reportAlunos.map(a => {
@@ -2770,6 +2812,9 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         taskDeadline: z.string().nullable().optional(),
         taskStatus: z.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
         presence: z.enum(["presente", "ausente"]).optional(),
+        customTaskTitle: z.string().nullable().optional(),
+        customTaskDescription: z.string().nullable().optional(),
+        taskMode: z.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
       }))
       .mutation(async ({ input }) => {
         const { sessionId, ...data } = input;
@@ -2790,6 +2835,9 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         mensagemAluno: z.string().optional(),
         taskId: z.number().nullable().optional(),
         taskDeadline: z.string().nullable().optional(),
+        customTaskTitle: z.string().nullable().optional(),
+        customTaskDescription: z.string().nullable().optional(),
+        taskMode: z.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // Buscar consultor vinculado ao usuário logado
@@ -2836,6 +2884,9 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           mensagemAluno: input.mensagemAluno,
           taskId: input.taskId ?? null,
           taskDeadline: input.taskDeadline ?? null,
+          customTaskTitle: input.customTaskTitle ?? null,
+          customTaskDescription: input.customTaskDescription ?? null,
+          taskMode: input.taskMode ?? "sem_tarefa",
         });
 
         // Notificar o aluno sobre a nova sessão registrada (Item 7)

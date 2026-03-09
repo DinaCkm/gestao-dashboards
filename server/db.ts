@@ -703,6 +703,9 @@ export async function updateMentoringSession(sessionId: number, data: {
   evidenceImageKey?: string | null;
   submittedAt?: Date | null;
   validatedBy?: number | null;
+  customTaskTitle?: string | null;
+  customTaskDescription?: string | null;
+  taskMode?: "biblioteca" | "personalizada" | "livre" | "sem_tarefa";
   validatedAt?: Date | null;
 }): Promise<boolean> {
   const db = await getDb();
@@ -724,6 +727,9 @@ export async function updateMentoringSession(sessionId: number, data: {
   if (data.submittedAt !== undefined) updateData.submittedAt = data.submittedAt;
   if (data.validatedBy !== undefined) updateData.validatedBy = data.validatedBy;
   if (data.validatedAt !== undefined) updateData.validatedAt = data.validatedAt;
+  if (data.customTaskTitle !== undefined) updateData.customTaskTitle = data.customTaskTitle;
+  if (data.customTaskDescription !== undefined) updateData.customTaskDescription = data.customTaskDescription;
+  if (data.taskMode !== undefined) updateData.taskMode = data.taskMode;
   
   if (Object.keys(updateData).length === 0) return true;
   
@@ -748,6 +754,9 @@ export async function createMentoringSession(data: {
   mensagemAluno?: string;
   taskId?: number | null;
   taskDeadline?: string | null;
+  customTaskTitle?: string | null;
+  customTaskDescription?: string | null;
+  taskMode?: "biblioteca" | "personalizada" | "livre" | "sem_tarefa";
 }): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -767,6 +776,9 @@ export async function createMentoringSession(data: {
     mensagemAluno: data.mensagemAluno ?? null,
     taskId: data.taskId ?? null,
     taskDeadline: data.taskDeadline as any,
+    customTaskTitle: data.customTaskTitle ?? null,
+    customTaskDescription: data.customTaskDescription ?? null,
+    taskMode: data.taskMode ?? "sem_tarefa",
   });
   return result[0].insertId;
 }

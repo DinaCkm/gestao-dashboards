@@ -185,6 +185,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas", roles: ["manager"], requireConsultorId: true },
   { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas", roles: ["manager"], requireConsultorId: true },
   { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorId: true },
+  { icon: Settings, label: "Configurações", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorId: true },
   
   // === GERENTE DE EMPRESA ===
   { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], hideIfConsultorId: true },
@@ -631,7 +632,7 @@ function DashboardLayoutContent({
                 <DropdownMenuItem
                   onClick={() => {
                     if (hasConsultorId) {
-                      setLocation("/dashboard/mentor");
+                      setLocation("/mentor/configuracoes");
                     } else if (user?.role === 'user') {
                       setLocation("/meu-dashboard");
                     } else {

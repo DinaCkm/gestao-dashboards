@@ -37,7 +37,11 @@ import {
   Send,
   FileText,
   Image as ImageIcon,
-  Snowflake
+  Snowflake,
+  Library,
+  Pencil,
+  FileEdit,
+  Ban
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -71,6 +75,13 @@ export default function RegistroMentoria() {
   const [newTaskId, setNewTaskId] = useState<number | null>(null);
   const [newTaskDeadline, setNewTaskDeadline] = useState<string>("");
   const [taskSearch, setTaskSearch] = useState<string>("");
+  // B1: Novos estados para modos de tarefa
+  const [newTaskMode, setNewTaskMode] = useState<"biblioteca" | "personalizada" | "livre" | "sem_tarefa">("sem_tarefa");
+  const [newCustomTaskTitle, setNewCustomTaskTitle] = useState<string>("");
+  const [newCustomTaskDescription, setNewCustomTaskDescription] = useState<string>("");
+  const [editTaskMode, setEditTaskMode] = useState<"biblioteca" | "personalizada" | "livre" | "sem_tarefa">("sem_tarefa");
+  const [editCustomTaskTitle, setEditCustomTaskTitle] = useState<string>("");
+  const [editCustomTaskDescription, setEditCustomTaskDescription] = useState<string>("");
 
   // Queries
   const { data: allPrograms = [] } = trpc.programs.list.useQuery(undefined, { enabled: isAdmin });
@@ -206,6 +217,9 @@ export default function RegistroMentoria() {
     setEditTaskDeadline(session.taskDeadline ? new Date(session.taskDeadline).toISOString().split('T')[0] : "");
     setEditTaskStatus(session.taskStatus || "");
     setEditPresence(session.presence || "");
+    setEditTaskMode(session.taskMode || "sem_tarefa");
+    setEditCustomTaskTitle(session.customTaskTitle || "");
+    setEditCustomTaskDescription(session.customTaskDescription || "");
   };
 
   const handleSave = () => {
@@ -221,6 +235,9 @@ export default function RegistroMentoria() {
       taskDeadline: editTaskDeadline || null,
       taskStatus: editTaskStatus as any || undefined,
       presence: editPresence as any || undefined,
+      taskMode: editTaskMode,
+      customTaskTitle: editCustomTaskTitle || null,
+      customTaskDescription: editCustomTaskDescription || null,
     });
   };
 
@@ -242,6 +259,9 @@ export default function RegistroMentoria() {
     setNewTaskId(null);
     setNewTaskDeadline("");
     setTaskSearch("");
+    setNewTaskMode("sem_tarefa");
+    setNewCustomTaskTitle("");
+    setNewCustomTaskDescription("");
   };
 
   const handleCreateSession = () => {
@@ -261,6 +281,9 @@ export default function RegistroMentoria() {
       mensagemAluno: newMensagemAluno || undefined,
       taskId: newTaskId,
       taskDeadline: newTaskDeadline || null,
+      taskMode: newTaskMode,
+      customTaskTitle: newCustomTaskTitle || null,
+      customTaskDescription: newCustomTaskDescription || null,
     });
   };
 
@@ -321,104 +344,264 @@ export default function RegistroMentoria() {
     </div>
   );
 
-  // Task selector component - grouped by competência in accordion/leque
-  const TaskSelector = ({ value, onChange, deadline, onDeadlineChange }: { 
+  // B1: Task selector component with 4 modes
+  const TaskSelector = ({ 
+    value, onChange, deadline, onDeadlineChange,
+    taskMode, onTaskModeChange,
+    customTitle, onCustomTitleChange,
+    customDescription, onCustomDescriptionChange
+  }: { 
     value: number | null; onChange: (v: number | null) => void;
     deadline: string; onDeadlineChange: (v: string) => void;
+    taskMode: "biblioteca" | "personalizada" | "livre" | "sem_tarefa";
+    onTaskModeChange: (v: "biblioteca" | "personalizada" | "livre" | "sem_tarefa") => void;
+    customTitle: string; onCustomTitleChange: (v: string) => void;
+    customDescription: string; onCustomDescriptionChange: (v: string) => void;
   }) => {
     const selectedTask = taskLibrary.find(t => t.id === value);
+    
+    const TASK_MODES = [
+      { key: "biblioteca" as const, label: "Biblioteca", icon: Library, color: "border-blue-500 bg-blue-50 text-blue-800", desc: "Selecionar da biblioteca de ações" },
+      { key: "personalizada" as const, label: "Personalizar", icon: Pencil, color: "border-purple-500 bg-purple-50 text-purple-800", desc: "Adaptar uma ação da biblioteca" },
+      { key: "livre" as const, label: "Texto Livre", icon: FileEdit, color: "border-amber-500 bg-amber-50 text-amber-800", desc: "Criar tarefa do zero" },
+      { key: "sem_tarefa" as const, label: "Sem Tarefa", icon: Ban, color: "border-gray-500 bg-gray-50 text-gray-800", desc: "Nenhuma tarefa nesta sessão" },
+    ];
+
     return (
       <div className="space-y-3">
         <Label className="flex items-center gap-2">
           <BookOpen className="h-4 w-4 text-[#0A1E3E]" />
-          Tarefa da Biblioteca
+          Atividade Prática / Tarefa
         </Label>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Buscar por competência ou nome da ação..."
-            value={taskSearch}
-            onChange={(e) => setTaskSearch(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="max-h-64 overflow-y-auto border rounded-lg">
-          {/* Sem tarefa */}
-          <button
-            type="button"
-            onClick={() => { onChange(null); setExpandedComp(null); }}
-            className={`w-full text-left px-3 py-2 text-sm border-b hover:bg-gray-50 ${!value ? 'bg-blue-50 font-medium' : ''}`}
-          >
-            Sem tarefa
-          </button>
-          {/* Competências em accordion */}
-          {competenciaNames.map(comp => {
-            const tasks = groupedTasks[comp];
-            const isExpanded = expandedComp === comp;
-            const hasSelected = tasks.some(t => t.id === value);
+        
+        {/* Mode selector - 4 buttons */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {TASK_MODES.map(mode => {
+            const Icon = mode.icon;
+            const isActive = taskMode === mode.key;
             return (
-              <div key={comp}>
-                <button
-                  type="button"
-                  onClick={() => setExpandedComp(isExpanded ? null : comp)}
-                  className={`w-full text-left px-3 py-2.5 text-sm border-b flex items-center justify-between hover:bg-gray-50 transition-colors ${
-                    hasSelected ? 'bg-blue-50/50' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
-                    <span className="font-semibold text-[#0A1E3E]">{comp}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {tasks.length} {tasks.length === 1 ? 'ação' : 'ações'}
-                    </Badge>
-                  </div>
-                  {hasSelected && <CheckCircle2 className="h-4 w-4 text-blue-600" />}
-                </button>
-                {isExpanded && (
-                  <div className="bg-gray-50/50">
-                    {tasks.map(task => (
-                      <button
-                        key={task.id}
-                        type="button"
-                        onClick={() => onChange(task.id)}
-                        className={`w-full text-left pl-8 pr-3 py-2 text-sm border-b hover:bg-blue-50/50 transition-colors ${
-                          value === task.id ? 'bg-blue-100 font-medium border-l-2 border-l-blue-500' : ''
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {value === task.id ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                          ) : (
-                            <Target className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                          )}
-                          <span>{task.nome}</span>
-                        </div>
-                        {task.resumo && (
-                          <p className="text-xs text-gray-500 mt-0.5 pl-5.5 line-clamp-1">{task.resumo}</p>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <button
+                key={mode.key}
+                type="button"
+                onClick={() => {
+                  onTaskModeChange(mode.key);
+                  if (mode.key === "sem_tarefa") {
+                    onChange(null);
+                    onCustomTitleChange("");
+                    onCustomDescriptionChange("");
+                  }
+                  if (mode.key === "livre") {
+                    onChange(null);
+                  }
+                }}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all text-xs ${
+                  isActive ? mode.color + ' ring-1 ring-offset-1' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-600'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="font-medium">{mode.label}</span>
+              </button>
             );
           })}
-          {competenciaNames.length === 0 && (
-            <div className="p-4 text-center text-sm text-gray-500">
-              Nenhuma tarefa encontrada
-            </div>
-          )}
         </div>
-        {/* Detalhes da tarefa selecionada */}
-        {selectedTask && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
-            <p className="font-medium text-sm text-[#0A1E3E]">{selectedTask.competencia}: {selectedTask.nome}</p>
-            {selectedTask.resumo && <p className="text-xs text-gray-600"><strong>Resumo:</strong> {selectedTask.resumo}</p>}
-            {selectedTask.oQueFazer && <p className="text-xs text-gray-600"><strong>O que fazer:</strong> {selectedTask.oQueFazer}</p>}
-            {selectedTask.oQueGanha && <p className="text-xs text-gray-600"><strong>O que o aluno ganha:</strong> {selectedTask.oQueGanha}</p>}
+
+        {/* Mode: Biblioteca - buscar e selecionar da biblioteca */}
+        {taskMode === "biblioteca" && (
+          <div className="space-y-2 border rounded-lg p-3 bg-blue-50/30">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar por competência ou nome da ação..."
+                value={taskSearch}
+                onChange={(e) => setTaskSearch(e.target.value)}
+                className="pl-10 bg-white"
+              />
+            </div>
+            <div className="max-h-52 overflow-y-auto border rounded-lg bg-white">
+              {competenciaNames.map(comp => {
+                const tasks = groupedTasks[comp];
+                const isExpanded = expandedComp === comp;
+                const hasSelected = tasks.some(t => t.id === value);
+                return (
+                  <div key={comp}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedComp(isExpanded ? null : comp)}
+                      className={`w-full text-left px-3 py-2 text-sm border-b flex items-center justify-between hover:bg-gray-50 transition-colors ${
+                        hasSelected ? 'bg-blue-50/50' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`transition-transform text-xs ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                        <span className="font-semibold text-[#0A1E3E] text-sm">{comp}</span>
+                        <Badge variant="secondary" className="text-[10px]">{tasks.length}</Badge>
+                      </div>
+                      {hasSelected && <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />}
+                    </button>
+                    {isExpanded && (
+                      <div className="bg-gray-50/50">
+                        {tasks.map(task => (
+                          <button
+                            key={task.id}
+                            type="button"
+                            onClick={() => onChange(task.id)}
+                            className={`w-full text-left pl-7 pr-3 py-1.5 text-sm border-b hover:bg-blue-50/50 transition-colors ${
+                              value === task.id ? 'bg-blue-100 font-medium border-l-2 border-l-blue-500' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {value === task.id ? (
+                                <CheckCircle2 className="h-3 w-3 text-blue-600 shrink-0" />
+                              ) : (
+                                <Target className="h-3 w-3 text-gray-400 shrink-0" />
+                              )}
+                              <span className="text-sm">{task.nome}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {competenciaNames.length === 0 && (
+                <div className="p-3 text-center text-sm text-gray-500">Nenhuma tarefa encontrada</div>
+              )}
+            </div>
+            {selectedTask && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-1">
+                <p className="font-medium text-sm text-[#0A1E3E]">{selectedTask.competencia}: {selectedTask.nome}</p>
+                {selectedTask.resumo && <p className="text-xs text-gray-600"><strong>Resumo:</strong> {selectedTask.resumo}</p>}
+                {selectedTask.oQueFazer && <p className="text-xs text-gray-600"><strong>O que fazer:</strong> {selectedTask.oQueFazer}</p>}
+              </div>
+            )}
           </div>
         )}
-        {value && (
+
+        {/* Mode: Personalizar - selecionar da biblioteca + editar título/descrição */}
+        {taskMode === "personalizada" && (
+          <div className="space-y-2 border rounded-lg p-3 bg-purple-50/30">
+            <p className="text-xs text-purple-700 font-medium">Selecione uma ação da biblioteca como base e personalize:</p>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar ação base..."
+                value={taskSearch}
+                onChange={(e) => setTaskSearch(e.target.value)}
+                className="pl-10 bg-white"
+              />
+            </div>
+            <div className="max-h-40 overflow-y-auto border rounded-lg bg-white">
+              {competenciaNames.map(comp => {
+                const tasks = groupedTasks[comp];
+                const isExpanded = expandedComp === comp;
+                const hasSelected = tasks.some(t => t.id === value);
+                return (
+                  <div key={comp}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedComp(isExpanded ? null : comp)}
+                      className={`w-full text-left px-3 py-2 text-sm border-b flex items-center justify-between hover:bg-gray-50 transition-colors ${
+                        hasSelected ? 'bg-purple-50/50' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`transition-transform text-xs ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                        <span className="font-semibold text-[#0A1E3E] text-sm">{comp}</span>
+                        <Badge variant="secondary" className="text-[10px]">{tasks.length}</Badge>
+                      </div>
+                      {hasSelected && <CheckCircle2 className="h-3.5 w-3.5 text-purple-600" />}
+                    </button>
+                    {isExpanded && (
+                      <div className="bg-gray-50/50">
+                        {tasks.map(task => (
+                          <button
+                            key={task.id}
+                            type="button"
+                            onClick={() => {
+                              onChange(task.id);
+                              // Pré-preencher com dados da biblioteca para personalização
+                              if (!customTitle) onCustomTitleChange(task.nome);
+                              if (!customDescription) onCustomDescriptionChange(task.resumo || task.oQueFazer || "");
+                            }}
+                            className={`w-full text-left pl-7 pr-3 py-1.5 text-sm border-b hover:bg-purple-50/50 transition-colors ${
+                              value === task.id ? 'bg-purple-100 font-medium border-l-2 border-l-purple-500' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {value === task.id ? (
+                                <CheckCircle2 className="h-3 w-3 text-purple-600 shrink-0" />
+                              ) : (
+                                <Target className="h-3 w-3 text-gray-400 shrink-0" />
+                              )}
+                              <span className="text-sm">{task.nome}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="space-y-2 pt-2 border-t border-purple-200">
+              <div>
+                <Label className="text-xs text-purple-700">Título personalizado</Label>
+                <Input
+                  placeholder="Ex: Praticar escuta ativa com a equipe"
+                  value={customTitle}
+                  onChange={(e) => onCustomTitleChange(e.target.value)}
+                  className="mt-1 bg-white"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-purple-700">Descrição / Instruções</Label>
+                <Textarea
+                  placeholder="Descreva o que o aluno deve fazer..."
+                  value={customDescription}
+                  onChange={(e) => onCustomDescriptionChange(e.target.value)}
+                  className="mt-1 bg-white min-h-[60px]"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mode: Livre - texto livre sem biblioteca */}
+        {taskMode === "livre" && (
+          <div className="space-y-2 border rounded-lg p-3 bg-amber-50/30">
+            <p className="text-xs text-amber-700 font-medium">Crie uma tarefa personalizada do zero:</p>
+            <div>
+              <Label className="text-xs text-amber-700">Título da tarefa</Label>
+              <Input
+                placeholder="Ex: Elaborar plano de ação para a equipe"
+                value={customTitle}
+                onChange={(e) => onCustomTitleChange(e.target.value)}
+                className="mt-1 bg-white"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-amber-700">Descrição / Instruções</Label>
+              <Textarea
+                placeholder="Descreva detalhadamente o que o aluno deve fazer, como entregar, etc."
+                value={customDescription}
+                onChange={(e) => onCustomDescriptionChange(e.target.value)}
+                className="mt-1 bg-white min-h-[80px]"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Mode: Sem Tarefa */}
+        {taskMode === "sem_tarefa" && (
+          <div className="border rounded-lg p-3 bg-gray-50 text-center">
+            <Ban className="h-6 w-6 text-gray-400 mx-auto mb-1" />
+            <p className="text-sm text-gray-500">Nenhuma tarefa será atribuída nesta sessão</p>
+          </div>
+        )}
+
+        {/* Data de entrega - aparece para todos os modos exceto sem_tarefa */}
+        {taskMode !== "sem_tarefa" && (
           <div>
             <Label>Data de Entrega da Tarefa</Label>
             <Input type="date" value={deadline} onChange={(e) => onDeadlineChange(e.target.value)} className="mt-1" />
@@ -714,6 +897,12 @@ export default function RegistroMentoria() {
                       onChange={setNewTaskId}
                       deadline={newTaskDeadline}
                       onDeadlineChange={setNewTaskDeadline}
+                      taskMode={newTaskMode}
+                      onTaskModeChange={setNewTaskMode}
+                      customTitle={newCustomTaskTitle}
+                      onCustomTitleChange={setNewCustomTaskTitle}
+                      customDescription={newCustomTaskDescription}
+                      onCustomDescriptionChange={setNewCustomTaskDescription}
                     />
                   </div>
 
@@ -824,7 +1013,18 @@ export default function RegistroMentoria() {
                             </div>
 
                             {/* Tarefa da Biblioteca */}
-                            <TaskSelector value={editTaskId} onChange={setEditTaskId} deadline={editTaskDeadline} onDeadlineChange={setEditTaskDeadline} />
+                            <TaskSelector 
+                              value={editTaskId} 
+                              onChange={setEditTaskId} 
+                              deadline={editTaskDeadline} 
+                              onDeadlineChange={setEditTaskDeadline}
+                              taskMode={editTaskMode}
+                              onTaskModeChange={setEditTaskMode}
+                              customTitle={editCustomTaskTitle}
+                              onCustomTitleChange={setEditCustomTaskTitle}
+                              customDescription={editCustomTaskDescription}
+                              onCustomDescriptionChange={setEditCustomTaskDescription}
+                            />
 
                             {/* Nível de Engajamento */}
                             <StageSelector value={selectedStage} onChange={setSelectedStage} />
@@ -1063,6 +1263,24 @@ export default function RegistroMentoria() {
                   </div>
                 </div>
                 
+                {/* B1: Detalhes da tarefa personalizada/livre */}
+                {(viewedSession as any).customTaskTitle && (
+                  <div className={`rounded-lg p-3 border ${
+                    (viewedSession as any).taskMode === 'personalizada' ? 'bg-purple-50 border-purple-200' 
+                    : (viewedSession as any).taskMode === 'livre' ? 'bg-amber-50 border-amber-200' 
+                    : 'bg-blue-50 border-blue-200'
+                  }`}>
+                    <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                      {(viewedSession as any).taskMode === 'personalizada' ? <Pencil className="h-3 w-3" /> : <FileEdit className="h-3 w-3" />}
+                      {(viewedSession as any).taskMode === 'personalizada' ? 'Tarefa Personalizada' : (viewedSession as any).taskMode === 'livre' ? 'Tarefa Livre' : 'Tarefa'}
+                    </p>
+                    <p className="font-medium text-sm">{(viewedSession as any).customTaskTitle}</p>
+                    {(viewedSession as any).customTaskDescription && (
+                      <p className="text-xs text-gray-600 mt-1 whitespace-pre-wrap">{(viewedSession as any).customTaskDescription}</p>
+                    )}
+                  </div>
+                )}
+
                 {viewedSession.feedback && (
                   <div>
                     <p className="text-xs text-gray-500 mb-1 font-medium">Feedback / Observações</p>

@@ -145,6 +145,48 @@ export default function ReportsPage() {
           </p>
         </div>
 
+        {/* Atalhos Rápidos para Mentores */}
+        {isMentor && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="gradient-card cursor-pointer hover:shadow-md transition-all" onClick={() => {
+              handleGenerateReport({
+                name: `Gerencial ${new Date().toLocaleDateString('pt-BR')}`,
+                type: 'manager',
+                format: 'excel',
+              });
+            }}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-primary/10">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Relatório Gerencial Rápido</p>
+                    <p className="text-sm text-muted-foreground">Consolidado de todos os seus mentorados (Excel)</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="gradient-card cursor-pointer hover:shadow-md transition-all" onClick={() => {
+              setReportType('individual');
+              setReportFormat('excel');
+              setReportName(`Individual ${new Date().toLocaleDateString('pt-BR')}`);
+            }}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-full bg-orange-100">
+                    <User className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Relatório Individual</p>
+                    <p className="text-sm text-muted-foreground">Selecione um aluno para gerar relatório detalhado</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Generate Report Card */}
         <Card className="gradient-card">
           <CardHeader>
@@ -287,7 +329,7 @@ export default function ReportsPage() {
               </h4>
               <p className="text-sm text-muted-foreground">
                 {reportType === "admin" && "Visão consolidada de todos os dados do sistema, incluindo métricas de todos os alunos, mentorias e eventos."}
-                {reportType === "manager" && "Dados da equipe da empresa, incluindo lista de alunos, sessões de mentoria e performance individual."}
+                {reportType === "manager" && (isMentor ? "Relatório consolidado de todos os seus mentorados: resumo geral, total de sessões, presença, indicadores V2 e sessões por mês." : "Dados da equipe da empresa, incluindo lista de alunos, sessões de mentoria e performance individual.")}
                 {reportType === "individual" && "Relatório Individual, mostra a performance do aluno com indicadores por ciclo, engajamento e evolução."}
               </p>
             </div>
