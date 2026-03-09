@@ -2103,3 +2103,4 @@
 - [x] Bug: Página Biblioteca de Tarefas não tem sidebar/DashboardLayout - sem navegação para sair
 - [x] Adicionar DashboardLayout na página CursosDisponiveis (admin)
 - [x] Adicionar AlunoLayout na página CursosAluno (aluno)
+- [x] Bug: Item 'Cursos' no menu lateral mostra badge 'Em breve' e toast placeholder em vez de navegar para /cursos

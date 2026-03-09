@@ -508,8 +508,8 @@ function DashboardLayoutContent({
                               <SidebarMenuSub>
                                 {group.items.map(item => {
                                   const isActive = isPathActive(item.path);
-                                  // Placeholder items (cursos, atividades extras)
-                                  const isPlaceholder = item.path === "/cursos" || item.path === "/atividades-extras";
+                                  // Placeholder items (atividades extras)
+                                  const isPlaceholder = item.path === "/atividades-extras";
                                   return (
                                     <SidebarMenuSubItem key={item.path}>
                                       <SidebarMenuSubButton
