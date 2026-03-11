@@ -861,12 +861,15 @@ export async function getEventsByProgramOrGlobal(programId: number): Promise<Eve
       .trim();
   };
   const coreTitle = (n: string): string => n.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '').trim();
+  // Deduplicar por core title + data (para não juntar aulas diferentes do mesmo tema em datas diferentes)
   const seen = new Map<string, Event>();
   const deduped: Event[] = [];
   for (const evt of allEvts) {
     const core = coreTitle(normTitle(evt.title));
-    if (!seen.has(core)) {
-      seen.set(core, evt);
+    const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
+    const dedupKey = `${core}|${dateStr}`;
+    if (!seen.has(dedupKey)) {
+      seen.set(dedupKey, evt);
       deduped.push(evt);
     }
   }
@@ -3174,9 +3177,11 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
   const deduplicatedProgramEvents: Event[] = [];
   for (const evt of allProgramEvents) {
     const core = extractCoreDedup(normalizeTitleDedup(evt.title));
-    const existing = seenCoresDedup.get(core);
+    const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
+    const dedupKey = `${core}|${dateStr}`;
+    const existing = seenCoresDedup.get(dedupKey);
     if (!existing) {
-      seenCoresDedup.set(core, evt);
+      seenCoresDedup.set(dedupKey, evt);
       deduplicatedProgramEvents.push(evt);
     } else {
       // Preferir o evento que tem participação
@@ -3185,7 +3190,7 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
       if (!existingPart && currentPart) {
         const idx = deduplicatedProgramEvents.indexOf(existing);
         if (idx >= 0) deduplicatedProgramEvents[idx] = evt;
-        seenCoresDedup.set(core, evt);
+        seenCoresDedup.set(dedupKey, evt);
       }
     }
   }
@@ -4348,14 +4353,16 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       .trim();
   };
 
-  // DEDUPLICAR eventos por título normalizado (manter o que tem participação, ou o primeiro)
+  // DEDUPLICAR eventos por título normalizado + data (manter o que tem participação, ou o primeiro)
   const seenCores = new Map<string, typeof allEvents[0]>();
   const deduplicatedEvents: typeof allEvents = [];
   for (const evt of allEvents) {
     const core = extractCore(normalizeTitle(evt.title));
-    const existing = seenCores.get(core);
+    const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
+    const dedupKey = `${core}|${dateStr}`;
+    const existing = seenCores.get(dedupKey);
     if (!existing) {
-      seenCores.set(core, evt);
+      seenCores.set(dedupKey, evt);
       deduplicatedEvents.push(evt);
     } else {
       // Se o evento atual tem participação e o existente não, substituir
@@ -4365,7 +4372,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
         // Substituir: remover o antigo e adicionar o novo
         const idx = deduplicatedEvents.indexOf(existing);
         if (idx >= 0) deduplicatedEvents[idx] = evt;
-        seenCores.set(core, evt);
+        seenCores.set(dedupKey, evt);
       }
       // Se ambos têm ou ambos não têm participação, manter o primeiro (já está no array)
     }
@@ -6984,4 +6991,54 @@ export async function getAllAssessmentCompetenciasForReport() {
     microInicio: assessmentCompetencias.microInicio,
     microTermino: assessmentCompetencias.microTermino,
   }).from(assessmentCompetencias);
+}
+
+
+// ============ MACRO INICIO POR ALUNO (para filtrar eventos na unificação) ============
+
+/**
+ * Retorna um Map<alunoId, Date> com a data de início do macrociclo mais antigo de cada aluno.
+ * Usado para filtrar eventos na unificação: só marcar ausência em eventos a partir do macroInicio do aluno.
+ * Se o aluno tem contratoInicio, usa o menor entre contratoInicio e macroInicio.
+ */
+export async function getAlunoMacroInicioMap(): Promise<Map<number, Date>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  
+  // Buscar macroInicio de todos os PDIs ativos
+  const allPdis = await db.select({
+    alunoId: assessmentPdi.alunoId,
+    macroInicio: assessmentPdi.macroInicio,
+  }).from(assessmentPdi).where(eq(assessmentPdi.status, 'ativo'));
+  
+  // Buscar contratoInicio dos alunos
+  const allAlunos = await db.select({
+    id: alunos.id,
+    contratoInicio: alunos.contratoInicio,
+  }).from(alunos);
+  const alunoContratoMap = new Map(allAlunos.map(a => [a.id, a.contratoInicio]));
+  
+  const result = new Map<number, Date>();
+  
+  for (const pdi of allPdis) {
+    const macroDate = new Date(pdi.macroInicio);
+    const existing = result.get(pdi.alunoId);
+    // Usar o macroInicio mais antigo (caso tenha múltiplos PDIs)
+    if (!existing || macroDate < existing) {
+      result.set(pdi.alunoId, macroDate);
+    }
+  }
+  
+  // Se o aluno tem contratoInicio e é anterior ao macroInicio, usar contratoInicio
+  for (const [alunoId, macroDate] of Array.from(result.entries())) {
+    const contrato = alunoContratoMap.get(alunoId);
+    if (contrato) {
+      const contratoDate = new Date(contrato);
+      if (contratoDate < macroDate) {
+        result.set(alunoId, contratoDate);
+      }
+    }
+  }
+  
+  return result;
 }

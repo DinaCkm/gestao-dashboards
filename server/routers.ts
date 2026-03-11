@@ -1094,7 +1094,7 @@ export const appRouter = router({
                 presenca: ep.status as 'presente' | 'ausente',
               });
             }
-            // === UNIFICAÇÃO: Adicionar eventos ausentes ===
+            // === UNIFICAÇÃO: Adicionar eventos ausentes (filtrado por macroInicio) ===
             {
               const _epEvtIds3 = new Map<number, Set<number>>();
               for (const _ep3 of eventParticipations) {
@@ -1105,14 +1105,21 @@ export const appRouter = router({
               for (const _prog3 of programsList) {
                 _evtsByProg3.set(_prog3.id, await db.getEventsByProgramOrGlobal(_prog3.id));
               }
+              const _macroInicioMap3 = await db.getAlunoMacroInicioMap();
               for (const _a3 of alunosList) {
                 if (!_a3.programId) continue;
                 const _progEvts3 = _evtsByProg3.get(_a3.programId) || [];
                 const _participated3 = _epEvtIds3.get(_a3.id) || new Set();
                 const _aIdStr3 = _a3.externalId || String(_a3.id);
                 const _prog3b = programMap.get(_a3.programId);
+                const _macroInicio3 = _macroInicioMap3.get(_a3.id);
                 for (const _evt3 of _progEvts3) {
                   if (!_participated3.has(_evt3.id)) {
+                    // Só marcar ausência se o evento é posterior ao macroInicio do aluno
+                    if (_macroInicio3 && _evt3.eventDate) {
+                      const evtDate = new Date(_evt3.eventDate);
+                      if (evtDate < _macroInicio3) continue;
+                    }
                     eventosV2.push({
                       idUsuario: _aIdStr3,
                       nomeAluno: _a3.name,
@@ -1671,7 +1678,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           presenca: participation.status as 'presente' | 'ausente'
         });
       }
-      // === UNIFICAÇÃO: Adicionar eventos ausentes para alunos sem registro de participação ===
+      // === UNIFICAÇÃO: Adicionar eventos ausentes (filtrado por macroInicio) ===
       {
         const _epEvtIds = new Map<number, Set<number>>();
         for (const _ep of eventParticipations) {
@@ -1682,14 +1689,21 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         for (const _prog of programsList) {
           _evtsByProg.set(_prog.id, await db.getEventsByProgramOrGlobal(_prog.id));
         }
+        const _macroInicioMap = await db.getAlunoMacroInicioMap();
         for (const _a of alunosList) {
           if (!_a.programId) continue;
           const _progEvts = _evtsByProg.get(_a.programId) || [];
           const _participated = _epEvtIds.get(_a.id) || new Set();
           const _aIdStr = _a.externalId || String(_a.id);
           const _prog = programMap.get(_a.programId);
+          const _macroInicio = _macroInicioMap.get(_a.id);
           for (const _evt of _progEvts) {
             if (!_participated.has(_evt.id)) {
+              // Só marcar ausência se o evento é posterior ao macroInicio do aluno
+              if (_macroInicio && _evt.eventDate) {
+                const evtDate = new Date(_evt.eventDate);
+                if (evtDate < _macroInicio) continue;
+              }
               eventos.push({
                 idUsuario: _aIdStr,
                 nomeAluno: _a.name,
@@ -1793,7 +1807,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
             presenca: participation.status as 'presente' | 'ausente'
           });
         }
-      // === UNIFICAÇÃO: Adicionar eventos ausentes para alunos sem registro de participação ===
+      // === UNIFICAÇÃO: Adicionar eventos ausentes (filtrado por macroInicio) ===
       {
         const _epEvtIds = new Map<number, Set<number>>();
         for (const _ep of eventParticipations) {
@@ -1804,14 +1818,20 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         for (const _prog of programsList) {
           _evtsByProg.set(_prog.id, await db.getEventsByProgramOrGlobal(_prog.id));
         }
+        const _macroInicioMap = await db.getAlunoMacroInicioMap();
         for (const _a of alunosList) {
           if (!_a.programId) continue;
           const _progEvts = _evtsByProg.get(_a.programId) || [];
           const _participated = _epEvtIds.get(_a.id) || new Set();
           const _aIdStr = _a.externalId || String(_a.id);
           const _prog = programMap.get(_a.programId);
+          const _macroInicio = _macroInicioMap.get(_a.id);
           for (const _evt of _progEvts) {
             if (!_participated.has(_evt.id)) {
+              if (_macroInicio && _evt.eventDate) {
+                const evtDate = new Date(_evt.eventDate);
+                if (evtDate < _macroInicio) continue;
+              }
               eventos.push({
                 idUsuario: _aIdStr,
                 nomeAluno: _a.name,
@@ -1989,7 +2009,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
             presenca: participation.status as 'presente' | 'ausente'
           });
         }
-      // === UNIFICAÇÃO: Adicionar eventos ausentes para alunos sem registro de participação ===
+      // === UNIFICAÇÃO: Adicionar eventos ausentes (filtrado por macroInicio) ===
       {
         const _epEvtIds = new Map<number, Set<number>>();
         for (const _ep of eventParticipations) {
@@ -2000,14 +2020,20 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         for (const _prog of programsList) {
           _evtsByProg.set(_prog.id, await db.getEventsByProgramOrGlobal(_prog.id));
         }
+        const _macroInicioMap = await db.getAlunoMacroInicioMap();
         for (const _a of alunosList) {
           if (!_a.programId) continue;
           const _progEvts = _evtsByProg.get(_a.programId) || [];
           const _participated = _epEvtIds.get(_a.id) || new Set();
           const _aIdStr = _a.externalId || String(_a.id);
           const _prog = programMap.get(_a.programId);
+          const _macroInicio = _macroInicioMap.get(_a.id);
           for (const _evt of _progEvts) {
             if (!_participated.has(_evt.id)) {
+              if (_macroInicio && _evt.eventDate) {
+                const evtDate = new Date(_evt.eventDate);
+                if (evtDate < _macroInicio) continue;
+              }
               eventos.push({
                 idUsuario: _aIdStr,
                 nomeAluno: _a.name,
@@ -2108,7 +2134,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
             presenca: participation.status as 'presente' | 'ausente'
           });
         }
-        // === UNIFICAÇÃO: Adicionar eventos ausentes para alunos sem registro de participação ===
+        // === UNIFICAÇÃO: Adicionar eventos ausentes (filtrado por macroInicio) ===
         {
           const _epEvtIds = new Map<number, Set<number>>();
           for (const _ep of eventParticipations) {
@@ -2119,14 +2145,20 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           for (const _prog of programsList) {
             _evtsByProg.set(_prog.id, await db.getEventsByProgramOrGlobal(_prog.id));
           }
+          const _macroInicioMap = await db.getAlunoMacroInicioMap();
           for (const _a of alunosList) {
             if (!_a.programId) continue;
             const _progEvts = _evtsByProg.get(_a.programId) || [];
             const _participated = _epEvtIds.get(_a.id) || new Set();
             const _aIdStr = _a.externalId || String(_a.id);
             const _prog2 = programMap.get(_a.programId);
+            const _macroInicio = _macroInicioMap.get(_a.id);
             for (const _evt of _progEvts) {
               if (!_participated.has(_evt.id)) {
+                if (_macroInicio && _evt.eventDate) {
+                  const evtDate = new Date(_evt.eventDate);
+                  if (evtDate < _macroInicio) continue;
+                }
                 eventos.push({
                   idUsuario: _aIdStr,
                   nomeAluno: _a.name,
@@ -2263,7 +2295,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
             presenca: participation.status as 'presente' | 'ausente'
           });
         }
-        // === UNIFICAÇÃO: Adicionar eventos ausentes para alunos sem registro de participação ===
+        // === UNIFICAÇÃO: Adicionar eventos ausentes (filtrado por macroInicio) ===
         {
           const _epEvtIds = new Map<number, Set<number>>();
           for (const _ep of eventParticipations) {
@@ -2274,14 +2306,20 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           for (const _prog of programsList) {
             _evtsByProg.set(_prog.id, await db.getEventsByProgramOrGlobal(_prog.id));
           }
+          const _macroInicioMap = await db.getAlunoMacroInicioMap();
           for (const _a of alunosList) {
             if (!_a.programId) continue;
             const _progEvts = _evtsByProg.get(_a.programId) || [];
             const _participated = _epEvtIds.get(_a.id) || new Set();
             const _aIdStr = _a.externalId || String(_a.id);
             const _prog2 = programMap.get(_a.programId);
+            const _macroInicio = _macroInicioMap.get(_a.id);
             for (const _evt of _progEvts) {
               if (!_participated.has(_evt.id)) {
+                if (_macroInicio && _evt.eventDate) {
+                  const evtDate = new Date(_evt.eventDate);
+                  if (evtDate < _macroInicio) continue;
+                }
                 eventos.push({
                   idUsuario: _aIdStr,
                   nomeAluno: _a.name,
@@ -2447,11 +2485,10 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         });
       }
 
-      // === UNIFICAÇÃO DE FONTE DE DADOS DE EVENTOS ===
+      // === UNIFICAÇÃO DE FONTE DE DADOS DE EVENTOS (filtrado por macroInicio) ===
       // Para cada aluno, adicionar registros de 'ausente' para eventos do programa
       // onde o aluno NÃO tem registro de participação.
-      // Isso garante que o calculador V2 (e os cards de resumo) considerem TODOS os
-      // eventos do programa, não apenas aqueles com registro em eventParticipation.
+      // Só marca ausência em eventos cuja data seja >= macroInicio do aluno.
       const eventParticipationEventIds = new Map<number, Set<number>>(); // alunoId -> Set<eventId>
       for (const ep of allEventParticipations) {
         if (!eventParticipationEventIds.has(ep.alunoId)) {
@@ -2465,6 +2502,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         const progEvents = await db.getEventsByProgramOrGlobal(prog.id);
         eventsByProgram.set(prog.id, progEvents);
       }
+      const macroInicioMapMeuDash = await db.getAlunoMacroInicioMap();
       // Para cada aluno, adicionar eventos ausentes (sem registro de participação)
       for (const a of alunosList) {
         if (!a.programId) continue;
@@ -2472,8 +2510,14 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         const alunoParticipatedEvents = eventParticipationEventIds.get(a.id) || new Set();
         const alunoIdStr = a.externalId || String(a.id);
         const program = programMap.get(a.programId);
+        const macroInicioAluno = macroInicioMapMeuDash.get(a.id);
         for (const evt of progEvents) {
           if (!alunoParticipatedEvents.has(evt.id)) {
+            // Só marcar ausência se o evento é posterior ao macroInicio do aluno
+            if (macroInicioAluno && evt.eventDate) {
+              const evtDate = new Date(evt.eventDate);
+              if (evtDate < macroInicioAluno) continue;
+            }
             eventos.push({
               idUsuario: alunoIdStr,
               nomeAluno: a.name,

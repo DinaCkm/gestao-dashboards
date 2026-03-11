@@ -2177,3 +2177,9 @@
 
 ## Bug - Autopercepção Joseane
 - [x] Corrigir mapa de autopercepção da Joseane que não aparece preenchido no Assessment do Onboarding (incluir Visão de Futuro no filtro de trilhas da Régua e do Mapa)
+
+## Bugs Reportados (11/03/2026)
+- [x] Bug: Cursos cadastrados pelo admin não aparecem para o aluno assistir (adicionado Cursos e Atividades ao menu AlunoLayout)
+- [x] Investigar: Verificar cálculo de webinares da Walbenia - CONFIRMADO BUG: unificação marca ausência em eventos anteriores ao macrociclo
+- [x] Bug: Corrigir unificação de eventos - filtrar eventos pela data de início do macrociclo do aluno (7 ocorrências corrigidas)
+- [x] Bug: Corrigir duplicatas de eventos na unificação - deduplicar por título + data (3 deduplicadores atualizados)
