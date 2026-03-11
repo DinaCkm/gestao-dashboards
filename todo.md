@@ -2189,3 +2189,4 @@
 - [x] Ajuste: Reverter filtro na lista de eventos do aluno - mostrar todos os eventos com campo dentroDoMacrociclo
 - [x] Ajuste: Cards de resumo contam apenas eventos dentroDoMacrociclo (não penaliza nem pontua fora)
 - [x] Feature: Badge visual nos eventos fora do período + explicação da lógica abaixo dos cards
+- [x] Ajuste: Ordenar lista de eventos por data decrescente (mais recentes primeiro)

@@ -4528,8 +4528,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       dentroDoMacrociclo,
     };
   }).sort((a, b) => {
-    // Ordenar: ausentes primeiro, depois por data decrescente
-    if (a.status !== b.status) return a.status === 'ausente' ? -1 : 1;
+    // Ordenar por data decrescente (mais recentes primeiro)
     const dateA = a.eventDate ? new Date(a.eventDate).getTime() : 0;
     const dateB = b.eventDate ? new Date(b.eventDate).getTime() : 0;
     return dateB - dateA;
