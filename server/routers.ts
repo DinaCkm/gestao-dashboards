@@ -1315,9 +1315,16 @@ export const appRouter = router({
               if (!ind) continue;
               const allCiclos = [...ind.ciclosFinalizados, ...ind.ciclosEmAndamento];
               for (const ciclo of allCiclos) {
+                // Formatar datas do ciclo
+                const fmtCicloDate = (d: string | undefined) => {
+                  if (!d) return '';
+                  try { return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR'); } catch { return d; }
+                };
                 indicadoresPorCiclo.push({
                   'Aluno': a.name || '',
                   'Ciclo': ciclo.nomeCiclo || '',
+                  'Início do Ciclo': fmtCicloDate(ciclo.dataInicio),
+                  'Fim do Ciclo': fmtCicloDate(ciclo.dataFim),
                   'Status': ciclo.status || '',
                   'Ind.1 Webinars': Math.round(ciclo.ind1_webinars),
                   'Ind.2 Avaliações': Math.round(ciclo.ind2_avaliacoes),

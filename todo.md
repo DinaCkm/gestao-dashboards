@@ -2203,3 +2203,6 @@
 
 ## Bug: Visualização DISC/Assessment no Onboarding concluído (11/03/2026)
 - [x] Corrigir: Joseane não consegue visualizar DISC, assessment e teste de autoconhecimento no Onboarding (etapas com cadeado não clicáveis quando onboarding concluído) - Stepper agora permite navegação livre quando readOnly, barra 100%, todas etapas clicáveis
+
+## Bug: Datas de macrociclos/microciclos no relatório Excel do gestor (11/03/2026)
+- [x] Corrigir: datas de início e fim dos macrociclos e microciclos não estão aparecendo no Excel exportado pelo gestor - Adicionadas colunas 'Início do Ciclo' e 'Fim do Ciclo' na aba 'Indicadores por Ciclo'
