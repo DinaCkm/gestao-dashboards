@@ -1,0 +1,20 @@
+{
+  "query": "SELECT a.id as alunoId, a.name, a.email, dr.id as discId, dr.scoreD, dr.scoreI, dr.scoreS, dr.scoreC FROM alunos a LEFT JOIN disc_resultados dr ON a.id = dr.alunoId WHERE a.name LIKE '%Joseane%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id as alunoId, a.name, a.email, dr.id as discId, dr.scoreD, dr.scoreI, dr.scoreS, dr.scoreC FROM alunos a LEFT JOIN disc_resultados dr ON a.id = dr.alunoId WHERE a.name LIKE '%Joseane%';",
+  "rows": [
+    {
+      "alunoId": "30066",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "discId": "NULL",
+      "scoreD": "NULL",
+      "scoreI": "NULL",
+      "scoreS": "NULL",
+      "scoreC": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "alunoId\tname\temail\tdiscId\tscoreD\tscoreI\tscoreS\tscoreC\n30066\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\tNULL\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 360
+}

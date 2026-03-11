@@ -1,0 +1,17 @@
+{
+  "query": "SELECT COUNT(DISTINCT alunoId) as total_alunos_com_disc, COUNT(*) as total_resultados FROM disc_resultados; SELECT COUNT(DISTINCT alunoId) as total_alunos_com_respostas FROM disc_respostas;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(DISTINCT alunoId) as total_alunos_com_disc, COUNT(*) as total_resultados FROM disc_resultados; SELECT COUNT(DISTINCT alunoId) as total_alunos_com_respostas FROM disc_respostas;",
+  "rows": [
+    {
+      "total_alunos_com_disc": "4",
+      "total_resultados": "4"
+    }
+  ],
+  "messages": [
+    "total_alunos_com_respostas",
+    "4"
+  ],
+  "stdout": "total_alunos_com_disc\ttotal_resultados\n4\t4\ntotal_alunos_com_respostas\n4\n",
+  "stderr": "",
+  "execution_time_ms": 499
+}

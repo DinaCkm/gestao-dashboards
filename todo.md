@@ -2171,3 +2171,6 @@
 - [x] Adicionar coluna Macrociclos (Trilhas) na aba equipe do relatório gerencial Excel
 - [x] Adicionar coluna Microciclos (Competências) na aba equipe do relatório gerencial Excel
 - [x] Coluna Turma já existia na aba equipe do relatório gerencial Excel
+
+## Desbloqueio Assessment Onboarding
+- [x] Permitir visualização do Assessment (DISC) mesmo quando Onboarding está concluído (forçar step=5 quando onboarding completo)

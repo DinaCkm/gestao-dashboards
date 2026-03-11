@@ -5472,6 +5472,10 @@ Responda APENAS em JSON com o formato:
         if (discCompleto && autopercepCompleta && mentoraEscolhida) step = 4; // Pula para agendamento
         if (discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito) step = 5; // Pula para 1º encontro
 
+        // Quando onboarding está completo, forçar step 5 para que todas as etapas
+        // apareçam como concluídas e o aluno possa navegar livremente em modo visualização
+        if (onboardingCompleto) step = 5;
+
         return {
           step,
           discCompleto,
