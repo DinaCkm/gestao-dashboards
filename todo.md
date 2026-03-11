@@ -2192,3 +2192,8 @@
 - [x] Ajuste: Ordenar lista de eventos por data decrescente (mais recentes primeiro)
 - [x] Investigar: Deduplicação de eventos - confirmado que a 1 ausência da Walbenia é o evento de HOJE (ainda não assistido), não é bug
 - [x] Feature: Botão de compartilhar no LinkedIn abaixo de cada evento com post pré-preenchido (#ecolider #desenvolvimento #ckmtalents @dinamakiyama)
+- [x] Investigar: Ruama tem 28 presenças e 0 ausências mas indicador de Webinars mostra 94% em vez de 100% (RESOLVIDO: dados corretos no banco após deduplicação - 28/28 = 100%, limpeza de 3 participações duplicadas)
+## Inclusão de scheduled_webinars na unificação de eventos (11/03/2026)
+- [x] Incluir eventos de scheduled_webinars na unificação de eventos do dashboard (meuDashboard, dashboardGeral, dashboardEmpresa, dashboardGestor, relatórios)
+- [x] Garantir que scheduled_webinars impactem corretamente o indicador de participação (Ind.1 Webinars)
+- [x] Testes vitest para validar a inclusão de scheduled_webinars na unificação (12 testes passando)

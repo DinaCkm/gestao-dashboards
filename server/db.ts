@@ -885,7 +885,8 @@ export async function getEventsByProgram(programId: number): Promise<Event[]> {
 
 /**
  * Busca eventos do programa OU eventos sem programa (programId NULL).
- * Mesma lógica usada em getWebinarsPendingAttendance para garantir consistência.
+ * Inclui scheduled_webinars (published/completed) que ainda não existem na tabela events,
+ * garantindo que webinars agendados pelo admin impactem o cálculo de participação nos dashboards.
  */
 export async function getEventsByProgramOrGlobal(programId: number): Promise<Event[]> {
   const db = await getDb();
@@ -893,6 +894,15 @@ export async function getEventsByProgramOrGlobal(programId: number): Promise<Eve
   const allEvts = await db.select().from(events).where(
     or(eq(events.programId, programId), isNull(events.programId))
   );
+
+  // Incluir scheduled_webinars (published/completed) que NÃO existem na tabela events
+  const allScheduledWebinars = await db.select().from(scheduledWebinars).where(
+    or(
+      eq(scheduledWebinars.status, 'published'),
+      eq(scheduledWebinars.status, 'completed')
+    )
+  );
+
   // Deduplicar eventos por título normalizado (evita duplicados como 4x "2025/19 Estrutura e Conceitos")
   const normTitle = (t: string | null): string => {
     if (!t) return '';
@@ -903,10 +913,46 @@ export async function getEventsByProgramOrGlobal(programId: number): Promise<Eve
       .trim();
   };
   const coreTitle = (n: string): string => n.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '').trim();
+
+  // Criar set de títulos normalizados dos eventos existentes para detectar duplicatas
+  const existingCoreKeys = new Set<string>();
+  for (const evt of allEvts) {
+    const core = coreTitle(normTitle(evt.title));
+    const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
+    existingCoreKeys.add(`${core}|${dateStr}`);
+  }
+
+  // Adicionar scheduled_webinars como eventos sintéticos (se não existem na tabela events)
+  const syntheticEvents: Event[] = [];
+  for (const sw of allScheduledWebinars) {
+    // Filtrar por programa: se o webinar tem programId, deve ser do mesmo programa; se NULL, é global
+    if (sw.programId && sw.programId !== programId) continue;
+    // Verificar se já existe na tabela events (por core title + data)
+    const swCore = coreTitle(normTitle(sw.title));
+    const swDateStr = sw.eventDate ? new Date(sw.eventDate).toISOString().split('T')[0] : 'nodate';
+    const swKey = `${swCore}|${swDateStr}`;
+    if (existingCoreKeys.has(swKey)) continue;
+    // Criar evento sintético
+    syntheticEvents.push({
+      id: sw.id + 900000, // ID alto para não colidir com events reais
+      externalId: `sw-${sw.id}`,
+      title: sw.title,
+      eventType: 'webinar',
+      eventDate: sw.eventDate ? new Date(sw.eventDate) : null,
+      videoLink: sw.youtubeLink || null,
+      programId: sw.programId,
+      trilhaId: null,
+      createdAt: sw.createdAt,
+    } as Event);
+    existingCoreKeys.add(swKey);
+  }
+
+  const combined = [...allEvts, ...syntheticEvents];
+
   // Deduplicar por core title + data (para não juntar aulas diferentes do mesmo tema em datas diferentes)
   const seen = new Map<string, Event>();
   const deduped: Event[] = [];
-  for (const evt of allEvts) {
+  for (const evt of combined) {
     const core = coreTitle(normTitle(evt.title));
     const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
     const dedupKey = `${core}|${dateStr}`;

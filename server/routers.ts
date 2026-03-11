@@ -2597,7 +2597,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       // Buscar participações em eventos do aluno com detalhes
       const eventosAluno = await db.getEventParticipationByAluno(aluno.id);
       // Buscar detalhes dos eventos
-      const allEvents = aluno.programId ? await db.getEventsByProgram(aluno.programId) : [];
+      const allEvents = aluno.programId ? await db.getEventsByProgramOrGlobal(aluno.programId) : [];
       const eventMap = new Map(allEvents.map(e => [e.id, e]));
       const eventosDetalhados = eventosAluno.map(ep => {
         const evento = eventMap.get(ep.eventId);
