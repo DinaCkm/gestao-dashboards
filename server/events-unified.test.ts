@@ -64,8 +64,11 @@ describe("attendance.pending (lista unificada de eventos)", () => {
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.attendance.pending();
-    expect(Array.isArray(result)).toBe(true);
-    expect(result).toEqual([]);
+    expect(result).toHaveProperty('events');
+    expect(result).toHaveProperty('periodoInicio');
+    expect(result).toHaveProperty('periodoFim');
+    expect(Array.isArray(result.events)).toBe(true);
+    expect(result.events).toEqual([]);
   });
 
   it("retorna array com campos corretos (title, eventDate, videoLink, status)", async () => {
@@ -73,13 +76,14 @@ describe("attendance.pending (lista unificada de eventos)", () => {
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.attendance.pending();
-    // Para aluno inexistente, retorna vazio
-    expect(Array.isArray(result)).toBe(true);
+    // Para aluno inexistente, retorna objeto com events vazio
+    expect(result).toHaveProperty('events');
+    expect(Array.isArray(result.events)).toBe(true);
 
     // Verificar que se houvesse dados, a estrutura estaria correta
-    // Cada item deve ter: eventId, title, eventDate, videoLink, status
-    if (result.length > 0) {
-      const first = result[0];
+    // Cada item deve ter: eventId, title, eventDate, videoLink, status, dentroDoMacrociclo
+    if (result.events.length > 0) {
+      const first = result.events[0];
       expect(first).toHaveProperty("eventId");
       expect(first).toHaveProperty("title");
       expect(first).toHaveProperty("eventDate");

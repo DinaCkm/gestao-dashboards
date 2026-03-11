@@ -2186,3 +2186,6 @@
 - [x] Bug: Evento de hoje não aparece para o aluno preencher presença no portal (scheduled_webinars agora são incluídos como eventos sintéticos + markPresence cria evento real automaticamente + regra de liberação por startDate)
 - [x] Bug: Lista de eventos do aluno (getWebinarsPendingAttendance) não filtra por macroInicio - corrigido filtro por macroInicio
 - [x] Feature: Adicionar informação do período de cálculo dos eventos na tela de Eventos do aluno
+- [x] Ajuste: Reverter filtro na lista de eventos do aluno - mostrar todos os eventos com campo dentroDoMacrociclo
+- [x] Ajuste: Cards de resumo contam apenas eventos dentroDoMacrociclo (não penaliza nem pontua fora)
+- [x] Feature: Badge visual nos eventos fora do período + explicação da lógica abaixo dos cards

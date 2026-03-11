@@ -1643,51 +1643,66 @@ export default function DashboardMeuPerfil() {
           {/* === EVENTOS - LISTA UNIFICADA === */}
           <TabsContent value="eventos" className="mt-4">
             <div className="space-y-6">
-              {/* Resumo com contadores visuais */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200">
-                  <CardContent className="p-4 text-center">
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-200/60 mb-2">
-                      <CheckCircle2 className="h-5 w-5 text-emerald-700" />
+              {/* Resumo com contadores visuais - usa apenas eventos dentro do macrociclo */}
+              {(() => {
+                const eventosDentro = pendingWebinars?.events?.filter((e: any) => e.dentroDoMacrociclo) || [];
+                const presencasDentro = eventosDentro.filter((e: any) => e.status === 'presente').length;
+                const totalDentro = eventosDentro.length;
+                const ausenciasDentro = totalDentro - presencasDentro;
+                return (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200">
+                        <CardContent className="p-4 text-center">
+                          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-200/60 mb-2">
+                            <CheckCircle2 className="h-5 w-5 text-emerald-700" />
+                          </div>
+                          <p className="text-2xl font-bold text-emerald-800">{presencasDentro}</p>
+                          <p className="text-xs text-emerald-600 font-medium">Presenças</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200">
+                        <CardContent className="p-4 text-center">
+                          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-red-200/60 mb-2">
+                            <XCircle className="h-5 w-5 text-red-700" />
+                          </div>
+                          <p className="text-2xl font-bold text-red-800">{ausenciasDentro}</p>
+                          <p className="text-xs text-red-600 font-medium">Ausências</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200">
+                        <CardContent className="p-4 text-center">
+                          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-200/60 mb-2">
+                            <Video className="h-5 w-5 text-blue-700" />
+                          </div>
+                          <p className="text-2xl font-bold text-blue-800">{totalDentro}</p>
+                          <p className="text-xs text-blue-600 font-medium">Total de Eventos</p>
+                        </CardContent>
+                      </Card>
                     </div>
-                    <p className="text-2xl font-bold text-emerald-800">{indicadores.eventosPresente}</p>
-                    <p className="text-xs text-emerald-600 font-medium">Presenças</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200">
-                  <CardContent className="p-4 text-center">
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-red-200/60 mb-2">
-                      <XCircle className="h-5 w-5 text-red-700" />
-                    </div>
-                    <p className="text-2xl font-bold text-red-800">{indicadores.totalEventos - indicadores.eventosPresente}</p>
-                    <p className="text-xs text-red-600 font-medium">Ausências</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200">
-                  <CardContent className="p-4 text-center">
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-200/60 mb-2">
-                      <Video className="h-5 w-5 text-blue-700" />
-                    </div>
-                    <p className="text-2xl font-bold text-blue-800">{indicadores.totalEventos}</p>
-                    <p className="text-xs text-blue-600 font-medium">Total de Eventos</p>
-                  </CardContent>
-                </Card>
-              </div>
 
-              {/* Informação do período de cálculo */}
-              {pendingWebinars?.periodoInicio && (
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
-                  <div className="flex-shrink-0 mt-0.5">
-                    <Calendar className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <p className="text-xs text-blue-800">
-                    <span className="font-semibold">Período de cálculo:</span> Seus eventos estão sendo calculados no período de{" "}
-                    <span className="font-bold">{new Date(pendingWebinars.periodoInicio).toLocaleDateString("pt-BR")}</span>
-                    {" "}a{" "}
-                    <span className="font-bold">{pendingWebinars.periodoFim ? new Date(pendingWebinars.periodoFim).toLocaleDateString("pt-BR") : "atual"}</span>.
-                  </p>
-                </div>
-              )}
+                    {/* Explicação da lógica de cálculo */}
+                    {pendingWebinars?.periodoInicio && (
+                      <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <Info className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="text-xs text-blue-800 space-y-1">
+                          <p>
+                            <span className="font-semibold">Como funciona o cálculo:</span> Os indicadores acima consideram apenas os eventos dentro do seu período de avaliação:{" "}
+                            <span className="font-bold">{new Date(pendingWebinars.periodoInicio).toLocaleDateString("pt-BR")}</span>
+                            {" "}a{" "}
+                            <span className="font-bold">{pendingWebinars.periodoFim ? new Date(pendingWebinars.periodoFim).toLocaleDateString("pt-BR") : "atual"}</span>.
+                          </p>
+                          <p className="text-blue-700">
+                            Eventos realizados fora deste período aparecem na lista abaixo para que você possa assistir, mas <strong>não impactam sua nota de performance</strong> (não penalizam como ausência e não pontuam como presença).
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* Dica informativa */}
               <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
@@ -1717,9 +1732,11 @@ export default function DashboardMeuPerfil() {
                     <div className="space-y-2 max-h-[700px] overflow-y-auto pr-1">
                       {pendingWebinars.events.map((evt: any) => (
                         <div key={evt.eventId} className={`rounded-xl border overflow-hidden transition-all duration-200 ${
-                          evt.status === "ausente"
-                            ? "bg-gradient-to-r from-red-50/50 to-white border-red-200 hover:shadow-sm"
-                            : "bg-gradient-to-r from-emerald-50/30 to-white border-emerald-100 hover:shadow-sm"
+                          !evt.dentroDoMacrociclo
+                            ? "bg-gradient-to-r from-gray-50/50 to-gray-50/30 border-gray-200 opacity-70 hover:opacity-90"
+                            : evt.status === "ausente"
+                              ? "bg-gradient-to-r from-red-50/50 to-white border-red-200 hover:shadow-sm"
+                              : "bg-gradient-to-r from-emerald-50/30 to-white border-emerald-100 hover:shadow-sm"
                         }`}>
                           <div className="flex items-center gap-3 p-3">
                             {/* Ícone de status */}
@@ -1737,11 +1754,17 @@ export default function DashboardMeuPerfil() {
 
                             {/* Nome e Data */}
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm text-gray-900 font-medium leading-tight">{evt.title}</p>
-                              <div className="flex items-center gap-2 mt-0.5">
+                              <p className={`text-sm font-medium leading-tight ${!evt.dentroDoMacrociclo ? 'text-gray-500' : 'text-gray-900'}`}>{evt.title}</p>
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                 {evt.eventDate && (
                                   <span className="text-xs text-gray-500">
                                     {new Date(evt.eventDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                                  </span>
+                                )}
+                                {!evt.dentroDoMacrociclo && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
+                                    <Clock className="h-2.5 w-2.5" />
+                                    Fora do período de avaliação
                                   </span>
                                 )}
                               </div>

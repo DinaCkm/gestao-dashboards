@@ -4401,27 +4401,9 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
     } as typeof dbEvents[0]);
   }
 
-  // FILTRO POR MACROINICIO: remover eventos anteriores ao macrociclo do aluno
-  // Apenas eventos sem participação registrada são filtrados (se o aluno participou, manter)
-  const filteredDbEvents = macroInicio
-    ? dbEvents.filter(evt => {
-        // Se o aluno tem participação nesse evento, manter sempre
-        if (participationMap.has(evt.id)) return true;
-        // Se o evento não tem data, manter
-        if (!evt.eventDate) return true;
-        // Filtrar: só manter eventos a partir do macroInicio
-        return new Date(evt.eventDate) >= macroInicio;
-      })
-    : dbEvents;
-  const filteredSyntheticEvents = macroInicio
-    ? syntheticEvents.filter(evt => {
-        if (participationMap.has(evt.id)) return true;
-        if (!evt.eventDate) return true;
-        return new Date(evt.eventDate) >= macroInicio;
-      })
-    : syntheticEvents;
-
-  const allEvents = [...filteredDbEvents, ...filteredSyntheticEvents];
+  // Mostrar TODOS os eventos (sem filtrar por macroInicio)
+  // O campo dentroDoMacrociclo será usado pelo frontend para separar visualmente
+  const allEvents = [...dbEvents, ...syntheticEvents];
   // Função de normalização de título para matching tolerante
   // Remove diferenças de traços (– vs -), espaços extras, "Aula 01 - ", etc.
   const normalizeTitle = (title: string | null): string => {
@@ -4526,6 +4508,11 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
     const isPresent = part?.status === 'presente';
     const selfReported = !!part?.selfReportedAt;
 
+    // Verificar se o evento está dentro do macrociclo do aluno
+    const dentroDoMacrociclo = macroInicio
+      ? (evt.eventDate ? new Date(evt.eventDate) >= macroInicio : true)
+      : true; // Se não tem macroInicio, considerar todos como dentro
+
     return {
       eventId: evt.id,
       scheduledWebinarId: matchedWebinar?.id || null,
@@ -4538,6 +4525,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       reflexao: part?.reflexao || null,
       selfReportedAt: part?.selfReportedAt || null,
       hasEnded,
+      dentroDoMacrociclo,
     };
   }).sort((a, b) => {
     // Ordenar: ausentes primeiro, depois por data decrescente
