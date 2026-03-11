@@ -2190,3 +2190,5 @@
 - [x] Ajuste: Cards de resumo contam apenas eventos dentroDoMacrociclo (não penaliza nem pontua fora)
 - [x] Feature: Badge visual nos eventos fora do período + explicação da lógica abaixo dos cards
 - [x] Ajuste: Ordenar lista de eventos por data decrescente (mais recentes primeiro)
+- [x] Investigar: Deduplicação de eventos - confirmado que a 1 ausência da Walbenia é o evento de HOJE (ainda não assistido), não é bug
+- [x] Feature: Botão de compartilhar no LinkedIn abaixo de cada evento com post pré-preenchido (#ecolider #desenvolvimento #ckmtalents @dinamakiyama)

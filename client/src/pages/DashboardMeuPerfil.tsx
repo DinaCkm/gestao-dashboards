@@ -14,7 +14,7 @@ import {
   Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
   ClipboardCheck, Play, ExternalLink, FileText, Send, Route, FileBarChart,
   AlertTriangle, Briefcase, HelpCircle, Upload, Paperclip, FileUp, Bell, Lock, Snowflake,
-  Cloud, Link2, Share2,
+  Cloud, Link2, Share2, Linkedin,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -1821,6 +1821,26 @@ export default function DashboardMeuPerfil() {
                               )}
                             </div>
                           </div>
+
+                          {/* Compartilhar no LinkedIn - aparece para eventos com presença confirmada e videoLink */}
+                          {evt.status === "presente" && evt.videoLink && (
+                            <div className="px-4 pb-3 border-t border-emerald-100 bg-emerald-50/30">
+                              <div className="flex items-center justify-between pt-2.5">
+                                <p className="text-xs text-gray-600">
+                                  <span className="font-medium text-gray-700">Assistiu este curso?</span> Compartilhe com os amigos, conte o que achou!
+                                </p>
+                                <a
+                                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(evt.videoLink)}&title=${encodeURIComponent(`Acabei de assistir: ${evt.title} \n\nRecomendo demais! Assista também pelo link abaixo. \n\n#ecolider #desenvolvimento #ckmtalents @dinamakiyama`)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-white bg-[#0A66C2] hover:bg-[#004182] px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                                >
+                                  <Linkedin className="h-3.5 w-3.5" />
+                                  Compartilhar no LinkedIn
+                                </a>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Formulário de marcação de presença (expandido) */}
                           {evt.status === "ausente" && expandedWebinar === evt.eventId && (
