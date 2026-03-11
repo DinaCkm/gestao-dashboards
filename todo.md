@@ -2200,3 +2200,6 @@
 
 ## Ajuste visual menu superior (11/03/2026)
 - [x] Diminuir tamanho das letras do menu superior (navbar do aluno) para melhor proporção (text-sm → text-xs, ícones h-4 → h-3.5, padding px-4 → px-3, gap reduzido)
+
+## Bug: Visualização DISC/Assessment no Onboarding concluído (11/03/2026)
+- [x] Corrigir: Joseane não consegue visualizar DISC, assessment e teste de autoconhecimento no Onboarding (etapas com cadeado não clicáveis quando onboarding concluído) - Stepper agora permite navegação livre quando readOnly, barra 100%, todas etapas clicáveis

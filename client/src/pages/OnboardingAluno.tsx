@@ -105,7 +105,7 @@ const ONBOARDING_STEPS = [
   { id: 5, label: "1º Encontro", icon: VideoIcon, description: "Participe da reunião" },
 ];
 
-function OnboardingStepper({ currentStep, onStepClick }: { currentStep: number; onStepClick: (step: number) => void }) {
+function OnboardingStepper({ currentStep, onStepClick, readOnly = false }: { currentStep: number; onStepClick: (step: number) => void; readOnly?: boolean }) {
   return (
     <div className="w-full mb-8">
       <div className="flex items-center justify-between relative">
@@ -113,13 +113,13 @@ function OnboardingStepper({ currentStep, onStepClick }: { currentStep: number; 
         <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-200 z-0" />
         <div
           className="absolute top-6 left-0 h-0.5 bg-gradient-to-r from-[#0A1E3E] to-[#F5991F] z-0 transition-all duration-700"
-          style={{ width: `${((currentStep - 1) / (ONBOARDING_STEPS.length - 1)) * 100}%` }}
+          style={{ width: readOnly ? '100%' : `${((currentStep - 1) / (ONBOARDING_STEPS.length - 1)) * 100}%` }}
         />
 
         {ONBOARDING_STEPS.map((step) => {
-          const isCompleted = step.id < currentStep;
+          const isCompleted = readOnly ? step.id !== currentStep : step.id < currentStep;
           const isCurrent = step.id === currentStep;
-          const isLocked = step.id > currentStep;
+          const isLocked = readOnly ? false : step.id > currentStep;
           const StepIcon = step.icon;
 
           return (
@@ -127,7 +127,7 @@ function OnboardingStepper({ currentStep, onStepClick }: { currentStep: number; 
               key={step.id}
               className="flex flex-col items-center relative z-10 cursor-pointer group"
               onClick={() => {
-                if (isCompleted || isCurrent) onStepClick(step.id);
+                if (readOnly || isCompleted || isCurrent) onStepClick(step.id);
                 else toast.info("Complete as etapas anteriores primeiro");
               }}
             >
@@ -1099,7 +1099,7 @@ export default function OnboardingAluno() {
         </div>
 
         {/* Stepper */}
-        <OnboardingStepper currentStep={currentStep} onStepClick={setCurrentStep} />
+        <OnboardingStepper currentStep={currentStep} onStepClick={setCurrentStep} readOnly={readOnly} />
 
         {/* Banner de modo somente leitura */}
         {readOnly && !reassessmentElegivel && (
