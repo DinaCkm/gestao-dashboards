@@ -835,6 +835,48 @@ export async function insertEvents(evts: InsertEvent[]): Promise<void> {
   await db.insert(events).values(evts);
 }
 
+/**
+ * Garante que existe um registro na tabela events correspondente a um scheduled_webinar.
+ * Se já existir (por título normalizado), retorna o id existente.
+ * Se não existir, cria um novo e retorna o id.
+ */
+export async function ensureEventForWebinar(webinarId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('DB not available');
+  
+  const webinar = await getWebinarById(webinarId);
+  if (!webinar) throw new Error('Webinar não encontrado');
+  
+  // Normalizar título para busca
+  const normTitle = (t: string | null): string => {
+    if (!t) return '';
+    return t.toLowerCase().trim()
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/\s+/g, ' ')
+      .replace(/\s*-\s*/g, ' - ')
+      .trim();
+  };
+  
+  // Verificar se já existe um evento com título similar
+  const allEvts = await db.select().from(events);
+  const webinarNorm = normTitle(webinar.title);
+  const existing = allEvts.find(e => normTitle(e.title) === webinarNorm);
+  
+  if (existing) return existing.id;
+  
+  // Criar novo evento a partir do webinar
+  const result = await db.insert(events).values({
+    title: webinar.title,
+    eventType: 'webinar',
+    eventDate: webinar.eventDate ? new Date(webinar.eventDate) : null,
+    videoLink: webinar.youtubeLink || null,
+    programId: webinar.programId || null,
+    externalId: `sw-${webinar.id}`,
+  });
+  
+  return result[0].insertId;
+}
+
 export async function getEventsByProgram(programId: number): Promise<Event[]> {
   const db = await getDb();
   if (!db) return [];
@@ -4301,7 +4343,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
   // Buscar todos os eventos do programa do aluno
   // Se o aluno tem programId, buscar eventos do programa OU eventos sem programa (programId NULL)
   // Se o aluno não tem programId, buscar todos os eventos
-  const allEvents = aluno.programId
+  const dbEvents = aluno.programId
     ? await db.select().from(events).where(
         or(eq(events.programId, aluno.programId), isNull(events.programId))
       )
@@ -4316,6 +4358,46 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
 
   // Buscar webinars agendados para verificar endDate e youtubeLink
   const allScheduledWebinars = await db.select().from(scheduledWebinars);
+
+  // CORREÇÃO: Incluir scheduled_webinars (published/completed) que NÃO existem na tabela events
+  // Isso garante que webinars agendados pelo admin apareçam para o aluno mesmo antes do upload de planilha
+  const existingEventTitlesNorm = new Set(dbEvents.map(e => {
+    if (!e.title) return '';
+    return e.title.toLowerCase().trim()
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/\s+/g, ' ')
+      .replace(/\s*-\s*/g, ' - ')
+      .trim();
+  }));
+
+  const syntheticEvents: typeof dbEvents = [];
+  for (const sw of allScheduledWebinars) {
+    // Só incluir webinars published ou completed
+    if (sw.status !== 'published' && sw.status !== 'completed') continue;
+    // Filtrar por programa do aluno (se o webinar tem programId, deve ser do mesmo programa; se NULL, é global)
+    if (sw.programId && aluno.programId && sw.programId !== aluno.programId) continue;
+    // Verificar se já existe na tabela events (por título normalizado)
+    const swNorm = sw.title ? sw.title.toLowerCase().trim()
+      .replace(/[\u2013\u2014]/g, '-')
+      .replace(/\s+/g, ' ')
+      .replace(/\s*-\s*/g, ' - ')
+      .trim() : '';
+    if (existingEventTitlesNorm.has(swNorm)) continue;
+    // Criar evento sintético a partir do scheduled_webinar
+    syntheticEvents.push({
+      id: sw.id + 900000, // ID alto para não colidir com events reais
+      externalId: `sw-${sw.id}`,
+      title: sw.title,
+      eventType: 'webinar',
+      eventDate: sw.eventDate ? new Date(sw.eventDate) : null,
+      videoLink: sw.youtubeLink || null,
+      programId: sw.programId,
+      trilhaId: null,
+      createdAt: sw.createdAt,
+    } as typeof dbEvents[0]);
+  }
+
+  const allEvents = [...dbEvents, ...syntheticEvents];
   // Função de normalização de título para matching tolerante
   // Remove diferenças de traços (– vs -), espaços extras, "Aula 01 - ", etc.
   const normalizeTitle = (title: string | null): string => {

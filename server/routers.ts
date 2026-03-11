@@ -4128,6 +4128,10 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           endDate,
           createdBy: ctx.user.id,
         });
+        // Se o webinar já foi criado como published, criar automaticamente o evento na tabela events
+        if (input.status === 'published') {
+          await db.ensureEventForWebinar(id);
+        }
         return { id, success: true };
       }),
 
@@ -4155,6 +4159,10 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         if (data.startDate) updateData.startDate = new Date(data.startDate);
         if (data.endDate) updateData.endDate = new Date(data.endDate);
         await db.updateWebinar(id, updateData);
+        // Se o status mudou para published, garantir que existe o evento na tabela events
+        if (data.status === 'published') {
+          await db.ensureEventForWebinar(id);
+        }
         return { success: true };
       }),
 
@@ -4326,27 +4334,36 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
         }
 
+        let realEventId = input.eventId;
+
+        // Se o eventId é sintético (>900000), significa que veio de scheduled_webinars
+        // e ainda não existe na tabela events. Criar automaticamente.
+        if (input.eventId > 900000) {
+          const scheduledWebinarId = input.eventId - 900000;
+          realEventId = await db.ensureEventForWebinar(scheduledWebinarId);
+        }
+
         // Buscar o evento na tabela events
-        const eventRecord = await db.getEventById(input.eventId);
+        const eventRecord = await db.getEventById(realEventId);
         if (!eventRecord) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Evento não encontrado.' });
         }
 
-        // Verificar se é um webinário agendado (tem endDate) - só bloqueia se ainda não terminou
+        // Verificar se é um webinário agendado (tem endDate) - verificar se já iniciou
         const allWebinars = await db.listWebinars();
         const matchingWebinar = allWebinars.find((w: any) => 
           w.title?.toLowerCase().trim() === eventRecord.title?.toLowerCase().trim()
         );
         if (matchingWebinar) {
-          // É um webinário agendado - verificar se já terminou
-          const endDate = matchingWebinar.endDate || matchingWebinar.eventDate;
-          if (endDate && new Date(endDate) > new Date()) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'A marcação de presença só é liberada após o término do evento.' });
+          // É um webinário agendado - verificar se já iniciou (regra: libera assim que inicia)
+          const startDate = matchingWebinar.startDate || matchingWebinar.eventDate;
+          if (startDate && new Date(startDate) > new Date()) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'A marcação de presença só é liberada após o início do evento.' });
           }
         }
         // Para eventos importados (sem webinar agendado correspondente), permite marcar presença a qualquer momento
 
-        const result = await db.markWebinarAttendance(aluno.id, input.eventId, input.reflexao);
+        const result = await db.markWebinarAttendance(aluno.id, realEventId, input.reflexao);
         return { success: true, ...result };
       }),
 
