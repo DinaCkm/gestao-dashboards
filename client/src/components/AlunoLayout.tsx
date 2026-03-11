@@ -50,7 +50,7 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
             </div>
 
             {/* Navegação Desktop */}
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center gap-0.5">
               {NAV_ITEMS.map((item) => {
                 const isActive = location === item.path;
                 const Icon = item.icon;
@@ -59,14 +59,14 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
                     key={item.path}
                     onClick={() => setLocation(item.path)}
                     className={`
-                      flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                      flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200
                       ${isActive
                         ? "bg-white/20 text-white shadow-inner"
                         : "text-white/70 hover:text-white hover:bg-white/10"
                       }
                     `}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-3.5 w-3.5" />
                     {item.label}
                   </button>
                 );

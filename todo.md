@@ -2197,3 +2197,6 @@
 - [x] Incluir eventos de scheduled_webinars na unificação de eventos do dashboard (meuDashboard, dashboardGeral, dashboardEmpresa, dashboardGestor, relatórios)
 - [x] Garantir que scheduled_webinars impactem corretamente o indicador de participação (Ind.1 Webinars)
 - [x] Testes vitest para validar a inclusão de scheduled_webinars na unificação (12 testes passando)
+
+## Ajuste visual menu superior (11/03/2026)
+- [x] Diminuir tamanho das letras do menu superior (navbar do aluno) para melhor proporção (text-sm → text-xs, ícones h-4 → h-3.5, padding px-4 → px-3, gap reduzido)
