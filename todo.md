@@ -2184,3 +2184,5 @@
 - [x] Bug: Corrigir unificação de eventos - filtrar eventos pela data de início do macrociclo do aluno (7 ocorrências corrigidas)
 - [x] Bug: Corrigir duplicatas de eventos na unificação - deduplicar por título + data (3 deduplicadores atualizados)
 - [x] Bug: Evento de hoje não aparece para o aluno preencher presença no portal (scheduled_webinars agora são incluídos como eventos sintéticos + markPresence cria evento real automaticamente + regra de liberação por startDate)
+- [x] Bug: Lista de eventos do aluno (getWebinarsPendingAttendance) não filtra por macroInicio - corrigido filtro por macroInicio
+- [x] Feature: Adicionar informação do período de cálculo dos eventos na tela de Eventos do aluno

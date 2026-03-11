@@ -1674,6 +1674,21 @@ export default function DashboardMeuPerfil() {
                 </Card>
               </div>
 
+              {/* Informação do período de cálculo */}
+              {pendingWebinars?.periodoInicio && (
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <Calendar className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <p className="text-xs text-blue-800">
+                    <span className="font-semibold">Período de cálculo:</span> Seus eventos estão sendo calculados no período de{" "}
+                    <span className="font-bold">{new Date(pendingWebinars.periodoInicio).toLocaleDateString("pt-BR")}</span>
+                    {" "}a{" "}
+                    <span className="font-bold">{pendingWebinars.periodoFim ? new Date(pendingWebinars.periodoFim).toLocaleDateString("pt-BR") : "atual"}</span>.
+                  </p>
+                </div>
+              )}
+
               {/* Dica informativa */}
               <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
                 <div className="flex-shrink-0 mt-0.5">
@@ -1698,9 +1713,9 @@ export default function DashboardMeuPerfil() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {pendingWebinars && pendingWebinars.length > 0 ? (
+                  {pendingWebinars?.events && pendingWebinars.events.length > 0 ? (
                     <div className="space-y-2 max-h-[700px] overflow-y-auto pr-1">
-                      {pendingWebinars.map((evt: any) => (
+                      {pendingWebinars.events.map((evt: any) => (
                         <div key={evt.eventId} className={`rounded-xl border overflow-hidden transition-all duration-200 ${
                           evt.status === "ausente"
                             ? "bg-gradient-to-r from-red-50/50 to-white border-red-200 hover:shadow-sm"

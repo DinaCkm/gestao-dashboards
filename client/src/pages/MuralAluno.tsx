@@ -565,13 +565,13 @@ export default function MuralAluno() {
   }, [activeAnnouncements]);
 
   const firstName = user?.name?.split(" ")[0] || "Aluno";
-  const pendingCount = pendingAttendance?.length || 0;
+  const pendingCount = pendingAttendance?.events?.length || 0;
 
   const getAttendanceStatus = (webinarId: number): "confirmed" | "pending" | null => {
     // Comparar com scheduledWebinarId (mapeado de events -> scheduled_webinars)
     if (confirmedWebinarIds.has(webinarId)) return "confirmed";
     // pending também retorna scheduledWebinarId agora
-    if (pendingAttendance?.some((p: any) => p.scheduledWebinarId === webinarId)) return "pending";
+    if (pendingAttendance?.events?.some((p: any) => p.scheduledWebinarId === webinarId)) return "pending";
     return null;
   };
 

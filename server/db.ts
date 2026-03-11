@@ -4340,6 +4340,10 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
   const aluno = await getAlunoById(alunoId);
   if (!aluno) return [];
 
+  // Buscar macroInicio do aluno para filtrar eventos anteriores ao macrociclo
+  const macroInicioMap = await getAlunoMacroInicioMap();
+  const macroInicio = macroInicioMap.get(alunoId);
+
   // Buscar todos os eventos do programa do aluno
   // Se o aluno tem programId, buscar eventos do programa OU eventos sem programa (programId NULL)
   // Se o aluno não tem programId, buscar todos os eventos
@@ -4397,7 +4401,27 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
     } as typeof dbEvents[0]);
   }
 
-  const allEvents = [...dbEvents, ...syntheticEvents];
+  // FILTRO POR MACROINICIO: remover eventos anteriores ao macrociclo do aluno
+  // Apenas eventos sem participação registrada são filtrados (se o aluno participou, manter)
+  const filteredDbEvents = macroInicio
+    ? dbEvents.filter(evt => {
+        // Se o aluno tem participação nesse evento, manter sempre
+        if (participationMap.has(evt.id)) return true;
+        // Se o evento não tem data, manter
+        if (!evt.eventDate) return true;
+        // Filtrar: só manter eventos a partir do macroInicio
+        return new Date(evt.eventDate) >= macroInicio;
+      })
+    : dbEvents;
+  const filteredSyntheticEvents = macroInicio
+    ? syntheticEvents.filter(evt => {
+        if (participationMap.has(evt.id)) return true;
+        if (!evt.eventDate) return true;
+        return new Date(evt.eventDate) >= macroInicio;
+      })
+    : syntheticEvents;
+
+  const allEvents = [...filteredDbEvents, ...filteredSyntheticEvents];
   // Função de normalização de título para matching tolerante
   // Remove diferenças de traços (– vs -), espaços extras, "Aula 01 - ", etc.
   const normalizeTitle = (title: string | null): string => {

@@ -4371,8 +4371,22 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
     pending: protectedProcedure
       .query(async ({ ctx }) => {
         const aluno = await db.getAlunoByEmail(ctx.user.email || '');
-        if (!aluno) return [];
-        return await db.getWebinarsPendingAttendance(aluno.id);
+        if (!aluno) return { events: [], periodoInicio: null, periodoFim: null };
+        const events = await db.getWebinarsPendingAttendance(aluno.id);
+        // Buscar período do macrociclo para exibir ao aluno
+        const macroInicioMap = await db.getAlunoMacroInicioMap();
+        const macroInicio = macroInicioMap.get(aluno.id);
+        // Período fim: macroInicio + 6 meses (padrão do macrociclo)
+        let periodoFim: Date | null = null;
+        if (macroInicio) {
+          periodoFim = new Date(macroInicio);
+          periodoFim.setMonth(periodoFim.getMonth() + 6);
+        }
+        return {
+          events,
+          periodoInicio: macroInicio ? macroInicio.toISOString() : null,
+          periodoFim: periodoFim ? periodoFim.toISOString() : null,
+        };
       }),
 
     // Admin: atualizar videoLink de um evento importado
