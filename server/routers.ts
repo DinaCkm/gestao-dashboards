@@ -1179,6 +1179,32 @@ export const appRouter = router({
               }
             }
             
+            // Buscar dados de macrociclos (assessment_pdi) e microciclos (assessment_competencias) para novas colunas
+            const allAssessmentPdis = await db.getAllAssessmentPdis();
+            const allTrilhasForReport = await db.getAllTrilhas();
+            const trilhaNameMap = new Map(allTrilhasForReport.map((t: any) => [t.id, t.name]));
+            // Agrupar PDIs por aluno
+            const pdisByAluno = new Map<number, typeof allAssessmentPdis>();
+            for (const pdi of allAssessmentPdis) {
+              if (!pdisByAluno.has(pdi.alunoId)) pdisByAluno.set(pdi.alunoId, []);
+              pdisByAluno.get(pdi.alunoId)!.push(pdi);
+            }
+            // Buscar todas as competências dos assessments para microciclos
+            const allPdiIds = allAssessmentPdis.map(p => p.id);
+            let allAssessmentComps: { id: number; assessmentPdiId: number; competenciaId: number; microInicio: Date | string | null; microTermino: Date | string | null }[] = [];
+            if (allPdiIds.length > 0) {
+              allAssessmentComps = await db.getAllAssessmentCompetenciasForReport();
+            }
+            // Buscar nomes das competências
+            const allCompetenciasForReport = await db.getAllCompetencias();
+            const compNameMap = new Map(allCompetenciasForReport.map((c: any) => [c.id, c.nome]));
+            // Agrupar competências por PDI
+            const compsByPdiId = new Map<number, typeof allAssessmentComps>();
+            for (const comp of allAssessmentComps) {
+              if (!compsByPdiId.has(comp.assessmentPdiId)) compsByPdiId.set(comp.assessmentPdiId, []);
+              compsByPdiId.get(comp.assessmentPdiId)!.push(comp);
+            }
+
             // Sheet 1: Alunos com Indicadores V2
             const sheetName1 = input.type === 'manager' ? 'Equipe' : 'Todos os Alunos';
             const alunosComIndicadores = reportAlunos.map(a => {
@@ -1196,11 +1222,45 @@ export const appRouter = router({
                   return db2 - da;
                 });
               const ultimaMentoria = alunoSessoes[0];
+              // Montar dados de Contrato, Macrociclos e Microciclos
+              const fmtDate = (d: any) => {
+                if (!d) return '';
+                try { return new Date(d).toLocaleDateString('pt-BR'); } catch { return String(d); }
+              };
+              const contratoStr = (a.contratoInicio || a.contratoFim)
+                ? `${fmtDate(a.contratoInicio)} a ${fmtDate(a.contratoFim)}`
+                : 'Não definido';
+              
+              const alunoPdis = pdisByAluno.get(a.id) || [];
+              const macrociclosStr = alunoPdis.length > 0
+                ? alunoPdis.map(p => {
+                    const trilhaNome = trilhaNameMap.get(p.trilhaId) || `Trilha ${p.trilhaId}`;
+                    const inicio = fmtDate(p.macroInicio);
+                    const termino = fmtDate(p.macroTermino);
+                    const status = p.status === 'congelado' ? ' [CONGELADO]' : '';
+                    return `${trilhaNome} (${inicio} - ${termino})${status}`;
+                  }).join(' | ')
+                : 'Sem macrociclos';
+              
+              const microciclosArr: string[] = [];
+              for (const pdi of alunoPdis) {
+                const comps = compsByPdiId.get(pdi.id) || [];
+                const compsComDatas = comps.filter(c => c.microInicio || c.microTermino);
+                for (const comp of compsComDatas) {
+                  const compNome = compNameMap.get(comp.competenciaId) || `Comp ${comp.competenciaId}`;
+                  microciclosArr.push(`${compNome} (${fmtDate(comp.microInicio)} - ${fmtDate(comp.microTermino)})`);
+                }
+              }
+              const microciclosStr = microciclosArr.length > 0 ? microciclosArr.join(' | ') : 'Sem microciclos';
+              
               return {
                 'Nome': a.name || '',
                 'Email': a.email || '',
                 'Empresa': prog?.name || '',
                 'Turma': turma?.name || '',
+                'Período do Contrato': contratoStr,
+                'Macrociclos (Trilhas)': macrociclosStr,
+                'Microciclos (Competências)': microciclosStr,
                 'Mentor(a)': mentor?.name || '',
                 'Total Sessões': alunoSessoes.length,
                 'Última Mentoria': ultimaMentoria?.sessionDate ? new Date(ultimaMentoria.sessionDate).toLocaleDateString('pt-BR') : 'Sem sessões',

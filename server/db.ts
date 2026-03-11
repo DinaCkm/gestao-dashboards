@@ -6967,3 +6967,21 @@ export async function getAllMentorSessionPricing(): Promise<Map<number, MentorSe
   }
   return map;
 }
+
+
+/**
+ * Buscar todas as competências de assessments para relatório gerencial
+ * Retorna id, assessmentPdiId, competenciaId, microInicio, microTermino
+ */
+export async function getAllAssessmentCompetenciasForReport() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select({
+    id: assessmentCompetencias.id,
+    assessmentPdiId: assessmentCompetencias.assessmentPdiId,
+    competenciaId: assessmentCompetencias.competenciaId,
+    microInicio: assessmentCompetencias.microInicio,
+    microTermino: assessmentCompetencias.microTermino,
+  }).from(assessmentCompetencias);
+}

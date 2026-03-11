@@ -2165,3 +2165,9 @@
 - [x] A3: Horário disponível do mentor mostra hora fim errada no Portal do Aluno (fix: auto-calcular endTime + validar no backend + corrigir dado existente)
 - [x] A4: Agendamento no Portal do Aluno não valida disponibilidade real do mentor (fix: validação frontend dia da semana + validação backend contra mentor_availability)
 - [x] A5: Relatório Excel: falta coluna "Data da Mentoria" na aba Dados do Aluno + filtro Gerencial não abre para mentor (fix: colunas Total Sessões e Última Mentoria no relatório gerencial + isManager inclui mentores)
+
+## Relatório Gerencial - Novas Colunas na Aba Equipe
+- [x] Adicionar coluna Período do Contrato na aba equipe do relatório gerencial Excel
+- [x] Adicionar coluna Macrociclos (Trilhas) na aba equipe do relatório gerencial Excel
+- [x] Adicionar coluna Microciclos (Competências) na aba equipe do relatório gerencial Excel
+- [x] Coluna Turma já existia na aba equipe do relatório gerencial Excel
