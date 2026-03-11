@@ -544,8 +544,8 @@ function ReguaAutopercepção({
   const [notas, setNotas] = useState<Record<number, number>>({});
   const [trilhaAtual, setTrilhaAtual] = useState(0);
 
-  // Filtrar apenas Basic, Essential e Master (excluir Jornada Personalizada, Alinhamento Inicial, etc.)
-  const TRILHAS_PERMITIDAS = ["Basic", "Essential", "Master"];
+  // Filtrar trilhas de desenvolvimento (excluir Jornada Personalizada, Alinhamento Inicial, etc.)
+  const TRILHAS_PERMITIDAS = ["Basic", "Essential", "Master", "Visão de Futuro"];
 
   const trilhasOrdenadas = useMemo(() => {
     if (!trilhasData) return [];
@@ -831,12 +831,14 @@ function RelatorioAutoconhecimento({
   const perfilPrincipal = perfis && perfilPredominante ? perfis[perfilPredominante] : null;
   const perfilSec = perfis && perfilSecundario ? perfis[perfilSecundario] : null;
 
-  // Agrupar autopercepções por trilha (apenas Basic, Essential e Master)
-  const TRILHAS_RELATORIO = ["Basic", "Essential", "Master"];
+  // Agrupar autopercepções por trilha (todas as trilhas que o aluno tem autopercepção)
+  const TRILHAS_RELATORIO_BASE = ["Basic", "Essential", "Master"];
   const autopercepçãoPorTrilha = useMemo(() => {
     if (!autopercepcoesData || !competenciasData || !trilhasData) return [];
+    // Incluir trilhas base + qualquer trilha que o aluno tenha autopercepção
+    const trilhasComAutopercepção = new Set(autopercepcoesData.map((a: any) => a.trilhaId));
     const trilhasOrdenadas = [...trilhasData]
-      .filter((t) => TRILHAS_RELATORIO.includes(t.name))
+      .filter((t) => TRILHAS_RELATORIO_BASE.includes(t.name) || trilhasComAutopercepção.has(t.id))
       .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
     return trilhasOrdenadas.map((trilha) => {
       const comps = competenciasData.filter((c: any) => c.trilhaId === trilha.id);

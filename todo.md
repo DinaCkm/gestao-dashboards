@@ -2174,3 +2174,6 @@
 
 ## Desbloqueio Assessment Onboarding
 - [x] Permitir visualização do Assessment (DISC) mesmo quando Onboarding está concluído (forçar step=5 quando onboarding completo)
+
+## Bug - Autopercepção Joseane
+- [x] Corrigir mapa de autopercepção da Joseane que não aparece preenchido no Assessment do Onboarding (incluir Visão de Futuro no filtro de trilhas da Régua e do Mapa)
