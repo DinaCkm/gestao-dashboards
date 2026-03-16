@@ -8,7 +8,7 @@ import {
   ChevronRight, ChevronLeft, CheckCircle2, Target, Brain,
   BarChart3, Sparkles, AlertCircle, Download, ArrowRight,
   CircleDot, Gauge, BookOpen, Eye, MessageSquare, Info,
-  Heart, Lightbulb, Play, Video, FastForward
+  Heart, Lightbulb, Play, Video, FastForward, Clock
 } from "lucide-react";
 
 // ============================================================
@@ -387,7 +387,7 @@ function TesteDisc({
               </div>
               <CardTitle className="text-xl text-[#0A1E3E]">Antes de começar o Teste DISC</CardTitle>
               <p className="text-gray-600 mt-2 text-sm leading-relaxed">
-                Assista ao vídeo abaixo para entender como funciona o teste DISC e como responder da melhor forma. 
+                Assista ao vídeo abaixo (4 minutos) para entender como funciona o teste DISC e como responder da melhor forma. 
                 Isso vai te ajudar a ter resultados mais precisos!
               </p>
             </CardHeader>
@@ -440,6 +440,10 @@ function TesteDisc({
                       <p className="text-white/70 text-sm flex items-center justify-center gap-1.5 mt-1">
                         <Video className="h-4 w-4" />
                         Entenda como funciona o DISC
+                      </p>
+                      <p className="text-white/50 text-xs flex items-center justify-center gap-1 mt-1">
+                        <Clock className="h-3 w-3" />
+                        Duração: 4 minutos
                       </p>
                     </div>
                   </div>

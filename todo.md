@@ -2243,3 +2243,5 @@
 - [x] Onboarding DISC: adicionar indicador visual de vídeo concluído e só habilitar botão "Iniciar o Teste DISC" após assistir o vídeo
 - [x] Alunas Adelice Novak e Ana Flávia Mendes Borges: eliminadas do programa, não serão cadastradas
 - [x] Onboarding DISC: permitir que aluno pule o vídeo após tê-lo assistido uma vez (salvar estado no banco)
+- [ ] Bug: Onboarding sempre retorna para etapa de cadastro mesmo quando aluno já salvou dados - corrigir lógica de progresso
+- [x] Adicionar informação de duração (4 minutos) no vídeo explicativo do DISC no onboarding
