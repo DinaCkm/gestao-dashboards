@@ -1093,6 +1093,47 @@ export async function getConsultors(): Promise<Consultor[]> {
   return await db.select().from(consultors).orderBy(consultors.name);
 }
 
+// Retorna apenas mentores ativos (para seleção no Onboarding do aluno)
+export async function getActiveMentorsForOnboarding(): Promise<Consultor[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select()
+    .from(consultors)
+    .where(and(eq(consultors.role, 'mentor'), eq(consultors.isActive, 1)))
+    .orderBy(consultors.name);
+}
+
+// Toggle ativar/inativar consultor
+export async function toggleConsultorStatus(consultorId: number): Promise<{ success: boolean; isActive: number }> {
+  const db = await getDb();
+  if (!db) throw new Error('Banco de dados não disponível');
+  const [consultor] = await db.select({ isActive: consultors.isActive }).from(consultors).where(eq(consultors.id, consultorId)).limit(1);
+  if (!consultor) throw new Error('Consultor não encontrado');
+  const newStatus = consultor.isActive === 1 ? 0 : 1;
+  await db.update(consultors).set({ isActive: newStatus }).where(eq(consultors.id, consultorId));
+  return { success: true, isActive: newStatus };
+}
+
+// Verificar se mentor tem disponibilidade de agenda nos próximos 10 dias
+export async function checkMentorHasAvailabilityNext10Days(consultorId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  // Buscar slots ativos do mentor
+  const slots = await db.select()
+    .from(mentorAvailability)
+    .where(and(eq(mentorAvailability.consultorId, consultorId), eq(mentorAvailability.isActive, 1)));
+  if (slots.length === 0) return false;
+  // Verificar se algum slot cai nos próximos 10 dias
+  const today = new Date();
+  for (let i = 0; i < 10; i++) {
+    const checkDate = new Date(today);
+    checkDate.setDate(today.getDate() + i);
+    const dayOfWeek = checkDate.getDay(); // 0=Dom, 1=Seg, ..., 6=Sab
+    if (slots.some(s => s.dayOfWeek === dayOfWeek)) return true;
+  }
+  return false;
+}
+
 export async function getConsultorById(id: number): Promise<Consultor | undefined> {
   const db = await getDb();
   if (!db) return undefined;
@@ -1541,7 +1582,7 @@ export async function updateConsultorAccess(consultorId: number, loginId: string
 }
 
 // Update consultor (gerente/mentor) data
-export async function updateConsultor(consultorId: number, data: { name?: string; email?: string; especialidade?: string; cpf?: string; managedProgramId?: number; programId?: number; photoUrl?: string; miniCurriculo?: string }) {
+export async function updateConsultor(consultorId: number, data: { name?: string; email?: string; especialidade?: string; cpf?: string; managedProgramId?: number; programId?: number; photoUrl?: string; miniCurriculo?: string; isActive?: number }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
   
@@ -1554,6 +1595,7 @@ export async function updateConsultor(consultorId: number, data: { name?: string
   if (data.programId !== undefined) updateData.programId = data.programId;
   if (data.photoUrl !== undefined) updateData.photoUrl = data.photoUrl;
   if (data.miniCurriculo !== undefined) updateData.miniCurriculo = data.miniCurriculo;
+  if (data.isActive !== undefined) updateData.isActive = data.isActive;
   
   if (Object.keys(updateData).length > 0) {
     await db.update(consultors)

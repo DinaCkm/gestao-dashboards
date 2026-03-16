@@ -2233,3 +2233,6 @@
 - [x] Corrigir email boas-vindas: remover tarja azul do header, deixar só o logo sobre fundo branco
 - [x] Corrigir email boas-vindas: URL do botão dá 404 (/login não existe), apontar para URL correta (raiz do site)
 - [x] Corrigir texto com códigos Unicode literais (\u00ea, \u2014, etc.) em OnboardingAluno, TesteDiscOnboarding, DashboardAluno, IndividualDashboard e Upload
+- [x] Onboarding: ao selecionar mentora sem agenda disponível nos próximos 10 dias, exibir mensagem "Esta profissional não tem agenda disponível, escolha outro profissional"
+- [x] Onboarding: mentores inativos (inabilitados pelo admin) não devem aparecer na lista de seleção para novos alunos
+- [x] Admin Cadastros: criar botão ativar/inativar mentor na área de gestão de mentores

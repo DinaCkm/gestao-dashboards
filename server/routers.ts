@@ -2840,9 +2840,9 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
 
   // Mentor/Consultor routes
   mentor: router({
-    // Lista todos os mentores
+    // Lista mentores ativos (para seleção no Onboarding do aluno)
     list: protectedProcedure.query(async () => {
-      return await db.getConsultors();
+      return await db.getActiveMentorsForOnboarding();
     }),
 
     // Detalhes de um mentor específico
@@ -3646,6 +3646,21 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         return await db.updateConsultor(consultorId, data);
       }),
     
+    // Ativar/Inativar mentor
+    toggleMentorStatus: adminProcedure
+      .input(z.object({ consultorId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.toggleConsultorStatus(input.consultorId);
+      }),
+
+    // Verificar se mentor tem agenda disponível nos próximos 10 dias
+    checkAvailabilityNext10Days: protectedProcedure
+      .input(z.object({ consultorId: z.number() }))
+      .query(async ({ input }) => {
+        const hasAvailability = await db.checkMentorHasAvailabilityNext10Days(input.consultorId);
+        return { hasAvailability };
+      }),
+
     // Precificação flexível de sessões do mentor
     getMentorPricing: adminProcedure
       .input(z.object({ consultorId: z.number() }))

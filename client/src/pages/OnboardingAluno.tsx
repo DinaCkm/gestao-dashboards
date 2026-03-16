@@ -372,6 +372,8 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
   const [detailMentora, setDetailMentora] = useState<Mentora | null>(null);
   const [saving, setSaving] = useState(false);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const utils = trpc.useUtils();
 
   // Converter consultores do banco para o formato Mentora
   const mentoras: Mentora[] = useMemo(() => {
@@ -473,12 +475,27 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
                           ? "bg-[#F5991F] hover:bg-[#F5991F]/90"
                           : "bg-[#0A1E3E] hover:bg-[#0A1E3E]/90"
                       }`}
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        setSelectedMentora(mentora);
+                        setCheckingAvailability(true);
+                        try {
+                          const result = await utils.admin.checkAvailabilityNext10Days.fetch({ consultorId: mentora.id });
+                          if (!result.hasAvailability) {
+                            toast.error(`${mentora.nome} não tem agenda disponível nos próximos 10 dias. Por favor, escolha outra profissional.`, { duration: 5000 });
+                            return;
+                          }
+                          setSelectedMentora(mentora);
+                        } catch {
+                          // Se falhar a verificação, permite selecionar mesmo assim
+                          setSelectedMentora(mentora);
+                        } finally {
+                          setCheckingAvailability(false);
+                        }
                       }}
                     >
-                      {selectedMentora?.id === mentora.id ? (
+                      {checkingAvailability ? (
+                        <><Clock className="h-3 w-3 mr-1 animate-spin" /> Verificando...</>
+                      ) : selectedMentora?.id === mentora.id ? (
                         <><CheckCircle2 className="h-3 w-3 mr-1" /> Selecionada</>
                       ) : (
                         <><Heart className="h-3 w-3 mr-1" /> Escolher</>

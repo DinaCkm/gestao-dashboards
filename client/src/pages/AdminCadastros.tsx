@@ -172,6 +172,14 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro ao atualizar mentor: ${err.message}`),
   });
 
+  const toggleMentorStatus = trpc.admin.toggleMentorStatus.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.isActive ? "Mentor ativado com sucesso!" : "Mentor inativado com sucesso!");
+      refetchMentores();
+    },
+    onError: (err) => toast.error(`Erro ao alterar status: ${err.message}`),
+  });
+
   const editGerente = trpc.admin.editGerente.useMutation({
     onSuccess: () => {
       toast.success("Gerente atualizado com sucesso!");
@@ -380,6 +388,8 @@ export default function AdminCadastros() {
               onUpdateAcesso={updateAcessoMentor.mutate}
               isCreating={createMentor.isPending}
               onEdit={editMentor.mutate}
+              onToggleStatus={(consultorId: number) => toggleMentorStatus.mutate({ consultorId })}
+              isTogglingStatus={toggleMentorStatus.isPending}
             />
           </TabsContent>
 
@@ -1311,7 +1321,7 @@ function EmpresasTab({ empresas, loading, onCreate, isCreating, onUpdate, onTogg
 }
 
 // ============ MENTORES TAB ============
-function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, isCreating, onEdit }: {
+function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, isCreating, onEdit, onToggleStatus, isTogglingStatus }: {
   mentores: any[];
   empresas: any[];
   loading: boolean;
@@ -1319,6 +1329,8 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
   onUpdateAcesso: (data: any) => void;
   isCreating: boolean;
   onEdit: (data: any) => void;
+  onToggleStatus: (consultorId: number) => void;
+  isTogglingStatus: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -1539,6 +1551,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                 <TableHead>CPF</TableHead>
                 <TableHead>ID Login</TableHead>
                 <TableHead>Valor/Sessão</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Acesso</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
@@ -1553,6 +1566,22 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                   <TableCell className="font-mono text-sm">{mentor.cpf ? displayCpf(mentor.cpf) : "-"}</TableCell>
                   <TableCell>{mentor.loginId || "-"}</TableCell>
                   <TableCell className="font-mono">{mentor.valorSessao ? `R$ ${Number(mentor.valorSessao).toFixed(2)}` : <span className="text-muted-foreground italic">-</span>}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToggleStatus(mentor.id)}
+                      disabled={isTogglingStatus}
+                      className={mentor.isActive ? "text-green-600 hover:text-red-600" : "text-red-600 hover:text-green-600"}
+                      title={mentor.isActive ? "Clique para inativar" : "Clique para ativar"}
+                    >
+                      {mentor.isActive ? (
+                        <Badge variant="default" className="bg-green-600 cursor-pointer"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
+                      ) : (
+                        <Badge variant="destructive" className="cursor-pointer"><AlertCircle className="h-3 w-3 mr-1" /> Inativo</Badge>
+                      )}
+                    </Button>
+                  </TableCell>
                   <TableCell>
                     {mentor.canLogin ? (
                       <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
