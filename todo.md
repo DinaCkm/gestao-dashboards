@@ -2239,3 +2239,4 @@
 - [x] Onboarding: adicionar badge visual no card da mentora indicando se tem agenda disponível (verde) ou não (vermelho) antes do aluno clicar
 - [x] Mentor: implementar agenda por data específica (além dos horários semanais recorrentes)
 - [x] Mentor: adicionar funcionalidade de configurar disponibilidade por data específica (não apenas dia da semana)
+- [x] Onboarding: adicionar botão com vídeo explicativo sobre o DISC antes do aluno iniciar o teste

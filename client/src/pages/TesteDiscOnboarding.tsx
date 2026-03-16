@@ -8,7 +8,7 @@ import {
   ChevronRight, ChevronLeft, CheckCircle2, Target, Brain,
   BarChart3, Sparkles, AlertCircle, Download, ArrowRight,
   CircleDot, Gauge, BookOpen, Eye, MessageSquare, Info,
-  Heart, Lightbulb
+  Heart, Lightbulb, Play, Video
 } from "lucide-react";
 
 // ============================================================
@@ -259,6 +259,10 @@ function TesteDisc({
 
   const blocos: DiscBloco[] = perguntasData?.blocos || [];
 
+  // Estado: tela de introdução com vídeo antes do teste
+  const [showIntro, setShowIntro] = useState(true);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+
   // Estado: para cada bloco, qual opção é "mais" e qual é "menos"
   const [respostas, setRespostas] = useState<Record<number, { maisId: string | null; menosId: string | null }>>({});
   const [blocoAtual, setBlocoAtual] = useState(0);
@@ -350,6 +354,92 @@ function TesteDisc({
     return (
       <div className="flex items-center justify-center py-20">
         <div className="animate-spin h-8 w-8 border-4 border-[#0A1E3E] border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Tela de introdução com vídeo
+  if (showIntro) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500" ref={topRef}>
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-2 border-[#F5991F]/30 shadow-lg overflow-hidden">
+            <CardHeader className="text-center bg-gradient-to-br from-[#0A1E3E]/5 to-[#F5991F]/10 pb-4">
+              <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#0A1E3E] to-[#2D5A87] flex items-center justify-center shadow-lg">
+                <Brain className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-xl text-[#0A1E3E]">Antes de começar o Teste DISC</CardTitle>
+              <p className="text-gray-600 mt-2 text-sm leading-relaxed">
+                Assista ao vídeo abaixo para entender como funciona o teste DISC e como responder da melhor forma. 
+                Isso vai te ajudar a ter resultados mais precisos!
+              </p>
+            </CardHeader>
+            <CardContent className="p-6 space-y-5">
+              {/* Vídeo Player */}
+              {showVideoPlayer ? (
+                <div className="rounded-xl overflow-hidden shadow-md border border-gray-200">
+                  <video
+                    controls
+                    autoPlay
+                    className="w-full aspect-video bg-black"
+                    src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/video-disc-explicativo_c13df132.mp4"
+                  >
+                    Seu navegador não suporta vídeo.
+                  </video>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowVideoPlayer(true)}
+                  className="w-full group relative rounded-xl overflow-hidden shadow-md border-2 border-[#0A1E3E]/20 hover:border-[#F5991F]/50 transition-all duration-300 cursor-pointer"
+                >
+                  <div className="aspect-video bg-gradient-to-br from-[#0A1E3E] to-[#2D5A87] flex flex-col items-center justify-center gap-3">
+                    <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-[#F5991F]/80 transition-all duration-300 shadow-xl">
+                      <Play className="h-10 w-10 text-white ml-1" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-white font-bold text-lg">Assistir Vídeo Explicativo</p>
+                      <p className="text-white/70 text-sm flex items-center justify-center gap-1.5 mt-1">
+                        <Video className="h-4 w-4" />
+                        Entenda como funciona o DISC
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* Dicas */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <h4 className="font-semibold text-amber-800 flex items-center gap-2 mb-2">
+                  <Lightbulb className="h-4 w-4" />
+                  Dicas para responder
+                </h4>
+                <ul className="text-sm text-amber-700 space-y-1.5">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-amber-600" />
+                    Responda com sinceridade — não existem respostas certas ou erradas
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-amber-600" />
+                    Pense em como você realmente age, não como gostaria de agir
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-amber-600" />
+                    Não pense demais — sua primeira reação geralmente é a mais verdadeira
+                  </li>
+                </ul>
+              </div>
+
+              {/* Botão Iniciar */}
+              <Button
+                onClick={() => setShowIntro(false)}
+                className="w-full bg-gradient-to-r from-[#0A1E3E] to-[#2D5A87] hover:from-[#0A1E3E]/90 hover:to-[#2D5A87]/90 text-white py-6 text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <ArrowRight className="h-5 w-5 mr-2" />
+                Iniciar o Teste DISC
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
