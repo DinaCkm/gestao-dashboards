@@ -30,12 +30,14 @@ export async function sendEmail(options: {
   subject: string;
   html: string;
   text?: string;
+  cc?: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const transport = getTransporter();
     const info = await transport.sendMail({
       from: `"ECOSSISTEMA DO BEM" <${ENV.smtpUser}>`,
       to: options.to,
+      cc: options.cc || undefined,
       subject: options.subject,
       html: options.html,
       text: options.text || "",

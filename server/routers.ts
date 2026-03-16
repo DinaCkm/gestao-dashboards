@@ -5602,8 +5602,10 @@ Responda APENAS em JSON com o formato:
         try {
           if (consultor?.email && aluno) {
             const { sendEmail } = await import('./emailService');
+            const adminEmail = process.env.SMTP_USER || '';
             await sendEmail({
               to: consultor.email,
+              cc: adminEmail || undefined,
               subject: `Encontro Inicial agendado com ${aluno.name} - Prepare-se!`,
               html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
