@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,7 @@ import {
   ChevronRight, ChevronLeft, CheckCircle2, Target, Brain,
   BarChart3, Sparkles, AlertCircle, Download, ArrowRight,
   CircleDot, Gauge, BookOpen, Eye, MessageSquare, Info,
-  Heart, Lightbulb, Play, Video
+  Heart, Lightbulb, Play, Video, FastForward
 } from "lucide-react";
 
 // ============================================================
@@ -257,13 +257,28 @@ function TesteDisc({
   const { data: perguntasData } = trpc.disc.perguntas.useQuery();
   const salvarMutation = trpc.disc.salvarRespostas.useMutation();
 
+  // Verificar se o aluno já assistiu o vídeo DISC antes
+  const { data: videoWatchedData } = trpc.onboarding.hasWatchedDiscVideo.useQuery(
+    { alunoId },
+    { enabled: !!alunoId }
+  );
+  const markVideoWatchedMutation = trpc.onboarding.markDiscVideoWatched.useMutation();
+
   const blocos: DiscBloco[] = perguntasData?.blocos || [];
 
   // Estado: tela de introdução com vídeo antes do teste
+  const alreadyWatched = videoWatchedData?.watched === true;
   const [showIntro, setShowIntro] = useState(true);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [videoCompleted, setVideoCompleted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Se o aluno já assistiu antes, marcar videoCompleted como true
+  useEffect(() => {
+    if (alreadyWatched) {
+      setVideoCompleted(true);
+    }
+  }, [alreadyWatched]);
 
   // Estado: para cada bloco, qual opção é "mais" e qual é "menos"
   const [respostas, setRespostas] = useState<Record<number, { maisId: string | null; menosId: string | null }>>({});
@@ -386,11 +401,19 @@ function TesteDisc({
                     autoPlay
                     className="w-full aspect-video bg-black"
                     src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/video-disc-explicativo_c13df132.mp4"
-                    onEnded={() => setVideoCompleted(true)}
+                    onEnded={() => {
+                      setVideoCompleted(true);
+                      if (!alreadyWatched) {
+                        markVideoWatchedMutation.mutate({ alunoId });
+                      }
+                    }}
                     onTimeUpdate={(e) => {
                       const video = e.currentTarget;
                       if (video.duration > 0 && video.currentTime / video.duration >= 0.9) {
                         setVideoCompleted(true);
+                        if (!alreadyWatched) {
+                          markVideoWatchedMutation.mutate({ alunoId });
+                        }
                       }
                     }}
                   >
@@ -446,33 +469,58 @@ function TesteDisc({
               </div>
 
               {/* Indicador de status do vídeo */}
-              {!videoCompleted && showVideoPlayer && (
+              {!videoCompleted && !alreadyWatched && showVideoPlayer && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
                   <Video className="h-4 w-4 shrink-0 animate-pulse" />
                   Assista o vídeo até o final para habilitar o início do teste
                 </div>
               )}
 
-              {videoCompleted && (
+              {videoCompleted && !alreadyWatched && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2 text-sm text-green-700 animate-in fade-in duration-300">
                   <CheckCircle2 className="h-4 w-4 shrink-0" />
                   Vídeo concluído! Você já pode iniciar o teste.
                 </div>
               )}
 
-              {/* Botão Iniciar */}
-              <Button
-                onClick={() => setShowIntro(false)}
-                disabled={!videoCompleted}
-                className={`w-full py-6 text-lg font-bold shadow-lg transition-all duration-300 ${
-                  videoCompleted
-                    ? 'bg-gradient-to-r from-[#0A1E3E] to-[#2D5A87] hover:from-[#0A1E3E]/90 hover:to-[#2D5A87]/90 text-white hover:shadow-xl'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                <ArrowRight className="h-5 w-5 mr-2" />
-                {videoCompleted ? 'Iniciar o Teste DISC' : 'Assista o vídeo para continuar'}
-              </Button>
+              {/* Mensagem para quem já assistiu antes */}
+              {alreadyWatched && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2 text-sm text-emerald-700 animate-in fade-in duration-300">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  Você já assistiu este vídeo anteriormente. Pode pular ou assistir novamente se preferir.
+                </div>
+              )}
+
+              {/* Botões */}
+              <div className="flex flex-col gap-3">
+                {/* Botão Iniciar (sempre disponível se já assistiu OU se completou agora) */}
+                <Button
+                  onClick={() => setShowIntro(false)}
+                  disabled={!videoCompleted}
+                  className={`w-full py-6 text-lg font-bold shadow-lg transition-all duration-300 ${
+                    videoCompleted
+                      ? 'bg-gradient-to-r from-[#0A1E3E] to-[#2D5A87] hover:from-[#0A1E3E]/90 hover:to-[#2D5A87]/90 text-white hover:shadow-xl'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {alreadyWatched ? (
+                    <>
+                      <FastForward className="h-5 w-5 mr-2" />
+                      Pular Vídeo e Iniciar o Teste DISC
+                    </>
+                  ) : videoCompleted ? (
+                    <>
+                      <ArrowRight className="h-5 w-5 mr-2" />
+                      Iniciar o Teste DISC
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight className="h-5 w-5 mr-2" />
+                      Assista o vídeo para continuar
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

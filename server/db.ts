@@ -7394,3 +7394,43 @@ export async function deleteAluno(alunoId: number) {
     return { success: false, message: `Erro ao excluir aluno: ${error.message}` };
   }
 }
+
+
+// ============ DISC VIDEO WATCHED ============
+
+/**
+ * Marca que o aluno assistiu o vídeo DISC pela primeira vez.
+ * Salva o timestamp atual na coluna discVideoWatchedAt.
+ */
+export async function markDiscVideoWatched(alunoId: number): Promise<{ success: boolean }> {
+  const db = await getDb();
+  if (!db) return { success: false };
+  try {
+    await db.update(alunos)
+      .set({ discVideoWatchedAt: new Date() })
+      .where(eq(alunos.id, alunoId));
+    return { success: true };
+  } catch (error: any) {
+    console.error("[markDiscVideoWatched] Error:", error);
+    return { success: false };
+  }
+}
+
+/**
+ * Verifica se o aluno já assistiu o vídeo DISC.
+ * Retorna true se discVideoWatchedAt não for null.
+ */
+export async function hasWatchedDiscVideo(alunoId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    const [aluno] = await db.select({ discVideoWatchedAt: alunos.discVideoWatchedAt })
+      .from(alunos)
+      .where(eq(alunos.id, alunoId))
+      .limit(1);
+    return aluno?.discVideoWatchedAt !== null && aluno?.discVideoWatchedAt !== undefined;
+  } catch (error: any) {
+    console.error("[hasWatchedDiscVideo] Error:", error);
+    return false;
+  }
+}

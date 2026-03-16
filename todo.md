@@ -2242,3 +2242,4 @@
 - [x] Onboarding: adicionar botão com vídeo explicativo sobre o DISC antes do aluno iniciar o teste
 - [x] Onboarding DISC: adicionar indicador visual de vídeo concluído e só habilitar botão "Iniciar o Teste DISC" após assistir o vídeo
 - [x] Alunas Adelice Novak e Ana Flávia Mendes Borges: eliminadas do programa, não serão cadastradas
+- [x] Onboarding DISC: permitir que aluno pule o vídeo após tê-lo assistido uma vez (salvar estado no banco)

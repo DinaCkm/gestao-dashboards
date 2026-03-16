@@ -194,6 +194,7 @@ export const alunos = mysqlTable("alunos", {
   areaAtuacao: varchar("areaAtuacao", { length: 255 }),
   minicurriculo: text("minicurriculo"),
   quemEVoce: text("quemEVoce"),
+  discVideoWatchedAt: timestamp("discVideoWatchedAt"), // Data/hora em que o aluno assistiu o video DISC pela 1a vez
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

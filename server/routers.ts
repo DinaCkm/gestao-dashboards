@@ -5601,6 +5601,21 @@ Responda APENAS em JSON com o formato:
         return { success: result.success, appointmentId: result.id };
       }),
 
+    // Marcar que o aluno assistiu o vídeo DISC
+    markDiscVideoWatched: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.markDiscVideoWatched(input.alunoId);
+      }),
+
+    // Verificar se o aluno já assistiu o vídeo DISC
+    hasWatchedDiscVideo: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const watched = await db.hasWatchedDiscVideo(input.alunoId);
+        return { watched };
+      }),
+
     // Retorna o step atual do onboarding baseado nos dados do banco
     progresso: protectedProcedure
       .input(z.object({ alunoId: z.number() }))

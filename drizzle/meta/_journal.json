@@ -337,6 +337,13 @@
       "when": 1773688126515,
       "tag": "0047_lethal_domino",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "5",
+      "when": 1773697932846,
+      "tag": "0048_rich_surge",
+      "breakpoints": true
     }
   ]
 }
