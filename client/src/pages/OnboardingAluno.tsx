@@ -1180,6 +1180,9 @@ export default function OnboardingAluno() {
     { enabled: alunoId > 0 }
   );
 
+  // Buscar lista de mentores para recuperar dados da mentora salva
+  const { data: mentoresData } = trpc.mentor.list.useQuery();
+
   // Restaurar o step correto ao carregar a página
   useEffect(() => {
     if (progressoData && !stepInitialized) {
@@ -1187,6 +1190,25 @@ export default function OnboardingAluno() {
       setStepInitialized(true);
     }
   }, [progressoData, stepInitialized]);
+
+  // Recuperar a mentora salva no banco quando o aluno retorna
+  useEffect(() => {
+    if (progressoData?.mentoraId && mentoresData && !selectedMentora) {
+      const mentoraSalva = mentoresData.find((c: any) => c.id === progressoData.mentoraId);
+      if (mentoraSalva) {
+        setSelectedMentora({
+          id: mentoraSalva.id,
+          nome: mentoraSalva.name,
+          foto: mentoraSalva.photoUrl || undefined,
+          especialidade: mentoraSalva.especialidade || "Mentoria e Desenvolvimento",
+          miniCurriculo: mentoraSalva.miniCurriculo || (mentoraSalva.especialidade ? `Especialista em ${mentoraSalva.especialidade}` : "Mentora do programa B.E.M."),
+          curriculoCompleto: mentoraSalva.miniCurriculo || undefined,
+          areasAtuacao: mentoraSalva.especialidade ? mentoraSalva.especialidade.split(",").map((a: string) => a.trim()) : ["Mentoria"],
+          disponivel: mentoraSalva.isActive === 1,
+        });
+      }
+    }
+  }, [progressoData?.mentoraId, mentoresData, selectedMentora]);
 
   // Modo somente leitura quando onboarding já foi completo
   const readOnly = !!(progressoData?.onboardingCompleto);

@@ -2243,7 +2243,7 @@
 - [x] Onboarding DISC: adicionar indicador visual de vídeo concluído e só habilitar botão "Iniciar o Teste DISC" após assistir o vídeo
 - [x] Alunas Adelice Novak e Ana Flávia Mendes Borges: eliminadas do programa, não serão cadastradas
 - [x] Onboarding DISC: permitir que aluno pule o vídeo após tê-lo assistido uma vez (salvar estado no banco)
-- [ ] Bug: Onboarding sempre retorna para etapa de cadastro mesmo quando aluno já salvou dados - corrigir lógica de progresso
+- [x] Bug: Onboarding sempre retorna para etapa de cadastro mesmo quando aluno já salvou dados - corrigido: adicionada verificação de cadastroPreenchido na lógica de step
 - [x] Adicionar informação de duração (4 minutos) no vídeo explicativo do DISC no onboarding
 - [x] Reformular etapa de agendamento do onboarding: mostrar datas/horários disponíveis reais da mentora (não genéricos)
 - [x] Mostrar link da sala de entrevista (Google Meet) na etapa de agendamento
@@ -2251,3 +2251,4 @@
 - [x] Enviar email para mentora informando que foi escolhida, parabenizando e solicitando que estude currículo e testes do aluno
 - [x] Enviar email para o administrador quando aluno fizer agendamento no onboarding (CC no email da mentora)
 - [x] Criar painel administrativo para visualizar todos os agendamentos realizados na plataforma
+- [x] Bug: Mentora escolhida pelo aluno no onboarding não é persistida ao retornar - corrigido: recuperar mentoraId do banco + useEffect para restaurar selectedMentora

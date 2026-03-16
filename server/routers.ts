@@ -5799,11 +5799,15 @@ Responda APENAS em JSON com o formato:
         const todosDisc = await db.getAllDiscResultados(alunoId);
         const cicloAtual = todosDisc.length;
 
+        // Verificar se o cadastro foi preenchido (tem pelo menos nome e email)
+        const cadastroPreenchido = !!(aluno?.name && aluno?.email);
+
         // Determinar step atual
         let step = 1;
-        if (discCompleto && autopercepCompleta) step = 3; // Pula para mentora
-        if (discCompleto && autopercepCompleta && mentoraEscolhida) step = 4; // Pula para agendamento
-        if (discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito) step = 5; // Pula para 1º encontro
+        if (cadastroPreenchido) step = 2; // Cadastro feito, vai para assessment
+        if (cadastroPreenchido && discCompleto && autopercepCompleta) step = 3; // Pula para mentora
+        if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida) step = 4; // Pula para agendamento
+        if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito) step = 5; // Pula para 1º encontro
 
         // Quando onboarding está completo, forçar step 5 para que todas as etapas
         // apareçam como concluídas e o aluno possa navegar livremente em modo visualização
@@ -5811,9 +5815,11 @@ Responda APENAS em JSON com o formato:
 
         return {
           step,
+          cadastroPreenchido,
           discCompleto,
           autopercepCompleta,
           mentoraEscolhida,
+          mentoraId: aluno?.consultorId || null,
           agendamentoFeito,
           agendamentoData,
           agendamentoHora,
