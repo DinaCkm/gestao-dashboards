@@ -42,7 +42,8 @@ import {
   activities, InsertActivity, Activity,
   activityRegistrations, InsertActivityRegistration, ActivityRegistration,
   activityTurmas, InsertActivityTurma, ActivityTurma,
-  mentorSessionPricing, InsertMentorSessionPricing, MentorSessionPricing,} from "../drizzle/schema";
+  mentorSessionPricing, InsertMentorSessionPricing, MentorSessionPricing,
+  mentorDateAvailability, InsertMentorDateAvailability, MentorDateAvailability,} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1118,18 +1119,32 @@ export async function toggleConsultorStatus(consultorId: number): Promise<{ succ
 export async function checkMentorHasAvailabilityNext10Days(consultorId: number): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
-  // Buscar slots ativos do mentor
-  const slots = await db.select()
+  // 1) Buscar slots recorrentes (dia da semana) ativos
+  const weeklySlots = await db.select()
     .from(mentorAvailability)
     .where(and(eq(mentorAvailability.consultorId, consultorId), eq(mentorAvailability.isActive, 1)));
-  if (slots.length === 0) return false;
-  // Verificar se algum slot cai nos próximos 10 dias
+  // 2) Buscar slots por data específica ativos
+  const dateSlots = await db.select()
+    .from(mentorDateAvailability)
+    .where(and(eq(mentorDateAvailability.consultorId, consultorId), eq(mentorDateAvailability.isActive, 1)));
+  
   const today = new Date();
-  for (let i = 0; i < 10; i++) {
-    const checkDate = new Date(today);
-    checkDate.setDate(today.getDate() + i);
-    const dayOfWeek = checkDate.getDay(); // 0=Dom, 1=Seg, ..., 6=Sab
-    if (slots.some(s => s.dayOfWeek === dayOfWeek)) return true;
+  const todayStr = today.toISOString().slice(0, 10);
+  const futureDate = new Date(today);
+  futureDate.setDate(today.getDate() + 10);
+  const futureStr = futureDate.toISOString().slice(0, 10);
+  
+  // Verificar datas específicas nos próximos 10 dias
+  if (dateSlots.some(s => s.specificDate >= todayStr && s.specificDate <= futureStr)) return true;
+  
+  // Verificar slots recorrentes nos próximos 10 dias
+  if (weeklySlots.length > 0) {
+    for (let i = 0; i < 10; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() + i);
+      const dayOfWeek = checkDate.getDay();
+      if (weeklySlots.some(s => s.dayOfWeek === dayOfWeek)) return true;
+    }
   }
   return false;
 }
@@ -5508,6 +5523,70 @@ export async function removeMentorAvailability(id: number) {
   const db = await getDb();
   if (!db) return { success: false };
   await db.delete(mentorAvailability).where(eq(mentorAvailability.id, id));
+  return { success: true };
+}
+
+// ==================== AGENDA POR DATA ESPECÍFICA ====================
+
+export async function getMentorDateAvailability(consultorId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(mentorDateAvailability)
+    .where(eq(mentorDateAvailability.consultorId, consultorId))
+    .orderBy(mentorDateAvailability.specificDate, mentorDateAvailability.startTime);
+}
+
+export async function saveMentorDateAvailability(consultorId: number, slots: {
+  id?: number;
+  specificDate: string;
+  startTime: string;
+  endTime: string;
+  slotDurationMinutes: number;
+  googleMeetLink?: string;
+  isActive: number;
+}[]) {
+  const db = await getDb();
+  if (!db) return { success: false };
+
+  for (const slot of slots) {
+    let endTime = slot.endTime;
+    if (!endTime || endTime === slot.startTime) {
+      const [h, m] = slot.startTime.split(':').map(Number);
+      const totalMin = h * 60 + m + slot.slotDurationMinutes;
+      const endH = Math.floor(totalMin / 60) % 24;
+      const endM = totalMin % 60;
+      endTime = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+    }
+    if (slot.id) {
+      await db.update(mentorDateAvailability)
+        .set({
+          specificDate: slot.specificDate,
+          startTime: slot.startTime,
+          endTime: endTime,
+          slotDurationMinutes: slot.slotDurationMinutes,
+          googleMeetLink: slot.googleMeetLink || null,
+          isActive: slot.isActive,
+        })
+        .where(eq(mentorDateAvailability.id, slot.id));
+    } else {
+      await db.insert(mentorDateAvailability).values({
+        consultorId,
+        specificDate: slot.specificDate,
+        startTime: slot.startTime,
+        endTime: endTime,
+        slotDurationMinutes: slot.slotDurationMinutes,
+        googleMeetLink: slot.googleMeetLink || null,
+        isActive: slot.isActive,
+      });
+    }
+  }
+  return { success: true };
+}
+
+export async function removeMentorDateAvailability(id: number) {
+  const db = await getDb();
+  if (!db) return { success: false };
+  await db.delete(mentorDateAvailability).where(eq(mentorDateAvailability.id, id));
   return { success: true };
 }
 

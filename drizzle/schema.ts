@@ -995,3 +995,24 @@ export const mentorSessionPricing = mysqlTable("mentor_session_pricing", {
 });
 export type MentorSessionPricing = typeof mentorSessionPricing.$inferSelect;
 export type InsertMentorSessionPricing = typeof mentorSessionPricing.$inferInsert;
+
+
+/**
+ * Disponibilidade por Data Específica do Mentor
+ * Permite que o mentor adicione datas avulsas de disponibilidade (além dos dias da semana recorrentes)
+ * Ex: "Disponível dia 20/03/2026 das 09:00 às 10:00"
+ */
+export const mentorDateAvailability = mysqlTable("mentor_date_availability", {
+  id: int("id").autoincrement().primaryKey(),
+  consultorId: int("consultorId").notNull(), // FK para consultors
+  specificDate: varchar("specificDate", { length: 10 }).notNull(), // "2026-03-20" formato YYYY-MM-DD
+  startTime: varchar("startTime", { length: 5 }).notNull(), // "09:00"
+  endTime: varchar("endTime", { length: 5 }).notNull(), // "10:00"
+  slotDurationMinutes: int("slotDurationMinutes").default(60).notNull(),
+  googleMeetLink: varchar("googleMeetLink", { length: 500 }),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MentorDateAvailability = typeof mentorDateAvailability.$inferSelect;
+export type InsertMentorDateAvailability = typeof mentorDateAvailability.$inferInsert;

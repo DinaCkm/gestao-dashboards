@@ -3270,6 +3270,40 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         return await db.removeMentorAvailability(input.id);
       }),
 
+    // ===== AGENDA POR DATA ESPECÍFICA =====
+    
+    // Listar disponibilidade por data específica do mentor
+    getDateAvailability: protectedProcedure
+      .input(z.object({ consultorId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getMentorDateAvailability(input.consultorId);
+      }),
+
+    // Salvar/atualizar disponibilidade por data específica
+    saveDateAvailability: managerProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        slots: z.array(z.object({
+          id: z.number().optional(),
+          specificDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          startTime: z.string().regex(/^\d{2}:\d{2}$/),
+          endTime: z.string().regex(/^\d{2}:\d{2}$/),
+          slotDurationMinutes: z.number().min(15).max(240).default(60),
+          googleMeetLink: z.string().optional(),
+          isActive: z.number().default(1),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.saveMentorDateAvailability(input.consultorId, input.slots);
+      }),
+
+    // Remover slot de data específica
+    removeDateAvailability: managerProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.removeMentorDateAvailability(input.id);
+      }),
+
     // Listar agendamentos do mentor
     getAppointments: protectedProcedure
       .input(z.object({

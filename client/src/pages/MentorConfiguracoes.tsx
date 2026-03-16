@@ -291,11 +291,253 @@ function MentorPerfilTab({ consultorId }: { consultorId: number }) {
   );
 }
 
+// ==================== SEÇÃO DE DATAS ESPECÍFICAS ====================
+function DateSpecificSection({ consultorId, dateAvailability, saveDateMutation, removeDateMutation, utils, globalMeetLink }: {
+  consultorId: number;
+  dateAvailability: any[];
+  saveDateMutation: any;
+  removeDateMutation: any;
+  utils: any;
+  globalMeetLink: string;
+}) {
+  const [newDateSlot, setNewDateSlot] = useState({
+    specificDate: '',
+    startTime: '09:00',
+    endTime: '10:00',
+    slotDurationMinutes: 60,
+    googleMeetLink: '',
+  });
+
+  const calcEndTime = (start: string, durationMin: number) => {
+    const [h, m] = start.split(':').map(Number);
+    const totalMin = h * 60 + m + durationMin;
+    const endH = Math.floor(totalMin / 60) % 24;
+    const endM = totalMin % 60;
+    return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+  };
+
+  const handleAddDateSlot = async () => {
+    if (!newDateSlot.specificDate) {
+      toast.error('Selecione uma data');
+      return;
+    }
+    // Validar que a data é futura
+    const today = new Date().toISOString().slice(0, 10);
+    if (newDateSlot.specificDate < today) {
+      toast.error('A data precisa ser hoje ou futura');
+      return;
+    }
+    try {
+      await saveDateMutation.mutateAsync({
+        consultorId,
+        slots: [{
+          specificDate: newDateSlot.specificDate,
+          startTime: newDateSlot.startTime,
+          endTime: newDateSlot.endTime,
+          slotDurationMinutes: newDateSlot.slotDurationMinutes,
+          googleMeetLink: newDateSlot.googleMeetLink || globalMeetLink || undefined,
+          isActive: 1,
+        }],
+      });
+      utils.mentor.getDateAvailability.invalidate();
+      toast.success('Data específica adicionada com sucesso!');
+      setNewDateSlot({ specificDate: '', startTime: '09:00', endTime: '10:00', slotDurationMinutes: 60, googleMeetLink: '' });
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao salvar data');
+    }
+  };
+
+  const handleRemoveDateSlot = async (id: number) => {
+    try {
+      await removeDateMutation.mutateAsync({ id });
+      utils.mentor.getDateAvailability.invalidate();
+      toast.success('Data removida');
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao remover');
+    }
+  };
+
+  const handleToggleDateActive = async (slot: any) => {
+    try {
+      await saveDateMutation.mutateAsync({
+        consultorId,
+        slots: [{
+          id: slot.id,
+          specificDate: slot.specificDate,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          slotDurationMinutes: slot.slotDurationMinutes,
+          googleMeetLink: slot.googleMeetLink || undefined,
+          isActive: slot.isActive === 1 ? 0 : 1,
+        }],
+      });
+      utils.mentor.getDateAvailability.invalidate();
+      toast.success(slot.isActive === 1 ? 'Data desativada' : 'Data ativada');
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao atualizar');
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
+  // Separar datas futuras e passadas
+  const today = new Date().toISOString().slice(0, 10);
+  const futureDates = (dateAvailability || []).filter(d => d.specificDate >= today);
+  const pastDates = (dateAvailability || []).filter(d => d.specificDate < today);
+
+  return (
+    <>
+      {/* Adicionar Data Específica */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Calendar className="h-5 w-5 text-purple-600" />
+            Adicionar Data Específica
+          </CardTitle>
+          <CardDescription>Adicione datas avulsas de disponibilidade além dos horários semanais recorrentes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <div>
+              <Label>Data</Label>
+              <Input
+                type="date"
+                value={newDateSlot.specificDate}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={e => setNewDateSlot(p => ({ ...p, specificDate: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Início</Label>
+              <Input type="time" value={newDateSlot.startTime} onChange={e => {
+                const start = e.target.value;
+                setNewDateSlot(p => ({ ...p, startTime: start, endTime: calcEndTime(start, p.slotDurationMinutes) }));
+              }} />
+            </div>
+            <div>
+              <Label>Fim <span className="text-xs text-muted-foreground">(auto)</span></Label>
+              <Input type="time" value={newDateSlot.endTime} readOnly className="bg-muted/50" />
+            </div>
+            <div>
+              <Label>Duração (min)</Label>
+              <Select value={String(newDateSlot.slotDurationMinutes)} onValueChange={v => {
+                const dur = Number(v);
+                setNewDateSlot(p => ({ ...p, slotDurationMinutes: dur, endTime: calcEndTime(p.startTime, dur) }));
+              }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">30 min</SelectItem>
+                  <SelectItem value="45">45 min</SelectItem>
+                  <SelectItem value="60">1 hora</SelectItem>
+                  <SelectItem value="90">1h30</SelectItem>
+                  <SelectItem value="120">2 horas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleAddDateSlot} disabled={saveDateMutation.isPending}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar
+            </Button>
+          </div>
+          <div className="mt-3">
+            <Label>Link do Meet (opcional)</Label>
+            <Input
+              placeholder="https://meet.google.com/xxx-xxxx-xxx"
+              value={newDateSlot.googleMeetLink}
+              onChange={e => setNewDateSlot(p => ({ ...p, googleMeetLink: e.target.value }))}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Datas Cadastradas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Calendar className="h-5 w-5 text-purple-600" />
+            Minhas Datas Específicas
+          </CardTitle>
+          <CardDescription>Datas avulsas de disponibilidade para sessões de mentoria</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {futureDates.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <p>Nenhuma data específica cadastrada.</p>
+              <p className="text-sm">Adicione datas avulsas acima para complementar seus horários semanais.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {futureDates.map(slot => (
+                <div key={slot.id} className={`flex items-center justify-between p-3 rounded-md ${slot.isActive ? 'bg-purple-50 border border-purple-200' : 'bg-gray-50 border border-gray-200 opacity-60'}`}>
+                  <div className="flex items-center gap-4">
+                    <Badge variant="outline" className="font-semibold text-purple-700 border-purple-300">
+                      {formatDate(slot.specificDate)}
+                    </Badge>
+                    <span className="font-mono text-sm font-medium">{slot.startTime} — {slot.endTime}</span>
+                    <Badge variant="outline" className="text-xs">{slot.slotDurationMinutes} min</Badge>
+                    {slot.googleMeetLink && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Video className="h-3 w-3 mr-1" /> Meet
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToggleDateActive(slot)}
+                      className={slot.isActive ? 'text-amber-600' : 'text-green-600'}
+                    >
+                      {slot.isActive ? 'Desativar' : 'Ativar'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveDateSlot(slot.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {pastDates.length > 0 && (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-xs text-muted-foreground mb-2">Datas passadas ({pastDates.length})</p>
+              <div className="space-y-1">
+                {pastDates.slice(0, 5).map(slot => (
+                  <div key={slot.id} className="flex items-center justify-between p-2 rounded-md bg-gray-50 opacity-50 text-sm">
+                    <div className="flex items-center gap-3">
+                      <span>{formatDate(slot.specificDate)}</span>
+                      <span className="font-mono">{slot.startTime} — {slot.endTime}</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => handleRemoveDateSlot(slot.id)} className="text-red-400 h-6">
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
 // ==================== ABA AGENDA ====================
 function MentorAgendaTab({ consultorId }: { consultorId: number }) {
   const { data: availability, isLoading } = trpc.mentor.getAvailability.useQuery({ consultorId });
+  const { data: dateAvailability } = trpc.mentor.getDateAvailability.useQuery({ consultorId });
   const saveMutation = trpc.mentor.saveAvailability.useMutation();
   const removeMutation = trpc.mentor.removeAvailability.useMutation();
+  const saveDateMutation = trpc.mentor.saveDateAvailability.useMutation();
+  const removeDateMutation = trpc.mentor.removeDateAvailability.useMutation();
   const utils = trpc.useUtils();
 
   // A3 FIX: Helper para calcular endTime baseado em startTime + duração
@@ -528,23 +770,8 @@ function MentorAgendaTab({ consultorId }: { consultorId: number }) {
         </CardContent>
       </Card>
 
-      {/* Bloqueio de Datas */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <XCircle className="h-5 w-5 text-red-500" />
-            Bloqueio de Datas
-          </CardTitle>
-          <CardDescription>Bloqueie datas específicas em que você não estará disponível (férias, feriados, etc.)</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6 text-muted-foreground">
-            <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Funcionalidade em desenvolvimento</p>
-            <p className="text-xs text-muted-foreground/70">Em breve você poderá bloquear datas específicas</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Datas Específicas */}
+      <DateSpecificSection consultorId={consultorId} dateAvailability={dateAvailability || []} saveDateMutation={saveDateMutation} removeDateMutation={removeDateMutation} utils={utils} globalMeetLink={globalMeetLink} />
     </div>
   );
 }

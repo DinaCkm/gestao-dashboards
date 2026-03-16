@@ -373,6 +373,8 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
   const [detailMentora, setDetailMentora] = useState<Mentora | null>(null);
   const [saving, setSaving] = useState(false);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [availabilityMap, setAvailabilityMap] = useState<Record<number, boolean>>({});
+  const [loadingAvailability, setLoadingAvailability] = useState(true);
   const utils = trpc.useUtils();
 
   // Converter consultores do banco para o formato Mentora
@@ -389,6 +391,32 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
       disponivel: c.isActive === 1,
     }));
   }, [mentoresData]);
+
+  // Verificar disponibilidade de agenda de todas as mentoras ao carregar
+  useEffect(() => {
+    if (!mentoras.length) return;
+    let cancelled = false;
+    const checkAll = async () => {
+      setLoadingAvailability(true);
+      const map: Record<number, boolean> = {};
+      await Promise.all(
+        mentoras.filter(m => m.disponivel).map(async (m) => {
+          try {
+            const result = await utils.admin.checkAvailabilityNext10Days.fetch({ consultorId: m.id });
+            if (!cancelled) map[m.id] = result.hasAvailability;
+          } catch {
+            if (!cancelled) map[m.id] = true; // Se falhar, assume disponível
+          }
+        })
+      );
+      if (!cancelled) {
+        setAvailabilityMap(map);
+        setLoadingAvailability(false);
+      }
+    };
+    checkAll();
+    return () => { cancelled = true; };
+  }, [mentoras.length]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -431,7 +459,21 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
                 {!mentora.disponivel && (
                   <div className="absolute top-3 right-3">
                     <Badge className="bg-red-500 text-white border-0 text-xs">
-                      Sem disponibilidade
+                      Inativa
+                    </Badge>
+                  </div>
+                )}
+                {mentora.disponivel && !loadingAvailability && availabilityMap[mentora.id] === false && (
+                  <div className="absolute top-3 right-3">
+                    <Badge className="bg-orange-500 text-white border-0 text-xs animate-pulse">
+                      Sem agenda disponível
+                    </Badge>
+                  </div>
+                )}
+                {mentora.disponivel && !loadingAvailability && availabilityMap[mentora.id] === true && (
+                  <div className="absolute top-3 left-3">
+                    <Badge className="bg-emerald-500 text-white border-0 text-xs">
+                      Agenda disponível
                     </Badge>
                   </div>
                 )}
@@ -468,39 +510,33 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
                     <Eye className="h-3 w-3 mr-1" /> Ver Currículo
                   </Button>
                   {mentora.disponivel && !readOnly ? (
-                    <Button
-                      size="sm"
-                      className={`flex-1 text-xs ${
-                        selectedMentora?.id === mentora.id
-                          ? "bg-[#F5991F] hover:bg-[#F5991F]/90"
-                          : "bg-[#0A1E3E] hover:bg-[#0A1E3E]/90"
-                      }`}
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        setCheckingAvailability(true);
-                        try {
-                          const result = await utils.admin.checkAvailabilityNext10Days.fetch({ consultorId: mentora.id });
-                          if (!result.hasAvailability) {
-                            toast.error(`${mentora.nome} não tem agenda disponível nos próximos 10 dias. Por favor, escolha outra profissional.`, { duration: 5000 });
-                            return;
-                          }
+                    availabilityMap[mentora.id] === false && !loadingAvailability ? (
+                      <Button size="sm" variant="outline" className="flex-1 text-xs text-orange-600 border-orange-300" disabled>
+                        Sem agenda
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className={`flex-1 text-xs ${
+                          selectedMentora?.id === mentora.id
+                            ? "bg-[#F5991F] hover:bg-[#F5991F]/90"
+                            : "bg-[#0A1E3E] hover:bg-[#0A1E3E]/90"
+                        }`}
+                        disabled={loadingAvailability}
+                        onClick={async (e) => {
+                          e.stopPropagation();
                           setSelectedMentora(mentora);
-                        } catch {
-                          // Se falhar a verificação, permite selecionar mesmo assim
-                          setSelectedMentora(mentora);
-                        } finally {
-                          setCheckingAvailability(false);
-                        }
-                      }}
-                    >
-                      {checkingAvailability ? (
-                        <><Clock className="h-3 w-3 mr-1 animate-spin" /> Verificando...</>
-                      ) : selectedMentora?.id === mentora.id ? (
-                        <><CheckCircle2 className="h-3 w-3 mr-1" /> Selecionada</>
-                      ) : (
-                        <><Heart className="h-3 w-3 mr-1" /> Escolher</>
-                      )}
-                    </Button>
+                        }}
+                      >
+                        {loadingAvailability ? (
+                          <><Clock className="h-3 w-3 mr-1 animate-spin" /> Verificando...</>
+                        ) : selectedMentora?.id === mentora.id ? (
+                          <><CheckCircle2 className="h-3 w-3 mr-1" /> Selecionada</>
+                        ) : (
+                          <><Heart className="h-3 w-3 mr-1" /> Escolher</>
+                        )}
+                      </Button>
+                    )
                   ) : !readOnly ? (
                     <Button size="sm" variant="outline" className="flex-1 text-xs" disabled>
                       Indisponível

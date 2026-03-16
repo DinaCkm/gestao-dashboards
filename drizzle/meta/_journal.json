@@ -330,6 +330,13 @@
       "when": 1773088057490,
       "tag": "0046_chilly_the_call",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "5",
+      "when": 1773688126515,
+      "tag": "0047_lethal_domino",
+      "breakpoints": true
     }
   ]
 }

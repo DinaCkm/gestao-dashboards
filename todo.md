@@ -2236,3 +2236,6 @@
 - [x] Onboarding: ao selecionar mentora sem agenda disponível nos próximos 10 dias, exibir mensagem "Esta profissional não tem agenda disponível, escolha outro profissional"
 - [x] Onboarding: mentores inativos (inabilitados pelo admin) não devem aparecer na lista de seleção para novos alunos
 - [x] Admin Cadastros: criar botão ativar/inativar mentor na área de gestão de mentores
+- [x] Onboarding: adicionar badge visual no card da mentora indicando se tem agenda disponível (verde) ou não (vermelho) antes do aluno clicar
+- [x] Mentor: implementar agenda por data específica (além dos horários semanais recorrentes)
+- [x] Mentor: adicionar funcionalidade de configurar disponibilidade por data específica (não apenas dia da semana)
