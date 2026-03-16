@@ -2240,3 +2240,5 @@
 - [x] Mentor: implementar agenda por data específica (além dos horários semanais recorrentes)
 - [x] Mentor: adicionar funcionalidade de configurar disponibilidade por data específica (não apenas dia da semana)
 - [x] Onboarding: adicionar botão com vídeo explicativo sobre o DISC antes do aluno iniciar o teste
+- [x] Onboarding DISC: adicionar indicador visual de vídeo concluído e só habilitar botão "Iniciar o Teste DISC" após assistir o vídeo
+- [x] Alunas Adelice Novak e Ana Flávia Mendes Borges: eliminadas do programa, não serão cadastradas

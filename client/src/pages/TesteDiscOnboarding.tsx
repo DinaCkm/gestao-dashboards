@@ -262,6 +262,8 @@ function TesteDisc({
   // Estado: tela de introdução com vídeo antes do teste
   const [showIntro, setShowIntro] = useState(true);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [videoCompleted, setVideoCompleted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Estado: para cada bloco, qual opção é "mais" e qual é "menos"
   const [respostas, setRespostas] = useState<Record<number, { maisId: string | null; menosId: string | null }>>({});
@@ -377,15 +379,29 @@ function TesteDisc({
             <CardContent className="p-6 space-y-5">
               {/* Vídeo Player */}
               {showVideoPlayer ? (
-                <div className="rounded-xl overflow-hidden shadow-md border border-gray-200">
+                <div className="rounded-xl overflow-hidden shadow-md border border-gray-200 relative">
                   <video
+                    ref={videoRef}
                     controls
                     autoPlay
                     className="w-full aspect-video bg-black"
                     src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/video-disc-explicativo_c13df132.mp4"
+                    onEnded={() => setVideoCompleted(true)}
+                    onTimeUpdate={(e) => {
+                      const video = e.currentTarget;
+                      if (video.duration > 0 && video.currentTime / video.duration >= 0.9) {
+                        setVideoCompleted(true);
+                      }
+                    }}
                   >
                     Seu navegador não suporta vídeo.
                   </video>
+                  {videoCompleted && (
+                    <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 shadow-lg animate-in fade-in zoom-in duration-300">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Vídeo concluído
+                    </div>
+                  )}
                 </div>
               ) : (
                 <button
@@ -429,13 +445,33 @@ function TesteDisc({
                 </ul>
               </div>
 
+              {/* Indicador de status do vídeo */}
+              {!videoCompleted && showVideoPlayer && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
+                  <Video className="h-4 w-4 shrink-0 animate-pulse" />
+                  Assista o vídeo até o final para habilitar o início do teste
+                </div>
+              )}
+
+              {videoCompleted && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2 text-sm text-green-700 animate-in fade-in duration-300">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  Vídeo concluído! Você já pode iniciar o teste.
+                </div>
+              )}
+
               {/* Botão Iniciar */}
               <Button
                 onClick={() => setShowIntro(false)}
-                className="w-full bg-gradient-to-r from-[#0A1E3E] to-[#2D5A87] hover:from-[#0A1E3E]/90 hover:to-[#2D5A87]/90 text-white py-6 text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300"
+                disabled={!videoCompleted}
+                className={`w-full py-6 text-lg font-bold shadow-lg transition-all duration-300 ${
+                  videoCompleted
+                    ? 'bg-gradient-to-r from-[#0A1E3E] to-[#2D5A87] hover:from-[#0A1E3E]/90 hover:to-[#2D5A87]/90 text-white hover:shadow-xl'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
               >
                 <ArrowRight className="h-5 w-5 mr-2" />
-                Iniciar o Teste DISC
+                {videoCompleted ? 'Iniciar o Teste DISC' : 'Assista o vídeo para continuar'}
               </Button>
             </CardContent>
           </Card>
