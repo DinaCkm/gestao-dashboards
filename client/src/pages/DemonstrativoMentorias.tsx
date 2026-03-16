@@ -138,14 +138,16 @@ function DemonstrativoContent() {
 
   // Summary KPIs
   const kpis = useMemo(() => {
-    if (!filteredData.length) return { total: 0, completos: 0, emAndamento: 0, atencao: 0, mediaProgresso: 0, totalSessoes: 0, totalFaltantes: 0 };
+    if (!filteredData.length) return { totalAlunos: 0, completos: 0, emAndamento: 0, atencao: 0, mediaProgresso: 0, totalSessoes: 0, totalFaltantes: 0 };
+    // Contar alunos distintos (não PDIs)
+    const alunosDistintos = new Set(filteredData.map((p: any) => p.alunoId)).size;
     const completos = filteredData.filter((p: any) => p.cicloCompleto).length;
     const atencao = filteredData.filter((p: any) => p.faltaUmaSessao).length;
     const emAndamento = filteredData.length - completos - atencao;
     const mediaProgresso = Math.round(filteredData.reduce((sum: number, p: any) => sum + p.percentualProgresso, 0) / filteredData.length);
     const totalSessoes = filteredData.reduce((sum: number, p: any) => sum + p.sessoesRealizadas, 0);
     const totalFaltantes = filteredData.reduce((sum: number, p: any) => sum + p.sessoesFaltantes, 0);
-    return { total: filteredData.length, completos, emAndamento, atencao, mediaProgresso, totalSessoes, totalFaltantes };
+    return { totalAlunos: alunosDistintos, completos, emAndamento, atencao, mediaProgresso, totalSessoes, totalFaltantes };
   }, [filteredData]);
 
   const hasActiveFilters = selectedEmpresa !== "todas" || selectedTurma !== "todas" || selectedTrilha !== "todas" || searchTerm !== "" || statusFilter !== "todos";
@@ -241,7 +243,7 @@ function DemonstrativoContent() {
               <Users className="h-4 w-4 text-[#1E3A5F]" />
               <span className="text-xs text-gray-500">Total Alunos</span>
             </div>
-            <p className="text-2xl font-bold text-[#1E3A5F]">{kpis.total}</p>
+            <p className="text-2xl font-bold text-[#1E3A5F]">{kpis.totalAlunos}</p>
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-emerald-500">

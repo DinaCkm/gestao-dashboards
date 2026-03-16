@@ -2206,3 +2206,7 @@
 
 ## Bug: Datas de macrociclos/microciclos no relatório Excel do gestor (11/03/2026)
 - [x] Corrigir: datas de início e fim dos macrociclos e microciclos não estão aparecendo no Excel exportado pelo gestor - Adicionadas colunas 'Início do Ciclo' e 'Fim do Ciclo' na aba 'Indicadores por Ciclo'
+
+## Limpeza de dados e ajuste Demonstrativo (16/03/2026)
+- [x] Limpar 20 alunos de teste do SEBRAE TO (nomes "Teste Contrato A7" e "Teste Direto Contrato A7") - 20 deletados, 0 dados relacionados perdidos, total SEBRAE TO agora 50
+- [x] Ajustar card "Total Alunos" no Demonstrativo de Sessões para mostrar alunos distintos em vez de PDIs - usa Set(alunoId).size
