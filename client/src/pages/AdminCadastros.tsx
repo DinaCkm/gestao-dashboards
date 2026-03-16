@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download } from "lucide-react";
+import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar } from "lucide-react";
 import { toast } from "sonner";
 
 function formatCpf(value: string): string {
@@ -513,6 +513,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [filterEmpresa, setFilterEmpresa] = useState("all");
   const [filterMentor, setFilterMentor] = useState("all");
   const [filterStatus, setFilterStatus] = useState("active");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   // Extrair lista única de mentores dos alunos
   const mentoresUnicos = useMemo(() => {
@@ -981,71 +982,106 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
               })}
             </div>
 
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>CPF</TableHead>
-                    <TableHead>ID Externo</TableHead>
-                    <TableHead>Empresa</TableHead>
-                    <TableHead>Mentor(a)</TableHead>
-                    <TableHead>Turma</TableHead>
-                    <TableHead>Contrato</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAlunos.map((aluno: any) => (
-                    <TableRow key={aluno.id} className={aluno.isActive !== 1 ? "opacity-50" : ""}>
-                      <TableCell className="font-medium whitespace-nowrap">{aluno.name}</TableCell>
-                      <TableCell className="text-sm">{aluno.email || "-"}</TableCell>
-                      <TableCell className="font-mono text-sm">{aluno.cpf ? displayCpf(aluno.cpf) : <span className="text-muted-foreground">-</span>}</TableCell>
-                      <TableCell className="font-mono text-sm">{aluno.externalId || "-"}</TableCell>
-                      <TableCell className="whitespace-nowrap">{aluno.programName || <span className="text-muted-foreground">-</span>}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{aluno.mentorName || <span className="text-muted-foreground">-</span>}</TableCell>
-                      <TableCell className="text-sm whitespace-nowrap">{aluno.turmaName || <span className="text-muted-foreground">-</span>}</TableCell>
-                      <TableCell className="text-xs whitespace-nowrap">
-                        {aluno.contratoInicio || aluno.contratoFim ? (
-                          <span className="text-muted-foreground">
-                            {aluno.contratoInicio ? new Date(aluno.contratoInicio).toLocaleDateString('pt-BR') : '?'}
-                            {' - '}
-                            {aluno.contratoFim ? new Date(aluno.contratoFim).toLocaleDateString('pt-BR') : '?'}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
+            <div className="space-y-1">
+              {filteredAlunos.map((aluno: any) => {
+                const isExpanded = expandedId === aluno.id;
+                return (
+                  <div key={aluno.id} className={`border rounded-lg transition-all ${aluno.isActive !== 1 ? 'opacity-50' : ''} ${isExpanded ? 'ring-1 ring-primary/30 shadow-sm' : 'hover:bg-muted/30'}`}>
+                    {/* Linha principal compacta - clicável */}
+                    <div
+                      className="flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none"
+                      onClick={() => setExpandedId(isExpanded ? null : aluno.id)}
+                    >
+                      <div className="text-muted-foreground">
+                        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-sm">{aluno.name}</span>
+                      </div>
+                      <div className="hidden sm:block text-xs text-muted-foreground truncate max-w-[200px]">
+                        {aluno.programName || ''}
+                      </div>
+                      <div className="hidden md:block text-xs text-muted-foreground truncate max-w-[160px]">
+                        {aluno.turmaName || ''}
+                      </div>
+                      <div>
                         {aluno.isActive === 1 ? (
-                          <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
+                          <Badge variant="default" className="bg-green-600 text-[10px] px-1.5 py-0.5"><CheckCircle className="h-2.5 w-2.5 mr-0.5" /> Ativo</Badge>
                         ) : (
-                          <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" /> Inativo</Badge>
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5"><AlertCircle className="h-2.5 w-2.5 mr-0.5" /> Inativo</Badge>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="outline" size="sm" onClick={() => handleEditOpen(aluno)}>
-                            <Pencil className="h-3 w-3 mr-1" /> Editar
+                      </div>
+                    </div>
+
+                    {/* Painel expandido com detalhes e ações */}
+                    {isExpanded && (
+                      <div className="border-t px-4 py-3 bg-muted/20">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Email:</span>
+                            <span className="truncate">{aluno.email || <span className="text-muted-foreground italic">não informado</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Hash className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">CPF:</span>
+                            <span className="font-mono">{aluno.cpf ? displayCpf(aluno.cpf) : <span className="text-muted-foreground italic">não informado</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Hash className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">ID Externo:</span>
+                            <span className="font-mono">{aluno.externalId || <span className="text-muted-foreground italic">-</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Empresa:</span>
+                            <span>{aluno.programName || <span className="text-muted-foreground italic">-</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <User className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Mentor(a):</span>
+                            <span>{aluno.mentorName || <span className="text-muted-foreground italic">não atribuído</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <GraduationCap className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Turma:</span>
+                            <span>{aluno.turmaName || <span className="text-muted-foreground italic">-</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Contrato:</span>
+                            <span>
+                              {aluno.contratoInicio || aluno.contratoFim ? (
+                                <>
+                                  {aluno.contratoInicio ? new Date(aluno.contratoInicio).toLocaleDateString('pt-BR') : '?'}
+                                  {' - '}
+                                  {aluno.contratoFim ? new Date(aluno.contratoFim).toLocaleDateString('pt-BR') : '?'}
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground italic">não definido</span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        {/* Ações */}
+                        <div className="flex gap-2 mt-3 pt-3 border-t">
+                          <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEditOpen(aluno); }}>
+                            <Pencil className="h-3.5 w-3.5 mr-1.5" /> Editar
                           </Button>
-                          <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => handleDeleteClick(aluno)} disabled={isDeleting}>
-                            <Trash2 className="h-3 w-3" />
+                          <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={(e) => { e.stopPropagation(); handleDeleteClick(aluno); }} disabled={isDeleting}>
+                            <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Excluir
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredAlunos.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
-                        {alunos.length === 0 ? "Nenhum aluno cadastrado." : "Nenhum aluno encontrado com os filtros aplicados."}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {filteredAlunos.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  {alunos.length === 0 ? "Nenhum aluno cadastrado." : "Nenhum aluno encontrado com os filtros aplicados."}
+                </div>
+              )}
             </div>
           </>
         )}

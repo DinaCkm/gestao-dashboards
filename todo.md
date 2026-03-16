@@ -2219,3 +2219,14 @@
 
 ## Exportar alunos em Excel (16/03/2026)
 - [x] Adicionar botão de exportar lista de alunos em formato Excel na área de cadastros do admin - import dinâmico xlsx, exporta filteredAlunos com colunas auto-dimensionadas
+
+## Melhoria visual tabela alunos (16/03/2026)
+- [x] Melhorar visualização da tabela de alunos: nome cortado, tabela muito larga, difícil identificar aluno ao excluir - Nome sticky, fonte text-xs, ações com ícones compactos
+- [ ] Refatorar tabela de alunos para layout expansível: linha compacta com dados essenciais, clique expande detalhes e ações (Editar, Excluir)
+
+## Varredura de Email (16/03/2026)
+- [x] Diagnosticar infraestrutura de email: configuração SMTP, pontos de envio, templates e status
+- [x] Configurar App Password do Google para conta relacionamento@ckmtalents.net
+- [x] Ativar envio automático de email de boas-vindas ao cadastrar alunos (Convite Onboarding e Cadastro Direto)
+- [x] Atualizar template de email com tom positivo, emojis, logo ECOBEM e frase motivacional
+- [x] Tabela expansível de alunos no Cadastros (linhas compactas com expansão ao clicar)

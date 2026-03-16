@@ -71,7 +71,9 @@ export function buildOnboardingInviteEmail(data: {
   empresaName?: string;
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
-  const subject = `Bem-vindo(a) ao ECOSSISTEMA DO BEM — Seu acesso está pronto!`;
+  const subject = `🎉 Parabéns! Sua jornada no ECOSSISTEMA DO BEM começa agora!`;
+
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
 
   const html = `
 <!DOCTYPE html>
@@ -86,9 +88,10 @@ export function buildOnboardingInviteEmail(data: {
       <td align="center">
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
           
-          <!-- Header -->
+          <!-- Header com Logo -->
           <tr>
             <td style="background: linear-gradient(135deg, #0f2b3c 0%, #1a4a5e 100%); padding: 30px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="120" style="display: block; margin: 0 auto 16px;" />
               <h1 style="color: #e8a838; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">
                 ECOSSISTEMA DO BEM
               </h1>
@@ -101,17 +104,20 @@ export function buildOnboardingInviteEmail(data: {
           <!-- Body -->
           <tr>
             <td style="padding: 40px;">
-              <h2 style="color: #0f2b3c; margin: 0 0 20px; font-size: 20px;">
-                Olá, ${data.alunoName}! 👋
+              <h2 style="color: #0f2b3c; margin: 0 0 20px; font-size: 22px;">
+                🎉 Parabéns, ${data.alunoName}!
               </h2>
               
-              <p style="color: #4a5568; font-size: 15px; line-height: 1.7; margin: 0 0 20px;">
-                Você foi cadastrado(a) no <strong>ECOSSISTEMA DO BEM</strong>${data.empresaName ? ` pela empresa <strong>${data.empresaName}</strong>` : ""}. 
-                Estamos muito felizes em ter você conosco!
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
+                É com muita alegria que informamos que você foi selecionado(a) para participar do <strong>ECOSSISTEMA DO BEM</strong>${data.empresaName ? ` pela empresa <strong>${data.empresaName}</strong>` : ""}! 🌟
               </p>
 
-              <p style="color: #4a5568; font-size: 15px; line-height: 1.7; margin: 0 0 25px;">
-                Para iniciar sua jornada de desenvolvimento, acesse a plataforma e complete o seu <strong>Onboarding</strong>.
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
+                Este é o início de uma <strong>jornada transformadora de desenvolvimento profissional e pessoal</strong>. Você terá acesso a mentorias exclusivas, trilhas de competências e ferramentas que vão impulsionar sua carreira! 🚀
+              </p>
+
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 25px;">
+                Para dar o primeiro passo, acesse a plataforma e complete o seu <strong>Onboarding</strong>. Estamos ansiosos para acompanhar sua evolução! 💪
               </p>
 
               <!-- Credentials Box -->
@@ -119,15 +125,15 @@ export function buildOnboardingInviteEmail(data: {
                 <tr>
                   <td style="background-color: #f0f7fa; border: 1px solid #d1e5ed; border-radius: 8px; padding: 20px;">
                     <p style="color: #0f2b3c; font-size: 14px; font-weight: 600; margin: 0 0 12px;">
-                      📋 Seus dados de acesso:
+                      🔑 Seus dados de acesso:
                     </p>
                     <table role="presentation" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 80px;">Email:</td>
+                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 80px;">📧 Email:</td>
                         <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.alunoEmail}</td>
                       </tr>
                       <tr>
-                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 80px;">ID:</td>
+                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 80px;">🆔 ID:</td>
                         <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.alunoId}</td>
                       </tr>
                     </table>
@@ -140,8 +146,8 @@ export function buildOnboardingInviteEmail(data: {
                 <tr>
                   <td align="center">
                     <a href="${data.loginUrl}" 
-                       style="display: inline-block; background: linear-gradient(135deg, #e8a838 0%, #d4922e 100%); color: #0f2b3c; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
-                      Acessar a Plataforma
+                       style="display: inline-block; background: linear-gradient(135deg, #e8a838 0%, #d4922e 100%); color: #0f2b3c; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
+                      ✨ Iniciar Minha Jornada
                     </a>
                   </td>
                 </tr>
@@ -154,13 +160,34 @@ export function buildOnboardingInviteEmail(data: {
             </td>
           </tr>
 
+          <!-- Motivational Banner -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #e8a838 0%, #f0c060 100%); padding: 20px 40px; text-align: center;">
+              <p style="color: #0f2b3c; font-size: 15px; font-weight: 600; margin: 0; line-height: 1.6;">
+                🌱 "O desenvolvimento é uma jornada, não um destino. Cada passo conta!" 🌱
+              </p>
+            </td>
+          </tr>
+
           <!-- Footer -->
           <tr>
             <td style="background-color: #f8fafc; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
-              <p style="color: #9ca3af; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
-                Este é um email automático do ECOSSISTEMA DO BEM.<br>
-                Em caso de dúvidas, entre em contato com a administração do programa.
-              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding-bottom: 12px;">
+                    <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="60" style="opacity: 0.7;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center">
+                    <p style="color: #9ca3af; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
+                      Este é um email automático do ECOSSISTEMA DO BEM.<br>
+                      Em caso de dúvidas, entre em contato com a administração do programa.<br>
+                      © ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+                    </p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
@@ -171,19 +198,24 @@ export function buildOnboardingInviteEmail(data: {
 </body>
 </html>`;
 
-  const text = `Olá, ${data.alunoName}!
+  const text = `🎉 Parabéns, ${data.alunoName}!
 
-Você foi cadastrado(a) no ECOSSISTEMA DO BEM${data.empresaName ? ` pela empresa ${data.empresaName}` : ""}.
+É com muita alegria que informamos que você foi selecionado(a) para participar do ECOSSISTEMA DO BEM${data.empresaName ? ` pela empresa ${data.empresaName}` : ""}! 🌟
 
-Para iniciar sua jornada de desenvolvimento, acesse a plataforma e complete o seu Onboarding.
+Este é o início de uma jornada transformadora de desenvolvimento profissional e pessoal. Você terá acesso a mentorias exclusivas, trilhas de competências e ferramentas que vão impulsionar sua carreira! 🚀
 
-Seus dados de acesso:
-- Email: ${data.alunoEmail}
-- ID: ${data.alunoId}
+Para dar o primeiro passo, acesse a plataforma e complete o seu Onboarding. 💪
 
-Acesse: ${data.loginUrl}
+🔑 Seus dados de acesso:
+- 📧 Email: ${data.alunoEmail}
+- 🆔 ID: ${data.alunoId}
 
-Este é um email automático do ECOSSISTEMA DO BEM.`;
+✨ Acesse: ${data.loginUrl}
+
+🌱 "O desenvolvimento é uma jornada, não um destino. Cada passo conta!" 🌱
+
+Este é um email automático do ECOSSISTEMA DO BEM.
+© ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.`;
 
   return { subject, html, text };
 }

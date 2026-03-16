@@ -3751,7 +3751,35 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         contratoFim: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.createAluno(input);
+        const result = await db.createAluno(input);
+
+        // Enviar email de boas-vindas ao aluno
+        try {
+          const { sendEmail, buildOnboardingInviteEmail } = await import('./emailService');
+          let empresaName: string | undefined;
+          if (input.programId) {
+            const allPrograms = await db.getPrograms();
+            const program = allPrograms.find(p => p.id === input.programId);
+            empresaName = program?.name;
+          }
+          const emailData = buildOnboardingInviteEmail({
+            alunoName: input.name,
+            alunoEmail: input.email,
+            alunoId: input.externalId,
+            empresaName,
+            loginUrl: 'https://ecolider.evoluirckm.com/login',
+          });
+          await sendEmail({
+            to: input.email,
+            subject: emailData.subject,
+            html: emailData.html,
+            text: emailData.text,
+          });
+        } catch (emailErr) {
+          console.warn('[Cadastro] Erro ao enviar email de boas-vindas:', emailErr);
+        }
+
+        return result;
       }),
 
     updateAluno: adminProcedure
@@ -3895,7 +3923,31 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         contratoFim: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.createAlunoDireto(input);
+        const result = await db.createAlunoDireto(input);
+
+        // Enviar email de boas-vindas ao aluno
+        try {
+          const { sendEmail, buildOnboardingInviteEmail } = await import('./emailService');
+          const allPrograms = await db.getPrograms();
+          const program = allPrograms.find(p => p.id === input.programId);
+          const emailData = buildOnboardingInviteEmail({
+            alunoName: input.name,
+            alunoEmail: input.email,
+            alunoId: input.cpf,
+            empresaName: program?.name,
+            loginUrl: 'https://ecolider.evoluirckm.com/login',
+          });
+          await sendEmail({
+            to: input.email,
+            subject: emailData.subject,
+            html: emailData.html,
+            text: emailData.text,
+          });
+        } catch (emailErr) {
+          console.warn('[Cadastro Direto] Erro ao enviar email de boas-vindas:', emailErr);
+        }
+
+        return result;
       }),
 
     // Check aluno dependencies before deletion
