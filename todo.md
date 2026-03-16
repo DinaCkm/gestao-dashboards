@@ -2245,3 +2245,7 @@
 - [x] Onboarding DISC: permitir que aluno pule o vídeo após tê-lo assistido uma vez (salvar estado no banco)
 - [ ] Bug: Onboarding sempre retorna para etapa de cadastro mesmo quando aluno já salvou dados - corrigir lógica de progresso
 - [x] Adicionar informação de duração (4 minutos) no vídeo explicativo do DISC no onboarding
+- [x] Reformular etapa de agendamento do onboarding: mostrar datas/horários disponíveis reais da mentora (não genéricos)
+- [x] Mostrar link da sala de entrevista (Google Meet) na etapa de agendamento
+- [x] Enviar email de confirmação de agendamento para o aluno após selecionar data/horário
+- [x] Enviar email para mentora informando que foi escolhida, parabenizando e solicitando que estude currículo e testes do aluno

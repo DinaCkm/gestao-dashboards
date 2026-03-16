@@ -5500,21 +5500,39 @@ Responda APENAS em JSON com o formato:
             const { sendEmail } = await import('./emailService');
             await sendEmail({
               to: consultor.email,
-              subject: `Novo aluno vinculado: ${aluno.name}`,
+              subject: `Parabéns! Você foi escolhida como mentora por ${aluno.name}`,
               html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <div style="background: #0A1E3E; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-                    <h2 style="margin: 0;">Novo Aluno Vinculado</h2>
+                  <div style="background: linear-gradient(135deg, #0A1E3E, #2D5A87); color: white; padding: 24px; border-radius: 8px 8px 0 0; text-align: center;">
+                    <h2 style="margin: 0; font-size: 22px;">\uD83C\uDF89 Parabéns, ${consultor.name}!</h2>
+                    <p style="margin: 8px 0 0; opacity: 0.9; font-size: 14px;">Você foi escolhida como mentora!</p>
                   </div>
-                  <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-                    <p>Olá, <strong>${consultor.name}</strong>!</p>
-                    <p>O aluno <strong>${aluno.name}</strong> escolheu você como mentora durante o onboarding do programa de mentoria.</p>
-                    <p>Em breve ele fará o agendamento do primeiro encontro. Fique atenta às notificações!</p>
-                    <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-top: 16px;">
-                      <p style="margin: 0; font-size: 14px; color: #6b7280;"><strong>Aluno:</strong> ${aluno.name}</p>
-                      ${aluno.email ? `<p style="margin: 4px 0 0; font-size: 14px; color: #6b7280;"><strong>Email:</strong> ${aluno.email}</p>` : ''}
+                  <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p style="font-size: 15px; line-height: 1.6;">O aluno <strong>${aluno.name}</strong> escolheu você como mentora durante o processo de onboarding do programa de mentoria. Isso é uma grande conquista e demonstra a confiança que ele deposita em você!</p>
+                    
+                    <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #bbf7d0;">
+                      <p style="margin: 0 0 8px; font-weight: bold; color: #166534; font-size: 14px;">\uD83D\uDCCB Dados do Aluno:</p>
+                      <p style="margin: 4px 0; font-size: 14px;"><strong>Nome:</strong> ${aluno.name}</p>
+                      ${aluno.email ? `<p style="margin: 4px 0; font-size: 14px;"><strong>Email:</strong> ${aluno.email}</p>` : ''}
                     </div>
-                    <p style="margin-top: 16px; font-size: 13px; color: #9ca3af;">Sistema do Bem - Programa de Mentoria</p>
+
+                    <div style="background: #fffbeb; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #fde68a;">
+                      <p style="margin: 0 0 8px; font-weight: bold; color: #92400e; font-size: 14px;">\u26A0\uFE0F Prepara\u00e7\u00e3o Importante:</p>
+                      <p style="margin: 4px 0; font-size: 14px; color: #78350f; line-height: 1.5;">Antes da sess\u00e3o de assessment, pedimos que voc\u00ea acesse a plataforma e:</p>
+                      <ul style="margin: 8px 0; padding-left: 20px; font-size: 14px; color: #78350f; line-height: 1.8;">
+                        <li>Leia o <strong>curr\u00edculo e perfil</strong> do aluno</li>
+                        <li>Estude os <strong>resultados do teste DISC</strong> e da <strong>autoavalia\u00e7\u00e3o de compet\u00eancias</strong></li>
+                        <li>Prepare-se para conduzir uma sess\u00e3o de assessment personalizada</li>
+                      </ul>
+                    </div>
+
+                    <div style="text-align: center; margin: 24px 0;">
+                      <a href="https://ecolider.evoluirckm.com/" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
+                    </div>
+
+                    <p style="font-size: 14px; color: #6b7280; line-height: 1.5;">Em breve o aluno far\u00e1 o agendamento do primeiro encontro. Voc\u00ea receber\u00e1 uma notifica\u00e7\u00e3o com a data e hor\u00e1rio escolhidos.</p>
+                    
+                    <p style="margin-top: 20px; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 16px;">Ecossistema do Bem - Programa de Mentoria</p>
                   </div>
                 </div>
               `,
@@ -5565,30 +5583,61 @@ Responda APENAS em JSON com o formato:
           alunoIds: [alunoId],
           createdBy: ctx.user.id,
         });
-        // Notificar a mentora por email sobre o agendamento
+        // Formatar data para exibição
+        const dateFormatted = (() => {
+          try {
+            const [y, m, d] = scheduledDate.split('-');
+            const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
+            const dias = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+            const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+            return `${dias[dateObj.getDay()]}, ${d} de ${meses[dateObj.getMonth()]} de ${y}`;
+          } catch { return scheduledDate; }
+        })();
+
+        // Buscar dados do aluno e mentora
+        const consultor = await db.getConsultorById(consultorId);
+        const aluno = await db.getAlunoById(alunoId);
+
+        // 1) Email para a MENTORA - informando agendamento e pedindo que estude o currículo/testes
         try {
-          const consultor = await db.getConsultorById(consultorId);
-          const aluno = await db.getAlunoById(alunoId);
           if (consultor?.email && aluno) {
             const { sendEmail } = await import('./emailService');
             await sendEmail({
               to: consultor.email,
-              subject: `Agendamento de encontro: ${aluno.name}`,
+              subject: `Encontro Inicial agendado com ${aluno.name} - Prepare-se!`,
               html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <div style="background: #0A1E3E; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-                    <h2 style="margin: 0;">Encontro Inicial Agendado</h2>
+                  <div style="background: linear-gradient(135deg, #0A1E3E, #2D5A87); color: white; padding: 24px; border-radius: 8px 8px 0 0; text-align: center;">
+                    <h2 style="margin: 0; font-size: 20px;">Encontro Inicial Agendado!</h2>
+                    <p style="margin: 8px 0 0; opacity: 0.9; font-size: 14px;">Seu aluno ${aluno.name} agendou a sessão de assessment</p>
                   </div>
-                  <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-                    <p>Olá, <strong>${consultor.name}</strong>!</p>
-                    <p>O aluno <strong>${aluno.name}</strong> agendou o primeiro encontro de mentoria.</p>
-                    <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin-top: 16px; border: 1px solid #bbf7d0;">
-                      <p style="margin: 0 0 8px; font-weight: bold; color: #166534;">Detalhes do Encontro:</p>
-                      <p style="margin: 4px 0; font-size: 14px;">Data: <strong>${scheduledDate}</strong></p>
+                  <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p style="font-size: 15px; line-height: 1.6;">Olá, <strong>${consultor.name}</strong>!</p>
+                    <p style="font-size: 14px; line-height: 1.6;">O aluno <strong>${aluno.name}</strong> agendou o primeiro encontro de mentoria com você. Confira os detalhes abaixo:</p>
+                    
+                    <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #bbf7d0;">
+                      <p style="margin: 0 0 8px; font-weight: bold; color: #166534; font-size: 14px;">Detalhes do Encontro:</p>
+                      <p style="margin: 4px 0; font-size: 14px;">Data: <strong>${dateFormatted}</strong></p>
                       <p style="margin: 4px 0; font-size: 14px;">Horário: <strong>${startTime} - ${endTime}</strong></p>
-                      ${googleMeetLink ? `<p style="margin: 4px 0; font-size: 14px;">Link: <a href="${googleMeetLink}">${googleMeetLink}</a></p>` : ''}
+                      ${googleMeetLink ? `<p style="margin: 4px 0; font-size: 14px;">Link da Sala: <a href="${googleMeetLink}" style="color: #0A1E3E; font-weight: bold;">${googleMeetLink}</a></p>` : ''}
                     </div>
-                    <p style="margin-top: 16px; font-size: 13px; color: #9ca3af;">Sistema do Bem - Programa de Mentoria</p>
+
+                    <div style="background: #fffbeb; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #fde68a;">
+                      <p style="margin: 0 0 8px; font-weight: bold; color: #92400e; font-size: 14px;">Preparação para a Sessão:</p>
+                      <p style="margin: 4px 0; font-size: 14px; color: #78350f; line-height: 1.5;">Antes do encontro, pedimos que você acesse a plataforma e:</p>
+                      <ul style="margin: 8px 0; padding-left: 20px; font-size: 14px; color: #78350f; line-height: 1.8;">
+                        <li>Leia o <strong>currículo e perfil completo</strong> do aluno</li>
+                        <li>Estude os <strong>resultados do teste DISC</strong></li>
+                        <li>Analise a <strong>autoavaliação de competências</strong></li>
+                        <li>Prepare-se para conduzir uma sessão de assessment personalizada</li>
+                      </ul>
+                    </div>
+
+                    <div style="text-align: center; margin: 24px 0;">
+                      <a href="https://ecolider.evoluirckm.com/" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
+                    </div>
+                    
+                    <p style="margin-top: 20px; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 16px;">Ecossistema do Bem - Programa de Mentoria</p>
                   </div>
                 </div>
               `,
@@ -5596,6 +5645,54 @@ Responda APENAS em JSON com o formato:
           }
         } catch (emailErr) {
           console.warn('[Onboarding] Erro ao enviar notificação de agendamento para mentora:', emailErr);
+        }
+
+        // 2) Email para o ALUNO - confirmação do agendamento
+        try {
+          if (aluno?.email && consultor) {
+            const { sendEmail } = await import('./emailService');
+            await sendEmail({
+              to: aluno.email,
+              subject: `Agendamento confirmado - Encontro Inicial com ${consultor.name}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="background: linear-gradient(135deg, #0A1E3E, #2D5A87); color: white; padding: 24px; border-radius: 8px 8px 0 0; text-align: center;">
+                    <h2 style="margin: 0; font-size: 20px;">Agendamento Confirmado!</h2>
+                    <p style="margin: 8px 0 0; opacity: 0.9; font-size: 14px;">Seu Encontro Inicial está marcado</p>
+                  </div>
+                  <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p style="font-size: 15px; line-height: 1.6;">Olá, <strong>${aluno.name}</strong>!</p>
+                    <p style="font-size: 14px; line-height: 1.6;">Seu primeiro encontro de mentoria foi agendado com sucesso. Confira os detalhes:</p>
+                    
+                    <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #bbf7d0;">
+                      <p style="margin: 0 0 8px; font-weight: bold; color: #166534; font-size: 14px;">Detalhes do Encontro:</p>
+                      <p style="margin: 4px 0; font-size: 14px;">Mentora: <strong>${consultor.name}</strong></p>
+                      <p style="margin: 4px 0; font-size: 14px;">Data: <strong>${dateFormatted}</strong></p>
+                      <p style="margin: 4px 0; font-size: 14px;">Horário: <strong>${startTime} - ${endTime}</strong></p>
+                      ${googleMeetLink ? `
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #bbf7d0;">
+                          <p style="margin: 0 0 4px; font-size: 13px; color: #166534; font-weight: bold;">Link da Sala de Entrevista:</p>
+                          <a href="${googleMeetLink}" style="display: inline-block; background: #0A1E3E; color: white; padding: 8px 20px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: bold;">${googleMeetLink}</a>
+                        </div>
+                      ` : ''}
+                    </div>
+
+                    <div style="background: #eff6ff; padding: 16px; border-radius: 8px; margin: 20px 0; border: 1px solid #bfdbfe;">
+                      <p style="margin: 0; font-size: 14px; color: #1e40af; line-height: 1.5;">Guarde este email! No dia do encontro, acesse o link da sala no horário marcado. Esteja preparado(a) e pontual.</p>
+                    </div>
+
+                    <div style="text-align: center; margin: 24px 0;">
+                      <a href="https://ecolider.evoluirckm.com/onboarding" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
+                    </div>
+                    
+                    <p style="margin-top: 20px; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 16px;">Ecossistema do Bem - Programa de Mentoria</p>
+                  </div>
+                </div>
+              `,
+            });
+          }
+        } catch (emailErr) {
+          console.warn('[Onboarding] Erro ao enviar confirmação de agendamento para aluno:', emailErr);
         }
 
         return { success: result.success, appointmentId: result.id };
