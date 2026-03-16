@@ -2216,3 +2216,6 @@
 ## Botão excluir aluno no cadastro admin (16/03/2026)
 - [x] Criar endpoint backend para excluir aluno (com verificação de dados relacionados) - getAlunoDependencies + deleteAluno com cascade
 - [x] Adicionar botão de excluir na interface de cadastro de alunos com diálogo de confirmação - botão Trash2 + Dialog com lista de dependências
+
+## Exportar alunos em Excel (16/03/2026)
+- [x] Adicionar botão de exportar lista de alunos em formato Excel na área de cadastros do admin - import dinâmico xlsx, exporta filteredAlunos com colunas auto-dimensionadas

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays } from "lucide-react";
+import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download } from "lucide-react";
 import { toast } from "sonner";
 
 function formatCpf(value: string): string {
@@ -471,6 +471,43 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     setDeleteDeps(null);
   };
 
+  // Export Excel function
+  const [isExporting, setIsExporting] = useState(false);
+  const handleExportExcel = async () => {
+    setIsExporting(true);
+    try {
+      const XLSX = await import('xlsx');
+      const data = filteredAlunos.map((a: any) => ({
+        'Nome': a.name || '',
+        'Email': a.email || '',
+        'CPF': a.cpf ? displayCpf(a.cpf) : '',
+        'ID Externo': a.externalId || '',
+        'Empresa': a.programName || '',
+        'Mentor(a)': a.mentorName || '',
+        'Turma': a.turmaName || '',
+        'Início Contrato': a.contratoInicio ? new Date(a.contratoInicio).toLocaleDateString('pt-BR') : '',
+        'Fim Contrato': a.contratoFim ? new Date(a.contratoFim).toLocaleDateString('pt-BR') : '',
+        'Status': a.isActive === 1 ? 'Ativo' : 'Inativo',
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      // Auto-width columns
+      if (data.length > 0) {
+        const colWidths = Object.keys(data[0]).map(key => ({
+          wch: Math.max(key.length, ...data.map((r: any) => (r[key] || '').toString().length)) + 2
+        }));
+        ws['!cols'] = colWidths;
+      }
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Alunos');
+      XLSX.writeFile(wb, `alunos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success(`${data.length} alunos exportados com sucesso!`);
+    } catch (err: any) {
+      toast.error(`Erro ao exportar: ${err.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Search/filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEmpresa, setFilterEmpresa] = useState("all");
@@ -658,6 +695,10 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           </CardDescription>
         </div>
         <div className="flex gap-2">
+          {/* Exportar Excel */}
+          <Button variant="outline" onClick={handleExportExcel} disabled={isExporting || filteredAlunos.length === 0}>
+            {isExporting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exportando...</> : <><Download className="h-4 w-4 mr-2" /> Exportar Excel</>}
+          </Button>
           {/* Convite Onboarding Dialog */}
           <Dialog open={onboardOpen} onOpenChange={setOnboardOpen}>
             <DialogTrigger asChild>
