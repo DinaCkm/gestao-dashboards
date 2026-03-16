@@ -1058,11 +1058,7 @@ function RelatorioAutoconhecimento({
     "Visão de Futuro": "#F59E0B",
   };
 
-  const handleDownloadPDF = () => {
-    toast.info("Preparando download do relatório em PDF...");
-    // Usar window.print() como solução simples para gerar PDF
-    window.print();
-  };
+
 
   if (!perfis || !discScores) {
     return (
@@ -1107,13 +1103,6 @@ function RelatorioAutoconhecimento({
           <Heart className="h-4 w-4 text-[#F5991F]" />
           <span className="italic">"O autoconhecimento é a base de toda evolução profissional."</span>
         </div>
-      </div>
-
-      {/* Botão Download */}
-      <div className="flex justify-center print:hidden">
-        <Button variant="outline" onClick={handleDownloadPDF} className="gap-2">
-          <Download className="h-4 w-4" /> Baixar Relatório (PDF)
-        </Button>
       </div>
 
       {/* ===== SEÇÃO 1: PERFIL DISC ===== */}

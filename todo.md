@@ -2252,3 +2252,4 @@
 - [x] Enviar email para o administrador quando aluno fizer agendamento no onboarding (CC no email da mentora)
 - [x] Criar painel administrativo para visualizar todos os agendamentos realizados na plataforma
 - [x] Bug: Mentora escolhida pelo aluno no onboarding não é persistida ao retornar - corrigido: recuperar mentoraId do banco + useEffect para restaurar selectedMentora
+- [x] Remover botão de gerar relatório dos testes DISC para o aluno no onboarding
