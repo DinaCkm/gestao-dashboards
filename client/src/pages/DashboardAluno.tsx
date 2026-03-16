@@ -570,7 +570,7 @@ export default function DashboardAluno() {
                           <div key={idx} className="flex items-center gap-2 text-xs text-blue-700 bg-white/60 rounded px-2 py-1 mt-1">
                             <Snowflake className="h-3 w-3 flex-shrink-0" />
                             <span className="font-medium">{pdi.trilhaNome}</span>
-                            {pdi.motivoCongelamento && <span className="italic">\u2014 {pdi.motivoCongelamento}</span>}
+                            {pdi.motivoCongelamento && <span className="italic">— {pdi.motivoCongelamento}</span>}
                             {pdi.congeladoEm && (
                               <span className="text-blue-500 ml-auto">
                                 ({new Date(pdi.congeladoEm).toLocaleDateString('pt-BR')})

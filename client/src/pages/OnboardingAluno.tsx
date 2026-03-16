@@ -50,24 +50,24 @@ const MENTORA_GUIA_AVATAR = "https://d2xsxph8kpxj0f.cloudfront.net/3105196631923
 
 const MENSAGENS_GUIA: Record<number, { titulo: string; mensagem: string }> = {
   1: {
-    titulo: "Que bom ter voc\u00ea aqui!",
-    mensagem: "Gostaria de te conhecer um pouco mais, por isso vou te guiar nesta jornada. Vamos come\u00e7ar preenchendo seus dados? Assim consigo entender melhor quem voc\u00ea \u00e9 e como posso te ajudar.",
+    titulo: "Que bom ter você aqui!",
+    mensagem: "Gostaria de te conhecer um pouco mais, por isso vou te guiar nesta jornada. Vamos começar preenchendo seus dados? Assim consigo entender melhor quem você é e como posso te ajudar.",
   },
   2: {
     titulo: "Hora de se conhecer melhor!",
-    mensagem: "Agora vamos descobrir juntos o seu perfil comportamental e suas compet\u00eancias. Responda com sinceridade \u2014 n\u00e3o existem respostas certas ou erradas. Esse \u00e9 um momento s\u00f3 seu!",
+    mensagem: "Agora vamos descobrir juntos o seu perfil comportamental e suas competências. Responda com sinceridade — não existem respostas certas ou erradas. Esse é um momento só seu!",
   },
   3: {
     titulo: "Chegou a hora de escolher sua mentora!",
-    mensagem: "Conhe\u00e7a as profissionais incr\u00edveis que est\u00e3o prontas para te acompanhar. Leia o perfil de cada uma e escolha aquela que mais combina com voc\u00ea e seus objetivos.",
+    mensagem: "Conheça as profissionais incríveis que estão prontas para te acompanhar. Leia o perfil de cada uma e escolha aquela que mais combina com você e seus objetivos.",
   },
   4: {
     titulo: "Vamos marcar seu primeiro encontro!",
-    mensagem: "Estamos quase l\u00e1! Agora \u00e9 s\u00f3 escolher o melhor hor\u00e1rio para conversar com sua mentora. Esse primeiro encontro \u00e9 especial \u2014 \u00e9 onde tudo come\u00e7a!",
+    mensagem: "Estamos quase lá! Agora é só escolher o melhor horário para conversar com sua mentora. Esse primeiro encontro é especial — é onde tudo começa!",
   },
   5: {
-    titulo: "Parab\u00e9ns, voc\u00ea chegou at\u00e9 aqui!",
-    mensagem: "Seu primeiro encontro com a mentora est\u00e1 marcado. Prepare-se para uma conversa transformadora. Estou muito orgulhosa de voc\u00ea por ter chegado at\u00e9 aqui!",
+    titulo: "Parabéns, você chegou até aqui!",
+    mensagem: "Seu primeiro encontro com a mentora está marcado. Prepare-se para uma conversa transformadora. Estou muito orgulhosa de você por ter chegado até aqui!",
   },
 };
 

@@ -31,8 +31,8 @@ function MentoraGuiaBannerAssessment() {
         </div>
         <h3 className="text-base font-bold text-[#0A1E3E] mb-1">Hora de se conhecer melhor!</h3>
         <p className="text-sm text-gray-600 leading-relaxed">
-          Agora vamos descobrir juntos o seu perfil comportamental e suas compet\u00eancias. 
-          Responda com sinceridade \u2014 n\u00e3o existem respostas certas ou erradas. Esse \u00e9 um momento s\u00f3 seu!
+          Agora vamos descobrir juntos o seu perfil comportamental e suas competências. 
+          Responda com sinceridade — não existem respostas certas ou erradas. Esse é um momento só seu!
         </p>
       </div>
     </div>

@@ -2232,3 +2232,4 @@
 - [x] Tabela expansível de alunos no Cadastros (linhas compactas com expansão ao clicar)
 - [x] Corrigir email boas-vindas: remover tarja azul do header, deixar só o logo sobre fundo branco
 - [x] Corrigir email boas-vindas: URL do botão dá 404 (/login não existe), apontar para URL correta (raiz do site)
+- [x] Corrigir texto com códigos Unicode literais (\u00ea, \u2014, etc.) em OnboardingAluno, TesteDiscOnboarding, DashboardAluno, IndividualDashboard e Upload

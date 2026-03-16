@@ -228,16 +228,16 @@ export default function UploadPage() {
     if (rejectedFiles.length > 0) {
       setValidationErrors([
         `Nome(s) de arquivo não reconhecido(s):`,
-        ...rejectedFiles.map(f => `\u2022 ${f}`),
+        ...rejectedFiles.map(f => `• ${f}`),
         '',
         'Renomeie o arquivo usando um dos nomes aceitos:',
-        '\u2022 SEBRAEACRE-Mentorias.xlsx',
-        '\u2022 SEBRAEACRE-Eventos.xlsx',
-        '\u2022 SEBRAETO-Mentorias.xlsx',
-        '\u2022 SEBRAETO-Eventos.xlsx',
-        '\u2022 EMBRAPII-Mentorias.xlsx',
-        '\u2022 EMBRAPII-Eventos.xlsx',
-        '\u2022 relatorio-de-performance.xlsx'
+        '• SEBRAEACRE-Mentorias.xlsx',
+        '• SEBRAEACRE-Eventos.xlsx',
+        '• SEBRAETO-Mentorias.xlsx',
+        '• SEBRAETO-Eventos.xlsx',
+        '• EMBRAPII-Mentorias.xlsx',
+        '• EMBRAPII-Eventos.xlsx',
+        '• relatorio-de-performance.xlsx'
       ]);
       setShowValidationDialog(true);
     }
