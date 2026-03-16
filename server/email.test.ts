@@ -13,7 +13,7 @@ describe("Email Service", () => {
       alunoEmail: "maria@teste.com",
       alunoId: "123456",
       empresaName: "SEBRAE TO",
-      loginUrl: "https://ecolider.evoluirckm.com/login",
+      loginUrl: "https://ecolider.evoluirckm.com/",
     });
 
     // Subject com tom positivo
@@ -25,7 +25,7 @@ describe("Email Service", () => {
     expect(email.html).toContain("maria@teste.com");
     expect(email.html).toContain("123456");
     expect(email.html).toContain("SEBRAE TO");
-    expect(email.html).toContain("ecolider.evoluirckm.com/login");
+    expect(email.html).toContain("ecolider.evoluirckm.com/");
 
     // HTML contém logo do ECOBEM
     expect(email.html).toContain("eco_do_bem_logo");
@@ -52,7 +52,7 @@ describe("Email Service", () => {
       alunoName: "João Santos",
       alunoEmail: "joao@teste.com",
       alunoId: "789012",
-      loginUrl: "https://ecolider.evoluirckm.com/login",
+      loginUrl: "https://ecolider.evoluirckm.com/",
     });
 
     expect(email.html).toContain("João Santos");

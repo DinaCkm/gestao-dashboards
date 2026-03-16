@@ -2230,3 +2230,5 @@
 - [x] Ativar envio automático de email de boas-vindas ao cadastrar alunos (Convite Onboarding e Cadastro Direto)
 - [x] Atualizar template de email com tom positivo, emojis, logo ECOBEM e frase motivacional
 - [x] Tabela expansível de alunos no Cadastros (linhas compactas com expansão ao clicar)
+- [x] Corrigir email boas-vindas: remover tarja azul do header, deixar só o logo sobre fundo branco
+- [x] Corrigir email boas-vindas: URL do botão dá 404 (/login não existe), apontar para URL correta (raiz do site)

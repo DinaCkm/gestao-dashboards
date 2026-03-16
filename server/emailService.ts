@@ -90,14 +90,17 @@ export function buildOnboardingInviteEmail(data: {
           
           <!-- Header com Logo -->
           <tr>
-            <td style="background: linear-gradient(135deg, #0f2b3c 0%, #1a4a5e 100%); padding: 30px 40px; text-align: center;">
-              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="120" style="display: block; margin: 0 auto 16px;" />
-              <h1 style="color: #e8a838; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">
-                ECOSSISTEMA DO BEM
-              </h1>
-              <p style="color: #a0c4d4; margin: 8px 0 0; font-size: 14px;">
+            <td style="background-color: #ffffff; padding: 30px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display: block; margin: 0 auto 12px;" />
+              <p style="color: #6b7280; margin: 4px 0 0; font-size: 13px;">
                 Programa de Desenvolvimento e Mentoria
               </p>
+            </td>
+          </tr>
+          <!-- Divider -->
+          <tr>
+            <td style="padding: 0 40px;">
+              <hr style="border: none; border-top: 2px solid #e8a838; margin: 0;" />
             </td>
           </tr>
 

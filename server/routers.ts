@@ -3767,7 +3767,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
             alunoEmail: input.email,
             alunoId: input.externalId,
             empresaName,
-            loginUrl: 'https://ecolider.evoluirckm.com/login',
+            loginUrl: 'https://ecolider.evoluirckm.com/',
           });
           await sendEmail({
             to: input.email,
@@ -3935,7 +3935,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
             alunoEmail: input.email,
             alunoId: input.cpf,
             empresaName: program?.name,
-            loginUrl: 'https://ecolider.evoluirckm.com/login',
+            loginUrl: 'https://ecolider.evoluirckm.com/',
           });
           await sendEmail({
             to: input.email,
