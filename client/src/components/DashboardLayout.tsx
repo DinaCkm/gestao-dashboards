@@ -66,6 +66,7 @@ import {
   Sparkles,
   Zap,
   Bell,
+  CalendarDays,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -120,6 +121,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Users, label: "Cadastro de Mentores", path: "/cadastros?tab=mentores" },
       { icon: BarChart3, label: "Dashboard de Mentores", path: "/dashboard/mentor" },
       { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias" },
+      { icon: CalendarDays, label: "Painel de Agendamentos", path: "/agendamentos" },
     ],
   },
   {

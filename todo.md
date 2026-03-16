@@ -2250,3 +2250,4 @@
 - [x] Enviar email de confirmação de agendamento para o aluno após selecionar data/horário
 - [x] Enviar email para mentora informando que foi escolhida, parabenizando e solicitando que estude currículo e testes do aluno
 - [x] Enviar email para o administrador quando aluno fizer agendamento no onboarding (CC no email da mentora)
+- [x] Criar painel administrativo para visualizar todos os agendamentos realizados na plataforma

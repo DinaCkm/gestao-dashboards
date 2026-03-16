@@ -21,6 +21,7 @@ import DashboardVisaoGeral from "./pages/DashboardVisaoGeral";
 import DashboardEmpresa from "./pages/DashboardEmpresa";
 import DashboardMentor from "./pages/DashboardMentor";
 import AdminCadastros from "./pages/AdminCadastros";
+import AdminAgendamentos from "./pages/AdminAgendamentos";
 import PorEmpresa from "./pages/PorEmpresa";
 import TrilhasCompetencias from "./pages/TrilhasCompetencias";
 import PlanoIndividual from "./pages/PlanoIndividual";
@@ -67,6 +68,7 @@ function Router() {
       <Route path={"/dashboard/empresa/:codigo"} component={DashboardEmpresa} />
       <Route path={"/dashboard/mentor"} component={DashboardMentor} />
       <Route path={"/cadastros"} component={AdminCadastros} />
+      <Route path={"/agendamentos"} component={AdminAgendamentos} />
       <Route path={"/trilhas-competencias"} component={TrilhasCompetencias} />
       <Route path={"/plano-individual"} component={PlanoIndividual} />
       <Route path={"/dashboard/aluno"} component={DashboardAluno} />

@@ -4021,6 +4021,19 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         
         return await db.deleteAluno(input.alunoId);
       }),
+
+    // ============ PAINEL DE AGENDAMENTOS ============
+    allAppointments: adminProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        type: z.string().optional(),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+        consultorId: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await db.getAllAppointments(input);
+      }),
   }),
 
   // Status de onboarding do aluno logado

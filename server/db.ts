@@ -7434,3 +7434,68 @@ export async function hasWatchedDiscVideo(alunoId: number): Promise<boolean> {
     return false;
   }
 }
+
+// ============ ADMIN: TODOS OS AGENDAMENTOS ============
+
+export async function getAllAppointments(filters?: {
+  status?: string;
+  type?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  consultorId?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions: any[] = [];
+  if (filters?.status) {
+    conditions.push(eq(mentorAppointments.status, filters.status as any));
+  }
+  if (filters?.type) {
+    conditions.push(eq(mentorAppointments.type, filters.type as any));
+  }
+  if (filters?.dateFrom) {
+    conditions.push(gte(mentorAppointments.scheduledDate, filters.dateFrom));
+  }
+  if (filters?.dateTo) {
+    conditions.push(lte(mentorAppointments.scheduledDate, filters.dateTo));
+  }
+  if (filters?.consultorId) {
+    conditions.push(eq(mentorAppointments.consultorId, filters.consultorId));
+  }
+
+  const appointments = await db.select().from(mentorAppointments)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(mentorAppointments.scheduledDate), mentorAppointments.startTime);
+
+  // Buscar todos os consultores e alunos de uma vez para enriquecer
+  const allConsultors = await getConsultors();
+  const consultorMap = new Map(allConsultors.map(c => [c.id, c]));
+  const allAlunos = await getAlunos();
+  const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
+
+  const result = [];
+  for (const appt of appointments) {
+    const participants = await db.select().from(appointmentParticipants)
+      .where(eq(appointmentParticipants.appointmentId, appt.id));
+
+    const mentor = consultorMap.get(appt.consultorId);
+
+    result.push({
+      ...appt,
+      mentorName: mentor?.name || 'Desconhecido',
+      mentorEmail: mentor?.email || '',
+      mentorEspecialidade: mentor?.especialidade || '',
+      participants: participants.map(p => ({
+        alunoId: p.alunoId,
+        alunoName: alunoMap.get(p.alunoId)?.name || 'Desconhecido',
+        alunoEmail: alunoMap.get(p.alunoId)?.email || '',
+        status: p.status,
+        confirmedAt: p.confirmedAt,
+        notes: p.notes,
+      })),
+    });
+  }
+
+  return result;
+}
