@@ -3897,6 +3897,29 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       .mutation(async ({ input }) => {
         return await db.createAlunoDireto(input);
       }),
+
+    // Check aluno dependencies before deletion
+    getAlunoDependencies: adminProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAlunoDependencies(input.alunoId);
+      }),
+
+    // Delete aluno and all related data
+    deleteAluno: adminProcedure
+      .input(z.object({ alunoId: z.number(), confirmCascade: z.boolean().default(false) }))
+      .mutation(async ({ input }) => {
+        // First check dependencies
+        const deps = await db.getAlunoDependencies(input.alunoId);
+        if (!deps) return { success: false, message: "Erro ao verificar dependências" };
+        
+        // If has related data and no confirmation, return deps info
+        if (deps.totalRelated > 0 && !input.confirmCascade) {
+          return { success: false, message: "Aluno possui dados relacionados", dependencies: deps, requiresConfirmation: true };
+        }
+        
+        return await db.deleteAluno(input.alunoId);
+      }),
   }),
 
   // Status de onboarding do aluno logado

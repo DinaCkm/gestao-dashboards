@@ -248,6 +248,21 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro ao cadastrar aluno: ${err.message}`),
   });
 
+  const deleteAluno = trpc.admin.deleteAluno.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast.success("Aluno excluído com sucesso!");
+        refetchAllAlunos();
+        refetchAccessUsers();
+      } else if (data.requiresConfirmation) {
+        // handled in component
+      } else {
+        toast.error(data.message || "Erro ao excluir aluno");
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao excluir aluno: ${err.message}`),
+  });
+
   const updateAluno = trpc.admin.updateAluno.useMutation({
     onSuccess: (data) => {
       if (data.success) {
@@ -338,6 +353,8 @@ export default function AdminCadastros() {
               onCreateDireto={createAlunoDireto.mutate}
               isCreatingDireto={createAlunoDireto.isPending}
               isUpdating={updateAluno.isPending}
+              onDelete={deleteAluno.mutate}
+              isDeleting={deleteAluno.isPending}
             />
           </TabsContent>
 
@@ -400,7 +417,7 @@ export default function AdminCadastros() {
 }
 
 // ============ ALUNOS TAB ============
-function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, onCreateDireto, isCreatingDireto, isUpdating }: {
+function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, onCreateDireto, isCreatingDireto, isUpdating, onDelete, isDeleting }: {
   alunos: any[];
   empresas: any[];
   mentoresList: any[];
@@ -412,9 +429,47 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   onCreateDireto: (data: any) => void;
   isCreatingDireto: boolean;
   isUpdating: boolean;
+  onDelete: (data: any) => void;
+  isDeleting: boolean;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [editAluno, setEditAluno] = useState<any>(null);
+
+  // Delete state
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleteDeps, setDeleteDeps] = useState<any>(null);
+  const [deleteStep, setDeleteStep] = useState<'confirm' | 'cascade'>('confirm');
+
+  const depsQuery = trpc.admin.getAlunoDependencies.useQuery(
+    { alunoId: deleteTarget?.id ?? 0 },
+    { enabled: !!deleteTarget && deleteOpen }
+  );
+
+  useEffect(() => {
+    if (depsQuery.data) {
+      setDeleteDeps(depsQuery.data);
+      if (depsQuery.data.totalRelated > 0) {
+        setDeleteStep('cascade');
+      }
+    }
+  }, [depsQuery.data]);
+
+  const handleDeleteClick = (aluno: any) => {
+    setDeleteTarget(aluno);
+    setDeleteDeps(null);
+    setDeleteStep('confirm');
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!deleteTarget) return;
+    const hasDeps = deleteDeps && deleteDeps.totalRelated > 0;
+    onDelete({ alunoId: deleteTarget.id, confirmCascade: hasDeps });
+    setDeleteOpen(false);
+    setDeleteTarget(null);
+    setDeleteDeps(null);
+  };
 
   // Search/filter state
   const [searchTerm, setSearchTerm] = useState("");
@@ -930,9 +985,14 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                         )}
                       </TableCell>
                       <TableCell>
-                        <Button variant="outline" size="sm" onClick={() => handleEditOpen(aluno)}>
-                          <Pencil className="h-3 w-3 mr-1" /> Editar
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button variant="outline" size="sm" onClick={() => handleEditOpen(aluno)}>
+                            <Pencil className="h-3 w-3 mr-1" /> Editar
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => handleDeleteClick(aluno)} disabled={isDeleting}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -949,6 +1009,54 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           </>
         )}
       </CardContent>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={(open) => { if (!open) { setDeleteOpen(false); setDeleteTarget(null); setDeleteDeps(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Excluir Aluno</DialogTitle>
+            <DialogDescription>
+              {deleteTarget && (
+                <span>Tem certeza que deseja excluir <strong>{deleteTarget.name}</strong>?</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {depsQuery.isLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Verificando dados relacionados...</span>
+            </div>
+          ) : deleteDeps && deleteDeps.totalRelated > 0 ? (
+            <div className="space-y-3">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Este aluno possui <strong>{deleteDeps.totalRelated}</strong> registros relacionados que serão excluídos permanentemente:
+                </AlertDescription>
+              </Alert>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {deleteDeps.pdis > 0 && <div>PDIs/Assessments: <strong>{deleteDeps.pdis}</strong></div>}
+                {deleteDeps.sessions > 0 && <div>Sessões de mentoria: <strong>{deleteDeps.sessions}</strong></div>}
+                {deleteDeps.participations > 0 && <div>Participações em eventos: <strong>{deleteDeps.participations}</strong></div>}
+                {deleteDeps.performance > 0 && <div>Registros de performance: <strong>{deleteDeps.performance}</strong></div>}
+                {deleteDeps.ciclos > 0 && <div>Ciclos de execução: <strong>{deleteDeps.ciclos}</strong></div>}
+                {deleteDeps.disc > 0 && <div>Resultados DISC: <strong>{deleteDeps.disc}</strong></div>}
+                {deleteDeps.metas > 0 && <div>Metas: <strong>{deleteDeps.metas}</strong></div>}
+                {deleteDeps.contratos > 0 && <div>Contratos: <strong>{deleteDeps.contratos}</strong></div>}
+              </div>
+              <p className="text-sm text-destructive font-medium">Esta ação é irreversível!</p>
+            </div>
+          ) : deleteDeps ? (
+            <p className="text-sm text-muted-foreground">Este aluno não possui dados relacionados. A exclusão será simples.</p>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteOpen(false); setDeleteTarget(null); setDeleteDeps(null); }}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={depsQuery.isLoading || isDeleting}>
+              {isDeleting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Excluindo...</> : "Excluir Permanentemente"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

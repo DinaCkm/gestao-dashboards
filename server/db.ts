@@ -7181,3 +7181,95 @@ export async function getAlunoMacroInicioMap(): Promise<Map<number, Date>> {
   
   return result;
 }
+
+
+/**
+ * Check what related data exists for an aluno before deletion
+ */
+export async function getAlunoDependencies(alunoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [pdis] = await db.select({ count: sql<number>`COUNT(*)` }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId));
+  const [sessions] = await db.select({ count: sql<number>`COUNT(*)` }).from(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
+  const [participations] = await db.select({ count: sql<number>`COUNT(*)` }).from(eventParticipation).where(eq(eventParticipation.alunoId, alunoId));
+  const [performance] = await db.select({ count: sql<number>`COUNT(*)` }).from(studentPerformance).where(eq(studentPerformance.alunoId, alunoId));
+  const [ciclos] = await db.select({ count: sql<number>`COUNT(*)` }).from(ciclosExecucao).where(eq(ciclosExecucao.alunoId, alunoId));
+  const [disc] = await db.select({ count: sql<number>`COUNT(*)` }).from(discResultados).where(eq(discResultados.alunoId, alunoId));
+  const [metasCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(metas).where(eq(metas.alunoId, alunoId));
+  const [contratos] = await db.select({ count: sql<number>`COUNT(*)` }).from(contratosAluno).where(eq(contratosAluno.alunoId, alunoId));
+
+  const totalRelated = pdis.count + sessions.count + participations.count + performance.count + ciclos.count + disc.count + metasCount.count + contratos.count;
+
+  return {
+    pdis: pdis.count,
+    sessions: sessions.count,
+    participations: participations.count,
+    performance: performance.count,
+    ciclos: ciclos.count,
+    disc: disc.count,
+    metas: metasCount.count,
+    contratos: contratos.count,
+    totalRelated,
+  };
+}
+
+/**
+ * Delete an aluno and all related data (cascade)
+ */
+export async function deleteAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Database not available" };
+
+  try {
+    // Delete all related data in order (respecting dependencies)
+    // 1. Meta acompanhamento (depends on metas)
+    const metaIds = await db.select({ id: metas.id }).from(metas).where(eq(metas.alunoId, alunoId));
+    if (metaIds.length > 0) {
+      const ids = metaIds.map(m => m.id);
+      await db.delete(metaAcompanhamento).where(sql`${metaAcompanhamento.metaId} IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`);
+    }
+
+    // 2. Assessment competencias (depends on assessment_pdi)
+    const pdiIds = await db.select({ id: assessmentPdi.id }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId));
+    if (pdiIds.length > 0) {
+      const ids = pdiIds.map(p => p.id);
+      await db.delete(assessmentCompetencias).where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`);
+    }
+
+    // 3. Ciclo competencias (depends on ciclos_execucao)
+    const cicloIds = await db.select({ id: ciclosExecucao.id }).from(ciclosExecucao).where(eq(ciclosExecucao.alunoId, alunoId));
+    if (cicloIds.length > 0) {
+      const ids = cicloIds.map(c => c.id);
+      await db.delete(cicloCompetencias).where(sql`${cicloCompetencias.cicloId} IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`);
+    }
+
+    // 4. Delete direct dependencies
+    await db.delete(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId));
+    await db.delete(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
+    await db.delete(eventParticipation).where(eq(eventParticipation.alunoId, alunoId));
+    await db.delete(studentPerformance).where(eq(studentPerformance.alunoId, alunoId));
+    await db.delete(ciclosExecucao).where(eq(ciclosExecucao.alunoId, alunoId));
+    await db.delete(discResultados).where(eq(discResultados.alunoId, alunoId));
+    await db.delete(discRespostas).where(eq(discRespostas.alunoId, alunoId));
+    await db.delete(metas).where(eq(metas.alunoId, alunoId));
+    await db.delete(contratosAluno).where(eq(contratosAluno.alunoId, alunoId));
+    await db.delete(autopercepcoesCompetencias).where(eq(autopercepcoesCompetencias.alunoId, alunoId));
+    await db.delete(mentoraContribuicoes).where(eq(mentoraContribuicoes.alunoId, alunoId));
+    await db.delete(historicoNivelCompetencia).where(eq(historicoNivelCompetencia.alunoId, alunoId));
+    await db.delete(casesSucesso).where(eq(casesSucesso.alunoId, alunoId));
+    await db.delete(planoIndividual).where(eq(planoIndividual.alunoId, alunoId));
+    await db.delete(appointmentParticipants).where(eq(appointmentParticipants.alunoId, alunoId));
+
+    // 5. Remove user link (set alunoId to null on users table)
+    await db.update(users).set({ alunoId: null }).where(eq(users.alunoId, alunoId));
+
+    // 6. Delete the aluno itself
+    await db.delete(alunos).where(eq(alunos.id, alunoId));
+
+    return { success: true, message: "Aluno excluído com sucesso" };
+  } catch (error: any) {
+    console.error("[deleteAluno] Error:", error);
+    return { success: false, message: `Erro ao excluir aluno: ${error.message}` };
+  }
+}

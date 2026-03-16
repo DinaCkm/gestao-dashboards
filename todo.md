@@ -2210,3 +2210,9 @@
 ## Limpeza de dados e ajuste Demonstrativo (16/03/2026)
 - [x] Limpar 20 alunos de teste do SEBRAE TO (nomes "Teste Contrato A7" e "Teste Direto Contrato A7") - 20 deletados, 0 dados relacionados perdidos, total SEBRAE TO agora 50
 - [x] Ajustar card "Total Alunos" no Demonstrativo de Sessões para mostrar alunos distintos em vez de PDIs - usa Set(alunoId).size
+
+- [ ] Investigar e limpar alunos de teste restantes em TODOS os programas (painel admin mostra 211, deveria ser menos)
+
+## Botão excluir aluno no cadastro admin (16/03/2026)
+- [x] Criar endpoint backend para excluir aluno (com verificação de dados relacionados) - getAlunoDependencies + deleteAluno com cascade
+- [x] Adicionar botão de excluir na interface de cadastro de alunos com diálogo de confirmação - botão Trash2 + Dialog com lista de dependências
