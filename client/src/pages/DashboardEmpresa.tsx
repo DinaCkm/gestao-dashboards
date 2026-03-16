@@ -232,6 +232,30 @@ export default function DashboardEmpresa() {
   const [filtroCiclo, setFiltroCiclo] = useState<string>("todos");
   const [filtroClassificacao, setFiltroClassificacao] = useState<string>("todas");
 
+  // IMPORTANTE: Todos os hooks devem ser chamados ANTES de qualquer early return
+  // para evitar o erro React #310 ("Rendered more hooks than during the previous render")
+  const alunos = data?.alunos || [];
+
+  const trilhasDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    alunos.forEach((a: any) => { if (a.trilhaNome && a.trilhaNome !== 'Não definida') set.add(a.trilhaNome); });
+    return Array.from(set).sort();
+  }, [alunos]);
+
+  const classificacoesDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    alunos.forEach((a: any) => { if (a.classificacao) set.add(a.classificacao); });
+    return Array.from(set);
+  }, [alunos]);
+
+  const alunosFiltrados = useMemo(() => {
+    return alunos.filter((a: any) => {
+      if (filtroTrilha !== "todas" && a.trilhaNome !== filtroTrilha) return false;
+      if (filtroClassificacao !== "todas" && a.classificacao !== filtroClassificacao) return false;
+      return true;
+    });
+  }, [alunos, filtroTrilha, filtroClassificacao]);
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -280,7 +304,7 @@ export default function DashboardEmpresa() {
     );
   }
 
-  const { visaoEmpresa, porTurma, alunos } = data;
+  const { visaoEmpresa, porTurma } = data;
 
   const melhorAluno = alunos.length > 0 
     ? alunos.reduce((best: any, current: any) => (current.notaFinal > best.notaFinal ? current : best), alunos[0])
@@ -294,28 +318,6 @@ export default function DashboardEmpresa() {
     { indicador: 'Tarefas', valor: visaoEmpresa.mediaInd4 || visaoEmpresa.mediaPerformanceCompetencias },
     { indicador: 'Engajamento', valor: visaoEmpresa.mediaInd5 || visaoEmpresa.mediaPerformanceAprendizado || 0 },
   ];
-
-  // Extrair opções de filtro dos alunos
-  const trilhasDisponiveis = useMemo(() => {
-    const set = new Set<string>();
-    alunos.forEach((a: any) => { if (a.trilhaNome && a.trilhaNome !== 'Não definida') set.add(a.trilhaNome); });
-    return Array.from(set).sort();
-  }, [alunos]);
-
-  const classificacoesDisponiveis = useMemo(() => {
-    const set = new Set<string>();
-    alunos.forEach((a: any) => { if (a.classificacao) set.add(a.classificacao); });
-    return Array.from(set);
-  }, [alunos]);
-
-  // Filtrar alunos
-  const alunosFiltrados = useMemo(() => {
-    return alunos.filter((a: any) => {
-      if (filtroTrilha !== "todas" && a.trilhaNome !== filtroTrilha) return false;
-      if (filtroClassificacao !== "todas" && a.classificacao !== filtroClassificacao) return false;
-      return true;
-    });
-  }, [alunos, filtroTrilha, filtroClassificacao]);
 
   return (
     <DashboardLayout>

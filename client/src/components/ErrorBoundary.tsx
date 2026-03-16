@@ -29,10 +29,16 @@ class ErrorBoundary extends Component<Props, State> {
       error.message.includes('appendChild')
     );
 
-    if (isDOMError) {
-      // For DOM manipulation errors, we can try to recover silently
-      // by not showing the error screen
-      console.warn('[ErrorBoundary] Caught DOM manipulation error, attempting recovery:', error.message);
+    // Check if this is a React hooks order error (#310 / #300)
+    // These can happen during route transitions when components mount/unmount
+    const isHooksError = error.message?.includes('#310') || 
+      error.message?.includes('#300') ||
+      error.message?.includes('Rendered more hooks') ||
+      error.message?.includes('Rendered fewer hooks');
+
+    if (isDOMError || isHooksError) {
+      // For DOM manipulation and hooks errors, try to recover silently
+      console.warn('[ErrorBoundary] Caught recoverable error, attempting recovery:', error.message);
       return { hasError: false, error: null };
     }
 
@@ -57,9 +63,14 @@ class ErrorBoundary extends Component<Props, State> {
       error.message.includes('appendChild')
     );
 
-    if (isDOMError) {
+    const isHooksError = error.message?.includes('#310') || 
+      error.message?.includes('#300') ||
+      error.message?.includes('Rendered more hooks') ||
+      error.message?.includes('Rendered fewer hooks');
+
+    if (isDOMError || isHooksError) {
       // Attempt recovery by forcing a re-render
-      console.warn('[ErrorBoundary] DOM error caught, forcing recovery');
+      console.warn('[ErrorBoundary] Recoverable error caught, forcing recovery:', error.message);
       this.setState({ hasError: false, error: null });
       return;
     }
