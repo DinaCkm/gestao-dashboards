@@ -4202,9 +4202,10 @@ export async function getAllStudentsSessionProgress() {
   // Get all mentoring sessions
   const allSessions = await db.select().from(mentoringSessions);
   
-  // Group sessions by aluno (count + last session date)
+  // Group sessions by aluno (count + last session date + last mentor)
   const sessionsByAluno = new Map<number, number>();
   const lastSessionByAluno = new Map<number, Date>();
+  const lastMentorByAluno = new Map<number, number>();
   for (const s of allSessions) {
     sessionsByAluno.set(s.alunoId, (sessionsByAluno.get(s.alunoId) || 0) + 1);
     if (s.sessionDate) {
@@ -4212,6 +4213,7 @@ export async function getAllStudentsSessionProgress() {
       const current = lastSessionByAluno.get(s.alunoId);
       if (!current || sessionDate.getTime() > current.getTime()) {
         lastSessionByAluno.set(s.alunoId, sessionDate);
+        if (s.consultorId) lastMentorByAluno.set(s.alunoId, s.consultorId);
       }
     }
   }
@@ -4249,7 +4251,9 @@ export async function getAllStudentsSessionProgress() {
     const percentualProgresso = Math.min(100, Math.round((sessoesRealizadas / totalSessoesEsperadas) * 100));
     
     const aluno = alunoMap.get(pdi.alunoId);
-    const consultor = pdi.consultorId ? consultorMap.get(pdi.consultorId) : null;
+    // Get mentor: first from PDI, then from last session, then from aluno record
+    const mentorId = pdi.consultorId || lastMentorByAluno.get(pdi.alunoId) || aluno?.consultorId || null;
+    const consultor = mentorId ? consultorMap.get(mentorId) : null;
     const program = pdi.programId ? programMap.get(pdi.programId) : null;
     const turma = aluno?.turmaId ? turmaMap.get(aluno.turmaId) : null;
     const trilha = pdi.trilhaId ? trilhaMap.get(pdi.trilhaId) : null;
@@ -4264,7 +4268,7 @@ export async function getAllStudentsSessionProgress() {
       alunoId: pdi.alunoId,
       alunoNome: aluno?.name || 'Desconhecido',
       alunoEmail: aluno?.email || null,
-      consultorId: pdi.consultorId,
+      consultorId: mentorId,
       consultorNome: consultor?.name || null,
       consultorEmail: consultor?.email || null,
       programId: pdi.programId,

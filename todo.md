@@ -2273,8 +2273,19 @@
 ## Melhoria Tabela Sessões por Aluno (16/03/2026)
 - [x] Adicionar coluna "Última Sessão" na tabela (data + dias atrás)
 - [x] Adicionar filtro "Atrasado 30+ dias" no dropdown de Status
-- [ ] Linhas clicáveis com visão detalhada expandida do aluno (simplificado: tabela com scroll horizontal)
+- [x] Linhas clicáveis com Sheet de visão detalhada completa do aluno
 - [x] Filtros por todas as colunas (incluir filtro por Mentor)
 - [x] Botão de envio manual de alertas por e-mail para alunos atrasados
 - [x] Badge visual (vermelho) para alunos com 30+ dias sem sessão
 - [x] Integrar cron job de alertas automáticos no startup do servidor
+
+## Correções Tabela Sessões (17/03/2026)
+- [x] Barra de ferramentas horizontal (filtros em linha única)
+- [x] Separar em 2 tipos de status: "Status Progresso" (Completo/Em andamento/Falta 1) e "Status Sessão" (Em dia/Atrasado Xd)
+- [x] Corrigir filtro de status para funcionar com ambos os tipos
+- [x] Corrigir coluna Mentor aparecendo em branco (busca mentor das sessões quando PDI não tem consultorId)
+- [x] Permitir envio de alertas para ambos os casos de status
+- [x] Limpar botão para resetar filtros
+- [x] Linhas clicáveis com Sheet/dialog de visão completa e detalhada do aluno
+- [x] Paginação na tabela (225+ linhas, 30 por página)
+- [ ] Configurar frequência do cron de alertas e personalizar template do e-mail
