@@ -555,7 +555,7 @@ function DemonstrativoContent() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="px-2 pb-2">
+        <CardContent className="px-2 pb-2 overflow-hidden">
           {filteredData.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Users className="h-12 w-12 mx-auto mb-3 text-gray-300" />
@@ -564,8 +564,8 @@ function DemonstrativoContent() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto max-w-full" style={{ scrollbarWidth: 'thin' }}>
-                <Table className="text-xs">
+              <div className="overflow-x-auto max-w-full border rounded-md" style={{ scrollbarWidth: 'auto', scrollbarColor: '#94a3b8 #f1f5f9' }}>
+                <Table className="text-xs" style={{ minWidth: '1200px' }}>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
                       <TableHead className="font-semibold text-gray-700 text-[11px] py-1.5 px-2 min-w-[160px]">Aluno</TableHead>

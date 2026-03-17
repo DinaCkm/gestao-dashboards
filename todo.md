@@ -2302,3 +2302,4 @@
 - [x] Ciclo completo: alunos com sessões completas (12/12) não devem aparecer como "Atrasado" no Status Sessão
 - [x] Ciclo completo: alunos com sessões completas não devem receber alertas por e-mail (cron + manual)
 - [x] Reativação em cascata: ao reativar empresa, reativar alunos e PDIs vinculados
+- [x] Implementar barra de rolagem horizontal na tabela de sessões de mentoria
