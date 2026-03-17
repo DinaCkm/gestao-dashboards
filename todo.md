@@ -2256,3 +2256,4 @@
 - [x] #0a ajustes17: Corrigir erro React #310 ao acessar dashboard por empresa - hooks movidos antes de early returns + ErrorBoundary com recuperação automática
 - [x] #2 ajustes17: Corrigir cadastro de gerente que cria como mentor - removido consultorId do createGerente + corrigido dados existentes no banco
 - [x] Remover aba Gerentes redundante do AdminCadastros - manter apenas Visão Dupla (renomeada para Gerentes)
+- [x] Reorganizar menu sidebar: mover Cadastros para dentro de Parametrização e remover links redundantes em Alunos, Mentores e Empresas

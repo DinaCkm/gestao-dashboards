@@ -108,7 +108,6 @@ const adminMenuGroups: MenuGroup[] = [
     icon: GraduationCap,
     label: "Alunos",
     items: [
-      { icon: Users, label: "Lista de Alunos", path: "/cadastros" },
       { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment" },
       { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas" },
       { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas" },
@@ -118,7 +117,6 @@ const adminMenuGroups: MenuGroup[] = [
     icon: UserCheck,
     label: "Mentores",
     items: [
-      { icon: Users, label: "Cadastro de Mentores", path: "/cadastros?tab=mentores" },
       { icon: BarChart3, label: "Dashboard de Mentores", path: "/dashboard/mentor" },
       { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias" },
       { icon: CalendarDays, label: "Painel de Agendamentos", path: "/agendamentos" },
@@ -136,12 +134,10 @@ const adminMenuGroups: MenuGroup[] = [
     icon: Settings,
     label: "Parametrização",
     items: [
+      { icon: Users, label: "Cadastros", path: "/cadastros" },
       { icon: GraduationCap, label: "Turmas", path: "/turmas" },
       { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias" },
       { icon: Calculator, label: "Fórmulas", path: "/formulas" },
-      { icon: Building2, label: "Empresas", path: "/cadastros?tab=empresas" },
-      { icon: Users, label: "Gerentes", path: "/cadastros?tab=gerentes" },
-      { icon: Lock, label: "Visão Dupla (Gerente+Aluno)", path: "/cadastros?tab=gerentes-empresa" },
       { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
     ],
   },
