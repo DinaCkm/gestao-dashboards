@@ -6,7 +6,7 @@
  */
 
 import { getDb } from './db';
-import { getAlunos, getConsultors, getPrograms } from './db';
+import { getAlunos, getConsultors, getPrograms, getAllStudentsSessionProgress } from './db';
 import { emailAlertasLog, mentoringSessions } from '../drizzle/schema';
 import { eq, and, gte, desc } from 'drizzle-orm';
 import { sendEmail, buildMentoringAlertEmail } from './emailService';
@@ -86,8 +86,17 @@ export async function verificarEEnviarAlertasMentoria(options?: {
 
   const smtpUser = process.env.SMTP_USER || '';
 
+  // Get session progress to check cicloCompleto (skip alunos who completed all sessions)
+  const allProgress = await getAllStudentsSessionProgress();
+  const cicloCompletoAlunoIds = new Set(
+    allProgress.filter(p => p.cicloCompleto).map(p => p.alunoId)
+  );
+
   for (const aluno of allAlunos) {
     if (!aluno.email) continue;
+
+    // Skip alunos who completed all their sessions (ciclo completo)
+    if (cicloCompletoAlunoIds.has(aluno.id)) continue;
 
     // Get current mentor
     const mentor = aluno.consultorId ? consultorMap.get(aluno.consultorId) : null;

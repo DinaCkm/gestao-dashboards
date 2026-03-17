@@ -160,7 +160,7 @@ function DemonstrativoContent() {
       if (statusSessaoFilter === "em_dia") {
         result = result.filter((p: any) => !p.atrasado30dias);
       } else if (statusSessaoFilter === "atrasado_30") {
-        result = result.filter((p: any) => p.atrasado30dias);
+        result = result.filter((p: any) => p.atrasado30dias && !p.cicloCompleto);
       }
     }
 
@@ -189,7 +189,7 @@ function DemonstrativoContent() {
     if (user?.role === "manager" && user?.programId) {
       data = data.filter((p: any) => p.programId === user.programId);
     }
-    return data.filter((p: any) => p.atrasado30dias).length;
+    return data.filter((p: any) => p.atrasado30dias && !p.cicloCompleto).length;
   }, [progressData, user]);
 
   // Summary KPIs
@@ -198,7 +198,7 @@ function DemonstrativoContent() {
     const alunosDistintos = new Set(filteredData.map((p: any) => p.alunoId)).size;
     const completos = filteredData.filter((p: any) => p.cicloCompleto).length;
     const atencao = filteredData.filter((p: any) => p.faltaUmaSessao).length;
-    const atrasados = filteredData.filter((p: any) => p.atrasado30dias).length;
+    const atrasados = filteredData.filter((p: any) => p.atrasado30dias && !p.cicloCompleto).length;
     const emAndamento = filteredData.length - completos - atencao;
     const mediaProgresso = Math.round(filteredData.reduce((sum: number, p: any) => sum + p.percentualProgresso, 0) / filteredData.length);
     const totalSessoes = filteredData.reduce((sum: number, p: any) => sum + p.sessoesRealizadas, 0);
@@ -239,6 +239,10 @@ function DemonstrativoContent() {
   };
 
   const getStatusSessaoBadge = (item: any) => {
+    // Alunos com ciclo completo não devem aparecer como atrasados
+    if (item.cicloCompleto) {
+      return <Badge className="bg-emerald-50 text-emerald-700 border-0 whitespace-nowrap text-[10px] px-1.5 py-0.5"><CheckCircle2 className="h-3 w-3 mr-0.5" /> Finalizado</Badge>;
+    }
     if (item.atrasado30dias) {
       return <Badge className="bg-red-100 text-red-800 border-0 whitespace-nowrap text-[10px] px-1.5 py-0.5"><AlertCircle className="h-3 w-3 mr-0.5" /> Atrasado {item.diasSemSessao !== null ? `${item.diasSemSessao}d` : ''}</Badge>;
     }

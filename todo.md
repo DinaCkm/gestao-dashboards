@@ -2296,3 +2296,9 @@
 - [x] cronAlertasMentoria: filtrar alunos de empresas inativas
 - [x] enviarAlertas (routers.ts): filtrar alunos de empresas inativas
 - [x] notificarCicloQuaseFechando: corrigido automaticamente via getAllStudentsSessionProgress
+
+## Inativação em cascata e ciclo completo
+- [x] Inativação em cascata: ao inativar empresa, inativar todos os alunos e PDIs vinculados
+- [x] Ciclo completo: alunos com sessões completas (12/12) não devem aparecer como "Atrasado" no Status Sessão
+- [x] Ciclo completo: alunos com sessões completas não devem receber alertas por e-mail (cron + manual)
+- [x] Reativação em cascata: ao reativar empresa, reativar alunos e PDIs vinculados

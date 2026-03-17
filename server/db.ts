@@ -1515,7 +1515,48 @@ export async function toggleProgramStatus(id: number) {
     .set({ isActive: newStatus })
     .where(eq(programs.id, id));
   
-  return { success: true, isActive: newStatus };
+  // Inativação/reativação em cascata: alunos e PDIs vinculados
+  // Ao inativar empresa: inativar todos os alunos e PDIs
+  // Ao reativar empresa: reativar todos os alunos e PDIs
+  const alunosVinculados = await db.select({ id: alunos.id })
+    .from(alunos)
+    .where(eq(alunos.programId, id));
+  
+  if (alunosVinculados.length > 0) {
+    await db.update(alunos)
+      .set({ isActive: newStatus })
+      .where(eq(alunos.programId, id));
+  }
+  
+  // Inativar/reativar PDIs vinculados ao programa
+  const pdisVinculados = await db.select({ id: assessmentPdi.id })
+    .from(assessmentPdi)
+    .where(eq(assessmentPdi.programId, id));
+  
+  if (pdisVinculados.length > 0) {
+    if (newStatus === 0) {
+      // Inativar: congelar PDIs (enum só permite 'ativo' e 'congelado')
+      await db.update(assessmentPdi)
+        .set({ status: 'congelado', motivoCongelamento: 'Empresa inativada - congelamento automático em cascata' })
+        .where(and(eq(assessmentPdi.programId, id), eq(assessmentPdi.status, 'ativo')));
+    } else {
+      // Reativar: descongelar PDIs que foram congelados por cascata
+      await db.update(assessmentPdi)
+        .set({ status: 'ativo', motivoCongelamento: null })
+        .where(and(
+          eq(assessmentPdi.programId, id),
+          eq(assessmentPdi.status, 'congelado'),
+          eq(assessmentPdi.motivoCongelamento, 'Empresa inativada - congelamento automático em cascata')
+        ));
+    }
+  }
+  
+  return {
+    success: true,
+    isActive: newStatus,
+    alunosAfetados: alunosVinculados.length,
+    pdisAfetados: pdisVinculados.length,
+  };
 }
 
 // Mentores

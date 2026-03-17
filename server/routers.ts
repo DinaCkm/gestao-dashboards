@@ -6449,6 +6449,12 @@ Responda APENAS em JSON com o formato especificado.`
           }
         }
         
+        // Get session progress to check cicloCompleto (skip alunos who completed all sessions)
+        const allProgress = await db.getAllStudentsSessionProgress();
+        const cicloCompletoAlunoIds = new Set(
+          allProgress.filter(p => p.cicloCompleto).map(p => p.alunoId)
+        );
+        
         // Find alunos sem mentoria há 30+ dias
         const now = Date.now();
         const alertas: Array<{
@@ -6465,6 +6471,9 @@ Responda APENAS em JSON com o formato especificado.`
         
         for (const aluno of allAlunos) {
           if (!aluno.email) continue;
+          
+          // Skip alunos who completed all their sessions (ciclo completo)
+          if (cicloCompletoAlunoIds.has(aluno.id)) continue;
           
           // Get current mentor
           const mentor = aluno.consultorId ? consultorMap.get(aluno.consultorId) : null;
