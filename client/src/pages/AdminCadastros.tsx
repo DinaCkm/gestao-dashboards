@@ -337,13 +337,9 @@ export default function AdminCadastros() {
               <UserCheck className="h-4 w-4" />
               Mentores
             </TabsTrigger>
-            <TabsTrigger value="gerentes" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Gerentes
-            </TabsTrigger>
             <TabsTrigger value="gerentes-empresa" className="flex items-center gap-2">
               <Crown className="h-4 w-4" />
-              Visão Dupla
+              Gerentes
             </TabsTrigger>
           </TabsList>
 
@@ -394,19 +390,6 @@ export default function AdminCadastros() {
           </TabsContent>
 
           {/* Gerentes Tab */}
-          <TabsContent value="gerentes">
-            <GerentesTab 
-              gerentes={gerentes || []} 
-              empresas={empresas || []}
-              loading={loadingGerentes}
-              onCreate={createGerente.mutate}
-              onUpdateAcesso={updateAcessoGerente.mutate}
-              isCreating={createGerente.isPending}
-              onEdit={editGerente.mutate}
-            />
-          </TabsContent>
-
-          {/* Gerentes de Empresa - Visão Dupla Tab */}
           <TabsContent value="gerentes-empresa">
             <GerentesEmpresaTab
               gerentesEmpresa={gerentesEmpresa || []}
