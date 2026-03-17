@@ -27,7 +27,11 @@ export default function EditarMentorias() {
 
   // Edit dialog state
   const [editSession, setEditSession] = useState<any | null>(null);
-  const [newDate, setNewDate] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editSessionNumber, setEditSessionNumber] = useState("");
+  const [editConsultorId, setEditConsultorId] = useState("");
+  const [editTaskStatus, setEditTaskStatus] = useState("");
+  const [editPresence, setEditPresence] = useState("");
 
   // Delete confirmation dialog state
   const [deleteSession, setDeleteSession] = useState<any | null>(null);
@@ -56,15 +60,14 @@ export default function EditarMentorias() {
     enabled: !loading && !!user && user.role === "admin",
   });
 
-  const updateDateMutation = trpc.admin.updateSessionDate.useMutation({
+  const updateSessionMutation = trpc.admin.updateSessionDate.useMutation({
     onSuccess: () => {
-      toast.success("Data da sessão atualizada com sucesso!");
-      setEditSession(null);
-      setNewDate("");
+      toast.success("Sessão atualizada com sucesso!");
+      closeEditDialog();
       refetch();
     },
     onError: (err) => {
-      toast.error("Erro ao atualizar data: " + err.message);
+      toast.error("Erro ao atualizar: " + err.message);
     },
   });
 
@@ -101,26 +104,78 @@ export default function EditarMentorias() {
 
   const totalPages = sessionsData ? Math.ceil(sessionsData.total / pageSize) : 0;
 
-  function handleEditDate(session: any) {
+  function handleEditClick(session: any) {
     setEditSession(session);
-    // Convert the session date to YYYY-MM-DD for the input
+    // Set date
     if (session.sessionDate) {
       const d = new Date(session.sessionDate);
       const year = d.getUTCFullYear();
       const month = String(d.getUTCMonth() + 1).padStart(2, "0");
       const day = String(d.getUTCDate()).padStart(2, "0");
-      setNewDate(`${year}-${month}-${day}`);
+      setEditDate(`${year}-${month}-${day}`);
     } else {
-      setNewDate("");
+      setEditDate("");
     }
+    // Set session number
+    setEditSessionNumber(String(session.sessionNumber || ""));
+    // Set consultor
+    setEditConsultorId(session.consultorId ? String(session.consultorId) : "");
+    // Set task status
+    setEditTaskStatus(session.taskStatus || "sem_tarefa");
+    // Set presence
+    setEditPresence(session.presence || "presente");
   }
 
-  function handleSaveDate() {
-    if (!editSession || !newDate) return;
-    updateDateMutation.mutate({
-      sessionId: editSession.id,
-      sessionDate: newDate,
-    });
+  function closeEditDialog() {
+    setEditSession(null);
+    setEditDate("");
+    setEditSessionNumber("");
+    setEditConsultorId("");
+    setEditTaskStatus("");
+    setEditPresence("");
+  }
+
+  function handleSaveEdit() {
+    if (!editSession) return;
+
+    const payload: any = { sessionId: editSession.id };
+
+    // Only send changed fields
+    if (editDate) {
+      const origDate = editSession.sessionDate
+        ? (() => { const d = new Date(editSession.sessionDate); return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`; })()
+        : "";
+      if (editDate !== origDate) {
+        payload.sessionDate = editDate;
+      }
+    }
+
+    const newNum = Number(editSessionNumber);
+    if (!isNaN(newNum) && newNum > 0 && newNum !== editSession.sessionNumber) {
+      payload.sessionNumber = newNum;
+    }
+
+    const newConsultorId = Number(editConsultorId);
+    if (!isNaN(newConsultorId) && newConsultorId !== editSession.consultorId) {
+      payload.consultorId = newConsultorId;
+    }
+
+    if (editTaskStatus && editTaskStatus !== editSession.taskStatus) {
+      payload.taskStatus = editTaskStatus;
+    }
+
+    if (editPresence && editPresence !== editSession.presence) {
+      payload.presence = editPresence;
+    }
+
+    // Check if anything changed
+    const hasChanges = Object.keys(payload).length > 1; // more than just sessionId
+    if (!hasChanges) {
+      toast.info("Nenhuma alteração detectada.");
+      return;
+    }
+
+    updateSessionMutation.mutate(payload);
   }
 
   function handleDeleteClick(session: any) {
@@ -140,6 +195,26 @@ export default function EditarMentorias() {
     setConsultorFilter("");
     setSearchTerm("");
     setPage(1);
+  }
+
+  // Task status display helper
+  function getTaskStatusLabel(status: string) {
+    switch (status) {
+      case "entregue": return "Entregue";
+      case "nao_entregue": return "Não entregue";
+      case "sem_tarefa": return "Sem tarefa";
+      case "validada": return "Validada";
+      default: return status || "—";
+    }
+  }
+
+  function getTaskStatusVariant(status: string): "default" | "destructive" | "outline" | "secondary" {
+    switch (status) {
+      case "entregue": return "default";
+      case "validada": return "default";
+      case "nao_entregue": return "destructive";
+      default: return "secondary";
+    }
   }
 
   if (loading) {
@@ -169,7 +244,7 @@ export default function EditarMentorias() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Editar Mentorias</h1>
           <p className="text-muted-foreground mt-1">
-            Pesquise e ajuste a data das sessões de mentoria já lançadas no sistema, ou exclua registros incorretos.
+            Pesquise, edite ou exclua sessões de mentoria já lançadas no sistema.
           </p>
         </div>
 
@@ -290,10 +365,10 @@ export default function EditarMentorias() {
                         <TableHead>Aluno</TableHead>
                         <TableHead>Mentor</TableHead>
                         <TableHead>Turma</TableHead>
-                        <TableHead>Trilha</TableHead>
                         <TableHead className="text-center">Sessão</TableHead>
                         <TableHead className="text-center">Data</TableHead>
                         <TableHead className="text-center">Presença</TableHead>
+                        <TableHead className="text-center">Tarefa</TableHead>
                         <TableHead className="text-center w-[100px]">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -312,9 +387,6 @@ export default function EditarMentorias() {
                           <TableCell className="text-xs max-w-[180px] truncate">
                             {session.turmaNome || "—"}
                           </TableCell>
-                          <TableCell className="text-xs">
-                            {session.trilhaNome || "—"}
-                          </TableCell>
                           <TableCell className="text-center">
                             <Badge variant="outline" className="text-xs">
                               #{session.sessionNumber}
@@ -332,13 +404,21 @@ export default function EditarMentorias() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">
+                            <Badge
+                              variant={getTaskStatusVariant(session.taskStatus)}
+                              className="text-xs"
+                            >
+                              {getTaskStatusLabel(session.taskStatus)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-1">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleEditDate(session)}
+                                onClick={() => handleEditClick(session)}
                                 className="h-7 w-7 p-0"
-                                title="Editar data da sessão"
+                                title="Editar sessão"
                               >
                                 <Edit3 className="h-3.5 w-3.5" />
                               </Button>
@@ -390,71 +470,127 @@ export default function EditarMentorias() {
           </CardContent>
         </Card>
 
-        {/* Edit Date Dialog */}
-        <Dialog open={!!editSession} onOpenChange={(open) => { if (!open) { setEditSession(null); setNewDate(""); } }}>
-          <DialogContent className="sm:max-w-md">
+        {/* Edit Session Dialog */}
+        <Dialog open={!!editSession} onOpenChange={(open) => { if (!open) closeEditDialog(); }}>
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Editar Data da Sessão
+                <Edit3 className="h-5 w-5" />
+                Editar Sessão de Mentoria
               </DialogTitle>
               <DialogDescription>
-                Altere a data da sessão de mentoria selecionada.
+                Altere os dados da sessão de mentoria selecionada.
               </DialogDescription>
             </DialogHeader>
 
             {editSession && (
               <div className="space-y-4 py-2">
-                {/* Session info */}
+                {/* Session info (read-only) */}
                 <div className="bg-muted/50 rounded-lg p-3 space-y-1.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">ID:</span>
+                    <span className="font-mono font-medium">{editSession.id}</span>
+                  </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Aluno:</span>
                     <span className="font-medium">{editSession.alunoNome}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Sessão:</span>
-                    <span className="font-medium">#{editSession.sessionNumber}</span>
+                    <span className="text-muted-foreground">Turma:</span>
+                    <span className="font-medium">{editSession.turmaNome || "—"}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Data atual:</span>
-                    <span className="font-medium">{formatDateSafe(editSession.sessionDate)}</span>
-                  </div>
-                  {editSession.consultorNome && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Mentor:</span>
-                      <span className="font-medium">{editSession.consultorNome}</span>
-                    </div>
-                  )}
                 </div>
 
-                {/* New date input */}
+                {/* Editable fields */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Session Number */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editSessionNumber" className="text-sm">Nº da Sessão</Label>
+                    <Input
+                      id="editSessionNumber"
+                      type="number"
+                      min={1}
+                      value={editSessionNumber}
+                      onChange={(e) => setEditSessionNumber(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Date */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editDate" className="text-sm">Data</Label>
+                    <Input
+                      id="editDate"
+                      type="date"
+                      value={editDate}
+                      onChange={(e) => setEditDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Mentor */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="newDate">Nova data</Label>
-                  <Input
-                    id="newDate"
-                    type="date"
-                    value={newDate}
-                    onChange={(e) => setNewDate(e.target.value)}
-                  />
+                  <Label className="text-sm">Mentor</Label>
+                  <Select value={editConsultorId} onValueChange={setEditConsultorId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o mentor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mentores?.map((m: any) => (
+                        <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Presence */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Presença</Label>
+                    <Select value={editPresence} onValueChange={setEditPresence}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Presença" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="presente">Presente</SelectItem>
+                        <SelectItem value="ausente">Ausente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Task Status */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Tarefa</Label>
+                    <Select value={editTaskStatus} onValueChange={setEditTaskStatus}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Status da tarefa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="entregue">Entregue</SelectItem>
+                        <SelectItem value="nao_entregue">Não entregue</SelectItem>
+                        <SelectItem value="sem_tarefa">Sem tarefa</SelectItem>
+                        <SelectItem value="validada">Validada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setEditSession(null); setNewDate(""); }}>
+              <Button variant="outline" onClick={closeEditDialog}>
                 Cancelar
               </Button>
               <Button
-                onClick={handleSaveDate}
-                disabled={!newDate || updateDateMutation.isPending}
+                onClick={handleSaveEdit}
+                disabled={updateSessionMutation.isPending}
               >
-                {updateDateMutation.isPending ? (
+                {updateSessionMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     Salvando...
                   </>
                 ) : (
-                  "Salvar"
+                  "Salvar Alterações"
                 )}
               </Button>
             </DialogFooter>

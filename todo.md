@@ -2342,3 +2342,10 @@
 - [x] Criar endpoint backend para excluir sessão de mentoria
 - [x] Adicionar botão de excluir na tabela da página Editar Mentorias (lixeira vermelha)
 - [x] Incluir confirmação antes de excluir (dialog de confirmação com detalhes da sessão)
+
+## Expandir Edição de Mentorias (17/03/2026)
+- [x] Permitir editar tarefa (entregue/não entregue) no dialog de edição
+- [x] Permitir editar número da sessão com validação de duplicidade (mesmo aluno não pode ter 2 sessões com mesmo número)
+- [x] Permitir editar o mentor/consultora da sessão
+- [x] Atualizar backend (updateSessionDate → updateSession completo)
+- [x] Atualizar frontend com novos campos no dialog (data, nº sessão, mentor, presença, tarefa)

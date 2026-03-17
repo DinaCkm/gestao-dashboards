@@ -4131,12 +4131,38 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
     updateSessionDate: adminProcedure
       .input(z.object({
         sessionId: z.number(),
-        sessionDate: z.string(),
+        sessionDate: z.string().optional(),
+        sessionNumber: z.number().optional(),
+        consultorId: z.number().optional(),
+        taskStatus: z.enum(["entregue", "nao_entregue", "sem_tarefa", "validada"]).optional(),
+        presence: z.enum(["presente", "ausente"]).optional(),
       }))
       .mutation(async ({ input }) => {
-        const success = await db.updateMentoringSession(input.sessionId, {
-          sessionDate: input.sessionDate,
-        });
+        // If sessionNumber is being changed, validate no duplicate for same aluno
+        if (input.sessionNumber !== undefined) {
+          const session = await db.getMentoringSessionById(input.sessionId);
+          if (session) {
+            const existingSessions = await db.getMentoringSessionsByAluno(session.alunoId);
+            const duplicate = existingSessions.find(
+              (s: any) => s.sessionNumber === input.sessionNumber && s.id !== input.sessionId
+            );
+            if (duplicate) {
+              throw new TRPCError({
+                code: 'CONFLICT',
+                message: `Este aluno já possui uma sessão #${input.sessionNumber}. Escolha outro número.`,
+              });
+            }
+          }
+        }
+
+        const updateData: Record<string, any> = {};
+        if (input.sessionDate !== undefined) updateData.sessionDate = input.sessionDate;
+        if (input.sessionNumber !== undefined) updateData.sessionNumber = input.sessionNumber;
+        if (input.consultorId !== undefined) updateData.consultorId = input.consultorId;
+        if (input.taskStatus !== undefined) updateData.taskStatus = input.taskStatus;
+        if (input.presence !== undefined) updateData.presence = input.presence;
+
+        const success = await db.updateMentoringSession(input.sessionId, updateData);
         return { success };
       }),
 

@@ -691,6 +691,8 @@ export async function getMentoringSessionsByAluno(alunoId: number): Promise<Ment
 
 export async function updateMentoringSession(sessionId: number, data: {
   sessionDate?: string;
+  sessionNumber?: number;
+  consultorId?: number;
   notaEvolucao?: number;
   feedback?: string;
   engagementScore?: number;
@@ -715,6 +717,8 @@ export async function updateMentoringSession(sessionId: number, data: {
   
   const updateData: Record<string, unknown> = {};
   if (data.sessionDate !== undefined) updateData.sessionDate = new Date(data.sessionDate + 'T00:00:00');
+  if (data.sessionNumber !== undefined) updateData.sessionNumber = data.sessionNumber;
+  if (data.consultorId !== undefined) updateData.consultorId = data.consultorId;
   if (data.notaEvolucao !== undefined) updateData.notaEvolucao = data.notaEvolucao;
   if (data.engagementScore !== undefined) updateData.engagementScore = data.engagementScore;
   if (data.feedback !== undefined) updateData.feedback = data.feedback;
