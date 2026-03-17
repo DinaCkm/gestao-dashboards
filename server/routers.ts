@@ -4231,6 +4231,72 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         await db.updateAssessmentCompetencia(id, data);
         return { success: true };
       }),
+
+    // Atualizar assessment PDI (trilha, datas macro, mentora, etc.)
+    atualizar: protectedProcedure
+      .input(z.object({
+        pdiId: z.number(),
+        trilhaId: z.number().optional(),
+        consultorId: z.number().nullable().optional(),
+        turmaId: z.number().nullable().optional(),
+        programId: z.number().nullable().optional(),
+        macroInicio: z.string().optional(),
+        macroTermino: z.string().optional(),
+        observacoes: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { pdiId, ...data } = input;
+        // Validate macro dates if both provided
+        if (data.macroInicio && data.macroTermino && data.macroInicio >= data.macroTermino) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Data de início deve ser anterior à data de término',
+          });
+        }
+        await db.updateAssessmentPdi(pdiId, data);
+        return { success: true };
+      }),
+
+    // Adicionar competência a um assessment existente
+    adicionarCompetencia: protectedProcedure
+      .input(z.object({
+        assessmentPdiId: z.number(),
+        competenciaId: z.number(),
+        peso: z.enum(['obrigatoria', 'opcional']),
+        notaCorte: z.string().optional(),
+        microInicio: z.string().nullable().optional(),
+        microTermino: z.string().nullable().optional(),
+        nivelAtual: z.string().nullable().optional(),
+        metaCiclo1: z.string().nullable().optional(),
+        metaCiclo2: z.string().nullable().optional(),
+        metaFinal: z.string().nullable().optional(),
+        justificativa: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { assessmentPdiId, ...data } = input;
+        const id = await db.addCompetenciaToAssessment(assessmentPdiId, data);
+        return { success: true, id };
+      }),
+
+    // Remover competência de um assessment
+    removerCompetencia: protectedProcedure
+      .input(z.object({
+        assessmentCompetenciaId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.removeCompetenciaFromAssessment(input.assessmentCompetenciaId);
+        return { success: true };
+      }),
+
+    // Excluir assessment PDI completo
+    excluir: protectedProcedure
+      .input(z.object({
+        pdiId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.deleteAssessmentPdi(input.pdiId);
+        return { success: true };
+      }),
   }),
 
   // ==================== WEBINARS MANAGEMENT ====================

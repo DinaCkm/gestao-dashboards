@@ -48,6 +48,7 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react";
+import EditAssessmentDialog from "@/components/EditAssessmentDialog";
 
 // ============ Progress Bar Component ============
 function ProgressBar({ value, meta, label }: { value: number; meta?: number; label?: string }) {
@@ -165,6 +166,7 @@ function AssessmentContent() {
   });
 
   // ---- Congelar: diálogo de confirmação com motivo obrigatório ----
+  const [editPdi, setEditPdi] = useState<any>(null);
   const [congelarDialogOpen, setCongelarDialogOpen] = useState(false);
   const [congelarPdiId, setCongelarPdiId] = useState<number | null>(null);
   const [congelarMotivo, setCongelarMotivo] = useState("");
@@ -705,6 +707,7 @@ function AssessmentContent() {
                   isDescongelando={descongelarMutation.isPending}
                   formatDate={formatDate}
                   refetch={refetchAssessments}
+                  onEdit={() => setEditPdi(pdi)}
                 />
               ))}
             </div>
@@ -824,6 +827,22 @@ function AssessmentContent() {
         />
       )}
 
+      {/* Diálogo de Edição do Assessment */}
+      {editPdi && (
+        <EditAssessmentDialog
+          open={!!editPdi}
+          onClose={() => setEditPdi(null)}
+          pdi={editPdi}
+          trilhas={trilhas}
+          programs={programs}
+          mentores={mentores}
+          isAdmin={isAdmin}
+          onSuccess={() => {
+            refetchAssessments();
+          }}
+        />
+      )}
+
       {/* Diálogo de Confirmação de Congelamento */}
       <Dialog open={congelarDialogOpen} onOpenChange={(open) => { if (!open) { setCongelarDialogOpen(false); setCongelarPdiId(null); setCongelarMotivo(""); } }}>
         <DialogContent className="sm:max-w-md">
@@ -939,6 +958,7 @@ function AssessmentCard({
   isDescongelando,
   formatDate,
   refetch,
+  onEdit,
 }: {
   pdi: any;
   isExpanded: boolean;
@@ -948,6 +968,7 @@ function AssessmentCard({
   isDescongelando: boolean;
   formatDate: (d: any) => string;
   refetch: () => void;
+  onEdit: () => void;
 }) {
   const [editingCompId, setEditingCompId] = useState<number | null>(null);
   const [editNivelAtual, setEditNivelAtual] = useState("");
@@ -1035,6 +1056,15 @@ function AssessmentCard({
               <div>{pdi.obrigatorias} obrigatórias</div>
               <div>{pdi.opcionais} opcionais</div>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="text-secondary border-secondary/30 hover:bg-secondary/10"
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1" />
+              Editar
+            </Button>
             {!isCongelado ? (
               <Button
                 variant="outline"

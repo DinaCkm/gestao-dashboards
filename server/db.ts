@@ -3783,6 +3783,146 @@ export async function createAssessmentPdi(
 }
 
 /**
+ * Update assessment PDI (trilha, datas macro, mentora, turma, programa, observações)
+ */
+export async function updateAssessmentPdi(
+  pdiId: number,
+  data: {
+    trilhaId?: number;
+    consultorId?: number | null;
+    turmaId?: number | null;
+    programId?: number | null;
+    macroInicio?: string;
+    macroTermino?: string;
+    observacoes?: string | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) return;
+
+  // Build update object
+  const updateData: Record<string, any> = {};
+  if (data.trilhaId !== undefined) updateData.trilhaId = data.trilhaId;
+  if (data.consultorId !== undefined) updateData.consultorId = data.consultorId;
+  if (data.turmaId !== undefined) updateData.turmaId = data.turmaId;
+  if (data.programId !== undefined) updateData.programId = data.programId;
+  if (data.observacoes !== undefined) updateData.observacoes = data.observacoes;
+  if (data.macroInicio !== undefined) updateData.macroInicio = new Date(data.macroInicio + 'T00:00:00');
+  if (data.macroTermino !== undefined) updateData.macroTermino = new Date(data.macroTermino + 'T00:00:00');
+
+  if (Object.keys(updateData).length > 0) {
+    await db.update(assessmentPdi).set(updateData).where(eq(assessmentPdi.id, pdiId));
+  }
+}
+
+/**
+ * Add a competência to an existing assessment PDI
+ */
+export async function addCompetenciaToAssessment(
+  assessmentPdiId: number,
+  data: {
+    competenciaId: number;
+    peso: 'obrigatoria' | 'opcional';
+    notaCorte?: string;
+    microInicio?: string | null;
+    microTermino?: string | null;
+    nivelAtual?: string | null;
+    metaCiclo1?: string | null;
+    metaCiclo2?: string | null;
+    metaFinal?: string | null;
+    justificativa?: string | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Validate micro dates against macro dates
+  const [pdi] = await db.select().from(assessmentPdi).where(eq(assessmentPdi.id, assessmentPdiId)).limit(1);
+  if (!pdi) throw new Error('Assessment PDI não encontrado');
+
+  const macroInicioStr = pdi.macroInicio instanceof Date ? pdi.macroInicio.toISOString().split('T')[0] : String(pdi.macroInicio);
+  const macroTerminoStr = pdi.macroTermino instanceof Date ? pdi.macroTermino.toISOString().split('T')[0] : String(pdi.macroTermino);
+
+  if (data.microInicio && data.microInicio < macroInicioStr) {
+    throw new Error('Micro ciclo início não pode ser anterior ao macro ciclo início');
+  }
+  if (data.microTermino && data.microTermino > macroTerminoStr) {
+    throw new Error('Micro ciclo término não pode ser posterior ao macro ciclo término');
+  }
+
+  // Check if competência already exists in this assessment
+  const existing = await db.select().from(assessmentCompetencias)
+    .where(sql`${assessmentCompetencias.assessmentPdiId} = ${assessmentPdiId} AND ${assessmentCompetencias.competenciaId} = ${data.competenciaId}`)
+    .limit(1);
+  if (existing.length > 0) {
+    throw new Error('Esta competência já está vinculada a este assessment');
+  }
+
+  const result = await db.insert(assessmentCompetencias).values({
+    assessmentPdiId,
+    competenciaId: data.competenciaId,
+    peso: data.peso,
+    notaCorte: data.notaCorte || '8.00',
+    microInicio: data.microInicio ? new Date(data.microInicio + 'T00:00:00') : null,
+    microTermino: data.microTermino ? new Date(data.microTermino + 'T00:00:00') : null,
+    nivelAtual: data.nivelAtual || null,
+    metaCiclo1: data.metaCiclo1 || null,
+    metaCiclo2: data.metaCiclo2 || null,
+    metaFinal: data.metaFinal || null,
+    justificativa: data.justificativa || null,
+  });
+
+  return result[0].insertId;
+}
+
+/**
+ * Remove a competência from an assessment PDI
+ */
+export async function removeCompetenciaFromAssessment(assessmentCompetenciaId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  // Also remove related metas and historico_nivel
+  try {
+    await db.execute(sql`DELETE FROM \`metas\` WHERE \`assessmentCompetenciaId\` = ${assessmentCompetenciaId}`);
+  } catch (e) { /* ignore if no metas */ }
+  try {
+    await db.execute(sql`DELETE FROM \`historico_nivel\` WHERE \`assessmentCompetenciaId\` = ${assessmentCompetenciaId}`);
+  } catch (e) { /* ignore if no historico */ }
+
+  await db.delete(assessmentCompetencias).where(eq(assessmentCompetencias.id, assessmentCompetenciaId));
+}
+
+/**
+ * Delete an entire assessment PDI and all its competências
+ */
+export async function deleteAssessmentPdi(pdiId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  // Get all competencia IDs for this PDI
+  const comps = await db.select({ id: assessmentCompetencias.id })
+    .from(assessmentCompetencias)
+    .where(eq(assessmentCompetencias.assessmentPdiId, pdiId));
+
+  // Delete related metas and historico for each competencia
+  for (const comp of comps) {
+    try {
+      await db.execute(sql`DELETE FROM \`metas\` WHERE \`assessmentCompetenciaId\` = ${comp.id}`);
+    } catch (e) { /* ignore */ }
+    try {
+      await db.execute(sql`DELETE FROM \`historico_nivel\` WHERE \`assessmentCompetenciaId\` = ${comp.id}`);
+    } catch (e) { /* ignore */ }
+  }
+
+  // Delete all competencias
+  await db.delete(assessmentCompetencias).where(eq(assessmentCompetencias.assessmentPdiId, pdiId));
+
+  // Delete the PDI itself
+  await db.delete(assessmentPdi).where(eq(assessmentPdi.id, pdiId));
+}
+
+/**
  * Freeze (congelar) an assessment PDI
  */
 export async function congelarAssessmentPdi(pdiId: number, consultorId: number, motivo?: string) {

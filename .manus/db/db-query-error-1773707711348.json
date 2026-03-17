@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, name, email, turmaId, consultorId, trilhaId, classificacao FROM alunos WHERE name LIKE '%Brenno%' OR name LIKE '%Ilda%' OR name LIKE '%Storferi%' OR name LIKE '%Bisoni%' OR name LIKE '%Passoni%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, turmaId, consultorId, trilhaId, classificacao FROM alunos WHERE name LIKE '%Brenno%' OR name LIKE '%Ilda%' OR name LIKE '%Storferi%' OR name LIKE '%Bisoni%' OR name LIKE '%Passoni%';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'classificacao' in 'field list'"
+  ]
+}
