@@ -1967,6 +1967,55 @@ export default function DashboardMeuPerfil() {
 
           {/* === TAREFAS PRÁTICAS === */}
           <TabsContent value="tarefas" className="mt-4">
+            {/* Cards de Resumo de Tarefas */}
+            {(() => {
+              const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && s.sessionNumber !== 1);
+              const totalTarefas = sessoesComTarefa.length;
+              const entregues = sessoesComTarefa.filter((s: any) => s.taskStatus === 'entregue').length;
+              const validadas = sessoesComTarefa.filter((s: any) => s.taskStatus === 'validada').length;
+              const pendentes = sessoesComTarefa.filter((s: any) => s.taskStatus === 'nao_entregue').length;
+              return (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <Card className="bg-blue-50 border border-blue-200 shadow-sm">
+                    <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+                        <ClipboardCheck className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <p className="text-2xl font-bold text-blue-900">{totalTarefas}</p>
+                      <p className="text-xs text-blue-700 font-medium">Total de Tarefas</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-amber-50 border border-amber-200 shadow-sm">
+                    <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mb-2">
+                        <Clock className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <p className="text-2xl font-bold text-amber-900">{pendentes}</p>
+                      <p className="text-xs text-amber-700 font-medium">Pendentes</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-emerald-50 border border-emerald-200 shadow-sm">
+                    <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center mb-2">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                      </div>
+                      <p className="text-2xl font-bold text-emerald-900">{entregues}</p>
+                      <p className="text-xs text-emerald-700 font-medium">Entregues</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-purple-50 border border-purple-200 shadow-sm">
+                    <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
+                        <Award className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <p className="text-2xl font-bold text-purple-900">{validadas}</p>
+                      <p className="text-xs text-purple-700 font-medium">Validadas</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })()}
+
             {/* Instrução sobre envio de tarefas na nuvem */}
             <Card className="bg-blue-50 border border-blue-200 shadow-sm mb-4">
               <CardContent className="pt-4 pb-4">

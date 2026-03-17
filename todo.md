@@ -2389,3 +2389,6 @@
 - [x] Ajustar visualização do aluno para exibir nome, descrição e detalhes da tarefa cadastrada pelo mentor
 - [x] Garantir que a lista de tarefas do aluno mostre dados vindos da sessão de mentoria (taskId, customTaskTitle, customTaskDescription, etc.)
 - [x] Corrigir backend (myTasks, submissions, submissionDetail) para incluir tarefas personalizadas e livres (não só da biblioteca)
+
+## Cards de Resumo na aba Tarefas do Aluno (17/03/2026)
+- [x] Adicionar cards de resumo (Total, Pendentes, Entregues, Validadas) no topo da aba Tarefas, similar aos cards da aba Webinars
