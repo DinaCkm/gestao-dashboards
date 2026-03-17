@@ -2375,3 +2375,6 @@
 - [x] Excluir sessões de assessment (isAssessment=1) da contagem de "sessões realizadas" no Demonstrativo
 - [x] Aplicar filtro em getSessionProgressByAluno e getAllStudentsSessionProgress
 - [x] A 1ª sessão (assessment) não conta no total de mentorias previstas no cadastro
+
+## Limpeza: Remover Atividades Extras de Teste (17/03/2026)
+- [x] Identificar e remover todas as atividades extras de teste do banco de dados (682 atividades + 78 inscrições + 147 vínculos turma excluídos)

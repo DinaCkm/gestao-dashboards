@@ -1,0 +1,22 @@
+{
+  "query": "SELECT 'activities' as tbl, COUNT(*) as cnt FROM activities UNION ALL SELECT 'activity_registrations', COUNT(*) FROM activity_registrations UNION ALL SELECT 'activity_turmas', COUNT(*) FROM activity_turmas;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT 'activities' as tbl, COUNT(*) as cnt FROM activities UNION ALL SELECT 'activity_registrations', COUNT(*) FROM activity_registrations UNION ALL SELECT 'activity_turmas', COUNT(*) FROM activity_turmas;",
+  "rows": [
+    {
+      "tbl": "activities",
+      "cnt": "0"
+    },
+    {
+      "tbl": "activity_registrations",
+      "cnt": "0"
+    },
+    {
+      "tbl": "activity_turmas",
+      "cnt": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tcnt\nactivities\t0\nactivity_registrations\t0\nactivity_turmas\t0\n",
+  "stderr": "",
+  "execution_time_ms": 365
+}
