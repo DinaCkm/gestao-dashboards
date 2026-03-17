@@ -3462,9 +3462,11 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
     // Dashboard consolidado de todos os mentores
     dashboardGeral: managerProcedure.query(async () => {
       const consultors = await db.getConsultors();
+      // Filtrar apenas mentores ativos (excluir gerentes)
+      const mentoresAtivos = consultors.filter(c => c.role === 'mentor' && c.isActive === 1);
       const allStats = [];
       
-      for (const consultor of consultors) {
+      for (const consultor of mentoresAtivos) {
         const stats = await db.getConsultorStats(consultor.id);
         if (stats) {
           allStats.push({
@@ -3479,7 +3481,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       }
       
       return {
-        totalMentores: consultors.length,
+        totalMentores: mentoresAtivos.length,
         mentores: allStats.sort((a, b) => b.totalMentorias - a.totalMentorias)
       };
     }),
