@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { formatDateSafe } from "@/lib/dateUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -398,7 +399,7 @@ export default function ReportsPage() {
                           <div className="flex items-center gap-3 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              {new Date(report.createdAt).toLocaleDateString('pt-BR')}
+                              {formatDateSafe(report.createdAt)}
                             </span>
                             <span className="px-2 py-0.5 rounded-full text-xs bg-muted">
                               {getReportTypeLabel(report.type)}

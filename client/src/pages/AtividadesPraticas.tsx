@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateSafe } from "@/lib/dateUtils";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -255,13 +256,13 @@ export default function AtividadesPraticas() {
                             {sub.taskDeadline && (
                               <span className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
-                                Prazo: <span className={isOverdue ? 'text-red-600 font-medium' : ''}>{new Date(sub.taskDeadline).toLocaleDateString('pt-BR')}</span>
+                                Prazo: <span className={isOverdue ? 'text-red-600 font-medium' : ''}>{formatDateSafe(sub.taskDeadline)}</span>
                               </span>
                             )}
                             {sub.submittedAt && (
                               <span className="flex items-center gap-1">
                                 <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                                Enviado: {new Date(sub.submittedAt).toLocaleDateString('pt-BR')}
+                                Enviado: {formatDateSafe(sub.submittedAt)}
                               </span>
                             )}
                           </div>
@@ -326,7 +327,7 @@ export default function AtividadesPraticas() {
                   })()}
                   {submissionDetail.taskDeadline && (
                     <span className="text-xs text-gray-500">
-                      Prazo: {new Date(submissionDetail.taskDeadline).toLocaleDateString('pt-BR')}
+                      Prazo: {formatDateSafe(submissionDetail.taskDeadline)}
                     </span>
                   )}
                 </div>

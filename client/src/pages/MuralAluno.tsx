@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { formatDateCustomSafe } from "@/lib/dateUtils";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,15 +25,11 @@ import { Progress } from "@/components/ui/progress";
 // ============================================================
 
 function formatDate(dateStr: string | Date | null | undefined): string {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  return formatDateCustomSafe(dateStr, { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function formatDateTime(dateStr: string | Date | null | undefined): string {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("pt-BR", {
+  return formatDateCustomSafe(dateStr, {
     day: "2-digit", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit"
   });

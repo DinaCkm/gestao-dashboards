@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDateSafe } from "@/lib/dateUtils";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -522,7 +523,7 @@ function DashboardMentorContent() {
                       <TableCell className="text-right">{aluno.totalMentorias}</TableCell>
                       <TableCell>
                         {aluno.ultimaMentoria 
-                          ? new Date(aluno.ultimaMentoria).toLocaleDateString('pt-BR')
+                          ? formatDateSafe(aluno.ultimaMentoria)
                           : '-'
                         }
                       </TableCell>

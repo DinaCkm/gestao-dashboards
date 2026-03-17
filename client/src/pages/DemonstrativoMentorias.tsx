@@ -1,6 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
+import { formatDateSafe, formatDateLongSafe } from "@/lib/dateUtils";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -218,15 +219,7 @@ function DemonstrativoContent() {
     setStatusSessaoFilter("todos");
   };
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "—";
-    try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString("pt-BR");
-    } catch {
-      return "—";
-    }
-  };
+  const formatDate = (dateStr: string | null) => formatDateSafe(dateStr);
 
   const getStatusProgressoBadge = (item: any) => {
     if (item.cicloCompleto) {
@@ -263,8 +256,7 @@ function DemonstrativoContent() {
     if (!item.ultimaSessao) {
       return <span className="text-gray-400 italic text-[10px]">Nenhuma</span>;
     }
-    const d = new Date(item.ultimaSessao);
-    const dateStr = d.toLocaleDateString("pt-BR");
+    const dateStr = formatDateSafe(item.ultimaSessao);
     const dias = item.diasSemSessao;
     const isLate = dias >= 30;
     return (
@@ -321,7 +313,7 @@ function DemonstrativoContent() {
       p.percentualProgresso,
       p.cicloCompleto ? "Completo" : p.faltaUmaSessao ? "Falta 1 sessão" : "Em andamento",
       p.atrasado30dias ? `Atrasado ${p.diasSemSessao}d` : "Em dia",
-      p.ultimaSessao ? new Date(p.ultimaSessao).toLocaleDateString("pt-BR") : "Nenhuma",
+      p.ultimaSessao ? formatDateSafe(p.ultimaSessao) : "Nenhuma",
       p.diasSemSessao !== null ? p.diasSemSessao : "N/A"
     ]);
     const csvContent = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
@@ -832,7 +824,7 @@ function DemonstrativoContent() {
                     <div>
                       <p className="font-medium text-sm">
                         {selectedAluno.ultimaSessao 
-                          ? new Date(selectedAluno.ultimaSessao).toLocaleDateString("pt-BR", { day: '2-digit', month: 'long', year: 'numeric' })
+                          ? formatDateLongSafe(selectedAluno.ultimaSessao)
                           : "Nenhuma sessão registrada"
                         }
                       </p>

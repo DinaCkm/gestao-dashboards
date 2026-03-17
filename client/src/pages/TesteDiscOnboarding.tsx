@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { formatDateSafe } from "@/lib/dateUtils";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1217,7 +1218,7 @@ function RelatorioAutoconhecimento({
               {contribuicoesDisc.map((c: any) => (
                 <div key={c.id} className="bg-[#0A1E3E]/5 rounded-lg p-3 mb-2">
                   <p className="text-sm text-gray-700">{c.conteudo}</p>
-                  <p className="text-xs text-gray-400 mt-1">{new Date(c.createdAt).toLocaleDateString('pt-BR')}</p>
+                  <p className="text-xs text-gray-400 mt-1">{formatDateSafe(c.createdAt)}</p>
                 </div>
               ))}
             </div>
@@ -1304,7 +1305,7 @@ function RelatorioAutoconhecimento({
             {contribuicoesGeral.map((c: any) => (
               <div key={c.id} className="bg-gray-50 rounded-lg p-4">
                 <p className="text-gray-700">{c.conteudo}</p>
-                <p className="text-xs text-gray-400 mt-2">{new Date(c.createdAt).toLocaleDateString('pt-BR')}</p>
+                <p className="text-xs text-gray-400 mt-2">{formatDateSafe(c.createdAt)}</p>
               </div>
             ))}
           </CardContent>

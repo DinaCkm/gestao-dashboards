@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef } from "react";
+import { formatDateSafe, formatDateCustomSafe } from "@/lib/dateUtils";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -747,7 +748,7 @@ export default function DashboardMeuPerfil() {
                           <span className="text-sm font-semibold text-blue-900">{pdi.trilhaNome}</span>
                           {pdi.congeladoEm && (
                             <span className="text-xs text-blue-600 ml-2">
-                              (congelada em {new Date(pdi.congeladoEm).toLocaleDateString('pt-BR')})
+                              (congelada em {formatDateSafe(pdi.congeladoEm)})
                             </span>
                           )}
                           {pdi.motivoCongelamento && (
@@ -794,7 +795,7 @@ export default function DashboardMeuPerfil() {
                         <div className="flex items-center gap-2 text-xs text-amber-700">
                           <Calendar className="h-3.5 w-3.5" />
                           <span>
-                            Entrega até <strong>{alerta.dataLimite ? new Date(alerta.dataLimite + 'T00:00:00').toLocaleDateString('pt-BR') : `${alerta.diasRestantes} dias`}</strong>
+                            Entrega até <strong>{alerta.dataLimite ? formatDateSafe(alerta.dataLimite + 'T00:00:00') : `${alerta.diasRestantes} dias`}</strong>
                             {alerta.diasRestantes !== undefined && ` (${alerta.diasRestantes} dias restantes)`}
                           </span>
                         </div>
@@ -1047,7 +1048,7 @@ export default function DashboardMeuPerfil() {
                           <div>
                             <p className="text-sm font-semibold text-gray-900">Contrato Ativo</p>
                             <p className="text-xs text-gray-600">
-                              {new Date(jornadaData.contrato.periodoInicio).toLocaleDateString("pt-BR")} a {new Date(jornadaData.contrato.periodoTermino).toLocaleDateString("pt-BR")}
+                              {formatDateSafe(jornadaData.contrato.periodoInicio)} a {formatDateSafe(jornadaData.contrato.periodoTermino)}
                             </p>
                           </div>
                         </div>
@@ -1175,7 +1176,7 @@ export default function DashboardMeuPerfil() {
                             Trilha: {macroJornada.trilhaNome}
                           </CardTitle>
                           <CardDescription className="text-gray-500 mt-1">
-                            Macro Jornada: {new Date(macroJornada.macroInicio).toLocaleDateString("pt-BR")} a {new Date(macroJornada.macroTermino).toLocaleDateString("pt-BR")}
+                            Macro Jornada: {formatDateSafe(macroJornada.macroInicio)} a {formatDateSafe(macroJornada.macroTermino)}
                             {" "}• {macroJornada.totalCompetencias} competências ({macroJornada.obrigatorias} obrigatórias, {macroJornada.opcionais} opcionais)
                           </CardDescription>
                         </div>
@@ -1386,7 +1387,7 @@ export default function DashboardMeuPerfil() {
                                         </div>
                                         <div className="flex items-center gap-2 flex-wrap">
                                           <span className="text-xs text-gray-500">
-                                            {new Date(ciclo.dataInicio).toLocaleDateString('pt-BR')} — {new Date(ciclo.dataFim).toLocaleDateString('pt-BR')}
+                                            {formatDateSafe(ciclo.dataInicio)} — {formatDateSafe(ciclo.dataFim)}
                                           </span>
                                           <Badge variant="outline" className={`text-xs ${statusColors.badge}`}>
                                             {getCicloStatusLabel(ciclo.status)}
@@ -1456,7 +1457,7 @@ export default function DashboardMeuPerfil() {
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <span className="text-xs text-gray-500">
-                                          {new Date(ciclo.dataInicio).toLocaleDateString('pt-BR')} — {new Date(ciclo.dataFim).toLocaleDateString('pt-BR')}
+                                          {formatDateSafe(ciclo.dataInicio)} — {formatDateSafe(ciclo.dataFim)}
                                         </span>
                                         <Badge variant="outline" className={`text-xs ${statusColors.badge}`}>
                                           {getCicloStatusLabel(ciclo.status)}
@@ -1589,7 +1590,7 @@ export default function DashboardMeuPerfil() {
                                 {sessao.ciclo && <span className="text-gray-500 ml-2">• Ciclo {sessao.ciclo}</span>}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {sessao.sessionDate ? new Date(sessao.sessionDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : "Data não registrada"}
+                                {sessao.sessionDate ? formatDateCustomSafe(sessao.sessionDate, { day: "2-digit", month: "long", year: "numeric" }) : "Data não registrada"}
                               </p>
                             </div>
                           </div>
@@ -1760,9 +1761,9 @@ export default function DashboardMeuPerfil() {
                         <div className="text-xs text-blue-800 space-y-1">
                           <p>
                             <span className="font-semibold">Como funciona o cálculo:</span> Os indicadores acima consideram apenas os eventos dentro do seu período de avaliação:{" "}
-                            <span className="font-bold">{new Date(pendingWebinars.periodoInicio).toLocaleDateString("pt-BR")}</span>
+                            <span className="font-bold">{formatDateSafe(pendingWebinars.periodoInicio)}</span>
                             {" "}a{" "}
-                            <span className="font-bold">{pendingWebinars.periodoFim ? new Date(pendingWebinars.periodoFim).toLocaleDateString("pt-BR") : "atual"}</span>.
+                            <span className="font-bold">{pendingWebinars.periodoFim ? formatDateSafe(pendingWebinars.periodoFim) : "atual"}</span>.
                           </p>
                           <p className="text-blue-700">
                             Eventos realizados fora deste período aparecem na lista abaixo para que você possa assistir, mas <strong>não impactam sua nota de performance</strong> (não penalizam como ausência e não pontuam como presença).
@@ -1828,7 +1829,7 @@ export default function DashboardMeuPerfil() {
                               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                 {evt.eventDate && (
                                   <span className="text-xs text-gray-500">
-                                    {new Date(evt.eventDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                                    {formatDateCustomSafe(evt.eventDate, { day: "2-digit", month: "short", year: "numeric" })}
                                   </span>
                                 )}
                                 {!evt.dentroDoMacrociclo && (
@@ -1841,7 +1842,7 @@ export default function DashboardMeuPerfil() {
                               {evt.status === "presente" && evt.selfReportedAt && (
                                 <p className="text-xs text-emerald-600 mt-0.5 flex items-center gap-1">
                                   <CheckCircle2 className="h-3 w-3" />
-                                  Presença confirmada em {new Date(evt.selfReportedAt).toLocaleDateString("pt-BR")}
+                                  Presença confirmada em {formatDateSafe(evt.selfReportedAt)}
                                 </p>
                               )}
                             </div>
@@ -2035,7 +2036,7 @@ export default function DashboardMeuPerfil() {
                                   {sessao.ciclo && <span className="text-gray-500 ml-2 text-xs">• Ciclo {sessao.ciclo}</span>}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {sessao.sessionDate ? new Date(sessao.sessionDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : "Data não registrada"}
+                                  {sessao.sessionDate ? formatDateCustomSafe(sessao.sessionDate, { day: "2-digit", month: "long", year: "numeric" }) : "Data não registrada"}
                                 </p>
                               </div>
                             </div>
@@ -2073,7 +2074,7 @@ export default function DashboardMeuPerfil() {
                                   Enviar Atividade — Sessão {sessao.sessionNumber}
                                 </DialogTitle>
                                 <DialogDescription className="text-gray-500">
-                                  {sessao.sessionDate ? new Date(sessao.sessionDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : ""}
+                                  {sessao.sessionDate ? formatDateCustomSafe(sessao.sessionDate, { day: "2-digit", month: "long", year: "numeric" }) : ""}
                                 </DialogDescription>
                               </DialogHeader>
 
@@ -2230,8 +2231,8 @@ export default function DashboardMeuPerfil() {
                                 <p className="text-xs text-blue-600 mb-1">Competência: {task.taskCompetencia}</p>
                               )}
                               <p className="text-xs text-gray-500">
-                                Sessão {task.sessionNumber} • {task.sessionDate ? new Date(task.sessionDate).toLocaleDateString("pt-BR") : ""}
-                                {task.taskDeadline && (<> • Prazo: <span className={isOverdue ? 'text-red-600 font-medium' : ''}>{new Date(task.taskDeadline).toLocaleDateString("pt-BR")}</span></>)}
+                                Sessão {task.sessionNumber} • {task.sessionDate ? formatDateSafe(task.sessionDate) : ""}
+                                {task.taskDeadline && (<> • Prazo: <span className={isOverdue ? 'text-red-600 font-medium' : ''}>{formatDateSafe(task.taskDeadline)}</span></>)}
                               </p>
                             </div>
                             <div className="flex items-center gap-1">
@@ -2298,7 +2299,7 @@ export default function DashboardMeuPerfil() {
                                 </DialogTitle>
                                 <DialogDescription className="text-gray-500">
                                   Sessão {task.sessionNumber} • {task.taskCompetencia}
-                                  {task.taskDeadline && (<> • Prazo: {new Date(task.taskDeadline).toLocaleDateString("pt-BR")}</>)}
+                                  {task.taskDeadline && (<> • Prazo: {formatDateSafe(task.taskDeadline)}</>)}
                                 </DialogDescription>
                               </DialogHeader>
 
@@ -2565,7 +2566,7 @@ export default function DashboardMeuPerfil() {
                             )}
                             <div className="flex items-center gap-2 text-xs text-gray-500">
                               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                              <span>Entregue em {caseEntregue.dataEntrega ? new Date(caseEntregue.dataEntrega).toLocaleDateString('pt-BR') : '-'}</span>
+                              <span>Entregue em {caseEntregue.dataEntrega ? formatDateSafe(caseEntregue.dataEntrega) : '-'}</span>
                             </div>
                             {caseEntregue.fileUrl && (
                               <a href={caseEntregue.fileUrl} target="_blank" rel="noopener noreferrer" 

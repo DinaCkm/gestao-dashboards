@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { formatDateSafe } from "@/lib/dateUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -225,11 +226,7 @@ function AssessmentContent() {
     descongelarMutation.mutate({ pdiId, consultorId });
   };
 
-  const formatDate = (d: any) => {
-    if (!d) return "—";
-    const date = d instanceof Date ? d : new Date(d);
-    return date.toLocaleDateString("pt-BR");
-  };
+  const formatDate = (d: any) => formatDateSafe(d);
 
   return (
     <div className="space-y-6">

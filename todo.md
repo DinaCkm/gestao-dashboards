@@ -2315,3 +2315,11 @@
 - [x] Criar script de importação com verificação de duplicatas
 - [x] Importar 69 sessões novas (18 duplicatas ignoradas, 2 headers ignorados)
 - [x] Validar dados importados: 33/33 alunos Masters com sessão 16, total 1306 sessões no banco
+
+## Bug: Datas de Última Sessão com -1 dia no CSV exportado (17/03/2026)
+- [x] Investigar e corrigir bug de fuso horário na exportação CSV do demonstrativo de mentorias
+- [x] Datas aparecem 1 dia antes do correto (ex: 05/02 no banco → 04/02 no CSV)
+- [x] Criado dateUtils.ts com formatDateSafe, formatDateCustomSafe, formatDateLongSafe (usa UTC)
+- [x] Corrigido em 29 arquivos do frontend (todas as chamadas toLocaleDateString)
+- [x] Corrigidas 2 datas com ano errado no banco (Aldeni 2026→2025, Ilda 2026→2025)
+- [x] Testes vitest passando (20/20) com cenários reais do bug

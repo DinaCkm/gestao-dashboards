@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { formatDateSafe } from "@/lib/dateUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
@@ -241,7 +242,7 @@ export default function Home() {
                 <div>
                   <p className="text-sm text-muted-foreground">Data</p>
                   <p className="font-medium">
-                    {new Date(latestBatch.createdAt).toLocaleDateString('pt-BR')}
+                    {formatDateSafe(latestBatch.createdAt)}
                   </p>
                 </div>
               </div>

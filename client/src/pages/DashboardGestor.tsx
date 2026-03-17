@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { formatDateCustomSafe } from "@/lib/dateUtils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -751,7 +752,7 @@ export default function DashboardGestor() {
                 if (totalMs <= 0) return null;
                 const today = new Date();
                 const todayPct = Math.max(0, Math.min(100, ((today.getTime() - minDate.getTime()) / totalMs) * 100));
-                const fmtShort = (d: Date) => d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+                const fmtShort = (d: Date) => formatDateCustomSafe(d, { month: 'short', year: '2-digit' });
 
                 // Cores para turmas
                 const turmaColors = ['#1E3A5F', '#F5A623', '#2E7D32', '#D32F2F', '#7B1FA2', '#00838F'];
@@ -775,7 +776,7 @@ export default function DashboardGestor() {
                           while (cur <= maxDate) {
                             const pct = ((cur.getTime() - minDate.getTime()) / totalMs) * 100;
                             if (pct >= 0 && pct <= 100) {
-                              months.push({ label: cur.toLocaleDateString('pt-BR', { month: 'short' }), pct });
+                              months.push({ label: formatDateCustomSafe(cur, { month: 'short' }), pct });
                             }
                             cur.setMonth(cur.getMonth() + 1);
                           }
@@ -798,7 +799,7 @@ export default function DashboardGestor() {
                           const macroWidth = Math.max(1, macroEnd - macroStart);
                           const fmtD = (d: string | Date | null) => {
                             if (!d) return '—';
-                            return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                            return formatDateCustomSafe(d, { day: '2-digit', month: '2-digit', year: 'numeric' });
                           };
                           return (
                             <div key={jornada.turmaId} className="flex items-center gap-3">
@@ -850,11 +851,7 @@ export default function DashboardGestor() {
                   const isExpanded = expandedJornadas.has(jornada.turmaId);
                   const bsMatch = jornada.turmaNome.match(/\[(BS\d+)\]/);
                   const turmaCode = bsMatch ? bsMatch[1] : jornada.turmaCode;
-                  const formatDate = (d: string | Date | null) => {
-                    if (!d) return '—';
-                    const date = new Date(d);
-                    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                  };
+                  const formatDate = (d: string | Date | null) => formatDateCustomSafe(d, { day: '2-digit', month: '2-digit', year: 'numeric' });
                   return (
                     <div key={jornada.turmaId} className="border rounded-lg overflow-hidden">
                       <div

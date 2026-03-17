@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { formatDateCustomSafe } from "@/lib/dateUtils";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -256,7 +257,7 @@ export default function AvisosAdmin() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString("pt-BR", {
+    return formatDateCustomSafe(dateStr, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",

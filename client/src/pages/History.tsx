@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { formatDateSafe, formatDateCustomSafe } from "@/lib/dateUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
@@ -137,7 +138,7 @@ export default function HistoryPage() {
                           {getStatusIcon(batch.status)}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(batch.createdAt).toLocaleDateString('pt-BR', {
+                          {formatDateCustomSafe(batch.createdAt, {
                             day: '2-digit',
                             month: '2-digit',
                             year: 'numeric',
@@ -202,7 +203,7 @@ export default function HistoryPage() {
                               <div>
                                 <p className="text-muted-foreground">Data</p>
                                 <p className="font-medium">
-                                  {new Date(batch.createdAt).toLocaleDateString('pt-BR')}
+                                  {formatDateSafe(batch.createdAt)}
                                 </p>
                               </div>
                             </div>

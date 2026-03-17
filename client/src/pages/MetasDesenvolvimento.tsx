@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { formatDateCustomSafe } from "@/lib/dateUtils";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -28,7 +29,7 @@ import DualIndicators from "@/components/DualIndicators";
 // ============================================================
 function formatDate(d: string | Date | null | undefined): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  return formatDateCustomSafe(d, { day: "2-digit", month: "short", year: "numeric" });
 }
 
 const meses = [

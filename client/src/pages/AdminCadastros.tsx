@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { formatDateSafe } from "@/lib/dateUtils";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation, useSearch } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -493,8 +494,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
         'Empresa': a.programName || '',
         'Mentor(a)': a.mentorName || '',
         'Turma': a.turmaName || '',
-        'Início Contrato': a.contratoInicio ? new Date(a.contratoInicio).toLocaleDateString('pt-BR') : '',
-        'Fim Contrato': a.contratoFim ? new Date(a.contratoFim).toLocaleDateString('pt-BR') : '',
+        'Início Contrato': a.contratoInicio ? formatDateSafe(a.contratoInicio) : '',
+        'Fim Contrato': a.contratoFim ? formatDateSafe(a.contratoFim) : '',
         'Status': a.isActive === 1 ? 'Ativo' : 'Inativo',
       }));
       const ws = XLSX.utils.json_to_sheet(data);
@@ -1065,9 +1066,9 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                             <span>
                               {aluno.contratoInicio || aluno.contratoFim ? (
                                 <>
-                                  {aluno.contratoInicio ? new Date(aluno.contratoInicio).toLocaleDateString('pt-BR') : '?'}
+                                  {aluno.contratoInicio ? formatDateSafe(aluno.contratoInicio) : '?'}
                                   {' - '}
-                                  {aluno.contratoFim ? new Date(aluno.contratoFim).toLocaleDateString('pt-BR') : '?'}
+                                  {aluno.contratoFim ? formatDateSafe(aluno.contratoFim) : '?'}
                                 </>
                               ) : (
                                 <span className="text-muted-foreground italic">não definido</span>

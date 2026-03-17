@@ -1,4 +1,5 @@
 import { Bell, Check, CheckCheck, ExternalLink, Info, AlertTriangle, CheckCircle, Zap } from "lucide-react";
+import { formatDateCustomSafe } from "@/lib/dateUtils";
 import { trpc } from "@/lib/trpc";
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
@@ -127,7 +128,7 @@ export default function NotificationBell() {
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[10px] text-muted-foreground">
-                        {new Date(n.createdAt).toLocaleDateString("pt-BR", {
+                        {formatDateCustomSafe(n.createdAt, {
                           day: "2-digit",
                           month: "short",
                           hour: "2-digit",

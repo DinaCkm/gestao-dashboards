@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateCustomSafe } from "@/lib/dateUtils";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -259,7 +260,7 @@ export default function WebinarsAdmin() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString("pt-BR", {
+    return formatDateCustomSafe(dateStr, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",

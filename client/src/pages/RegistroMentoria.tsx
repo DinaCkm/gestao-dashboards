@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateSafe } from "@/lib/dateUtils";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -713,9 +714,9 @@ export default function RegistroMentoria() {
                   <Progress value={sessionProgress.percentualProgresso} className="h-2" />
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-xs text-gray-500">
-                      {sessionProgress.macroInicio ? new Date(sessionProgress.macroInicio).toLocaleDateString('pt-BR') : ''}
+                      {sessionProgress.macroInicio ? formatDateSafe(sessionProgress.macroInicio) : ''}
                       {' → '}
-                      {sessionProgress.macroTermino ? new Date(sessionProgress.macroTermino).toLocaleDateString('pt-BR') : ''}
+                      {sessionProgress.macroTermino ? formatDateSafe(sessionProgress.macroTermino) : ''}
                     </span>
                     {sessionProgress.cicloCompleto ? (
                       <Badge className="bg-emerald-100 text-emerald-800 border-0"><Trophy className="h-3 w-3 mr-1" /> Ciclo Completo</Badge>
@@ -799,9 +800,9 @@ export default function RegistroMentoria() {
                         <Clock className="h-3.5 w-3.5 text-[#0A1E3E]" />
                         <span className="font-medium">Macro-Ciclo:</span>
                         <span>
-                          {new Date(sessionProgress.macroInicio).toLocaleDateString('pt-BR')}
+                          {formatDateSafe(sessionProgress.macroInicio)}
                           {' a '}
-                          {new Date(sessionProgress.macroTermino).toLocaleDateString('pt-BR')}
+                          {formatDateSafe(sessionProgress.macroTermino)}
                         </span>
                       </div>
                     </div>
@@ -967,7 +968,7 @@ export default function RegistroMentoria() {
                               <div className="flex items-center gap-3">
                                 <Calendar className="h-5 w-5 text-gray-400" />
                                 <span className="font-medium">
-                                  Sessão {session.sessionNumber || '-'} - {session.sessionDate ? new Date(session.sessionDate).toLocaleDateString('pt-BR') : 'Data não informada'}
+                                  Sessão {session.sessionNumber || '-'} - {session.sessionDate ? formatDateSafe(session.sessionDate) : 'Data não informada'}
                                 </span>
                               </div>
                               <div className="flex gap-2">
@@ -1055,7 +1056,7 @@ export default function RegistroMentoria() {
                                     <div>
                                       <p className="font-medium">Sessão {session.sessionNumber || '-'}</p>
                                       <p className="text-sm text-gray-500">
-                                        {session.sessionDate ? new Date(session.sessionDate).toLocaleDateString('pt-BR') : 'Data não informada'}
+                                        {session.sessionDate ? formatDateSafe(session.sessionDate) : 'Data não informada'}
                                       </p>
                                     </div>
                                   </div>
@@ -1178,7 +1179,7 @@ export default function RegistroMentoria() {
                 Detalhes da Sessão {viewedSession?.sessionNumber || ''}
               </DialogTitle>
               <DialogDescription>
-                {selectedAluno?.name} - {viewedSession?.sessionDate ? new Date(viewedSession.sessionDate).toLocaleDateString('pt-BR') : ''}
+                {selectedAluno?.name} - {viewedSession?.sessionDate ? formatDateSafe(viewedSession.sessionDate) : ''}
               </DialogDescription>
             </DialogHeader>
             
@@ -1191,7 +1192,7 @@ export default function RegistroMentoria() {
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-xs text-gray-500 mb-1">Data</p>
-                    <p className="font-bold text-lg">{viewedSession.sessionDate ? new Date(viewedSession.sessionDate).toLocaleDateString('pt-BR') : '-'}</p>
+                    <p className="font-bold text-lg">{viewedSession.sessionDate ? formatDateSafe(viewedSession.sessionDate) : '-'}</p>
                   </div>
                 </div>
                 

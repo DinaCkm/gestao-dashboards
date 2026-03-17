@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { formatDateSafe } from "@/lib/dateUtils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { 
@@ -143,7 +144,7 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
                     <div className="flex-1">
                       <p className="text-sm font-medium">{ciclo.nomeCiclo}</p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(ciclo.dataInicio).toLocaleDateString("pt-BR")} — {new Date(ciclo.dataFim).toLocaleDateString("pt-BR")}
+                        {formatDateSafe(ciclo.dataInicio)} — {formatDateSafe(ciclo.dataFim)}
                       </p>
                     </div>
                     <div className="text-right">

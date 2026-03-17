@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatDateCustomSafe } from "@/lib/dateUtils";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,7 @@ import {
 // ============================================================
 function formatDate(d: string | Date | null | undefined): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  return formatDateCustomSafe(d, { day: "2-digit", month: "short", year: "numeric" });
 }
 
 const meses = [

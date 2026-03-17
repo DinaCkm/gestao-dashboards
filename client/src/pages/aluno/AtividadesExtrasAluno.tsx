@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { formatDateCustomSafe } from "@/lib/dateUtils";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -127,14 +128,12 @@ export default function AtividadesExtrasAluno() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "A definir";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    return formatDateCustomSafe(dateStr, { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
   };
 
   const formatShortDate = (dateStr: string | null) => {
     if (!dateStr) return "A definir";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+    return formatDateCustomSafe(dateStr, { day: "2-digit", month: "short" });
   };
 
   const handleOpenDetail = (activity: ActivityItem) => {
@@ -350,8 +349,7 @@ function ActivityCard({
 
   const formatShortDate = (dateStr: string | null) => {
     if (!dateStr) return "A definir";
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+    return formatDateCustomSafe(dateStr, { day: "2-digit", month: "short" });
   };
 
   return (

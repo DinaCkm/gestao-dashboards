@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { formatDateSafe } from "@/lib/dateUtils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -295,10 +296,7 @@ export default function PlanoIndividual() {
     return { label: "Em Andamento", color: "bg-blue-500", textColor: "text-blue-700", borderColor: "border-blue-300" };
   };
 
-  const formatDate = (date: string | Date) => {
-    const d = new Date(date);
-    return d.toLocaleDateString('pt-BR');
-  };
+  const formatDate = (date: string | Date) => formatDateSafe(date);
 
   return (
     <DashboardLayout>

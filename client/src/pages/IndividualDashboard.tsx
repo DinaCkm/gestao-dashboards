@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { formatDateSafe } from "@/lib/dateUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -202,9 +203,9 @@ export default function IndividualDashboard() {
                 <div>
                   <h3 className="font-semibold text-gray-900">Progresso do Ciclo Macro</h3>
                   <p className="text-sm text-gray-500">
-                    {sessionProgress.macroInicio ? new Date(sessionProgress.macroInicio).toLocaleDateString('pt-BR') : ''}
+                    {sessionProgress.macroInicio ? formatDateSafe(sessionProgress.macroInicio) : ''}
                     {' → '}
-                    {sessionProgress.macroTermino ? new Date(sessionProgress.macroTermino).toLocaleDateString('pt-BR') : ''}
+                    {sessionProgress.macroTermino ? formatDateSafe(sessionProgress.macroTermino) : ''}
                   </p>
                 </div>
               </div>
@@ -330,7 +331,7 @@ export default function IndividualDashboard() {
                       <div>
                         <p className="font-medium text-gray-900">Sessão {session.sessionNumber || '-'}</p>
                         <p className="text-xs text-gray-500">
-                          {session.sessionDate ? new Date(session.sessionDate).toLocaleDateString('pt-BR') : 'Data não informada'}
+                          {session.sessionDate ? formatDateSafe(session.sessionDate) : 'Data não informada'}
                         </p>
                       </div>
                     </div>

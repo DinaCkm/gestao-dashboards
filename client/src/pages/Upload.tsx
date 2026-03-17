@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { formatDateSafe, formatDateCustomSafe } from "@/lib/dateUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -611,7 +612,7 @@ export default function UploadPage() {
                               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{batch.notes}</p>
                             )}
                             <p className="text-xs text-muted-foreground mt-1">
-                              {new Date(batch.createdAt).toLocaleDateString('pt-BR', {
+                              {formatDateCustomSafe(batch.createdAt, {
                                 day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
                               })}
                             </p>
@@ -673,7 +674,7 @@ export default function UploadPage() {
                                 </div>
                                 <div>
                                   <p className="text-muted-foreground">Data</p>
-                                  <p className="font-medium">{new Date(batch.createdAt).toLocaleDateString('pt-BR')}</p>
+                                  <p className="font-medium">{formatDateSafe(batch.createdAt)}</p>
                                 </div>
                               </div>
                               {batch.notes && (
@@ -790,7 +791,7 @@ export default function UploadPage() {
                                     <div className="flex items-center gap-2">
                                       <Calendar className="h-3.5 w-3.5 text-primary" />
                                       <span className="text-sm font-semibold text-foreground">
-                                        {uploadDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                        {formatDateCustomSafe(uploadDate, { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                       </span>
                                     </div>
                                     <div className="text-xs text-muted-foreground pl-5">

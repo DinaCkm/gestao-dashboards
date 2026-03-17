@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { formatDateSafe } from "@/lib/dateUtils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,9 +108,8 @@ export function ContratoDialog({ open, onOpenChange, alunoId, alunoNome, empresa
   }
 
   const formatDate = (d: any) => {
-    if (!d) return "-";
-    const date = new Date(d);
-    return date.toLocaleDateString("pt-BR");
+    const result = formatDateSafe(d);
+    return result === "\u2014" ? "-" : result;
   };
 
   return (

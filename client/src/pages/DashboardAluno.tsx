@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { formatDateSafe } from "@/lib/dateUtils";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -350,11 +351,7 @@ export default function DashboardAluno() {
     }
   };
 
-  const formatDate = (d: string | Date | null | undefined) => {
-    if (!d) return '—';
-    const date = typeof d === 'string' ? new Date(d) : d;
-    return date.toLocaleDateString('pt-BR');
-  };
+  const formatDate = (d: string | Date | null | undefined) => formatDateSafe(d);
 
   // Dados de indicadores
   const v2 = performanceData?.indicadoresV2;
@@ -573,7 +570,7 @@ export default function DashboardAluno() {
                             {pdi.motivoCongelamento && <span className="italic">— {pdi.motivoCongelamento}</span>}
                             {pdi.congeladoEm && (
                               <span className="text-blue-500 ml-auto">
-                                ({new Date(pdi.congeladoEm).toLocaleDateString('pt-BR')})
+                                ({formatDateSafe(pdi.congeladoEm)})
                               </span>
                             )}
                           </div>
@@ -650,7 +647,7 @@ export default function DashboardAluno() {
                       {v2.alertaCasePendente.map((alerta: any, idx: number) => (
                         <p key={idx} className="text-sm text-amber-700 mt-1">
                           O ciclo <strong>{alerta.cicloNome}</strong> está finalizando 
-                          {alerta.dataFim && ` (término: ${new Date(alerta.dataFim).toLocaleDateString('pt-BR')})`}. 
+                          {alerta.dataFim && ` (término: ${formatDateSafe(alerta.dataFim)})`}. 
                           O aluno precisa entregar o <strong>Case de Sucesso</strong> para completar a avaliação do macrociclo.
                         </p>
                       ))}

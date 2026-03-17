@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { formatDateSafe } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -827,8 +828,5 @@ function formatDateForInput(d: any): string {
 }
 
 function formatDateDisplay(d: any): string {
-  if (!d) return "—";
-  const date = d instanceof Date ? d : new Date(d);
-  if (isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("pt-BR");
+  return formatDateSafe(d);
 }
