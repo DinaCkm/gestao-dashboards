@@ -431,7 +431,7 @@ export async function getSystemStats() {
   const [batchCount] = await db.select({ count: sql<number>`count(*)` }).from(uploadBatches);
   const [reportCount] = await db.select({ count: sql<number>`count(*)` }).from(reports);
   const [alunoCount] = await db.select({ count: sql<number>`count(*)` }).from(alunos);
-  const [mentorCount] = await db.select({ count: sql<number>`count(*)` }).from(consultors);
+  const [mentorCount] = await db.select({ count: sql<number>`count(*)` }).from(consultors).where(and(eq(consultors.isActive, 1), eq(consultors.role, 'mentor')));
   const [sessionCount] = await db.select({ count: sql<number>`count(*)` }).from(mentoringSessions);
   const [programCount] = await db.select({ count: sql<number>`count(*)` }).from(programs).where(eq(programs.isActive, 1));
   
