@@ -2257,8 +2257,8 @@
 - [x] #2 ajustes17: Corrigir cadastro de gerente que cria como mentor - removido consultorId do createGerente + corrigido dados existentes no banco
 - [x] Remover aba Gerentes redundante do AdminCadastros - manter apenas Visão Dupla (renomeada para Gerentes)
 - [x] Reorganizar menu sidebar: mover Cadastros para dentro de Parametrização e remover links redundantes em Alunos, Mentores e Empresas
-- [ ] #0b ajustes17: Investigar por que Brenno e Ilda não têm dados no dashboard
-- [ ] #1 ajustes17: Botão de inativar aluno + excluir da contagem
+- [x] #0b ajustes17: Investigar por que Brenno e Ilda não têm dados no dashboard (resolvido via #3d/#3e)
+- [x] #1 ajustes17: Botão de inativar aluno + excluir da contagem
 - [ ] #10 ajustes17: Alterar regra de cálculo de webinares para período total do contrato (V2)
 - [ ] #11 ajustes17: Investigar tarefas zeradas da aluna Millena
 - [ ] #12 ajustes17: Corrigir sobreposição de abas do menu

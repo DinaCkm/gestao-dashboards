@@ -256,6 +256,17 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro ao cadastrar aluno: ${err.message}`),
   });
 
+  const toggleAlunoStatus = trpc.admin.toggleAlunoStatus.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast.success(data.isActive ? `${data.name} ativado(a) com sucesso!` : `${data.name} inativado(a) com sucesso!`);
+        refetchAllAlunos();
+        refetchAccessUsers();
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao alterar status: ${err.message}`),
+  });
+
   const deleteAluno = trpc.admin.deleteAluno.useMutation({
     onSuccess: (data: any) => {
       if (data.success) {
@@ -359,6 +370,8 @@ export default function AdminCadastros() {
               isUpdating={updateAluno.isPending}
               onDelete={deleteAluno.mutate}
               isDeleting={deleteAluno.isPending}
+              onToggleStatus={toggleAlunoStatus.mutate}
+              isTogglingStatus={toggleAlunoStatus.isPending}
             />
           </TabsContent>
 
@@ -410,7 +423,7 @@ export default function AdminCadastros() {
 }
 
 // ============ ALUNOS TAB ============
-function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, onCreateDireto, isCreatingDireto, isUpdating, onDelete, isDeleting }: {
+function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, onCreateDireto, isCreatingDireto, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus }: {
   alunos: any[];
   empresas: any[];
   mentoresList: any[];
@@ -424,6 +437,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   isUpdating: boolean;
   onDelete: (data: any) => void;
   isDeleting: boolean;
+  onToggleStatus: (data: any) => void;
+  isTogglingStatus: boolean;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [editAluno, setEditAluno] = useState<any>(null);
@@ -997,11 +1012,15 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                       <div className="hidden md:block text-xs text-muted-foreground truncate max-w-[160px]">
                         {aluno.turmaName || ''}
                       </div>
-                      <div>
+                      <div
+                        onClick={(e) => { e.stopPropagation(); onToggleStatus({ alunoId: aluno.id }); }}
+                        className="cursor-pointer"
+                        title={aluno.isActive === 1 ? "Clique para inativar" : "Clique para ativar"}
+                      >
                         {aluno.isActive === 1 ? (
-                          <Badge variant="default" className="bg-green-600 text-[10px] px-1.5 py-0.5"><CheckCircle className="h-2.5 w-2.5 mr-0.5" /> Ativo</Badge>
+                          <Badge variant="default" className="bg-green-600 cursor-pointer text-[10px] px-1.5 py-0.5"><CheckCircle className="h-2.5 w-2.5 mr-0.5" /> Ativo</Badge>
                         ) : (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5"><AlertCircle className="h-2.5 w-2.5 mr-0.5" /> Inativo</Badge>
+                          <Badge variant="secondary" className="cursor-pointer text-[10px] px-1.5 py-0.5"><AlertCircle className="h-2.5 w-2.5 mr-0.5" /> Inativo</Badge>
                         )}
                       </div>
                     </div>
@@ -1060,6 +1079,16 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                         <div className="flex gap-2 mt-3 pt-3 border-t">
                           <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEditOpen(aluno); }}>
                             <Pencil className="h-3.5 w-3.5 mr-1.5" /> Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={aluno.isActive === 1 ? "text-amber-600 hover:bg-amber-600 hover:text-white" : "text-green-600 hover:bg-green-600 hover:text-white"}
+                            onClick={(e) => { e.stopPropagation(); onToggleStatus({ alunoId: aluno.id }); }}
+                            disabled={isTogglingStatus}
+                          >
+                            <Power className="h-3.5 w-3.5 mr-1.5" />
+                            {aluno.isActive === 1 ? "Inativar" : "Ativar"}
                           </Button>
                           <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={(e) => { e.stopPropagation(); handleDeleteClick(aluno); }} disabled={isDeleting}>
                             <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Excluir

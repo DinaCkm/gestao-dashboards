@@ -4008,6 +4008,13 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         return await db.getAlunoDependencies(input.alunoId);
       }),
 
+    // Toggle ativar/inativar aluno
+    toggleAlunoStatus: adminProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.toggleAlunoStatus(input.alunoId);
+      }),
+
     // Delete aluno and all related data
     deleteAluno: adminProcedure
       .input(z.object({ alunoId: z.number(), confirmCascade: z.boolean().default(false) }))

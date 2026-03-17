@@ -1115,6 +1115,17 @@ export async function toggleConsultorStatus(consultorId: number): Promise<{ succ
   return { success: true, isActive: newStatus };
 }
 
+// Toggle ativar/inativar aluno
+export async function toggleAlunoStatus(alunoId: number): Promise<{ success: boolean; isActive: number; name: string }> {
+  const db = await getDb();
+  if (!db) throw new Error('Banco de dados não disponível');
+  const [aluno] = await db.select({ isActive: alunos.isActive, name: alunos.name }).from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  if (!aluno) throw new Error('Aluno não encontrado');
+  const newStatus = aluno.isActive === 1 ? 0 : 1;
+  await db.update(alunos).set({ isActive: newStatus }).where(eq(alunos.id, alunoId));
+  return { success: true, isActive: newStatus, name: aluno.name };
+}
+
 // Verificar se mentor tem disponibilidade de agenda nos próximos 10 dias
 export async function checkMentorHasAvailabilityNext10Days(consultorId: number): Promise<boolean> {
   const db = await getDb();
