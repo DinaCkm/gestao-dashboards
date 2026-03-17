@@ -1254,8 +1254,8 @@ export async function getConsultorStats(consultorId: number) {
     // For ultimaMentoria: use ALL sessions (any mentor) to get the real last session date
     // This prevents false alerts when aluno was transferred from another mentor
     const allAlunoSessions = allMentoringSessions
-      .filter(s => s.alunoId === id)
-      .sort((a, b) => String(a.sessionDate).localeCompare(String(b.sessionDate)));
+      .filter(s => s.alunoId === id && s.sessionDate)
+      .sort((a, b) => new Date(a.sessionDate!).getTime() - new Date(b.sessionDate!).getTime());
     const ultimaMentoriaGlobal = allAlunoSessions.length > 0 ? allAlunoSessions[allAlunoSessions.length - 1].sessionDate : null;
     return {
       id: aluno.id,
@@ -4202,10 +4202,18 @@ export async function getAllStudentsSessionProgress() {
   // Get all mentoring sessions
   const allSessions = await db.select().from(mentoringSessions);
   
-  // Group sessions by aluno
+  // Group sessions by aluno (count + last session date)
   const sessionsByAluno = new Map<number, number>();
+  const lastSessionByAluno = new Map<number, Date>();
   for (const s of allSessions) {
     sessionsByAluno.set(s.alunoId, (sessionsByAluno.get(s.alunoId) || 0) + 1);
+    if (s.sessionDate) {
+      const sessionDate = new Date(s.sessionDate);
+      const current = lastSessionByAluno.get(s.alunoId);
+      if (!current || sessionDate.getTime() > current.getTime()) {
+        lastSessionByAluno.set(s.alunoId, sessionDate);
+      }
+    }
   }
 
   // Get aluno names
@@ -4246,11 +4254,19 @@ export async function getAllStudentsSessionProgress() {
     const turma = aluno?.turmaId ? turmaMap.get(aluno.turmaId) : null;
     const trilha = pdi.trilhaId ? trilhaMap.get(pdi.trilhaId) : null;
 
+    const ultimaSessao = lastSessionByAluno.get(pdi.alunoId) || null;
+    const diasSemSessao = ultimaSessao 
+      ? Math.floor((Date.now() - ultimaSessao.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+    const atrasado30dias = diasSemSessao !== null ? diasSemSessao >= 30 : (sessoesRealizadas === 0);
+
     return {
       alunoId: pdi.alunoId,
       alunoNome: aluno?.name || 'Desconhecido',
+      alunoEmail: aluno?.email || null,
       consultorId: pdi.consultorId,
       consultorNome: consultor?.name || null,
+      consultorEmail: consultor?.email || null,
       programId: pdi.programId,
       programaNome: program?.name || null,
       turmaId: aluno?.turmaId || null,
@@ -4266,6 +4282,9 @@ export async function getAllStudentsSessionProgress() {
       cicloCompleto,
       percentualProgresso,
       assessmentPdiId: pdi.id,
+      ultimaSessao: ultimaSessao ? ultimaSessao.toISOString() : null,
+      diasSemSessao,
+      atrasado30dias,
     };
   });
 }

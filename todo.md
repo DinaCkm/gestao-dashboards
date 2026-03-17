@@ -2268,3 +2268,13 @@
 - [x] #3d ajustes17: Correção imediata - popular plano_individual do Brenno e Ilda a partir dos assessment_competencias existentes
 - [x] #3e ajustes17: Automação futura - sincronizar plano_individual automaticamente quando assessment é criado/editado
 - [x] #13 ajustes17: BUG - Alerta de acompanhamento deve considerar apenas sessões com o mentor ATUAL do aluno, não o mentor anterior (ex: alunos da Giovana transferidos para outros mentores mostram 180+ dias sem sessão incorretamente)
+- [x] #14 ajustes17: Implementar envio de e-mail automático quando mentoria estiver com mais de 30 dias sem ser agendada - para o aluno, CC mentor e CC administrador + card na tela Demonstrativo com lista detalhada de alunos/mentores atrasados + botão envio manual
+
+## Melhoria Tabela Sessões por Aluno (16/03/2026)
+- [x] Adicionar coluna "Última Sessão" na tabela (data + dias atrás)
+- [x] Adicionar filtro "Atrasado 30+ dias" no dropdown de Status
+- [ ] Linhas clicáveis com visão detalhada expandida do aluno (simplificado: tabela com scroll horizontal)
+- [x] Filtros por todas as colunas (incluir filtro por Mentor)
+- [x] Botão de envio manual de alertas por e-mail para alunos atrasados
+- [x] Badge visual (vermelho) para alunos com 30+ dias sem sessão
+- [x] Integrar cron job de alertas automáticos no startup do servidor

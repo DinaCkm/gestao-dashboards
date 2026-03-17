@@ -1017,3 +1017,21 @@ export const mentorDateAvailability = mysqlTable("mentor_date_availability", {
 });
 export type MentorDateAvailability = typeof mentorDateAvailability.$inferSelect;
 export type InsertMentorDateAvailability = typeof mentorDateAvailability.$inferInsert;
+
+/**
+ * Log de Alertas de Mentoria enviados por e-mail
+ * Controla quais alertas já foram enviados para evitar duplicatas
+ */
+export const emailAlertasLog = mysqlTable("email_alertas_log", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  consultorId: int("consultorId").notNull(), // Mentor atual do aluno no momento do envio
+  tipoAlerta: varchar("tipoAlerta", { length: 50 }).notNull(), // "mentoria_30dias"
+  diasSemSessao: int("diasSemSessao").notNull(),
+  emailEnviado: int("emailEnviado").default(1).notNull(), // 1 = enviado, 0 = falhou
+  erro: text("erro"), // Mensagem de erro se falhou
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type EmailAlertaLog = typeof emailAlertasLog.$inferSelect;
+export type InsertEmailAlertaLog = typeof emailAlertasLog.$inferInsert;
+

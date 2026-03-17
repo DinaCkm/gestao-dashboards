@@ -6405,6 +6405,137 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true };
       }),
   }),
+
+  // ============ ALERTAS DE MENTORIA (EMAIL) ============
+  alertasMentoria: router({
+    // Verificar alunos sem mentoria há 30+ dias e enviar e-mails
+    enviarAlertas: adminProcedure
+      .input(z.object({
+        diasMinimo: z.number().min(1).default(30),
+        dryRun: z.boolean().default(false), // Se true, apenas lista sem enviar
+      }).optional())
+      .mutation(async ({ input }) => {
+        const diasMinimo = input?.diasMinimo || 30;
+        const dryRun = input?.dryRun || false;
+        
+        const { sendEmail, buildMentoringAlertEmail } = await import('./emailService');
+        const { ENV } = await import('./_core/env');
+        
+        // Get all active alunos
+        const allAlunos = await db.getAlunos();
+        const allConsultores = await db.getConsultors();
+        const consultorMap = new Map(allConsultores.map(c => [c.id, c]));
+        
+        // Get all mentoring sessions
+        const dbInstance = await (await import('./db')).getDb();
+        if (!dbInstance) return { success: false, error: 'Database not available', alertas: [] };
+        
+        const { mentoringSessions: msTable } = await import('../drizzle/schema');
+        const allSessions = await dbInstance.select().from(msTable);
+        
+        // Calculate last session per aluno (with any mentor)
+        const lastSessionByAluno = new Map<number, { date: Date; consultorId: number }>();
+        for (const session of allSessions) {
+          if (!session.sessionDate) continue;
+          const sessionDate = new Date(session.sessionDate);
+          const current = lastSessionByAluno.get(session.alunoId);
+          if (!current || sessionDate > current.date) {
+            lastSessionByAluno.set(session.alunoId, { date: sessionDate, consultorId: session.consultorId });
+          }
+        }
+        
+        // Find alunos sem mentoria há 30+ dias
+        const now = Date.now();
+        const alertas: Array<{
+          alunoId: number;
+          alunoName: string;
+          alunoEmail: string;
+          mentorName: string;
+          mentorEmail: string;
+          diasSemSessao: number;
+          ultimaSessao: string | null;
+          emailEnviado: boolean;
+          erro?: string;
+        }> = [];
+        
+        for (const aluno of allAlunos) {
+          if (!aluno.email) continue;
+          
+          // Get current mentor
+          const mentor = aluno.consultorId ? consultorMap.get(aluno.consultorId) : null;
+          if (!mentor) continue; // Skip alunos without mentor
+          
+          const lastSession = lastSessionByAluno.get(aluno.id);
+          let diasSemSessao: number;
+          let ultimaSessaoDate: string | null = null;
+          
+          if (lastSession) {
+            diasSemSessao = Math.floor((now - lastSession.date.getTime()) / (1000 * 60 * 60 * 24));
+            ultimaSessaoDate = lastSession.date.toISOString();
+          } else {
+            // Never had a session
+            diasSemSessao = 999;
+          }
+          
+          if (diasSemSessao >= diasMinimo) {
+            const alertaItem: typeof alertas[0] = {
+              alunoId: aluno.id,
+              alunoName: aluno.name,
+              alunoEmail: aluno.email,
+              mentorName: mentor.name,
+              mentorEmail: mentor.email || '',
+              diasSemSessao,
+              ultimaSessao: ultimaSessaoDate,
+              emailEnviado: false,
+            };
+            
+            if (!dryRun && aluno.email) {
+              try {
+                const loginUrl = process.env.VITE_OAUTH_PORTAL_URL || 'https://ecolider.evoluirckm.com';
+                const emailData = buildMentoringAlertEmail({
+                  alunoName: aluno.name,
+                  mentorName: mentor.name,
+                  diasSemSessao,
+                  ultimaSessaoDate,
+                  loginUrl,
+                });
+                
+                // Build CC list: mentor + admin
+                const ccList = [mentor.email, ENV.smtpUser].filter(Boolean).join(', ');
+                
+                const result = await sendEmail({
+                  to: aluno.email,
+                  cc: ccList,
+                  subject: emailData.subject,
+                  html: emailData.html,
+                  text: emailData.text,
+                });
+                
+                alertaItem.emailEnviado = result.success;
+                if (!result.success) alertaItem.erro = result.error;
+              } catch (err: any) {
+                alertaItem.erro = err.message;
+              }
+            }
+            
+            alertas.push(alertaItem);
+          }
+        }
+        
+        // Sort by dias sem sessao (most urgent first)
+        alertas.sort((a, b) => b.diasSemSessao - a.diasSemSessao);
+        
+        return {
+          success: true,
+          dryRun,
+          diasMinimo,
+          totalAlunos: allAlunos.length,
+          totalAlertas: alertas.length,
+          emailsEnviados: alertas.filter(a => a.emailEnviado).length,
+          alertas,
+        };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

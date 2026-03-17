@@ -13,12 +13,17 @@ import {
 } from "@/components/ui/table";
 import { 
   Users, Calendar, CheckCircle2, AlertTriangle, Search, 
-  Download, Filter, X, TrendingUp, Clock, UserCheck, DollarSign, FileText
+  Download, Filter, X, TrendingUp, Clock, UserCheck, DollarSign, FileText,
+  Mail, AlertCircle, Loader2
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
+import { toast } from "sonner";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from "@/components/ui/dialog";
 
-type StatusFilter = "todos" | "completo" | "em_andamento" | "atencao";
+type StatusFilter = "todos" | "completo" | "em_andamento" | "atencao" | "atrasado_30";
 
 export default function DemonstrativoMentorias() {
   return (
@@ -56,28 +61,35 @@ function DemonstrativoContent() {
   const [selectedEmpresa, setSelectedEmpresa] = useState<string>("todas");
   const [selectedTurma, setSelectedTurma] = useState<string>("todas");
   const [selectedTrilha, setSelectedTrilha] = useState<string>("todas");
+  const [selectedMentor, setSelectedMentor] = useState<string>("todos");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [alertSending, setAlertSending] = useState(false);
 
   const { data: progressData, isLoading } = trpc.mentor.allSessionProgress.useQuery();
+  const enviarAlertasMutation = trpc.alertasMentoria.enviarAlertas.useMutation();
 
   // Extract unique filters from data
   const filterOptions = useMemo(() => {
-    if (!progressData) return { empresas: [], turmas: [], trilhas: [] };
+    if (!progressData) return { empresas: [], turmas: [], trilhas: [], mentores: [] };
 
     const empresasSet = new Set<string>();
     const turmasSet = new Set<string>();
     const trilhasSet = new Set<string>();
+    const mentoresSet = new Set<string>();
 
     progressData.forEach((p: any) => {
       if (p.programaNome) empresasSet.add(p.programaNome);
       if (p.turmaNome) turmasSet.add(p.turmaNome);
       if (p.trilhaNome) trilhasSet.add(p.trilhaNome);
+      if (p.consultorNome) mentoresSet.add(p.consultorNome);
     });
 
     return {
       empresas: Array.from(empresasSet).sort(),
       turmas: Array.from(turmasSet).sort(),
       trilhas: Array.from(trilhasSet).sort(),
+      mentores: Array.from(mentoresSet).sort(),
     };
   }, [progressData]);
 
@@ -113,6 +125,9 @@ function DemonstrativoContent() {
     if (selectedTrilha !== "todas") {
       result = result.filter((p: any) => p.trilhaNome === selectedTrilha);
     }
+    if (selectedMentor !== "todos") {
+      result = result.filter((p: any) => p.consultorNome === selectedMentor);
+    }
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter((p: any) => 
@@ -124,9 +139,11 @@ function DemonstrativoContent() {
       if (statusFilter === "completo") {
         result = result.filter((p: any) => p.cicloCompleto);
       } else if (statusFilter === "em_andamento") {
-        result = result.filter((p: any) => !p.cicloCompleto && !p.faltaUmaSessao);
+        result = result.filter((p: any) => !p.cicloCompleto && !p.faltaUmaSessao && !p.atrasado30dias);
       } else if (statusFilter === "atencao") {
         result = result.filter((p: any) => p.faltaUmaSessao);
+      } else if (statusFilter === "atrasado_30") {
+        result = result.filter((p: any) => p.atrasado30dias);
       }
     }
 
@@ -134,12 +151,21 @@ function DemonstrativoContent() {
     result.sort((a: any, b: any) => (a.alunoNome || "").localeCompare(b.alunoNome || ""));
 
     return result;
-  }, [progressData, selectedEmpresa, selectedTurma, selectedTrilha, searchTerm, statusFilter, user]);
+  }, [progressData, selectedEmpresa, selectedTurma, selectedTrilha, selectedMentor, searchTerm, statusFilter, user]);
+
+  // Count atrasados for KPI
+  const atrasadosCount = useMemo(() => {
+    if (!progressData) return 0;
+    let data = [...progressData] as any[];
+    if (user?.role === "manager" && user?.programId) {
+      data = data.filter((p: any) => p.programId === user.programId);
+    }
+    return data.filter((p: any) => p.atrasado30dias).length;
+  }, [progressData, user]);
 
   // Summary KPIs
   const kpis = useMemo(() => {
     if (!filteredData.length) return { totalAlunos: 0, completos: 0, emAndamento: 0, atencao: 0, mediaProgresso: 0, totalSessoes: 0, totalFaltantes: 0 };
-    // Contar alunos distintos (não PDIs)
     const alunosDistintos = new Set(filteredData.map((p: any) => p.alunoId)).size;
     const completos = filteredData.filter((p: any) => p.cicloCompleto).length;
     const atencao = filteredData.filter((p: any) => p.faltaUmaSessao).length;
@@ -150,12 +176,13 @@ function DemonstrativoContent() {
     return { totalAlunos: alunosDistintos, completos, emAndamento, atencao, mediaProgresso, totalSessoes, totalFaltantes };
   }, [filteredData]);
 
-  const hasActiveFilters = selectedEmpresa !== "todas" || selectedTurma !== "todas" || selectedTrilha !== "todas" || searchTerm !== "" || statusFilter !== "todos";
+  const hasActiveFilters = selectedEmpresa !== "todas" || selectedTurma !== "todas" || selectedTrilha !== "todas" || selectedMentor !== "todos" || searchTerm !== "" || statusFilter !== "todos";
 
   const clearFilters = () => {
     setSelectedEmpresa("todas");
     setSelectedTurma("todas");
     setSelectedTrilha("todas");
+    setSelectedMentor("todos");
     setSearchTerm("");
     setStatusFilter("todos");
   };
@@ -171,6 +198,9 @@ function DemonstrativoContent() {
   };
 
   const getStatusBadge = (item: any) => {
+    if (item.atrasado30dias) {
+      return <Badge className="bg-red-100 text-red-800 border-0 whitespace-nowrap"><AlertCircle className="h-3 w-3 mr-1" /> Atrasado {item.diasSemSessao !== null ? `${item.diasSemSessao}d` : ''}</Badge>;
+    }
     if (item.cicloCompleto) {
       return <Badge className="bg-emerald-100 text-emerald-800 border-0 whitespace-nowrap"><CheckCircle2 className="h-3 w-3 mr-1" /> Completo</Badge>;
     }
@@ -187,10 +217,54 @@ function DemonstrativoContent() {
     return "bg-red-500";
   };
 
+  const formatUltimaSessao = (item: any) => {
+    if (!item.ultimaSessao) {
+      return <span className="text-gray-400 italic text-[10px]">Nenhuma</span>;
+    }
+    const d = new Date(item.ultimaSessao);
+    const dateStr = d.toLocaleDateString("pt-BR");
+    const dias = item.diasSemSessao;
+    const isLate = dias >= 30;
+    return (
+      <div className="flex flex-col items-center gap-0">
+        <span className="text-[10px] text-gray-600">{dateStr}</span>
+        <span className={`text-[10px] font-semibold ${isLate ? 'text-red-600' : dias >= 15 ? 'text-amber-600' : 'text-gray-500'}`}>
+          ({dias}d atrás)
+        </span>
+      </div>
+    );
+  };
+
+  // Handle sending alerts
+  const handleEnviarAlertas = async (dryRun: boolean) => {
+    setAlertSending(true);
+    try {
+      const result = await enviarAlertasMutation.mutateAsync({ diasMinimo: 30, dryRun });
+      if (result.success) {
+        if (dryRun) {
+          if (result.totalAlertas === 0) {
+            toast.info("Nenhum aluno com 30+ dias sem sessão encontrado.");
+          } else {
+            toast.success(`${result.totalAlertas} aluno(s) com 30+ dias sem sessão identificados. Clique em "Enviar E-mails" para disparar os alertas.`);
+          }
+        } else {
+          toast.success(`${result.emailsEnviados} e-mail(s) de alerta enviado(s) com sucesso!`);
+        }
+      } else {
+        toast.error("Erro ao processar alertas.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao enviar alertas.");
+    } finally {
+      setAlertSending(false);
+      if (!dryRun) setShowAlertDialog(false);
+    }
+  };
+
   // Export to CSV
   const handleExportCSV = () => {
     if (!filteredData.length) return;
-    const headers = ["Aluno", "Empresa", "Turma", "Trilha", "Mentor", "Início", "Término", "Sessões Realizadas", "Total Esperadas", "Faltantes", "Progresso %", "Status"];
+    const headers = ["Aluno", "Empresa", "Turma", "Trilha", "Mentor", "Início", "Término", "Sessões Realizadas", "Total Esperadas", "Faltantes", "Progresso %", "Status", "Última Sessão", "Dias sem Sessão"];
     const rows = filteredData.map((p: any) => [
       p.alunoNome,
       p.programaNome || "",
@@ -203,7 +277,9 @@ function DemonstrativoContent() {
       p.totalSessoesEsperadas,
       p.sessoesFaltantes,
       p.percentualProgresso,
-      p.cicloCompleto ? "Completo" : p.faltaUmaSessao ? "Falta 1 sessão" : "Em andamento"
+      p.cicloCompleto ? "Completo" : p.faltaUmaSessao ? "Falta 1 sessão" : p.atrasado30dias ? "Atrasado 30+" : "Em andamento",
+      p.ultimaSessao ? new Date(p.ultimaSessao).toLocaleDateString("pt-BR") : "Nenhuma",
+      p.diasSemSessao !== null ? p.diasSemSessao : "N/A"
     ]);
     const csvContent = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
@@ -228,15 +304,25 @@ function DemonstrativoContent() {
 
   return (
     <div className="space-y-6">
-      {/* Export button */}
-      <div className="flex justify-end">
+      {/* Action buttons */}
+      <div className="flex justify-end gap-2">
+        {user?.role === "admin" && atrasadosCount > 0 && (
+          <Button 
+            onClick={() => setShowAlertDialog(true)} 
+            variant="outline" 
+            className="gap-2 border-red-300 text-red-700 hover:bg-red-50"
+          >
+            <Mail className="h-4 w-4" /> 
+            Enviar Alertas ({atrasadosCount})
+          </Button>
+        )}
         <Button onClick={handleExportCSV} variant="outline" className="gap-2" disabled={!filteredData.length}>
           <Download className="h-4 w-4" /> Exportar CSV
         </Button>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         <Card className="border-l-4 border-l-[#1E3A5F]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1">
@@ -273,6 +359,15 @@ function DemonstrativoContent() {
             <p className="text-2xl font-bold text-amber-600">{kpis.atencao}</p>
           </CardContent>
         </Card>
+        <Card className={`border-l-4 border-l-red-500 ${atrasadosCount > 0 ? 'ring-1 ring-red-200' : ''}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <span className="text-xs text-gray-500">Atrasados 30+</span>
+            </div>
+            <p className="text-2xl font-bold text-red-600">{atrasadosCount}</p>
+          </CardContent>
+        </Card>
         <Card className="border-l-4 border-l-[#F5A623]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1">
@@ -291,13 +386,13 @@ function DemonstrativoContent() {
             <p className="text-2xl font-bold text-indigo-600">{kpis.totalSessoes}</p>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-red-500">
+        <Card className="border-l-4 border-l-gray-400">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1">
-              <Calendar className="h-4 w-4 text-red-600" />
+              <Calendar className="h-4 w-4 text-gray-500" />
               <span className="text-xs text-gray-500">Sessões Faltantes</span>
             </div>
-            <p className="text-2xl font-bold text-red-600">{kpis.totalFaltantes}</p>
+            <p className="text-2xl font-bold text-gray-600">{kpis.totalFaltantes}</p>
           </CardContent>
         </Card>
       </div>
@@ -305,7 +400,7 @@ function DemonstrativoContent() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-3 items-start md:items-end">
+          <div className="flex flex-col md:flex-row gap-3 items-start md:items-end flex-wrap">
             <div className="flex-1 min-w-[200px]">
               <label className="text-xs font-medium text-gray-500 mb-1 block">Buscar Aluno</label>
               <div className="relative">
@@ -357,6 +452,18 @@ function DemonstrativoContent() {
               </Select>
             </div>
             <div className="min-w-[160px]">
+              <label className="text-xs font-medium text-gray-500 mb-1 block">Mentor</label>
+              <Select value={selectedMentor} onValueChange={setSelectedMentor}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Mentores</SelectItem>
+                  {filterOptions.mentores.map(m => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[180px]">
               <label className="text-xs font-medium text-gray-500 mb-1 block">Status</label>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -365,6 +472,7 @@ function DemonstrativoContent() {
                   <SelectItem value="completo">Completo</SelectItem>
                   <SelectItem value="em_andamento">Em Andamento</SelectItem>
                   <SelectItem value="atencao">Falta 1 Sessão</SelectItem>
+                  <SelectItem value="atrasado_30">Atrasado 30+ dias</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -411,17 +519,21 @@ function DemonstrativoContent() {
                     <TableHead className="font-semibold text-gray-700 text-xs text-center py-1.5 px-1">Esp.</TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs text-center py-1.5 px-1">Falt.</TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs min-w-[120px] py-1.5 px-2">Progresso</TableHead>
+                    <TableHead className="font-semibold text-gray-700 text-xs text-center py-1.5 px-2">Últ. Sessão</TableHead>
                     <TableHead className="font-semibold text-gray-700 text-xs text-center py-1.5 px-2">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredData.map((item: any, idx: number) => {
-                    // Extract turma code (BS1, BS2, BS3) from turma name
                     const turmaCode = item.turmaNome?.match(/\[(BS\d+)\]/)?.[1] || item.turmaNome || "—";
+                    const isAtrasado = item.atrasado30dias;
                     
                     return (
-                      <TableRow key={`${item.alunoId}-${item.assessmentPdiId}-${idx}`} className="hover:bg-gray-50/50">
-                        <TableCell className="font-medium text-gray-900 whitespace-nowrap py-1 px-2 text-xs">
+                      <TableRow 
+                        key={`${item.alunoId}-${item.assessmentPdiId}-${idx}`} 
+                        className={`hover:bg-gray-50/50 ${isAtrasado ? 'bg-red-50/40' : ''}`}
+                      >
+                        <TableCell className={`font-medium whitespace-nowrap py-1 px-2 text-xs ${isAtrasado ? 'text-red-900' : 'text-gray-900'}`}>
                           {item.alunoNome}
                         </TableCell>
                         {user?.role === "admin" && (
@@ -468,6 +580,9 @@ function DemonstrativoContent() {
                           </div>
                         </TableCell>
                         <TableCell className="text-center py-1 px-2">
+                          {formatUltimaSessao(item)}
+                        </TableCell>
+                        <TableCell className="text-center py-1 px-2">
                           {getStatusBadge(item)}
                         </TableCell>
                       </TableRow>
@@ -479,6 +594,54 @@ function DemonstrativoContent() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog de Envio de Alertas */}
+      <Dialog open={showAlertDialog} onOpenChange={setShowAlertDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-red-600" />
+              Enviar Alertas de Mentoria
+            </DialogTitle>
+            <DialogDescription>
+              Enviar e-mail de alerta para todos os alunos com 30+ dias sem sessão de mentoria.
+              O e-mail será enviado ao aluno, com cópia para o mentor e administrador.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-800 font-medium">
+                {atrasadosCount} aluno(s) com 30+ dias sem sessão
+              </p>
+              <p className="text-xs text-red-600 mt-1">
+                Os e-mails serão enviados apenas para alunos que não receberam alerta nos últimos 7 dias.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowAlertDialog(false)} disabled={alertSending}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => handleEnviarAlertas(true)} 
+              disabled={alertSending}
+              className="gap-2"
+            >
+              {alertSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              Verificar
+            </Button>
+            <Button 
+              onClick={() => handleEnviarAlertas(false)} 
+              disabled={alertSending}
+              className="gap-2 bg-red-600 hover:bg-red-700"
+            >
+              {alertSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+              Enviar E-mails
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
