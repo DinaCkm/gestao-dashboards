@@ -69,6 +69,18 @@ const MENSAGENS_GUIA: Record<number, { titulo: string; mensagem: string }> = {
     titulo: "Parabéns, você chegou até aqui!",
     mensagem: "Seu primeiro encontro com a mentora está marcado. Prepare-se para uma conversa transformadora. Estou muito orgulhosa de você por ter chegado até aqui!",
   },
+  6: {
+    titulo: "Seu plano de desenvolvimento está pronto!",
+    mensagem: "Sua mentora preparou um plano especial para você! Aqui você vai conhecer as competências que vamos desenvolver juntas. Lembre-se: o autoconhecimento é o primeiro passo para o sucesso!",
+  },
+  7: {
+    titulo: "Descubra tudo que preparamos para você!",
+    mensagem: "Sua jornada de desenvolvimento vai muito além das mentorias! Assista aos vídeos e descubra todos os recursos incríveis que vão acelerar sua transformação profissional.",
+  },
+  8: {
+    titulo: "O momento mais importante da sua jornada!",
+    mensagem: "Você está prestes a dar o passo mais importante: assumir o compromisso com o seu próprio desenvolvimento. Acredite em você — essa jornada vai transformar sua vida profissional!",
+  },
 };
 
 function MentoraGuiaBanner({ etapa }: { etapa: number }) {
@@ -103,6 +115,9 @@ const ONBOARDING_STEPS = [
   { id: 3, label: "Mentora", icon: Users2, description: "Escolha sua mentora" },
   { id: 4, label: "Agendamento", icon: CalendarDays, description: "Agende o 1º encontro" },
   { id: 5, label: "1º Encontro", icon: VideoIcon, description: "Participe da reunião" },
+  { id: 6, label: "Meu PDI", icon: Target, description: "Conheça seu plano" },
+  { id: 7, label: "Sua Jornada", icon: Play, description: "Descubra os recursos" },
+  { id: 8, label: "Aceite", icon: Award, description: "Confirme e comece" },
 ];
 
 function OnboardingStepper({ currentStep, onStepClick, readOnly = false }: { currentStep: number; onStepClick: (step: number) => void; readOnly?: boolean }) {
@@ -1148,12 +1163,574 @@ function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData, readOnly = 
           <Button
             className="bg-gradient-to-r from-[#0A1E3E] to-[#F5991F] hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg"
             onClick={() => {
-              toast.success("Bem-vinda ao Programa de Desenvolvimento!");
+              toast.success("Excelente! Vamos conhecer seu Plano de Desenvolvimento!");
               onComplete();
             }}
           >
             <Sparkles className="h-5 w-5 mr-2" />
-            Acessar Programa de Desenvolvimento
+            Conhecer Meu Plano de Desenvolvimento
+            <ArrowRight className="h-5 w-5 ml-2" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// ETAPA 6: MEU PDI — Visualização do Assessment
+// ============================================================
+
+function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
+  const { data: jornadaData } = trpc.jornada.minha.useQuery();
+  const marcarPdi = trpc.onboarding.marcarPdiVisualizado.useMutation();
+  const utils = trpc.useUtils();
+  const [visualizado, setVisualizado] = useState(false);
+
+  const macroJornada = jornadaData?.macroJornadas?.[0];
+  const competencias = macroJornada?.microJornadas || [];
+
+  const handleVisualizar = async () => {
+    if (readOnly) return;
+    try {
+      await marcarPdi.mutateAsync({ alunoId });
+      setVisualizado(true);
+      utils.onboarding.progresso.invalidate();
+    } catch (e) {
+      toast.error("Erro ao registrar visualização");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <MentoraGuiaBanner etapa={6} />
+
+      <Card className="border-0 shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+              <Target className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Seu Plano de Desenvolvimento Individual</h2>
+              <p className="text-white/80 text-sm">Preparado especialmente para você pela sua mentora</p>
+            </div>
+          </div>
+        </div>
+
+        <CardContent className="p-6">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 mb-6">
+            <div className="flex items-start gap-3">
+              <Sparkles className="h-6 w-6 text-[#F5991F] shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-bold text-[#0A1E3E] mb-1">Você sabia?</h3>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  O autoconhecimento é a base de toda transformação profissional. Seu PDI foi criado a partir do seu perfil único — 
+                  cada competência listada abaixo é uma oportunidade de crescimento que vai te levar mais longe na sua carreira!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {macroJornada ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm text-gray-500">Período da Jornada</p>
+                  <p className="font-semibold text-[#0A1E3E]">
+                    {macroJornada.macroInicio ? new Date(macroJornada.macroInicio).toLocaleDateString('pt-BR') : '---'}
+                    {' a '}
+                    {macroJornada.macroTermino ? new Date(macroJornada.macroTermino).toLocaleDateString('pt-BR') : '---'}
+                  </p>
+                </div>
+                <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                  {competencias.length} competências
+                </Badge>
+              </div>
+
+              <div className="space-y-3">
+                {competencias.map((comp: any, idx: number) => (
+                  <div key={comp.competenciaId || idx} className="border rounded-xl p-4 hover:shadow-md transition-shadow bg-white">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                        comp.status === 'concluido' ? 'bg-emerald-100 text-emerald-600' :
+                        comp.status === 'em_andamento' ? 'bg-blue-100 text-blue-600' :
+                        'bg-gray-100 text-gray-500'
+                      }`}>
+                        <span className="text-lg font-bold">{idx + 1}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-[#0A1E3E]">{comp.competenciaNome || `Competência ${idx + 1}`}</h4>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                          {comp.microInicio && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(comp.microInicio).toLocaleDateString('pt-BR')} a {comp.microTermino ? new Date(comp.microTermino).toLocaleDateString('pt-BR') : '---'}
+                            </span>
+                          )}
+                          <Badge variant="outline" className={`text-[10px] ${
+                            comp.peso === 'obrigatoria' ? 'border-red-300 text-red-600' : 'border-gray-300 text-gray-500'
+                          }`}>
+                            {comp.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        comp.status === 'concluido' ? 'bg-emerald-100 text-emerald-700' :
+                        comp.status === 'em_andamento' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-500'
+                      }`}>
+                        {comp.status === 'concluido' ? 'Concluída' : comp.status === 'em_andamento' ? 'Em andamento' : 'Pendente'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5">
+                <div className="flex items-start gap-3">
+                  <Heart className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-bold text-emerald-800 mb-1">Cada passo conta!</h3>
+                    <p className="text-sm text-emerald-700 leading-relaxed">
+                      Não se preocupe em ser perfeita desde o início. O desenvolvimento é uma jornada, não um destino. 
+                      Sua mentora estará ao seu lado em cada etapa, celebrando suas conquistas e te apoiando nos desafios.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-10">
+              <Target className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">Seu PDI ainda está sendo preparado pela sua mentora.</p>
+              <p className="text-sm text-gray-400 mt-1">Volte em breve para conferir!</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {!readOnly && macroJornada && (
+        <div className="flex justify-center">
+          <Button
+            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg"
+            onClick={handleVisualizar}
+            disabled={marcarPdi.isPending}
+          >
+            {marcarPdi.isPending ? (
+              <span className="animate-spin mr-2">...</span>
+            ) : (
+              <Eye className="h-5 w-5 mr-2" />
+            )}
+            Visualizei meu PDI — Próximo passo!
+            <ArrowRight className="h-5 w-5 ml-2" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// ETAPA 7: SUA JORNADA — Vídeos de Apresentação
+// ============================================================
+
+function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
+  const { data: videos } = trpc.onboarding.videos.useQuery();
+  const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId }, { enabled: alunoId > 0 });
+  const marcarVideo = trpc.onboarding.marcarVideoAssistido.useMutation();
+  const utils = trpc.useUtils();
+
+  const [assistidos, setAssistidos] = useState<Record<string, boolean>>({
+    boas_vindas: false, competencias: false, webinars: false, tarefas: false, metas: false,
+  });
+  const [expandedVideo, setExpandedVideo] = useState<string | null>(null);
+
+  // Sincronizar com dados do backend
+  useEffect(() => {
+    if (progressoData?.jornada) {
+      setAssistidos({
+        boas_vindas: progressoData.jornada.videoBoasVindas,
+        competencias: progressoData.jornada.videoCompetencias,
+        webinars: progressoData.jornada.videoWebinars,
+        tarefas: progressoData.jornada.videoTarefas,
+        metas: progressoData.jornada.videoMetas,
+      });
+    }
+  }, [progressoData?.jornada]);
+
+  const todosAssistidos = Object.values(assistidos).every(v => v);
+  const totalAssistidos = Object.values(assistidos).filter(v => v).length;
+
+  const VIDEO_ICONS: Record<string, any> = {
+    boas_vindas: { icon: Heart, color: 'from-rose-500 to-pink-500', bg: 'bg-rose-50', border: 'border-rose-200' },
+    competencias: { icon: Target, color: 'from-purple-500 to-indigo-500', bg: 'bg-purple-50', border: 'border-purple-200' },
+    webinars: { icon: VideoIcon, color: 'from-blue-500 to-cyan-500', bg: 'bg-blue-50', border: 'border-blue-200' },
+    tarefas: { icon: ClipboardCheck, color: 'from-emerald-500 to-teal-500', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+    metas: { icon: Award, color: 'from-amber-500 to-orange-500', bg: 'bg-amber-50', border: 'border-amber-200' },
+  };
+
+  const handleMarcarAssistido = async (chave: string) => {
+    if (readOnly || assistidos[chave]) return;
+    try {
+      const result = await marcarVideo.mutateAsync({ alunoId, chave: chave as any });
+      setAssistidos(prev => ({ ...prev, [chave]: true }));
+      utils.onboarding.progresso.invalidate();
+      if (result.todosAssistidos) {
+        toast.success("🎉 Incrível! Você assistiu todos os vídeos! Vamos para o próximo passo!");
+      } else {
+        toast.success("✅ Vídeo marcado como assistido!");
+      }
+    } catch (e) {
+      toast.error("Erro ao marcar vídeo");
+    }
+  };
+
+  // Extrair ID do YouTube para embed
+  const getYouTubeEmbedUrl = (url: string | null) => {
+    if (!url) return null;
+    const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]+)/);
+    return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+  };
+
+  return (
+    <div className="space-y-6">
+      <MentoraGuiaBanner etapa={7} />
+
+      <Card className="border-0 shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 text-white">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+              <Play className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Sua Jornada de Desenvolvimento</h2>
+              <p className="text-white/80 text-sm">Descubra todos os recursos que vão acelerar sua transformação</p>
+            </div>
+          </div>
+          <div className="mt-4 bg-white/10 rounded-lg p-3 flex items-center justify-between">
+            <span className="text-sm">Progresso dos vídeos</span>
+            <div className="flex items-center gap-2">
+              <div className="w-32 h-2 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-[#F5991F] rounded-full transition-all duration-500" style={{ width: `${(totalAssistidos / 5) * 100}%` }} />
+              </div>
+              <span className="text-sm font-bold">{totalAssistidos}/5</span>
+            </div>
+          </div>
+        </div>
+
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {(videos || []).map((video: any) => {
+              const config = VIDEO_ICONS[video.chave] || VIDEO_ICONS.boas_vindas;
+              const Icon = config.icon;
+              const isAssistido = assistidos[video.chave];
+              const isExpanded = expandedVideo === video.chave;
+              const embedUrl = getYouTubeEmbedUrl(video.videoUrl);
+
+              return (
+                <div
+                  key={video.id}
+                  className={`border-2 rounded-xl overflow-hidden transition-all duration-300 ${
+                    isAssistido ? 'border-emerald-300 bg-emerald-50/50' : `${config.border} hover:shadow-md`
+                  }`}
+                >
+                  <div
+                    className="p-4 cursor-pointer flex items-center gap-4"
+                    onClick={() => setExpandedVideo(isExpanded ? null : video.chave)}
+                  >
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${config.color} flex items-center justify-center shrink-0 shadow-md`}>
+                      {isAssistido ? (
+                        <CheckCircle2 className="h-6 w-6 text-white" />
+                      ) : (
+                        <Icon className="h-6 w-6 text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-[#0A1E3E]">{video.titulo}</h3>
+                      <p className="text-sm text-gray-500 line-clamp-1">{video.descricao}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isAssistido && (
+                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Assistido</Badge>
+                      )}
+                      <ChevronRight className={`h-5 w-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="px-4 pb-4 space-y-4 border-t border-gray-100 pt-4">
+                      <p className="text-sm text-gray-600 leading-relaxed">{video.descricao}</p>
+
+                      {embedUrl ? (
+                        <div className="aspect-video rounded-lg overflow-hidden bg-black">
+                          <iframe
+                            src={embedUrl}
+                            className="w-full h-full"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      ) : (
+                        <div className="aspect-video rounded-lg bg-gray-100 flex items-center justify-center">
+                          <div className="text-center">
+                            <VideoIcon className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                            <p className="text-sm text-gray-400">Vídeo em breve</p>
+                            <p className="text-xs text-gray-300 mt-1">O conteúdo será disponibilizado pela coordenação</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {!isAssistido && !readOnly && (
+                        <Button
+                          className={`w-full bg-gradient-to-r ${config.color} text-white hover:opacity-90`}
+                          onClick={(e) => { e.stopPropagation(); handleMarcarAssistido(video.chave); }}
+                          disabled={marcarVideo.isPending}
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Marcar como Assistido
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {(!videos || videos.length === 0) && (
+              <div className="text-center py-8">
+                <VideoIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">Os vídeos estão sendo preparados.</p>
+              </div>
+            )}
+          </div>
+
+          {todosAssistidos && (
+            <div className="mt-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
+              <div className="flex items-start gap-3">
+                <Sparkles className="h-6 w-6 text-[#F5991F] shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-bold text-[#0A1E3E] mb-1">Você está preparada!</h3>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    Agora você conhece todos os recursos disponíveis para sua jornada. 
+                    O próximo passo é o mais importante: assumir o compromisso com o seu desenvolvimento!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {!readOnly && todosAssistidos && (
+        <div className="flex justify-center">
+          <Button
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg"
+            onClick={onComplete}
+          >
+            <Award className="h-5 w-5 mr-2" />
+            Estou pronta! Vamos ao compromisso!
+            <ArrowRight className="h-5 w-5 ml-2" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// ETAPA 8: ACEITE E INÍCIO — Compromisso Formal
+// ============================================================
+
+function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
+  const { data: jornadaData } = trpc.jornada.minha.useQuery();
+  const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
+  const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId }, { enabled: alunoId > 0 });
+  const realizarAceite = trpc.onboarding.realizarAceite.useMutation();
+  const utils = trpc.useUtils();
+
+  const [nomeAceite, setNomeAceite] = useState("");
+  const [aceitou, setAceitou] = useState(false);
+  const [checkboxes, setCheckboxes] = useState({
+    compromisso1: false, compromisso2: false, compromisso3: false, compromisso4: false,
+  });
+
+  const macroJornada = jornadaData?.macroJornadas?.[0];
+  const aluno = dashData?.found ? dashData.aluno : null;
+  const todosCheckados = Object.values(checkboxes).every(v => v);
+  const nomeValido = nomeAceite.trim().length >= 2;
+  const jaAceitou = progressoData?.aceiteRealizado;
+
+  const handleAceite = async () => {
+    if (readOnly || !todosCheckados || !nomeValido) return;
+    try {
+      await realizarAceite.mutateAsync({ alunoId, nomeAceite: nomeAceite.trim() });
+      setAceitou(true);
+      utils.onboarding.progresso.invalidate();
+      toast.success("🌟 Parabéns! Sua jornada de desenvolvimento começa agora!");
+    } catch (e) {
+      toast.error("Erro ao registrar aceite");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <MentoraGuiaBanner etapa={8} />
+
+      <Card className="border-0 shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-[#0A1E3E] to-[#F5991F] p-6 text-white">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+              <Award className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Termo de Compromisso</h2>
+              <p className="text-white/80 text-sm">Seu pacto com o próprio desenvolvimento</p>
+            </div>
+          </div>
+        </div>
+
+        <CardContent className="p-6">
+          {(aceitou || jaAceitou) ? (
+            <div className="text-center py-8 space-y-6">
+              <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg">
+                <CheckCircle2 className="h-12 w-12 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-[#0A1E3E] mb-2">Compromisso Firmado!</h3>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  Você deu o passo mais importante: assumiu o compromisso com o seu próprio crescimento. 
+                  Agora sua jornada de desenvolvimento está oficialmente ativa!
+                </p>
+              </div>
+              {progressoData?.jornada?.nomeAceite && (
+                <div className="bg-gray-50 rounded-xl p-4 max-w-sm mx-auto">
+                  <p className="text-xs text-gray-400 mb-1">Assinado por</p>
+                  <p className="font-semibold text-[#0A1E3E]">{progressoData.jornada.nomeAceite}</p>
+                  {progressoData.jornada.aceiteRealizadoEm && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      em {new Date(progressoData.jornada.aceiteRealizadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  )}
+                </div>
+              )}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="h-6 w-6 text-[#F5991F] shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-bold text-[#0A1E3E] mb-1">Sua transformação começa agora!</h3>
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      Acesse seu Portal de Desenvolvimento para acompanhar seu progresso, participar dos webinars, 
+                      entregar suas tarefas e evoluir nas competências. Estamos todos torcendo por você!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Resumo do PDI */}
+              {macroJornada && (
+                <div className="bg-gray-50 rounded-xl p-5">
+                  <h3 className="font-bold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                    <Target className="h-5 w-5 text-purple-600" />
+                    Resumo do seu Plano
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-white rounded-lg p-3 text-center border">
+                      <p className="text-2xl font-bold text-purple-600">{macroJornada.totalCompetencias || 0}</p>
+                      <p className="text-xs text-gray-500">Competências</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 text-center border">
+                      <p className="text-2xl font-bold text-blue-600">{(macroJornada as any).totalSessoesPrevistas || '---'}</p>
+                      <p className="text-xs text-gray-500">Sessões Previstas</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 text-center border">
+                      <p className="text-2xl font-bold text-[#0A1E3E]">
+                        {macroJornada.macroInicio ? new Date(macroJornada.macroInicio).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---'}
+                      </p>
+                      <p className="text-xs text-gray-500">Início</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 text-center border">
+                      <p className="text-2xl font-bold text-[#F5991F]">
+                        {macroJornada.macroTermino ? new Date(macroJornada.macroTermino).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---'}
+                      </p>
+                      <p className="text-xs text-gray-500">Término</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Compromissos */}
+              <div>
+                <h3 className="font-bold text-[#0A1E3E] mb-4 flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-rose-500" />
+                  Meus Compromissos
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { key: 'compromisso1', text: 'Participarei ativamente das sessões de mentoria, chegando preparada e com disposição para aprender e evoluir.' },
+                    { key: 'compromisso2', text: 'Entregarei as tarefas práticas dentro dos prazos, aplicando os aprendizados no meu dia a dia profissional.' },
+                    { key: 'compromisso3', text: 'Participarei dos webinars quinzenais, aproveitando cada oportunidade de aprendizado e networking.' },
+                    { key: 'compromisso4', text: 'Assumo o compromisso com meu autoconhecimento e desenvolvimento, entendendo que meu sucesso depende da minha dedicação.' },
+                  ].map(({ key, text }) => (
+                    <label key={key} className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      (checkboxes as any)[key] ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200 hover:border-[#F5991F]/50'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={(checkboxes as any)[key]}
+                        onChange={(e) => setCheckboxes(prev => ({ ...prev, [key]: e.target.checked }))}
+                        className="mt-1 h-5 w-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="text-sm text-gray-700 leading-relaxed">{text}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Assinatura */}
+              <div className="border-t pt-6">
+                <h3 className="font-bold text-[#0A1E3E] mb-3">Assinatura Digital</h3>
+                <p className="text-sm text-gray-500 mb-3">Digite seu nome completo para confirmar o aceite:</p>
+                <Input
+                  placeholder={aluno?.name || "Seu nome completo"}
+                  value={nomeAceite}
+                  onChange={(e) => setNomeAceite(e.target.value)}
+                  className="text-lg py-3 border-2 focus:border-[#F5991F]"
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {!readOnly && !aceitou && !jaAceitou && (
+        <div className="flex justify-center">
+          <Button
+            className="bg-gradient-to-r from-[#0A1E3E] to-[#F5991F] hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg disabled:opacity-50"
+            onClick={handleAceite}
+            disabled={!todosCheckados || !nomeValido || realizarAceite.isPending}
+          >
+            {realizarAceite.isPending ? (
+              <span className="animate-spin mr-2">...</span>
+            ) : (
+              <Award className="h-5 w-5 mr-2" />
+            )}
+            Aceitar e Iniciar Minha Jornada
+            <Sparkles className="h-5 w-5 ml-2" />
+          </Button>
+        </div>
+      )}
+
+      {(aceitou || jaAceitou) && !readOnly && (
+        <div className="flex justify-center">
+          <Button
+            className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg"
+            onClick={onComplete}
+          >
+            <Sparkles className="h-5 w-5 mr-2" />
+            Acessar Meu Portal de Desenvolvimento
             <ArrowRight className="h-5 w-5 ml-2" />
           </Button>
         </div>
@@ -1215,11 +1792,11 @@ export default function OnboardingAluno() {
   const reassessmentElegivel = !!(progressoData?.reassessmentElegivel);
 
   const handleStepComplete = () => {
-    if (currentStep < 5) {
+    if (currentStep < 8) {
       setCurrentStep(currentStep + 1);
     } else {
       // Onboarding completo, redirecionar para o Portal do Aluno
-      toast.success("Onboarding concluído! Redirecionando para o Portal do Aluno...");
+      toast.success("🌟 Parabéns! Sua jornada de desenvolvimento começa agora!");
       setLocation("/meu-dashboard");
     }
   };
@@ -1293,6 +1870,9 @@ export default function OnboardingAluno() {
         )}
         {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
         {currentStep === 5 && <EtapaPrimeiroEncontro mentora={selectedMentora} onComplete={handleStepComplete} progressoData={progressoData ?? undefined} readOnly={readOnly} />}
+        {currentStep === 6 && <EtapaMeuPDI onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
+        {currentStep === 7 && <EtapaSuaJornada onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
+        {currentStep === 8 && <EtapaAceite onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
       </div>
     </AlunoLayout>
   );

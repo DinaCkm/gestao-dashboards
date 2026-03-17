@@ -2392,3 +2392,15 @@
 
 ## Cards de Resumo na aba Tarefas do Aluno (17/03/2026)
 - [x] Adicionar cards de resumo (Total, Pendentes, Entregues, Validadas) no topo da aba Tarefas, similar aos cards da aba Webinars
+
+## Novas Etapas do Onboarding do Aluno (17/03/2026)
+- [x] Etapa 6 - Meu PDI: Visualização do assessment/PDI elaborado pelo mentor com competências e metas
+- [x] Etapa 7 - Sua Jornada: Vídeo de boas-vindas + 4 vídeos temáticos (Competências, Webinars, Tarefas, Metas)
+- [x] Etapa 8 - Aceite e Início: Aceite formal do PDI + início oficial da trilha de desenvolvimento
+- [x] Linguagem alegre, motivadora e desafiadora focada no autoconhecimento
+- [x] Stepper atualizado para 8 etapas
+- [x] Tabelas no banco para rastrear vídeos assistidos e aceite (onboarding_jornada, onboarding_videos)
+- [x] Backend: procedures marcarPdiVisualizado, marcarVideoAssistido, realizarAceite, videos
+- [x] Vídeos configuráveis pelo admin (URLs YouTube/Vimeo) - tabela onboarding_videos
+- [x] Checkbox "Assistido" em cada vídeo para liberar avanço
+- [x] Termo de compromisso com aceite formal (4 checkboxes + assinatura digital)

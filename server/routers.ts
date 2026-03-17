@@ -6132,9 +6132,14 @@ Responda APENAS em JSON com o formato:
         // 2. Fez o assessment/PDI
         const encontroRealizado = presencaRegistrada && assessmentFeito;
 
-        // Verificar se o onboarding está completo (aluno já tem trilha/PDI definido)
-        // Quando completo, o onboarding entra em modo somente leitura
-        const onboardingCompleto = encontroRealizado;
+        // Buscar progresso da jornada (etapas 6-8)
+        const jornada = await db.getOnboardingJornada(alunoId);
+        const pdiVisualizado = !!(jornada?.pdiVisualizado);
+        const todosVideosAssistidos = !!(jornada?.videoBoasVindas && jornada?.videoCompetencias && jornada?.videoWebinars && jornada?.videoTarefas && jornada?.videoMetas);
+        const aceiteRealizado = !!(jornada?.aceiteRealizado);
+
+        // Verificar se o onboarding está completo (aluno completou todas as 8 etapas)
+        const onboardingCompleto = encontroRealizado && aceiteRealizado;
 
         // Verificar contrato do aluno para reassessment
         const contratos = await db.getContratosByAluno(alunoId);
@@ -6162,10 +6167,13 @@ Responda APENAS em JSON com o formato:
         if (cadastroPreenchido && discCompleto && autopercepCompleta) step = 3; // Pula para mentora
         if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida) step = 4; // Pula para agendamento
         if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito) step = 5; // Pula para 1º encontro
+        if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado) step = 6; // 1º encontro feito, vai para Meu PDI
+        if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado && pdiVisualizado) step = 7; // PDI visualizado, vai para Sua Jornada
+        if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado && pdiVisualizado && todosVideosAssistidos) step = 8; // Vídeos assistidos, vai para Aceite
 
-        // Quando onboarding está completo, forçar step 5 para que todas as etapas
+        // Quando onboarding está completo, forçar step 8 para que todas as etapas
         // apareçam como concluídas e o aluno possa navegar livremente em modo visualização
-        if (onboardingCompleto) step = 5;
+        if (onboardingCompleto) step = 8;
 
         return {
           step,
@@ -6186,8 +6194,88 @@ Responda APENAS em JSON com o formato:
           reassessmentElegivel,
           contratoTermino,
           cicloAtual,
+          // Etapas 6-8
+          pdiVisualizado,
+          todosVideosAssistidos,
+          aceiteRealizado,
+          jornada: jornada ? {
+            videoBoasVindas: !!jornada.videoBoasVindas,
+            videoCompetencias: !!jornada.videoCompetencias,
+            videoWebinars: !!jornada.videoWebinars,
+            videoTarefas: !!jornada.videoTarefas,
+            videoMetas: !!jornada.videoMetas,
+            nomeAceite: jornada.nomeAceite,
+            aceiteRealizadoEm: jornada.aceiteRealizadoEm ? jornada.aceiteRealizadoEm.getTime() : null,
+          } : null,
         };
       }),
+
+    // Marcar PDI como visualizado (etapa 6)
+    marcarPdiVisualizado: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.upsertOnboardingJornada(input.alunoId, {
+          pdiVisualizado: 1,
+          pdiVisualizadoEm: new Date(),
+        });
+        return { success: true };
+      }),
+
+    // Marcar vídeo como assistido (etapa 7)
+    marcarVideoAssistido: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        chave: z.enum(['boas_vindas', 'competencias', 'webinars', 'tarefas', 'metas']),
+      }))
+      .mutation(async ({ input }) => {
+        const fieldMap: Record<string, string> = {
+          boas_vindas: 'videoBoasVindas',
+          competencias: 'videoCompetencias',
+          webinars: 'videoWebinars',
+          tarefas: 'videoTarefas',
+          metas: 'videoMetas',
+        };
+        const field = fieldMap[input.chave];
+        const updateData: any = { [field]: 1 };
+        
+        // Verificar se todos os vídeos foram assistidos após esta marcação
+        const jornada = await db.getOnboardingJornada(input.alunoId);
+        const videoStates: any = {
+          videoBoasVindas: jornada?.videoBoasVindas || 0,
+          videoCompetencias: jornada?.videoCompetencias || 0,
+          videoWebinars: jornada?.videoWebinars || 0,
+          videoTarefas: jornada?.videoTarefas || 0,
+          videoMetas: jornada?.videoMetas || 0,
+          ...updateData,
+        };
+        const todosAssistidos = Object.values(videoStates).every((v: any) => v === 1);
+        if (todosAssistidos) {
+          updateData.todosVideosEm = new Date();
+        }
+        
+        await db.upsertOnboardingJornada(input.alunoId, updateData);
+        return { success: true, todosAssistidos };
+      }),
+
+    // Realizar aceite formal (etapa 8)
+    realizarAceite: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        nomeAceite: z.string().min(2),
+      }))
+      .mutation(async ({ input }) => {
+        await db.upsertOnboardingJornada(input.alunoId, {
+          aceiteRealizado: 1,
+          aceiteRealizadoEm: new Date(),
+          nomeAceite: input.nomeAceite,
+        });
+        return { success: true };
+      }),
+
+    // Listar vídeos do onboarding
+    videos: protectedProcedure.query(async () => {
+      return await db.getOnboardingVideos();
+    }),
   }),
 
   // ============ IN-APP NOTIFICATIONS ============

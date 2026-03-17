@@ -1036,3 +1036,50 @@ export const emailAlertasLog = mysqlTable("email_alertas_log", {
 export type EmailAlertaLog = typeof emailAlertasLog.$inferSelect;
 export type InsertEmailAlertaLog = typeof emailAlertasLog.$inferInsert;
 
+
+/**
+ * Onboarding Jornada - Rastreamento das etapas 6, 7 e 8 do onboarding
+ * Etapa 6: Visualização do PDI
+ * Etapa 7: Vídeos da jornada (boas-vindas + 4 temáticos)
+ * Etapa 8: Aceite formal do PDI
+ */
+export const onboardingJornada = mysqlTable("onboarding_jornada", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  // Etapa 6 - Meu PDI
+  pdiVisualizado: int("pdiVisualizado").default(0).notNull(), // 1 = visualizou o PDI
+  pdiVisualizadoEm: timestamp("pdiVisualizadoEm"),
+  // Etapa 7 - Sua Jornada (vídeos)
+  videoBoasVindas: int("videoBoasVindas").default(0).notNull(), // 1 = assistiu
+  videoCompetencias: int("videoCompetencias").default(0).notNull(),
+  videoWebinars: int("videoWebinars").default(0).notNull(),
+  videoTarefas: int("videoTarefas").default(0).notNull(),
+  videoMetas: int("videoMetas").default(0).notNull(),
+  todosVideosEm: timestamp("todosVideosEm"), // quando completou todos
+  // Etapa 8 - Aceite e Início
+  aceiteRealizado: int("aceiteRealizado").default(0).notNull(), // 1 = aceitou
+  aceiteRealizadoEm: timestamp("aceiteRealizadoEm"),
+  nomeAceite: varchar("nomeAceite", { length: 255 }), // Nome digitado no aceite
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type OnboardingJornada = typeof onboardingJornada.$inferSelect;
+export type InsertOnboardingJornada = typeof onboardingJornada.$inferInsert;
+
+/**
+ * Configuração dos vídeos do onboarding (admin pode alterar URLs)
+ */
+export const onboardingVideos = mysqlTable("onboarding_videos", {
+  id: int("id").autoincrement().primaryKey(),
+  chave: varchar("chave", { length: 50 }).notNull().unique(), // boas_vindas, competencias, webinars, tarefas, metas
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  videoUrl: text("videoUrl"), // URL do YouTube/Vimeo
+  thumbnailUrl: text("thumbnailUrl"),
+  ordem: int("ordem").default(0).notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type OnboardingVideo = typeof onboardingVideos.$inferSelect;
+export type InsertOnboardingVideo = typeof onboardingVideos.$inferInsert;

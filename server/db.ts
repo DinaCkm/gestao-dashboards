@@ -43,7 +43,10 @@ import {
   activityRegistrations, InsertActivityRegistration, ActivityRegistration,
   activityTurmas, InsertActivityTurma, ActivityTurma,
   mentorSessionPricing, InsertMentorSessionPricing, MentorSessionPricing,
-  mentorDateAvailability, InsertMentorDateAvailability, MentorDateAvailability,} from "../drizzle/schema";
+  mentorDateAvailability, InsertMentorDateAvailability, MentorDateAvailability,
+  onboardingJornada, InsertOnboardingJornada, OnboardingJornada,
+  onboardingVideos, InsertOnboardingVideo, OnboardingVideo,
+  emailAlertasLog, InsertEmailAlertaLog, EmailAlertaLog,} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -7891,4 +7894,37 @@ export async function getAllAppointments(filters?: {
   }
 
   return result;
+}
+
+
+// ============ ONBOARDING JORNADA (Steps 6-8) ============
+
+export async function getOnboardingJornada(alunoId: number): Promise<OnboardingJornada | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(onboardingJornada).where(eq(onboardingJornada.alunoId, alunoId)).limit(1);
+  return rows[0] || null;
+}
+
+export async function upsertOnboardingJornada(alunoId: number, data: Partial<InsertOnboardingJornada>): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await getOnboardingJornada(alunoId);
+  if (existing) {
+    await db.update(onboardingJornada).set(data).where(eq(onboardingJornada.alunoId, alunoId));
+  } else {
+    await db.insert(onboardingJornada).values({ alunoId, ...data });
+  }
+}
+
+export async function getOnboardingVideos(): Promise<OnboardingVideo[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(onboardingVideos).where(eq(onboardingVideos.isActive, 1)).orderBy(onboardingVideos.ordem);
+}
+
+export async function updateOnboardingVideo(id: number, data: Partial<InsertOnboardingVideo>): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(onboardingVideos).set(data).where(eq(onboardingVideos.id, id));
 }
