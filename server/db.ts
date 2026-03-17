@@ -1193,15 +1193,22 @@ export async function getConsultorStats(consultorId: number) {
   
   // Filter only valid sessions (aluno exists in alunos table)
   const validSessions = sessions.filter(s => alunoMap.has(s.alunoId));
-  const sessionAlunoIds = new Set(validSessions.map(s => s.alunoId));
   
-  // Also get alunos directly linked via consultorId (e.g., from onboarding)
+  // Alunos currently assigned to this mentor (via consultorId in alunos table)
   const directAlunos = alunosList.filter(a => a.consultorId === consultorId && a.isActive === 1);
   const directAlunoIds = new Set(directAlunos.map(a => a.id));
+  
+  // For session counting: only count sessions where the aluno is CURRENTLY assigned to this mentor
+  // OR sessions that this mentor conducted (historical)
+  const sessionAlunoIds = new Set(validSessions.map(s => s.alunoId));
   
   // Merge both sources: alunos from sessions + alunos linked directly
   const allAlunoIds = new Set([...Array.from(sessionAlunoIds), ...Array.from(directAlunoIds)]);
   const validAlunoIds = Array.from(allAlunoIds);
+  
+  // Get ALL mentoring sessions (from all mentors) to calculate ultimaMentoria correctly
+  // This ensures that when an aluno is transferred, we count days since their last session with ANY mentor
+  const allMentoringSessions = await db.select().from(mentoringSessions);
   
   // Get programs
   const programsList = await getPrograms();
@@ -1243,13 +1250,21 @@ export async function getConsultorStats(consultorId: number) {
     const aluno = alunoMap.get(id);
     if (!aluno) return null;
     const program = aluno.programId ? programMap.get(aluno.programId) : null;
-    const alunoSessions = validSessions.filter(s => s.alunoId === id);
+    const alunoSessionsThisMentor = validSessions.filter(s => s.alunoId === id);
+    // For ultimaMentoria: use ALL sessions (any mentor) to get the real last session date
+    // This prevents false alerts when aluno was transferred from another mentor
+    const allAlunoSessions = allMentoringSessions
+      .filter(s => s.alunoId === id)
+      .sort((a, b) => String(a.sessionDate).localeCompare(String(b.sessionDate)));
+    const ultimaMentoriaGlobal = allAlunoSessions.length > 0 ? allAlunoSessions[allAlunoSessions.length - 1].sessionDate : null;
     return {
       id: aluno.id,
       nome: aluno.name,
       empresa: program?.name || 'Sem Programa',
-      totalMentorias: alunoSessions.length,
-      ultimaMentoria: alunoSessions.length > 0 ? alunoSessions[alunoSessions.length - 1].sessionDate : null
+      totalMentorias: alunoSessionsThisMentor.length,
+      ultimaMentoria: ultimaMentoriaGlobal,
+      // Flag: is this aluno currently assigned to this mentor?
+      isCurrentAluno: directAlunoIds.has(id)
     };
   }).filter(Boolean);
   

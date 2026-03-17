@@ -71,8 +71,11 @@ function DashboardMentorContent() {
     .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))
     .slice(0, 5);
 
-  // Alertas: alunos sem sessão há 30+ dias
+  // Alertas: apenas alunos ATUALMENTE vinculados a este mentor (isCurrentAluno)
+  // e que estão sem sessão há 30+ dias (considerando sessões com qualquer mentor)
   const alertasAlunos = (stats?.alunosAtendidos || []).filter((aluno: any) => {
+    // Só mostrar alerta de alunos que são atualmente deste mentor
+    if (aluno.isCurrentAluno === false) return false;
     if (!aluno.ultimaMentoria) return true;
     const dias = Math.floor((Date.now() - new Date(aluno.ultimaMentoria).getTime()) / (1000 * 60 * 60 * 24));
     return dias >= 30;
