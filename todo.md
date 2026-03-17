@@ -2366,3 +2366,12 @@
 - [x] Criar dialog com campos: aluno, mentor, data, nº sessão, presença, tarefa, nota evolução, parecer
 - [x] Validar duplicidade de nº sessão para o mesmo aluno
 - [x] Notificar admin por e-mail com cópia para dina@makiyama.com.br ao criar nova sessão de mentoria
+
+## Bug: EMBRAPII - Primeira sessão (Assessment) não contabilizada (17/03/2026)
+- [ ] Investigar como a sessão de assessment da EMBRAPII está registrada no banco
+- [ ] Corrigir para que a sessão de assessment seja contabilizada na contagem de sessões realizadas
+
+## Excluir Assessment da Contagem de Mentorias (17/03/2026)
+- [x] Excluir sessões de assessment (isAssessment=1) da contagem de "sessões realizadas" no Demonstrativo
+- [x] Aplicar filtro em getSessionProgressByAluno e getAllStudentsSessionProgress
+- [x] A 1ª sessão (assessment) não conta no total de mentorias previstas no cadastro

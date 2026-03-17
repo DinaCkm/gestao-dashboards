@@ -4235,9 +4235,12 @@ export async function getSessionProgressByAluno(alunoId: number) {
     totalSessoesEsperadas = Math.max(1, totalMeses);
   }
 
-  // Count sessions completed for this student
+  // Count sessions completed for this student (excluding assessment sessions)
   const sessions = await db.select().from(mentoringSessions)
-    .where(eq(mentoringSessions.alunoId, alunoId));
+    .where(and(
+      eq(mentoringSessions.alunoId, alunoId),
+      eq(mentoringSessions.isAssessment, 0)
+    ));
   
   const sessoesRealizadas = sessions.length;
   const sessoesFaltantes = Math.max(0, totalSessoesEsperadas - sessoesRealizadas);
@@ -4277,12 +4280,15 @@ export async function getAllStudentsSessionProgress() {
   // Get all mentoring sessions
   const allSessions = await db.select().from(mentoringSessions);
   
-  // Group sessions by aluno (count + last session date + last mentor)
+  // Group sessions by aluno (count excludes assessment, but last session date includes all)
   const sessionsByAluno = new Map<number, number>();
   const lastSessionByAluno = new Map<number, Date>();
   const lastMentorByAluno = new Map<number, number>();
   for (const s of allSessions) {
-    sessionsByAluno.set(s.alunoId, (sessionsByAluno.get(s.alunoId) || 0) + 1);
+    // Only count non-assessment sessions for progress calculation
+    if (!s.isAssessment) {
+      sessionsByAluno.set(s.alunoId, (sessionsByAluno.get(s.alunoId) || 0) + 1);
+    }
     if (s.sessionDate) {
       const sessionDate = new Date(s.sessionDate);
       const current = lastSessionByAluno.get(s.alunoId);
