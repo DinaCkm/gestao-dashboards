@@ -2323,3 +2323,17 @@
 - [x] Corrigido em 29 arquivos do frontend (todas as chamadas toLocaleDateString)
 - [x] Corrigidas 2 datas com ano errado no banco (Aldeni 2026→2025, Ilda 2026→2025)
 - [x] Testes vitest passando (20/20) com cenários reais do bug
+
+## Editar Mentorias na Parametrização (17/03/2026)
+- [x] Criar página "Editar Mentorias" na seção de Parametrização
+- [x] Implementar filtros por empresa, turma, aluno e consultor
+- [x] Exibir tabela com sessões de mentoria (nº sessão, data, aluno, consultor, presença, tarefa)
+- [x] Permitir editar a data da sessão de mentoria já lançada
+- [x] Criar endpoint backend para atualizar data da sessão
+- [x] Adicionar rota no menu de Parametrização
+- [x] Escrever testes vitest para o endpoint de edição (15 testes passando)
+
+## Bug: Alunos inativos aparecendo como pendentes no demonstrativo (17/03/2026)
+- [x] Gabriela Tomasi (inativada) aparece como "Em andamento" e "Atrasado 174d" no demonstrativo
+- [x] Filtrar alunos inativos do demonstrativo de mentorias (8 PDIs de 4 alunos inativos removidos: Luciano, Gabriela, Dina, Graça)
+- [x] Filtrar alunos com PDI congelado do demonstrativo de mentorias (não devem aparecer como pendentes)

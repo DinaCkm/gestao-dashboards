@@ -690,6 +690,7 @@ export async function getMentoringSessionsByAluno(alunoId: number): Promise<Ment
 }
 
 export async function updateMentoringSession(sessionId: number, data: {
+  sessionDate?: string;
   notaEvolucao?: number;
   feedback?: string;
   engagementScore?: number;
@@ -713,6 +714,7 @@ export async function updateMentoringSession(sessionId: number, data: {
   if (!db) return false;
   
   const updateData: Record<string, unknown> = {};
+  if (data.sessionDate !== undefined) updateData.sessionDate = new Date(data.sessionDate + 'T00:00:00');
   if (data.notaEvolucao !== undefined) updateData.notaEvolucao = data.notaEvolucao;
   if (data.engagementScore !== undefined) updateData.engagementScore = data.engagementScore;
   if (data.feedback !== undefined) updateData.feedback = data.feedback;
@@ -4298,9 +4300,13 @@ export async function getAllStudentsSessionProgress() {
   const allTrilhas = await db.select().from(trilhas);
   const trilhaMap = new Map(allTrilhas.map(t => [t.id, t]));
 
-  // Filter out PDIs from inactive programs
+  // Filter out PDIs from inactive programs, inactive alunos, AND frozen PDIs
   const activePdis = pdis.filter(pdi => {
     if (pdi.programId && inactiveProgramIds.has(pdi.programId)) return false;
+    const aluno = alunoMap.get(pdi.alunoId);
+    if (aluno && aluno.isActive === 0) return false;
+    // Exclude frozen PDIs (congeladoEm set but not yet descongelado)
+    if (pdi.congeladoEm && !pdi.descongeladoEm) return false;
     return true;
   });
 

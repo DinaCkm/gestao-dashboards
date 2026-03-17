@@ -2926,6 +2926,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
     updateSession: protectedProcedure
       .input(z.object({
         sessionId: z.number(),
+        sessionDate: z.string().optional(),
         notaEvolucao: z.number().min(0).max(10).optional(),
         engagementScore: z.number().min(0).max(10).optional(),
         feedback: z.string().optional(),
@@ -4049,9 +4050,96 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       }).optional())
       .query(async ({ input }) => {
         return await db.getAllAppointments(input);
+       }),
+
+    // ============ EDITAR MENTORIAS (PARAMETRIZAÇÃO) ============
+    listMentoringSessions: adminProcedure
+      .input(z.object({
+        programId: z.number().optional(),
+        turmaId: z.number().optional(),
+        alunoId: z.number().optional(),
+        consultorId: z.number().optional(),
+        page: z.number().default(1),
+        pageSize: z.number().default(50),
+      }))
+      .query(async ({ input }) => {
+        const filters = input;
+        const page = filters.page || 1;
+        const pageSize = filters.pageSize || 50;
+        const offset = (page - 1) * pageSize;
+
+        const dbInstance = await (await import('./db')).getDb();
+        if (!dbInstance) return { sessions: [], total: 0 };
+
+        const { mentoringSessions, alunos: alunosTable, consultors: consultorsTable, turmas: turmasTable, programs: programsTable, trilhas: trilhasTable } = await import('../drizzle/schema');
+        const { eq, and, sql, desc } = await import('drizzle-orm');
+
+        // Build conditions
+        const conditions: any[] = [];
+        if (filters.alunoId) conditions.push(eq(mentoringSessions.alunoId, filters.alunoId));
+        if (filters.consultorId) conditions.push(eq(mentoringSessions.consultorId, filters.consultorId));
+        if (filters.turmaId) conditions.push(eq(mentoringSessions.turmaId, filters.turmaId));
+
+        // If programId filter, get turma IDs for that program
+        if (filters.programId && !filters.turmaId) {
+          const turmasForProgram = await dbInstance.select({ id: turmasTable.id }).from(turmasTable).where(eq(turmasTable.programId, filters.programId));
+          const turmaIds = turmasForProgram.map(t => t.id);
+          if (turmaIds.length > 0) {
+            conditions.push(sql`${mentoringSessions.turmaId} IN (${sql.raw(turmaIds.join(','))})`);
+          } else {
+            return { sessions: [], total: 0 };
+          }
+        }
+
+        const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+        // Count total
+        const [countResult] = await dbInstance.select({ count: sql<number>`COUNT(*)` }).from(mentoringSessions).where(whereClause);
+        const total = Number(countResult?.count || 0);
+
+        // Get sessions with pagination
+        let query = dbInstance.select().from(mentoringSessions).where(whereClause).orderBy(desc(mentoringSessions.sessionDate), desc(mentoringSessions.id)).limit(pageSize).offset(offset);
+        const sessions = await query;
+
+        // Get related data for display
+        const alunoIds = Array.from(new Set(sessions.map(s => s.alunoId)));
+        const consultorIds = Array.from(new Set(sessions.filter(s => s.consultorId).map(s => s.consultorId!)));
+        const turmaIds = Array.from(new Set(sessions.filter(s => s.turmaId).map(s => s.turmaId!)));
+        const trilhaIds = Array.from(new Set(sessions.filter(s => s.trilhaId).map(s => s.trilhaId!)));
+
+        const alunosList = alunoIds.length > 0 ? await dbInstance.select({ id: alunosTable.id, name: alunosTable.name }).from(alunosTable).where(sql`${alunosTable.id} IN (${sql.raw(alunoIds.join(','))})`) : [];
+        const consultorsList = consultorIds.length > 0 ? await dbInstance.select({ id: consultorsTable.id, name: consultorsTable.name }).from(consultorsTable).where(sql`${consultorsTable.id} IN (${sql.raw(consultorIds.join(','))})`) : [];
+        const turmasList = turmaIds.length > 0 ? await dbInstance.select({ id: turmasTable.id, name: turmasTable.name }).from(turmasTable).where(sql`${turmasTable.id} IN (${sql.raw(turmaIds.join(','))})`) : [];
+        const trilhasList = trilhaIds.length > 0 ? await dbInstance.select({ id: trilhasTable.id, name: trilhasTable.name }).from(trilhasTable).where(sql`${trilhasTable.id} IN (${sql.raw(trilhaIds.join(','))})`) : [];
+
+        const alunoMap = new Map(alunosList.map(a => [a.id, a.name]));
+        const consultorMap = new Map(consultorsList.map(c => [c.id, c.name]));
+        const turmaMap = new Map(turmasList.map(t => [t.id, t.name]));
+        const trilhaMap = new Map(trilhasList.map(t => [t.id, t.name]));
+
+        const enrichedSessions = sessions.map(s => ({
+          ...s,
+          alunoNome: alunoMap.get(s.alunoId) || 'Desconhecido',
+          consultorNome: s.consultorId ? consultorMap.get(s.consultorId) || 'Desconhecido' : null,
+          turmaNome: s.turmaId ? turmaMap.get(s.turmaId) || null : null,
+          trilhaNome: s.trilhaId ? trilhaMap.get(s.trilhaId) || null : null,
+        }));
+
+        return { sessions: enrichedSessions, total };
+      }),
+
+    updateSessionDate: adminProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        sessionDate: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const success = await db.updateMentoringSession(input.sessionId, {
+          sessionDate: input.sessionDate,
+        });
+        return { success };
       }),
   }),
-
   // Status de onboarding do aluno logado
   aluno: router({
     onboardingStatus: protectedProcedure.query(async ({ ctx }) => {

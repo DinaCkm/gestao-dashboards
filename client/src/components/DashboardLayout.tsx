@@ -67,6 +67,7 @@ import {
   Zap,
   Bell,
   CalendarDays,
+  Edit3,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -139,6 +140,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias" },
       { icon: Calculator, label: "Fórmulas", path: "/formulas" },
       { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
+      { icon: Edit3, label: "Editar Mentorias", path: "/editar-mentorias" },
     ],
   },
   {
