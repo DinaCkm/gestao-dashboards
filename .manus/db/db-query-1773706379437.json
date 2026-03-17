@@ -1,0 +1,28 @@
+{
+  "query": "SELECT u.id, u.name, u.role, u.consultorId, u.programId, c.role as consultor_role, c.managedProgramId FROM users u LEFT JOIN consultors c ON u.consultorId = c.id WHERE u.name LIKE '%Ana Carolina%' OR u.name LIKE '%Joseane%' ORDER BY u.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.role, u.consultorId, u.programId, c.role as consultor_role, c.managedProgramId FROM users u LEFT JOIN consultors c ON u.consultorId = c.id WHERE u.name LIKE '%Ana Carolina%' OR u.name LIKE '%Joseane%' ORDER BY u.name;",
+  "rows": [
+    {
+      "id": "720421",
+      "name": "Ana Carolina Cardoso Viana Rocha",
+      "role": "manager",
+      "consultorId": "28",
+      "programId": "NULL",
+      "consultor_role": "mentor",
+      "managedProgramId": "NULL"
+    },
+    {
+      "id": "660170",
+      "name": "Joseane Rodrigues Leite",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "17",
+      "consultor_role": "NULL",
+      "managedProgramId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\trole\tconsultorId\tprogramId\tconsultor_role\tmanagedProgramId\n720421\tAna Carolina Cardoso Viana Rocha\tmanager\t28\tNULL\tmentor\tNULL\n660170\tJoseane Rodrigues Leite\tmanager\tNULL\t17\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}

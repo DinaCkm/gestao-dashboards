@@ -3744,19 +3744,21 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         managedProgramId: z.number()
       }))
       .mutation(async ({ input }) => {
-        // Criar registro na tabela consultors
+        // Criar registro na tabela consultors com role 'gerente'
         const gerenteResult = await db.createGerente(input);
         
         // Se tem CPF, criar também registro na tabela users para login
+        // IMPORTANTE: Gerentes NÃO devem ter consultorId vinculado,
+        // pois o DashboardLayout usa consultorId para distinguir mentor vs gerente.
+        // Se consultorId estiver presente, o sistema interpreta como Mentor.
         if (input.cpf) {
-          const gerenteId = 'id' in gerenteResult ? gerenteResult.id as number : undefined;
           await db.createAccessUser({
             name: input.name,
             email: input.email,
             cpf: input.cpf,
             role: 'manager' as const,
             programId: input.managedProgramId,
-            consultorId: gerenteId ?? null,
+            consultorId: null, // Gerente não deve ter consultorId
           });
         }
         

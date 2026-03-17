@@ -1,0 +1,34 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.role, u.consultorId, c.role as consultor_role FROM users u INNER JOIN consultors c ON u.consultorId = c.id WHERE u.role = 'manager' AND c.role = 'gerente';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.role, u.consultorId, c.role as consultor_role FROM users u INNER JOIN consultors c ON u.consultorId = c.id WHERE u.role = 'manager' AND c.role = 'gerente';",
+  "rows": [
+    {
+      "id": "3630110",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "manager",
+      "consultorId": "60001",
+      "consultor_role": "gerente"
+    },
+    {
+      "id": "3630136",
+      "name": "Emanoel",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "manager",
+      "consultorId": "60002",
+      "consultor_role": "gerente"
+    },
+    {
+      "id": "4290839",
+      "name": "gerente teste",
+      "email": "teste@embrapii.com",
+      "role": "manager",
+      "consultorId": "90001",
+      "consultor_role": "gerente"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tconsultorId\tconsultor_role\n3630110\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tmanager\t60001\tgerente\n3630136\tEmanoel\temanoel.querette@embrapii.org.br\tmanager\t60002\tgerente\n4290839\tgerente teste\tteste@embrapii.com\tmanager\t90001\tgerente\n",
+  "stderr": "",
+  "execution_time_ms": 379
+}

@@ -2254,3 +2254,4 @@
 - [x] Bug: Mentora escolhida pelo aluno no onboarding não é persistida ao retornar - corrigido: recuperar mentoraId do banco + useEffect para restaurar selectedMentora
 - [x] Remover botão de gerar relatório dos testes DISC para o aluno no onboarding
 - [x] #0a ajustes17: Corrigir erro React #310 ao acessar dashboard por empresa - hooks movidos antes de early returns + ErrorBoundary com recuperação automática
+- [x] #2 ajustes17: Corrigir cadastro de gerente que cria como mentor - removido consultorId do createGerente + corrigido dados existentes no banco
