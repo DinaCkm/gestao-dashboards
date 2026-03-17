@@ -2515,6 +2515,59 @@ export async function addCompetenciasToPlano(alunoId: number, competenciaIds: nu
   return true;
 }
 
+// Sincronizar plano_individual a partir dos assessment_competencias de um aluno
+// Adiciona competências que estão no assessment mas não no plano_individual
+export async function syncPlanoFromAssessment(alunoId: number) {
+  const db = await getDb();
+  if (!db) return { added: 0 };
+  
+  // Buscar todas as competências dos assessments do aluno
+  const assessmentComps = await db.select({
+    competenciaId: assessmentCompetencias.competenciaId,
+    peso: assessmentCompetencias.peso,
+    nivelAtual: assessmentCompetencias.nivelAtual,
+    metaFinal: assessmentCompetencias.metaFinal,
+  })
+  .from(assessmentCompetencias)
+  .innerJoin(assessmentPdi, eq(assessmentCompetencias.assessmentPdiId, assessmentPdi.id))
+  .where(eq(assessmentPdi.alunoId, alunoId));
+  
+  // Agrupar por competenciaId (priorizar obrigatória se duplicada)
+  const uniqueMap = new Map<number, typeof assessmentComps[0]>();
+  for (const c of assessmentComps) {
+    const existing = uniqueMap.get(c.competenciaId);
+    if (!existing) {
+      uniqueMap.set(c.competenciaId, c);
+    } else if (c.peso === 'obrigatoria') {
+      uniqueMap.set(c.competenciaId, c);
+    }
+  }
+  
+  // Buscar competências já existentes no plano_individual
+  const existingPlano = await db.select({ competenciaId: planoIndividual.competenciaId })
+    .from(planoIndividual)
+    .where(eq(planoIndividual.alunoId, alunoId));
+  const existingIds = new Set(existingPlano.map(p => p.competenciaId));
+  
+  // Inserir apenas as que não existem ainda
+  let added = 0;
+  for (const [compId, comp] of Array.from(uniqueMap.entries())) {
+    if (!existingIds.has(compId)) {
+      await db.insert(planoIndividual).values({
+        alunoId,
+        competenciaId: compId,
+        isObrigatoria: comp.peso === 'obrigatoria' ? 1 : 0,
+        notaAtual: comp.nivelAtual ? String(comp.nivelAtual) : null,
+        metaNota: comp.metaFinal ? String(comp.metaFinal) : "7.00",
+        status: "pendente",
+      });
+      added++;
+    }
+  }
+  
+  return { added };
+}
+
 // Remover competência do plano individual
 export async function removeCompetenciaFromPlano(id: number) {
   const db = await getDb();

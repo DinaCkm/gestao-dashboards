@@ -1,0 +1,24 @@
+{
+  "query": "SELECT id, name, email, programId, turmaId FROM alunos WHERE name LIKE '%Brenno%' OR name LIKE '%Ilda%' ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, programId, turmaId FROM alunos WHERE name LIKE '%Brenno%' OR name LIKE '%Ilda%' ORDER BY name;",
+  "rows": [
+    {
+      "id": "30035",
+      "name": "Brenno Soffredi Passoni",
+      "email": "brenno.passoni@embrapii.org.br",
+      "programId": "18",
+      "turmaId": "30002"
+    },
+    {
+      "id": "30041",
+      "name": "Ilda Bisinotti ",
+      "email": "ilda.bisinotti@embrapii.org.br",
+      "programId": "18",
+      "turmaId": "30002"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tprogramId\tturmaId\n30035\tBrenno Soffredi Passoni\tbrenno.passoni@embrapii.org.br\t18\t30002\n30041\tIlda Bisinotti \tilda.bisinotti@embrapii.org.br\t18\t30002\n",
+  "stderr": "",
+  "execution_time_ms": 397
+}

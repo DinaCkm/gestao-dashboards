@@ -253,7 +253,7 @@ export default function EditAssessmentDialog({
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent
-        className="max-w-5xl max-h-[90vh] flex flex-col overflow-hidden"
+        className="max-w-5xl max-h-[85vh] flex flex-col"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
@@ -267,7 +267,7 @@ export default function EditAssessmentDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="geral" className="flex items-center gap-1.5">
               <BookOpen className="h-3.5 w-3.5" />
@@ -280,7 +280,7 @@ export default function EditAssessmentDialog({
           </TabsList>
 
           {/* ===== TAB: Dados Gerais ===== */}
-          <TabsContent value="geral" className="flex-1 overflow-y-auto mt-4">
+          <TabsContent value="geral" className="flex-1 overflow-y-auto mt-4 max-h-[calc(85vh-220px)]">
             <div className="space-y-5 pr-1">
               {/* Trilha */}
               <div className="space-y-2">
@@ -400,7 +400,7 @@ export default function EditAssessmentDialog({
           </TabsContent>
 
           {/* ===== TAB: Competências ===== */}
-          <TabsContent value="competencias" className="flex-1 overflow-hidden flex flex-col mt-4">
+          <TabsContent value="competencias" className="flex-1 flex flex-col mt-4 min-h-0 max-h-[calc(85vh-220px)]">
             {/* Add competencia button */}
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm text-muted-foreground">
@@ -514,7 +514,7 @@ export default function EditAssessmentDialog({
             )}
 
             {/* Competencias list */}
-            <ScrollArea className="flex-1 min-h-0 pr-1">
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
               <div className="space-y-3">
                 {(pdi.competencias || []).map((comp: any) => {
                   const isEditing = editingComps.has(comp.id);
@@ -793,7 +793,7 @@ export default function EditAssessmentDialog({
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
         </Tabs>
 

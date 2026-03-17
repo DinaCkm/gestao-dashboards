@@ -2263,3 +2263,7 @@
 - [ ] #11 ajustes17: Investigar tarefas zeradas da aluna Millena
 - [ ] #12 ajustes17: Corrigir sobreposição de abas do menu
 - [x] #3 ajustes17: Implementar edição de assessment (trilha, competências, ciclos, contrato) pelo admin/mentor - resolve também #0b (Brenno/Ilda sem dados)
+- [x] #3b ajustes17: BUG - Dados de Brenno e Ilda (EMBRAPII) não aparecem no assessment apesar de terem sido carregados via upload - investigar e corrigir
+- [x] #3c ajustes17: Corrigir barra de rolagem no diálogo de edição de assessment - campos ficam cortados quando edita competência
+- [x] #3d ajustes17: Correção imediata - popular plano_individual do Brenno e Ilda a partir dos assessment_competencias existentes
+- [x] #3e ajustes17: Automação futura - sincronizar plano_individual automaticamente quando assessment é criado/editado

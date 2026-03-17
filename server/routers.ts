@@ -4170,6 +4170,11 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         
         const pdiId = await db.createAssessmentPdi(pdiData, competencias);
         
+        // Auto-sincronizar plano_individual com as competências do assessment
+        try {
+          await db.syncPlanoFromAssessment(input.alunoId);
+        } catch (e) { /* sync não deve bloquear criação */ }
+        
         // Notificar o aluno que o assessment foi criado (Item 7)
         try {
           // Buscar o userId do aluno pelo alunoId
@@ -4275,6 +4280,12 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       .mutation(async ({ input }) => {
         const { assessmentPdiId, ...data } = input;
         const id = await db.addCompetenciaToAssessment(assessmentPdiId, data);
+        // Auto-sincronizar plano_individual
+        try {
+          const allPdis = await db.getAllAssessmentPdis();
+          const pdi = allPdis.find((p: any) => p.id === assessmentPdiId);
+          if (pdi) await db.syncPlanoFromAssessment(pdi.alunoId);
+        } catch (e) { /* sync não deve bloquear */ }
         return { success: true, id };
       }),
 
