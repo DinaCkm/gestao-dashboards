@@ -4174,6 +4174,94 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         const success = await db.deleteMentoringSession(input.sessionId);
         return { success };
       }),
+
+    adminCreateSession: adminProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        consultorId: z.number(),
+        sessionDate: z.string(),
+        sessionNumber: z.number().min(1),
+        presence: z.enum(["presente", "ausente"]),
+        taskStatus: z.enum(["entregue", "nao_entregue", "sem_tarefa"]),
+        notaEvolucao: z.number().min(0).max(10).nullable().optional(),
+        feedback: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // Verificar se já existe sessão com mesmo número para o mesmo aluno
+        const existingSessions = await db.getMentoringSessionsByAluno(input.alunoId);
+        const duplicate = existingSessions.find(s => s.sessionNumber === input.sessionNumber);
+        if (duplicate) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: `Já existe uma sessão #${input.sessionNumber} para este aluno`,
+          });
+        }
+
+        // Buscar dados do aluno para turma e trilha
+        const aluno = await db.getAlunoById(input.alunoId);
+        if (!aluno) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+        }
+
+        const sessionId = await db.createMentoringSession({
+          alunoId: input.alunoId,
+          consultorId: input.consultorId,
+          turmaId: aluno.turmaId,
+          trilhaId: aluno.trilhaId,
+          sessionNumber: input.sessionNumber,
+          sessionDate: input.sessionDate,
+          presence: input.presence,
+          taskStatus: input.taskStatus,
+          engagementScore: null,
+          notaEvolucao: input.notaEvolucao ?? null,
+          feedback: input.feedback,
+          mensagemAluno: undefined,
+          taskId: null,
+          taskDeadline: null,
+          customTaskTitle: null,
+          customTaskDescription: null,
+          taskMode: "sem_tarefa",
+        });
+
+        // Notificar admin por e-mail com cópia para dina@makiyama.com.br
+        try {
+          const { sendEmail } = await import('./emailService');
+          const { ENV } = await import('./_core/env');
+          const consultors = await db.getConsultors();
+          const mentor = consultors.find(c => c.id === input.consultorId);
+          const mentorNome = mentor?.name || 'Não definido';
+          const alunoNome = aluno.name || 'Não definido';
+          const dataFormatada = new Date(input.sessionDate + 'T12:00:00').toLocaleDateString('pt-BR');
+
+          await sendEmail({
+            to: ENV.smtpUser,
+            cc: 'dina@makiyama.com.br',
+            subject: `[ECOSSISTEMA DO BEM] Nova Sessão de Mentoria Criada - ${alunoNome}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: #0f3d5c; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                  <h2 style="margin: 0;">Nova Sessão de Mentoria Criada</h2>
+                </div>
+                <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr><td style="padding: 8px; font-weight: bold; color: #374151;">Aluno:</td><td style="padding: 8px;">${alunoNome}</td></tr>
+                    <tr style="background: #f9fafb;"><td style="padding: 8px; font-weight: bold; color: #374151;">Mentor:</td><td style="padding: 8px;">${mentorNome}</td></tr>
+                    <tr><td style="padding: 8px; font-weight: bold; color: #374151;">Sessão:</td><td style="padding: 8px;">#${input.sessionNumber}</td></tr>
+                    <tr style="background: #f9fafb;"><td style="padding: 8px; font-weight: bold; color: #374151;">Data:</td><td style="padding: 8px;">${dataFormatada}</td></tr>
+                    <tr><td style="padding: 8px; font-weight: bold; color: #374151;">Presença:</td><td style="padding: 8px;">${input.presence === 'presente' ? 'Presente' : 'Ausente'}</td></tr>
+                    <tr style="background: #f9fafb;"><td style="padding: 8px; font-weight: bold; color: #374151;">Tarefa:</td><td style="padding: 8px;">${input.taskStatus === 'entregue' ? 'Entregue' : input.taskStatus === 'nao_entregue' ? 'Não entregue' : 'Sem tarefa'}</td></tr>
+                  </table>
+                  <p style="margin-top: 16px; color: #6b7280; font-size: 12px;">Esta sessão foi criada manualmente pelo administrador.</p>
+                </div>
+              </div>
+            `,
+          });
+        } catch (emailError) {
+          console.error('[AdminCreateSession] Erro ao enviar notificação por e-mail:', emailError);
+        }
+
+        return { success: true, sessionId };
+      }),
   }),
   // Status de onboarding do aluno logado
   aluno: router({
@@ -4270,6 +4358,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         consultorId: z.number().nullable().optional(),
         macroInicio: z.string(),
         macroTermino: z.string(),
+        totalSessoesPrevistas: z.number().min(1).nullable().optional(),
         competencias: z.array(z.object({
           competenciaId: z.number(),
           peso: z.enum(['obrigatoria', 'opcional']),
@@ -4384,6 +4473,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         programId: z.number().nullable().optional(),
         macroInicio: z.string().optional(),
         macroTermino: z.string().optional(),
+        totalSessoesPrevistas: z.number().min(1).nullable().optional(),
         observacoes: z.string().nullable().optional(),
       }))
       .mutation(async ({ input }) => {

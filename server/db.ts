@@ -4223,14 +4223,17 @@ export async function getSessionProgressByAluno(alunoId: number) {
 
   const pdi = pdis[0];
   
-  // Calculate total expected sessions from macro cycle duration
-  const macroInicio = new Date(pdi.macroInicio);
-  const macroTermino = new Date(pdi.macroTermino);
-  
-  // Calculate months difference
-  const totalMeses = (macroTermino.getFullYear() - macroInicio.getFullYear()) * 12 
-    + (macroTermino.getMonth() - macroInicio.getMonth());
-  const totalSessoesEsperadas = Math.max(1, totalMeses); // At least 1 session
+  // Calculate total expected sessions: use totalSessoesPrevistas if set, otherwise fallback to months difference
+  let totalSessoesEsperadas: number;
+  if (pdi.totalSessoesPrevistas && pdi.totalSessoesPrevistas > 0) {
+    totalSessoesEsperadas = pdi.totalSessoesPrevistas;
+  } else {
+    const macroInicio = new Date(pdi.macroInicio);
+    const macroTermino = new Date(pdi.macroTermino);
+    const totalMeses = (macroTermino.getFullYear() - macroInicio.getFullYear()) * 12 
+      + (macroTermino.getMonth() - macroInicio.getMonth());
+    totalSessoesEsperadas = Math.max(1, totalMeses);
+  }
 
   // Count sessions completed for this student
   const sessions = await db.select().from(mentoringSessions)
@@ -4322,11 +4325,17 @@ export async function getAllStudentsSessionProgress() {
   });
 
   return activePdis.map(pdi => {
-    const macroInicio = new Date(pdi.macroInicio);
-    const macroTermino = new Date(pdi.macroTermino);
-    const totalMeses = (macroTermino.getFullYear() - macroInicio.getFullYear()) * 12 
-      + (macroTermino.getMonth() - macroInicio.getMonth());
-    const totalSessoesEsperadas = Math.max(1, totalMeses);
+    // Use totalSessoesPrevistas if set, otherwise fallback to months difference
+    let totalSessoesEsperadas: number;
+    if (pdi.totalSessoesPrevistas && pdi.totalSessoesPrevistas > 0) {
+      totalSessoesEsperadas = pdi.totalSessoesPrevistas;
+    } else {
+      const macroInicio = new Date(pdi.macroInicio);
+      const macroTermino = new Date(pdi.macroTermino);
+      const totalMeses = (macroTermino.getFullYear() - macroInicio.getFullYear()) * 12 
+        + (macroTermino.getMonth() - macroInicio.getMonth());
+      totalSessoesEsperadas = Math.max(1, totalMeses);
+    }
     const sessoesRealizadas = sessionsByAluno.get(pdi.alunoId) || 0;
     const sessoesFaltantes = Math.max(0, totalSessoesEsperadas - sessoesRealizadas);
     const faltaUmaSessao = sessoesFaltantes === 1;

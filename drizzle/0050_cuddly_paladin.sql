@@ -1,0 +1,1 @@
+ALTER TABLE `assessment_pdi` ADD `totalSessoesPrevistas` int;

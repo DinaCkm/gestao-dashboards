@@ -1340,6 +1340,7 @@ function CreateAssessmentDialog({
   const [selectedConsultorId, setSelectedConsultorId] = useState<string>(consultorId ? String(consultorId) : "");
   const [macroInicio, setMacroInicio] = useState("");
   const [macroTermino, setMacroTermino] = useState("");
+  const [totalSessoesPrevistas, setTotalSessoesPrevistas] = useState<string>("");
   const [competenciasConfig, setCompetenciasConfig] = useState<Array<{
     competenciaId: number;
     nome: string;
@@ -1425,6 +1426,7 @@ function CreateAssessmentDialog({
       consultorId: selectedConsultorId ? parseInt(selectedConsultorId) : null,
       macroInicio,
       macroTermino,
+      totalSessoesPrevistas: totalSessoesPrevistas ? parseInt(totalSessoesPrevistas) : null,
       competencias: selectedComps.map(c => ({
         competenciaId: c.competenciaId,
         peso: c.peso,
@@ -1517,6 +1519,23 @@ function CreateAssessmentDialog({
                   <Input type="date" value={macroTermino} onChange={e => setMacroTermino(e.target.value)} />
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-medium flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5" />
+                Total de Sessões de Mentoria Previstas
+              </Label>
+              <Input 
+                type="number" 
+                min="1" 
+                placeholder="Ex: 12 (se não preenchido, calcula pela duração do contrato)" 
+                value={totalSessoesPrevistas} 
+                onChange={e => setTotalSessoesPrevistas(e.target.value)} 
+              />
+              <p className="text-xs text-muted-foreground">
+                Quantidade total de sessões que devem ser realizadas dentro do período do contrato. Se não preenchido, o sistema calcula automaticamente (1 sessão por mês).
+              </p>
             </div>
 
             <DialogFooter>

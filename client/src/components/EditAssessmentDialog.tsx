@@ -64,6 +64,7 @@ export default function EditAssessmentDialog({
   const [turmaId, setTurmaId] = useState(pdi.turmaId ? String(pdi.turmaId) : "");
   const [macroInicio, setMacroInicio] = useState(formatDateForInput(pdi.macroInicio));
   const [macroTermino, setMacroTermino] = useState(formatDateForInput(pdi.macroTermino));
+  const [totalSessoesPrevistas, setTotalSessoesPrevistas] = useState(pdi.totalSessoesPrevistas ? String(pdi.totalSessoesPrevistas) : "");
   const [observacoes, setObservacoes] = useState(pdi.observacoes || "");
 
   // ===== Competencias state =====
@@ -162,6 +163,7 @@ export default function EditAssessmentDialog({
       turmaId: turmaId ? parseInt(turmaId) : null,
       macroInicio,
       macroTermino,
+      totalSessoesPrevistas: totalSessoesPrevistas ? parseInt(totalSessoesPrevistas) : null,
       observacoes: observacoes || null,
     });
   };
@@ -373,6 +375,21 @@ export default function EditAssessmentDialog({
                     <Input type="date" value={macroTermino} onChange={e => setMacroTermino(e.target.value)} />
                   </div>
                 </div>
+              </div>
+
+              {/* Total de Sessões Previstas */}
+              <div className="space-y-2">
+                <Label className="font-medium">Total de Sessões de Mentoria Previstas</Label>
+                <Input 
+                  type="number" 
+                  min="1" 
+                  placeholder="Ex: 12 (se vazio, calcula pela duração do contrato)" 
+                  value={totalSessoesPrevistas} 
+                  onChange={e => setTotalSessoesPrevistas(e.target.value)} 
+                />
+                <p className="text-xs text-muted-foreground">
+                  Quantidade total de sessões que devem ser realizadas dentro do período do contrato. Se vazio, calcula automaticamente (1 sessão/mês).
+                </p>
               </div>
 
               {/* Observações */}

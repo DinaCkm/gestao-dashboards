@@ -2352,3 +2352,17 @@
 
 ## Lista de Datas de Sessões no Card de Detalhes do Aluno (17/03/2026)
 - [x] Adicionar lista sequencial de sessões com datas no card de Detalhes do Aluno (Demonstrativo)
+
+## Total de Sessões Previstas no Cadastro do PDI (17/03/2026)
+- [ ] Adicionar coluna totalSessoesPrevistas na tabela assessment_pdi (schema + migração)
+- [ ] Atualizar lógica de cálculo: usar totalSessoesPrevistas em vez de diferença de meses
+- [ ] Atualizar endpoints de criação/edição do PDI para aceitar o novo campo
+- [ ] Atualizar formulário de cadastro do PDI no frontend com campo "Total de Sessões Previstas"
+- [ ] Manter fallback: se campo não preenchido, usar cálculo antigo (diferença de meses)
+
+## Incluir Nova Sessão de Mentoria (Admin) (17/03/2026)
+- [x] Criar endpoint backend para adicionar nova sessão de mentoria (admin)
+- [x] Adicionar botão "Nova Sessão" na página Editar Mentorias
+- [x] Criar dialog com campos: aluno, mentor, data, nº sessão, presença, tarefa, nota evolução, parecer
+- [x] Validar duplicidade de nº sessão para o mesmo aluno
+- [x] Notificar admin por e-mail com cópia para dina@makiyama.com.br ao criar nova sessão de mentoria

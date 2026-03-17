@@ -351,6 +351,13 @@
       "when": 1773713730584,
       "tag": "0049_petite_ricochet",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1773780341977,
+      "tag": "0050_cuddly_paladin",
+      "breakpoints": true
     }
   ]
 }

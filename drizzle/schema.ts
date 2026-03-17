@@ -374,6 +374,7 @@ export const assessmentPdi = mysqlTable("assessment_pdi", {
   programId: int("programId"), // FK para programs
   macroInicio: date("macroInicio").notNull(), // Data início do macro ciclo (jornada)
   macroTermino: date("macroTermino").notNull(), // Data término do macro ciclo (jornada)
+  totalSessoesPrevistas: int("totalSessoesPrevistas"), // Total de sessões de mentoria previstas para o período do contrato (se null, calcula pela diferença de meses)
   status: mysqlEnum("status", ["ativo", "congelado"]).default("ativo").notNull(),
   observacoes: text("observacoes"),
   congeladoEm: timestamp("congeladoEm"), // Data em que a mentora congelou a trilha
