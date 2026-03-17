@@ -133,6 +133,14 @@ export interface CaseSucessoData {
 }
 
 /**
+ * Dados do macrociclo (período do contrato/jornada) para cálculo de Ind.1, Ind.4 e Ind.5
+ */
+export interface MacrocicloData {
+  macroInicio: string; // YYYY-MM-DD
+  macroTermino: string; // YYYY-MM-DD
+}
+
+/**
  * Dados de ciclo para o calculador
  */
 export interface CicloDataV2 {
@@ -417,7 +425,8 @@ export function calcularIndicadoresAluno(
   ciclos: CicloDataV2[],
   compIdToCodigoMap: Map<number, string>,
   casesData: CaseSucessoData[],
-  hoje?: Date
+  hoje?: Date,
+  macrociclo?: MacrocicloData
 ): StudentIndicatorsV2 {
   // Filtrar registros do aluno
   const mentoriasAluno = mentorias.filter(m => m.idUsuario === idUsuario);
@@ -430,7 +439,65 @@ export function calcularIndicadoresAluno(
   const turma = mentoriasAluno[0]?.turma || eventosAluno[0]?.turma;
   const trilha = mentoriasAluno[0]?.trilha || eventosAluno[0]?.trilha;
   
-  // Calcular indicadores por ciclo
+  // ============================================================
+  // IND.1, IND.4, IND.5: Calculados pelo MACROCICLO (período da jornada)
+  // Não dependem dos microciclos, usam TODAS as sessões/eventos do período
+  // ============================================================
+  
+  // Filtrar mentorias e eventos pelo período do macrociclo (se disponível)
+  let mentoriasMacro = mentoriasAluno;
+  let eventosMacro = eventosAluno;
+  if (macrociclo) {
+    const macroInicioDate = new Date(macrociclo.macroInicio + 'T00:00:00');
+    const macroTerminoDate = new Date(macrociclo.macroTermino + 'T23:59:59');
+    mentoriasMacro = mentoriasAluno.filter(m => {
+      if (m.dataSessao) {
+        const d = new Date(m.dataSessao);
+        return d >= macroInicioDate && d <= macroTerminoDate;
+      }
+      return true; // fallback para dados sem data
+    });
+    eventosMacro = eventosAluno.filter(e => {
+      if (e.dataEvento) {
+        const d = new Date(e.dataEvento);
+        return d >= macroInicioDate && d <= macroTerminoDate;
+      }
+      return true; // fallback para dados sem data
+    });
+  }
+  
+  // IND 1 (Macrociclo): Webinars - total vs presentes no período do macrociclo
+  const macroTotalWebinars = eventosMacro.length;
+  const macroWebinarsPresente = eventosMacro.filter(e => e.presenca === 'presente').length;
+  const macroInd1 = macroTotalWebinars > 0
+    ? Math.round((macroWebinarsPresente / macroTotalWebinars) * 100 * 100) / 100
+    : 0;
+  
+  // IND 4 (Macrociclo): Tarefas - total com tarefa vs entregues no período do macrociclo
+  const macroAtividadesComTarefa = mentoriasMacro.filter(m => m.atividadeEntregue !== 'sem_tarefa');
+  const macroTotalTarefas = macroAtividadesComTarefa.length;
+  const macroTarefasEntregues = macroAtividadesComTarefa.filter(m => m.atividadeEntregue === 'entregue').length;
+  const macroInd4 = macroTotalTarefas > 0
+    ? Math.round((macroTarefasEntregues / macroTotalTarefas) * 100 * 100) / 100
+    : 0;
+  
+  // IND 5 (Macrociclo): Engajamento - média das notas no período do macrociclo
+  const macroNotasEng = mentoriasMacro
+    .filter(m => m.engajamento !== undefined && m.engajamento !== null)
+    .map(m => m.engajamento!);
+  const macroTotalSessoesEng = macroNotasEng.length;
+  const macroSomaEng = macroNotasEng.reduce((a, b) => a + b, 0);
+  // Converter de 0-10 para 0-100
+  let macroInd5Base = macroTotalSessoesEng > 0
+    ? (macroSomaEng / macroTotalSessoesEng) * 10
+    : 0;
+  // Aplicar bônus de +10% se algum case foi entregue
+  const anyCaseEntregue = casesData.some(c => c.entregue);
+  const macroInd5 = anyCaseEntregue && macroInd5Base > 0
+    ? Math.round(Math.min(100, macroInd5Base * 1.10) * 100) / 100
+    : Math.round(macroInd5Base * 100) / 100;
+  
+  // Calcular indicadores por ciclo (para Ind.2 e Ind.3 que dependem de competências)
   const todosCiclos: IndicadoresCiclo[] = [];
   const ciclosFinalizados: IndicadoresCiclo[] = [];
   const ciclosEmAndamento: IndicadoresCiclo[] = [];
@@ -455,22 +522,60 @@ export function calcularIndicadoresAluno(
     }
   }
   
-  // Consolidar: média apenas dos ciclos FINALIZADOS que têm competências obrigatórias
-  // Ciclos com apenas opcionais (competenciaIds vazio) não entram no cálculo
-  // Ciclos em andamento não entram no consolidado (label = "Todos os ciclos finalizados")
+  // ============================================================
+  // CONSOLIDAÇÃO HÍBRIDA:
+  // - Ind.1 (Webinars), Ind.4 (Tarefas), Ind.5 (Engajamento): calculados pelo MACROCICLO
+  //   (já calculados acima como macroInd1, macroInd4, macroInd5)
+  // - Ind.2 (Avaliações), Ind.3 (Competências): consolidados pelos MICROCICLOS
+  //   (dependem das competências específicas de cada ciclo)
+  // ============================================================
+  
+  // Ciclos finalizados COM competências obrigatórias (para Ind.2 e Ind.3)
   const ciclosFinalizadosComObrig = ciclosFinalizados
     .filter(c => {
       const cicloOriginal = ciclos.find(co => co.nomeCiclo === c.nomeCiclo);
       return cicloOriginal ? cicloOriginal.competenciaIds.length > 0 : true;
     });
-  // Se não há finalizados com obrigatórias, usar todos (finalizados + em andamento) como fallback
-  const ciclosParaConsolidar = ciclosFinalizadosComObrig.length > 0
+  
+  // Consolidar Ind.2 e Ind.3 pelos microciclos (apenas os com competências obrigatórias)
+  const ciclosParaInd2Ind3 = ciclosFinalizadosComObrig.length > 0
     ? ciclosFinalizadosComObrig
     : [...ciclosFinalizados, ...ciclosEmAndamento].filter(c => {
         const cicloOriginal = ciclos.find(co => co.nomeCiclo === c.nomeCiclo);
         return cicloOriginal ? cicloOriginal.competenciaIds.length > 0 : true;
       });
-  const consolidado = consolidarCiclos(ciclosParaConsolidar, trilha || 'Geral');
+  
+  const consolidadoMicro = consolidarCiclos(ciclosParaInd2Ind3, trilha || 'Geral');
+  
+  // Montar consolidado final: Ind.1/4/5 do macrociclo, Ind.2/3 dos microciclos
+  const consolidadoInd2 = consolidadoMicro.ind2_avaliacoes;
+  const consolidadoInd3 = consolidadoMicro.ind3_competencias;
+  const ind7 = Math.round(((macroInd1 + consolidadoInd2 + consolidadoInd3 + macroInd4 + macroInd5) / 5) * 100) / 100;
+  
+  const consolidado: IndicadoresCiclo = {
+    cicloId: 0,
+    nomeCiclo: 'Consolidado',
+    trilhaNome: trilha || 'Geral',
+    status: ciclosFinalizados.length > 0 && ciclosEmAndamento.length === 0 ? 'finalizado' : 'em_andamento',
+    dataInicio: macrociclo?.macroInicio || ciclosFinalizados[0]?.dataInicio || ciclosEmAndamento[0]?.dataInicio || '',
+    dataFim: macrociclo?.macroTermino || ciclosEmAndamento[ciclosEmAndamento.length - 1]?.dataFim || ciclosFinalizados[ciclosFinalizados.length - 1]?.dataFim || '',
+    ind1_webinars: macroInd1,
+    ind2_avaliacoes: consolidadoInd2,
+    ind3_competencias: consolidadoInd3,
+    ind4_tarefas: macroInd4,
+    ind5_engajamento: macroInd5,
+    ind6_aplicabilidade: consolidadoMicro.ind6_aplicabilidade,
+    ind7_engajamentoFinal: ind7,
+    detalhes: {
+      webinars: { total: macroTotalWebinars, presentes: macroWebinarsPresente },
+      avaliacoes: consolidadoMicro.detalhes.avaliacoes,
+      competencias: consolidadoMicro.detalhes.competencias,
+      tarefas: { total: macroTotalTarefas, entregues: macroTarefasEntregues },
+      engajamento: { sessoes: macroTotalSessoesEng, somaNotas: macroSomaEng },
+      case: consolidadoMicro.detalhes.case,
+    },
+    classificacao: classificarPercentual(ind7),
+  };
   
   // Alertas de case pendente (deduplicado por trilhaNome)
   const alertaCasePendente: { ativo: boolean; trilhaId: number | null; trilhaNome: string; diasRestantes: number; dataLimite: string }[] = [];
@@ -775,7 +880,8 @@ export function calcularIndicadoresTodosAlunos(
   ciclosPorAluno: Map<string, CicloDataV2[]>,
   compIdToCodigoMap: Map<number, string>,
   casesData: CaseSucessoData[],
-  hoje?: Date
+  hoje?: Date,
+  macrocicloPorAluno?: Map<string, MacrocicloData>
 ): StudentIndicatorsV2[] {
   // Coletar todos os IDs únicos
   const idsUsuarios = new Set<string>();
@@ -788,9 +894,10 @@ export function calcularIndicadoresTodosAlunos(
   for (const idUsuario of Array.from(idsUsuarios)) {
     const ciclosAluno = ciclosPorAluno.get(idUsuario) || [];
     const casesAluno = casesData.filter(c => c.trilhaNome !== null); // Filter valid cases
+    const macrocicloAluno = macrocicloPorAluno?.get(idUsuario);
     
     const indicadores = calcularIndicadoresAluno(
-      idUsuario, mentorias, eventos, performance, ciclosAluno, compIdToCodigoMap, casesAluno, hoje
+      idUsuario, mentorias, eventos, performance, ciclosAluno, compIdToCodigoMap, casesAluno, hoje, macrocicloAluno
     );
     
     resultados.push(indicadores);

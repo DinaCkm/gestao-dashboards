@@ -1,0 +1,91 @@
+{
+  "query": "SELECT ap.id as pdiId, ap.trilhaId, ap.status, ac.id as compId, ac.competenciaId, ac.microInicio, ac.microTermino\nFROM assessment_pdi ap\nLEFT JOIN assessment_competencias ac ON ac.assessmentPdiId = ap.id\nWHERE ap.alunoId = 30070\nORDER BY ac.microInicio;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id as pdiId, ap.trilhaId, ap.status, ac.id as compId, ac.competenciaId, ac.microInicio, ac.microTermino\nFROM assessment_pdi ap\nLEFT JOIN assessment_competencias ac ON ac.assessmentPdiId = ap.id\nWHERE ap.alunoId = 30070\nORDER BY ac.microInicio;",
+  "rows": [
+    {
+      "pdiId": "60407",
+      "trilhaId": "4",
+      "status": "ativo",
+      "compId": "62580",
+      "competenciaId": "30022",
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-05-25"
+    },
+    {
+      "pdiId": "60407",
+      "trilhaId": "4",
+      "status": "ativo",
+      "compId": "62574",
+      "competenciaId": "30013",
+      "microInicio": "2025-05-20",
+      "microTermino": "2025-06-24"
+    },
+    {
+      "pdiId": "60407",
+      "trilhaId": "4",
+      "status": "ativo",
+      "compId": "62581",
+      "competenciaId": "30028",
+      "microInicio": "2025-06-29",
+      "microTermino": "2025-08-03"
+    },
+    {
+      "pdiId": "60407",
+      "trilhaId": "4",
+      "status": "ativo",
+      "compId": "62579",
+      "competenciaId": "30021",
+      "microInicio": "2025-08-08",
+      "microTermino": "2025-09-12"
+    },
+    {
+      "pdiId": "60407",
+      "trilhaId": "4",
+      "status": "ativo",
+      "compId": "62576",
+      "competenciaId": "30016",
+      "microInicio": "2025-09-17",
+      "microTermino": "2025-10-22"
+    },
+    {
+      "pdiId": "60407",
+      "trilhaId": "4",
+      "status": "ativo",
+      "compId": "62575",
+      "competenciaId": "30015",
+      "microInicio": "2025-10-27",
+      "microTermino": "2025-12-01"
+    },
+    {
+      "pdiId": "60407",
+      "trilhaId": "4",
+      "status": "ativo",
+      "compId": "62573",
+      "competenciaId": "30034",
+      "microInicio": "2026-01-12",
+      "microTermino": "2026-02-16"
+    },
+    {
+      "pdiId": "60407",
+      "trilhaId": "4",
+      "status": "ativo",
+      "compId": "62577",
+      "competenciaId": "30035",
+      "microInicio": "2026-01-30",
+      "microTermino": "2026-03-06"
+    },
+    {
+      "pdiId": "60407",
+      "trilhaId": "4",
+      "status": "ativo",
+      "compId": "62578",
+      "competenciaId": "30036",
+      "microInicio": "2026-02-24",
+      "microTermino": "2026-03-31"
+    }
+  ],
+  "messages": [],
+  "stdout": "pdiId\ttrilhaId\tstatus\tcompId\tcompetenciaId\tmicroInicio\tmicroTermino\n60407\t4\tativo\t62580\t30022\t2025-04-20\t2025-05-25\n60407\t4\tativo\t62574\t30013\t2025-05-20\t2025-06-24\n60407\t4\tativo\t62581\t30028\t2025-06-29\t2025-08-03\n60407\t4\tativo\t62579\t30021\t2025-08-08\t2025-09-12\n60407\t4\tativo\t62576\t30016\t2025-09-17\t2025-10-22\n60407\t4\tativo\t62575\t30015\t2025-10-27\t2025-12-01\n60407\t4\tativo\t62573\t30034\t2026-01-12\t2026-02-16\n60407\t4\tativo\t62577\t30035\t2026-01-30\t2026-03-06\n60407\t4\tativo\t62578\t30036\t2026-02-24\t2026-03-31\n",
+  "stderr": "",
+  "execution_time_ms": 377
+}

@@ -1,0 +1,19 @@
+{
+  "query": "SELECT a.id, a.name, a.contratoInicio, a.contratoFim FROM alunos a WHERE a.id = 30070;\nSELECT ca.* FROM contratos_aluno ca WHERE ca.alunoId = 30070;\nSELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas, ap.status FROM assessment_pdi ap WHERE ap.alunoId = 30070;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.contratoInicio, a.contratoFim FROM alunos a WHERE a.id = 30070;\nSELECT ca.* FROM contratos_aluno ca WHERE ca.alunoId = 30070;\nSELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas, ap.status FROM assessment_pdi ap WHERE ap.alunoId = 30070;",
+  "rows": [
+    {
+      "id": "30070",
+      "name": "Millena Pereira Lima Rodrigues",
+      "contratoInicio": "NULL",
+      "contratoFim": "NULL"
+    }
+  ],
+  "messages": [
+    "id\tmacroInicio\tmacroTermino\ttotalSessoesPrevistas\tstatus",
+    "60407\t2025-04-20\t2026-03-31\tNULL\tativo"
+  ],
+  "stdout": "id\tname\tcontratoInicio\tcontratoFim\n30070\tMillena Pereira Lima Rodrigues\tNULL\tNULL\nid\tmacroInicio\tmacroTermino\ttotalSessoesPrevistas\tstatus\n60407\t2025-04-20\t2026-03-31\tNULL\tativo\n",
+  "stderr": "",
+  "execution_time_ms": 502
+}

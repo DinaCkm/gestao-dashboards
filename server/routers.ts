@@ -8,7 +8,7 @@ import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
 import * as XLSX from 'xlsx';
 import { calcularIndicadoresAlunoFiltrado, calcularPerformanceFiltrada, CompetenciaObrigatoria, CicloExecucaoData } from './indicatorsCalculator';
-import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno as calcularIndicadoresAlunoV2, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicatorsV2, CicloDataV2, CaseSucessoData } from './indicatorsCalculatorV2';
+import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno as calcularIndicadoresAlunoV2, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicatorsV2, CicloDataV2, CaseSucessoData, MacrocicloData } from './indicatorsCalculatorV2';
 import { notifyOwner } from "./_core/notification";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
@@ -1141,7 +1141,8 @@ export const appRouter = router({
             const casesMapReport = await db.getCasesForCalculator();
             const casesDataReport: CaseSucessoData[] = [];
             for (const [, cases] of Array.from(casesMapReport.entries())) { casesDataReport.push(...cases); }
-            const todosIndicadores = calcularIndicadoresTodosAlunos(mentoriasV2, eventosV2, performanceV2, ciclosPorAlunoReport, compIdToCodigoMapReport, casesDataReport);
+            const macrocicloPorAlunoReport = await db.getMacrocicloPorAluno();
+            const todosIndicadores = calcularIndicadoresTodosAlunos(mentoriasV2, eventosV2, performanceV2, ciclosPorAlunoReport, compIdToCodigoMapReport, casesDataReport, undefined, macrocicloPorAlunoReport);
             const indicadoresMap = new Map(todosIndicadores.map(i => [i.idUsuario, i]));
             
             // Sheet 0: Resumo do Mentor (apenas para relatório gerencial de mentor)
@@ -1759,8 +1760,11 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       const casesData: CaseSucessoData[] = [];
       for (const [, cases] of Array.from(casesMap.entries())) { casesData.push(...cases); }
       
+      // Buscar macrociclos
+      const macrocicloPorAluno = await db.getMacrocicloPorAluno();
+      
       // Calcular indicadores (V2)
-      const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData);
+      const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno);
       const dashboard = gerarDashboardGeral(indicadores);
       
       return dashboard;
@@ -1883,7 +1887,8 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         const casesMapEmp = await db.getCasesForCalculator();
         const casesDataEmp: CaseSucessoData[] = [];
         for (const [, cases] of Array.from(casesMapEmp.entries())) { casesDataEmp.push(...cases); }
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataEmp);
+        const macrocicloPorAlunoEmp = await db.getMacrocicloPorAluno();
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataEmp, undefined, macrocicloPorAlunoEmp);
         const dashboard = gerarDashboardEmpresa(indicadores, input.empresa);
         
         // Enriquecer alunos com turma, trilha, ciclo, competências
@@ -2086,7 +2091,8 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         const casesMapTurma = await db.getCasesForCalculator();
         const casesDataTurma: CaseSucessoData[] = [];
         for (const [, cases] of Array.from(casesMapTurma.entries())) { casesDataTurma.push(...cases); }
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataTurma);
+        const macrocicloPorAlunoTurma = await db.getMacrocicloPorAluno();
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataTurma, undefined, macrocicloPorAlunoTurma);
         const agregado = agregarIndicadores(indicadores, 'turma', String(input.turmaId));
         const alunos = indicadores.filter(i => i.turma === String(input.turmaId));
         
@@ -2211,7 +2217,8 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         const casesMapInd = await db.getCasesForCalculator();
         const casesDataInd: CaseSucessoData[] = [];
         for (const [, cases] of Array.from(casesMapInd.entries())) { casesDataInd.push(...cases); }
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataInd);
+        const macrocicloPorAlunoInd = await db.getMacrocicloPorAluno();
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataInd, undefined, macrocicloPorAlunoInd);
         const alunoIndicadores = indicadores.find(i => i.idUsuario === input.alunoId);
         
         if (!alunoIndicadores) {
@@ -2387,8 +2394,11 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           trilhaNome: c.trilhaNome,
           entregue: c.entregue === 1,
         }));
+        // Buscar macrociclo do aluno
+        const macrocicloPorAlunoMap = await db.getMacrocicloPorAluno();
+        const macrocicloAluno = macrocicloPorAlunoMap.get(idUsuario);
         const indicadoresV2 = calcularIndicadoresAlunoV2(
-          idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno
+          idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAluno
         );
         
         return {
@@ -2594,8 +2604,11 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         trilhaNome: c.trilhaNome,
         entregue: c.entregue === 1,
       }));
+      // Buscar macrociclo do aluno
+      const macrocicloPorAlunoPortal = await db.getMacrocicloPorAluno();
+      const macrocicloAlunoPortal = macrocicloPorAlunoPortal.get(idUsuario);
       const indicadoresV2 = calcularIndicadoresAlunoV2(
-        idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno
+        idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAlunoPortal
       );
 
       // Buscar sessões individuais do aluno para histórico
@@ -2640,7 +2653,8 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       const casesMapAll = await db.getCasesForCalculator();
       const casesDataAll: CaseSucessoData[] = [];
       for (const [, cases] of Array.from(casesMapAll.entries())) { casesDataAll.push(...cases); }
-      const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll);
+      const macrocicloPorAlunoRanking = await db.getMacrocicloPorAluno();
+      const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll, undefined, macrocicloPorAlunoRanking);
 
       let ranking = { posicao: 0, totalAlunos: 0 };
       if (aluno.programId) {

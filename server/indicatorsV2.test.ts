@@ -132,20 +132,28 @@ describe('calcularIndicadoresAluno', () => {
       expect(result.consolidado.ind1_webinars).toBe(0);
     });
 
-    it('deve filtrar webinars por data do ciclo (não incluir eventos fora do período)', () => {
-      // Ciclo: 2025-01-01 a 2025-06-30
+    it('deve filtrar webinars por data do macrociclo quando fornecido', () => {
+      // Sem macrociclo: Ind.1 usa TODOS os eventos do aluno (não filtra por ciclo)
       const eventos = [
-        mkEvento({ presenca: 'presente', dataEvento: new Date('2025-03-15') }), // dentro do ciclo
-        mkEvento({ presenca: 'presente', dataEvento: new Date('2025-05-20') }), // dentro do ciclo
-        mkEvento({ presenca: 'presente', dataEvento: new Date('2024-11-01') }), // FORA do ciclo (antes)
-        mkEvento({ presenca: 'ausente', dataEvento: new Date('2025-08-15') }),  // FORA do ciclo (depois)
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2025-03-15') }),
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2025-05-20') }),
+        mkEvento({ presenca: 'presente', dataEvento: new Date('2024-11-01') }),
+        mkEvento({ presenca: 'ausente', dataEvento: new Date('2025-08-15') }),
       ];
       const ciclos = [mkCiclo({ dataInicio: '2025-01-01', dataFim: '2025-06-30' })];
-      const result = calcularIndicadoresAluno('aluno1', [], eventos, [], ciclos, emptyMap, []);
-      // Apenas 2 eventos dentro do ciclo, ambos presentes → 100%
-      expect(result.consolidado.ind1_webinars).toBe(100);
-      expect(result.consolidado.detalhes.webinars.total).toBe(2);
-      expect(result.consolidado.detalhes.webinars.presentes).toBe(2);
+      
+      // Sem macrociclo: usa todos os 4 eventos (3 presentes, 1 ausente) = 75%
+      const resultSemMacro = calcularIndicadoresAluno('aluno1', [], eventos, [], ciclos, emptyMap, []);
+      expect(resultSemMacro.consolidado.ind1_webinars).toBe(75);
+      expect(resultSemMacro.consolidado.detalhes.webinars.total).toBe(4);
+      expect(resultSemMacro.consolidado.detalhes.webinars.presentes).toBe(3);
+      
+      // Com macrociclo: filtra apenas eventos dentro do período
+      const macrociclo = { macroInicio: '2025-01-01', macroTermino: '2025-06-30' };
+      const resultComMacro = calcularIndicadoresAluno('aluno1', [], eventos, [], ciclos, emptyMap, [], undefined, macrociclo);
+      expect(resultComMacro.consolidado.ind1_webinars).toBe(100);
+      expect(resultComMacro.consolidado.detalhes.webinars.total).toBe(2);
+      expect(resultComMacro.consolidado.detalhes.webinars.presentes).toBe(2);
     });
 
     it('deve contar corretamente webinars em ciclos diferentes', () => {

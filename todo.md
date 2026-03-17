@@ -2378,3 +2378,8 @@
 
 ## Limpeza: Remover Atividades Extras de Teste (17/03/2026)
 - [x] Identificar e remover todas as atividades extras de teste do banco de dados (682 atividades + 78 inscrições + 147 vínculos turma excluídos)
+
+## Bug: Indicador 4 (Tarefas) mostrando 0% mesmo com tarefas entregues (17/03/2026)
+- [x] Investigar cálculo do Ind. 4 Tarefas no dashboard do aluno
+- [x] Corrigir para que reflita corretamente tarefas demandadas vs entregues
+- [x] Refatorar Ind. 1 (Webinars), Ind. 4 (Tarefas) e Ind. 5 (Engajamento) para calcular com base no macrociclo (assessment_pdi.macroInicio/macroTermino) em vez de por microciclo

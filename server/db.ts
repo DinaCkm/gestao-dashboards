@@ -5596,6 +5596,53 @@ export async function getAllCiclosForCalculatorV2(): Promise<Map<string, { id: n
 }
 
 
+/**
+ * Get macrociclo (período da jornada) data for all students
+ * Returns a map: idUsuario -> { macroInicio, macroTermino }
+ * Source: assessment_pdi.macroInicio / macroTermino
+ */
+export async function getMacrocicloPorAluno(): Promise<Map<string, { macroInicio: string; macroTermino: string }>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  
+  const pdis = await db.select({
+    alunoId: assessmentPdi.alunoId,
+    macroInicio: assessmentPdi.macroInicio,
+    macroTermino: assessmentPdi.macroTermino,
+  }).from(assessmentPdi)
+    .where(and(
+      isNotNull(assessmentPdi.macroInicio),
+      isNotNull(assessmentPdi.macroTermino),
+    ));
+  
+  const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
+  const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId || String(a.id)]));
+  
+  const result = new Map<string, { macroInicio: string; macroTermino: string }>();
+  
+  for (const pdi of pdis) {
+    const alunoKey = alunoMap.get(pdi.alunoId) || String(pdi.alunoId);
+    // If student has multiple PDIs, use the one with the widest range
+    const existing = result.get(alunoKey);
+    // macroInicio/macroTermino come as Date from drizzle date() type
+    const macroInicioStr = pdi.macroInicio instanceof Date 
+      ? pdi.macroInicio.toISOString().split('T')[0] 
+      : String(pdi.macroInicio);
+    const macroTerminoStr = pdi.macroTermino instanceof Date 
+      ? pdi.macroTermino.toISOString().split('T')[0] 
+      : String(pdi.macroTermino);
+    if (!existing) {
+      result.set(alunoKey, { macroInicio: macroInicioStr, macroTermino: macroTerminoStr });
+    } else {
+      // Expand range to cover all PDIs
+      if (macroInicioStr < existing.macroInicio) existing.macroInicio = macroInicioStr;
+      if (macroTerminoStr > existing.macroTermino) existing.macroTermino = macroTerminoStr;
+    }
+  }
+  
+  return result;
+}
+
 // ============ PRACTICAL ACTIVITY COMMENTS ============
 
 export async function getCommentsBySessionId(sessionId: number): Promise<PracticalActivityComment[]> {
