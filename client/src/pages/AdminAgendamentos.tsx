@@ -45,7 +45,7 @@ export default function AdminAgendamentos() {
   }, [statusFilter, typeFilter, mentorFilter, dateFrom, dateTo]);
 
   const { data: appointments, isLoading, isError, refetch } = trpc.admin.allAppointments.useQuery(filters);
-  const { data: mentores } = trpc.admin.listMentores.useQuery();
+  const { data: mentores } = trpc.admin.listMentoresAtivos.useQuery();
 
   // Filtro local por busca de texto (nome do aluno ou mentor)
   const filteredAppointments = useMemo(() => {

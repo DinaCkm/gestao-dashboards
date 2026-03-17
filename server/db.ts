@@ -1094,6 +1094,13 @@ export async function getConsultors(): Promise<Consultor[]> {
   return await db.select().from(consultors).orderBy(consultors.name);
 }
 
+// Retorna apenas consultores ativos (para dropdowns de seleção)
+export async function getActiveConsultors(): Promise<Consultor[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(consultors).where(eq(consultors.isActive, 1)).orderBy(consultors.name);
+}
+
 // Retorna apenas mentores ativos (para seleção no Onboarding do aluno)
 export async function getActiveMentorsForOnboarding(): Promise<Consultor[]> {
   const db = await getDb();
@@ -1560,12 +1567,23 @@ export async function toggleProgramStatus(id: number) {
 }
 
 // Mentores
+// Retorna todos os mentores (ativos e inativos) - para listagem administrativa
 export async function getAllMentores() {
   const db = await getDb();
   if (!db) return [];
   return await db.select()
     .from(consultors)
     .where(eq(consultors.role, 'mentor'))
+    .orderBy(consultors.name);
+}
+
+// Retorna apenas mentores ativos - para dropdowns de seleção
+export async function getActiveMentores() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select()
+    .from(consultors)
+    .where(and(eq(consultors.role, 'mentor'), eq(consultors.isActive, 1)))
     .orderBy(consultors.name);
 }
 

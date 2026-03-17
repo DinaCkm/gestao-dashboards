@@ -2306,3 +2306,12 @@
 - [x] Ocultar todos os campos de comentários do mentor na visualização do aluno, exceto o campo "feedback para o aluno"
 - [x] Adicionar descritivo robusto da nota de evolução como feedback automático no histórico de sessões do aluno
 - [x] Bug: Dashboard Mentores mostra "14 mentores cadastrados" mas exibe apenas 6 cards (corrigido: filtrar apenas role=mentor, remover .slice(0,6))
+- [ ] Filtrar mentores inativos nos dropdowns de seleção em todo o sistema (getConsultors sem filtro)
+- [ ] Limpar 4 registros fantasma de mentores sem nome/email/CPF nos Cadastros
+- [ ] Adicionar coluna Status visível na tabela de Cadastros de Mentores
+
+## Importação de Sessões Faltantes (17/03/2026)
+- [x] Analisar planilha MENTORIASFALTANTES.xlsx (89 registros, 86 alunos, 4 consultoras, 8 turmas)
+- [x] Criar script de importação com verificação de duplicatas
+- [x] Importar 69 sessões novas (18 duplicatas ignoradas, 2 headers ignorados)
+- [x] Validar dados importados: 33/33 alunos Masters com sessão 16, total 1306 sessões no banco

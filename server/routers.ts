@@ -3639,8 +3639,13 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       }),
     
     // Mentores
+    // Lista TODOS os mentores (ativos e inativos) - para tabela de Cadastros
     listMentores: adminProcedure.query(async () => {
       return await db.getAllMentores();
+    }),
+    // Lista apenas mentores ATIVOS - para dropdowns de seleção/filtro
+    listMentoresAtivos: adminProcedure.query(async () => {
+      return await db.getActiveMentores();
     }),
     
      createMentor: adminProcedure
