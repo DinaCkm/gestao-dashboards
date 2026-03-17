@@ -1,0 +1,18 @@
+{
+  "query": "SELECT c.id, c.name, c.email, c.role, c.managedProgramId, c.isActive FROM consultors c WHERE c.name LIKE '%Ana Carolina%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT c.id, c.name, c.email, c.role, c.managedProgramId, c.isActive FROM consultors c WHERE c.name LIKE '%Ana Carolina%';",
+  "rows": [
+    {
+      "id": "28",
+      "name": "Ana Carolina Cardoso Viana Rocha",
+      "email": "anaccvrocha@gmail.com",
+      "role": "mentor",
+      "managedProgramId": "NULL",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tmanagedProgramId\tisActive\n28\tAna Carolina Cardoso Viana Rocha\tanaccvrocha@gmail.com\tmentor\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 369
+}

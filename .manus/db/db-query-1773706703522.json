@@ -1,0 +1,24 @@
+{
+  "query": "SELECT name, email, role, consultorId, programId FROM users WHERE name LIKE '%Carolina%' AND role = 'manager';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT name, email, role, consultorId, programId FROM users WHERE name LIKE '%Carolina%' AND role = 'manager';",
+  "rows": [
+    {
+      "name": "Carolina Borges Moreira",
+      "email": "carolina.moreira@embrapii.org.br",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "18"
+    },
+    {
+      "name": "Ana Carolina Cardoso Viana Rocha",
+      "email": "anaccvrocha@gmail.com",
+      "role": "manager",
+      "consultorId": "28",
+      "programId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\temail\trole\tconsultorId\tprogramId\nCarolina Borges Moreira\tcarolina.moreira@embrapii.org.br\tmanager\tNULL\t18\nAna Carolina Cardoso Viana Rocha\tanaccvrocha@gmail.com\tmanager\t28\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 368
+}

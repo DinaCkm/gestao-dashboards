@@ -1,0 +1,76 @@
+{
+  "query": "SELECT c.id as consultor_id, c.name, c.email, c.role as consultor_role, c.managedProgramId, u.id as user_id, u.consultorId, u.programId, u.role as user_role FROM consultors c LEFT JOIN users u ON u.email = c.email WHERE c.role = 'gerente';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT c.id as consultor_id, c.name, c.email, c.role as consultor_role, c.managedProgramId, u.id as user_id, u.consultorId, u.programId, u.role as user_role FROM consultors c LEFT JOIN users u ON u.email = c.email WHERE c.role = 'gerente';",
+  "rows": [
+    {
+      "consultor_id": "30001",
+      "name": "Joseane",
+      "email": "joseane@to.sebrae.com.br",
+      "consultor_role": "gerente",
+      "managedProgramId": "17",
+      "user_id": "660170",
+      "consultorId": "NULL",
+      "programId": "17",
+      "user_role": "manager"
+    },
+    {
+      "consultor_id": "60002",
+      "name": "Emanoel",
+      "email": "emanoel.querette@embrapii.org.br",
+      "consultor_role": "gerente",
+      "managedProgramId": "18",
+      "user_id": "3630110",
+      "consultorId": "NULL",
+      "programId": "18",
+      "user_role": "manager"
+    },
+    {
+      "consultor_id": "60001",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "consultor_role": "gerente",
+      "managedProgramId": "18",
+      "user_id": "3630110",
+      "consultorId": "NULL",
+      "programId": "18",
+      "user_role": "manager"
+    },
+    {
+      "consultor_id": "60002",
+      "name": "Emanoel",
+      "email": "emanoel.querette@embrapii.org.br",
+      "consultor_role": "gerente",
+      "managedProgramId": "18",
+      "user_id": "3630136",
+      "consultorId": "NULL",
+      "programId": "18",
+      "user_role": "manager"
+    },
+    {
+      "consultor_id": "60001",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "consultor_role": "gerente",
+      "managedProgramId": "18",
+      "user_id": "3630136",
+      "consultorId": "NULL",
+      "programId": "18",
+      "user_role": "manager"
+    },
+    {
+      "consultor_id": "90001",
+      "name": "gerente teste",
+      "email": "teste@embrapii.com",
+      "consultor_role": "gerente",
+      "managedProgramId": "18",
+      "user_id": "4290839",
+      "consultorId": "NULL",
+      "programId": "18",
+      "user_role": "manager"
+    }
+  ],
+  "messages": [],
+  "stdout": "consultor_id\tname\temail\tconsultor_role\tmanagedProgramId\tuser_id\tconsultorId\tprogramId\tuser_role\n30001\tJoseane\tjoseane@to.sebrae.com.br\tgerente\t17\t660170\tNULL\t17\tmanager\n60002\tEmanoel\temanoel.querette@embrapii.org.br\tgerente\t18\t3630110\tNULL\t18\tmanager\n60001\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\t18\t3630110\tNULL\t18\tmanager\n60002\tEmanoel\temanoel.querette@embrapii.org.br\tgerente\t18\t3630136\tNULL\t18\tmanager\n60001\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\t18\t3630136\tNULL\t18\tmanager\n90001\tgerente teste\tteste@embrapii.com\tgerente\t18\t4290839\tNULL\t18\tmanager\n",
+  "stderr": "",
+  "execution_time_ms": 381
+}
