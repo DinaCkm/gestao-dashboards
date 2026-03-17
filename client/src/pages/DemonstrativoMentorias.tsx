@@ -840,6 +840,9 @@ function DemonstrativoContent() {
                   </div>
                 </div>
 
+                {/* Histórico de Sessões */}
+                <AlunoSessionsList alunoId={selectedAluno.alunoId} />
+
                 {/* Enviar Alerta Individual */}
                 {user?.role === "admin" && selectedAluno.atrasado30dias && selectedAluno.alunoEmail && (
                   <Button 
@@ -1084,6 +1087,91 @@ function RelatorioFinanceiro() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+
+// ============ HISTÓRICO DE SESSÕES DO ALUNO ============
+
+function AlunoSessionsList({ alunoId }: { alunoId: number }) {
+  const { data: sessions, isLoading } = trpc.mentor.sessionsByAluno.useQuery(
+    { alunoId },
+    { enabled: !!alunoId }
+  );
+
+  // Sort sessions by sessionNumber ascending
+  const sortedSessions = useMemo(() => {
+    if (!sessions) return [];
+    return [...sessions].sort((a, b) => (a.sessionNumber ?? 0) - (b.sessionNumber ?? 0));
+  }, [sessions]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-4">
+        <h4 className="font-semibold text-gray-800 text-sm mb-3 flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-[#1E3A5F]" /> Histórico de Sessões
+        </h4>
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          <span className="ml-2 text-xs text-gray-500">Carregando sessões...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sortedSessions.length) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-4">
+        <h4 className="font-semibold text-gray-800 text-sm mb-3 flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-[#1E3A5F]" /> Histórico de Sessões
+        </h4>
+        <p className="text-xs text-gray-500 text-center py-2">Nenhuma sessão registrada.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-50 rounded-lg p-4">
+      <h4 className="font-semibold text-gray-800 text-sm mb-3 flex items-center gap-2">
+        <Calendar className="h-4 w-4 text-[#1E3A5F]" /> Histórico de Sessões
+        <Badge variant="secondary" className="text-[10px] ml-auto">{sortedSessions.length} sessão(ões)</Badge>
+      </h4>
+      <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
+        {sortedSessions.map((session) => (
+          <div
+            key={session.id}
+            className="flex items-center gap-3 bg-white rounded-md border px-3 py-2 text-xs"
+          >
+            {/* Session number */}
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#1E3A5F] text-white flex items-center justify-center font-bold text-xs">
+              {session.sessionNumber ?? "—"}
+            </div>
+
+            {/* Date */}
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-800">
+                {session.sessionDate ? formatDateSafe(session.sessionDate) : "Sem data"}
+              </p>
+            </div>
+
+            {/* Presence badge */}
+            <div className="flex-shrink-0">
+              {session.presence === "presente" ? (
+                <Badge variant="default" className="text-[10px] px-1.5 py-0.5 bg-emerald-600">
+                  <CheckCircle2 className="h-3 w-3 mr-0.5" />
+                  Presente
+                </Badge>
+              ) : (
+                <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">
+                  <X className="h-3 w-3 mr-0.5" />
+                  Ausente
+                </Badge>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

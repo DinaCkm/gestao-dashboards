@@ -2349,3 +2349,6 @@
 - [x] Permitir editar o mentor/consultora da sessão
 - [x] Atualizar backend (updateSessionDate → updateSession completo)
 - [x] Atualizar frontend com novos campos no dialog (data, nº sessão, mentor, presença, tarefa)
+
+## Lista de Datas de Sessões no Card de Detalhes do Aluno (17/03/2026)
+- [x] Adicionar lista sequencial de sessões com datas no card de Detalhes do Aluno (Demonstrativo)
