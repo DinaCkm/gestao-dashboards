@@ -14,7 +14,8 @@ import {
   User, ClipboardCheck, Users2, CalendarDays, Video as VideoIcon,
   CheckCircle2, Circle, Lock, ChevronRight, ExternalLink, Camera, Briefcase,
   GraduationCap, Clock, Calendar, Target, Award,
-  Play, ArrowRight, Sparkles, Heart, Eye, AlertCircle, CheckCircle
+  Play, ArrowRight, Sparkles, Heart, Eye, AlertCircle, CheckCircle,
+  BookOpen, TrendingUp, BarChart3, Layers, Star, Zap, Trophy, MapPin, Rocket
 } from "lucide-react";
 // Tipos locais (dados agora vêm do banco real)
 type Mentora = {
@@ -1178,17 +1179,47 @@ function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData, readOnly = 
 }
 
 // ============================================================
-// ETAPA 6: MEU PDI — Visualização do Assessment
+// ETAPA 6: MEU PDI — Visualização Completa do Plano de Desenvolvimento
 // ============================================================
 
 function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
+  const { data: metasData } = trpc.metas.minhas.useQuery();
+  const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
+  const { data: webinarsData } = trpc.webinars.upcoming.useQuery({ limit: 5 });
   const marcarPdi = trpc.onboarding.marcarPdiVisualizado.useMutation();
   const utils = trpc.useUtils();
   const [visualizado, setVisualizado] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('visao-geral');
+  const [expandedComp, setExpandedComp] = useState<number | null>(null);
 
   const macroJornada = jornadaData?.macroJornadas?.[0];
   const competencias = macroJornada?.microJornadas || [];
+  const metas = metasData?.metas || [];
+  const aluno = dashData?.found ? dashData.aluno : null;
+
+  // Calcular dados do macrociclo
+  const macroInicio = macroJornada?.macroInicio ? new Date(macroJornada.macroInicio) : null;
+  const macroTermino = macroJornada?.macroTermino ? new Date(macroJornada.macroTermino) : null;
+  const totalMeses = macroInicio && macroTermino 
+    ? Math.max(1, (macroTermino.getFullYear() - macroInicio.getFullYear()) * 12 + (macroTermino.getMonth() - macroInicio.getMonth()))
+    : 0;
+  const mesesDecorridos = macroInicio 
+    ? Math.max(0, (new Date().getFullYear() - macroInicio.getFullYear()) * 12 + (new Date().getMonth() - macroInicio.getMonth()))
+    : 0;
+  const progressoTempo = totalMeses > 0 ? Math.min(100, Math.round((mesesDecorridos / totalMeses) * 100)) : 0;
+
+  // Dados de sessões
+  const sessoesRealizadas = dashData?.found ? (dashData as any).sessoesAluno?.filter((s: any) => s.presence === 'presente' && !s.isAssessment)?.length || 0 : 0;
+  const totalSessoesPrevistas = (macroJornada as any)?.totalSessoesEsperadas || totalMeses;
+
+  // Dados de tarefas
+  const tarefasEntregues = dashData?.found ? (dashData as any).indicadores?.atividadesEntregues || 0 : 0;
+  const totalAtividades = dashData?.found ? (dashData as any).indicadores?.totalAtividades || 0 : 0;
+
+  // Dados de eventos
+  const eventosPresente = dashData?.found ? (dashData as any).indicadores?.eventosPresente || 0 : 0;
+  const totalEventos = dashData?.found ? (dashData as any).indicadores?.totalEventos || 0 : 0;
 
   const handleVisualizar = async () => {
     if (readOnly) return;
@@ -1201,114 +1232,640 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
     }
   };
 
+  const SECTIONS = [
+    { id: 'visao-geral', label: 'Visão Geral', icon: Layers },
+    { id: 'competencias', label: 'Competências', icon: Target },
+    { id: 'jornada', label: 'Etapas', icon: MapPin },
+    { id: 'recursos', label: 'Recursos', icon: BookOpen },
+  ];
+
   return (
     <div className="space-y-6">
       <MentoraGuiaBanner etapa={6} />
 
-      <Card className="border-0 shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-              <Target className="h-6 w-6" />
+      {/* Hero Card */}
+      <Card className="border-0 shadow-xl overflow-hidden">
+        <div className="relative bg-gradient-to-br from-[#0A1E3E] via-[#1a3a6e] to-[#0A1E3E] p-8 text-white overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#F5991F]/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="absolute top-1/2 right-1/4 w-3 h-3 bg-[#F5991F] rounded-full animate-pulse" />
+          <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-3">
+              <Rocket className="h-5 w-5 text-[#F5991F]" />
+              <span className="text-[#F5991F] text-sm font-semibold uppercase tracking-wider">Seu Plano de Desenvolvimento</span>
             </div>
-            <div>
-              <h2 className="text-xl font-bold">Seu Plano de Desenvolvimento Individual</h2>
-              <p className="text-white/80 text-sm">Preparado especialmente para você pela sua mentora</p>
-            </div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">
+              Olá{aluno?.name ? `, ${aluno.name.split(' ')[0]}` : ''}!
+            </h1>
+            <p className="text-white/70 text-lg max-w-2xl">
+              Este é o seu mapa de desenvolvimento pessoal e profissional. Cada etapa foi pensada para te ajudar a 
+              descobrir e potencializar suas melhores habilidades.
+            </p>
+
+            {macroJornada && (
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                  <Trophy className="h-6 w-6 text-[#F5991F] mx-auto mb-1" />
+                  <p className="text-2xl font-bold">{competencias.length}</p>
+                  <p className="text-xs text-white/60">Competências</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                  <Users2 className="h-6 w-6 text-purple-400 mx-auto mb-1" />
+                  <p className="text-2xl font-bold">{totalSessoesPrevistas || '---'}</p>
+                  <p className="text-xs text-white/60">Sessões de Mentoria</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                  <Calendar className="h-6 w-6 text-emerald-400 mx-auto mb-1" />
+                  <p className="text-2xl font-bold">{totalMeses}</p>
+                  <p className="text-xs text-white/60">Meses de Jornada</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                  <Star className="h-6 w-6 text-amber-400 mx-auto mb-1" />
+                  <p className="text-2xl font-bold">{macroJornada.trilhaNome?.split(' ').slice(0, 2).join(' ') || 'PDI'}</p>
+                  <p className="text-xs text-white/60">Sua Trilha</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
+      </Card>
 
-        <CardContent className="p-6">
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 mb-6">
+      {/* Motivational Banner */}
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
+        <div className="flex items-start gap-3">
+          <Sparkles className="h-6 w-6 text-[#F5991F] shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-bold text-[#0A1E3E] mb-1">O autoconhecimento é o seu superpoder!</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              Seu PDI foi criado a partir do seu perfil único. Cada competência é uma oportunidade de crescimento 
+              que vai te levar mais longe na sua carreira. Explore cada seção abaixo e descubra tudo que preparamos para você!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {macroJornada ? (
+        <>
+          {/* Section Navigation */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {SECTIONS.map(section => {
+              const Icon = section.icon;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                    activeSection === section.id
+                      ? 'bg-[#0A1E3E] text-white shadow-lg'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:border-[#F5991F]/50 hover:text-[#0A1E3E]'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {section.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ===== SEÇÃO: VISÃO GERAL ===== */}
+          {activeSection === 'visao-geral' && (
+            <div className="space-y-5">
+              {/* Timeline do Macrociclo */}
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-6">
+                  <h3 className="font-bold text-[#0A1E3E] mb-4 flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                    Linha do Tempo da Sua Jornada
+                  </h3>
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                        Início: {macroInicio?.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                      </span>
+                      <span className="text-xs font-medium text-[#F5991F] bg-amber-50 px-2 py-1 rounded-full">
+                        Término: {macroTermino?.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="h-4 bg-gray-100 rounded-full overflow-hidden relative">
+                      <div 
+                        className="h-full bg-gradient-to-r from-emerald-500 via-blue-500 to-[#F5991F] rounded-full transition-all duration-1000 relative"
+                        style={{ width: `${progressoTempo}%` }}
+                      >
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 bg-white border-3 border-blue-600 rounded-full shadow-md" />
+                      </div>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-xs text-gray-400">{mesesDecorridos} meses decorridos</span>
+                      <span className="text-xs text-gray-400">{Math.max(0, totalMeses - mesesDecorridos)} meses restantes</span>
+                    </div>
+                  </div>
+
+                  {/* Microciclos Timeline */}
+                  {competencias.length > 0 && (
+                    <div className="mt-6">
+                      <p className="text-sm font-medium text-gray-500 mb-3">Microciclos de Desenvolvimento</p>
+                      <div className="space-y-2">
+                        {competencias.map((comp: any, idx: number) => {
+                          const compInicio = comp.microInicio ? new Date(comp.microInicio) : null;
+                          const compTermino = comp.microTermino ? new Date(comp.microTermino) : null;
+                          const now = new Date();
+                          const isActive = compInicio && compTermino && now >= compInicio && now <= compTermino;
+                          const isPast = compTermino && now > compTermino;
+                          const colors = [
+                            'from-purple-500 to-indigo-500', 'from-blue-500 to-cyan-500', 'from-emerald-500 to-teal-500',
+                            'from-amber-500 to-orange-500', 'from-rose-500 to-pink-500', 'from-violet-500 to-purple-500',
+                            'from-sky-500 to-blue-500', 'from-lime-500 to-green-500', 'from-fuchsia-500 to-pink-500'
+                          ];
+                          return (
+                            <div key={comp.id || idx} className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                              isActive ? 'bg-blue-50 border-2 border-blue-300 shadow-sm' : isPast ? 'bg-gray-50 border border-gray-200' : 'bg-white border border-gray-100'
+                            }`}>
+                              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${colors[idx % colors.length]} flex items-center justify-center shrink-0`}>
+                                {isPast ? <CheckCircle2 className="h-4 w-4 text-white" /> : <span className="text-xs font-bold text-white">{idx + 1}</span>}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-[#0A1E3E] truncate">{comp.competenciaNome}</p>
+                                <p className="text-xs text-gray-400">
+                                  {compInicio?.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} — {compTermino?.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                </p>
+                              </div>
+                              {isActive && <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[10px]">Agora</Badge>}
+                              {isPast && <Badge className="bg-gray-100 text-gray-500 border-gray-200 text-[10px]">Concluído</Badge>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Cards de Progresso */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Card className="border-0 shadow-md bg-gradient-to-br from-purple-50 to-indigo-50">
+                  <CardContent className="p-4 text-center">
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-2">
+                      <Users2 className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-purple-700">{sessoesRealizadas}/{totalSessoesPrevistas}</p>
+                    <p className="text-xs text-purple-500">Mentorias</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-md bg-gradient-to-br from-emerald-50 to-teal-50">
+                  <CardContent className="p-4 text-center">
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-2">
+                      <ClipboardCheck className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-emerald-700">{tarefasEntregues}/{totalAtividades}</p>
+                    <p className="text-xs text-emerald-500">Tarefas Entregues</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-md bg-gradient-to-br from-blue-50 to-cyan-50">
+                  <CardContent className="p-4 text-center">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2">
+                      <VideoIcon className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-blue-700">{eventosPresente}/{totalEventos}</p>
+                    <p className="text-xs text-blue-500">Webinars</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-md bg-gradient-to-br from-amber-50 to-orange-50">
+                  <CardContent className="p-4 text-center">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-2">
+                      <Target className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-amber-700">{metasData?.resumo?.cumpridas || 0}/{metasData?.resumo?.total || 0}</p>
+                    <p className="text-xs text-amber-500">Metas Atingidas</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* ===== SEÇÃO: COMPETÊNCIAS ===== */}
+          {activeSection === 'competencias' && (
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="font-bold text-[#0A1E3E] flex items-center gap-2">
+                    <Target className="h-5 w-5 text-purple-600" />
+                    Suas Competências de Desenvolvimento
+                  </h3>
+                  <div className="flex gap-2">
+                    <Badge className="bg-red-50 text-red-600 border-red-200">{macroJornada.obrigatorias} obrigatórias</Badge>
+                    <Badge className="bg-gray-50 text-gray-500 border-gray-200">{macroJornada.opcionais} opcionais</Badge>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-500 mb-5 leading-relaxed">
+                  Cada competência abaixo representa uma área de crescimento mapeada no seu perfil. 
+                  Clique em uma competência para ver mais detalhes sobre seu progresso e metas.
+                </p>
+
+                <div className="space-y-3">
+                  {competencias.map((comp: any, idx: number) => {
+                    const isExpanded = expandedComp === idx;
+                    const nivel = comp.nivelAtual !== null ? Math.round(comp.nivelAtual) : null;
+                    const meta = comp.metaFinal !== null ? Math.round(comp.metaFinal) : null;
+                    const progressoCurso = comp.progressoPlataforma !== null ? Math.round(comp.progressoPlataforma) : null;
+                    const colors = [
+                      { bg: 'bg-purple-50', border: 'border-purple-200', accent: 'text-purple-600', bar: 'bg-purple-500' },
+                      { bg: 'bg-blue-50', border: 'border-blue-200', accent: 'text-blue-600', bar: 'bg-blue-500' },
+                      { bg: 'bg-emerald-50', border: 'border-emerald-200', accent: 'text-emerald-600', bar: 'bg-emerald-500' },
+                      { bg: 'bg-amber-50', border: 'border-amber-200', accent: 'text-amber-600', bar: 'bg-amber-500' },
+                      { bg: 'bg-rose-50', border: 'border-rose-200', accent: 'text-rose-600', bar: 'bg-rose-500' },
+                      { bg: 'bg-violet-50', border: 'border-violet-200', accent: 'text-violet-600', bar: 'bg-violet-500' },
+                      { bg: 'bg-sky-50', border: 'border-sky-200', accent: 'text-sky-600', bar: 'bg-sky-500' },
+                      { bg: 'bg-lime-50', border: 'border-lime-200', accent: 'text-lime-600', bar: 'bg-lime-500' },
+                      { bg: 'bg-fuchsia-50', border: 'border-fuchsia-200', accent: 'text-fuchsia-600', bar: 'bg-fuchsia-500' },
+                    ];
+                    const c = colors[idx % colors.length];
+
+                    return (
+                      <div key={comp.id || idx} className={`border-2 rounded-xl overflow-hidden transition-all duration-300 ${
+                        isExpanded ? `${c.border} shadow-md` : 'border-gray-100 hover:border-gray-200 hover:shadow-sm'
+                      }`}>
+                        <div
+                          className="p-4 cursor-pointer flex items-center gap-4"
+                          onClick={() => setExpandedComp(isExpanded ? null : idx)}
+                        >
+                          <div className={`w-12 h-12 rounded-xl ${c.bg} flex items-center justify-center shrink-0`}>
+                            <span className={`text-lg font-bold ${c.accent}`}>{idx + 1}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-[#0A1E3E]">{comp.competenciaNome}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              {nivel !== null && (
+                                <span className="text-xs text-gray-500">Nível: <span className={`font-semibold ${c.accent}`}>{nivel}%</span></span>
+                              )}
+                              {meta !== null && (
+                                <span className="text-xs text-gray-400">Meta: {meta}%</span>
+                              )}
+                              <Badge variant="outline" className={`text-[10px] ${
+                                comp.peso === 'obrigatoria' ? 'border-red-300 text-red-600' : 'border-gray-300 text-gray-500'
+                              }`}>
+                                {comp.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
+                              </Badge>
+                            </div>
+                          </div>
+                          <ChevronRight className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                        </div>
+
+                        {isExpanded && (
+                          <div className={`px-4 pb-4 space-y-4 border-t ${c.border} pt-4 ${c.bg}`}>
+                            {/* Barra de progresso nível vs meta */}
+                            {(nivel !== null || meta !== null) && (
+                              <div>
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span className="text-gray-500">Nível Atual</span>
+                                  {meta !== null && <span className="text-gray-400">Meta: {meta}%</span>}
+                                </div>
+                                <div className="h-3 bg-white rounded-full overflow-hidden relative">
+                                  {meta !== null && (
+                                    <div className="absolute top-0 h-full border-r-2 border-dashed border-gray-400 z-10" style={{ left: `${meta}%` }} />
+                                  )}
+                                  <div className={`h-full ${c.bar} rounded-full transition-all duration-700`} style={{ width: `${nivel || 0}%` }} />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Progresso do curso na plataforma */}
+                            {progressoCurso !== null && (
+                              <div className="bg-white rounded-lg p-3 border border-gray-100">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <BookOpen className="h-4 w-4 text-blue-500" />
+                                  <span className="text-xs font-medium text-gray-600">Curso na Plataforma</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 text-center">
+                                  <div>
+                                    <p className="text-lg font-bold text-blue-600">{progressoCurso}%</p>
+                                    <p className="text-[10px] text-gray-400">Progresso</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-lg font-bold text-emerald-600">{comp.aulasConcluidas || 0}/{comp.aulasDisponiveis || 0}</p>
+                                    <p className="text-[10px] text-gray-400">Aulas</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-lg font-bold text-amber-600">{comp.avaliacoesRespondidas || 0}/{comp.avaliacoesDisponiveis || 0}</p>
+                                    <p className="text-[10px] text-gray-400">Avaliações</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Período */}
+                            {comp.microInicio && (
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <Calendar className="h-3.5 w-3.5" />
+                                <span>
+                                  Período: {new Date(comp.microInicio).toLocaleDateString('pt-BR')} a {comp.microTermino ? new Date(comp.microTermino).toLocaleDateString('pt-BR') : '---'}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Metas do ciclo */}
+                            {(comp.metaCiclo1 !== null || comp.metaCiclo2 !== null) && (
+                              <div className="flex gap-3">
+                                {comp.metaCiclo1 !== null && (
+                                  <div className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center flex-1">
+                                    <p className="text-xs text-gray-400">Meta Ciclo 1</p>
+                                    <p className={`text-sm font-bold ${c.accent}`}>{Math.round(comp.metaCiclo1)}%</p>
+                                  </div>
+                                )}
+                                {comp.metaCiclo2 !== null && (
+                                  <div className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center flex-1">
+                                    <p className="text-xs text-gray-400">Meta Ciclo 2</p>
+                                    <p className={`text-sm font-bold ${c.accent}`}>{Math.round(comp.metaCiclo2)}%</p>
+                                  </div>
+                                )}
+                                {comp.metaFinal !== null && (
+                                  <div className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center flex-1">
+                                    <p className="text-xs text-gray-400">Meta Final</p>
+                                    <p className={`text-sm font-bold ${c.accent}`}>{Math.round(comp.metaFinal)}%</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ===== SEÇÃO: ETAPAS DA JORNADA ===== */}
+          {activeSection === 'jornada' && (
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <h3 className="font-bold text-[#0A1E3E] mb-5 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-blue-600" />
+                  Etapas da Sua Jornada de Desenvolvimento
+                </h3>
+                <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                  Sua jornada é composta por sessões de mentoria, tarefas práticas, webinars e cursos. 
+                  Cada elemento contribui para o seu crescimento. Veja o que te espera:
+                </p>
+
+                <div className="relative">
+                  {/* Vertical line */}
+                  <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-300 via-blue-300 to-emerald-300" />
+
+                  <div className="space-y-6">
+                    {/* Mentoria */}
+                    <div className="relative flex gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shrink-0 z-10 shadow-lg">
+                        <Users2 className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                        <h4 className="font-bold text-[#0A1E3E] mb-1">Sessões de Mentoria Individual</h4>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Encontros mensais com sua mentora para discutir seu progresso, receber orientações 
+                          personalizadas e definir próximos passos.
+                        </p>
+                        <div className="flex items-center gap-4 text-xs">
+                          <span className="flex items-center gap-1 text-purple-600 font-medium">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> {sessoesRealizadas} realizadas
+                          </span>
+                          <span className="text-gray-400">{totalSessoesPrevistas} previstas no total</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tarefas */}
+                    <div className="relative flex gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0 z-10 shadow-lg">
+                        <ClipboardCheck className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                        <h4 className="font-bold text-[#0A1E3E] mb-1">Tarefas Práticas</h4>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Atividades práticas entre as sessões para aplicar os aprendizados no seu dia a dia. 
+                          Cada tarefa é uma oportunidade de colocar a teoria em prática!
+                        </p>
+                        <div className="flex items-center gap-4 text-xs">
+                          <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> {tarefasEntregues} entregues
+                          </span>
+                          <span className="text-gray-400">{totalAtividades} no total</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Webinars */}
+                    <div className="relative flex gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0 z-10 shadow-lg">
+                        <VideoIcon className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                        <h4 className="font-bold text-[#0A1E3E] mb-1">Webinars Quinzenais</h4>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Encontros online com especialistas sobre temas relevantes para o seu desenvolvimento. 
+                          Uma chance de aprender, trocar experiências e ampliar sua rede!
+                        </p>
+                        <div className="flex items-center gap-4 text-xs">
+                          <span className="flex items-center gap-1 text-blue-600 font-medium">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> {eventosPresente} presenças
+                          </span>
+                          <span className="text-gray-400">{totalEventos} eventos no período</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cursos */}
+                    <div className="relative flex gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0 z-10 shadow-lg">
+                        <BookOpen className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                        <h4 className="font-bold text-[#0A1E3E] mb-1">Cursos Complementares</h4>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Conteúdos online alinhados às suas competências de desenvolvimento. 
+                          Estude no seu ritmo e aprofunde seus conhecimentos!
+                        </p>
+                        <div className="flex items-center gap-4 text-xs">
+                          {competencias.filter((c: any) => c.progressoPlataforma !== null).length > 0 ? (
+                            <span className="flex items-center gap-1 text-amber-600 font-medium">
+                              <BookOpen className="h-3.5 w-3.5" /> {competencias.filter((c: any) => c.competenciaConcluida).length} cursos concluídos
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">Cursos vinculados às suas competências</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Metas */}
+                    <div className="relative flex gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center shrink-0 z-10 shadow-lg">
+                        <Trophy className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                        <h4 className="font-bold text-[#0A1E3E] mb-1">Metas e Desafios</h4>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Objetivos concretos definidos com sua mentora para cada competência. 
+                          Metas claras te ajudam a medir seu progresso e celebrar conquistas!
+                        </p>
+                        <div className="flex items-center gap-4 text-xs">
+                          <span className="flex items-center gap-1 text-rose-600 font-medium">
+                            <Trophy className="h-3.5 w-3.5" /> {metasData?.resumo?.cumpridas || 0} cumpridas
+                          </span>
+                          <span className="text-gray-400">{metasData?.resumo?.total || 0} metas definidas</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ===== SEÇÃO: RECURSOS ===== */}
+          {activeSection === 'recursos' && (
+            <div className="space-y-5">
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-6">
+                  <h3 className="font-bold text-[#0A1E3E] mb-5 flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-amber-600" />
+                    Recursos Disponíveis para Você
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                    Além das mentorias, você tem acesso a diversos recursos que vão potencializar seu desenvolvimento. 
+                    Aproveite cada um deles!
+                  </p>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Webinars Próximos */}
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-5 border border-blue-100">
+                      <div className="flex items-center gap-2 mb-3">
+                        <VideoIcon className="h-5 w-5 text-blue-600" />
+                        <h4 className="font-bold text-[#0A1E3E]">Webinars Quinzenais</h4>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Encontros online com especialistas sobre temas de desenvolvimento profissional e pessoal.
+                      </p>
+                      {webinarsData && (webinarsData as any[]).length > 0 ? (
+                        <div className="space-y-2">
+                          {(webinarsData as any[]).slice(0, 3).map((w: any) => (
+                            <div key={w.id} className="bg-white rounded-lg p-2.5 border border-blue-100 flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-blue-400 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-[#0A1E3E] truncate">{w.title || w.tema}</p>
+                                <p className="text-[10px] text-gray-400">{w.scheduledDate ? new Date(w.scheduledDate).toLocaleDateString('pt-BR') : ''}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-blue-400">Webinars serão agendados em breve!</p>
+                      )}
+                    </div>
+
+                    {/* Cursos */}
+                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
+                      <div className="flex items-center gap-2 mb-3">
+                        <GraduationCap className="h-5 w-5 text-amber-600" />
+                        <h4 className="font-bold text-[#0A1E3E]">Cursos Online</h4>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Conteúdos alinhados às suas competências para estudar no seu ritmo.
+                      </p>
+                      <div className="space-y-2">
+                        {competencias.filter((c: any) => c.totalAulas !== null && c.totalAulas > 0).slice(0, 3).map((comp: any, idx: number) => (
+                          <div key={idx} className="bg-white rounded-lg p-2.5 border border-amber-100">
+                            <p className="text-xs font-medium text-[#0A1E3E] truncate">{comp.competenciaNome}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex-1 h-1.5 bg-amber-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-500 rounded-full" style={{ width: `${comp.progressoPlataforma || 0}%` }} />
+                              </div>
+                              <span className="text-[10px] text-amber-600 font-medium">{Math.round(comp.progressoPlataforma || 0)}%</span>
+                            </div>
+                          </div>
+                        ))}
+                        {competencias.filter((c: any) => c.totalAulas !== null && c.totalAulas > 0).length === 0 && (
+                          <p className="text-xs text-amber-400">Cursos serão vinculados às suas competências!</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Tarefas */}
+                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-100">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ClipboardCheck className="h-5 w-5 text-emerald-600" />
+                        <h4 className="font-bold text-[#0A1E3E]">Tarefas Práticas</h4>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Atividades para aplicar na prática o que você aprende nas mentorias.
+                      </p>
+                      <div className="bg-white rounded-lg p-3 border border-emerald-100 text-center">
+                        <div className="flex justify-around">
+                          <div>
+                            <p className="text-lg font-bold text-emerald-600">{tarefasEntregues}</p>
+                            <p className="text-[10px] text-gray-400">Entregues</p>
+                          </div>
+                          <div className="border-l border-gray-100" />
+                          <div>
+                            <p className="text-lg font-bold text-amber-600">{Math.max(0, totalAtividades - tarefasEntregues)}</p>
+                            <p className="text-[10px] text-gray-400">Pendentes</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Metas */}
+                    <div className="bg-gradient-to-br from-rose-50 to-pink-50 rounded-xl p-5 border border-rose-100">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Trophy className="h-5 w-5 text-rose-600" />
+                        <h4 className="font-bold text-[#0A1E3E]">Metas de Desenvolvimento</h4>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Objetivos concretos para cada competência, definidos com sua mentora.
+                      </p>
+                      <div className="bg-white rounded-lg p-3 border border-rose-100 text-center">
+                        <p className="text-2xl font-bold text-rose-600">{metasData?.resumo?.percentual || 0}%</p>
+                        <p className="text-[10px] text-gray-400">das metas cumpridas</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Motivational Footer */}
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5">
             <div className="flex items-start gap-3">
-              <Sparkles className="h-6 w-6 text-[#F5991F] shrink-0 mt-0.5" />
+              <Heart className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-bold text-[#0A1E3E] mb-1">Você sabia?</h3>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  O autoconhecimento é a base de toda transformação profissional. Seu PDI foi criado a partir do seu perfil único — 
-                  cada competência listada abaixo é uma oportunidade de crescimento que vai te levar mais longe na sua carreira!
+                <h3 className="font-bold text-emerald-800 mb-1">Cada passo conta!</h3>
+                <p className="text-sm text-emerald-700 leading-relaxed">
+                  Não se preocupe em ser perfeita desde o início. O desenvolvimento é uma jornada, não um destino. 
+                  Sua mentora estará ao seu lado em cada etapa, celebrando suas conquistas e te apoiando nos desafios. 
+                  O mais importante é dar o primeiro passo — e você já está dando!
                 </p>
               </div>
             </div>
           </div>
-
-          {macroJornada ? (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm text-gray-500">Período da Jornada</p>
-                  <p className="font-semibold text-[#0A1E3E]">
-                    {macroJornada.macroInicio ? new Date(macroJornada.macroInicio).toLocaleDateString('pt-BR') : '---'}
-                    {' a '}
-                    {macroJornada.macroTermino ? new Date(macroJornada.macroTermino).toLocaleDateString('pt-BR') : '---'}
-                  </p>
-                </div>
-                <Badge className="bg-purple-100 text-purple-700 border-purple-200">
-                  {competencias.length} competências
-                </Badge>
-              </div>
-
-              <div className="space-y-3">
-                {competencias.map((comp: any, idx: number) => (
-                  <div key={comp.competenciaId || idx} className="border rounded-xl p-4 hover:shadow-md transition-shadow bg-white">
-                    <div className="flex items-start gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                        comp.status === 'concluido' ? 'bg-emerald-100 text-emerald-600' :
-                        comp.status === 'em_andamento' ? 'bg-blue-100 text-blue-600' :
-                        'bg-gray-100 text-gray-500'
-                      }`}>
-                        <span className="text-lg font-bold">{idx + 1}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-[#0A1E3E]">{comp.competenciaNome || `Competência ${idx + 1}`}</h4>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                          {comp.microInicio && (
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(comp.microInicio).toLocaleDateString('pt-BR')} a {comp.microTermino ? new Date(comp.microTermino).toLocaleDateString('pt-BR') : '---'}
-                            </span>
-                          )}
-                          <Badge variant="outline" className={`text-[10px] ${
-                            comp.peso === 'obrigatoria' ? 'border-red-300 text-red-600' : 'border-gray-300 text-gray-500'
-                          }`}>
-                            {comp.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        comp.status === 'concluido' ? 'bg-emerald-100 text-emerald-700' :
-                        comp.status === 'em_andamento' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-500'
-                      }`}>
-                        {comp.status === 'concluido' ? 'Concluída' : comp.status === 'em_andamento' ? 'Em andamento' : 'Pendente'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5">
-                <div className="flex items-start gap-3">
-                  <Heart className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-bold text-emerald-800 mb-1">Cada passo conta!</h3>
-                    <p className="text-sm text-emerald-700 leading-relaxed">
-                      Não se preocupe em ser perfeita desde o início. O desenvolvimento é uma jornada, não um destino. 
-                      Sua mentora estará ao seu lado em cada etapa, celebrando suas conquistas e te apoiando nos desafios.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-10">
-              <Target className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">Seu PDI ainda está sendo preparado pela sua mentora.</p>
-              <p className="text-sm text-gray-400 mt-1">Volte em breve para conferir!</p>
+        </>
+      ) : (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-10 text-center">
+            <div className="w-20 h-20 rounded-full bg-purple-50 flex items-center justify-center mx-auto mb-4">
+              <Target className="h-10 w-10 text-purple-300" />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <h3 className="text-xl font-bold text-[#0A1E3E] mb-2">Seu PDI está sendo preparado!</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              Sua mentora está elaborando seu Plano de Desenvolvimento Individual com muito carinho. 
+              Volte em breve para descobrir todas as oportunidades de crescimento que te esperam!
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {!readOnly && macroJornada && (
         <div className="flex justify-center">
@@ -1322,7 +1879,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
             ) : (
               <Eye className="h-5 w-5 mr-2" />
             )}
-            Visualizei meu PDI — Próximo passo!
+            Explorei meu PDI — Vamos ao próximo passo!
             <ArrowRight className="h-5 w-5 ml-2" />
           </Button>
         </div>

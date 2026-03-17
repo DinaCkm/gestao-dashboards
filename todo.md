@@ -2404,3 +2404,14 @@
 - [x] Vídeos configuráveis pelo admin (URLs YouTube/Vimeo) - tabela onboarding_videos
 - [x] Checkbox "Assistido" em cada vídeo para liberar avanço
 - [x] Termo de compromisso com aceite formal (4 checkboxes + assinatura digital)
+
+## Refatoração Etapa 6 - Visualização Completa do PDI (17/03/2026)
+- [x] Seção Visão Geral: macrociclo (período, trilha, status, sessões previstas) + cards de progresso
+- [x] Seção Visão Geral: Timeline visual dos microciclos com competências e cores
+- [x] Seção Competências: Cards expandíveis com nível atual, meta, progresso curso, aulas, avaliações
+- [x] Seção Etapas: Timeline vertical (mentorias, tarefas, webinars, cursos, metas) com contadores
+- [x] Seção Recursos: Grid com webinars próximos, cursos, tarefas e metas
+- [x] Interface visual moderna com navegação por abas (4 seções)
+- [x] Animações leves (pulse, gradientes, transições hover/expand)
+- [x] Hero card personalizado com nome do aluno e decorações visuais
+- [x] Linguagem motivadora focada no autoconhecimento
