@@ -4226,9 +4226,10 @@ export async function getAllStudentsSessionProgress() {
   const allConsultors = await db.select().from(consultors);
   const consultorMap = new Map(allConsultors.map(c => [c.id, c]));
 
-  // Get program names
+  // Get program names (and identify inactive ones)
   const allPrograms = await db.select().from(programs);
   const programMap = new Map(allPrograms.map(p => [p.id, p]));
+  const inactiveProgramIds = new Set(allPrograms.filter(p => p.isActive === 0).map(p => p.id));
 
   // Get turma names
   const allTurmas = await db.select().from(turmas);
@@ -4238,7 +4239,13 @@ export async function getAllStudentsSessionProgress() {
   const allTrilhas = await db.select().from(trilhas);
   const trilhaMap = new Map(allTrilhas.map(t => [t.id, t]));
 
-  return pdis.map(pdi => {
+  // Filter out PDIs from inactive programs
+  const activePdis = pdis.filter(pdi => {
+    if (pdi.programId && inactiveProgramIds.has(pdi.programId)) return false;
+    return true;
+  });
+
+  return activePdis.map(pdi => {
     const macroInicio = new Date(pdi.macroInicio);
     const macroTermino = new Date(pdi.macroTermino);
     const totalMeses = (macroTermino.getFullYear() - macroInicio.getFullYear()) * 12 

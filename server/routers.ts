@@ -6421,10 +6421,15 @@ Responda APENAS em JSON com o formato especificado.`
         const { sendEmail, buildMentoringAlertEmail } = await import('./emailService');
         const { ENV } = await import('./_core/env');
         
-        // Get all active alunos
-        const allAlunos = await db.getAlunos();
+        // Get all active alunos (excluding those from inactive programs)
+        const allAlunosRaw = await db.getAlunos();
         const allConsultores = await db.getConsultors();
         const consultorMap = new Map(allConsultores.map(c => [c.id, c]));
+        
+        // Filter out alunos from inactive programs
+        const activePrograms = await db.getPrograms();
+        const activeProgramIds = new Set(activePrograms.map(p => p.id));
+        const allAlunos = allAlunosRaw.filter(a => !a.programId || activeProgramIds.has(a.programId));
         
         // Get all mentoring sessions
         const dbInstance = await (await import('./db')).getDb();

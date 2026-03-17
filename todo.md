@@ -2289,3 +2289,10 @@
 - [x] Linhas clicáveis com Sheet/dialog de visão completa e detalhada do aluno
 - [x] Paginação na tabela (225+ linhas, 30 por página)
 - [ ] Configurar frequência do cron de alertas e personalizar template do e-mail
+- [ ] Corrigir barra de ferramentas/filtros para layout horizontal (toolbar) na tabela de Sessões
+
+## Excluir empresas inativas dos alertas e visualizações
+- [x] getAllStudentsSessionProgress: filtrar PDIs de empresas inativas
+- [x] cronAlertasMentoria: filtrar alunos de empresas inativas
+- [x] enviarAlertas (routers.ts): filtrar alunos de empresas inativas
+- [x] notificarCicloQuaseFechando: corrigido automaticamente via getAllStudentsSessionProgress
