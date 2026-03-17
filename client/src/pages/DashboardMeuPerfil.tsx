@@ -1503,13 +1503,7 @@ export default function DashboardMeuPerfil() {
                         );
                       })()}
 
-                      {/* Observações do assessment */}
-                      {macroJornada.observacoes && (
-                        <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-100 text-xs text-gray-700">
-                          <p className="font-semibold mb-1 text-gray-800">Observações da Mentora:</p>
-                          <p>{macroJornada.observacoes}</p>
-                        </div>
-                      )}
+                      {/* Observações do assessment - ocultas para o aluno (campo interno da mentora) */}
                     </CardContent>
                   </Card>
                 ))}
@@ -1620,12 +1614,88 @@ export default function DashboardMeuPerfil() {
                           </div>
                           {sessao.notaEvolucao && (
                             <div className="flex items-center gap-1 text-gray-600">
-                              <TrendingUp className="h-3.5 w-3.5" />Evolução: {sessao.notaEvolucao}
+                              <TrendingUp className="h-3.5 w-3.5" />Evolução: {sessao.notaEvolucao}/10
                             </div>
                           )}
                         </div>
-                        {sessao.feedback && (
-                          <div className="mt-2 ml-11 p-2 rounded bg-blue-50 border border-blue-100 text-xs text-gray-700 italic">"{sessao.feedback}"</div>
+                        {/* Descritivo da nota de evolução + feedback da mentora */}
+                        {(sessao.notaEvolucao || sessao.mensagemAluno) && (
+                          <div className="mt-2 ml-11 space-y-1.5">
+                            {sessao.notaEvolucao && (() => {
+                              const nota = sessao.notaEvolucao;
+                              const descritivos: Record<number, { titulo: string; descricao: string; cor: string; bgCor: string; borderCor: string; icone: string }> = {
+                                1: {
+                                  titulo: "Fase Inicial",
+                                  descricao: "O(a) aluno(a) está no início da sua jornada de desenvolvimento. Neste estágio, é natural que haja um período de adaptação ao processo de mentoria. O foco deve ser em compreender as expectativas, estabelecer uma relação de confiança com a mentora e identificar as principais áreas de desenvolvimento.",
+                                  cor: "text-red-700", bgCor: "bg-red-50", borderCor: "border-red-200", icone: "🌱"
+                                },
+                                2: {
+                                  titulo: "Em Adaptação",
+                                  descricao: "O(a) aluno(a) demonstra os primeiros sinais de engajamento com o processo. Está começando a compreender a dinâmica da mentoria e a identificar seus pontos de melhoria. É importante manter a consistência na participação e buscar aplicar as orientações recebidas no dia a dia profissional.",
+                                  cor: "text-red-600", bgCor: "bg-red-50", borderCor: "border-red-200", icone: "🌿"
+                                },
+                                3: {
+                                  titulo: "Desenvolvimento Inicial",
+                                  descricao: "O(a) aluno(a) está construindo uma base sólida para seu crescimento. Já demonstra compreensão dos conceitos trabalhados e começa a aplicar algumas práticas sugeridas pela mentora. O próximo passo é aprofundar o comprometimento com as atividades e buscar maior consistência na execução das ações de desenvolvimento.",
+                                  cor: "text-orange-700", bgCor: "bg-orange-50", borderCor: "border-orange-200", icone: "📊"
+                                },
+                                4: {
+                                  titulo: "Progresso Gradual",
+                                  descricao: "O(a) aluno(a) apresenta evolução perceptível em relação ao início da jornada. Demonstra maior engajamento nas sessões, participa ativamente das discussões e começa a traduzir os aprendizados em ações concretas. Recomenda-se intensificar a prática das competências trabalhadas e manter o ritmo de desenvolvimento.",
+                                  cor: "text-orange-600", bgCor: "bg-orange-50", borderCor: "border-orange-200", icone: "📈"
+                                },
+                                5: {
+                                  titulo: "Intermediário",
+                                  descricao: "O(a) aluno(a) atingiu um nível intermediário de desenvolvimento. Demonstra boa compreensão dos temas abordados, participa com regularidade e já consegue aplicar parte significativa dos aprendizados em seu contexto profissional. Para avançar ao próximo nível, é importante buscar maior profundidade na aplicação prática e assumir desafios mais complexos.",
+                                  cor: "text-amber-700", bgCor: "bg-amber-50", borderCor: "border-amber-200", icone: "⭐"
+                                },
+                                6: {
+                                  titulo: "Bom Progresso",
+                                  descricao: "O(a) aluno(a) demonstra consistência no seu desenvolvimento e já apresenta resultados visíveis na aplicação das competências trabalhadas. Mostra proatividade nas sessões, entrega as atividades com qualidade e busca feedback para aprimoramento contínuo. Está no caminho certo para alcançar um nível avançado de maturidade profissional.",
+                                  cor: "text-amber-600", bgCor: "bg-amber-50", borderCor: "border-amber-200", icone: "🌟"
+                                },
+                                7: {
+                                  titulo: "Avançado",
+                                  descricao: "O(a) aluno(a) apresenta um nível avançado de desenvolvimento. Demonstra domínio dos conceitos trabalhados, aplica os aprendizados de forma autônoma e consistente, e já é capaz de identificar oportunidades de melhoria por conta própria. Sua postura é madura, engajada e orientada a resultados. Continue investindo no aprofundamento das competências para alcançar a excelência.",
+                                  cor: "text-blue-700", bgCor: "bg-blue-50", borderCor: "border-blue-200", icone: "🚀"
+                                },
+                                8: {
+                                  titulo: "Muito Avançado",
+                                  descricao: "O(a) aluno(a) se destaca pelo alto nível de comprometimento e evolução. Aplica os aprendizados com excelência, demonstra pensamento crítico e estratégico, e já influencia positivamente seu ambiente de trabalho. Sua capacidade de autoavaliação e busca por melhoria contínua são notáveis. Está muito próximo(a) de atingir o nível de excelência em sua jornada.",
+                                  cor: "text-blue-600", bgCor: "bg-blue-50", borderCor: "border-blue-200", icone: "🏆"
+                                },
+                                9: {
+                                  titulo: "Excelência",
+                                  descricao: "O(a) aluno(a) atingiu um nível de excelência em seu desenvolvimento. Demonstra maestria nas competências trabalhadas, é referência para colegas e contribui ativamente para o crescimento da equipe. Sua jornada de mentoria é um exemplo de dedicação, consistência e transformação profissional. Recomenda-se que assuma papéis de liderança e multiplicação do conhecimento.",
+                                  cor: "text-emerald-700", bgCor: "bg-emerald-50", borderCor: "border-emerald-200", icone: "🎖️"
+                                },
+                                10: {
+                                  titulo: "Desempenho Excepcional",
+                                  descricao: "O(a) aluno(a) alcançou o nível máximo de evolução. Representa o mais alto padrão de desenvolvimento dentro do programa de mentoria. Demonstra liderança, visão estratégica, autonomia plena e capacidade de inspirar e desenvolver outras pessoas. Sua transformação ao longo da jornada é excepcional e merece reconhecimento. Parabéns pelo resultado extraordinário!",
+                                  cor: "text-emerald-600", bgCor: "bg-emerald-50", borderCor: "border-emerald-200", icone: "👑"
+                                },
+                              };
+                              const desc = descritivos[nota] || descritivos[5];
+                              return (
+                                <div className={`p-3 rounded-lg ${desc.bgCor} border ${desc.borderCor}`}>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-base">{desc.icone}</span>
+                                    <span className={`text-xs font-bold ${desc.cor}`}>Evolução {nota}/10 — {desc.titulo}</span>
+                                  </div>
+                                  <p className="text-xs text-gray-700 leading-relaxed">{desc.descricao}</p>
+                                </div>
+                              );
+                            })()}
+                            {sessao.mensagemAluno && (
+                              <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <MessageSquare className="h-3.5 w-3.5 text-blue-700" />
+                                  <span className="text-xs font-bold text-blue-800">Feedback da Mentora</span>
+                                </div>
+                                <p className="text-xs text-gray-700 leading-relaxed italic">"{sessao.mensagemAluno}"</p>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     ))}

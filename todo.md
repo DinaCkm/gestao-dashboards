@@ -2303,3 +2303,5 @@
 - [x] Ciclo completo: alunos com sessões completas não devem receber alertas por e-mail (cron + manual)
 - [x] Reativação em cascata: ao reativar empresa, reativar alunos e PDIs vinculados
 - [x] Implementar barra de rolagem horizontal na tabela de sessões de mentoria
+- [x] Ocultar todos os campos de comentários do mentor na visualização do aluno, exceto o campo "feedback para o aluno"
+- [x] Adicionar descritivo robusto da nota de evolução como feedback automático no histórico de sessões do aluno
