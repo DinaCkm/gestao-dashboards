@@ -2337,3 +2337,8 @@
 - [x] Gabriela Tomasi (inativada) aparece como "Em andamento" e "Atrasado 174d" no demonstrativo
 - [x] Filtrar alunos inativos do demonstrativo de mentorias (8 PDIs de 4 alunos inativos removidos: Luciano, Gabriela, Dina, Graça)
 - [x] Filtrar alunos com PDI congelado do demonstrativo de mentorias (não devem aparecer como pendentes)
+
+## Excluir Sessão de Mentoria (17/03/2026)
+- [x] Criar endpoint backend para excluir sessão de mentoria
+- [x] Adicionar botão de excluir na tabela da página Editar Mentorias (lixeira vermelha)
+- [x] Incluir confirmação antes de excluir (dialog de confirmação com detalhes da sessão)

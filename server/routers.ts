@@ -4139,6 +4139,15 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         });
         return { success };
       }),
+
+    deleteSession: adminProcedure
+      .input(z.object({
+        sessionId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const success = await db.deleteMentoringSession(input.sessionId);
+        return { success };
+      }),
   }),
   // Status de onboarding do aluno logado
   aluno: router({

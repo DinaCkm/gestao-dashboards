@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Search, Edit3, Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Loader2, Search, Edit3, Calendar, ChevronLeft, ChevronRight, X, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function EditarMentorias() {
@@ -28,6 +28,9 @@ export default function EditarMentorias() {
   // Edit dialog state
   const [editSession, setEditSession] = useState<any | null>(null);
   const [newDate, setNewDate] = useState("");
+
+  // Delete confirmation dialog state
+  const [deleteSession, setDeleteSession] = useState<any | null>(null);
 
   // Data queries
   const { data: empresas } = trpc.admin.listEmpresas.useQuery(undefined, {
@@ -62,6 +65,17 @@ export default function EditarMentorias() {
     },
     onError: (err) => {
       toast.error("Erro ao atualizar data: " + err.message);
+    },
+  });
+
+  const deleteSessionMutation = trpc.admin.deleteSession.useMutation({
+    onSuccess: () => {
+      toast.success("Sessão de mentoria excluída com sucesso!");
+      setDeleteSession(null);
+      refetch();
+    },
+    onError: (err) => {
+      toast.error("Erro ao excluir sessão: " + err.message);
     },
   });
 
@@ -109,6 +123,17 @@ export default function EditarMentorias() {
     });
   }
 
+  function handleDeleteClick(session: any) {
+    setDeleteSession(session);
+  }
+
+  function handleConfirmDelete() {
+    if (!deleteSession) return;
+    deleteSessionMutation.mutate({
+      sessionId: deleteSession.id,
+    });
+  }
+
   function clearFilters() {
     setProgramFilter("");
     setTurmaFilter("");
@@ -144,7 +169,7 @@ export default function EditarMentorias() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Editar Mentorias</h1>
           <p className="text-muted-foreground mt-1">
-            Pesquise e ajuste a data das sessões de mentoria já lançadas no sistema.
+            Pesquise e ajuste a data das sessões de mentoria já lançadas no sistema, ou exclua registros incorretos.
           </p>
         </div>
 
@@ -269,7 +294,7 @@ export default function EditarMentorias() {
                         <TableHead className="text-center">Sessão</TableHead>
                         <TableHead className="text-center">Data</TableHead>
                         <TableHead className="text-center">Presença</TableHead>
-                        <TableHead className="text-center w-[80px]">Ação</TableHead>
+                        <TableHead className="text-center w-[100px]">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -307,15 +332,26 @@ export default function EditarMentorias() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditDate(session)}
-                              className="h-7 w-7 p-0"
-                              title="Editar data da sessão"
-                            >
-                              <Edit3 className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditDate(session)}
+                                className="h-7 w-7 p-0"
+                                title="Editar data da sessão"
+                              >
+                                <Edit3 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteClick(session)}
+                                className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                title="Excluir sessão"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -419,6 +455,81 @@ export default function EditarMentorias() {
                   </>
                 ) : (
                   "Salvar"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!deleteSession} onOpenChange={(open) => { if (!open) setDeleteSession(null); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Excluir Sessão de Mentoria
+              </DialogTitle>
+              <DialogDescription>
+                Esta ação não pode ser desfeita. A sessão será permanentemente removida do sistema.
+              </DialogDescription>
+            </DialogHeader>
+
+            {deleteSession && (
+              <div className="space-y-4 py-2">
+                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 space-y-1.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">ID:</span>
+                    <span className="font-mono font-medium">{deleteSession.id}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Aluno:</span>
+                    <span className="font-medium">{deleteSession.alunoNome}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Sessão:</span>
+                    <span className="font-medium">#{deleteSession.sessionNumber}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Data:</span>
+                    <span className="font-medium">{formatDateSafe(deleteSession.sessionDate)}</span>
+                  </div>
+                  {deleteSession.consultorNome && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Mentor:</span>
+                      <span className="font-medium">{deleteSession.consultorNome}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Presença:</span>
+                    <span className="font-medium">{deleteSession.presence === "presente" ? "Presente" : "Ausente"}</span>
+                  </div>
+                </div>
+
+                <p className="text-sm text-muted-foreground text-center">
+                  Tem certeza que deseja excluir esta sessão?
+                </p>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setDeleteSession(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                disabled={deleteSessionMutation.isPending}
+              >
+                {deleteSessionMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Excluindo...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir Sessão
+                  </>
                 )}
               </Button>
             </DialogFooter>

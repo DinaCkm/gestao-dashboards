@@ -742,6 +742,13 @@ export async function updateMentoringSession(sessionId: number, data: {
   return true;
 }
 
+export async function deleteMentoringSession(sessionId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  await db.delete(mentoringSessions).where(eq(mentoringSessions.id, sessionId));
+  return true;
+}
+
 export async function createMentoringSession(data: {
   alunoId: number;
   consultorId: number;
