@@ -2383,3 +2383,9 @@
 - [x] Investigar cálculo do Ind. 4 Tarefas no dashboard do aluno
 - [x] Corrigir para que reflita corretamente tarefas demandadas vs entregues
 - [x] Refatorar Ind. 1 (Webinars), Ind. 4 (Tarefas) e Ind. 5 (Engajamento) para calcular com base no macrociclo (assessment_pdi.macroInicio/macroTermino) em vez de por microciclo
+
+## Melhoria: Visualização de Atividades Práticas do Aluno (17/03/2026)
+- [x] Investigar fluxo de cadastro de tarefa pelo mentor (campos disponíveis: taskMode, taskId, customTaskTitle, customTaskDescription, taskDeadline)
+- [x] Ajustar visualização do aluno para exibir nome, descrição e detalhes da tarefa cadastrada pelo mentor
+- [x] Garantir que a lista de tarefas do aluno mostre dados vindos da sessão de mentoria (taskId, customTaskTitle, customTaskDescription, etc.)
+- [x] Corrigir backend (myTasks, submissions, submissionDetail) para incluir tarefas personalizadas e livres (não só da biblioteca)

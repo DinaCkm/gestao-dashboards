@@ -1,0 +1,175 @@
+{
+  "query": "SELECT ms.id, ms.sessionNumber, ms.taskMode, ms.taskId, ms.customTaskTitle, ms.customTaskDescription, ms.taskStatus, tl.nome as taskLibraryNome, tl.resumo as taskLibraryResumo FROM mentoring_sessions ms LEFT JOIN task_library tl ON ms.taskId = tl.id WHERE ms.taskStatus IN ('entregue', 'nao_entregue') LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ms.id, ms.sessionNumber, ms.taskMode, ms.taskId, ms.customTaskTitle, ms.customTaskDescription, ms.taskStatus, tl.nome as taskLibraryNome, tl.resumo as taskLibraryResumo FROM mentoring_sessions ms LEFT JOIN task_library tl ON ms.taskId = tl.id WHERE ms.taskStatus IN ('entregue', 'nao_entregue') LIMIT 15;",
+  "rows": [
+    {
+      "id": "30001",
+      "sessionNumber": "1",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30002",
+      "sessionNumber": "2",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30003",
+      "sessionNumber": "3",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30004",
+      "sessionNumber": "4",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30005",
+      "sessionNumber": "5",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30006",
+      "sessionNumber": "1",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30007",
+      "sessionNumber": "2",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30008",
+      "sessionNumber": "3",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30009",
+      "sessionNumber": "4",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30010",
+      "sessionNumber": "5",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30011",
+      "sessionNumber": "1",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30012",
+      "sessionNumber": "2",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30013",
+      "sessionNumber": "3",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30014",
+      "sessionNumber": "4",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    },
+    {
+      "id": "30015",
+      "sessionNumber": "5",
+      "taskMode": "sem_tarefa",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "customTaskDescription": "NULL",
+      "taskStatus": "entregue",
+      "taskLibraryNome": "NULL",
+      "taskLibraryResumo": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsessionNumber\ttaskMode\ttaskId\tcustomTaskTitle\tcustomTaskDescription\ttaskStatus\ttaskLibraryNome\ttaskLibraryResumo\n30001\t1\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30002\t2\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30003\t3\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30004\t4\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30005\t5\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30006\t1\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30007\t2\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30008\t3\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30009\t4\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30010\t5\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30011\t1\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30012\t2\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30013\t3\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30014\t4\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n30015\t5\tsem_tarefa\tNULL\tNULL\tNULL\tentregue\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 414
+}

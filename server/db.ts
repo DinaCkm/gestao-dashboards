@@ -5673,8 +5673,14 @@ export async function getActivitySubmissionsForAdmin(filters?: {
   const db = await getDb();
   if (!db) return [];
   
+  // Incluir sessões com qualquer modo de tarefa (biblioteca, personalizada, livre)
   const conditions = [
-    isNotNull(mentoringSessions.taskId), // Apenas sessões com tarefa atribuída
+    or(
+      isNotNull(mentoringSessions.taskId),
+      eq(mentoringSessions.taskMode, 'personalizada' as any),
+      eq(mentoringSessions.taskMode, 'livre' as any),
+      isNotNull(mentoringSessions.customTaskTitle)
+    )!,
   ];
   
   if (filters?.consultorId) {

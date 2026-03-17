@@ -3539,6 +3539,9 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
             const aluno = alunoMap.get(s.alunoId);
             const consultor = consultorMap.get(s.consultorId);
             const program = aluno?.programId ? programMap.get(aluno.programId) : null;
+            // Determinar nome da tarefa: customTaskTitle > biblioteca > fallback
+            const taskName = s.customTaskTitle || task?.nome || '';
+            const taskCompetencia = task?.competencia || '';
             return {
               sessionId: s.id,
               alunoId: s.alunoId,
@@ -3548,8 +3551,9 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
               consultorNome: consultor?.name || 'Mentor não encontrado',
               sessionNumber: s.sessionNumber,
               sessionDate: s.sessionDate,
-              taskName: task?.nome || '',
-              taskCompetencia: task?.competencia || '',
+              taskMode: s.taskMode || 'sem_tarefa',
+              taskName,
+              taskCompetencia,
               taskDeadline: s.taskDeadline,
               taskStatus: s.taskStatus,
               evidenceLink: s.evidenceLink,
@@ -3584,10 +3588,13 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           sessionNumber: session.sessionNumber,
           sessionDate: session.sessionDate,
           taskId: session.taskId,
-          taskName: task?.nome || '',
+          taskMode: session.taskMode || 'sem_tarefa',
+          taskName: session.customTaskTitle || task?.nome || '',
           taskCompetencia: task?.competencia || '',
-          taskResumo: task?.resumo || '',
-          taskOQueFazer: task?.oQueFazer || '',
+          taskResumo: session.customTaskDescription || task?.resumo || '',
+          taskOQueFazer: task?.oQueFazer || session.customTaskDescription || '',
+          customTaskTitle: session.customTaskTitle,
+          customTaskDescription: session.customTaskDescription,
           taskDeadline: session.taskDeadline,
           taskStatus: session.taskStatus,
           evidenceLink: session.evidenceLink,
@@ -4901,25 +4908,52 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         const aluno = await db.getAlunoByEmail(ctx.user.email || '');
         if (!aluno) return [];
         const sessions = await db.getMentoringSessionsByAluno(aluno.id);
-        // Pegar apenas sessões que têm taskId atribuído
-        const sessionsWithTask = sessions.filter(s => s.taskId !== null && s.taskId !== undefined);
+        // Incluir sessões com qualquer modo de tarefa (biblioteca, personalizada, livre)
+        // Excluir apenas sem_tarefa e sessões sem nenhum dado de tarefa
+        const sessionsWithTask = sessions.filter(s => {
+          // Tem taskId (biblioteca ou personalizada com base)
+          if (s.taskId !== null && s.taskId !== undefined) return true;
+          // Tem modo personalizada ou livre com título customizado
+          if (s.taskMode === 'personalizada' || s.taskMode === 'livre') return true;
+          // Tem customTaskTitle preenchido (fallback)
+          if (s.customTaskTitle) return true;
+          return false;
+        });
         // Buscar detalhes de cada tarefa
         const tasks = await Promise.all(
           sessionsWithTask.map(async (s) => {
-            const task = await db.getTaskLibraryById(s.taskId!);
+            const task = s.taskId ? await db.getTaskLibraryById(s.taskId) : null;
             const comments = await db.getCommentsBySessionId(s.id);
+            
+            // Determinar nome da tarefa: customTaskTitle > biblioteca > fallback
+            let taskName = 'Tarefa não encontrada';
+            if (s.customTaskTitle) {
+              taskName = s.customTaskTitle;
+            } else if (task?.nome) {
+              taskName = task.nome;
+            }
+            
+            // Determinar descrição: customTaskDescription > biblioteca resumo
+            const taskResumo = s.customTaskDescription || task?.resumo || '';
+            const taskOQueFazer = task?.oQueFazer || s.customTaskDescription || '';
+            const taskOQueGanha = task?.oQueGanha || '';
+            const taskCompetencia = task?.competencia || '';
+            
             return {
               sessionId: s.id,
               sessionNumber: s.sessionNumber,
               sessionDate: s.sessionDate,
               taskId: s.taskId,
+              taskMode: s.taskMode || 'sem_tarefa',
               taskDeadline: s.taskDeadline,
               taskStatus: s.taskStatus,
-              taskName: task?.nome || 'Tarefa não encontrada',
-              taskCompetencia: task?.competencia || '',
-              taskResumo: task?.resumo || '',
-              taskOQueFazer: task?.oQueFazer || '',
-              taskOQueGanha: task?.oQueGanha || '',
+              taskName,
+              taskCompetencia,
+              taskResumo,
+              taskOQueFazer,
+              taskOQueGanha,
+              customTaskTitle: s.customTaskTitle,
+              customTaskDescription: s.customTaskDescription,
               // Campos de evidência
               evidenceLink: s.evidenceLink,
               evidenceImageUrl: s.evidenceImageUrl,
