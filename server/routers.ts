@@ -5842,8 +5842,13 @@ Responda APENAS em JSON com o formato:
         minicurriculo: z.string().optional(),
         quemEVoce: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { alunoId, nome, email, telefone, cargo, areaAtuacao, minicurriculo, quemEVoce } = input;
+        // Proteção: verificar se o aluno pode editar o onboarding
+        const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura. Aluno já possui PDI.' });
+        }
         const result = await db.updateAluno(alunoId, {
           name: nome,
           email,
@@ -5869,6 +5874,11 @@ Responda APENAS em JSON com o formato:
       }))
       .mutation(async ({ input, ctx }) => {
         const { alunoId, consultorId } = input;
+        // Proteção: verificar se o aluno pode editar o onboarding
+        const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura. Aluno já possui PDI.' });
+        }
         const result = await db.updateAluno(alunoId, { consultorId });
 
         // Notificar a mentora por email
@@ -5950,6 +5960,11 @@ Responda APENAS em JSON com o formato:
       }))
       .mutation(async ({ input, ctx }) => {
         const { alunoId, consultorId, scheduledDate, startTime, endTime, googleMeetLink, notes } = input;
+        // Proteção: verificar se o aluno pode editar o onboarding
+        const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
+        }
         // Criar o agendamento na tabela mentor_appointments
         const result = await db.createGroupAppointment({
           consultorId,
@@ -6226,7 +6241,11 @@ Responda APENAS em JSON com o formato:
     // Marcar PDI como visualizado (etapa 6)
     marcarPdiVisualizado: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
+        }
         await db.upsertOnboardingJornada(input.alunoId, {
           pdiVisualizado: 1,
           pdiVisualizadoEm: new Date(),
@@ -6240,7 +6259,11 @@ Responda APENAS em JSON com o formato:
         alunoId: z.number(),
         chave: z.enum(['boas_vindas', 'competencias', 'webinars', 'tarefas', 'metas']),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
+        }
         const fieldMap: Record<string, string> = {
           boas_vindas: 'videoBoasVindas',
           competencias: 'videoCompetencias',
@@ -6276,7 +6299,11 @@ Responda APENAS em JSON com o formato:
         alunoId: z.number(),
         nomeAceite: z.string().min(2),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
+        }
         await db.upsertOnboardingJornada(input.alunoId, {
           aceiteRealizado: 1,
           aceiteRealizadoEm: new Date(),

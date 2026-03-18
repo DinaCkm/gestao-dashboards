@@ -2427,3 +2427,8 @@
 - [x] Validação: aluno com PDI sem mentor = erro apontado para correção (verificado: 0 casos no banco)
 - [x] Remover lógica de bypassOnboarding (bypassOnboarding=0 no cadastro direto, regra agora é baseada em PDI)
 - [x] Testes (onboarding.test.ts — todos passando)
+
+## Bug: Onboarding não bloqueia edição para aluno com PDI (17/03/2026)
+- [x] Aluno com PDI (ex: Joseane) consegue editar e salvar cadastro no onboarding — deveria ser somente leitura
+  - Frontend: readOnly agora baseado em hasPdi + needsOnboarding (não apenas onboardingCompleto)
+  - Backend: todas as mutations do onboarding protegidas contra edição por aluno com PDI

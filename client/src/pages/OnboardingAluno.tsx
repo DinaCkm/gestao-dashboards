@@ -2314,6 +2314,12 @@ export default function OnboardingAluno() {
     { enabled: alunoId > 0 }
   );
 
+  // Buscar status de onboarding para determinar readOnly baseado em PDI
+  const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(
+    undefined,
+    { enabled: !!user }
+  );
+
   // Buscar lista de mentores para recuperar dados da mentora salva
   const { data: mentoresData } = trpc.mentor.list.useQuery();
 
@@ -2344,8 +2350,12 @@ export default function OnboardingAluno() {
     }
   }, [progressoData?.mentoraId, mentoresData, selectedMentora]);
 
-  // Modo somente leitura quando onboarding já foi completo
-  const readOnly = !!(progressoData?.onboardingCompleto);
+  // Modo somente leitura:
+  // - Aluno COM PDI e SEM onboarding liberado = readOnly (veterano visualizando)
+  // - Aluno COM onboardingCompleto = readOnly (completou o fluxo)
+  // - Aluno SEM PDI ou COM onboarding liberado = pode editar (aluno novo ou novo ciclo)
+  const readOnly = !!(progressoData?.onboardingCompleto) || 
+    !!(onboardingStatus?.hasPdi && !onboardingStatus?.needsOnboarding);
   const reassessmentElegivel = !!(progressoData?.reassessmentElegivel);
 
   const handleStepComplete = () => {
