@@ -2193,27 +2193,53 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                     <Target className="h-5 w-5 text-purple-600" />
                     Resumo do seu Plano
                   </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-white rounded-lg p-3 text-center border">
-                      <p className="text-2xl font-bold text-purple-600">{macroJornada.totalCompetencias || 0}</p>
-                      <p className="text-xs text-gray-500">Competências</p>
-                    </div>
-                    <div className="bg-white rounded-lg p-3 text-center border">
-                      <p className="text-2xl font-bold text-blue-600">{(macroJornada as any).totalSessoesPrevistas || '---'}</p>
-                      <p className="text-xs text-gray-500">Sessões Previstas</p>
-                    </div>
-                    <div className="bg-white rounded-lg p-3 text-center border">
-                      <p className="text-2xl font-bold text-[#0A1E3E]">
-                        {macroJornada.macroInicio ? new Date(macroJornada.macroInicio).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---'}
-                      </p>
-                      <p className="text-xs text-gray-500">Início</p>
-                    </div>
-                    <div className="bg-white rounded-lg p-3 text-center border">
-                      <p className="text-2xl font-bold text-[#F5991F]">
-                        {macroJornada.macroTermino ? new Date(macroJornada.macroTermino).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---'}
-                      </p>
-                      <p className="text-xs text-gray-500">Término</p>
-                    </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {(() => {
+                      // Calcular duração do ciclo em meses e quinzenas
+                      const inicio = macroJornada.macroInicio ? new Date(macroJornada.macroInicio) : null;
+                      const termino = macroJornada.macroTermino ? new Date(macroJornada.macroTermino) : null;
+                      let totalMeses = 0;
+                      let totalQuinzenas = 0;
+                      if (inicio && termino) {
+                        totalMeses = Math.max(1, Math.round((termino.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
+                        totalQuinzenas = Math.max(1, Math.round((termino.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 15.22)));
+                      }
+                      const totalMentorias = totalMeses; // 1 por mês
+                      const totalWebinares = totalQuinzenas; // 1 por quinzena
+                      const totalTarefas = totalMentorias; // ~1 por sessão de mentoria
+                      return (
+                        <>
+                          <div className="bg-white rounded-lg p-3 text-center border">
+                            <p className="text-2xl font-bold text-purple-600">{macroJornada.totalCompetencias || 0}</p>
+                            <p className="text-xs text-gray-500">Competências</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 text-center border">
+                            <p className="text-2xl font-bold text-blue-600">{inicio && termino ? `≈${totalWebinares}` : '---'}</p>
+                            <p className="text-xs text-gray-500">Webinares</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 text-center border">
+                            <p className="text-2xl font-bold text-teal-600">{inicio && termino ? `≈${totalMentorias}` : '---'}</p>
+                            <p className="text-xs text-gray-500">Mentorias</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 text-center border">
+                            <p className="text-2xl font-bold text-amber-600">{inicio && termino ? `≈${totalTarefas}` : '---'}</p>
+                            <p className="text-xs text-gray-500">Tarefas</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 text-center border">
+                            <p className="text-2xl font-bold text-[#0A1E3E]">
+                              {inicio ? inicio.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---'}
+                            </p>
+                            <p className="text-xs text-gray-500">Início</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 text-center border">
+                            <p className="text-2xl font-bold text-[#F5991F]">
+                              {termino ? termino.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---'}
+                            </p>
+                            <p className="text-xs text-gray-500">Término</p>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               )}

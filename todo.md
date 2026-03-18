@@ -2437,3 +2437,7 @@
 - [x] Em readOnly, todas as etapas do stepper devem ser clicáveis para visualização (sem cadeado)
   - Loading state adicionado para evitar flash de conteúdo incorreto enquanto onboardingStatus carrega
   - Stepper já tinha lógica correta (isLocked=false em readOnly), problema era timing de carregamento
+
+## Resumo do Plano - Novos cards calculados (17/03/2026)
+- [x] Adicionar cards: Webinares (≈quinzenas no ciclo), Mentorias (≈meses no ciclo), Competências e Tarefas (≈mentorias)
+- [x] Calcular valores com base no ciclo (início e término) com símbolo de aproximado (≈)
