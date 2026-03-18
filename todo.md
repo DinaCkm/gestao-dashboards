@@ -2489,3 +2489,19 @@
   - Botões Adicionar Competências, Atribuir em Lote, Remover e Novo Ciclo ocultos para mentores
   - Status não é clicável para mentores (somente visualização)
 - [x] 19 testes unitários cobrindo permissões, filtragem e ciclos PDI
+
+## Reorganização: Plano Individual como página central de gestão do PDI (18/03/2026)
+- [x] Análise: mapear todas as funcionalidades PDI espalhadas no sistema (banco, páginas, routers)
+- [x] Análise: identificar onde estão dados de contrato, mentorias, webinars, tarefas, metas
+- [x] Análise: produzir documento de mapeamento para validação do usuário
+- [x] Implementar reorganização na página Plano Individual
+
+## Reorganização da Página P.D.I - Plano Individual (18/03/2026) - SEQUENCIAL
+- [x] Página sequencial unificada (sem abas) com seções fluindo de cima para baixo
+- [x] Seção 1: Seleção de Aluno (filtros + lista lateral)
+- [x] Seção 2: Contrato (período, sessões contratadas, saldo)
+- [x] Seção 3: Jornada/PDI (macro + micro jornada: trilhas, competências, níveis, metas ciclo, datas)
+- [x] Seção 4: Ciclos de Execução (timeline com CRUD)
+- [x] Seção 5: Metas de Desenvolvimento (criação, acompanhamento, biblioteca, IA)
+- [x] Seção 6: Performance Filtrada (indicadores V2)
+- [x] Manter funcionalidades existentes (competências do plano, ciclos, atribuição em lote)
