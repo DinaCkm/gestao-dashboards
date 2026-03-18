@@ -2358,6 +2358,17 @@ export default function OnboardingAluno() {
     !!(onboardingStatus?.hasPdi && !onboardingStatus?.needsOnboarding);
   const reassessmentElegivel = !!(progressoData?.reassessmentElegivel);
 
+  // Aguardar carregamento do status de onboarding para evitar flash de conteúdo incorreto
+  if (!onboardingStatus && user) {
+    return (
+      <AlunoLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F5991F]" />
+        </div>
+      </AlunoLayout>
+    );
+  }
+
   const handleStepComplete = () => {
     if (currentStep < 8) {
       setCurrentStep(currentStep + 1);

@@ -2432,3 +2432,8 @@
 - [x] Aluno com PDI (ex: Joseane) consegue editar e salvar cadastro no onboarding — deveria ser somente leitura
   - Frontend: readOnly agora baseado em hasPdi + needsOnboarding (não apenas onboardingCompleto)
   - Backend: todas as mutations do onboarding protegidas contra edição por aluno com PDI
+
+## Bug: Stepper readOnly bloqueia clique nas etapas (17/03/2026)
+- [x] Em readOnly, todas as etapas do stepper devem ser clicáveis para visualização (sem cadeado)
+  - Loading state adicionado para evitar flash de conteúdo incorreto enquanto onboardingStatus carrega
+  - Stepper já tinha lógica correta (isLocked=false em readOnly), problema era timing de carregamento
