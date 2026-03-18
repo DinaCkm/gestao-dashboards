@@ -2100,6 +2100,7 @@ function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete
 // ============================================================
 
 function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
+  const [, setLocation] = useLocation();
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
   const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId }, { enabled: alunoId > 0 });
@@ -2207,36 +2208,26 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                       const totalMentorias = totalMeses; // 1 por mês
                       const totalWebinares = totalQuinzenas; // 1 por quinzena
                       const totalTarefas = totalMentorias; // ~1 por sessão de mentoria
+                      const cards = [
+                        { valor: String(macroJornada.totalCompetencias || 0), label: 'Competências', cor: 'text-purple-600', link: '/trilhas-competencias' },
+                        { valor: inicio && termino ? `≈${totalWebinares}` : '---', label: 'Webinares', cor: 'text-blue-600', link: '/cursos' },
+                        { valor: inicio && termino ? `≈${totalMentorias}` : '---', label: 'Mentorias', cor: 'text-teal-600', link: '/meu-dashboard' },
+                        { valor: inicio && termino ? `≈${totalTarefas}` : '---', label: 'Tarefas', cor: 'text-amber-600', link: '/minhas-atividades' },
+                        { valor: inicio ? inicio.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---', label: 'Início', cor: 'text-[#0A1E3E]', link: '/meu-dashboard' },
+                        { valor: termino ? termino.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---', label: 'Término', cor: 'text-[#F5991F]', link: '/meu-dashboard' },
+                      ];
                       return (
                         <>
-                          <div className="bg-white rounded-lg p-3 text-center border">
-                            <p className="text-2xl font-bold text-purple-600">{macroJornada.totalCompetencias || 0}</p>
-                            <p className="text-xs text-gray-500">Competências</p>
-                          </div>
-                          <div className="bg-white rounded-lg p-3 text-center border">
-                            <p className="text-2xl font-bold text-blue-600">{inicio && termino ? `≈${totalWebinares}` : '---'}</p>
-                            <p className="text-xs text-gray-500">Webinares</p>
-                          </div>
-                          <div className="bg-white rounded-lg p-3 text-center border">
-                            <p className="text-2xl font-bold text-teal-600">{inicio && termino ? `≈${totalMentorias}` : '---'}</p>
-                            <p className="text-xs text-gray-500">Mentorias</p>
-                          </div>
-                          <div className="bg-white rounded-lg p-3 text-center border">
-                            <p className="text-2xl font-bold text-amber-600">{inicio && termino ? `≈${totalTarefas}` : '---'}</p>
-                            <p className="text-xs text-gray-500">Tarefas</p>
-                          </div>
-                          <div className="bg-white rounded-lg p-3 text-center border">
-                            <p className="text-2xl font-bold text-[#0A1E3E]">
-                              {inicio ? inicio.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---'}
-                            </p>
-                            <p className="text-xs text-gray-500">Início</p>
-                          </div>
-                          <div className="bg-white rounded-lg p-3 text-center border">
-                            <p className="text-2xl font-bold text-[#F5991F]">
-                              {termino ? termino.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---'}
-                            </p>
-                            <p className="text-xs text-gray-500">Término</p>
-                          </div>
+                          {cards.map((card) => (
+                            <div
+                              key={card.label}
+                              className="bg-white rounded-lg p-3 text-center border hover:border-[#F5991F]/50 hover:shadow-md transition-all cursor-pointer group"
+                              onClick={() => setLocation(card.link)}
+                            >
+                              <p className={`text-2xl font-bold ${card.cor}`}>{card.valor}</p>
+                              <p className="text-xs text-gray-500 group-hover:text-[#0A1E3E] transition-colors">{card.label}</p>
+                            </div>
+                          ))}
                         </>
                       );
                     })()}

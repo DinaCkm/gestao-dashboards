@@ -2441,3 +2441,6 @@
 ## Resumo do Plano - Novos cards calculados (17/03/2026)
 - [x] Adicionar cards: Webinares (≈quinzenas no ciclo), Mentorias (≈meses no ciclo), Competências e Tarefas (≈mentorias)
 - [x] Calcular valores com base no ciclo (início e término) com símbolo de aproximado (≈)
+
+## Links nos cards do Resumo do Plano (17/03/2026)
+- [x] Adicionar link em cada card do Resumo do Plano para a seção correspondente na plataforma
