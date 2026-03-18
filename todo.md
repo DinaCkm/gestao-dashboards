@@ -2467,3 +2467,10 @@
 - [x] Formulário Nova Sessão de Mentoria: corrigir filtro de alunos por turma (agora considera PDI do aluno)
 - [x] Bug: Flavia Balieiro agora aparece ao filtrar por Jornada Personalizada (via PDI, mesmo com turmaId=Basic)
 - [x] 13 testes unitários cobrindo ordenação, busca e filtro PDI
+
+## Bug: Flavia Balieiro NÃO aparece ao filtrar por Jornada Personalizada no Nova Sessão (18/03/2026)
+- [x] Corrigir filtro: Flavia tem 2 trilhas (Basic + Jornada Personalizada) mas não aparece ao selecionar turma Jornada Personalizada
+  - Causa raiz: getAllStudentsSessionProgress usava aluno.turmaId (30002=Basic) em vez de pdi.turmaId (30009=Jornada Personalizada)
+  - Correção: alterado para usar pdi.turmaId || aluno.turmaId no db.ts
+- [x] Verificar se progressData retorna dados corretos para Flavia com turmaNome matching
+  - Confirmado visualmente: Flavia aparece na lista ao filtrar por Jornada Personalizada

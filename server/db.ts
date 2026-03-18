@@ -4368,7 +4368,10 @@ export async function getAllStudentsSessionProgress() {
     const mentorId = pdi.consultorId || lastMentorByAluno.get(pdi.alunoId) || aluno?.consultorId || null;
     const consultor = mentorId ? consultorMap.get(mentorId) : null;
     const program = pdi.programId ? programMap.get(pdi.programId) : null;
-    const turma = aluno?.turmaId ? turmaMap.get(aluno.turmaId) : null;
+    // Use pdi.turmaId (from assessment_pdi) instead of aluno.turmaId
+    // This is critical for students like Flavia who have PDIs in different turmas than their primary turmaId
+    const pdiTurmaId = pdi.turmaId || aluno?.turmaId || null;
+    const turma = pdiTurmaId ? turmaMap.get(pdiTurmaId) : null;
     const trilha = pdi.trilhaId ? trilhaMap.get(pdi.trilhaId) : null;
 
     const ultimaSessao = lastSessionByAluno.get(pdi.alunoId) || null;
@@ -4386,7 +4389,7 @@ export async function getAllStudentsSessionProgress() {
       consultorEmail: consultor?.email || null,
       programId: pdi.programId,
       programaNome: program?.name || null,
-      turmaId: aluno?.turmaId || null,
+      turmaId: pdiTurmaId,
       turmaNome: turma?.name || null,
       trilhaId: pdi.trilhaId,
       trilhaNome: trilha?.name || null,
