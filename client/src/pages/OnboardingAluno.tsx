@@ -49,6 +49,17 @@ import { useLocation } from "wouter";
 // ============================================================
 const MENTORA_GUIA_AVATAR = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/guia-avatar-mPLDYEsokpgWnmRXLMtkY6.webp";
 
+const DICAS_HOVER: Record<number, string> = {
+  1: "Dica: Preencha todos os campos para avançar mais rápido!",
+  2: "Dica: Não existe resposta certa ou errada, seja sincero(a)!",
+  3: "Dica: Leia o perfil completo antes de escolher sua mentora!",
+  4: "Dica: Escolha um horário que você consiga manter toda semana!",
+  5: "Dica: Prepare perguntas para aproveitar ao máximo o encontro!",
+  6: "Dica: Seu PDI é seu mapa — revise com atenção!",
+  7: "Dica: Assista aos vídeos com calma, eles fazem diferença!",
+  8: "Dica: Esse compromisso é com você mesmo(a). Acredite!",
+};
+
 const MENSAGENS_GUIA: Record<number, { titulo: string; mensagem: string }> = {
   1: {
     titulo: "Que bom ter você aqui!",
@@ -85,15 +96,36 @@ const MENSAGENS_GUIA: Record<number, { titulo: string; mensagem: string }> = {
 };
 
 function MentoraGuiaBanner({ etapa }: { etapa: number }) {
+  const [showDica, setShowDica] = useState(false);
   const msg = MENSAGENS_GUIA[etapa];
+  const dica = DICAS_HOVER[etapa];
   if (!msg) return null;
   return (
     <div className="flex items-start gap-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-[#F5991F]/20 rounded-xl p-5 mb-6 shadow-sm animate-in fade-in slide-in-from-left-4 duration-500">
-      <img
-        src={MENTORA_GUIA_AVATAR}
-        alt="Mentora Guia"
-        className="w-20 h-24 object-cover object-top rounded-lg border-2 border-[#F5991F]/30 shadow-md shrink-0 animate-[float_3s_ease-in-out_infinite]"
-      />
+      <div
+        className="relative shrink-0 cursor-pointer"
+        onMouseEnter={() => setShowDica(true)}
+        onMouseLeave={() => setShowDica(false)}
+      >
+        <img
+          src={MENTORA_GUIA_AVATAR}
+          alt="Mentora Guia"
+          className="w-20 h-24 object-cover object-top rounded-lg border-2 border-[#F5991F]/30 shadow-md animate-[float_3s_ease-in-out_infinite]"
+        />
+        {showDica && dica && (
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 w-56 animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative bg-white border border-[#F5991F]/30 rounded-xl px-3.5 py-2.5 shadow-lg">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Sparkles className="h-3 w-3 text-[#F5991F]" />
+                <span className="text-xs font-semibold text-[#F5991F]">Sua Guia diz:</span>
+              </div>
+              <p className="text-xs text-gray-700 leading-relaxed">{dica}</p>
+              <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white" />
+              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-[-0.5px] w-0 h-0 border-l-[9px] border-l-transparent border-r-[9px] border-r-transparent border-t-[9px] border-t-[#F5991F]/30" />
+            </div>
+          </div>
+        )}
+      </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-sm font-semibold text-[#0A1E3E]">Sua Guia</span>

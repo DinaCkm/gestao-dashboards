@@ -2447,3 +2447,6 @@
 
 ## Avatar da Guia - GIF Animado (17/03/2026)
 - [x] Trocar avatar da guia por ilustração gerada por IA de mulher negra profissional + animação CSS float
+
+## Balão de Diálogo Interativo no Avatar (17/03/2026)
+- [x] Adicionar balão de diálogo ao avatar da guia que exibe dicas contextuais ao passar o mouse
