@@ -2450,3 +2450,8 @@
 
 ## Balão de Diálogo Interativo no Avatar (17/03/2026)
 - [x] Adicionar balão de diálogo ao avatar da guia que exibe dicas contextuais ao passar o mouse
+
+## Filtrar Cases de Sucesso por trilhas do aluno (18/03/2026)
+- [x] Mostrar apenas cards das trilhas que o aluno realmente faz na área de Cases de Sucesso
+  - Backend: trilhasDisponiveis agora filtra por assessment_pdi do aluno (getAssessmentsByAluno)
+  - Testes: 9 testes unitários cobrindo cenários (múltiplos PDIs, trilha inativa, sem PDI, etc.)

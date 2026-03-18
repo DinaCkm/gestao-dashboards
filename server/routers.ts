@@ -2839,14 +2839,20 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           fileName: c.fileName,
           observacao: c.observacao,
         })),
-        // Trilhas disponíveis para o aluno (para saber quais cases pode enviar)
+        // Trilhas disponíveis para o aluno (apenas as que ele tem PDI)
         trilhasDisponiveis: await (async () => {
           const allTrilhas = await db.getAllTrilhas();
-          return allTrilhas.filter(t => t.isActive === 1).map(t => ({
-            id: t.id,
-            name: t.name,
-            codigo: t.codigo,
-          }));
+          // Buscar trilhas reais do aluno via assessment_pdi
+          const alunoAssessments = await db.getAssessmentsByAluno(aluno!.id);
+          const alunoTrilhaIds = new Set(alunoAssessments.map(a => a.trilhaId));
+          // Filtrar apenas trilhas ativas que o aluno realmente faz
+          return allTrilhas
+            .filter(t => t.isActive === 1 && alunoTrilhaIds.has(t.id))
+            .map(t => ({
+              id: t.id,
+              name: t.name,
+              codigo: t.codigo,
+            }));
         })(),
       };
     }),
