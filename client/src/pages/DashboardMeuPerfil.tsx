@@ -1,5 +1,7 @@
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { formatDateSafe, formatDateCustomSafe } from "@/lib/dateUtils";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useLocation } from "wouter";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -132,6 +134,20 @@ function IndicadorCardAluno({
 }
 
 export default function DashboardMeuPerfil() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Verificar se o aluno precisa de onboarding (sem PDI ou admin liberou novo ciclo)
+  const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
+    enabled: !!user && (user.role === 'user' || (user.role === 'manager' && !!(user as any).alunoId)),
+  });
+
+  useEffect(() => {
+    if (onboardingStatus?.needsOnboarding) {
+      setLocation('/onboarding');
+    }
+  }, [onboardingStatus, setLocation]);
+
   const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");

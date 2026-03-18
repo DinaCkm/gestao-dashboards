@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { useLocation } from "wouter";
 import { formatDateCustomSafe } from "@/lib/dateUtils";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -526,8 +527,19 @@ function DrillDownHeader({
 
 export default function MuralAluno() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [currentView, setCurrentView] = useState<ViewType>("home");
 
+  // Verificar se o aluno precisa de onboarding (sem PDI ou admin liberou novo ciclo)
+  const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
+    enabled: !!user && (user.role === 'user' || (user.role === 'manager' && !!(user as any).alunoId)),
+  });
+
+  useEffect(() => {
+    if (onboardingStatus?.needsOnboarding) {
+      setLocation('/onboarding');
+    }
+  }, [onboardingStatus, setLocation]);
 
   // Data hooks
   const { data: upcomingWebinars, isLoading: loadingUpcoming } = trpc.webinars.upcoming.useQuery({ limit: 20 });

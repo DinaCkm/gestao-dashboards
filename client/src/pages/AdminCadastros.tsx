@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar } from "lucide-react";
+import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 function formatCpf(value: string): string {
@@ -268,6 +268,18 @@ export default function AdminCadastros() {
     onError: (err: any) => toast.error(`Erro ao alterar status: ${err.message}`),
   });
 
+  const liberarOnboarding = trpc.admin.liberarOnboarding.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast.success("Onboarding liberado para novo ciclo!");
+        refetchAllAlunos();
+      } else {
+        toast.error(data.message || "Erro ao liberar onboarding");
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao liberar onboarding: ${err.message}`),
+  });
+
   const deleteAluno = trpc.admin.deleteAluno.useMutation({
     onSuccess: (data: any) => {
       if (data.success) {
@@ -373,6 +385,8 @@ export default function AdminCadastros() {
               isDeleting={deleteAluno.isPending}
               onToggleStatus={toggleAlunoStatus.mutate}
               isTogglingStatus={toggleAlunoStatus.isPending}
+              onLiberarOnboarding={liberarOnboarding.mutate}
+              isLiberandoOnboarding={liberarOnboarding.isPending}
             />
           </TabsContent>
 
@@ -424,7 +438,7 @@ export default function AdminCadastros() {
 }
 
 // ============ ALUNOS TAB ============
-function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, onCreateDireto, isCreatingDireto, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus }: {
+function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, onCreateDireto, isCreatingDireto, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding }: {
   alunos: any[];
   empresas: any[];
   mentoresList: any[];
@@ -440,6 +454,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   isDeleting: boolean;
   onToggleStatus: (data: any) => void;
   isTogglingStatus: boolean;
+  onLiberarOnboarding: (data: any) => void;
+  isLiberandoOnboarding: boolean;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [editAluno, setEditAluno] = useState<any>(null);
@@ -617,16 +633,12 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       toast.error("Selecione a empresa vinculada");
       return;
     }
-    if (!diretoConsultorId) {
-      toast.error("Selecione o mentor para vincular ao aluno");
-      return;
-    }
     onCreateDireto({
       name: diretoNome,
       email: diretoEmail,
       cpf: credentialDigits,
       programId: parseInt(diretoProgramId),
-      consultorId: parseInt(diretoConsultorId),
+      consultorId: diretoConsultorId ? parseInt(diretoConsultorId) : null,
       turmaId: diretoTurmaId ? parseInt(diretoTurmaId) : null,
       contratoInicio: diretoContratoInicio || undefined,
       contratoFim: diretoContratoFim || undefined,
@@ -785,7 +797,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                     Cadastro Direto de Aluno
                   </DialogTitle>
                   <DialogDescription>
-                    Cadastre o aluno e vincule o mentor diretamente.
+                    Cadastre o aluno. O mentor será escolhido pelo aluno durante o onboarding.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -829,18 +841,18 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-emerald-700 font-semibold">Vincular Mentor(a) *</Label>
-                    <select value={diretoConsultorId} onChange={(e) => setDiretoConsultorId(e.target.value)} className="flex h-9 w-full rounded-md border-2 border-emerald-300 bg-emerald-50 px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" required>
-                      <option value="">Selecione o mentor(a)</option>
+                    <Label className="text-muted-foreground">Mentor(a) (Opcional)</Label>
+                    <select value={diretoConsultorId} onChange={(e) => setDiretoConsultorId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <option value="">Aluno escolherá no onboarding</option>
                       {mentoresList.map((m: any) => (<option key={m.id} value={m.id.toString()}>{m.name}</option>))}
                     </select>
-                    <p className="text-xs text-muted-foreground">O aluno será vinculado a este mentor e pulará o fluxo de onboarding.</p>
+                    <p className="text-xs text-muted-foreground">O aluno sempre passará pelo onboarding e poderá escolher o mentor na etapa 3.</p>
                   </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setDiretoOpen(false)}>Cancelar</Button>
                   <Button type="submit" disabled={isCreatingDireto} className="bg-emerald-600 hover:bg-emerald-700">
-                    {isCreatingDireto ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Cadastrando...</> : "Cadastrar com Mentor"}
+                    {isCreatingDireto ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Cadastrando...</> : "Cadastrar Aluno"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -1094,6 +1106,19 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                           <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={(e) => { e.stopPropagation(); handleDeleteClick(aluno); }} disabled={isDeleting}>
                             <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Excluir
                           </Button>
+                          {aluno.hasPdi && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={aluno.onboardingLiberado === 1 ? "text-orange-600 border-orange-300 bg-orange-50" : "text-blue-600 hover:bg-blue-600 hover:text-white"}
+                              onClick={(e) => { e.stopPropagation(); onLiberarOnboarding({ alunoId: aluno.id }); }}
+                              disabled={isLiberandoOnboarding || aluno.onboardingLiberado === 1}
+                              title={aluno.onboardingLiberado === 1 ? "Onboarding j\u00e1 liberado para novo ciclo" : "Liberar onboarding para novo ciclo (renova\u00e7\u00e3o de contrato)"}
+                            >
+                              <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                              {aluno.onboardingLiberado === 1 ? "Onboarding Liberado" : "Liberar Onboarding"}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     )}

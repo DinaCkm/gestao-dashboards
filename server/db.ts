@@ -1740,6 +1740,7 @@ export async function getAllAlunosForAdmin() {
     createdAt: alunos.createdAt,
     contratoInicio: alunos.contratoInicio,
     contratoFim: alunos.contratoFim,
+    onboardingLiberado: alunos.onboardingLiberado,
     programName: programs.name,
     mentorName: consultors.name,
     turmaName: turmas.name,
@@ -1749,7 +1750,18 @@ export async function getAllAlunosForAdmin() {
     .leftJoin(consultors, eq(alunos.consultorId, consultors.id))
     .leftJoin(turmas, eq(alunos.turmaId, turmas.id))
     .orderBy(alunos.name);
-  return result;
+
+  // Verificar quais alunos têm PDI (assessment_pdi)
+  const pdiCounts = await db.select({
+    alunoId: assessmentPdi.alunoId,
+    count: sql<number>`COUNT(*)`,
+  }).from(assessmentPdi).groupBy(assessmentPdi.alunoId);
+  const pdiMap = new Map(pdiCounts.map(p => [p.alunoId, p.count]));
+
+  return result.map(a => ({
+    ...a,
+    hasPdi: (pdiMap.get(a.id) ?? 0) > 0,
+  }));
 }
 
 export async function updateAluno(alunoId: number, data: {
@@ -5727,7 +5739,7 @@ export async function createAlunoDireto(data: {
   email: string;
   cpf: string;
   programId: number;
-  consultorId: number;
+  consultorId?: number | null;
   turmaId?: number | null;
   contratoInicio?: string;
   contratoFim?: string;
@@ -5757,15 +5769,15 @@ export async function createAlunoDireto(data: {
     return { success: false, message: "Este ID/CPF já está cadastrado no sistema." };
   }
 
-  // 1. Criar registro na tabela alunos COM mentor e bypass
+  // 1. Criar registro na tabela alunos SEM mentor (aluno escolhe no onboarding) e SEM bypass
   const [alunoResult] = await db.insert(alunos).values({
     name: data.name,
     email: data.email.toLowerCase(),
     externalId: normalizedCpf,
     programId: data.programId,
     turmaId: data.turmaId ?? null,
-    consultorId: data.consultorId,
-    bypassOnboarding: 1,
+    consultorId: data.consultorId ?? null,
+    bypassOnboarding: 0,
     cadastradoPorAdmin: 1,
     canLogin: 1,
     isActive: 1,
@@ -5793,6 +5805,32 @@ export async function createAlunoDireto(data: {
   return { success: true, alunoId: Number(alunoId) };
 }
 
+// ============ LIBERAR ONBOARDING (NOVO CICLO) ============
+
+export async function liberarOnboardingAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return { success: false, message: 'Erro de conexão com banco' };
+
+  // Verificar se o aluno existe e tem PDI
+  const [aluno] = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  if (!aluno) return { success: false, message: 'Aluno não encontrado' };
+
+  const [pdiCount] = await db.select({ count: sql<number>`COUNT(*)` })
+    .from(assessmentPdi)
+    .where(eq(assessmentPdi.alunoId, alunoId));
+  if ((pdiCount?.count ?? 0) === 0) {
+    return { success: false, message: 'Aluno não tem PDI. Já deve ir para onboarding automaticamente.' };
+  }
+
+  // Marcar onboarding como liberado
+  await db.update(alunos).set({
+    onboardingLiberado: 1,
+    onboardingLiberadoEm: new Date(),
+  }).where(eq(alunos.id, alunoId));
+
+  return { success: true, message: 'Onboarding liberado para novo ciclo' };
+}
+
 // ============ STATUS DE ONBOARDING DO ALUNO ============
 
 export async function getAlunoOnboardingStatus(user: {
@@ -5804,15 +5842,16 @@ export async function getAlunoOnboardingStatus(user: {
 }): Promise<{
   needsOnboarding: boolean;
   hasMentor: boolean;
-  bypassOnboarding: boolean;
+  hasPdi: boolean;
+  onboardingLiberado: boolean;
   alunoId: number | null;
 }> {
   const db = await getDb();
-  if (!db) return { needsOnboarding: false, hasMentor: false, bypassOnboarding: false, alunoId: null };
+  if (!db) return { needsOnboarding: false, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null };
 
   // Só se aplica a alunos (role === 'user') ou managers com alunoId (visão dupla)
   if (user.role !== 'user' && !(user.role === 'manager' && user.alunoId)) {
-    return { needsOnboarding: false, hasMentor: false, bypassOnboarding: false, alunoId: null };
+    return { needsOnboarding: false, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null };
   }
 
   // Buscar aluno: primeiro pelo alunoId, depois pelo email
@@ -5836,19 +5875,34 @@ export async function getAlunoOnboardingStatus(user: {
 
   if (!aluno) {
     // Aluno não encontrado na tabela alunos - precisa de onboarding
-    return { needsOnboarding: true, hasMentor: false, bypassOnboarding: false, alunoId: null };
+    return { needsOnboarding: true, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null };
   }
 
   const hasMentor = !!aluno.consultorId;
-  const bypassOnboarding = aluno.bypassOnboarding === 1;
+  const onboardingLiberado = aluno.onboardingLiberado === 1;
 
-  // Se tem bypass OU já tem mentor → não precisa de onboarding
-  const needsOnboarding = !bypassOnboarding && !hasMentor;
+  // Verificar se o aluno tem PDI (assessment_pdi)
+  const [pdiCount] = await db.select({ count: sql<number>`COUNT(*)` })
+    .from(assessmentPdi)
+    .where(eq(assessmentPdi.alunoId, aluno.id));
+  const hasPdi = (pdiCount?.count ?? 0) > 0;
+
+  // REGRA PRINCIPAL:
+  // - Aluno SEM PDI = aluno novo → precisa de onboarding
+  // - Aluno COM PDI = veterano → NÃO precisa (a menos que admin liberou novo ciclo)
+  // - Aluno COM PDI + onboardingLiberado = renovação → precisa de onboarding (novo ciclo)
+  let needsOnboarding = false;
+  if (!hasPdi) {
+    needsOnboarding = true; // Aluno novo, sem PDI
+  } else if (onboardingLiberado) {
+    needsOnboarding = true; // Admin liberou novo ciclo
+  }
 
   return {
     needsOnboarding,
     hasMentor,
-    bypassOnboarding,
+    hasPdi,
+    onboardingLiberado,
     alunoId: aluno.id,
   };
 }

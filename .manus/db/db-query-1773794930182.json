@@ -1,0 +1,9 @@
+{
+  "query": "\nSELECT a.id, a.name, a.email, a.consultorId\nFROM alunos a\nINNER JOIN (SELECT DISTINCT alunoId FROM assessment_pdi) ap ON ap.alunoId = a.id\nWHERE a.isActive = 1 AND a.consultorId IS NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT a.id, a.name, a.email, a.consultorId\nFROM alunos a\nINNER JOIN (SELECT DISTINCT alunoId FROM assessment_pdi) ap ON ap.alunoId = a.id\nWHERE a.isActive = 1 AND a.consultorId IS NULL;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 126
+}

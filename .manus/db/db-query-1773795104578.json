@@ -1,0 +1,19 @@
+{
+  "query": "\nSELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS \nWHERE TABLE_NAME = 'onboarding_jornada' AND COLUMN_NAME IN ('ciclo', 'cadastroConfirmado', 'cadastroConfirmadoEm');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS \nWHERE TABLE_NAME = 'onboarding_jornada' AND COLUMN_NAME IN ('ciclo', 'cadastroConfirmado', 'cadastroConfirmadoEm');\n",
+  "rows": [
+    {
+      "COLUMN_NAME": "cadastroConfirmado"
+    },
+    {
+      "COLUMN_NAME": "cadastroConfirmadoEm"
+    },
+    {
+      "COLUMN_NAME": "ciclo"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\ncadastroConfirmado\ncadastroConfirmadoEm\nciclo\n",
+  "stderr": "",
+  "execution_time_ms": 115
+}

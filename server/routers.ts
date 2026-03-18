@@ -3997,7 +3997,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         email: z.string().email(),
         cpf: z.string().min(1),
         programId: z.number(),
-        consultorId: z.number(), // mentor vinculado
+        consultorId: z.number().nullable().optional(), // mentor agora é opcional — aluno escolhe no onboarding
         turmaId: z.number().nullable().optional(),
         contratoInicio: z.string().optional(),
         contratoFim: z.string().optional(),
@@ -4058,6 +4058,13 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         }
         
         return await db.deleteAluno(input.alunoId);
+      }),
+
+    // ============ LIBERAR ONBOARDING (NOVO CICLO) ============
+    liberarOnboarding: adminProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.liberarOnboardingAluno(input.alunoId);
       }),
 
     // ============ PAINEL DE AGENDAMENTOS ============
@@ -5846,6 +5853,11 @@ Responda APENAS em JSON com o formato:
           minicurriculo: minicurriculo || null,
           quemEVoce: quemEVoce || null,
         });
+        // Marcar cadastro como confirmado na tabela onboarding_jornada
+        await db.upsertOnboardingJornada(alunoId, {
+          cadastroConfirmado: 1,
+          cadastroConfirmadoEm: new Date(),
+        });
         return result;
       }),
 
@@ -6158,18 +6170,19 @@ Responda APENAS em JSON com o formato:
         const todosDisc = await db.getAllDiscResultados(alunoId);
         const cicloAtual = todosDisc.length;
 
-        // Verificar se o cadastro foi preenchido (tem pelo menos nome e email)
-        const cadastroPreenchido = !!(aluno?.name && aluno?.email);
+        // Verificar se o cadastro foi confirmado pelo aluno (clicou "Salvar e Continuar" na etapa 1)
+        // Dados importados (nome/email) NÃO contam — o aluno precisa confirmar explicitamente
+        const cadastroConfirmado = !!(jornada?.cadastroConfirmado);
 
         // Determinar step atual
         let step = 1;
-        if (cadastroPreenchido) step = 2; // Cadastro feito, vai para assessment
-        if (cadastroPreenchido && discCompleto && autopercepCompleta) step = 3; // Pula para mentora
-        if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida) step = 4; // Pula para agendamento
-        if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito) step = 5; // Pula para 1º encontro
-        if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado) step = 6; // 1º encontro feito, vai para Meu PDI
-        if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado && pdiVisualizado) step = 7; // PDI visualizado, vai para Sua Jornada
-        if (cadastroPreenchido && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado && pdiVisualizado && todosVideosAssistidos) step = 8; // Vídeos assistidos, vai para Aceite
+        if (cadastroConfirmado) step = 2; // Cadastro confirmado, vai para assessment
+        if (cadastroConfirmado && discCompleto && autopercepCompleta) step = 3; // Pula para mentora
+        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida) step = 4; // Pula para agendamento
+        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito) step = 5; // Pula para 1º encontro
+        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado) step = 6; // 1º encontro feito, vai para Meu PDI
+        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado && pdiVisualizado) step = 7; // PDI visualizado, vai para Sua Jornada
+        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado && pdiVisualizado && todosVideosAssistidos) step = 8; // Vídeos assistidos, vai para Aceite
 
         // Quando onboarding está completo, forçar step 8 para que todas as etapas
         // apareçam como concluídas e o aluno possa navegar livremente em modo visualização
@@ -6177,7 +6190,7 @@ Responda APENAS em JSON com o formato:
 
         return {
           step,
-          cadastroPreenchido,
+          cadastroConfirmado,
           discCompleto,
           autopercepCompleta,
           mentoraEscolhida,

@@ -185,7 +185,9 @@ export const alunos = mysqlTable("alunos", {
   programId: int("programId"),
   isActive: int("isActive").default(1).notNull(),
   canLogin: int("canLogin").default(1).notNull(), // 1 = pode fazer login
-  bypassOnboarding: int("bypassOnboarding").default(0).notNull(), // 1 = pular assessment/vitrine, ir direto ao dashboard
+  bypassOnboarding: int("bypassOnboarding").default(0).notNull(), // 1 = pular assessment/vitrine, ir direto ao dashboard (LEGADO - não usar mais)
+  onboardingLiberado: int("onboardingLiberado").default(0).notNull(), // 1 = admin liberou novo ciclo de onboarding
+  onboardingLiberadoEm: timestamp("onboardingLiberadoEm"), // quando o admin liberou
   cadastradoPorAdmin: int("cadastradoPorAdmin").default(0).notNull(), // 1 = cadastrado diretamente pelo admin
   contratoInicio: timestamp("contratoInicio"), // Data início do período contratual
   contratoFim: timestamp("contratoFim"), // Data fim do período contratual
@@ -1046,6 +1048,10 @@ export type InsertEmailAlertaLog = typeof emailAlertasLog.$inferInsert;
 export const onboardingJornada = mysqlTable("onboarding_jornada", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(),
+  ciclo: int("ciclo").default(1).notNull(), // Número do ciclo de onboarding (1 = primeiro, 2 = renovação, etc.)
+  // Etapa 1 - Cadastro confirmado pelo aluno
+  cadastroConfirmado: int("cadastroConfirmado").default(0).notNull(), // 1 = aluno revisou e confirmou seus dados
+  cadastroConfirmadoEm: timestamp("cadastroConfirmadoEm"),
   // Etapa 6 - Meu PDI
   pdiVisualizado: int("pdiVisualizado").default(0).notNull(), // 1 = visualizou o PDI
   pdiVisualizadoEm: timestamp("pdiVisualizadoEm"),

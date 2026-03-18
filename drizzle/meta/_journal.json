@@ -365,6 +365,13 @@
       "when": 1773789964380,
       "tag": "0051_sad_greymalkin",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "5",
+      "when": 1773795090517,
+      "tag": "0052_cloudy_santa_claus",
+      "breakpoints": true
     }
   ]
 }

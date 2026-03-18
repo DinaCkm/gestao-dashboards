@@ -1,0 +1,430 @@
+{
+  "query": "\nSELECT a.id, a.name, a.email, a.consultorId, c.name as mentor_nome, t.name as turma, a.cadastradoPorAdmin, a.createdAt\nFROM alunos a\nLEFT JOIN consultors c ON c.id = a.consultorId\nLEFT JOIN turmas t ON t.id = a.turmaId\nWHERE a.isActive = 1 AND a.bypassOnboarding = 1\nORDER BY a.createdAt DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT a.id, a.name, a.email, a.consultorId, c.name as mentor_nome, t.name as turma, a.cadastradoPorAdmin, a.createdAt\nFROM alunos a\nLEFT JOIN consultors c ON c.id = a.consultorId\nLEFT JOIN turmas t ON t.id = a.turmaId\nWHERE a.isActive = 1 AND a.bypassOnboarding = 1\nORDER BY a.createdAt DESC;\n",
+  "rows": [
+    {
+      "id": "630049",
+      "name": "Maria Juliana",
+      "email": "juliana@teste.com",
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:59:21"
+    },
+    {
+      "id": "630048",
+      "name": "Teste Direto Contrato A7",
+      "email": "direto-contrato-a7-1773791291635@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:48:11"
+    },
+    {
+      "id": "630046",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1773791289667@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:48:09"
+    },
+    {
+      "id": "630045",
+      "name": "Test Turma Number",
+      "email": "turma-num-1773791288767@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:48:08"
+    },
+    {
+      "id": "630044",
+      "name": "Test Turma Null",
+      "email": "turma-null-1773791287835@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:48:07"
+    },
+    {
+      "id": "630043",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1773791286352@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:48:06"
+    },
+    {
+      "id": "630042",
+      "name": "Teste Direto Contrato A7",
+      "email": "direto-contrato-a7-1773790664294@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:37:44"
+    },
+    {
+      "id": "630040",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1773790662525@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:37:42"
+    },
+    {
+      "id": "630039",
+      "name": "Test Turma Number",
+      "email": "turma-num-1773790661646@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:37:41"
+    },
+    {
+      "id": "630038",
+      "name": "Test Turma Null",
+      "email": "turma-null-1773790660799@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:37:40"
+    },
+    {
+      "id": "630037",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1773790659233@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:37:39"
+    },
+    {
+      "id": "630036",
+      "name": "Teste Direto Contrato A7",
+      "email": "direto-contrato-a7-1773790636043@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:37:16"
+    },
+    {
+      "id": "630034",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1773790634463@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:37:14"
+    },
+    {
+      "id": "630033",
+      "name": "Test Turma Number",
+      "email": "turma-num-1773790633574@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:37:13"
+    },
+    {
+      "id": "630032",
+      "name": "Test Turma Null",
+      "email": "turma-null-1773790632624@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:37:12"
+    },
+    {
+      "id": "630031",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1773790631032@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:37:11"
+    },
+    {
+      "id": "630030",
+      "name": "Teste Direto Contrato A7",
+      "email": "direto-contrato-a7-1773789150494@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:12:30"
+    },
+    {
+      "id": "630028",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1773789148805@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:12:28"
+    },
+    {
+      "id": "630027",
+      "name": "Test Turma Number",
+      "email": "turma-num-1773789147765@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:12:27"
+    },
+    {
+      "id": "630026",
+      "name": "Test Turma Null",
+      "email": "turma-null-1773789146788@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:12:26"
+    },
+    {
+      "id": "630025",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1773789144985@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 23:12:25"
+    },
+    {
+      "id": "630024",
+      "name": "Teste Direto Contrato A7",
+      "email": "direto-contrato-a7-1773788248684@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 22:57:28"
+    },
+    {
+      "id": "630022",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1773788247149@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 22:57:27"
+    },
+    {
+      "id": "630021",
+      "name": "Test Turma Number",
+      "email": "turma-num-1773788246108@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 22:57:26"
+    },
+    {
+      "id": "630020",
+      "name": "Test Turma Null",
+      "email": "turma-null-1773788245184@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 22:57:25"
+    },
+    {
+      "id": "630019",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1773788243663@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 22:57:24"
+    },
+    {
+      "id": "630018",
+      "name": "Teste Direto Contrato A7",
+      "email": "direto-contrato-a7-1773785453100@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 22:10:53"
+    },
+    {
+      "id": "630016",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1773785450409@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 22:10:50"
+    },
+    {
+      "id": "630015",
+      "name": "Test Turma Number",
+      "email": "turma-num-1773785449219@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 22:10:49"
+    },
+    {
+      "id": "630014",
+      "name": "Test Turma Null",
+      "email": "turma-null-1773785448264@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 22:10:48"
+    },
+    {
+      "id": "630013",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1773785446595@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 22:10:47"
+    },
+    {
+      "id": "630012",
+      "name": "Teste Direto Contrato A7",
+      "email": "direto-contrato-a7-1773755649760@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 13:54:09"
+    },
+    {
+      "id": "630011",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1773755648148@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 13:54:08"
+    },
+    {
+      "id": "630009",
+      "name": "Test Turma Number",
+      "email": "turma-num-1773755646972@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 13:54:07"
+    },
+    {
+      "id": "630008",
+      "name": "Test Turma Null",
+      "email": "turma-null-1773755645518@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 13:54:05"
+    },
+    {
+      "id": "630007",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1773755643971@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 13:54:04"
+    },
+    {
+      "id": "630006",
+      "name": "Teste Direto Contrato A7",
+      "email": "direto-contrato-a7-1773755169287@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 13:46:09"
+    },
+    {
+      "id": "630004",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1773755167557@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 13:46:07"
+    },
+    {
+      "id": "630003",
+      "name": "Test Turma Number",
+      "email": "turma-num-1773755166627@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 13:46:06"
+    },
+    {
+      "id": "630002",
+      "name": "Test Turma Null",
+      "email": "turma-null-1773755165657@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 13:46:05"
+    },
+    {
+      "id": "630001",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1773755163782@test.com",
+      "consultorId": "1",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-17 13:46:04"
+    },
+    {
+      "id": "570057",
+      "name": "Adriana Pereira de Deus",
+      "email": "drikadeusckm@gmail.com",
+      "consultorId": "NULL",
+      "mentor_nome": "NULL",
+      "turma": "NULL",
+      "cadastradoPorAdmin": "1",
+      "createdAt": "2026-03-16 21:51:37"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tconsultorId\tmentor_nome\tturma\tcadastradoPorAdmin\tcreatedAt\n630049\tMaria Juliana\tjuliana@teste.com\t39\tAdriana Deus\tNULL\t1\t2026-03-17 23:59:21\n630048\tTeste Direto Contrato A7\tdireto-contrato-a7-1773791291635@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:48:11\n630046\tTest Turma Undefined\tturma-undef-1773791289667@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:48:09\n630045\tTest Turma Number\tturma-num-1773791288767@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:48:08\n630044\tTest Turma Null\tturma-null-1773791287835@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:48:07\n630043\tAluno Direto Test\tdireto-test-1773791286352@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:48:06\n630042\tTeste Direto Contrato A7\tdireto-contrato-a7-1773790664294@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:37:44\n630040\tTest Turma Undefined\tturma-undef-1773790662525@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:37:42\n630039\tTest Turma Number\tturma-num-1773790661646@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:37:41\n630038\tTest Turma Null\tturma-null-1773790660799@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:37:40\n630037\tAluno Direto Test\tdireto-test-1773790659233@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:37:39\n630036\tTeste Direto Contrato A7\tdireto-contrato-a7-1773790636043@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:37:16\n630034\tTest Turma Undefined\tturma-undef-1773790634463@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:37:14\n630033\tTest Turma Number\tturma-num-1773790633574@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:37:13\n630032\tTest Turma Null\tturma-null-1773790632624@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:37:12\n630031\tAluno Direto Test\tdireto-test-1773790631032@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:37:11\n630030\tTeste Direto Contrato A7\tdireto-contrato-a7-1773789150494@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:12:30\n630028\tTest Turma Undefined\tturma-undef-1773789148805@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:12:28\n630027\tTest Turma Number\tturma-num-1773789147765@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:12:27\n630026\tTest Turma Null\tturma-null-1773789146788@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:12:26\n630025\tAluno Direto Test\tdireto-test-1773789144985@test.com\t1\tNULL\tNULL\t1\t2026-03-17 23:12:25\n630024\tTeste Direto Contrato A7\tdireto-contrato-a7-1773788248684@test.com\t1\tNULL\tNULL\t1\t2026-03-17 22:57:28\n630022\tTest Turma Undefined\tturma-undef-1773788247149@test.com\t1\tNULL\tNULL\t1\t2026-03-17 22:57:27\n630021\tTest Turma Number\tturma-num-1773788246108@test.com\t1\tNULL\tNULL\t1\t2026-03-17 22:57:26\n630020\tTest Turma Null\tturma-null-1773788245184@test.com\t1\tNULL\tNULL\t1\t2026-03-17 22:57:25\n630019\tAluno Direto Test\tdireto-test-1773788243663@test.com\t1\tNULL\tNULL\t1\t2026-03-17 22:57:24\n630018\tTeste Direto Contrato A7\tdireto-contrato-a7-1773785453100@test.com\t1\tNULL\tNULL\t1\t2026-03-17 22:10:53\n630016\tTest Turma Undefined\tturma-undef-1773785450409@test.com\t1\tNULL\tNULL\t1\t2026-03-17 22:10:50\n630015\tTest Turma Number\tturma-num-1773785449219@test.com\t1\tNULL\tNULL\t1\t2026-03-17 22:10:49\n630014\tTest Turma Null\tturma-null-1773785448264@test.com\t1\tNULL\tNULL\t1\t2026-03-17 22:10:48\n630013\tAluno Direto Test\tdireto-test-1773785446595@test.com\t1\tNULL\tNULL\t1\t2026-03-17 22:10:47\n630012\tTeste Direto Contrato A7\tdireto-contrato-a7-1773755649760@test.com\t1\tNULL\tNULL\t1\t2026-03-17 13:54:09\n630011\tTest Turma Undefined\tturma-undef-1773755648148@test.com\t1\tNULL\tNULL\t1\t2026-03-17 13:54:08\n630009\tTest Turma Number\tturma-num-1773755646972@test.com\t1\tNULL\tNULL\t1\t2026-03-17 13:54:07\n630008\tTest Turma Null\tturma-null-1773755645518@test.com\t1\tNULL\tNULL\t1\t2026-03-17 13:54:05\n630007\tAluno Direto Test\tdireto-test-1773755643971@test.com\t1\tNULL\tNULL\t1\t2026-03-17 13:54:04\n630006\tTeste Direto Contrato A7\tdireto-contrato-a7-1773755169287@test.com\t1\tNULL\tNULL\t1\t2026-03-17 13:46:09\n630004\tTest Turma Undefined\tturma-undef-1773755167557@test.com\t1\tNULL\tNULL\t1\t2026-03-17 13:46:07\n630003\tTest Turma Number\tturma-num-1773755166627@test.com\t1\tNULL\tNULL\t1\t2026-03-17 13:46:06\n630002\tTest Turma Null\tturma-null-1773755165657@test.com\t1\tNULL\tNULL\t1\t2026-03-17 13:46:05\n630001\tAluno Direto Test\tdireto-test-1773755163782@test.com\t1\tNULL\tNULL\t1\t2026-03-17 13:46:04\n570057\tAdriana Pereira de Deus\tdrikadeusckm@gmail.com\tNULL\tNULL\tNULL\t1\t2026-03-16 21:51:37\n",
+  "stderr": "",
+  "execution_time_ms": 143
+}

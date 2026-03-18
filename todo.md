@@ -2415,3 +2415,15 @@
 - [x] Animações leves (pulse, gradientes, transições hover/expand)
 - [x] Hero card personalizado com nome do aluno e decorações visuais
 - [x] Linguagem motivadora focada no autoconhecimento
+
+## Nova Lógica de Onboarding (17/03/2026)
+- [x] Schema: campo onboardingLiberado + cadastroConfirmado na tabela onboarding_jornada/alunos
+- [x] Backend: nova lógica getAlunoOnboardingStatus baseada em PDI (sem PDI = onboarding obrigatório)
+- [x] Backend: procedure admin liberarOnboarding (novo ciclo)
+- [x] Backend: ajustar lógica de progresso — etapa 1 sempre primeiro (cadastroConfirmado)
+- [x] Frontend: redirecionamento nas páginas do aluno (Mural, Dashboard) para onboarding se sem PDI
+- [x] Frontend: botão "Liberar Onboarding" na lista de alunos (só para quem tem PDI)
+- [x] Ajustar cadastro de aluno (admin) para NÃO atribuir mentor — aluno sempre escolhe no onboarding
+- [x] Validação: aluno com PDI sem mentor = erro apontado para correção (verificado: 0 casos no banco)
+- [x] Remover lógica de bypassOnboarding (bypassOnboarding=0 no cadastro direto, regra agora é baseada em PDI)
+- [x] Testes (onboarding.test.ts — todos passando)

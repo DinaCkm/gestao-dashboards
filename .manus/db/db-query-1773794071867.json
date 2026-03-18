@@ -1,0 +1,25 @@
+{
+  "query": "\nSELECT \n  CASE WHEN ap_count > 0 THEN 'COM_PDI' ELSE 'SEM_PDI' END as status_pdi,\n  CASE WHEN a.consultorId IS NOT NULL THEN 'COM_MENTOR' ELSE 'SEM_MENTOR' END as status_mentor,\n  COUNT(*) as qtd\nFROM (\n  SELECT a.id, a.consultorId,\n    (SELECT COUNT(*) FROM assessment_pdi ap WHERE ap.alunoId = a.id) as ap_count\n  FROM alunos a\n  WHERE a.isActive = 1\n) a\nGROUP BY status_pdi, status_mentor\nORDER BY status_pdi, status_mentor;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  CASE WHEN ap_count > 0 THEN 'COM_PDI' ELSE 'SEM_PDI' END as status_pdi,\n  CASE WHEN a.consultorId IS NOT NULL THEN 'COM_MENTOR' ELSE 'SEM_MENTOR' END as status_mentor,\n  COUNT(*) as qtd\nFROM (\n  SELECT a.id, a.consultorId,\n    (SELECT COUNT(*) FROM assessment_pdi ap WHERE ap.alunoId = a.id) as ap_count\n  FROM alunos a\n  WHERE a.isActive = 1\n) a\nGROUP BY status_pdi, status_mentor\nORDER BY status_pdi, status_mentor;\n",
+  "rows": [
+    {
+      "status_pdi": "COM_PDI",
+      "status_mentor": "COM_MENTOR",
+      "qtd": "97"
+    },
+    {
+      "status_pdi": "SEM_PDI",
+      "status_mentor": "COM_MENTOR",
+      "qtd": "42"
+    },
+    {
+      "status_pdi": "SEM_PDI",
+      "status_mentor": "SEM_MENTOR",
+      "qtd": "9"
+    }
+  ],
+  "messages": [],
+  "stdout": "status_pdi\tstatus_mentor\tqtd\nCOM_PDI\tCOM_MENTOR\t97\nSEM_PDI\tCOM_MENTOR\t42\nSEM_PDI\tSEM_MENTOR\t9\n",
+  "stderr": "",
+  "execution_time_ms": 113
+}

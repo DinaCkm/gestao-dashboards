@@ -64,10 +64,10 @@ export default function Home() {
       // Verificar se precisa de onboarding
       if (onboardingStatus) {
         if (onboardingStatus.needsOnboarding) {
-          // Aluno sem mentor e sem bypass → vai para onboarding
+          // Aluno sem PDI ou admin liberou novo ciclo → vai para onboarding
           setLocation("/onboarding");
         } else {
-          // Aluno com mentor ou bypass → vai direto para dashboard
+          // Aluno com PDI → vai direto para dashboard
           setLocation("/meu-dashboard");
         }
       }
