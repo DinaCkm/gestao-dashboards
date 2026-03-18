@@ -4309,11 +4309,19 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
 
   // Ciclos de Execução da Trilha
   ciclos: router({
-    // Listar ciclos de um aluno
+    // Listar ciclos de um aluno (manual ou derivados do PDI)
     porAluno: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
       .query(async ({ input }) => {
-        return await db.getCiclosByAluno(input.alunoId);
+        // 1. Tentar ciclos manuais (tabela ciclos_execucao)
+        const ciclosManuais = await db.getCiclosByAluno(input.alunoId);
+        if (ciclosManuais.length > 0) {
+          return ciclosManuais.map(c => ({ ...c, fonte: 'manual' as const }));
+        }
+        
+        // 2. Fallback: gerar ciclos a partir de assessment_competencias (micro ciclos do PDI)
+        const ciclosDerivados = await db.getCiclosDerivadosDoPdi(input.alunoId);
+        return ciclosDerivados;
       }),
 
     // Criar ciclo

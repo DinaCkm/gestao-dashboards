@@ -110,6 +110,7 @@ const adminMenuGroups: MenuGroup[] = [
     label: "Alunos",
     items: [
       { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment" },
+      { icon: Target, label: "Plano Individual", path: "/plano-individual" },
       { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas" },
       { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas" },
     ],

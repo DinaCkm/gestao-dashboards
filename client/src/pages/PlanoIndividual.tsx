@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { formatDateSafe } from "@/lib/dateUtils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,10 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function PlanoIndividual() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const userConsultorId = (user as any)?.consultorId as number | null;
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmpresa, setSelectedEmpresa] = useState<string>("all");
   const [selectedAluno, setSelectedAluno] = useState<number | null>(null);
@@ -39,6 +44,10 @@ export default function PlanoIndividual() {
 
   // Queries
   const { data: alunosWithPlano, isLoading: loadingAlunos, refetch: refetchAlunos } = trpc.planoIndividual.alunosWithPlano.useQuery();
+  const { data: mentorAlunos } = trpc.alunos.byConsultor.useQuery(
+    { consultorId: userConsultorId! },
+    { enabled: !!userConsultorId && !isAdmin }
+  );
   const { data: empresas } = trpc.indicadores.empresas.useQuery();
   const { data: planoAluno, refetch: refetchPlano } = trpc.planoIndividual.byAluno.useQuery(
     { alunoId: selectedAluno! },
@@ -142,13 +151,20 @@ export default function PlanoIndividual() {
     }
   });
 
-  // Filtrar alunos
-  const filteredAlunos = alunosWithPlano?.filter(aluno => {
+  // Filtrar alunos - mentor vê apenas seus mentorados
+  const baseAlunos = useMemo(() => {
+    if (isAdmin) return alunosWithPlano || [];
+    if (!mentorAlunos || !alunosWithPlano) return [];
+    const mentorAlunoIds = new Set(mentorAlunos.map((a: any) => a.id));
+    return alunosWithPlano.filter(a => mentorAlunoIds.has(a.id));
+  }, [isAdmin, alunosWithPlano, mentorAlunos]);
+
+  const filteredAlunos = baseAlunos.filter(aluno => {
     const matchesSearch = aluno.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          aluno.externalId?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesEmpresa = selectedEmpresa === "all" || aluno.programId === parseInt(selectedEmpresa);
     return matchesSearch && matchesEmpresa;
-  }) || [];
+  });
 
   // Filtrar competências disponíveis (não no plano atual)
   const competenciasDisponiveis = competencias?.filter(comp => {
@@ -304,10 +320,15 @@ export default function PlanoIndividual() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">Plano Individual</h1>
-            <p className="text-slate-600">Defina as competências obrigatórias e ciclos de execução para cada aluno</p>
+            <h1 className="text-3xl font-bold text-slate-800">P.D.I - Plano Individual</h1>
+            <p className="text-slate-600">
+              {isAdmin
+                ? "Defina as competências obrigatórias e ciclos de execução para cada aluno"
+                : "Visualize as competências e ciclos de execução dos seus mentorados"
+              }
+            </p>
           </div>
-          <Dialog open={isLoteDialogOpen} onOpenChange={setIsLoteDialogOpen}>
+          {isAdmin && <Dialog open={isLoteDialogOpen} onOpenChange={setIsLoteDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-[#F5991F] hover:bg-[#d06a1e]">
                 <Users className="w-4 h-4 mr-2" />
@@ -392,7 +413,7 @@ export default function PlanoIndividual() {
                 </Button>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
+          </Dialog>}
         </div>
 
         {/* Stats Cards */}
@@ -405,7 +426,7 @@ export default function PlanoIndividual() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-600">Total de Alunos</p>
-                  <p className="text-2xl font-bold">{alunosWithPlano?.length || 0}</p>
+                  <p className="text-2xl font-bold">{baseAlunos.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -538,7 +559,7 @@ export default function PlanoIndividual() {
                     }
                   </CardDescription>
                 </div>
-                {selectedAluno && (
+                {selectedAluno && isAdmin && (
                   <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                     <DialogTrigger asChild>
                       <Button>
@@ -655,7 +676,7 @@ export default function PlanoIndividual() {
                                   <TableHead>Competência</TableHead>
                                   <TableHead className="w-32">Status</TableHead>
                                   <TableHead className="w-24">Meta</TableHead>
-                                  <TableHead className="w-24">Ações</TableHead>
+                                  {isAdmin && <TableHead className="w-24">Ações</TableHead>}
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -670,14 +691,18 @@ export default function PlanoIndividual() {
                                       </div>
                                     </TableCell>
                                     <TableCell>
-                                      <button onClick={() => handleToggleStatus(item.id, item.status)}>
-                                        {getStatusBadge(item.status)}
-                                      </button>
+                                      {isAdmin ? (
+                                        <button onClick={() => handleToggleStatus(item.id, item.status)}>
+                                          {getStatusBadge(item.status)}
+                                        </button>
+                                      ) : (
+                                        getStatusBadge(item.status)
+                                      )}
                                     </TableCell>
                                     <TableCell>
                                       <span className="text-slate-600">&ge; {item.metaNota}</span>
                                     </TableCell>
-                                    <TableCell>
+                                    {isAdmin && <TableCell>
                                       <Button
                                         variant="ghost"
                                         size="sm"
@@ -686,7 +711,7 @@ export default function PlanoIndividual() {
                                       >
                                         <Trash2 className="w-4 h-4" />
                                       </Button>
-                                    </TableCell>
+                                    </TableCell>}
                                   </TableRow>
                                 ))}
                               </TableBody>
@@ -707,7 +732,7 @@ export default function PlanoIndividual() {
                             Defina os ciclos de execução com períodos e competências que o aluno deve cumprir.
                           </p>
                         </div>
-                        <Button
+                        {isAdmin && <Button
                           onClick={() => {
                             resetCicloForm();
                             setIsCicloDialogOpen(true);
@@ -717,13 +742,21 @@ export default function PlanoIndividual() {
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Novo Ciclo
-                        </Button>
+                        </Button>}
                       </div>
 
                       {(!planoAluno || planoAluno.length === 0) && (
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
                           <AlertCircle className="w-4 h-4 inline mr-2" />
                           Adicione competências ao plano do aluno antes de criar ciclos de execução.
+                        </div>
+                      )}
+
+                      {/* Banner informativo quando ciclos vêm do PDI */}
+                      {ciclosAluno && ciclosAluno.length > 0 && (ciclosAluno as any)[0]?.fonte === 'pdi' && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+                          <AlertCircle className="w-4 h-4 inline mr-2" />
+                          Ciclos gerados automaticamente a partir do PDI (Assessment). Para personalizar, crie ciclos manuais usando o botão "Novo Ciclo".
                         </div>
                       )}
 
@@ -742,6 +775,7 @@ export default function PlanoIndividual() {
                           <div className="relative">
                             {ciclosAluno.map((ciclo, index) => {
                               const status = getCicloStatus(ciclo);
+                              const isPdiCiclo = (ciclo as any).fonte === 'pdi';
                               return (
                                 <div key={ciclo.id} className="relative flex gap-4 pb-6">
                                   {/* Linha vertical conectora */}
@@ -771,6 +805,11 @@ export default function PlanoIndividual() {
                                           <Badge className={`${status.color} text-white text-xs`}>
                                             {status.label}
                                           </Badge>
+                                          {isPdiCiclo && (
+                                            <Badge variant="outline" className="text-xs text-blue-600 border-blue-300">
+                                              PDI
+                                            </Badge>
+                                          )}
                                         </div>
                                         <p className="text-sm text-slate-500 mt-1">
                                           <Calendar className="w-3 h-3 inline mr-1" />
@@ -780,24 +819,26 @@ export default function PlanoIndividual() {
                                           <p className="text-sm text-slate-500 mt-1 italic">{ciclo.observacoes}</p>
                                         )}
                                       </div>
-                                      <div className="flex gap-1">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => openEditCiclo(ciclo)}
-                                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                                        >
-                                          <Edit2 className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleExcluirCiclo(ciclo.id, ciclo.nomeCiclo)}
-                                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                      </div>
+                                      {isAdmin && !isPdiCiclo && (
+                                        <div className="flex gap-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => openEditCiclo(ciclo)}
+                                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                          >
+                                            <Edit2 className="w-4 h-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleExcluirCiclo(ciclo.id, ciclo.nomeCiclo)}
+                                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </Button>
+                                        </div>
+                                      )}
                                     </div>
 
                                     {/* Competências do Ciclo */}

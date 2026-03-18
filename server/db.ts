@@ -2872,6 +2872,116 @@ export async function getCiclosByAluno(alunoId: number) {
   return result;
 }
 
+// Gerar ciclos derivados do PDI (assessment_competencias) para exibição na aba Ciclos de Execução
+// Retorna no mesmo formato que getCiclosByAluno para compatibilidade com o frontend
+export async function getCiclosDerivadosDoPdi(alunoId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  
+  const pdis = await dbConn.select({
+    id: assessmentPdi.id,
+    trilhaId: assessmentPdi.trilhaId,
+    status: assessmentPdi.status,
+    macroInicio: assessmentPdi.macroInicio,
+    macroTermino: assessmentPdi.macroTermino,
+  }).from(assessmentPdi)
+    .where(sql`${assessmentPdi.alunoId} = ${alunoId} AND ${assessmentPdi.status} = 'ativo'`);
+  
+  if (pdis.length === 0) return [];
+  
+  const pdiIds = pdis.map(p => p.id);
+  const allComps = await dbConn.select({
+    id: assessmentCompetencias.id,
+    assessmentPdiId: assessmentCompetencias.assessmentPdiId,
+    competenciaId: assessmentCompetencias.competenciaId,
+    peso: assessmentCompetencias.peso,
+    microInicio: assessmentCompetencias.microInicio,
+    microTermino: assessmentCompetencias.microTermino,
+  }).from(assessmentCompetencias)
+    .where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map(id => sql`${id}`), sql`, `)})`);
+  
+  const allTrilhas = await dbConn.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t.name]));
+  
+  const allCompetencias = await dbConn.select({ id: competencias.id, nome: competencias.nome, codigoIntegracao: competencias.codigoIntegracao, trilhaId: competencias.trilhaId }).from(competencias);
+  const compMap = new Map(allCompetencias.map(c => [c.id, c]));
+  
+  let autoId = 300000;
+  const result: any[] = [];
+  
+  for (const pdi of pdis) {
+    const trilhaNome = trilhaMap.get(pdi.trilhaId) || `Trilha ${pdi.trilhaId}`;
+    const comps = allComps.filter(c => c.assessmentPdiId === pdi.id);
+    
+    // Agrupar competências por período (microInicio + microTermino)
+    const cicloGroups = new Map<string, { compIds: number[]; inicio: string; termino: string }>(); 
+    
+    for (const comp of comps) {
+      if (!comp.microInicio || !comp.microTermino) continue;
+      
+      const inicio = new Date(comp.microInicio).toISOString().split('T')[0];
+      const termino = new Date(comp.microTermino).toISOString().split('T')[0];
+      const key = `${inicio}|${termino}`;
+      
+      const group = cicloGroups.get(key) || { compIds: [], inicio, termino };
+      group.compIds.push(comp.competenciaId);
+      cicloGroups.set(key, group);
+    }
+    
+    // Competências sem datas de micro ciclo → usar datas do macro ciclo
+    const compsWithoutDates = comps.filter(c => !c.microInicio || !c.microTermino);
+    if (compsWithoutDates.length > 0 && pdi.macroInicio && pdi.macroTermino) {
+      const inicio = new Date(pdi.macroInicio).toISOString().split('T')[0];
+      const termino = new Date(pdi.macroTermino).toISOString().split('T')[0];
+      const key = `${inicio}|${termino}`;
+      const group = cicloGroups.get(key) || { compIds: [], inicio, termino };
+      for (const comp of compsWithoutDates) {
+        group.compIds.push(comp.competenciaId);
+      }
+      cicloGroups.set(key, group);
+    }
+    
+    const sortedGroups = Array.from(cicloGroups.entries()).sort((a, b) => a[1].inicio.localeCompare(b[1].inicio));
+    
+    for (let i = 0; i < sortedGroups.length; i++) {
+      const [, group] = sortedGroups[i];
+      if (group.compIds.length === 0) continue;
+      
+      const cicloLabel = sortedGroups.length > 1 ? ` - Ciclo ${i + 1}` : '';
+      
+      result.push({
+        id: autoId++,
+        alunoId,
+        nomeCiclo: `${trilhaNome}${cicloLabel}`,
+        dataInicio: group.inicio,
+        dataFim: group.termino,
+        definidoPor: null,
+        observacoes: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        competencias: group.compIds.map(compId => {
+          const comp = compMap.get(compId);
+          return {
+            id: compId,
+            competenciaId: compId,
+            competenciaNome: comp?.nome || 'Desconhecida',
+            competenciaCodigo: comp?.codigoIntegracao || null,
+            trilhaId: comp?.trilhaId || pdi.trilhaId,
+            trilhaNome: trilhaNome,
+          };
+        }),
+        competenciaIds: group.compIds,
+        fonte: 'pdi' as const,
+      });
+    }
+  }
+  
+  // Ordenar por data de início
+  result.sort((a, b) => a.dataInicio.localeCompare(b.dataInicio));
+  
+  return result;
+}
+
 // Buscar todos os ciclos (para cálculo em massa)
 export async function getAllCiclos() {
   const db = await getDb();

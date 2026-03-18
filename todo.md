@@ -2474,3 +2474,18 @@
   - Correção: alterado para usar pdi.turmaId || aluno.turmaId no db.ts
 - [x] Verificar se progressData retorna dados corretos para Flavia com turmaNome matching
   - Confirmado visualmente: Flavia aparece na lista ao filtrar por Jornada Personalizada
+
+## Bug: Aba Ciclos de Execução no Plano Individual não mostra ciclos existentes (18/03/2026)
+- [x] Aba "Ciclos de Execução" agora mostra micro ciclos derivados do PDI (assessment_competencias)
+- [x] Backend: nova função getCiclosDerivadosDoPdi agrupa competências por trilha/período
+- [x] Frontend: exibe ciclos com badge PDI, timeline visual e competências associadas
+
+- [x] Adicionar página Plano Individual no menu/sidebar do administrador (grupo Alunos)
+
+## Ajustes Plano Individual - Permissões e Título (18/03/2026)
+- [x] Alterar título da página para "P.D.I - Plano Individual"
+- [x] Mentora vê apenas seus mentorados na lista de alunos (via trpc.alunos.byConsultor)
+- [x] Apenas administrador pode ver/editar plano de todos os alunos
+  - Botões Adicionar Competências, Atribuir em Lote, Remover e Novo Ciclo ocultos para mentores
+  - Status não é clicável para mentores (somente visualização)
+- [x] 19 testes unitários cobrindo permissões, filtragem e ciclos PDI
