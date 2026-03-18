@@ -2455,3 +2455,15 @@
 - [x] Mostrar apenas cards das trilhas que o aluno realmente faz na área de Cases de Sucesso
   - Backend: trilhasDisponiveis agora filtra por assessment_pdi do aluno (getAssessmentsByAluno)
   - Testes: 9 testes unitários cobrindo cenários (múltiplos PDIs, trilha inativa, sem PDI, etc.)
+
+## Bug: Competência Raciocínio Lógico sem evolução para Wandemberg (18/03/2026)
+- [ ] Investigar por que "Raciocínio Lógico e Espacial" do Wandemberg aparece sem barra de progresso, sem nota e como "Vencida"
+  - Tem 3/4 webinars e 2/2 tarefas, mas não mostra Aulas, Nota, Nível Mentora
+  - Outras competências (Gestão do Tempo, Empatia) mostram todos os dados normalmente
+
+## Ajustes Solicitados - Documento Flavia Balieiro (18/03/2026)
+- [x] Página Editar Mentorias: organizar sessões por ordem numérica (ascendente) e incluir filtro de pesquisa
+- [x] Página Editar Mentorias: ao clicar na linha do aluno, abrir card com dados detalhados (Sheet lateral com progresso, sessões, última sessão)
+- [x] Formulário Nova Sessão de Mentoria: corrigir filtro de alunos por turma (agora considera PDI do aluno)
+- [x] Bug: Flavia Balieiro agora aparece ao filtrar por Jornada Personalizada (via PDI, mesmo com turmaId=Basic)
+- [x] 13 testes unitários cobrindo ordenação, busca e filtro PDI

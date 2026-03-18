@@ -1,0 +1,37 @@
+{
+  "query": "SELECT DISTINCT competenciaName FROM student_performance WHERE competenciaName > 'Inteligência Emocional Tática' ORDER BY competenciaName;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT DISTINCT competenciaName FROM student_performance WHERE competenciaName > 'Inteligência Emocional Tática' ORDER BY competenciaName;",
+  "rows": [
+    {
+      "competenciaName": "Inteligência Emocional Tática - Visão de Futuro"
+    },
+    {
+      "competenciaName": "Leitura de Cenário - Essencial"
+    },
+    {
+      "competenciaName": "Memória - Básica"
+    },
+    {
+      "competenciaName": "Mentalidade Sistêmica - Visão de Futuro"
+    },
+    {
+      "competenciaName": "Mindset Visionário - Visão de Futuro"
+    },
+    {
+      "competenciaName": "Negociação - Master"
+    },
+    {
+      "competenciaName": "Planejamento e Organização - Essencial"
+    },
+    {
+      "competenciaName": "Presença Executiva - Master"
+    },
+    {
+      "competenciaName": "Proatividade - Essencial"
+    }
+  ],
+  "messages": [],
+  "stdout": "competenciaName\nInteligência Emocional Tática - Visão de Futuro\nLeitura de Cenário - Essencial\nMemória - Básica\nMentalidade Sistêmica - Visão de Futuro\nMindset Visionário - Visão de Futuro\nNegociação - Master\nPlanejamento e Organização - Essencial\nPresença Executiva - Master\nProatividade - Essencial\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

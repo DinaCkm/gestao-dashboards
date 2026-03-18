@@ -1,0 +1,75 @@
+{
+  "query": "SELECT competenciaId, competenciaName, progressoTotal FROM student_performance WHERE alunoId = 30097 ORDER BY competenciaName;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT competenciaId, competenciaName, progressoTotal FROM student_performance WHERE alunoId = 30097 ORDER BY competenciaName;",
+  "rows": [
+    {
+      "competenciaId": "60002",
+      "competenciaName": "Adaptabilidade - Essencial",
+      "progressoTotal": "0"
+    },
+    {
+      "competenciaId": "60005",
+      "competenciaName": "Atenção - Básica",
+      "progressoTotal": "100"
+    },
+    {
+      "competenciaId": "60006",
+      "competenciaName": "Autopercepção - Básica",
+      "progressoTotal": "100"
+    },
+    {
+      "competenciaId": "60007",
+      "competenciaName": "Comunicação Assertiva - Essencial",
+      "progressoTotal": "0"
+    },
+    {
+      "competenciaId": "60009",
+      "competenciaName": "Disciplina - Básica",
+      "progressoTotal": "100"
+    },
+    {
+      "competenciaId": "60010",
+      "competenciaName": "Empatia - Básica",
+      "progressoTotal": "100"
+    },
+    {
+      "competenciaId": "60011",
+      "competenciaName": "Escuta Ativa - Básica",
+      "progressoTotal": "100"
+    },
+    {
+      "competenciaId": "60017",
+      "competenciaName": "Gestão do Tempo - Básica",
+      "progressoTotal": "100"
+    },
+    {
+      "competenciaId": "60019",
+      "competenciaName": "Inteligência Emocional - Essencial",
+      "progressoTotal": "0"
+    },
+    {
+      "competenciaId": "60021",
+      "competenciaName": "Leitura de Cenário - Essencial",
+      "progressoTotal": "0"
+    },
+    {
+      "competenciaId": "60022",
+      "competenciaName": "Memória - Básica",
+      "progressoTotal": "100"
+    },
+    {
+      "competenciaId": "60026",
+      "competenciaName": "Planejamento e Organização - Essencial",
+      "progressoTotal": "0"
+    },
+    {
+      "competenciaId": "60028",
+      "competenciaName": "Proatividade - Essencial",
+      "progressoTotal": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "competenciaId\tcompetenciaName\tprogressoTotal\n60002\tAdaptabilidade - Essencial\t0\n60005\tAtenção - Básica\t100\n60006\tAutopercepção - Básica\t100\n60007\tComunicação Assertiva - Essencial\t0\n60009\tDisciplina - Básica\t100\n60010\tEmpatia - Básica\t100\n60011\tEscuta Ativa - Básica\t100\n60017\tGestão do Tempo - Básica\t100\n60019\tInteligência Emocional - Essencial\t0\n60021\tLeitura de Cenário - Essencial\t0\n60022\tMemória - Básica\t100\n60026\tPlanejamento e Organização - Essencial\t0\n60028\tProatividade - Essencial\t0\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

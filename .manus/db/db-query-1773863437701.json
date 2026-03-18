@@ -1,0 +1,19 @@
+{
+  "query": "SELECT t.id, t.name, t.programId FROM turmas t WHERE t.id = 30002;\nSELECT ap.id, ap.trilhaId, ap.status, tr.name as trilhaNome FROM assessment_pdi ap JOIN trilhas tr ON tr.id = ap.trilhaId WHERE ap.alunoId = 30040;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT t.id, t.name, t.programId FROM turmas t WHERE t.id = 30002;\nSELECT ap.id, ap.trilhaId, ap.status, tr.name as trilhaNome FROM assessment_pdi ap JOIN trilhas tr ON tr.id = ap.trilhaId WHERE ap.alunoId = 30040;",
+  "rows": [
+    {
+      "id": "30002",
+      "name": "[2025] Embrapii | Basic",
+      "programId": "18"
+    }
+  ],
+  "messages": [
+    "id\ttrilhaId\tstatus\ttrilhaNome",
+    "60361\t1\tativo\tBasic",
+    "60344\t60001\tativo\tJornada Personalizada"
+  ],
+  "stdout": "id\tname\tprogramId\n30002\t[2025] Embrapii | Basic\t18\nid\ttrilhaId\tstatus\ttrilhaNome\n60361\t1\tativo\tBasic\n60344\t60001\tativo\tJornada Personalizada\n",
+  "stderr": "",
+  "execution_time_ms": 61
+}

@@ -1,0 +1,94 @@
+{
+  "query": "SELECT DISTINCT competenciaName FROM student_performance ORDER BY competenciaName;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT DISTINCT competenciaName FROM student_performance ORDER BY competenciaName;",
+  "rows": [
+    {
+      "competenciaName": "Accountability - Master"
+    },
+    {
+      "competenciaName": "Adaptabilidade - Essencial"
+    },
+    {
+      "competenciaName": "Adaptabilidade Dinâmica - Visão de Futuro"
+    },
+    {
+      "competenciaName": "Arquitetura de Mudanças - Visão de Futuro"
+    },
+    {
+      "competenciaName": "Atenção - Básica"
+    },
+    {
+      "competenciaName": "Autopercepção - Básica"
+    },
+    {
+      "competenciaName": "Comunicação Assertiva - Essencial"
+    },
+    {
+      "competenciaName": "Decisões Ágeis - Visão de Futuro"
+    },
+    {
+      "competenciaName": "Disciplina - Básica"
+    },
+    {
+      "competenciaName": "Empatia - Básica"
+    },
+    {
+      "competenciaName": "Escuta Ativa - Básica"
+    },
+    {
+      "competenciaName": "Estratégia de Longo Alcance - Visão de Futuro"
+    },
+    {
+      "competenciaName": "Foco em Resultados - Master"
+    },
+    {
+      "competenciaName": "Gestão da Comunicação - Visão de Futuro"
+    },
+    {
+      "competenciaName": "Gestão de Conflitos - Master"
+    },
+    {
+      "competenciaName": "Gestão de Equipes - Master"
+    },
+    {
+      "competenciaName": "Gestão do Tempo - Básica"
+    },
+    {
+      "competenciaName": "Influência - Master"
+    },
+    {
+      "competenciaName": "Inteligência Emocional - Essencial"
+    },
+    {
+      "competenciaName": "Inteligência Emocional Tática - Visão de Futuro"
+    },
+    {
+      "competenciaName": "Leitura de Cenário - Essencial"
+    },
+    {
+      "competenciaName": "Memória - Básica"
+    },
+    {
+      "competenciaName": "Mentalidade Sistêmica - Visão de Futuro"
+    },
+    {
+      "competenciaName": "Mindset Visionário - Visão de Futuro"
+    },
+    {
+      "competenciaName": "Negociação - Master"
+    },
+    {
+      "competenciaName": "Planejamento e Organização - Essencial"
+    },
+    {
+      "competenciaName": "Presença Executiva - Master"
+    },
+    {
+      "competenciaName": "Proatividade - Essencial"
+    }
+  ],
+  "messages": [],
+  "stdout": "competenciaName\nAccountability - Master\nAdaptabilidade - Essencial\nAdaptabilidade Dinâmica - Visão de Futuro\nArquitetura de Mudanças - Visão de Futuro\nAtenção - Básica\nAutopercepção - Básica\nComunicação Assertiva - Essencial\nDecisões Ágeis - Visão de Futuro\nDisciplina - Básica\nEmpatia - Básica\nEscuta Ativa - Básica\nEstratégia de Longo Alcance - Visão de Futuro\nFoco em Resultados - Master\nGestão da Comunicação - Visão de Futuro\nGestão de Conflitos - Master\nGestão de Equipes - Master\nGestão do Tempo - Básica\nInfluência - Master\nInteligência Emocional - Essencial\nInteligência Emocional Tática - Visão de Futuro\nLeitura de Cenário - Essencial\nMemória - Básica\nMentalidade Sistêmica - Visão de Futuro\nMindset Visionário - Visão de Futuro\nNegociação - Master\nPlanejamento e Organização - Essencial\nPresença Executiva - Master\nProatividade - Essencial\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

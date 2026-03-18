@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, nome, trilhaId FROM competencias WHERE nome LIKE '%Racioc%' OR nome LIKE '%racioc%' OR nome LIKE '%Lógic%' OR nome LIKE '%logic%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, nome, trilhaId FROM competencias WHERE nome LIKE '%Racioc%' OR nome LIKE '%racioc%' OR nome LIKE '%Lógic%' OR nome LIKE '%logic%';",
+  "rows": [
+    {
+      "id": "30010",
+      "nome": "Raciocínio Lógico e Espacial",
+      "trilhaId": "1"
+    },
+    {
+      "id": "60030",
+      "nome": "Raciocínio Lógico e Espacial",
+      "trilhaId": "60001"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome\ttrilhaId\n30010\tRaciocínio Lógico e Espacial\t1\n60030\tRaciocínio Lógico e Espacial\t60001\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

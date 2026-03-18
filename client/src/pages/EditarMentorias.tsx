@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { formatDateSafe } from "@/lib/dateUtils";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -10,8 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Search, Edit3, Calendar, ChevronLeft, ChevronRight, X, Trash2, AlertTriangle, Plus } from "lucide-react";
+import { Loader2, Search, Edit3, Calendar, ChevronLeft, ChevronRight, X, Trash2, AlertTriangle, Plus, Eye, FileText, Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function EditarMentorias() {
@@ -47,6 +48,10 @@ export default function EditarMentorias() {
   const [createNotaEvolucao, setCreateNotaEvolucao] = useState("");
   const [createFeedback, setCreateFeedback] = useState("");
   const [createTurmaFilter, setCreateTurmaFilter] = useState("");
+  const [createAlunoSearch, setCreateAlunoSearch] = useState("");
+
+  // Student detail sheet state
+  const [selectedAlunoId, setSelectedAlunoId] = useState<number | null>(null);
 
   // Data queries
   const { data: empresas } = trpc.admin.listEmpresas.useQuery(undefined, {
@@ -60,6 +65,11 @@ export default function EditarMentorias() {
   });
   const { data: allAlunos } = trpc.alunos.list.useQuery(undefined, {
     enabled: !loading && !!user && user.role === "admin",
+  });
+
+  // Student detail data (from demonstrativo-mentorias)
+  const { data: progressData } = trpc.mentor.allSessionProgress.useQuery(undefined, {
+    enabled: !loading && !!user && (user.role === "admin" || user.role === "manager"),
   });
 
   // Build query input
@@ -115,12 +125,42 @@ export default function EditarMentorias() {
     return turmasData.filter((t: any) => t.programId === Number(programFilter));
   }, [turmasData, programFilter]);
 
-  // Filter alunos by turma for create dialog
+  // Filter alunos by turma for create dialog — also consider PDI-based turma association
   const filteredAlunosForCreate = useMemo(() => {
     if (!allAlunos) return [];
-    if (!createTurmaFilter) return allAlunos;
-    return allAlunos.filter((a: any) => a.turmaId === Number(createTurmaFilter));
-  }, [allAlunos, createTurmaFilter]);
+    if (!createTurmaFilter) {
+      // No turma filter — show all, optionally filtered by search
+      const list = allAlunos;
+      if (!createAlunoSearch.trim()) return list;
+      const term = createAlunoSearch.toLowerCase();
+      return list.filter((a: any) => a.name?.toLowerCase().includes(term));
+    }
+    
+    // Get the turma name to extract trilha info
+    const selectedTurma = turmasData?.find((t: any) => String(t.id) === createTurmaFilter);
+    const turmaId = Number(createTurmaFilter);
+    
+    // Filter: aluno belongs to this turma directly OR has a PDI for a trilha matching this turma
+    // Since we can't query PDI from frontend easily, we use progressData which has trilhaId per PDI
+    const alunoIdsFromPdi = new Set<number>();
+    if (progressData && selectedTurma) {
+      // progressData items have alunoId and turmaId/trilhaId
+      for (const p of progressData) {
+        // Match by turma name containing the same program+trilha pattern
+        if (p.turmaNome === selectedTurma.name) {
+          alunoIdsFromPdi.add(p.alunoId);
+        }
+      }
+    }
+    
+    const list = allAlunos.filter((a: any) => 
+      a.turmaId === turmaId || alunoIdsFromPdi.has(a.id)
+    );
+    
+    if (!createAlunoSearch.trim()) return list;
+    const term = createAlunoSearch.toLowerCase();
+    return list.filter((a: any) => a.name?.toLowerCase().includes(term));
+  }, [allAlunos, createTurmaFilter, createAlunoSearch, turmasData, progressData]);
 
   // Client-side search filter on the results
   const filteredSessions = useMemo(() => {
@@ -136,6 +176,12 @@ export default function EditarMentorias() {
   }, [sessionsData, searchTerm]);
 
   const totalPages = sessionsData ? Math.ceil(sessionsData.total / pageSize) : 0;
+
+  // Find selected aluno detail from progressData
+  const selectedAlunoDetail = useMemo(() => {
+    if (!selectedAlunoId || !progressData) return null;
+    return progressData.find((p: any) => p.alunoId === selectedAlunoId) || null;
+  }, [selectedAlunoId, progressData]);
 
   function handleEditClick(session: any) {
     setEditSession(session);
@@ -182,9 +228,8 @@ export default function EditarMentorias() {
       payload.sessionNumber = newNum;
     }
 
-    const newConsultorId = Number(editConsultorId);
-    if (!isNaN(newConsultorId) && newConsultorId !== editSession.consultorId) {
-      payload.consultorId = newConsultorId;
+    if (editConsultorId && Number(editConsultorId) !== editSession.consultorId) {
+      payload.consultorId = Number(editConsultorId);
     }
 
     if (editTaskStatus && editTaskStatus !== editSession.taskStatus) {
@@ -195,8 +240,7 @@ export default function EditarMentorias() {
       payload.presence = editPresence;
     }
 
-    const hasChanges = Object.keys(payload).length > 1;
-    if (!hasChanges) {
+    if (Object.keys(payload).length <= 1) {
       toast.info("Nenhuma alteração detectada.");
       return;
     }
@@ -226,6 +270,7 @@ export default function EditarMentorias() {
     setCreateNotaEvolucao("");
     setCreateFeedback("");
     setCreateTurmaFilter("");
+    setCreateAlunoSearch("");
   }
 
   function closeCreateDialog() {
@@ -239,6 +284,7 @@ export default function EditarMentorias() {
     setCreateNotaEvolucao("");
     setCreateFeedback("");
     setCreateTurmaFilter("");
+    setCreateAlunoSearch("");
   }
 
   function handleCreateSession() {
@@ -290,6 +336,19 @@ export default function EditarMentorias() {
       case "nao_entregue": return "destructive";
       default: return "secondary";
     }
+  }
+
+  function getProgressColor(pct: number) {
+    if (pct >= 100) return "bg-emerald-500";
+    if (pct >= 75) return "bg-blue-500";
+    if (pct >= 50) return "bg-amber-500";
+    return "bg-red-500";
+  }
+
+  function formatDate(dateStr: string | Date | null | undefined) {
+    if (!dateStr) return "—";
+    const d = dateStr instanceof Date ? dateStr : new Date(dateStr);
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
   }
 
   if (loading) {
@@ -455,12 +514,19 @@ export default function EditarMentorias() {
                     </TableHeader>
                     <TableBody>
                       {filteredSessions.map((session: any) => (
-                        <TableRow key={session.id}>
+                        <TableRow 
+                          key={session.id} 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => setSelectedAlunoId(session.alunoId)}
+                        >
                           <TableCell className="text-xs text-muted-foreground font-mono">
                             {session.id}
                           </TableCell>
                           <TableCell className="font-medium text-sm max-w-[200px] truncate">
-                            {session.alunoNome}
+                            <span className="flex items-center gap-1.5">
+                              <Eye className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              {session.alunoNome}
+                            </span>
                           </TableCell>
                           <TableCell className="text-sm max-w-[150px] truncate">
                             {session.consultorNome || "—"}
@@ -497,7 +563,7 @@ export default function EditarMentorias() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleEditClick(session)}
+                                onClick={(e) => { e.stopPropagation(); handleEditClick(session); }}
                                 className="h-7 w-7 p-0"
                                 title="Editar sessão"
                               >
@@ -506,7 +572,7 @@ export default function EditarMentorias() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDeleteClick(session)}
+                                onClick={(e) => { e.stopPropagation(); handleDeleteClick(session); }}
                                 className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                 title="Excluir sessão"
                               >
@@ -530,16 +596,16 @@ export default function EditarMentorias() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
                         disabled={page <= 1}
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                         disabled={page >= totalPages}
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                       >
                         <ChevronRight className="h-4 w-4" />
                       </Button>
@@ -703,21 +769,7 @@ export default function EditarMentorias() {
                     <span className="text-muted-foreground">Data:</span>
                     <span className="font-medium">{formatDateSafe(deleteSession.sessionDate)}</span>
                   </div>
-                  {deleteSession.consultorNome && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Mentor:</span>
-                      <span className="font-medium">{deleteSession.consultorNome}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Presença:</span>
-                    <span className="font-medium">{deleteSession.presence === "presente" ? "Presente" : "Ausente"}</span>
-                  </div>
                 </div>
-
-                <p className="text-sm text-muted-foreground text-center">
-                  Tem certeza que deseja excluir esta sessão?
-                </p>
               </div>
             )}
 
@@ -763,7 +815,7 @@ export default function EditarMentorias() {
               {/* Turma filter to help find aluno */}
               <div className="space-y-1.5">
                 <Label className="text-sm">Turma <span className="text-xs text-muted-foreground">(filtro para facilitar a busca do aluno)</span></Label>
-                <Select value={createTurmaFilter} onValueChange={(v) => { setCreateTurmaFilter(v); setCreateAlunoId(""); }}>
+                <Select value={createTurmaFilter} onValueChange={(v) => { setCreateTurmaFilter(v); setCreateAlunoId(""); setCreateAlunoSearch(""); }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Todas as turmas" />
                   </SelectTrigger>
@@ -778,6 +830,16 @@ export default function EditarMentorias() {
               {/* Aluno */}
               <div className="space-y-1.5">
                 <Label className="text-sm">Aluno <span className="text-destructive">*</span></Label>
+                {/* Search input for aluno */}
+                <div className="relative mb-1.5">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Nome do aluno..."
+                    value={createAlunoSearch}
+                    onChange={(e) => setCreateAlunoSearch(e.target.value)}
+                    className="pl-8 h-8 text-xs"
+                  />
+                </div>
                 <Select value={createAlunoId} onValueChange={setCreateAlunoId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o aluno" />
@@ -786,6 +848,11 @@ export default function EditarMentorias() {
                     {filteredAlunosForCreate?.map((a: any) => (
                       <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
                     ))}
+                    {filteredAlunosForCreate?.length === 0 && (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground text-center">
+                        Nenhum aluno encontrado
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -913,7 +980,239 @@ export default function EditarMentorias() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Student Detail Sheet */}
+        <Sheet open={!!selectedAlunoId} onOpenChange={(open) => { if (!open) setSelectedAlunoId(null); }}>
+          <SheetContent className="w-[480px] sm:w-[540px] overflow-y-auto">
+            {selectedAlunoDetail ? (
+              <>
+                <SheetHeader className="pb-4">
+                  <SheetTitle className="text-lg flex items-center gap-2">
+                    <Eye className="h-5 w-5 text-[#1E3A5F]" />
+                    Detalhes do Aluno
+                  </SheetTitle>
+                  <SheetDescription>
+                    Visão completa do progresso de mentoria
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="space-y-4">
+                  {/* Aluno Info */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-bold text-gray-900 text-base mb-3">{selectedAlunoDetail.alunoNome}</h3>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-500 text-xs block">Empresa</span>
+                        <span className="font-medium text-gray-800">{selectedAlunoDetail.programaNome || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 text-xs block">Turma</span>
+                        <span className="font-medium text-gray-800">{selectedAlunoDetail.turmaNome || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 text-xs block">Trilha</span>
+                        <span className="font-medium text-gray-800">{selectedAlunoDetail.trilhaNome || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 text-xs block">Mentor</span>
+                        <span className="font-medium text-gray-800">{selectedAlunoDetail.consultorNome || <span className="text-gray-400 italic">Não atribuído</span>}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 text-xs block">E-mail Aluno</span>
+                        <span className="font-medium text-gray-800 text-xs">{selectedAlunoDetail.alunoEmail || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 text-xs block">E-mail Mentor</span>
+                        <span className="font-medium text-gray-800 text-xs">{selectedAlunoDetail.consultorEmail || "—"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Período */}
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-800 text-sm mb-2 flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-blue-600" /> Período do Contrato
+                    </h4>
+                    <div className="flex items-center gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500 text-xs block">Início</span>
+                        <span className="font-medium">{formatDate(selectedAlunoDetail.macroInicio)}</span>
+                      </div>
+                      <span className="text-gray-400">→</span>
+                      <div>
+                        <span className="text-gray-500 text-xs block">Término</span>
+                        <span className="font-medium">{formatDate(selectedAlunoDetail.macroTermino)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Cards */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg border p-3">
+                      <span className="text-gray-500 text-xs block mb-1">Status Progresso</span>
+                      <Badge className={selectedAlunoDetail.cicloCompleto ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800"}>
+                        {selectedAlunoDetail.cicloCompleto ? "Completo" : "Em andamento"}
+                      </Badge>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <span className="text-gray-500 text-xs block mb-1">Status Sessão</span>
+                      <Badge className={selectedAlunoDetail.atrasado30dias ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}>
+                        {selectedAlunoDetail.atrasado30dias ? "Atrasado" : "Em dia"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Sessões */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-800 text-sm mb-3 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-[#1E3A5F]" /> Sessões de Mentoria
+                    </h4>
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div className="bg-white rounded-lg p-3 border">
+                        <p className="text-2xl font-bold text-[#1E3A5F]">{selectedAlunoDetail.sessoesRealizadas}</p>
+                        <p className="text-[10px] text-gray-500">Realizadas</p>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border">
+                        <p className="text-2xl font-bold text-gray-600">{selectedAlunoDetail.totalSessoesEsperadas}</p>
+                        <p className="text-[10px] text-gray-500">Esperadas</p>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border">
+                        <p className={`text-2xl font-bold ${selectedAlunoDetail.sessoesFaltantes === 0 ? 'text-emerald-600' : 'text-red-600'}`}>{selectedAlunoDetail.sessoesFaltantes}</p>
+                        <p className="text-[10px] text-gray-500">Faltantes</p>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="mt-3">
+                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>Progresso</span>
+                        <span className="font-semibold">{selectedAlunoDetail.percentualProgresso}%</span>
+                      </div>
+                      <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all ${getProgressColor(selectedAlunoDetail.percentualProgresso)}`}
+                          style={{ width: `${Math.min(100, selectedAlunoDetail.percentualProgresso)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Última Sessão */}
+                  <div className={`rounded-lg p-4 ${selectedAlunoDetail.atrasado30dias ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`}>
+                    <h4 className="font-semibold text-gray-800 text-sm mb-2 flex items-center gap-2">
+                      <Clock className={`h-4 w-4 ${selectedAlunoDetail.atrasado30dias ? 'text-red-600' : 'text-green-600'}`} /> Última Sessão
+                    </h4>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">
+                          {selectedAlunoDetail.ultimaSessao 
+                            ? new Date(selectedAlunoDetail.ultimaSessao).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
+                            : "Nenhuma sessão registrada"
+                          }
+                        </p>
+                        {selectedAlunoDetail.diasSemSessao !== null && (
+                          <p className={`text-xs mt-1 font-semibold ${selectedAlunoDetail.atrasado30dias ? 'text-red-700' : 'text-green-700'}`}>
+                            {selectedAlunoDetail.diasSemSessao} dia(s) atrás
+                          </p>
+                        )}
+                      </div>
+                      {selectedAlunoDetail.atrasado30dias && (
+                        <AlertCircle className="h-8 w-8 text-red-400" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Histórico de Sessões */}
+                  <AlunoSessionsList alunoId={selectedAlunoDetail.alunoId} />
+                </div>
+              </>
+            ) : selectedAlunoId ? (
+              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                <p className="text-sm">Carregando dados do aluno...</p>
+              </div>
+            ) : null}
+          </SheetContent>
+        </Sheet>
       </div>
     </DashboardLayout>
+  );
+}
+
+// Inline component for session history in the detail sheet
+function AlunoSessionsList({ alunoId }: { alunoId: number }) {
+  const { data: sessions, isLoading } = trpc.mentor.sessionsByAluno.useQuery(
+    { alunoId },
+    { enabled: !!alunoId }
+  );
+
+  const sortedSessions = useMemo(() => {
+    if (!sessions) return [];
+    return [...sessions].sort((a, b) => (a.sessionNumber ?? 0) - (b.sessionNumber ?? 0));
+  }, [sessions]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-4">
+        <h4 className="font-semibold text-gray-800 text-sm mb-3 flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-[#1E3A5F]" /> Histórico de Sessões
+        </h4>
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          <span className="ml-2 text-xs text-gray-500">Carregando sessões...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sortedSessions.length) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-4">
+        <h4 className="font-semibold text-gray-800 text-sm mb-3 flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-[#1E3A5F]" /> Histórico de Sessões
+        </h4>
+        <p className="text-xs text-gray-500 text-center py-2">Nenhuma sessão registrada.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-50 rounded-lg p-4">
+      <h4 className="font-semibold text-gray-800 text-sm mb-3 flex items-center gap-2">
+        <Calendar className="h-4 w-4 text-[#1E3A5F]" /> Histórico de Sessões ({sortedSessions.length})
+      </h4>
+      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+        {sortedSessions.map((s: any) => (
+          <div key={s.id} className="bg-white rounded-md border p-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="text-xs font-mono">
+                #{s.sessionNumber}
+              </Badge>
+              <div>
+                <p className="text-xs font-medium">
+                  {s.sessionDate ? new Date(s.sessionDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }) : "Sem data"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant={s.presence === "presente" ? "default" : "destructive"}
+                className="text-[10px]"
+              >
+                {s.presence === "presente" ? "Presente" : "Ausente"}
+              </Badge>
+              {s.taskStatus && s.taskStatus !== "sem_tarefa" && (
+                <Badge
+                  variant={s.taskStatus === "entregue" || s.taskStatus === "validada" ? "default" : "destructive"}
+                  className="text-[10px]"
+                >
+                  {s.taskStatus === "entregue" ? "Entregue" : s.taskStatus === "validada" ? "Validada" : "Não entregue"}
+                </Badge>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

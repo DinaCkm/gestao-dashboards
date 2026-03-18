@@ -4106,7 +4106,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         if (!dbInstance) return { sessions: [], total: 0 };
 
         const { mentoringSessions, alunos: alunosTable, consultors: consultorsTable, turmas: turmasTable, programs: programsTable, trilhas: trilhasTable } = await import('../drizzle/schema');
-        const { eq, and, sql, desc } = await import('drizzle-orm');
+        const { eq, and, sql, desc, asc } = await import('drizzle-orm');
 
         // Build conditions
         const conditions: any[] = [];
@@ -4132,7 +4132,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         const total = Number(countResult?.count || 0);
 
         // Get sessions with pagination
-        let query = dbInstance.select().from(mentoringSessions).where(whereClause).orderBy(desc(mentoringSessions.sessionDate), desc(mentoringSessions.id)).limit(pageSize).offset(offset);
+        let query = dbInstance.select().from(mentoringSessions).where(whereClause).orderBy(asc(mentoringSessions.sessionNumber), desc(mentoringSessions.sessionDate), desc(mentoringSessions.id)).limit(pageSize).offset(offset);
         const sessions = await query;
 
         // Get related data for display
