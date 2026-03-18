@@ -2444,3 +2444,6 @@
 
 ## Links nos cards do Resumo do Plano (17/03/2026)
 - [x] Adicionar link em cada card do Resumo do Plano para a seção correspondente na plataforma
+
+## Avatar da Guia - GIF Animado (17/03/2026)
+- [x] Trocar avatar da guia por ilustração gerada por IA de mulher negra profissional + animação CSS float

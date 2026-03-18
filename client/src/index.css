@@ -319,3 +319,13 @@
 .overflow-x-auto::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }
+
+/* Floating animation for guia avatar */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}

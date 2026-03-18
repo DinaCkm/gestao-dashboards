@@ -47,7 +47,7 @@ import { useLocation } from "wouter";
 // ============================================================
 // AVATAR DA MENTORA GUIA
 // ============================================================
-const MENTORA_GUIA_AVATAR = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/mentora-guia-avatar_ad26e4e6.png";
+const MENTORA_GUIA_AVATAR = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/guia-avatar-mPLDYEsokpgWnmRXLMtkY6.webp";
 
 const MENSAGENS_GUIA: Record<number, { titulo: string; mensagem: string }> = {
   1: {
@@ -92,7 +92,7 @@ function MentoraGuiaBanner({ etapa }: { etapa: number }) {
       <img
         src={MENTORA_GUIA_AVATAR}
         alt="Mentora Guia"
-        className="w-20 h-24 object-cover object-top rounded-lg border-2 border-[#F5991F]/30 shadow-md shrink-0"
+        className="w-20 h-24 object-cover object-top rounded-lg border-2 border-[#F5991F]/30 shadow-md shrink-0 animate-[float_3s_ease-in-out_infinite]"
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
