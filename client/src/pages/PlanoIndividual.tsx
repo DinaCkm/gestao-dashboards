@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { formatDateSafe, formatDateCustomSafe } from "@/lib/dateUtils";
@@ -16,11 +16,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { SelectContentNoPortal } from "@/components/ui/select";
 import {
   Search, Plus, Trash2, BookOpen, Target, CheckCircle2, Clock, AlertCircle,
   Users, Building2, TrendingUp, Award, BarChart3, Calendar, Edit2, ChevronRight,
   Circle, ChevronDown, Flag, User, Loader2, Library, Sparkles, Edit3,
-  MessageSquare, XCircle, FileText, Snowflake, Play
+  MessageSquare, XCircle, FileText, Snowflake, Play, ArrowLeft, ListChecks, AlertTriangle
 } from "lucide-react";
 import DualIndicators from "@/components/DualIndicators";
 import EditAssessmentDialog from "@/components/EditAssessmentDialog";
@@ -138,6 +139,24 @@ function PlanoContent() {
   // Assessment edit dialog state
   const [editAssessment, setEditAssessment] = useState<any>(null);
 
+  // Novo Assessment wizard state
+  const [showNovoAssessment, setShowNovoAssessment] = useState(false);
+  const [novoStep, setNovoStep] = useState(1);
+  const [novoTrilhaId, setNovoTrilhaId] = useState<string>("");
+  const [novoConsultorId, setNovoConsultorId] = useState<string>("");
+  const [novoMacroInicio, setNovoMacroInicio] = useState("");
+  const [novoMacroTermino, setNovoMacroTermino] = useState("");
+  const [novoTotalSessoes, setNovoTotalSessoes] = useState("");
+  const [novoCompConfig, setNovoCompConfig] = useState<Array<{
+    competenciaId: number;
+    nome: string;
+    selected: boolean;
+    peso: "obrigatoria" | "opcional";
+    notaCorte: string;
+    microInicio: string;
+    microTermino: string;
+  }>>([]);
+
   // Contrato state
   const [showContratoDialog, setShowContratoDialog] = useState(false);
   const [editingContrato, setEditingContrato] = useState<any>(null);
@@ -209,6 +228,15 @@ function PlanoContent() {
   const { data: discResultado } = trpc.disc.resultado.useQuery(
     { alunoId: selectedAluno! },
     { enabled: !!selectedAluno }
+  );
+
+  // Mentores list
+  const { data: mentores = [] } = trpc.mentor.list.useQuery();
+
+  // Competencias by trilha for novo assessment wizard
+  const { data: compsByTrilha = [] } = trpc.competencias.byTrilha.useQuery(
+    { trilhaId: parseInt(novoTrilhaId) },
+    { enabled: !!novoTrilhaId }
   );
 
   // Programs for mentor
@@ -283,6 +311,16 @@ function PlanoContent() {
   const sugerirIAMutation = trpc.metas.sugerirComIA.useMutation({
     onSuccess: () => { setMetaFromLibrary(false); toast.success("Sugestão gerada pela IA!"); },
     onError: (err) => toast.error("Erro ao gerar sugestão: " + err.message),
+  });
+
+  // Criar assessment mutation
+  const criarAssessmentMutation = trpc.assessment.criar.useMutation({
+    onSuccess: () => {
+      toast.success("Assessment/PDI criado com sucesso!");
+      refetchAssessments(); refetchPlano(); refetchAlunos();
+      resetNovoAssessmentForm();
+    },
+    onError: (err) => toast.error(err.message),
   });
 
   // ============================================================
@@ -477,6 +515,73 @@ function PlanoContent() {
       });
     }
   };
+
+  // Novo Assessment handlers
+  function resetNovoAssessmentForm() {
+    setShowNovoAssessment(false); setNovoStep(1);
+    setNovoTrilhaId(""); setNovoConsultorId(""); setNovoMacroInicio(""); setNovoMacroTermino("");
+    setNovoTotalSessoes(""); setNovoCompConfig([]);
+  }
+  function openNovoAssessment() {
+    resetNovoAssessmentForm();
+    // Pre-fill consultorId for mentors
+    if (userConsultorId) setNovoConsultorId(String(userConsultorId));
+    else if (selectedAlunoData && (selectedAlunoData as any).consultorId) setNovoConsultorId(String((selectedAlunoData as any).consultorId));
+    setShowNovoAssessment(true);
+  }
+  // Sync competencias when trilha changes
+  const compsByTrilhaKey = useMemo(() => compsByTrilha.map((c: any) => c.id).join(","), [compsByTrilha]);
+  useEffect(() => {
+    if (!compsByTrilhaKey) { setNovoCompConfig([]); return; }
+    setNovoCompConfig(compsByTrilha.map((c: any) => ({
+      competenciaId: c.id,
+      nome: c.nome || "Sem nome",
+      selected: true,
+      peso: "obrigatoria" as const,
+      notaCorte: "80",
+      microInicio: "",
+      microTermino: "",
+    })));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compsByTrilhaKey]);
+
+  function handleSubmitNovoAssessment() {
+    if (!selectedAluno || !novoTrilhaId || !novoMacroInicio || !novoMacroTermino) {
+      toast.error("Preencha a trilha e as datas da Macro Jornada"); return;
+    }
+    if (novoMacroInicio >= novoMacroTermino) {
+      toast.error("Data de início deve ser anterior à data de término"); return;
+    }
+    const selectedComps = novoCompConfig.filter(c => c.selected);
+    if (selectedComps.length === 0) {
+      toast.error("Selecione pelo menos uma competência"); return;
+    }
+    for (const comp of selectedComps) {
+      if (comp.microInicio && comp.microInicio < novoMacroInicio) {
+        toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`); return;
+      }
+      if (comp.microTermino && comp.microTermino > novoMacroTermino) {
+        toast.error(`Micro Jornada de "${comp.nome}" não pode terminar depois da Macro Jornada`); return;
+      }
+    }
+    criarAssessmentMutation.mutate({
+      alunoId: selectedAluno,
+      trilhaId: parseInt(novoTrilhaId),
+      turmaId: (selectedAlunoData as any)?.turmaId || null,
+      programId: (selectedAlunoData as any)?.programId || null,
+      consultorId: novoConsultorId ? parseInt(novoConsultorId) : null,
+      macroInicio: novoMacroInicio,
+      macroTermino: novoMacroTermino,
+      totalSessoesPrevistas: novoTotalSessoes ? parseInt(novoTotalSessoes) : null,
+      competencias: selectedComps.map(c => ({
+        competenciaId: c.competenciaId,
+        peso: c.peso,
+        notaCorte: c.notaCorte,
+        microInicio: c.microInicio || null,
+        microTermino: c.microTermino || null,
+      })),
+    });
+  }
 
   // Metas handlers
   function resetMetaForm() {
@@ -784,15 +889,31 @@ function PlanoContent() {
               {/* ===== SEÇÃO 2: JORNADA / ASSESSMENT PDI ===== */}
               <Card>
                 <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-base">Jornada / Assessment PDI</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-base">Jornada / Assessment PDI</CardTitle>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={openNovoAssessment}>
+                      <Plus className="h-4 w-4 mr-1" /> Novo Assessment
+                    </Button>
                   </div>
                   <CardDescription>Trilhas, competências vinculadas, níveis e metas por ciclo</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {assessments.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum Assessment/PDI encontrado. Crie um na página de Assessment.</p>
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <div className="p-4 bg-amber-50 rounded-full mb-4">
+                        <AlertTriangle className="h-8 w-8 text-amber-500" />
+                      </div>
+                      <h3 className="font-semibold text-base mb-1">Nenhum Assessment / PDI encontrado</h3>
+                      <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                        Este aluno ainda não possui um Plano de Desenvolvimento Individual. Crie o primeiro assessment para definir trilha, competências e metas.
+                      </p>
+                      <Button onClick={openNovoAssessment} className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                        <Plus className="h-4 w-4 mr-2" /> Criar Primeiro Assessment
+                      </Button>
+                    </div>
                   ) : (
                     <div className="space-y-4">
                       {assessments.map((ass: any) => (
@@ -1537,6 +1658,173 @@ function PlanoContent() {
         </DialogContent>
       </Dialog>
 
+      {/* ===== NOVO ASSESSMENT WIZARD DIALOG ===== */}
+      <Dialog open={showNovoAssessment} onOpenChange={(open) => { if (!open) resetNovoAssessmentForm(); }}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListChecks className="h-5 w-5 text-primary" />
+              {novoStep === 1 ? "Novo Assessment — Configuração" : "Novo Assessment — Competências"}
+            </DialogTitle>
+            <DialogDescription>
+              {novoStep === 1
+                ? `Defina a trilha, mentora e período da Macro Jornada para ${selectedAlunoData?.name || "o aluno"}`
+                : `Selecione e configure as competências para a trilha ${trilhas?.find(t => t.id === parseInt(novoTrilhaId))?.name || ""}`
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          {novoStep === 1 ? (
+            <div className="space-y-4 py-2">
+              {/* Trilha */}
+              <div>
+                <Label className="mb-1.5 block text-sm font-medium">Trilha *</Label>
+                <Select value={novoTrilhaId} onValueChange={setNovoTrilhaId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a trilha" /></SelectTrigger>
+                  <SelectContent>
+                    {trilhas?.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Mentora */}
+              <div>
+                <Label className="mb-1.5 block text-sm font-medium">Mentora Responsável</Label>
+                <Select value={novoConsultorId} onValueChange={setNovoConsultorId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a mentora" /></SelectTrigger>
+                  <SelectContent>
+                    {(mentores || []).map((m: any) => <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Macro Jornada */}
+              <div>
+                <Label className="mb-1.5 block text-sm font-medium">Macro Jornada (Duração da Trilha) *</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Início</Label>
+                    <Input type="date" value={novoMacroInicio} onChange={(e) => setNovoMacroInicio(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Término</Label>
+                    <Input type="date" value={novoMacroTermino} onChange={(e) => setNovoMacroTermino(e.target.value)} />
+                  </div>
+                </div>
+              </div>
+              {/* Total Sessões */}
+              <div>
+                <Label className="mb-1.5 block text-sm font-medium">Total de Sessões de Mentoria Previstas</Label>
+                <Input type="number" min="0" placeholder="Ex: 12" value={novoTotalSessoes} onChange={(e) => setNovoTotalSessoes(e.target.value)} />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3 py-2">
+              {/* Bulk actions */}
+              <div className="flex items-center gap-2 mb-2">
+                <Button variant="outline" size="sm" onClick={() => setNovoCompConfig(prev => prev.map(c => ({ ...c, selected: true })))}>
+                  Selecionar Todas
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setNovoCompConfig(prev => prev.map(c => ({ ...c, selected: false })))}>
+                  Desmarcar Todas
+                </Button>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {novoCompConfig.filter(c => c.selected).length} de {novoCompConfig.length} selecionadas
+                </span>
+              </div>
+              {novoCompConfig.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma competência encontrada para esta trilha</p>
+              ) : (
+                <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                  {novoCompConfig.map((comp, idx) => (
+                    <div key={comp.competenciaId} className={`border rounded-lg p-3 transition-colors ${
+                      comp.selected ? "bg-primary/5 border-primary/20" : "opacity-60"
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={comp.selected}
+                          onCheckedChange={(checked) => {
+                            setNovoCompConfig(prev => prev.map((c, i) => i === idx ? { ...c, selected: !!checked } : c));
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{comp.nome}</p>
+                        </div>
+                        <Select
+                          value={comp.peso}
+                          onValueChange={(val) => setNovoCompConfig(prev => prev.map((c, i) => i === idx ? { ...c, peso: val as any } : c))}
+                        >
+                          <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContentNoPortal>
+                            <SelectItem value="obrigatoria">Obrigatória</SelectItem>
+                            <SelectItem value="opcional">Opcional</SelectItem>
+                          </SelectContentNoPortal>
+                        </Select>
+                      </div>
+                      {comp.selected && (
+                        <div className="grid grid-cols-3 gap-2 mt-2 pl-8">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Nota de Corte (%)</Label>
+                            <Input className="h-8 text-xs" type="number" min="0" max="100" value={comp.notaCorte}
+                              onChange={(e) => setNovoCompConfig(prev => prev.map((c, i) => i === idx ? { ...c, notaCorte: e.target.value } : c))}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Micro Início</Label>
+                            <Input className="h-8 text-xs" type="date" value={comp.microInicio}
+                              onChange={(e) => setNovoCompConfig(prev => prev.map((c, i) => i === idx ? { ...c, microInicio: e.target.value } : c))}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Micro Término</Label>
+                            <Input className="h-8 text-xs" type="date" value={comp.microTermino}
+                              onChange={(e) => setNovoCompConfig(prev => prev.map((c, i) => i === idx ? { ...c, microTermino: e.target.value } : c))}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="flex justify-between">
+            {novoStep === 2 && (
+              <Button variant="outline" onClick={() => setNovoStep(1)}>
+                <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+              </Button>
+            )}
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" onClick={resetNovoAssessmentForm}>Cancelar</Button>
+              {novoStep === 1 ? (
+                <Button
+                  onClick={() => {
+                    if (!novoTrilhaId) { toast.error("Selecione uma trilha"); return; }
+                    if (!novoMacroInicio || !novoMacroTermino) { toast.error("Defina as datas da Macro Jornada"); return; }
+                    setNovoStep(2);
+                  }}
+                  className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                >
+                  Próximo: Competências <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmitNovoAssessment}
+                  disabled={criarAssessmentMutation.isPending}
+                  className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                >
+                  {criarAssessmentMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Criando...</>
+                  ) : (
+                    <><CheckCircle2 className="h-4 w-4 mr-2" /> Criar Assessment</>
+                  )}
+                </Button>
+              )}
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* EditAssessmentDialog */}
       {editAssessment && (
         <EditAssessmentDialog
@@ -1545,7 +1833,7 @@ function PlanoContent() {
           pdi={editAssessment}
           trilhas={trilhas || []}
           programs={programs || []}
-          mentores={[]}
+          mentores={mentores || []}
           isAdmin={isAdmin}
           onSuccess={() => { setEditAssessment(null); refetchAssessments(); refetchPlano(); refetchMetas(); }}
         />

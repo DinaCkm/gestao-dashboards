@@ -2505,3 +2505,15 @@
 - [x] Seção 5: Metas de Desenvolvimento (criação, acompanhamento, biblioteca, IA)
 - [x] Seção 6: Performance Filtrada (indicadores V2)
 - [x] Manter funcionalidades existentes (competências do plano, ciclos, atribuição em lote)
+
+## Criar PDI do Zero para Alunos sem Plano (18/03/2026)
+- [x] Quando aluno não tem assessment/PDI, mostrar seção "Criar PDI" com botão e formulário
+- [x] Permitir mentora criar assessment/trilha para o aluno diretamente na página
+- [x] Após criar assessment, sincronizar competências no plano individual
+- [x] Exibir estado vazio amigável com CTA claro para iniciar o PDI
+
+## Botão Editar Assessment + Novo Macrociclo na Página PDI (18/03/2026)
+- [x] Adicionar botão "Editar" em cada assessment existente (abre EditAssessmentDialog)
+- [x] Adicionar botão "+ Novo Assessment" para criar novo macrociclo para alunos que já têm assessment
+- [x] Criar wizard/formulário inline para criar PDI do zero (alunos sem assessment)
+- [x] NÃO alterar permissões do contrato (fica só admin, conforme solicitado)
