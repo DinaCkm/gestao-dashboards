@@ -2693,3 +2693,4 @@
 - [x] Corrigir link nos emails de mentoria: usar ecolider.evoluirckm.com em vez de Manus
 - [x] Corrigir link no reenvio de convite: usar ecolider.evoluirckm.com em vez de Manus
 - [x] Corrigir import use-toast no OnboardingTracking.tsx (já estava correto com sonner)
+- [x] Corrigir: emails de avanço de onboarding agora usam CC para dina@ckmtalents.net (envio único em vez de loop separado)

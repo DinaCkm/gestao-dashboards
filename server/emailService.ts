@@ -42,7 +42,7 @@ export async function sendEmail(options: {
       html: options.html,
       text: options.text || "",
     });
-    console.log(`[Email] Enviado para ${options.to} - MessageID: ${info.messageId}`);
+    console.log(`[Email] Enviado para ${options.to}${options.cc ? ` (cc: ${options.cc})` : ''} - MessageID: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
     console.error(`[Email] Erro ao enviar para ${options.to}:`, error.message);

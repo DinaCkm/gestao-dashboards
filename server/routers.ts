@@ -4644,10 +4644,9 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
               stepNumber: 5,
               totalSteps: 6,
             });
-            const adminRecipients = [adminEmail, 'dina@ckmtalents.net'].filter(Boolean);
-            for (const to of adminRecipients) {
-              await sendEmailStep({ to, subject: stepEmail.subject, html: stepEmail.html, text: stepEmail.text }).catch(() => {});
-            }
+            console.log(`[Onboarding Step] Enviando email de avanço (PDI) para admin=${adminEmail}, cc=dina@ckmtalents.net, aluno=${alunoForEmail.name}`);
+            const stepResult = await sendEmailStep({ to: adminEmail || 'dina@ckmtalents.net', cc: adminEmail ? 'dina@ckmtalents.net' : undefined, subject: stepEmail.subject, html: stepEmail.html, text: stepEmail.text });
+            console.log(`[Onboarding Step] Resultado envio (PDI): ${JSON.stringify(stepResult)}`);
 
             // 2) Email para o ALUNO convidando a acessar e assinar
             if (alunoForEmail.email) {
@@ -5989,10 +5988,9 @@ Responda APENAS em JSON com o formato:
               stepNumber: 3,
               totalSteps: 6,
             });
-            const recipients = [adminEmail, 'dina@ckmtalents.net'].filter(Boolean);
-            for (const to of recipients) {
-              await sendEmail({ to, subject: emailData.subject, html: emailData.html, text: emailData.text }).catch(() => {});
-            }
+            console.log(`[Onboarding Step] Enviando email de avanço (DISC) para admin=${adminEmail}, cc=dina@ckmtalents.net, aluno=${aluno.name}`);
+            const result = await sendEmail({ to: adminEmail || 'dina@ckmtalents.net', cc: adminEmail ? 'dina@ckmtalents.net' : undefined, subject: emailData.subject, html: emailData.html, text: emailData.text });
+            console.log(`[Onboarding Step] Resultado envio (DISC): ${JSON.stringify(result)}`);
           }
         } catch (e) { console.warn('[Onboarding] Erro ao enviar email de avanço (DISC):', e); }
 
@@ -6245,10 +6243,9 @@ Responda APENAS em JSON com o formato:
               stepNumber: 2,
               totalSteps: 6,
             });
-            const recipients = [adminEmail, 'dina@ckmtalents.net'].filter(Boolean);
-            for (const to of recipients) {
-              await sendEmail({ to, subject: emailData.subject, html: emailData.html, text: emailData.text }).catch(() => {});
-            }
+            console.log(`[Onboarding Step] Enviando email de avanço (Cadastro) para admin=${adminEmail}, cc=dina@ckmtalents.net, aluno=${aluno.name}`);
+            const result = await sendEmail({ to: adminEmail || 'dina@ckmtalents.net', cc: adminEmail ? 'dina@ckmtalents.net' : undefined, subject: emailData.subject, html: emailData.html, text: emailData.text });
+            console.log(`[Onboarding Step] Resultado envio (Cadastro): ${JSON.stringify(result)}`);
           }
         } catch (e) { console.warn('[Onboarding] Erro ao enviar email de avanço (cadastro):', e); }
 
@@ -6491,10 +6488,9 @@ Responda APENAS em JSON com o formato:
               stepNumber: 4,
               totalSteps: 6,
             });
-            const recipients = [adminEmailStep, 'dina@ckmtalents.net'].filter(Boolean);
-            for (const to of recipients) {
-              await sendEmailStep({ to, subject: emailData.subject, html: emailData.html, text: emailData.text }).catch(() => {});
-            }
+            console.log(`[Onboarding Step] Enviando email de avanço (Agendamento) para admin=${adminEmailStep}, cc=dina@ckmtalents.net, aluno=${aluno.name}`);
+            const result = await sendEmailStep({ to: adminEmailStep || 'dina@ckmtalents.net', cc: adminEmailStep ? 'dina@ckmtalents.net' : undefined, subject: emailData.subject, html: emailData.html, text: emailData.text });
+            console.log(`[Onboarding Step] Resultado envio (Agendamento): ${JSON.stringify(result)}`);
           }
         } catch (e) { console.warn('[Onboarding] Erro ao enviar email de avanço (agendamento):', e); }
 
@@ -6729,10 +6725,9 @@ Responda APENAS em JSON com o formato:
               stepNumber: 6,
               totalSteps: 6,
             });
-            const recipients = [adminEmail, 'dina@ckmtalents.net'].filter(Boolean);
-            for (const to of recipients) {
-              await sendEmail({ to, subject: emailData.subject, html: emailData.html, text: emailData.text }).catch(() => {});
-            }
+            console.log(`[Onboarding Step] Enviando email de avanço (Aceite) para admin=${adminEmail}, cc=dina@ckmtalents.net, aluno=${aluno.name}`);
+            const result = await sendEmail({ to: adminEmail || 'dina@ckmtalents.net', cc: adminEmail ? 'dina@ckmtalents.net' : undefined, subject: emailData.subject, html: emailData.html, text: emailData.text });
+            console.log(`[Onboarding Step] Resultado envio (Aceite): ${JSON.stringify(result)}`);
           }
         } catch (e) { console.warn('[Onboarding] Erro ao enviar email de avanço (aceite):', e); }
 
