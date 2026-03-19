@@ -459,7 +459,7 @@ function DashboardLayoutContent({
             {isAdmin ? (
               <>
                 {/* PAINEL INICIAL - item fixo no topo */}
-                <SidebarGroup className="py-1">
+                <div className="px-2 pt-1 pb-1">
                   <SidebarMenu className="px-0">
                     <SidebarMenuItem>
                       <SidebarMenuButton
@@ -478,7 +478,7 @@ function DashboardLayoutContent({
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>
-                </SidebarGroup>
+                </div>
 
                 {/* 7 ÁREAS COLAPSÁVEIS */}
                 {adminMenuGroups.map((group, groupIdx) => {
@@ -489,7 +489,7 @@ function DashboardLayoutContent({
                       defaultOpen={isGroupActive}
                       className="group/collapsible"
                     >
-                      <SidebarGroup className="py-0.5">
+                      <SidebarGroup className="py-0.5 px-2">
                         <SidebarMenu className="px-0">
                           <SidebarMenuItem>
                             <CollapsibleTrigger asChild>

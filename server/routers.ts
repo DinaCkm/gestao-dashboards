@@ -3709,6 +3709,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         especialidade: z.string().optional(),
         programId: z.number().optional(),
         valorSessao: z.string().optional(),
+        miniCurriculo: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const { consultorId, ...data } = input;

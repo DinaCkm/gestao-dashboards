@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw } from "lucide-react";
+import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 function formatCpf(value: string): string {
@@ -1384,6 +1385,20 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
   const [editCpf, setEditCpf] = useState("");
   const [editEspecialidade, setEditEspecialidade] = useState("");
   const [editValorSessao, setEditValorSessao] = useState("");
+  const [editMiniCurriculo, setEditMiniCurriculo] = useState("");
+  const [editPhotoUrl, setEditPhotoUrl] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const uploadPhotoMutation = trpc.mentor.uploadPhoto.useMutation({
+    onSuccess: (data) => {
+      setEditPhotoUrl(data.url);
+      toast.success("Foto atualizada com sucesso!");
+      setUploadingPhoto(false);
+    },
+    onError: (err) => {
+      toast.error(`Erro ao enviar foto: ${err.message}`);
+      setUploadingPhoto(false);
+    },
+  });
   // Precificação flexível
   const [pricingOpen, setPricingOpen] = useState(false);
   const [pricingMentor, setPricingMentor] = useState<any>(null);
@@ -1501,7 +1516,33 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
     setEditCpf(mentor.cpf ? formatCpf(mentor.cpf) : "");
     setEditEspecialidade(mentor.especialidade || "");
     setEditValorSessao(mentor.valorSessao || "");
+    setEditMiniCurriculo(mentor.miniCurriculo || "");
+    setEditPhotoUrl(mentor.photoUrl || "");
     setEditOpen(true);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editMentor) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecione um arquivo de imagem (JPG, PNG)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+    setUploadingPhoto(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(',')[1];
+      uploadPhotoMutation.mutate({
+        consultorId: editMentor.id,
+        photoBase64: base64,
+        mimeType: file.type,
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -1514,7 +1555,8 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
       email: editEmail || undefined,
       cpf: cpfDigits || undefined,
       especialidade: editEspecialidade || undefined,
-      valorSessao: editValorSessao ? editValorSessao : undefined
+      valorSessao: editValorSessao ? editValorSessao : undefined,
+      miniCurriculo: editMiniCurriculo || undefined,
     });
     setEditOpen(false);
   };
@@ -1742,13 +1784,50 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
 
         {/* Dialog de Edição de Mentor */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleEditSubmit}>
               <DialogHeader>
                 <DialogTitle>Editar Mentor</DialogTitle>
                 <DialogDescription>Atualize os dados do mentor</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                {/* Foto do Mentor */}
+                <div className="space-y-2">
+                  <Label>Foto do Mentor</Label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden bg-muted border-2 border-border flex items-center justify-center">
+                      {editPhotoUrl ? (
+                        <img src={editPhotoUrl} alt="Foto do mentor" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="h-8 w-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={uploadingPhoto}
+                        onClick={() => document.getElementById('edit-photo-mentor')?.click()}
+                      >
+                        {uploadingPhoto ? (
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
+                        ) : (
+                          <><Camera className="h-4 w-4 mr-2" /> {editPhotoUrl ? 'Alterar Foto' : 'Adicionar Foto'}</>
+                        )}
+                      </Button>
+                      <input
+                        id="edit-photo-mentor"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handlePhotoUpload}
+                      />
+                      <p className="text-xs text-muted-foreground">JPG, PNG ou WebP. Máx 5MB.</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="edit-nome-mentor">Nome Completo</Label>
                   <Input id="edit-nome-mentor" value={editNome} onChange={(e) => setEditNome(e.target.value)} placeholder="Nome do mentor" required />
@@ -1768,6 +1847,19 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
                 <div className="space-y-2">
                   <Label htmlFor="edit-valor-sessao-mentor">Valor por Sessão (R$)</Label>
                   <Input id="edit-valor-sessao-mentor" type="number" step="0.01" min="0" value={editValorSessao} onChange={(e) => setEditValorSessao(e.target.value)} placeholder="Ex: 150.00" />
+                </div>
+
+                {/* Minicurrículo */}
+                <div className="space-y-2">
+                  <Label htmlFor="edit-minicurriculo-mentor">Minicurrículo</Label>
+                  <Textarea
+                    id="edit-minicurriculo-mentor"
+                    value={editMiniCurriculo}
+                    onChange={(e) => setEditMiniCurriculo(e.target.value)}
+                    placeholder="Breve descrição profissional do mentor, formação, experiência e áreas de atuação..."
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground">Biografia profissional que será exibida no perfil do mentor</p>
                 </div>
               </div>
               <DialogFooter>

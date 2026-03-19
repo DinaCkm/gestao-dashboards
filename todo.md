@@ -2536,3 +2536,29 @@
 ## Remoção de colunas Meta C1 e Meta C2 da tabela Assessment PDI (18/03/2026)
 - [x] Remover colunas Meta C1 e Meta C2 da tabela de competências no Assessment PDI
 - [x] Manter colunas Peso, Nível e Meta Final (usados em cálculos)
+
+
+## Bugs de validação de status ativo/inativo (18/03/2026)
+- [ ] Bug: possível criar PDI (Assessment) para aluno inativado - deveria bloquear
+- [ ] Bug: possível ativar aluno vinculado a empresa desativada - deveria bloquear
+- [ ] Adicionar validação no backend: impedir criação de Assessment para aluno inativo
+- [ ] Adicionar validação no backend: impedir ativação de aluno se empresa está desativada
+- [ ] Adicionar validação no frontend: ocultar/desabilitar ações de PDI para alunos inativos
+- [ ] Adicionar validação no frontend: impedir ativação de aluno com empresa desativada
+
+## Bug visual sidebar (18/03/2026)
+- [ ] Bug: texto "Painel Inicial" sobrepõe "Alunos" no sidebar - corrigir espaçamento/layout
+
+
+## Sidebar overlap fix + IA na Biblioteca de Tarefas (18/03/2026)
+- [x] Fix: sobreposição de "Painel Inicial" sobre "Alunos" no sidebar (confirmado na versão publicada)
+- [ ] Feature: botão "Gerar com IA" no formulário de criação/edição de tarefa na Biblioteca de Tarefas
+- [ ] Feature: endpoint tRPC para gerar Resumo, O que fazer e O que ganha via LLM
+
+
+## Foto e Minicurrículo do Mentor (18/03/2026)
+- [x] Campos fotoUrl e miniCurriculo já existiam na tabela de consultores (schema)
+- [x] Endpoint tRPC mentor.uploadPhoto já existia para upload de foto (S3)
+- [x] Endpoint editMentor atualizado para aceitar miniCurriculo
+- [x] Frontend da aba Mentores atualizado com foto (upload) e minicurrículo (textarea) no dialog de edição
+- [x] Edição de foto e minicurrículo funcionando para mentores já cadastrados
