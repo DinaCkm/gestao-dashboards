@@ -4874,6 +4874,40 @@ export async function getActiveStudentsWithIds(programId?: number): Promise<{id:
 }
 
 
+// ============ GET RECIPIENTS BY GROUP ============
+
+/**
+ * Get active mentors (role=mentor) with email and id
+ */
+export async function getActiveMentorsWithIds(): Promise<{id: number; email: string | null; name: string | null; group: string}[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const results = await db.select({ id: consultors.id, email: consultors.email, name: consultors.name })
+    .from(consultors)
+    .where(and(
+      eq(consultors.role, "mentor"),
+      eq(consultors.isActive, 1),
+      isNotNull(consultors.email)
+    ));
+  return results.map(r => ({ ...r, group: 'mentor' }));
+}
+
+/**
+ * Get active managers (role=gerente) with email and id
+ */
+export async function getActiveManagersWithIds(): Promise<{id: number; email: string | null; name: string | null; group: string}[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const results = await db.select({ id: consultors.id, email: consultors.email, name: consultors.name })
+    .from(consultors)
+    .where(and(
+      eq(consultors.role, "gerente"),
+      eq(consultors.isActive, 1),
+      isNotNull(consultors.email)
+    ));
+  return results.map(r => ({ ...r, group: 'gerente' }));
+}
+
 // ============ WEBINAR ATTENDANCE (Self-reported) ============
 
 /**

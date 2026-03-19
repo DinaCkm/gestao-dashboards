@@ -108,6 +108,8 @@ export default function WebinarsAdmin() {
   const [form, setForm] = useState<WebinarForm>(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [cardFile, setCardFile] = useState<File | null>(null);
+  const [reminderDialogWebinarId, setReminderDialogWebinarId] = useState<number | null>(null);
+  const [reminderRecipients, setReminderRecipients] = useState<string[]>(['alunos', 'gerentes', 'mentores']);
 
   const { data: webinars, isLoading, refetch } = trpc.webinars.list.useQuery(
     { status: statusFilter === "all" ? undefined : statusFilter }
@@ -153,15 +155,39 @@ export default function WebinarsAdmin() {
 
   const reminderMutation = trpc.webinars.sendReminder.useMutation({
     onSuccess: (data) => {
-      const parts = [];
-      if (data.emailsSent > 0) parts.push(`${data.emailsSent} emails enviados`);
-      if (data.emailsFailed > 0) parts.push(`${data.emailsFailed} emails falharam`);
-      if (data.notificationsCreated > 0) parts.push(`${data.notificationsCreated} notificações criadas`);
-      toast.success(`Lembrete enviado! ${parts.join(', ')}.`);
+      const parts: string[] = [];
+      if (data.groupCounts) {
+        Object.entries(data.groupCounts).forEach(([group, count]) => {
+          parts.push(`${count} ${group}`);
+        });
+      }
+      const details: string[] = [];
+      if (data.emailsSent > 0) details.push(`${data.emailsSent} emails enviados`);
+      if (data.emailsFailed > 0) details.push(`${data.emailsFailed} emails falharam`);
+      if (data.notificationsCreated > 0) details.push(`${data.notificationsCreated} notificações in-app`);
+      toast.success(`Lembrete enviado para ${parts.join(', ')}! ${details.join(', ')}.`);
+      setReminderDialogWebinarId(null);
       refetch();
     },
     onError: (err) => toast.error(`Erro ao enviar lembrete: ${err.message}`),
   });
+
+  const toggleRecipient = (group: string) => {
+    setReminderRecipients(prev =>
+      prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]
+    );
+  };
+
+  const handleSendReminder = () => {
+    if (!reminderDialogWebinarId || reminderRecipients.length === 0) {
+      toast.error('Selecione pelo menos um grupo de destinatários');
+      return;
+    }
+    reminderMutation.mutate({
+      webinarId: reminderDialogWebinarId,
+      recipients: reminderRecipients as any,
+    });
+  };
 
   const filteredWebinars = useMemo(() => {
     if (!webinars) return [];
@@ -654,13 +680,17 @@ export default function WebinarsAdmin() {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      {!isPast && webinar.status === "published" && !webinar.reminderSent && (
+                      {!isPast && webinar.status === "published" && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => reminderMutation.mutate({ webinarId: webinar.id })}
+                          onClick={() => {
+                            setReminderDialogWebinarId(webinar.id);
+                            setReminderRecipients(['alunos', 'gerentes', 'mentores']);
+                          }}
                           disabled={reminderMutation.isPending}
-                          title="Enviar lembrete"
+                          title={webinar.reminderSent ? "Reenviar lembrete" : "Enviar lembrete"}
+                          className={webinar.reminderSent ? "text-green-600 hover:text-green-700" : ""}
                         >
                           <Send className="h-4 w-4" />
                         </Button>
@@ -775,6 +805,74 @@ export default function WebinarsAdmin() {
               disabled={updateMutation.isPending}
             >
               {updateMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reminder Recipients Dialog */}
+      <Dialog open={!!reminderDialogWebinarId} onOpenChange={(open) => !open && setReminderDialogWebinarId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Enviar Lembrete
+            </DialogTitle>
+            <DialogDescription>
+              Selecione quem deve receber o lembrete deste webinar por email.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm font-medium text-muted-foreground">Destinatários:</p>
+            <div className="space-y-2">
+              <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={reminderRecipients.includes('alunos')}
+                  onChange={() => toggleRecipient('alunos')}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <div>
+                  <span className="font-medium">Alunos</span>
+                  <p className="text-xs text-muted-foreground">Todos os alunos ativos com email cadastrado</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={reminderRecipients.includes('gerentes')}
+                  onChange={() => toggleRecipient('gerentes')}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <div>
+                  <span className="font-medium">Gerentes</span>
+                  <p className="text-xs text-muted-foreground">Todos os gerentes ativos com email cadastrado</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={reminderRecipients.includes('mentores')}
+                  onChange={() => toggleRecipient('mentores')}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <div>
+                  <span className="font-medium">Mentores</span>
+                  <p className="text-xs text-muted-foreground">Todos os mentores ativos com email cadastrado</p>
+                </div>
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReminderDialogWebinarId(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSendReminder}
+              disabled={reminderMutation.isPending || reminderRecipients.length === 0}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {reminderMutation.isPending ? "Enviando..." : `Enviar Lembrete`}
             </Button>
           </DialogFooter>
         </DialogContent>

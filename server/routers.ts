@@ -4852,17 +4852,50 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       }),
 
     sendReminder: adminProcedure
-      .input(z.object({ webinarId: z.number() }))
+      .input(z.object({
+        webinarId: z.number(),
+        recipients: z.array(z.enum(['alunos', 'gerentes', 'mentores'])).min(1, 'Selecione pelo menos um grupo de destinatários'),
+      }))
       .mutation(async ({ input }) => {
         const webinar = await db.getWebinarById(input.webinarId);
         if (!webinar) throw new TRPCError({ code: 'NOT_FOUND', message: 'Webinar não encontrado' });
         
-        // Get all active students with IDs (for both email and in-app notifications)
-        const students = await db.getActiveStudentsWithIds();
-        const validStudents = students.filter(s => s.email).map(s => ({ id: s.id, email: s.email!, name: s.name || 'Aluno' }));
+        // Collect recipients from selected groups
+        type Recipient = { id: number; email: string; name: string; group: string };
+        const allRecipients: Recipient[] = [];
+        const groupCounts: Record<string, number> = {};
         
-        if (validStudents.length === 0) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Nenhum aluno com email cadastrado encontrado' });
+        if (input.recipients.includes('alunos')) {
+          const students = await db.getActiveStudentsWithIds();
+          const valid = students.filter(s => s.email).map(s => ({ id: s.id, email: s.email!, name: s.name || 'Aluno', group: 'aluno' }));
+          allRecipients.push(...valid);
+          groupCounts['Alunos'] = valid.length;
+        }
+        
+        if (input.recipients.includes('mentores')) {
+          const mentors = await db.getActiveMentorsWithIds();
+          const valid = mentors.filter(m => m.email).map(m => ({ id: m.id, email: m.email!, name: m.name || 'Mentor', group: 'mentor' }));
+          allRecipients.push(...valid);
+          groupCounts['Mentores'] = valid.length;
+        }
+        
+        if (input.recipients.includes('gerentes')) {
+          const managers = await db.getActiveManagersWithIds();
+          const valid = managers.filter(m => m.email).map(m => ({ id: m.id, email: m.email!, name: m.name || 'Gerente', group: 'gerente' }));
+          allRecipients.push(...valid);
+          groupCounts['Gerentes'] = valid.length;
+        }
+        
+        // Deduplicate by email (in case someone is in multiple groups)
+        const seen = new Set<string>();
+        const uniqueRecipients = allRecipients.filter(r => {
+          if (seen.has(r.email.toLowerCase())) return false;
+          seen.add(r.email.toLowerCase());
+          return true;
+        });
+        
+        if (uniqueRecipients.length === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Nenhum destinatário com email cadastrado encontrado nos grupos selecionados' });
         }
         
         // Format event date and time in Brazil timezone
@@ -4877,10 +4910,12 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         // Determine login URL
         const loginUrl = process.env.VITE_APP_URL || 'https://ecolider.evoluirckm.com';
         
-        // === 1. CREATE IN-APP NOTIFICATIONS FOR ALL STUDENTS ===
+        // === 1. CREATE IN-APP NOTIFICATIONS FOR STUDENTS ONLY (they have user accounts) ===
         const notificationMessage = `Evento: ${webinar.title}\nData: ${eventDateStr} às ${eventTimeStr} (horário de Brasília)${webinar.speaker ? `\nPalestrante: ${webinar.speaker}` : ''}${webinar.meetingLink ? `\nLink: ${webinar.meetingLink}` : ''}`;
         
-        const inAppNotifications = validStudents.map(s => ({
+        // Only create in-app notifications for alunos (they have user accounts in the users table)
+        const studentRecipients = uniqueRecipients.filter(r => r.group === 'aluno');
+        const inAppNotifications = studentRecipients.map(s => ({
           userId: s.id,
           title: `Lembrete: ${webinar.title}`,
           message: notificationMessage,
@@ -4907,13 +4942,13 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         const BATCH_SIZE = 10;
         const BATCH_DELAY_MS = 1000; // 1 second between batches
         
-        for (let i = 0; i < validStudents.length; i += BATCH_SIZE) {
-          const batch = validStudents.slice(i, i + BATCH_SIZE);
+        for (let i = 0; i < uniqueRecipients.length; i += BATCH_SIZE) {
+          const batch = uniqueRecipients.slice(i, i + BATCH_SIZE);
           
-          const batchPromises = batch.map(async (student) => {
+          const batchPromises = batch.map(async (recipient) => {
             try {
               const emailData = buildWebinarReminderEmail({
-                alunoName: student.name,
+                alunoName: recipient.name,
                 webinarTitle: webinar.title,
                 eventDate: eventDateStr,
                 eventTime: eventTimeStr,
@@ -4924,7 +4959,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
               });
               
               const result = await sendEmail({
-                to: student.email,
+                to: recipient.email,
                 subject: emailData.subject,
                 html: emailData.html,
                 text: emailData.text,
@@ -4934,23 +4969,23 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
                 emailsSent++;
               } else {
                 emailsFailed++;
-                errors.push(`${student.email}: ${result.error}`);
+                errors.push(`${recipient.email}: ${result.error}`);
               }
             } catch (err: any) {
               emailsFailed++;
-              errors.push(`${student.email}: ${err.message}`);
+              errors.push(`${recipient.email}: ${err.message}`);
             }
           });
           
           await Promise.all(batchPromises);
           
           // Wait between batches (except for the last one)
-          if (i + BATCH_SIZE < validStudents.length) {
+          if (i + BATCH_SIZE < uniqueRecipients.length) {
             await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
           }
         }
         
-        console.log(`[Reminder] Emails enviados: ${emailsSent}/${validStudents.length}, falhas: ${emailsFailed}`);
+        console.log(`[Reminder] Emails enviados: ${emailsSent}/${uniqueRecipients.length}, falhas: ${emailsFailed}`);
         if (errors.length > 0) {
           console.error(`[Reminder] Erros de email:`, errors.slice(0, 5).join('; '));
         }
@@ -4958,7 +4993,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         // === 3. NOTIFY OWNER ABOUT THE REMINDER ===
         await notifyOwner({
           title: `Lembrete de Webinar Enviado`,
-          content: `Lembrete do webinar "${webinar.title}" (${eventDateStr} às ${eventTimeStr}):\n- ${inAppNotifications.length} notificações in-app criadas\n- ${emailsSent} emails enviados com sucesso\n- ${emailsFailed} emails falharam${errors.length > 0 ? `\nErros: ${errors.slice(0, 3).join('; ')}` : ''}`,
+          content: `Lembrete do webinar "${webinar.title}" (${eventDateStr} às ${eventTimeStr}):\nDestinatários: ${Object.entries(groupCounts).map(([k, v]) => `${v} ${k}`).join(', ')}\n- ${inAppNotifications.length} notificações in-app criadas (alunos)\n- ${emailsSent} emails enviados com sucesso\n- ${emailsFailed} emails falharam${errors.length > 0 ? `\nErros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         });
         
         // === 4. UPDATE REMINDER STATUS ===
@@ -4972,7 +5007,8 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           emailsSent,
           emailsFailed,
           notificationsCreated: inAppNotifications.length,
-          totalStudents: validStudents.length,
+          totalRecipients: uniqueRecipients.length,
+          groupCounts,
         };
       }),
 

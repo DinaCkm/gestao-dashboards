@@ -2624,3 +2624,13 @@
 ## Redirect Aluno com PDI para Mural (19/03/2026)
 - [x] Aluno que já tem PDI (onboarding concluído) deve ser redirecionado para /mural ao acessar a plataforma
 - [x] Verificar fluxo de redirecionamento atual após login - alterado de /meu-dashboard para /mural
+
+## Seleção de Destinatários e Reenvio de Lembretes (19/03/2026)
+- [x] Adicionar checkboxes para selecionar destinatários: Alunos, Gerentes, Mentores (dialog com 3 checkboxes)
+- [x] Atualizar backend sendReminder para aceitar array de grupos destinatários
+- [x] Criar função para buscar emails de gerentes (getActiveManagersWithEmails)
+- [x] Criar função para buscar emails de mentores (getActiveMentorsWithEmails)
+- [x] Adicionar botão "Reenviar Lembrete" para webinars que já tiveram lembrete enviado
+- [x] Permitir reenvio com seleção de destinatários diferente
+- [x] Atualizar toast com detalhamento por grupo (X alunos, Y gerentes, Z mentores)
+- [x] 18 testes unitários cobrindo seleção de grupos, deduplicação e reenvio
