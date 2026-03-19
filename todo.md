@@ -2526,3 +2526,13 @@
 - [x] Verificado: criação de contrato funciona e aparece imediatamente na lista
 - [x] Verificado: edição de contrato funciona sem erros de validação
 - [x] Verificado: exclusão de contrato funciona corretamente
+
+## Remoção da seção Ciclos de Execução da página PDI (18/03/2026)
+- [x] Remover seção Ciclos de Execução da página PDI (macrociclo já definido no formulário de Assessment)
+- [x] Remover botão "Novo Ciclo" e dialog de criação de ciclo
+- [x] Remover estados e mutations relacionados a ciclos que não são mais necessários
+- [x] Atualizar testes unitários (22 testes PDI + 18 testes jornada passando)
+
+## Remoção de colunas Meta C1 e Meta C2 da tabela Assessment PDI (18/03/2026)
+- [x] Remover colunas Meta C1 e Meta C2 da tabela de competências no Assessment PDI
+- [x] Manter colunas Peso, Nível e Meta Final (usados em cálculos)

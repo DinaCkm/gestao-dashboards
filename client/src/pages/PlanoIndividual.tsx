@@ -108,15 +108,7 @@ function PlanoContent() {
   const [selectedCompetenciasLote, setSelectedCompetenciasLote] = useState<number[]>([]);
   const [selectedTrilhaLote, setSelectedTrilhaLote] = useState<string>("all");
 
-  // Ciclos state
-  const [isCicloDialogOpen, setIsCicloDialogOpen] = useState(false);
-  const [editingCiclo, setEditingCiclo] = useState<any>(null);
-  const [cicloNome, setCicloNome] = useState("");
-  const [cicloDataInicio, setCicloDataInicio] = useState("");
-  const [cicloDataFim, setCicloDataFim] = useState("");
-  const [cicloObservacoes, setCicloObservacoes] = useState("");
-  const [cicloCompetenciasSelecionadas, setCicloCompetenciasSelecionadas] = useState<number[]>([]);
-  const [cicloTrilhaFiltro, setCicloTrilhaFiltro] = useState<string>("all");
+
 
   // Metas state
   const [expandedCompId, setExpandedCompId] = useState<number | null>(null);
@@ -182,10 +174,6 @@ function PlanoContent() {
   const { data: competencias } = trpc.competencias.listWithTrilha.useQuery();
   const { data: trilhas } = trpc.trilhas.list.useQuery();
   const { data: turmas } = trpc.turmas.list.useQuery();
-  const { data: ciclosAluno, refetch: refetchCiclos } = trpc.ciclos.porAluno.useQuery(
-    { alunoId: selectedAluno! },
-    { enabled: !!selectedAluno }
-  );
   const { data: performanceFiltrada } = trpc.indicadores.performanceFiltrada.useQuery(
     { alunoId: selectedAluno! },
     { enabled: !!selectedAluno }
@@ -268,19 +256,7 @@ function PlanoContent() {
     onError: (error) => toast.error(`Erro: ${error.message}`),
   });
 
-  // Ciclos mutations
-  const criarCicloMutation = trpc.ciclos.criar.useMutation({
-    onSuccess: () => { toast.success("Ciclo criado com sucesso!"); refetchCiclos(); resetCicloForm(); },
-    onError: (error) => toast.error(`Erro ao criar ciclo: ${error.message}`),
-  });
-  const atualizarCicloMutation = trpc.ciclos.atualizar.useMutation({
-    onSuccess: () => { toast.success("Ciclo atualizado com sucesso!"); refetchCiclos(); resetCicloForm(); },
-    onError: (error) => toast.error(`Erro ao atualizar ciclo: ${error.message}`),
-  });
-  const excluirCicloMutation = trpc.ciclos.excluir.useMutation({
-    onSuccess: () => { toast.success("Ciclo excluído com sucesso!"); refetchCiclos(); },
-    onError: (error) => toast.error(`Erro ao excluir ciclo: ${error.message}`),
-  });
+
 
   // Contrato mutations
   const criarContratoMutation = trpc.contratos.create.useMutation({
@@ -355,13 +331,6 @@ function PlanoContent() {
     return acc;
   }, {} as Record<string, typeof planoAluno>) || {};
 
-  const competenciasParaCiclo = useMemo(() => {
-    if (!planoAluno) return [];
-    return planoAluno.filter(p => {
-      const matchesTrilha = cicloTrilhaFiltro === "all" || String(p.trilhaId) === cicloTrilhaFiltro;
-      return matchesTrilha;
-    });
-  }, [planoAluno, cicloTrilhaFiltro]);
 
   const competenciasLoteDisponiveis = competencias?.filter(comp => {
     const matchesTrilha = selectedTrilhaLote === "all" || comp.trilhaId === parseInt(selectedTrilhaLote);
@@ -440,42 +409,6 @@ function PlanoContent() {
     }
   };
 
-  // Ciclos handlers
-  const resetCicloForm = () => {
-    setIsCicloDialogOpen(false); setEditingCiclo(null); setCicloNome(""); setCicloDataInicio(""); setCicloDataFim("");
-    setCicloObservacoes(""); setCicloCompetenciasSelecionadas([]); setCicloTrilhaFiltro("all");
-  };
-  const openEditCiclo = (ciclo: any) => {
-    setEditingCiclo(ciclo);
-    setCicloNome(ciclo.nomeCiclo);
-    setCicloDataInicio(typeof ciclo.dataInicio === 'string' ? ciclo.dataInicio.split('T')[0] : new Date(ciclo.dataInicio).toISOString().split('T')[0]);
-    setCicloDataFim(typeof ciclo.dataFim === 'string' ? ciclo.dataFim.split('T')[0] : new Date(ciclo.dataFim).toISOString().split('T')[0]);
-    setCicloObservacoes(ciclo.observacoes || "");
-    setCicloCompetenciasSelecionadas(ciclo.competenciaIds || []);
-    setIsCicloDialogOpen(true);
-  };
-  const handleSaveCiclo = () => {
-    if (!cicloNome || !cicloDataInicio || !cicloDataFim || cicloCompetenciasSelecionadas.length === 0) {
-      toast.error("Preencha todos os campos obrigatórios e selecione pelo menos uma competência"); return;
-    }
-    if (new Date(cicloDataFim) <= new Date(cicloDataInicio)) { toast.error("A data de fim deve ser posterior à data de início"); return; }
-    if (editingCiclo) {
-      atualizarCicloMutation.mutate({ cicloId: editingCiclo.id, nomeCiclo: cicloNome, dataInicio: cicloDataInicio, dataFim: cicloDataFim, competenciaIds: cicloCompetenciasSelecionadas, observacoes: cicloObservacoes || undefined });
-    } else {
-      criarCicloMutation.mutate({ alunoId: selectedAluno!, nomeCiclo: cicloNome, dataInicio: cicloDataInicio, dataFim: cicloDataFim, competenciaIds: cicloCompetenciasSelecionadas, observacoes: cicloObservacoes || undefined });
-    }
-  };
-  const handleExcluirCiclo = (cicloId: number, nomeCiclo: string) => {
-    if (confirm(`Tem certeza que deseja excluir o ciclo "${nomeCiclo}"?`)) excluirCicloMutation.mutate({ cicloId });
-  };
-  const getCicloStatus = (ciclo: any) => {
-    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-    const inicio = new Date(ciclo.dataInicio); inicio.setHours(0, 0, 0, 0);
-    const fim = new Date(ciclo.dataFim); fim.setHours(0, 0, 0, 0);
-    if (hoje < inicio) return { label: "Futuro", color: "bg-slate-400", textColor: "text-slate-600", borderColor: "border-slate-300" };
-    if (hoje > fim) return { label: "Finalizado", color: "bg-green-500", textColor: "text-green-700", borderColor: "border-green-300" };
-    return { label: "Em Andamento", color: "bg-blue-500", textColor: "text-blue-700", borderColor: "border-blue-300" };
-  };
 
   // Contrato handlers
   const resetContratoForm = () => {
@@ -945,8 +878,6 @@ function PlanoContent() {
                                     <TableHead className="text-xs">Competência</TableHead>
                                     <TableHead className="text-xs w-20">Peso</TableHead>
                                     <TableHead className="text-xs w-20">Nível</TableHead>
-                                    <TableHead className="text-xs w-20">Meta C1</TableHead>
-                                    <TableHead className="text-xs w-20">Meta C2</TableHead>
                                     <TableHead className="text-xs w-20">Meta Final</TableHead>
                                     <TableHead className="text-xs w-40">Micro Jornada</TableHead>
                                   </TableRow>
@@ -961,8 +892,6 @@ function PlanoContent() {
                                         </Badge>
                                       </TableCell>
                                       <TableCell className="text-sm">{comp.nivelAtualEfetivo ?? comp.nivelAtual ?? "—"}%</TableCell>
-                                      <TableCell className="text-sm">{comp.metaCiclo1 ?? "—"}%</TableCell>
-                                      <TableCell className="text-sm">{comp.metaCiclo2 ?? "—"}%</TableCell>
                                       <TableCell className="text-sm">{comp.metaFinal ?? "—"}%</TableCell>
                                       <TableCell className="text-xs text-muted-foreground">
                                         {comp.microInicio || comp.microTermino
@@ -1090,102 +1019,7 @@ function PlanoContent() {
                 </CardContent>
               </Card>
 
-              {/* ===== SEÇÃO 4: CICLOS DE EXECUÇÃO ===== */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-base">Ciclos de Execução</CardTitle>
-                    </div>
-                    {isAdmin && (
-                      <Button size="sm" variant="outline" onClick={() => { resetCicloForm(); setIsCicloDialogOpen(true); }} disabled={!planoAluno || planoAluno.length === 0}>
-                        <Plus className="h-4 w-4 mr-1" /> Novo Ciclo
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {(!planoAluno || planoAluno.length === 0) && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 mb-3">
-                      <AlertCircle className="w-4 h-4 inline mr-2" />
-                      Adicione competências ao plano antes de criar ciclos.
-                    </div>
-                  )}
-                  {ciclosAluno && ciclosAluno.length > 0 && (ciclosAluno as any)[0]?.fonte === 'pdi' && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800 mb-3">
-                      <AlertCircle className="w-4 h-4 inline mr-2" />
-                      Ciclos gerados automaticamente a partir do PDI. Para personalizar, crie ciclos manuais.
-                    </div>
-                  )}
-                  {!ciclosAluno || ciclosAluno.length === 0 ? (
-                    planoAluno && planoAluno.length > 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-4">Nenhum ciclo de execução definido</p>
-                    )
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="relative">
-                        {ciclosAluno.map((ciclo, index) => {
-                          const status = getCicloStatus(ciclo);
-                          const isPdiCiclo = (ciclo as any).fonte === 'pdi';
-                          return (
-                            <div key={ciclo.id} className="relative flex gap-4 pb-6">
-                              {index < ciclosAluno.length - 1 && <div className="absolute left-[19px] top-10 bottom-0 w-0.5 bg-border" />}
-                              <div className="flex-shrink-0 mt-1">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${status.color} text-white`}>
-                                  {status.label === "Finalizado" ? <CheckCircle2 className="w-5 h-5" /> : status.label === "Em Andamento" ? <Clock className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
-                                </div>
-                              </div>
-                              <div className={`flex-1 border rounded-lg p-4 ${status.borderColor} bg-card`}>
-                                <div className="flex items-start justify-between mb-3">
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <h4 className="font-semibold text-sm">{ciclo.nomeCiclo}</h4>
-                                      <Badge className={`${status.color} text-white text-xs`}>{status.label}</Badge>
-                                      {isPdiCiclo && <Badge variant="outline" className="text-xs text-blue-600 border-blue-300">PDI</Badge>}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      <Calendar className="w-3 h-3 inline mr-1" />
-                                      {formatDateSafe(ciclo.dataInicio)} até {formatDateSafe(ciclo.dataFim)}
-                                    </p>
-                                    {ciclo.observacoes && <p className="text-xs text-muted-foreground mt-1 italic">{ciclo.observacoes}</p>}
-                                  </div>
-                                  {isAdmin && !isPdiCiclo && (
-                                    <div className="flex gap-1">
-                                      <Button variant="ghost" size="sm" onClick={() => openEditCiclo(ciclo)} className="h-8 w-8 p-0"><Edit2 className="w-4 h-4" /></Button>
-                                      <Button variant="ghost" size="sm" onClick={() => handleExcluirCiclo(ciclo.id, ciclo.nomeCiclo)} className="h-8 w-8 p-0 text-red-500"><Trash2 className="w-4 h-4" /></Button>
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                  {ciclo.competencias?.map((comp: any) => (
-                                    <Badge key={comp.id} variant="outline" className="text-xs">
-                                      {comp.competenciaNome}
-                                      {comp.trilhaNome && <span className="text-muted-foreground ml-1">({comp.trilhaNome})</span>}
-                                    </Badge>
-                                  ))}
-                                </div>
-                                <div className="mt-2 text-xs text-muted-foreground">
-                                  {ciclo.competencias?.length || 0} competência(s)
-                                  {status.label === "Finalizado" && <span className="text-green-600 font-medium ml-2">Entra no Engajamento Final</span>}
-                                  {status.label === "Em Andamento" && <span className="text-blue-600 font-medium ml-2">Ciclo em andamento</span>}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="flex items-center gap-6 text-xs text-muted-foreground pt-2 border-t">
-                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-green-500" /><span>Finalizado</span></div>
-                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-blue-500" /><span>Em Andamento</span></div>
-                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-slate-400" /><span>Futuro</span></div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* ===== SEÇÃO 5: DISC ===== */}
+              {/* ===== SEÇÃO 4: DISC ===== */}
               {discResultado && (
                 <Card className="border-secondary/30 bg-gradient-to-r from-secondary/5 to-transparent">
                   <CardContent className="py-4">
@@ -1447,59 +1281,6 @@ function PlanoContent() {
             <Button variant="outline" onClick={resetContratoForm}>Cancelar</Button>
             <Button onClick={handleSaveContrato} disabled={criarContratoMutation.isPending || atualizarContratoMutation.isPending}>
               {criarContratoMutation.isPending || atualizarContratoMutation.isPending ? "Salvando..." : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog: Ciclo */}
-      <Dialog open={isCicloDialogOpen} onOpenChange={(open) => { if (!open) resetCicloForm(); else setIsCicloDialogOpen(true); }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingCiclo ? `Editar Ciclo: ${editingCiclo.nomeCiclo}` : "Novo Ciclo de Execução"}</DialogTitle>
-            <DialogDescription>Defina o período e as competências que o aluno deve cumprir neste ciclo.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div><Label>Nome do Ciclo *</Label><Input placeholder="Ex: Ciclo 1 - Competências Comportamentais" value={cicloNome} onChange={(e) => setCicloNome(e.target.value)} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Data de Início *</Label><Input type="date" value={cicloDataInicio} onChange={(e) => setCicloDataInicio(e.target.value)} /></div>
-              <div><Label>Data de Fim *</Label><Input type="date" value={cicloDataFim} onChange={(e) => setCicloDataFim(e.target.value)} /></div>
-            </div>
-            <div><Label>Observações</Label><Input placeholder="Observações opcionais" value={cicloObservacoes} onChange={(e) => setCicloObservacoes(e.target.value)} /></div>
-            <div>
-              <Label className="mb-2 block">Competências do Ciclo * ({cicloCompetenciasSelecionadas.length} selecionadas)</Label>
-              <Select value={cicloTrilhaFiltro} onValueChange={setCicloTrilhaFiltro}>
-                <SelectTrigger className="mb-2"><SelectValue placeholder="Filtrar por trilha" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as trilhas</SelectItem>
-                  {trilhas?.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <div className="border rounded-lg max-h-60 overflow-y-auto p-2 space-y-1">
-                {competenciasParaCiclo.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4 text-sm">Nenhuma competência disponível</p>
-                ) : (
-                  competenciasParaCiclo.map(item => (
-                    <div key={item.competenciaId} className="flex items-center gap-2 p-2 hover:bg-accent/30 rounded">
-                      <Checkbox checked={cicloCompetenciasSelecionadas.includes(item.competenciaId)} onCheckedChange={(checked) => {
-                        if (checked) setCicloCompetenciasSelecionadas([...cicloCompetenciasSelecionadas, item.competenciaId]);
-                        else setCicloCompetenciasSelecionadas(cicloCompetenciasSelecionadas.filter(id => id !== item.competenciaId));
-                      }} />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{item.competenciaNome}</p>
-                        <p className="text-xs text-muted-foreground">{item.trilhaNome || "Sem trilha"}</p>
-                      </div>
-                      {getStatusBadge(item.status)}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={resetCicloForm}>Cancelar</Button>
-            <Button onClick={handleSaveCiclo} disabled={criarCicloMutation.isPending || atualizarCicloMutation.isPending || !cicloNome || !cicloDataInicio || !cicloDataFim || cicloCompetenciasSelecionadas.length === 0}>
-              {criarCicloMutation.isPending || atualizarCicloMutation.isPending ? "Salvando..." : editingCiclo ? "Atualizar Ciclo" : "Criar Ciclo"}
             </Button>
           </DialogFooter>
         </DialogContent>
