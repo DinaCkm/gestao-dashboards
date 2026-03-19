@@ -2643,3 +2643,16 @@
 ## Email de Teste para Admin (19/03/2026)
 - [x] Incluir relacionamento@ckmtalents.net como destinatário fixo em todos os envios de lembrete
 - [x] Admin sempre recebe cópia do email para visualizar como chega aos destinatários
+
+## Página Admin: Acompanhamento de Onboarding (19/03/2026)
+- [ ] Criar página admin "Acompanhamento de Onboarding" com régua de progresso por aluno
+- [ ] Etapas da régua: Convite Enviado → Cadastro Preenchido → Teste Realizado → Mentoria Agendada → PDI Publicado → Termo de Compromisso Assinado
+- [ ] Visualizar evolução de cada aluno com indicador visual de progresso
+- [ ] Email automático para admin (relacionamento@ckmtalents.net) e dina@ckmtalents.net quando aluno avança etapa
+- [ ] Email para aluno quando mentor finaliza PDI, convidando a acessar e assinar o aceite
+- [ ] Filtros por programa, empresa, status de onboarding
+- [ ] Backend: procedure para listar alunos com status de onboarding
+- [ ] Testes unitários
+
+## Bug - Cursos Disponíveis redireciona para página gerencial (19/03/2026)
+- [x] Corrigir: quando aluno/gerente clica em "Cursos Disponíveis" no mural, é levado para a página admin de gestão de cursos (/cursos) em vez da página do aluno (/meus-cursos)

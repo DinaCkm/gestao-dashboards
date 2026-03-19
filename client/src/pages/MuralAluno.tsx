@@ -669,7 +669,7 @@ export default function MuralAluno() {
                 iconColor="text-purple-600"
                 countColor="text-purple-700"
                 labelColor="text-purple-600/70"
-                onClick={() => setLocation("/cursos")}
+                onClick={() => setLocation("/meus-cursos")}
               />
               <StatCard
                 icon={Zap}

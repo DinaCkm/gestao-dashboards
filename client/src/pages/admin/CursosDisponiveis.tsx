@@ -1,5 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -135,6 +137,16 @@ function getYouTubeThumbnail(url: string): string | null {
 }
 
 export default function CursosDisponiveis() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Redirecionar não-admin para a página de cursos do aluno
+  useEffect(() => {
+    if (!loading && user && user.role !== 'admin') {
+      setLocation('/meus-cursos');
+    }
+  }, [loading, user, setLocation]);
+
   const [search, setSearch] = useState("");
   const [filterCategoria, setFilterCategoria] = useState<string>("all");
   const [showDialog, setShowDialog] = useState(false);
