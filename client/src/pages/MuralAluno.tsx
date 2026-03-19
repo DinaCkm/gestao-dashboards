@@ -636,82 +636,6 @@ export default function MuralAluno() {
           {/* Attendance Banner - redireciona para Portal do Aluno aba Eventos */}
           <AttendanceBanner />
 
-          {/* Card ECO_EVOLUIR - apenas para SEBRAE TO (programId=17) */}
-          {user?.programId === 17 && (
-          <a
-            href="https://www.evoluirckm.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block relative overflow-hidden rounded-2xl border border-amber-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0A1E3E] via-[#0A1E3E]/95 to-[#0A1E3E]/80" />
-            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
-            <div className="relative flex items-center gap-5 p-5 sm:p-6">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-white/10 backdrop-blur-sm ring-2 ring-amber-400/30 shadow-lg">
-                <img
-                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_evoluir_logo_00dbbab4.png"
-                  alt="ECO_EVOLUIR"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Plataforma de Desenvolvimento</span>
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-1">
-                  ECO_EVOLUIR
-                </h3>
-                <p className="text-sm text-gray-300">
-                  Acesse aqui e realize seu PDI
-                </p>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center group-hover:bg-amber-400 transition-colors shadow-lg">
-                  <ExternalLink className="h-5 w-5 text-white" />
-                </div>
-              </div>
-            </div>
-          </a>
-          )}
-
-          {/* Card B.E.M. - Área de Aulas */}
-          <a
-            href="https://sebraeto.competenciasdobem.com.br"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block relative overflow-hidden rounded-2xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white via-blue-50/80 to-amber-50/60" />
-            <div className="absolute top-0 right-0 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
-            <div className="relative flex items-center gap-5 p-5 sm:p-6">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-blue-100 shadow-lg p-2">
-                <img
-                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
-                  alt="eco do bem"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#0A1E3E]">Plataforma de Aprendizagem</span>
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-[#0A1E3E] mb-1">
-                  B.E.M. - Área de Aulas
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Acesse a área de aulas e conteúdos do programa
-                </p>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 rounded-full bg-[#0A1E3E] flex items-center justify-center group-hover:bg-[#0A1E3E]/80 transition-colors shadow-lg">
-                  <ExternalLink className="h-5 w-5 text-amber-400" />
-                </div>
-              </div>
-            </div>
-          </a>
-
           {/* Next Webinar Highlight */}
           {nextWebinar && <NextWebinarHighlight webinar={nextWebinar} />}
 
@@ -720,7 +644,7 @@ export default function MuralAluno() {
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Explore por Categoria
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               <StatCard
                 icon={Video}
                 count={upcomingWebinars?.length || 0}
@@ -770,7 +694,70 @@ export default function MuralAluno() {
                 labelColor="text-amber-600/70"
                 onClick={() => setCurrentView("avisos")}
               />
+            </div>
+          </div>
 
+          {/* Plataformas Externas - Mini Cards */}
+          <div>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              Plataformas Externas
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* ECO_EVOLUIR - apenas para SEBRAE TO (programId=17) */}
+              {user?.programId === 17 && (
+                <a
+                  href="https://www.evoluirckm.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block group"
+                >
+                  <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#0A1E3E]/90 border-amber-400/30 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-sm ring-1 ring-amber-400/30 overflow-hidden flex-shrink-0">
+                          <img
+                            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_evoluir_logo_00dbbab4.png"
+                            alt="ECO_EVOLUIR"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-white leading-tight">ECO_EVOLUIR</p>
+                          <p className="text-[11px] text-amber-300/80 font-medium leading-tight">Realize seu PDI</p>
+                        </div>
+                        <ExternalLink className="h-4 w-4 text-amber-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform flex-shrink-0" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </a>
+              )}
+
+              {/* B.E.M. - Área de Aulas */}
+              <a
+                href="https://sebraeto.competenciasdobem.com.br"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block group"
+              >
+                <Card className="bg-gradient-to-br from-white to-blue-50 border-blue-200 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center shadow-sm ring-1 ring-blue-100 overflow-hidden flex-shrink-0 p-1">
+                        <img
+                          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
+                          alt="eco do bem"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-[#0A1E3E] leading-tight">B.E.M. - Área de Aulas</p>
+                        <p className="text-[11px] text-gray-500 font-medium leading-tight">Aulas e conteúdos do programa</p>
+                      </div>
+                      <ExternalLink className="h-4 w-4 text-[#0A1E3E]/50 group-hover:text-[#0A1E3E] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all flex-shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </a>
             </div>
           </div>
 

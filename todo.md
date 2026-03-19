@@ -2608,3 +2608,9 @@
 - [x] Tratamento de erros: continuar enviando mesmo se um email falhar (batch de 10 com delay)
 - [x] Atualizar toast para refletir quantidade real de emails e notificações enviadas
 - [x] 17 testes unitários para o envio de lembretes (webinar-reminder.test.ts)
+
+## Reorganizar Layout do Mural do Aluno (19/03/2026)
+- [x] Mover os dois cards grandes (ECO_EVOLUIR e B.E.M. Área de Aulas) para abaixo dos avisos/comunicados
+- [x] Transformar os dois cards grandes em mini-cards compactos (seção "Plataformas Externas")
+- [x] Card "Cursos Disponíveis" verificado - funciona corretamente (exibe drill-down com estado vazio quando não há cursos)
+- [x] Avisos/comunicados e webinar em destaque ficam visíveis primeiro no mural
