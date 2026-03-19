@@ -2684,3 +2684,5 @@
 - [x] Alunos com PDI não devem aparecer na lista nem receber lembretes automáticos
 - [x] Ajustar etapas da régua: remover "PDI Publicado" (pois quem tem PDI sai da lista)
 - [x] Atualizar contadores (Total, Concluídos, Em Progresso, Não Iniciados) para refletir filtro
+
+## Melhorias Onboarding Tracking - 19/03/2026- [x] Ordenar lista por data de cadastramento (mais recentes primeir- [x] Adicionar botão de reenvio manual de convite para alunos que não iniciaram cad- [x] Incluir coluna de "dias parado" mostrando há quantos dias o aluno está na mesma etapa- [x] Corrigir lógica de etapas para ser cumulativa (se etapa posterior está ok, anteriores também devem estar)

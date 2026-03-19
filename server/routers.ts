@@ -7381,6 +7381,46 @@ Responda APENAS em JSON com o formato especificado.`
       .query(async ({ input }) => {
         return await db.getOnboardingTrackingList(input?.programId);
       }),
+    resendInvite: adminProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        // Fetch the student
+        const { alunos: alunosTable } = await import('../drizzle/schema');
+        const { eq } = await import('drizzle-orm');
+        const [aluno] = await database.select().from(alunosTable).where(eq(alunosTable.id, input.alunoId));
+        if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno n\u00e3o encontrado' });
+
+        // Get program name
+        const allPrograms = await db.getPrograms();
+        const program = aluno.programId ? allPrograms.find(p => p.id === aluno.programId) : null;
+
+        // Build login URL
+        const loginUrl = `${process.env.VITE_OAUTH_PORTAL_URL || 'https://app.manus.im/login'}?app_id=${process.env.VITE_APP_ID || ''}`;
+
+        // Send invite email
+        const { sendEmail, buildOnboardingInviteEmail } = await import('./emailService');
+        const emailData = buildOnboardingInviteEmail({
+          alunoName: aluno.name,
+          alunoEmail: aluno.email || '',
+          alunoId: aluno.cpf || aluno.externalId || String(aluno.id),
+          empresaName: program?.name,
+          loginUrl,
+        });
+
+        if (aluno.email) {
+          await sendEmail({
+            to: aluno.email,
+            subject: emailData.subject,
+            html: emailData.html,
+            text: emailData.text,
+          });
+        }
+
+        return { success: true, email: aluno.email };
+      }),
   }),
 });
 

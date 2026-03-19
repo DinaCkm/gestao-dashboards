@@ -8214,9 +8214,9 @@ export async function getOnboardingTrackingList(programId?: number) {
 
   // Build lookup maps
   const jornadaMap = new Map(jornadas.map(j => [j.alunoId, j]));
-  const discMap = new Map<number, boolean>();
+  const discMap = new Map<number, { completed: boolean; completedAt: Date | null }>();
   for (const d of discResults) {
-    discMap.set(d.alunoId, true);
+    discMap.set(d.alunoId, { completed: true, completedAt: d.completedAt });
   }
   const appointmentMap = new Map<number, boolean>();
   for (const a of appointments) {
@@ -8236,24 +8236,54 @@ export async function getOnboardingTrackingList(programId?: number) {
   const turmaMap = new Map(allTurmas.map(t => [t.id, t.name]));
 
   // Build result — only include students who do NOT have PDI yet
+  const now = new Date();
   return alunosList
     .filter(aluno => !pdiMap.get(aluno.id)) // Exclude students with PDI
     .map(aluno => {
     const jornada = jornadaMap.get(aluno.id);
-    const hasDISC = discMap.get(aluno.id) || false;
+    const discInfo = discMap.get(aluno.id);
+    const hasDISC = discInfo?.completed || false;
     const hasAppointment = appointmentMap.get(aluno.id) || false;
 
-    // Calculate step statuses (5 steps — PDI and Termo removed since students with PDI leave the list)
+    // Calculate step statuses (5 steps — cumulative: if a later step is done, all previous are also done)
+    // Raw checks from database
+    const rawConvite = aluno.cadastradoPorAdmin === 1;
+    const rawCadastro = jornada?.cadastroConfirmado === 1;
+    const rawTeste = hasDISC;
+    const rawMentoria = hasAppointment;
+    const rawAceite = jornada?.aceiteRealizado === 1;
+
+    // Apply cumulative logic: if step N is done, steps 1..N-1 are also done
     const steps = {
-      conviteEnviado: aluno.cadastradoPorAdmin === 1,
-      cadastroPreenchido: jornada?.cadastroConfirmado === 1,
-      testeRealizado: hasDISC,
-      mentoriaAgendada: hasAppointment,
-      aceiteOnboarding: jornada?.aceiteRealizado === 1,
+      conviteEnviado: rawConvite || rawCadastro || rawTeste || rawMentoria || rawAceite,
+      cadastroPreenchido: rawCadastro || rawTeste || rawMentoria || rawAceite,
+      testeRealizado: rawTeste || rawMentoria || rawAceite,
+      mentoriaAgendada: rawMentoria || rawAceite,
+      aceiteOnboarding: rawAceite === true,
     };
 
     // Count completed steps
     const completedSteps = Object.values(steps).filter(Boolean).length;
+
+    // Determine the date of the last completed step (for "dias parado" calculation)
+    let lastStepDate: Date | null = aluno.createdAt; // default: registration date
+    if (steps.aceiteOnboarding && jornada?.aceiteRealizadoEm) {
+      lastStepDate = jornada.aceiteRealizadoEm;
+    } else if (steps.mentoriaAgendada) {
+      // No specific date stored for appointment, use disc or cadastro date
+      lastStepDate = discInfo?.completedAt || jornada?.cadastroConfirmadoEm || aluno.createdAt;
+    } else if (steps.testeRealizado && discInfo?.completedAt) {
+      lastStepDate = discInfo.completedAt;
+    } else if (steps.cadastroPreenchido && jornada?.cadastroConfirmadoEm) {
+      lastStepDate = jornada.cadastroConfirmadoEm;
+    }
+
+    // Calculate days stalled
+    const diasParado = lastStepDate
+      ? Math.floor((now.getTime() - new Date(lastStepDate).getTime()) / (1000 * 60 * 60 * 24))
+      : aluno.createdAt
+        ? Math.floor((now.getTime() - new Date(aluno.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
 
     return {
       alunoId: aluno.id,
@@ -8265,9 +8295,17 @@ export async function getOnboardingTrackingList(programId?: number) {
       completedSteps,
       totalSteps: 5,
       createdAt: aluno.createdAt,
+      diasParado,
+      lastStepDate,
       // Timestamps for detail view
       cadastroConfirmadoEm: jornada?.cadastroConfirmadoEm || null,
       aceiteRealizadoEm: jornada?.aceiteRealizadoEm || null,
     };
+  })
+  // Sort by createdAt descending (most recent first)
+  .sort((a, b) => {
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
   });
 }

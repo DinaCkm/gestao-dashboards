@@ -3,10 +3,12 @@ import { trpc } from '@/lib/trpc';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Search, Users, CheckCircle2, Clock, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Users, CheckCircle2, Clock, Filter, ChevronDown, ChevronUp, Send, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 const STEP_LABELS = [
   'Convite Enviado',
@@ -36,8 +38,24 @@ interface StudentTracking {
   completedSteps: number;
   totalSteps: number;
   createdAt: unknown;
+  diasParado: number;
+  lastStepDate: unknown;
   cadastroConfirmadoEm: unknown;
   aceiteRealizadoEm: unknown;
+}
+
+function getDiasParadoColor(dias: number): string {
+  if (dias <= 3) return 'text-emerald-600';
+  if (dias <= 7) return 'text-amber-600';
+  if (dias <= 14) return 'text-orange-600';
+  return 'text-red-600';
+}
+
+function getDiasParadoBg(dias: number): string {
+  if (dias <= 3) return 'bg-emerald-50 dark:bg-emerald-950/30';
+  if (dias <= 7) return 'bg-amber-50 dark:bg-amber-950/30';
+  if (dias <= 14) return 'bg-orange-50 dark:bg-orange-950/30';
+  return 'bg-red-50 dark:bg-red-950/30';
 }
 
 function ProgressBar({ steps, completedSteps, totalSteps }: { steps: Record<StepKey, boolean>; completedSteps: number; totalSteps: number }) {
@@ -106,15 +124,22 @@ function ProgressBar({ steps, completedSteps, totalSteps }: { steps: Record<Step
   );
 }
 
-function StudentRow({ student, isExpanded, onToggle }: { student: StudentTracking; isExpanded: boolean; onToggle: () => void }) {
+function StudentRow({ student, isExpanded, onToggle, onResendInvite, isResending }: {
+  student: StudentTracking;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onResendInvite: (alunoId: number) => void;
+  isResending: boolean;
+}) {
   const percentage = Math.round((student.completedSteps / student.totalSteps) * 100);
   const isComplete = student.completedSteps === student.totalSteps;
+  const canResendInvite = !student.steps.cadastroPreenchido && student.email;
 
   return (
     <div className={`border rounded-lg transition-all duration-200 ${isComplete ? 'border-emerald-200 bg-emerald-50/30 dark:bg-emerald-950/10' : 'border-border bg-card'}`}>
       {/* Header row */}
       <div
-        className="flex items-center gap-4 p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+        className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/30 transition-colors"
         onClick={onToggle}
       >
         <div className="flex-1 min-w-0">
@@ -132,6 +157,22 @@ function StudentRow({ student, isExpanded, onToggle }: { student: StudentTrackin
           <span className="text-[10px] text-muted-foreground">{student.turmaName || ''}</span>
         </div>
 
+        {/* Dias parado badge */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${getDiasParadoBg(student.diasParado)} ${getDiasParadoColor(student.diasParado)}`}>
+                {student.diasParado > 7 && <AlertTriangle className="w-3 h-3" />}
+                <span>{student.diasParado}d</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-medium">Parado há {student.diasParado} dia{student.diasParado !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-muted-foreground">Tempo desde a última etapa concluída</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Clock className="w-3.5 h-3.5" />
           <span>{student.completedSteps}/{student.totalSteps}</span>
@@ -146,6 +187,25 @@ function StudentRow({ student, isExpanded, onToggle }: { student: StudentTrackin
           <div className="pt-3">
             <ProgressBar steps={student.steps} completedSteps={student.completedSteps} totalSteps={student.totalSteps} />
           </div>
+
+          {/* Resend invite button - only show for students who haven't completed cadastro */}
+          {canResendInvite && (
+            <div className="mt-3 flex justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs gap-1.5"
+                disabled={isResending}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onResendInvite(student.alunoId);
+                }}
+              >
+                <Send className="w-3.5 h-3.5" />
+                {isResending ? 'Enviando...' : 'Reenviar Convite'}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -154,10 +214,27 @@ function StudentRow({ student, isExpanded, onToggle }: { student: StudentTrackin
 
 export default function OnboardingTracking() {
   const { data: students = [], isLoading } = trpc.onboardingTracking.list.useQuery();
+  const resendInviteMutation = trpc.onboardingTracking.resendInvite.useMutation();
   const [searchTerm, setSearchTerm] = useState('');
   const [programFilter, setProgramFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [resendingId, setResendingId] = useState<number | null>(null);
+  const handleResendInvite = async (alunoId: number) => {
+    setResendingId(alunoId);
+    try {
+      const result = await resendInviteMutation.mutateAsync({ alunoId });
+      toast.success('Convite reenviado!', {
+        description: `Email enviado para ${result.email}`,
+      });
+    } catch {
+      toast.error('Erro ao reenviar convite', {
+        description: 'Tente novamente mais tarde.',
+      });
+    } finally {
+      setResendingId(null);
+    }
+  };
 
   const toggleExpanded = (id: number) => {
     setExpandedIds(prev => {
@@ -375,6 +452,8 @@ export default function OnboardingTracking() {
                   student={student}
                   isExpanded={expandedIds.has(student.alunoId)}
                   onToggle={() => toggleExpanded(student.alunoId)}
+                  onResendInvite={handleResendInvite}
+                  isResending={resendingId === student.alunoId}
                 />
               ))}
             </div>
@@ -385,16 +464,29 @@ export default function OnboardingTracking() {
       {/* Legend */}
       <Card>
         <CardContent className="p-4">
-          <p className="text-xs font-medium text-muted-foreground mb-2">Legenda das Etapas:</p>
-          <div className="flex flex-wrap gap-x-6 gap-y-1">
-            {STEP_LABELS.map((label, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                  {i + 1}
-                </div>
-                <span className="text-xs text-muted-foreground">{label}</span>
+          <div className="flex flex-col md:flex-row md:items-start gap-4">
+            <div className="flex-1">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Legenda das Etapas:</p>
+              <div className="flex flex-wrap gap-x-6 gap-y-1">
+                {STEP_LABELS.map((label, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                      {i + 1}
+                    </div>
+                    <span className="text-xs text-muted-foreground">{label}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Dias Parado:</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <span className="text-xs text-emerald-600">0-3d: Normal</span>
+                <span className="text-xs text-amber-600">4-7d: Atenção</span>
+                <span className="text-xs text-orange-600">8-14d: Alerta</span>
+                <span className="text-xs text-red-600">15d+: Crítico</span>
+              </div>
+            </div>
           </div>
           <p className="text-[10px] text-muted-foreground mt-2 italic">
             Alunos que já possuem PDI publicado não aparecem nesta lista.

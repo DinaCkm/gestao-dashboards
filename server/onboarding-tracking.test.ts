@@ -120,6 +120,86 @@ describe("onboardingTracking", () => {
       const result = await caller.onboardingTracking.list({ programId: 1 });
       expect(Array.isArray(result)).toBe(true);
     });
+
+    it("students have diasParado and lastStepDate fields", async () => {
+      const { ctx } = createAdminContext();
+      const caller = appRouter.createCaller(ctx);
+
+      const result = await caller.onboardingTracking.list();
+
+      if (result.length > 0) {
+        const student = result[0];
+        expect(student).toHaveProperty("diasParado");
+        expect(typeof student.diasParado).toBe("number");
+        expect(student.diasParado).toBeGreaterThanOrEqual(0);
+        expect(student).toHaveProperty("lastStepDate");
+      }
+    });
+
+    it("cumulative steps: if later step is done, earlier steps are also done", async () => {
+      const { ctx } = createAdminContext();
+      const caller = appRouter.createCaller(ctx);
+
+      const result = await caller.onboardingTracking.list();
+
+      // For each student, verify cumulative logic
+      for (const student of result) {
+        const stepValues = [
+          student.steps.conviteEnviado,
+          student.steps.cadastroPreenchido,
+          student.steps.testeRealizado,
+          student.steps.mentoriaAgendada,
+          student.steps.aceiteOnboarding,
+        ];
+
+        // Find the highest completed step index
+        let highestCompleted = -1;
+        for (let i = stepValues.length - 1; i >= 0; i--) {
+          if (stepValues[i]) {
+            highestCompleted = i;
+            break;
+          }
+        }
+
+        // All steps before the highest completed should also be true
+        if (highestCompleted > 0) {
+          for (let i = 0; i < highestCompleted; i++) {
+            expect(stepValues[i]).toBe(true);
+          }
+        }
+      }
+    });
+
+    it("list is sorted by createdAt descending (most recent first)", async () => {
+      const { ctx } = createAdminContext();
+      const caller = appRouter.createCaller(ctx);
+
+      const result = await caller.onboardingTracking.list();
+
+      if (result.length > 1) {
+        for (let i = 0; i < result.length - 1; i++) {
+          const dateA = result[i].createdAt ? new Date(result[i].createdAt as string).getTime() : 0;
+          const dateB = result[i + 1].createdAt ? new Date(result[i + 1].createdAt as string).getTime() : 0;
+          expect(dateA).toBeGreaterThanOrEqual(dateB);
+        }
+      }
+    });
+  });
+
+  describe("onboardingTracking.resendInvite", () => {
+    it("rejects non-admin users", async () => {
+      const { ctx } = createStudentContext();
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(caller.onboardingTracking.resendInvite({ alunoId: 1 })).rejects.toThrow();
+    });
+
+    it("throws NOT_FOUND for non-existent student", async () => {
+      const { ctx } = createAdminContext();
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(caller.onboardingTracking.resendInvite({ alunoId: 999999 })).rejects.toThrow();
+    });
   });
 });
 
