@@ -2694,3 +2694,17 @@
 - [x] Corrigir link no reenvio de convite: usar ecolider.evoluirckm.com em vez de Manus
 - [x] Corrigir import use-toast no OnboardingTracking.tsx (já estava correto com sonner)
 - [x] Corrigir: emails de avanço de onboarding agora usam CC para dina@ckmtalents.net (envio único em vez de loop separado)
+
+## Alerta de Vencimento de Ciclo (Macrociclo) - 19/03/2026
+- [x] Criar cron job automático que verifica diariamente vencimento de macrociclos
+- [x] Enviar alertas em 30, 15 e 7 dias antes do vencimento do macroTermino
+- [x] Enviar email para admin (relacionamento@ckmtalents.net) com CC para dina@ckmtalents.net
+- [x] Enviar email para o aluno avisando que seu ciclo está terminando
+- [x] Enviar email para o mentor do aluno
+- [x] Template de email com: nome do aluno, programa/empresa, trilha, data de término, dias restantes
+- [x] Registrar cron no servidor (startup)
+- [x] Escrever testes unitários para o cron de vencimento
+
+## Bug: Aluna cancelada ainda consegue acessar - 19/03/2026
+- [ ] Investigar por que Adriana Pereira de Deus ainda acessa o sistema após cancelamento
+- [ ] Corrigir fluxo de login para bloquear alunos com isActive=0 ou canLogin=0

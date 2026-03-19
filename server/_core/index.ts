@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { iniciarCronAlertasMentoria } from "../cronAlertasMentoria";
 import { iniciarCronOnboardingReminders } from "../cronOnboardingReminders";
+import { iniciarCronVencimentoCiclo } from "../cronVencimentoCiclo";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -65,6 +66,8 @@ async function startServer() {
     iniciarCronAlertasMentoria();
     // Iniciar cron job de lembretes de onboarding (verifica a cada 1h alunos parados há 24h+)
     iniciarCronOnboardingReminders();
+    // Iniciar cron job de alertas de vencimento de macrociclo (verifica diariamente PDIs próximos do vencimento)
+    iniciarCronVencimentoCiclo();
   });
 }
 

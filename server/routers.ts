@@ -7369,6 +7369,24 @@ Responda APENAS em JSON com o formato especificado.`
       }),
   }),
 
+  // ============ ALERTAS DE VENCIMENTO DE CICLO (EMAIL) ============
+  vencimentoCiclo: router({
+    // Verificar PDIs próximos do vencimento e enviar alertas
+    enviarAlertas: adminProcedure
+      .input(z.object({
+        dryRun: z.boolean().default(false),
+        forceResend: z.boolean().default(false),
+      }).optional())
+      .mutation(async ({ input }) => {
+        const { verificarEEnviarAlertasVencimentoCiclo } = await import('./cronVencimentoCiclo');
+        const result = await verificarEEnviarAlertasVencimentoCiclo({
+          dryRun: input?.dryRun || false,
+          forceResend: input?.forceResend || false,
+        });
+        return result;
+      }),
+  }),
+
   // ============ ONBOARDING TRACKING (ADMIN) ============
   onboardingTracking: router({
     list: adminProcedure
