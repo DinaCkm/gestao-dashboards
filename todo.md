@@ -2634,3 +2634,12 @@
 - [x] Permitir reenvio com seleção de destinatários diferente
 - [x] Atualizar toast com detalhamento por grupo (X alunos, Y gerentes, Z mentores)
 - [x] 18 testes unitários cobrindo seleção de grupos, deduplicação e reenvio
+
+## Verificar Link de Reunião no Email de Lembrete (19/03/2026)
+- [x] Garantir que o link de reunião do webinar seja passado corretamente para o template do email
+- [x] Botão "Acessar Reunião" aparece no email quando o webinar tem link cadastrado
+- [x] Verificado: Aula 04 tem meetingLink = https://www.even3.com.br/... - botão verde aparecerá no email
+
+## Email de Teste para Admin (19/03/2026)
+- [x] Incluir relacionamento@ckmtalents.net como destinatário fixo em todos os envios de lembrete
+- [x] Admin sempre recebe cópia do email para visualizar como chega aos destinatários

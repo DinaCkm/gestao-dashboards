@@ -4894,6 +4894,13 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           return true;
         });
         
+        // Always include admin email so they can preview the email
+        const adminEmail = 'relacionamento@ckmtalents.net';
+        if (!seen.has(adminEmail.toLowerCase())) {
+          uniqueRecipients.push({ id: 0, email: adminEmail, name: 'Administrador', group: 'admin' });
+          seen.add(adminEmail.toLowerCase());
+        }
+        
         if (uniqueRecipients.length === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Nenhum destinatário com email cadastrado encontrado nos grupos selecionados' });
         }

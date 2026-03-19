@@ -1,0 +1,24 @@
+{
+  "query": "SELECT id, title, meetingLink, speaker, theme FROM scheduled_webinars WHERE id IN (SELECT MAX(id) FROM scheduled_webinars) OR title LIKE '%Aula 04%' ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, title, meetingLink, speaker, theme FROM scheduled_webinars WHERE id IN (SELECT MAX(id) FROM scheduled_webinars) OR title LIKE '%Aula 04%' ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "120001",
+      "title": "2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional",
+      "meetingLink": "https://www.even3.com.br/202606-aula-04-Integracao-704241",
+      "speaker": "Sandra Pitman",
+      "theme": "Integração: Resiliência + Produtividade = Maturidade."
+    },
+    {
+      "id": "17",
+      "title": "2025/22 - Aula 04 – Monitoramento, Avaliação e Encerramento com Emerson Dias",
+      "meetingLink": "NULL",
+      "speaker": "Emarson Dias",
+      "theme": "Curso Online - Estruturação e Implantação de Projeto de Inovação"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tmeetingLink\tspeaker\ttheme\n120001\t2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional\thttps://www.even3.com.br/202606-aula-04-Integracao-704241\tSandra Pitman\tIntegração: Resiliência + Produtividade = Maturidade.\n17\t2025/22 - Aula 04 – Monitoramento, Avaliação e Encerramento com Emerson Dias\tNULL\tEmarson Dias\tCurso Online - Estruturação e Implantação de Projeto de Inovação\n",
+  "stderr": "",
+  "execution_time_ms": 110
+}
