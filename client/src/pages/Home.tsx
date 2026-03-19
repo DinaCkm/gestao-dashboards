@@ -49,7 +49,7 @@ export default function Home() {
             if (onboardingStatus.needsOnboarding) {
               setLocation("/onboarding");
             } else {
-              setLocation("/meu-dashboard");
+              setLocation("/mural");
             }
           }
         }
@@ -67,8 +67,8 @@ export default function Home() {
           // Aluno sem PDI ou admin liberou novo ciclo → vai para onboarding
           setLocation("/onboarding");
         } else {
-          // Aluno com PDI → vai direto para dashboard
-          setLocation("/meu-dashboard");
+          // Aluno com PDI → vai direto para o mural
+          setLocation("/mural");
         }
       }
       // Se onboardingStatus ainda não carregou, aguarda

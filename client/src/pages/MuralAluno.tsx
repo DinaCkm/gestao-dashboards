@@ -546,6 +546,7 @@ export default function MuralAluno() {
   const { data: upcomingWebinars, isLoading: loadingUpcoming } = trpc.webinars.upcoming.useQuery({ limit: 20 });
   const { data: pastWebinars, isLoading: loadingPast } = trpc.webinars.past.useQuery({ limit: 50 });
   const { data: activeAnnouncements, isLoading: loadingAnnouncements } = trpc.announcements.active.useQuery();
+  const { data: activeCourses } = trpc.courses.listActive.useQuery();
   const { data: pendingAttendance, refetch: refetchPending } = trpc.attendance.pending.useQuery();
   const { data: myAttendance, refetch: refetchMyAttendance } = trpc.attendance.myAttendance.useQuery();
 
@@ -660,7 +661,7 @@ export default function MuralAluno() {
 
               <StatCard
                 icon={GraduationCap}
-                count={announcementsByType.courses.length}
+                count={activeCourses?.length || 0}
                 label="Cursos Disponíveis"
                 gradientFrom="from-purple-50"
                 gradientBorder="border-purple-100"
@@ -668,7 +669,7 @@ export default function MuralAluno() {
                 iconColor="text-purple-600"
                 countColor="text-purple-700"
                 labelColor="text-purple-600/70"
-                onClick={() => setCurrentView("cursos")}
+                onClick={() => setLocation("/cursos")}
               />
               <StatCard
                 icon={Zap}

@@ -2614,3 +2614,13 @@
 - [x] Transformar os dois cards grandes em mini-cards compactos (seção "Plataformas Externas")
 - [x] Card "Cursos Disponíveis" verificado - funciona corretamente (exibe drill-down com estado vazio quando não há cursos)
 - [x] Avisos/comunicados e webinar em destaque ficam visíveis primeiro no mural
+
+## Bug: Card "Cursos Disponíveis" no Mural (19/03/2026)
+- [x] Card mostra "0" mas existem 71 cursos cadastrados na página /cursos
+- [x] Ao clicar no card, abre drill-down vazia em vez de redirecionar para /cursos
+- [x] Corrigir contagem para refletir cursos reais (usa courses.listActive)
+- [x] Corrigir navegação para ir para /cursos ao clicar (setLocation("/cursos"))
+
+## Redirect Aluno com PDI para Mural (19/03/2026)
+- [x] Aluno que já tem PDI (onboarding concluído) deve ser redirecionado para /mural ao acessar a plataforma
+- [x] Verificar fluxo de redirecionamento atual após login - alterado de /meu-dashboard para /mural
