@@ -163,7 +163,7 @@ function PlanoContent() {
   const [contratoInicio, setContratoInicio] = useState("");
   const [contratoFim, setContratoFim] = useState("");
   const [contratoSessoes, setContratoSessoes] = useState("");
-  const [contratoValor, setContratoValor] = useState("");
+  // valorContrato removed - column doesn't exist in DB schema
   const [contratoObs, setContratoObs] = useState("");
 
   // ============================================================
@@ -480,30 +480,27 @@ function PlanoContent() {
   // Contrato handlers
   const resetContratoForm = () => {
     setShowContratoDialog(false); setEditingContrato(null);
-    setContratoInicio(""); setContratoFim(""); setContratoSessoes(""); setContratoValor(""); setContratoObs("");
+    setContratoInicio(""); setContratoFim(""); setContratoSessoes(""); setContratoObs("");
   };
   const openEditContrato = (c: any) => {
     setEditingContrato(c);
-    setContratoInicio(formatDateInput(c.dataInicio));
-    setContratoFim(formatDateInput(c.dataFim));
-    setContratoSessoes(c.sessoesContratadas ? String(c.sessoesContratadas) : "");
-    setContratoValor(c.valorContrato ? String(c.valorContrato) : "");
+    setContratoInicio(formatDateInput(c.periodoInicio));
+    setContratoFim(formatDateInput(c.periodoTermino));
+    setContratoSessoes(c.totalSessoesContratadas ? String(c.totalSessoesContratadas) : "");
     setContratoObs(c.observacoes || "");
     setShowContratoDialog(true);
   };
   const handleSaveContrato = () => {
     if (!contratoInicio || !contratoFim) { toast.error("Preencha as datas do contrato"); return; }
-    const data: any = {
-      dataInicio: contratoInicio,
-      dataFim: contratoFim,
-      sessoesContratadas: contratoSessoes ? parseInt(contratoSessoes) : null,
-      valorContrato: contratoValor ? contratoValor : null,
-      observacoes: contratoObs || null,
-    };
     if (editingContrato) {
-      atualizarContratoMutation.mutate({ id: editingContrato.id, ...data });
+      atualizarContratoMutation.mutate({
+        id: editingContrato.id,
+        periodoInicio: contratoInicio,
+        periodoTermino: contratoFim,
+        totalSessoesContratadas: contratoSessoes ? parseInt(contratoSessoes) : undefined,
+        observacoes: contratoObs || undefined,
+      });
     } else {
-      // The contratos.create procedure expects: alunoId, programId, periodoInicio, periodoTermino, totalSessoesContratadas
       const programId = selectedAlunoData?.programId || 1;
       criarContratoMutation.mutate({
         alunoId: selectedAluno!,
@@ -867,9 +864,9 @@ function PlanoContent() {
                         <div key={c.id} className="flex items-center gap-3 p-3 border rounded-lg">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-medium">{formatDate(c.dataInicio)} — {formatDate(c.dataFim)}</span>
-                              {c.sessoesContratadas && <Badge variant="outline" className="text-xs">{c.sessoesContratadas} sessões</Badge>}
-                              {c.valorContrato && <Badge variant="secondary" className="text-xs">R$ {Number(c.valorContrato).toLocaleString('pt-BR')}</Badge>}
+                              <span className="text-sm font-medium">{formatDate(c.periodoInicio)} — {formatDate(c.periodoTermino)}</span>
+                              {c.totalSessoesContratadas && <Badge variant="outline" className="text-xs">{c.totalSessoesContratadas} sessões</Badge>}
+
                             </div>
                             {c.observacoes && <p className="text-xs text-muted-foreground mt-1">{c.observacoes}</p>}
                           </div>
@@ -1442,7 +1439,7 @@ function PlanoContent() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">Sessões Contratadas</Label><Input type="number" min="1" placeholder="Ex: 12" value={contratoSessoes} onChange={e => setContratoSessoes(e.target.value)} /></div>
-              <div><Label className="text-xs">Valor (R$)</Label><Input placeholder="Ex: 5000" value={contratoValor} onChange={e => setContratoValor(e.target.value)} /></div>
+
             </div>
             <div><Label className="text-xs">Observações</Label><Textarea placeholder="Observações..." value={contratoObs} onChange={e => setContratoObs(e.target.value)} rows={2} /></div>
           </div>

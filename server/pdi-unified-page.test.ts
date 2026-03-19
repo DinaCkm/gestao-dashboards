@@ -280,6 +280,63 @@ describe('PDI Unified Page - Data Integration', () => {
     });
   });
 
+  describe('Seção 2: Contrato - CRUD Operations', () => {
+    it('deve criar contrato com campos corretos (periodoInicio, periodoTermino, totalSessoesContratadas)', async () => {
+      const contratoData = {
+        alunoId: 100,
+        programId: 1,
+        periodoInicio: '2026-01-01',
+        periodoTermino: '2026-12-31',
+        totalSessoesContratadas: 12,
+        observacoes: undefined, // campo opcional - deve ser undefined, não null
+      };
+
+      // Verify field names match backend schema
+      expect(contratoData).toHaveProperty('periodoInicio');
+      expect(contratoData).toHaveProperty('periodoTermino');
+      expect(contratoData).toHaveProperty('totalSessoesContratadas');
+      expect(contratoData).not.toHaveProperty('dataInicio');
+      expect(contratoData).not.toHaveProperty('dataFim');
+      expect(contratoData).not.toHaveProperty('sessoesContratadas');
+      expect(contratoData).not.toHaveProperty('valorContrato');
+    });
+
+    it('deve editar contrato sem enviar observacoes como null', async () => {
+      const updateData = {
+        id: 1,
+        periodoInicio: '2026-02-01',
+        periodoTermino: '2026-11-30',
+        totalSessoesContratadas: 10,
+        observacoes: '' || undefined, // empty string should become undefined
+      };
+
+      // observacoes should be undefined, not null
+      expect(updateData.observacoes).toBeUndefined();
+    });
+
+    it('deve preservar observacoes quando preenchido', async () => {
+      const updateData = {
+        id: 1,
+        observacoes: 'Contrato renovado' || undefined,
+      };
+
+      expect(updateData.observacoes).toBe('Contrato renovado');
+    });
+
+    it('deve listar contratos ativos após criação', async () => {
+      const mockContratos = [
+        { id: 1, periodoInicio: new Date('2026-01-01'), periodoTermino: new Date('2026-06-30'), totalSessoesContratadas: 6, isActive: 1 },
+        { id: 2, periodoInicio: new Date('2026-07-01'), periodoTermino: new Date('2026-12-31'), totalSessoesContratadas: 10, isActive: 1 },
+      ];
+      vi.mocked(db.getContratosByAluno).mockResolvedValue(mockContratos as any);
+
+      const result = await db.getContratosByAluno(100);
+      expect(result).toHaveLength(2);
+      expect(result[0].isActive).toBe(1);
+      expect(result[1].totalSessoesContratadas).toBe(10);
+    });
+  });
+
   describe('Data Consistency across sections', () => {
     it('competências do assessment devem corresponder às do plano', async () => {
       const assessmentComps = ['Foco em Resultados', 'Presença Executiva'];

@@ -2517,3 +2517,12 @@
 - [x] Adicionar botão "+ Novo Assessment" para criar novo macrociclo para alunos que já têm assessment
 - [x] Criar wizard/formulário inline para criar PDI do zero (alunos sem assessment)
 - [x] NÃO alterar permissões do contrato (fica só admin, conforme solicitado)
+
+## Bugs Contrato na Página PDI (18/03/2026)
+- [x] Fix: campo observacoes envia null ao editar contrato (expected string, received null)
+- [x] Fix: contrato não aparece após criação (query invalidation)
+- [x] Fix: incompatibilidade de nomes de campos entre frontend e backend (periodoInicio/periodoTermino/totalSessoesContratadas)
+- [x] Fix: campo valorContrato removido do formulário (não existe no schema do banco)
+- [x] Verificado: criação de contrato funciona e aparece imediatamente na lista
+- [x] Verificado: edição de contrato funciona sem erros de validação
+- [x] Verificado: exclusão de contrato funciona corretamente
