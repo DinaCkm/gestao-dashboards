@@ -372,6 +372,13 @@
       "when": 1773795090517,
       "tag": "0052_cloudy_santa_claus",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "5",
+      "when": 1773884816896,
+      "tag": "0053_ancient_blue_blade",
+      "breakpoints": true
     }
   ]
 }

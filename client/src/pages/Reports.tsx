@@ -25,7 +25,7 @@ import { toast } from "sonner";
 
 export default function ReportsPage() {
   const { user } = useAuth();
-  const [reportType, setReportType] = useState<"admin" | "manager" | "individual">("individual");
+  const [reportType, setReportType] = useState<"admin" | "manager" | "individual" | "financeiro_mentora" | "financeiro_empresa">("individual");
   const [reportFormat, setReportFormat] = useState<"pdf" | "excel">("excel");
   const [reportName, setReportName] = useState("");
   const [selectedAlunoId, setSelectedAlunoId] = useState<string>("");
@@ -89,7 +89,7 @@ export default function ReportsPage() {
 
   const handleGenerateReport = async (overrides?: {
     name?: string;
-    type?: "admin" | "manager" | "individual";
+    type?: "admin" | "manager" | "individual" | "financeiro_mentora" | "financeiro_empresa";
     format?: "pdf" | "excel";
     scopeId?: number;
   }) => {
@@ -130,6 +130,8 @@ export default function ReportsPage() {
       case "admin": return "Administrativo";
       case "manager": return "Gerencial";
       case "individual": return "Individual";
+      case "financeiro_mentora": return "Financeiro por Mentora";
+      case "financeiro_empresa": return "Financeiro por Empresa";
       default: return type;
     }
   };
@@ -218,7 +220,7 @@ export default function ReportsPage() {
                 <Select 
                   value={reportType} 
                   onValueChange={(v) => {
-                    setReportType(v as "admin" | "manager" | "individual");
+                    setReportType(v as "admin" | "manager" | "individual" | "financeiro_mentora" | "financeiro_empresa");
                     setSelectedAlunoId("");
                   }}
                 >
@@ -229,6 +231,8 @@ export default function ReportsPage() {
                     <SelectItem value="individual">Individual</SelectItem>
                     {isManager && <SelectItem value="manager">Gerencial</SelectItem>}
                     {isAdmin && <SelectItem value="admin">Administrativo</SelectItem>}
+                    {isAdmin && <SelectItem value="financeiro_mentora">Financeiro por Mentora</SelectItem>}
+                    {isAdmin && <SelectItem value="financeiro_empresa">Financeiro por Empresa</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
@@ -328,11 +332,15 @@ export default function ReportsPage() {
                 {reportType === "admin" && <><BarChart3 className="h-4 w-4" /> Relatório Administrativo</>}
                 {reportType === "manager" && <><Users className="h-4 w-4" /> Relatório Gerencial</>}
                 {reportType === "individual" && <><User className="h-4 w-4" /> Relatório Individual</>}
+                {reportType === "financeiro_mentora" && <><FileSpreadsheet className="h-4 w-4" /> Relatório Financeiro por Mentora</>}
+                {reportType === "financeiro_empresa" && <><FileSpreadsheet className="h-4 w-4" /> Relatório Financeiro por Empresa</>}
               </h4>
               <p className="text-sm text-muted-foreground">
                 {reportType === "admin" && "Visão consolidada de todos os dados do sistema, incluindo métricas de todos os alunos, mentorias e eventos."}
                 {reportType === "manager" && (isMentor ? "Relatório consolidado de todos os seus mentorados: resumo geral, total de sessões, presença, indicadores V2 e sessões por mês." : "Dados da equipe da empresa, incluindo lista de alunos, sessões de mentoria e performance individual.")}
                 {reportType === "individual" && "Relatório Individual, mostra a performance do aluno com indicadores por ciclo, engajamento e evolução."}
+                {reportType === "financeiro_mentora" && "Demonstrativo financeiro por mentora: sessões realizadas, alunos atendidos, empresas, valor por sessão e total a pagar no período."}
+                {reportType === "financeiro_empresa" && "Demonstrativo financeiro por empresa: sessões realizadas, alunos atendidos, mentoras responsáveis, valor por sessão e total gasto no período."}
               </p>
             </div>
           </CardContent>

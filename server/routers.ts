@@ -909,7 +909,7 @@ export const appRouter = router({
     generate: protectedProcedure
       .input(z.object({
         name: z.string().min(1),
-        type: z.enum(["admin", "manager", "individual"]),
+        type: z.enum(["admin", "manager", "individual", "financeiro_mentora", "financeiro_empresa"]),
         format: z.enum(["pdf", "excel"]),
         scopeId: z.number().optional(),
         dateFrom: z.string().optional(), // YYYY-MM-DD
@@ -923,6 +923,9 @@ export const appRouter = router({
         }
         if (input.type === "manager" && ctx.user.role === "user") {
           throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        if ((input.type === "financeiro_mentora" || input.type === "financeiro_empresa") && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Relatórios financeiros são restritos ao administrador' });
         }
         
         // Create report record first
@@ -1342,6 +1345,168 @@ export const appRouter = router({
             if (indicadoresPorCiclo.length > 0) {
               const ws3 = XLSX.utils.json_to_sheet(indicadoresPorCiclo);
               XLSX.utils.book_append_sheet(wb, ws3, 'Indicadores por Ciclo');
+            }
+          } else if (input.type === 'financeiro_mentora') {
+            // ===== RELATÓRIO FINANCEIRO POR MENTORA =====
+            const pricingMap = await db.getAllMentorSessionPricing();
+            
+            // Sheet 1: Resumo por Mentora
+            const mentoraSummary: Record<number, {
+              nome: string;
+              valorPadrao: number;
+              sessoes: Array<{ alunoNome: string; empresaNome: string; data: string; sessionNumber: number; valor: number }>;
+            }> = {};
+            
+            for (const s of mentoringSessions) {
+              if (!s.consultorId) continue;
+              const consultor = consultorMap.get(s.consultorId);
+              if (!consultor) continue;
+              const aluno = s.alunoId ? alunoMap.get(s.alunoId) : null;
+              const program = aluno?.programId ? programMap.get(aluno.programId) : null;
+              const valorPadrao = consultor.valorSessao ? Number(consultor.valorSessao) : 0;
+              
+              if (!mentoraSummary[s.consultorId]) {
+                mentoraSummary[s.consultorId] = {
+                  nome: consultor.name || 'Desconhecido',
+                  valorPadrao,
+                  sessoes: [],
+                };
+              }
+              
+              // Calcular valor usando precificação flexível
+              const rules = pricingMap.get(s.consultorId) || [];
+              const sessionNum = s.sessionNumber || 0;
+              const matchingRule = rules.find(r => sessionNum >= r.sessionFrom && sessionNum <= r.sessionTo);
+              const valorSessao = matchingRule ? Number(matchingRule.valor) : valorPadrao;
+              
+              mentoraSummary[s.consultorId].sessoes.push({
+                alunoNome: aluno?.name || 'N/A',
+                empresaNome: program?.name || 'N/A',
+                data: s.sessionDate ? new Date(s.sessionDate).toLocaleDateString('pt-BR') : '',
+                sessionNumber: s.sessionNumber || 0,
+                valor: valorSessao,
+              });
+            }
+            
+            // Sheet 1: Resumo Geral por Mentora
+            const resumoMentoras = Object.values(mentoraSummary).map(m => ({
+              'Mentora': m.nome,
+              'Total de Sessões': m.sessoes.length,
+              'Valor Total (R$)': m.sessoes.reduce((sum, s) => sum + s.valor, 0).toFixed(2),
+              'Alunos Atendidos': Array.from(new Set(m.sessoes.map(s => s.alunoNome))).length,
+              'Empresas': Array.from(new Set(m.sessoes.map(s => s.empresaNome))).join(', '),
+            })).sort((a, b) => parseFloat(b['Valor Total (R$)']) - parseFloat(a['Valor Total (R$)']));
+            
+            const totalGeralMentoras = resumoMentoras.reduce((sum, m) => sum + parseFloat(m['Valor Total (R$)']), 0);
+            resumoMentoras.push({
+              'Mentora': 'TOTAL GERAL',
+              'Total de Sessões': resumoMentoras.reduce((sum, m) => sum + m['Total de Sessões'], 0),
+              'Valor Total (R$)': totalGeralMentoras.toFixed(2),
+              'Alunos Atendidos': 0,
+              'Empresas': '',
+            });
+            
+            const wsResumoM = XLSX.utils.json_to_sheet(resumoMentoras);
+            XLSX.utils.book_append_sheet(wb, wsResumoM, 'Resumo por Mentora');
+            
+            // Sheet 2: Detalhamento - todas as sessões
+            const detalheMentora: any[] = [];
+            for (const m of Object.values(mentoraSummary)) {
+              for (const s of m.sessoes) {
+                detalheMentora.push({
+                  'Mentora': m.nome,
+                  'Aluno': s.alunoNome,
+                  'Empresa': s.empresaNome,
+                  'Data da Sessão': s.data,
+                  'Nº Sessão': s.sessionNumber,
+                  'Valor (R$)': s.valor.toFixed(2),
+                });
+              }
+            }
+            detalheMentora.sort((a, b) => a['Mentora'].localeCompare(b['Mentora']));
+            if (detalheMentora.length > 0) {
+              const wsDetalheM = XLSX.utils.json_to_sheet(detalheMentora);
+              XLSX.utils.book_append_sheet(wb, wsDetalheM, 'Detalhamento Sessões');
+            }
+            
+          } else if (input.type === 'financeiro_empresa') {
+            // ===== RELATÓRIO FINANCEIRO POR EMPRESA =====
+            const pricingMap = await db.getAllMentorSessionPricing();
+            
+            const empresaSummary: Record<number, {
+              nome: string;
+              sessoes: Array<{ alunoNome: string; mentoraNome: string; data: string; sessionNumber: number; valor: number }>;
+            }> = {};
+            
+            for (const s of mentoringSessions) {
+              const aluno = s.alunoId ? alunoMap.get(s.alunoId) : null;
+              if (!aluno || !aluno.programId) continue;
+              const program = programMap.get(aluno.programId);
+              if (!program) continue;
+              const consultor = s.consultorId ? consultorMap.get(s.consultorId) : null;
+              const valorPadrao = consultor?.valorSessao ? Number(consultor.valorSessao) : 0;
+              
+              if (!empresaSummary[program.id]) {
+                empresaSummary[program.id] = {
+                  nome: program.name || 'Desconhecida',
+                  sessoes: [],
+                };
+              }
+              
+              // Calcular valor usando precificação flexível
+              const rules = s.consultorId ? (pricingMap.get(s.consultorId) || []) : [];
+              const sessionNum = s.sessionNumber || 0;
+              const matchingRule = rules.find(r => sessionNum >= r.sessionFrom && sessionNum <= r.sessionTo);
+              const valorSessao = matchingRule ? Number(matchingRule.valor) : valorPadrao;
+              
+              empresaSummary[program.id].sessoes.push({
+                alunoNome: aluno.name || 'N/A',
+                mentoraNome: consultor?.name || 'N/A',
+                data: s.sessionDate ? new Date(s.sessionDate).toLocaleDateString('pt-BR') : '',
+                sessionNumber: s.sessionNumber || 0,
+                valor: valorSessao,
+              });
+            }
+            
+            // Sheet 1: Resumo Geral por Empresa
+            const resumoEmpresas = Object.values(empresaSummary).map(e => ({
+              'Empresa': e.nome,
+              'Total de Sessões': e.sessoes.length,
+              'Valor Total (R$)': e.sessoes.reduce((sum, s) => sum + s.valor, 0).toFixed(2),
+              'Alunos Atendidos': Array.from(new Set(e.sessoes.map(s => s.alunoNome))).length,
+              'Mentoras': Array.from(new Set(e.sessoes.map(s => s.mentoraNome))).join(', '),
+            })).sort((a, b) => parseFloat(b['Valor Total (R$)']) - parseFloat(a['Valor Total (R$)']));
+            
+            const totalGeralEmpresas = resumoEmpresas.reduce((sum, e) => sum + parseFloat(e['Valor Total (R$)']), 0);
+            resumoEmpresas.push({
+              'Empresa': 'TOTAL GERAL',
+              'Total de Sessões': resumoEmpresas.reduce((sum, e) => sum + e['Total de Sessões'], 0),
+              'Valor Total (R$)': totalGeralEmpresas.toFixed(2),
+              'Alunos Atendidos': 0,
+              'Mentoras': '',
+            });
+            
+            const wsResumoE = XLSX.utils.json_to_sheet(resumoEmpresas);
+            XLSX.utils.book_append_sheet(wb, wsResumoE, 'Resumo por Empresa');
+            
+            // Sheet 2: Detalhamento - todas as sessões por empresa
+            const detalheEmpresa: any[] = [];
+            for (const e of Object.values(empresaSummary)) {
+              for (const s of e.sessoes) {
+                detalheEmpresa.push({
+                  'Empresa': e.nome,
+                  'Aluno': s.alunoNome,
+                  'Mentora': s.mentoraNome,
+                  'Data da Sessão': s.data,
+                  'Nº Sessão': s.sessionNumber,
+                  'Valor (R$)': s.valor.toFixed(2),
+                });
+              }
+            }
+            detalheEmpresa.sort((a, b) => a['Empresa'].localeCompare(b['Empresa']));
+            if (detalheEmpresa.length > 0) {
+              const wsDetalheE = XLSX.utils.json_to_sheet(detalheEmpresa);
+              XLSX.utils.book_append_sheet(wb, wsDetalheE, 'Detalhamento Sessões');
             }
           }
           

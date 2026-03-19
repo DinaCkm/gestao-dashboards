@@ -347,7 +347,7 @@ export type InsertDashboardMetric = typeof dashboardMetrics.$inferInsert;
 export const reports = mysqlTable("reports", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  type: mysqlEnum("type", ["admin", "manager", "individual"]).notNull(),
+  type: mysqlEnum("type", ["admin", "manager", "individual", "financeiro_mentora", "financeiro_empresa"]).notNull(),
   format: mysqlEnum("format", ["pdf", "excel"]).notNull(),
   generatedBy: int("generatedBy").notNull(),
   programId: int("programId"),

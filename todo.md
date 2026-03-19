@@ -2562,3 +2562,14 @@
 - [x] Endpoint editMentor atualizado para aceitar miniCurriculo
 - [x] Frontend da aba Mentores atualizado com foto (upload) e minicurrículo (textarea) no dialog de edição
 - [x] Edição de foto e minicurrículo funcionando para mentores já cadastrados
+
+
+## Relatórios Financeiros (18/03/2026)
+- [x] Relatório Financeiro por Mentora: nome mentora, alunos atendidos, empresa, datas sessões, valor sessão, total a pagar no período
+- [x] Relatório Financeiro por Empresa: nome empresa, alunos, mentora, datas sessões, valor sessão, total gasto no período
+- [x] Adicionar "Financeiro por Mentora" e "Financeiro por Empresa" no dropdown Tipo de Relatório
+- [x] Exportação em Excel (PDF usa mesmo mecanismo)
+- [x] Controle de acesso: apenas admin pode gerar relatórios financeiros
+- [x] Filtro por período (data início/fim) funcional
+- [x] Precificação flexível por faixa de sessões (mentor_session_pricing)
+- [x] 17 testes unitários cobrindo acesso, geração e validação
