@@ -2585,3 +2585,10 @@
 - [x] Botão para ver currículo completo
 - [x] Badges de disponibilidade e áreas de atuação
 - [x] Botão de seleção da mentora
+
+## Redesign Cards de Mentoras v2 - Inspirado na Referência (18/03/2026)
+- [x] Foto circular grande centralizada no topo do card (w-24 h-24)
+- [x] Nome da mentora abaixo da foto, centralizado (primeiro + último nome)
+- [x] Botão "Saiba mais" verde (ver currículo) + botão "Escolher" empilhados
+- [x] Badge de disponibilidade discreto (verde/laranja)
+- [x] Layout limpo e elegante similar à referência (5 colunas em telas grandes)
