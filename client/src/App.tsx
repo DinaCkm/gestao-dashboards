@@ -50,6 +50,7 @@ import AtividadesExtrasAdmin from "./pages/admin/AtividadesExtras";
 import AtividadesExtrasAluno from "./pages/aluno/AtividadesExtrasAluno";
 import MentorConfiguracoes from "./pages/MentorConfiguracoes";
 import EditarMentorias from "./pages/EditarMentorias";
+import OnboardingTracking from "./pages/admin/OnboardingTracking";
 
 function Router() {
   return (
@@ -96,6 +97,7 @@ function Router() {
       <Route path={"/atividades-extras"} component={AtividadesExtrasAdmin} />
       <Route path={"/minhas-atividades"} component={AtividadesExtrasAluno} />
       <Route path={"/editar-mentorias"} component={EditarMentorias} />
+      <Route path={"/onboarding-tracking"} component={OnboardingTracking} />
       <Route path={"/mentor/configuracoes"} component={MentorConfiguracoes} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />

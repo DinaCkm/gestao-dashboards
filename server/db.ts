@@ -8151,3 +8151,124 @@ export async function updateOnboardingVideo(id: number, data: Partial<InsertOnbo
   if (!db) return;
   await db.update(onboardingVideos).set(data).where(eq(onboardingVideos.id, id));
 }
+
+
+// ==================== ONBOARDING TRACKING (ADMIN) ====================
+
+/**
+ * Retorna lista de todos os alunos com seu progresso de onboarding para a visão admin.
+ * Cada aluno tem 6 etapas:
+ * 1. Convite Enviado (cadastradoPorAdmin = 1)
+ * 2. Cadastro Preenchido (onboardingJornada.cadastroConfirmado = 1)
+ * 3. Teste Realizado (discResultados existe)
+ * 4. Mentoria Agendada (mentorAppointments existe via appointmentParticipants)
+ * 5. PDI Publicado (assessmentPdi existe)
+ * 6. Termo de Compromisso Assinado (onboardingJornada.aceiteRealizado = 1)
+ */
+export async function getOnboardingTrackingList(programId?: number) {
+  const database = await getDb();
+  if (!database) return [];
+
+  // Base query: all active students
+  let alunosList;
+  if (programId) {
+    alunosList = await database.select()
+      .from(alunos)
+      .where(and(eq(alunos.isActive, 1), eq(alunos.programId, programId)));
+  } else {
+    alunosList = await database.select()
+      .from(alunos)
+      .where(eq(alunos.isActive, 1));
+  }
+
+  if (alunosList.length === 0) return [];
+
+  const alunoIds = alunosList.map(a => a.id);
+
+  // Batch fetch all related data
+  const [jornadas, discResults, appointments, pdis] = await Promise.all([
+    // Onboarding jornadas
+    database.select()
+      .from(onboardingJornada)
+      .where(inArray(onboardingJornada.alunoId, alunoIds)),
+    // DISC results
+    database.select({ alunoId: discResultados.alunoId, completedAt: discResultados.completedAt })
+      .from(discResultados)
+      .where(inArray(discResultados.alunoId, alunoIds)),
+    // Appointments (via participants)
+    database.select({ 
+      alunoId: appointmentParticipants.alunoId,
+      appointmentId: appointmentParticipants.appointmentId,
+    })
+      .from(appointmentParticipants)
+      .innerJoin(mentorAppointments, eq(appointmentParticipants.appointmentId, mentorAppointments.id))
+      .where(and(
+        inArray(appointmentParticipants.alunoId, alunoIds),
+        sql`${mentorAppointments.status} != 'cancelado'`
+      )),
+    // Assessment PDIs
+    database.select({ alunoId: assessmentPdi.alunoId, createdAt: assessmentPdi.createdAt })
+      .from(assessmentPdi)
+      .where(inArray(assessmentPdi.alunoId, alunoIds)),
+  ]);
+
+  // Build lookup maps
+  const jornadaMap = new Map(jornadas.map(j => [j.alunoId, j]));
+  const discMap = new Map<number, boolean>();
+  for (const d of discResults) {
+    discMap.set(d.alunoId, true);
+  }
+  const appointmentMap = new Map<number, boolean>();
+  for (const a of appointments) {
+    appointmentMap.set(a.alunoId, true);
+  }
+  const pdiMap = new Map<number, boolean>();
+  for (const p of pdis) {
+    pdiMap.set(p.alunoId, true);
+  }
+
+  // Fetch program names for display
+  const allPrograms = await database.select().from(programs);
+  const programMap = new Map(allPrograms.map(p => [p.id, p.name]));
+
+  // Fetch turma names
+  const allTurmas = await database.select().from(turmas);
+  const turmaMap = new Map(allTurmas.map(t => [t.id, t.name]));
+
+  // Build result
+  return alunosList.map(aluno => {
+    const jornada = jornadaMap.get(aluno.id);
+    const hasDISC = discMap.get(aluno.id) || false;
+    const hasAppointment = appointmentMap.get(aluno.id) || false;
+    const hasPdi = pdiMap.get(aluno.id) || false;
+    const aceiteRealizado = jornada?.aceiteRealizado === 1;
+
+    // Calculate step statuses
+    const steps = {
+      conviteEnviado: aluno.cadastradoPorAdmin === 1,
+      cadastroPreenchido: jornada?.cadastroConfirmado === 1,
+      testeRealizado: hasDISC,
+      mentoriaAgendada: hasAppointment,
+      pdiPublicado: hasPdi,
+      termoAssinado: aceiteRealizado,
+    };
+
+    // Count completed steps
+    const completedSteps = Object.values(steps).filter(Boolean).length;
+
+    return {
+      alunoId: aluno.id,
+      name: aluno.name,
+      email: aluno.email,
+      programName: aluno.programId ? programMap.get(aluno.programId) || null : null,
+      turmaName: aluno.turmaId ? turmaMap.get(aluno.turmaId) || null : null,
+      steps,
+      completedSteps,
+      totalSteps: 6,
+      createdAt: aluno.createdAt,
+      // Timestamps for detail view
+      cadastroConfirmadoEm: jornada?.cadastroConfirmadoEm || null,
+      aceiteRealizadoEm: jornada?.aceiteRealizadoEm || null,
+    };
+  });
+}

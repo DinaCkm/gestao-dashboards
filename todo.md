@@ -2656,3 +2656,18 @@
 
 ## Bug - Cursos Disponíveis redireciona para página gerencial (19/03/2026)
 - [x] Corrigir: quando aluno/gerente clica em "Cursos Disponíveis" no mural, é levado para a página admin de gestão de cursos (/cursos) em vez da página do aluno (/meus-cursos)
+
+## Onboarding Tracking (Admin) - 19/03/2026
+- [x] Criar página admin "Acompanhamento de Onboarding" com régua de progresso de 6 etapas
+- [x] Etapas: Convite Enviado → Cadastro Preenchido → Teste Realizado → Mentoria Agendada → PDI Publicado → Termo Assinado
+- [x] Backend: db helper getOnboardingTrackingList para listar alunos com progresso
+- [x] Backend: tRPC procedure onboardingTracking.list (admin only)
+- [x] Frontend: cards de estatísticas (Total, Concluídos, Em Progresso, Não Iniciados)
+- [x] Frontend: filtros por nome/email, programa e status
+- [x] Frontend: lista expansível com régua de progresso visual por aluno
+- [x] Email automático: admin + dina@ckmtalents.net recebem notificação quando aluno avança etapa
+- [x] Email automático: aluno recebe convite para acessar plataforma e assinar aceite quando mentor publica PDI
+- [x] Sidebar: item "Onboarding Tracking" adicionado no grupo Alunos (admin)
+- [x] Rota /onboarding-tracking registrada no App.tsx
+- [x] Vitest: testes para onboardingTracking.list (admin access, student rejection, shape validation)
+- [x] Templates de email: buildOnboardingStepEmail e buildPdiPublishedInviteEmail criados

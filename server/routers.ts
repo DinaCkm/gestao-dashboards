@@ -4629,6 +4629,38 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
             }
           }
         } catch (e) { /* notificação não deve bloquear criação */ }
+
+        // Notificar admin + dina sobre avanço no onboarding (PDI Publicado)
+        try {
+          const alunoForEmail = await db.getAlunoById(input.alunoId);
+          if (alunoForEmail) {
+            const { sendEmail: sendEmailStep, buildOnboardingStepEmail, buildPdiPublishedInviteEmail } = await import('./emailService');
+            const adminEmail = process.env.SMTP_USER || '';
+
+            // 1) Email para admin + dina
+            const stepEmail = buildOnboardingStepEmail({
+              alunoName: alunoForEmail.name || 'Aluno',
+              stepName: 'PDI Publicado',
+              stepNumber: 5,
+              totalSteps: 6,
+            });
+            const adminRecipients = [adminEmail, 'dina@ckmtalents.net'].filter(Boolean);
+            for (const to of adminRecipients) {
+              await sendEmailStep({ to, subject: stepEmail.subject, html: stepEmail.html, text: stepEmail.text }).catch(() => {});
+            }
+
+            // 2) Email para o ALUNO convidando a acessar e assinar
+            if (alunoForEmail.email) {
+              const mentorInfo = input.consultorId ? await db.getConsultorById(input.consultorId) : null;
+              const inviteEmail = buildPdiPublishedInviteEmail({
+                alunoName: alunoForEmail.name || 'Aluno',
+                mentorName: mentorInfo?.name || 'seu(sua) mentor(a)',
+                loginUrl: 'https://ecolider.evoluirckm.com/onboarding',
+              });
+              await sendEmailStep({ to: alunoForEmail.email, subject: inviteEmail.subject, html: inviteEmail.html, text: inviteEmail.text }).catch(() => {});
+            }
+          }
+        } catch (e) { console.warn('[Onboarding] Erro ao enviar email de avanço (PDI):', e); }
         
         return { success: true, pdiId };
       }),
@@ -5945,6 +5977,25 @@ Responda APENAS em JSON com o formato:
           metodoCalculo: 'ipsativo',
         });
 
+        // Notificar admin + dina sobre avanço no onboarding (Teste DISC realizado)
+        try {
+          const aluno = await db.getAlunoById(input.alunoId);
+          if (aluno) {
+            const { sendEmail, buildOnboardingStepEmail } = await import('./emailService');
+            const adminEmail = process.env.SMTP_USER || '';
+            const emailData = buildOnboardingStepEmail({
+              alunoName: aluno.name || 'Aluno',
+              stepName: 'Teste Realizado (DISC)',
+              stepNumber: 3,
+              totalSteps: 6,
+            });
+            const recipients = [adminEmail, 'dina@ckmtalents.net'].filter(Boolean);
+            for (const to of recipients) {
+              await sendEmail({ to, subject: emailData.subject, html: emailData.html, text: emailData.text }).catch(() => {});
+            }
+          }
+        } catch (e) { console.warn('[Onboarding] Erro ao enviar email de avanço (DISC):', e); }
+
         return resultado;
       }),
 
@@ -6181,6 +6232,26 @@ Responda APENAS em JSON com o formato:
           cadastroConfirmado: 1,
           cadastroConfirmadoEm: new Date(),
         });
+
+        // Notificar admin + dina sobre avanço no onboarding
+        try {
+          const aluno = await db.getAlunoById(alunoId);
+          if (aluno) {
+            const { sendEmail, buildOnboardingStepEmail } = await import('./emailService');
+            const adminEmail = process.env.SMTP_USER || '';
+            const emailData = buildOnboardingStepEmail({
+              alunoName: aluno.name || 'Aluno',
+              stepName: 'Cadastro Preenchido',
+              stepNumber: 2,
+              totalSteps: 6,
+            });
+            const recipients = [adminEmail, 'dina@ckmtalents.net'].filter(Boolean);
+            for (const to of recipients) {
+              await sendEmail({ to, subject: emailData.subject, html: emailData.html, text: emailData.text }).catch(() => {});
+            }
+          }
+        } catch (e) { console.warn('[Onboarding] Erro ao enviar email de avanço (cadastro):', e); }
+
         return result;
       }),
 
@@ -6409,6 +6480,24 @@ Responda APENAS em JSON com o formato:
           console.warn('[Onboarding] Erro ao enviar confirmação de agendamento para aluno:', emailErr);
         }
 
+        // Notificar admin + dina sobre avanço no onboarding (Mentoria Agendada)
+        try {
+          if (aluno) {
+            const { sendEmail: sendEmailStep, buildOnboardingStepEmail } = await import('./emailService');
+            const adminEmailStep = process.env.SMTP_USER || '';
+            const emailData = buildOnboardingStepEmail({
+              alunoName: aluno.name || 'Aluno',
+              stepName: 'Mentoria Agendada',
+              stepNumber: 4,
+              totalSteps: 6,
+            });
+            const recipients = [adminEmailStep, 'dina@ckmtalents.net'].filter(Boolean);
+            for (const to of recipients) {
+              await sendEmailStep({ to, subject: emailData.subject, html: emailData.html, text: emailData.text }).catch(() => {});
+            }
+          }
+        } catch (e) { console.warn('[Onboarding] Erro ao enviar email de avanço (agendamento):', e); }
+
         return { success: result.success, appointmentId: result.id };
       }),
 
@@ -6627,6 +6716,26 @@ Responda APENAS em JSON com o formato:
           aceiteRealizadoEm: new Date(),
           nomeAceite: input.nomeAceite,
         });
+
+        // Notificar admin + dina sobre aceite realizado
+        try {
+          const aluno = await db.getAlunoById(input.alunoId);
+          if (aluno) {
+            const { sendEmail, buildOnboardingStepEmail } = await import('./emailService');
+            const adminEmail = process.env.SMTP_USER || '';
+            const emailData = buildOnboardingStepEmail({
+              alunoName: aluno.name || 'Aluno',
+              stepName: 'Termo de Compromisso Assinado',
+              stepNumber: 6,
+              totalSteps: 6,
+            });
+            const recipients = [adminEmail, 'dina@ckmtalents.net'].filter(Boolean);
+            for (const to of recipients) {
+              await sendEmail({ to, subject: emailData.subject, html: emailData.html, text: emailData.text }).catch(() => {});
+            }
+          }
+        } catch (e) { console.warn('[Onboarding] Erro ao enviar email de avanço (aceite):', e); }
+
         return { success: true };
       }),
 
@@ -7262,6 +7371,15 @@ Responda APENAS em JSON com o formato especificado.`
           emailsEnviados: alertas.filter(a => a.emailEnviado).length,
           alertas,
         };
+      }),
+  }),
+
+  // ============ ONBOARDING TRACKING (ADMIN) ============
+  onboardingTracking: router({
+    list: adminProcedure
+      .input(z.object({ programId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getOnboardingTrackingList(input?.programId);
       }),
   }),
 });
