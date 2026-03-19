@@ -2687,7 +2687,7 @@
 
 ## Melhorias Onboarding Tracking - 19/03/2026- [x] Ordenar lista por data de cadastramento (mais recentes primeir- [x] Adicionar botão de reenvio manual de convite para alunos que não iniciaram cad- [x] Incluir coluna de "dias parado" mostrando há quantos dias o aluno está na mesma etapa- [x] Corrigir lógica de etapas para ser cumulativa (se etapa posterior está ok, anteriores também devem estar)
 - [x] Corrigir: "Convite Enviado" deve ser sempre true para todos os alunos (existência no sistema = convite enviado)
-- [ ] Bloquear etapas "Mentora" e "Agendamento" no onboarding do aluno quando já tem reunião agendada (impedir agendar 2x)
+- [x] Bloquear etapas "Mentora" e "Agendamento" no onboarding do aluno quando já tem reunião agendada (impedir agendar 2x)
 - [x] Corrigir link nos emails de lembrete de onboarding: deve apontar para https://ecolider.evoluirckm.com em vez do Manus
 - [x] Excluir alunos em fase de onboarding (sem PDI) do cron de alertas de mentoria (30 dias sem sessão)
 - [x] Corrigir link nos emails de mentoria: usar ecolider.evoluirckm.com em vez de Manus

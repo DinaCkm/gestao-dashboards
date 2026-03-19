@@ -2451,7 +2451,15 @@ export default function OnboardingAluno() {
         </div>
 
         {/* Stepper */}
-        <OnboardingStepper currentStep={currentStep} onStepClick={setCurrentStep} readOnly={readOnly} />
+        <OnboardingStepper currentStep={currentStep} onStepClick={(step) => {
+          // Bloquear navegação para etapas 3 (Mentora) e 4 (Agendamento) se o aluno já passou dessas etapas
+          // (currentStep >= 5 significa que já agendou e está no 1° Encontro ou além)
+          if (!readOnly && currentStep >= 5 && (step === 3 || step === 4)) {
+            toast.info("Você já escolheu sua mentora e agendou seu encontro. Não é possível alterar.");
+            return;
+          }
+          setCurrentStep(step);
+        }} readOnly={readOnly} />
 
         {/* Banner de modo somente leitura */}
         {readOnly && !reassessmentElegivel && (
