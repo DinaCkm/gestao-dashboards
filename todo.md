@@ -2573,3 +2573,8 @@
 - [x] Filtro por período (data início/fim) funcional
 - [x] Precificação flexível por faixa de sessões (mentor_session_pricing)
 - [x] 17 testes unitários cobrindo acesso, geração e validação
+
+## Correção Visual - Cards de Mentoras no Onboarding (18/03/2026)
+- [x] Fotos das mentoras nos cards estão muito próximas/cortadas - melhorar enquadramento
+- [x] Reduzir tamanho da foto no card para não ocupar toda a área
+- [x] Garantir que o rosto fique visível e bem enquadrado (object-position)

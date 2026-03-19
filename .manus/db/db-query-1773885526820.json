@@ -1,0 +1,55 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.alunoId, u.openId, u.passwordHash IS NOT NULL as hasPassword, a.cpf FROM users u LEFT JOIN alunos a ON u.alunoId = a.id WHERE u.alunoId IS NOT NULL AND u.role = 'user' AND (u.passwordHash IS NOT NULL OR a.cpf IS NOT NULL) LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.alunoId, u.openId, u.passwordHash IS NOT NULL as hasPassword, a.cpf FROM users u LEFT JOIN alunos a ON u.alunoId = a.id WHERE u.alunoId IS NOT NULL AND u.role = 'user' AND (u.passwordHash IS NOT NULL OR a.cpf IS NOT NULL) LIMIT 5",
+  "rows": [
+    {
+      "id": "570386",
+      "name": "BRUNO DE JESUS RODRIGUES",
+      "email": "bruno.rodrigues@to.sebrae.com.br",
+      "alunoId": "30080",
+      "openId": "aluno_1770945253081",
+      "hasPassword": "0",
+      "cpf": "06463327328"
+    },
+    {
+      "id": "660145",
+      "name": "Admary Monteiro Barbosa",
+      "email": "admary.monteiro@to.sebrae.com.br",
+      "alunoId": "30047",
+      "openId": "aluno_30047",
+      "hasPassword": "0",
+      "cpf": "83845186100"
+    },
+    {
+      "id": "660146",
+      "name": "Aldeni Batista Torres",
+      "email": "aldeni.torres@to.sebrae.com.br",
+      "alunoId": "30048",
+      "openId": "aluno_30048",
+      "hasPassword": "0",
+      "cpf": "00658585142"
+    },
+    {
+      "id": "660147",
+      "name": "Alencar Hubner Borelli",
+      "email": "alencar.borelli@to.sebrae.com.br",
+      "alunoId": "30049",
+      "openId": "aluno_30049",
+      "hasPassword": "0",
+      "cpf": "01017472173"
+    },
+    {
+      "id": "660148",
+      "name": "Alorran de Freitas Barbosa",
+      "email": "alorran.barbosa@to.sebrae.com.br",
+      "alunoId": "30050",
+      "openId": "aluno_30050",
+      "hasPassword": "0",
+      "cpf": "86622536104"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\talunoId\topenId\thasPassword\tcpf\n570386\tBRUNO DE JESUS RODRIGUES\tbruno.rodrigues@to.sebrae.com.br\t30080\taluno_1770945253081\t0\t06463327328\n660145\tAdmary Monteiro Barbosa\tadmary.monteiro@to.sebrae.com.br\t30047\taluno_30047\t0\t83845186100\n660146\tAldeni Batista Torres\taldeni.torres@to.sebrae.com.br\t30048\taluno_30048\t0\t00658585142\n660147\tAlencar Hubner Borelli\talencar.borelli@to.sebrae.com.br\t30049\taluno_30049\t0\t01017472173\n660148\tAlorran de Freitas Barbosa\talorran.barbosa@to.sebrae.com.br\t30050\taluno_30050\t0\t86622536104\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

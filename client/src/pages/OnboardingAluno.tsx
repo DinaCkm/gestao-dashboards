@@ -485,12 +485,12 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
             } ${!mentora.disponivel ? "opacity-60" : ""}`}
           >
             <CardContent className="p-0">
-              <div className="relative h-52 overflow-hidden">
+              <div className="relative h-48 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
                 {mentora.foto ? (
                   <img
                     src={mentora.foto}
                     alt={mentora.nome}
-                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover object-[center_20%] group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-[#0A1E3E] to-[#1a3a6e] flex items-center justify-center">
@@ -499,7 +499,7 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
                     </span>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <div className="absolute bottom-3 left-3 right-3">
                   <h3 className="text-white font-bold text-lg">{mentora.nome}</h3>
                   <p className="text-white/80 text-sm">{mentora.especialidade}</p>
