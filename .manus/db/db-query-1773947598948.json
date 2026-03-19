@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, userId, title, message, type, isRead, createdAt FROM in_app_notifications WHERE createdAt >= '2026-03-19 18:00:00' ORDER BY createdAt DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, userId, title, message, type, isRead, createdAt FROM in_app_notifications WHERE createdAt >= '2026-03-19 18:00:00' ORDER BY createdAt DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "390004",
+      "userId": "2",
+      "title": "Test Notification",
+      "message": "This is a test notification",
+      "type": "info",
+      "isRead": "1",
+      "createdAt": "2026-03-19 18:37:33"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\ttitle\tmessage\ttype\tisRead\tcreatedAt\n390004\t2\tTest Notification\tThis is a test notification\tinfo\t1\t2026-03-19 18:37:33\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

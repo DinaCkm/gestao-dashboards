@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as total FROM users WHERE role = 'user' AND isActive = 1 AND email IS NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total FROM users WHERE role = 'user' AND isActive = 1 AND email IS NOT NULL;",
+  "rows": [
+    {
+      "total": "217"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\n217\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

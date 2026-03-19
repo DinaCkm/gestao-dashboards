@@ -153,7 +153,11 @@ export default function WebinarsAdmin() {
 
   const reminderMutation = trpc.webinars.sendReminder.useMutation({
     onSuccess: (data) => {
-      toast.success(`Lembrete enviado! Notificação enviada para ${data.emailsSent} alunos.`);
+      const parts = [];
+      if (data.emailsSent > 0) parts.push(`${data.emailsSent} emails enviados`);
+      if (data.emailsFailed > 0) parts.push(`${data.emailsFailed} emails falharam`);
+      if (data.notificationsCreated > 0) parts.push(`${data.notificationsCreated} notificações criadas`);
+      toast.success(`Lembrete enviado! ${parts.join(', ')}.`);
       refetch();
     },
     onError: (err) => toast.error(`Erro ao enviar lembrete: ${err.message}`),

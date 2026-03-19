@@ -2599,3 +2599,12 @@
 - [x] Garantir que o horário editado no formulário seja exibido corretamente na listagem
 - [x] Corrigido também em AvisosAdmin e MuralAluno
 - [x] 18 testes unitários cobrindo conversão UTC <-> Brazil timezone
+
+## Implementar Envio Real de Lembretes de Webinar (19/03/2026)
+- [x] Criar função de envio de email SMTP para lembretes de webinar (buildWebinarReminderEmail)
+- [x] Criar notificações in-app para todos os alunos ativos ao enviar lembrete (createNotifications)
+- [x] Atualizar procedimento sendReminder para enviar email + notificação in-app
+- [x] Template HTML do email com informações do webinar (título, data, horário, link, palestrante)
+- [x] Tratamento de erros: continuar enviando mesmo se um email falhar (batch de 10 com delay)
+- [x] Atualizar toast para refletir quantidade real de emails e notificações enviadas
+- [x] 17 testes unitários para o envio de lembretes (webinar-reminder.test.ts)

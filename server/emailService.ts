@@ -380,3 +380,196 @@ Este é um email automático do ECOSSISTEMA DO BEM.
 
   return { subject, html, text };
 }
+
+
+// ============ WEBINAR REMINDER EMAIL ============
+
+export function buildWebinarReminderEmail(data: {
+  alunoName: string;
+  webinarTitle: string;
+  eventDate: string; // formatted date string (dd/mm/yyyy)
+  eventTime: string; // formatted time string (HH:mm)
+  meetingLink?: string | null;
+  speaker?: string | null;
+  theme?: string | null;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Lembrete: ${data.webinarTitle} - ${data.eventDate} às ${data.eventTime}`;
+
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const speakerRow = data.speaker ? `
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 140px;">Palestrante:</td>
+                        <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.speaker}</td>
+                      </tr>` : '';
+
+  const themeRow = data.theme ? `
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 140px;">Tema:</td>
+                        <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.theme}</td>
+                      </tr>` : '';
+
+  const meetingLinkSection = data.meetingLink ? `
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 25px;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.meetingLink}" 
+                       style="display: inline-block; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 15px; font-weight: 700; letter-spacing: 0.5px;">
+                      Acessar Reunião
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top: 8px;">
+                    <a href="${data.meetingLink}" style="color: #1a4a5e; font-size: 12px; word-break: break-all;">${data.meetingLink}</a>
+                  </td>
+                </tr>
+              </table>` : '';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+          
+          <!-- Header com Logo -->
+          <tr>
+            <td style="background-color: #ffffff; padding: 30px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display: block; margin: 0 auto 12px;" />
+              <p style="color: #6b7280; margin: 4px 0 0; font-size: 13px;">
+                Programa de Desenvolvimento e Mentoria
+              </p>
+            </td>
+          </tr>
+          <!-- Divider -->
+          <tr>
+            <td style="padding: 0 40px;">
+              <hr style="border: none; border-top: 2px solid #e8a838; margin: 0;" />
+            </td>
+          </tr>
+
+          <!-- Event Banner -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #0A1E3E 0%, #2D5A87 100%); padding: 24px 40px; text-align: center;">
+              <p style="color: #e8a838; font-size: 13px; font-weight: 600; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 1px;">
+                Lembrete de Evento
+              </p>
+              <p style="color: #ffffff; font-size: 20px; font-weight: 700; margin: 0; line-height: 1.4;">
+                ${data.webinarTitle}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="color: #0f2b3c; margin: 0 0 20px; font-size: 18px;">
+                Olá, ${data.alunoName}!
+              </h2>
+              
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
+                Este é um lembrete do evento que está chegando. Não perca! Sua participação é muito importante para o seu desenvolvimento no programa.
+              </p>
+
+              <!-- Event Details Box -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 25px;">
+                <tr>
+                  <td style="background-color: #f0f7fa; border: 1px solid #d1e5ed; border-radius: 8px; padding: 20px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 140px;">Evento:</td>
+                        <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.webinarTitle}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 140px;">Data:</td>
+                        <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.eventDate}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 140px;">Horário:</td>
+                        <td style="color: #0f2b3c; font-size: 14px; font-weight: 700; padding: 4px 0;">${data.eventTime} (horário de Brasília)</td>
+                      </tr>${speakerRow}${themeRow}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              ${meetingLinkSection}
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.loginUrl}" 
+                       style="display: inline-block; background: linear-gradient(135deg, #e8a838 0%, #d4922e 100%); color: #0f2b3c; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
+                      Acessar Plataforma
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color: #9ca3af; font-size: 13px; line-height: 1.6; margin: 0; text-align: center;">
+                Marque na sua agenda e prepare-se para mais uma experiência de aprendizado!
+              </p>
+            </td>
+          </tr>
+
+          <!-- Motivational Banner -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #e8a838 0%, #f0c060 100%); padding: 16px 40px; text-align: center;">
+              <p style="color: #0f2b3c; font-size: 14px; font-weight: 600; margin: 0;">
+                Sua presença faz a diferença! Nos vemos no evento.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <p style="color: #9ca3af; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
+                      Este e-mail foi enviado automaticamente pelo ECOSSISTEMA DO BEM.<br>
+                      Em caso de dúvidas, entre em contato com a administração do programa.<br>
+                      &copy; ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Lembrete de Evento - ECOSSISTEMA DO BEM
+
+Olá, ${data.alunoName}!
+
+Este é um lembrete do evento que está chegando:
+
+Evento: ${data.webinarTitle}
+Data: ${data.eventDate}
+Horário: ${data.eventTime} (horário de Brasília)${data.speaker ? `\nPalestrante: ${data.speaker}` : ''}${data.theme ? `\nTema: ${data.theme}` : ''}${data.meetingLink ? `\nLink da reunião: ${data.meetingLink}` : ''}
+
+Sua participação é muito importante para o seu desenvolvimento no programa.
+
+Acesse a plataforma: ${data.loginUrl}
+
+Este e-mail foi enviado automaticamente pelo ECOSSISTEMA DO BEM.
+© ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.`;
+
+  return { subject, html, text };
+}

@@ -4851,6 +4851,28 @@ export async function getStudentEmailsByProgram(programId?: number): Promise<{em
     ));
 }
 
+export async function getActiveStudentsWithIds(programId?: number): Promise<{id: number; email: string | null; name: string | null}[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (programId) {
+    return await db.select({ id: users.id, email: users.email, name: users.name })
+      .from(users)
+      .where(and(
+        eq(users.role, "user"),
+        eq(users.isActive, 1),
+        eq(users.programId, programId),
+        isNotNull(users.email)
+      ));
+  }
+  return await db.select({ id: users.id, email: users.email, name: users.name })
+    .from(users)
+    .where(and(
+      eq(users.role, "user"),
+      eq(users.isActive, 1),
+      isNotNull(users.email)
+    ));
+}
+
 
 // ============ WEBINAR ATTENDANCE (Self-reported) ============
 

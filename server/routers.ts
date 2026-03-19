@@ -4857,28 +4857,123 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
         const webinar = await db.getWebinarById(input.webinarId);
         if (!webinar) throw new TRPCError({ code: 'NOT_FOUND', message: 'Webinar não encontrado' });
         
-        // Get all active student emails
-        const students = await db.getStudentEmailsByProgram();
-        const validEmails = students.filter(s => s.email).map(s => ({ email: s.email!, name: s.name || 'Aluno' }));
+        // Get all active students with IDs (for both email and in-app notifications)
+        const students = await db.getActiveStudentsWithIds();
+        const validStudents = students.filter(s => s.email).map(s => ({ id: s.id, email: s.email!, name: s.name || 'Aluno' }));
         
-        if (validEmails.length === 0) {
+        if (validStudents.length === 0) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Nenhum aluno com email cadastrado encontrado' });
         }
         
-        // Send notification to owner about the reminder
-        const eventDateStr = webinar.eventDate ? new Date(webinar.eventDate).toLocaleDateString('pt-BR') : 'Data não definida';
+        // Format event date and time in Brazil timezone
+        const eventDate = webinar.eventDate ? new Date(webinar.eventDate) : null;
+        const eventDateStr = eventDate
+          ? eventDate.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : 'Data não definida';
+        const eventTimeStr = eventDate
+          ? eventDate.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })
+          : 'Horário não definido';
+        
+        // Determine login URL
+        const loginUrl = process.env.VITE_APP_URL || 'https://ecolider.evoluirckm.com';
+        
+        // === 1. CREATE IN-APP NOTIFICATIONS FOR ALL STUDENTS ===
+        const notificationMessage = `Evento: ${webinar.title}\nData: ${eventDateStr} às ${eventTimeStr} (horário de Brasília)${webinar.speaker ? `\nPalestrante: ${webinar.speaker}` : ''}${webinar.meetingLink ? `\nLink: ${webinar.meetingLink}` : ''}`;
+        
+        const inAppNotifications = validStudents.map(s => ({
+          userId: s.id,
+          title: `Lembrete: ${webinar.title}`,
+          message: notificationMessage,
+          type: 'action' as const,
+          isRead: 0,
+          actionUrl: webinar.meetingLink || '/mural',
+        }));
+        
+        try {
+          await db.createNotifications(inAppNotifications);
+          console.log(`[Reminder] ${inAppNotifications.length} notificações in-app criadas para webinar ${webinar.title}`);
+        } catch (err: any) {
+          console.error(`[Reminder] Erro ao criar notificações in-app:`, err.message);
+        }
+        
+        // === 2. SEND EMAILS VIA SMTP TO ALL STUDENTS ===
+        const { sendEmail, buildWebinarReminderEmail } = await import('./emailService');
+        
+        let emailsSent = 0;
+        let emailsFailed = 0;
+        const errors: string[] = [];
+        
+        // Send emails in batches of 10 to avoid overwhelming SMTP
+        const BATCH_SIZE = 10;
+        const BATCH_DELAY_MS = 1000; // 1 second between batches
+        
+        for (let i = 0; i < validStudents.length; i += BATCH_SIZE) {
+          const batch = validStudents.slice(i, i + BATCH_SIZE);
+          
+          const batchPromises = batch.map(async (student) => {
+            try {
+              const emailData = buildWebinarReminderEmail({
+                alunoName: student.name,
+                webinarTitle: webinar.title,
+                eventDate: eventDateStr,
+                eventTime: eventTimeStr,
+                meetingLink: webinar.meetingLink,
+                speaker: webinar.speaker,
+                theme: webinar.theme,
+                loginUrl,
+              });
+              
+              const result = await sendEmail({
+                to: student.email,
+                subject: emailData.subject,
+                html: emailData.html,
+                text: emailData.text,
+              });
+              
+              if (result.success) {
+                emailsSent++;
+              } else {
+                emailsFailed++;
+                errors.push(`${student.email}: ${result.error}`);
+              }
+            } catch (err: any) {
+              emailsFailed++;
+              errors.push(`${student.email}: ${err.message}`);
+            }
+          });
+          
+          await Promise.all(batchPromises);
+          
+          // Wait between batches (except for the last one)
+          if (i + BATCH_SIZE < validStudents.length) {
+            await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+          }
+        }
+        
+        console.log(`[Reminder] Emails enviados: ${emailsSent}/${validStudents.length}, falhas: ${emailsFailed}`);
+        if (errors.length > 0) {
+          console.error(`[Reminder] Erros de email:`, errors.slice(0, 5).join('; '));
+        }
+        
+        // === 3. NOTIFY OWNER ABOUT THE REMINDER ===
         await notifyOwner({
           title: `Lembrete de Webinar Enviado`,
-          content: `Lembrete do webinar "${webinar.title}" (${eventDateStr}) enviado para ${validEmails.length} alunos.`,
+          content: `Lembrete do webinar "${webinar.title}" (${eventDateStr} às ${eventTimeStr}):\n- ${inAppNotifications.length} notificações in-app criadas\n- ${emailsSent} emails enviados com sucesso\n- ${emailsFailed} emails falharam${errors.length > 0 ? `\nErros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         });
         
-        // Update reminder status
+        // === 4. UPDATE REMINDER STATUS ===
         await db.updateWebinar(input.webinarId, {
           reminderSent: 1,
           reminderSentAt: new Date(),
         });
         
-        return { success: true, emailsSent: validEmails.length };
+        return {
+          success: true,
+          emailsSent,
+          emailsFailed,
+          notificationsCreated: inAppNotifications.length,
+          totalStudents: validStudents.length,
+        };
       }),
 
     // Public endpoint for students to see upcoming webinars

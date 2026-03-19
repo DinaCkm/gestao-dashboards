@@ -1,0 +1,100 @@
+{
+  "query": "SELECT id, title, eventDate, status, reminderSent, reminderSentAt, createdAt FROM scheduled_webinars ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, title, eventDate, status, reminderSent, reminderSentAt, createdAt FROM scheduled_webinars ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "120001",
+      "title": "2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional",
+      "eventDate": "2026-03-25 14:00:00",
+      "status": "published",
+      "reminderSent": "1",
+      "reminderSentAt": "2026-03-19 19:06:57",
+      "createdAt": "2026-03-19 19:00:54"
+    },
+    {
+      "id": "60001",
+      "title": "2026/05 - Aula 03 - Resiliência e Proatividade na Prática Organizacional",
+      "eventDate": "2026-03-11 14:00:00",
+      "status": "completed",
+      "reminderSent": "1",
+      "reminderSentAt": "2026-03-04 01:19:33",
+      "createdAt": "2026-03-04 01:16:33"
+    },
+    {
+      "id": "30",
+      "title": "2025/03 - Motivação e Engajamento com Sandra Pitman",
+      "eventDate": "2024-11-27 14:00:00",
+      "status": "completed",
+      "reminderSent": "0",
+      "reminderSentAt": "NULL",
+      "createdAt": "2026-02-27 02:09:23"
+    },
+    {
+      "id": "31",
+      "title": "2025/04 - Experiências e Trajetórias com Andressa Cristina dos Santos",
+      "eventDate": "2025-02-14 14:00:00",
+      "status": "completed",
+      "reminderSent": "0",
+      "reminderSentAt": "NULL",
+      "createdAt": "2026-02-27 02:09:23"
+    },
+    {
+      "id": "24",
+      "title": "2025/19 - Aula 01 –Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "eventDate": "2025-10-15 14:00:00",
+      "status": "completed",
+      "reminderSent": "0",
+      "reminderSentAt": "NULL",
+      "createdAt": "2026-02-27 02:09:23"
+    },
+    {
+      "id": "29",
+      "title": "2025/02 - Delegação com Márcia Fernandes",
+      "eventDate": "2024-11-13 14:00:00",
+      "status": "completed",
+      "reminderSent": "0",
+      "reminderSentAt": "NULL",
+      "createdAt": "2026-02-27 02:09:23"
+    },
+    {
+      "id": "28",
+      "title": "2025/01 - Gestão do Tempo com Edson Herreiro",
+      "eventDate": "2024-10-30 14:00:00",
+      "status": "completed",
+      "reminderSent": "0",
+      "reminderSentAt": "NULL",
+      "createdAt": "2026-02-27 02:09:23"
+    },
+    {
+      "id": "8",
+      "title": "2025/13 - Saúde Mental, Estresse e Burnout com Otácia Azevedo",
+      "eventDate": "2025-07-23 14:00:00",
+      "status": "completed",
+      "reminderSent": "0",
+      "reminderSentAt": "NULL",
+      "createdAt": "2026-02-27 02:09:22"
+    },
+    {
+      "id": "9",
+      "title": "2025/14 - Liderança colaborativa com Sergio David",
+      "eventDate": "2025-08-07 14:00:00",
+      "status": "completed",
+      "reminderSent": "0",
+      "reminderSentAt": "NULL",
+      "createdAt": "2026-02-27 02:09:22"
+    },
+    {
+      "id": "15",
+      "title": "2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias",
+      "eventDate": "2025-11-05 14:00:00",
+      "status": "completed",
+      "reminderSent": "0",
+      "reminderSentAt": "NULL",
+      "createdAt": "2026-02-27 02:09:22"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\teventDate\tstatus\treminderSent\treminderSentAt\tcreatedAt\n120001\t2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional\t2026-03-25 14:00:00\tpublished\t1\t2026-03-19 19:06:57\t2026-03-19 19:00:54\n60001\t2026/05 - Aula 03 - Resiliência e Proatividade na Prática Organizacional\t2026-03-11 14:00:00\tcompleted\t1\t2026-03-04 01:19:33\t2026-03-04 01:16:33\n30\t2025/03 - Motivação e Engajamento com Sandra Pitman\t2024-11-27 14:00:00\tcompleted\t0\tNULL\t2026-02-27 02:09:23\n31\t2025/04 - Experiências e Trajetórias com Andressa Cristina dos Santos\t2025-02-14 14:00:00\tcompleted\t0\tNULL\t2026-02-27 02:09:23\n24\t2025/19 - Aula 01 –Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\t2025-10-15 14:00:00\tcompleted\t0\tNULL\t2026-02-27 02:09:23\n29\t2025/02 - Delegação com Márcia Fernandes\t2024-11-13 14:00:00\tcompleted\t0\tNULL\t2026-02-27 02:09:23\n28\t2025/01 - Gestão do Tempo com Edson Herreiro\t2024-10-30 14:00:00\tcompleted\t0\tNULL\t2026-02-27 02:09:23\n8\t2025/13 - Saúde Mental, Estresse e Burnout com Otácia Azevedo\t2025-07-23 14:00:00\tcompleted\t0\tNULL\t2026-02-27 02:09:22\n9\t2025/14 - Liderança colaborativa com Sergio David\t2025-08-07 14:00:00\tcompleted\t0\tNULL\t2026-02-27 02:09:22\n15\t2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias\t2025-11-05 14:00:00\tcompleted\t0\tNULL\t2026-02-27 02:09:22\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}
