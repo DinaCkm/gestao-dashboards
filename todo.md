@@ -2592,3 +2592,10 @@
 - [x] Botão "Saiba mais" verde (ver currículo) + botão "Escolher" empilhados
 - [x] Badge de disponibilidade discreto (verde/laranja)
 - [x] Layout limpo e elegante similar à referência (5 colunas em telas grandes)
+
+## Bug: Horário do Webinar não atualiza após salvar (19/03/2026)
+- [x] Investigar lógica de salvamento e exibição de horário dos webinars
+- [x] Corrigir bug de timezone/offset - criadas funções formatDateTimeBrazil, utcToLocalDatetimeInput, localDatetimeInputToUTC
+- [x] Garantir que o horário editado no formulário seja exibido corretamente na listagem
+- [x] Corrigido também em AvisosAdmin e MuralAluno
+- [x] 18 testes unitários cobrindo conversão UTC <-> Brazil timezone

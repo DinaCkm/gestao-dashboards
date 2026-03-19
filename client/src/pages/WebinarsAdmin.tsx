@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { formatDateCustomSafe } from "@/lib/dateUtils";
+import { formatDateTimeBrazil, utcToLocalDatetimeInput, localDatetimeInputToUTC } from "@/lib/dateUtils";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -183,15 +183,9 @@ export default function WebinarsAdmin() {
       theme: webinar.theme || "",
       speaker: webinar.speaker || "",
       speakerBio: webinar.speakerBio || "",
-      eventDate: webinar.eventDate
-        ? new Date(webinar.eventDate).toISOString().slice(0, 16)
-        : "",
-      startDate: webinar.startDate
-        ? new Date(webinar.startDate).toISOString().slice(0, 16)
-        : "",
-      endDate: webinar.endDate
-        ? new Date(webinar.endDate).toISOString().slice(0, 16)
-        : "",
+      eventDate: utcToLocalDatetimeInput(webinar.eventDate),
+      startDate: utcToLocalDatetimeInput(webinar.startDate),
+      endDate: utcToLocalDatetimeInput(webinar.endDate),
       duration: webinar.duration || 60,
       meetingLink: webinar.meetingLink || "",
       youtubeLink: webinar.youtubeLink || "",
@@ -212,9 +206,9 @@ export default function WebinarsAdmin() {
       theme: form.theme || undefined,
       speaker: form.speaker || undefined,
       speakerBio: form.speakerBio || undefined,
-      eventDate: new Date(form.eventDate).toISOString(),
-      startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
-      endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+      eventDate: localDatetimeInputToUTC(form.eventDate),
+      startDate: form.startDate ? localDatetimeInputToUTC(form.startDate) : undefined,
+      endDate: form.endDate ? localDatetimeInputToUTC(form.endDate) : undefined,
       duration: form.duration || undefined,
       meetingLink: form.meetingLink || undefined,
       youtubeLink: form.youtubeLink || undefined,
@@ -232,9 +226,9 @@ export default function WebinarsAdmin() {
       theme: form.theme || undefined,
       speaker: form.speaker || undefined,
       speakerBio: form.speakerBio || undefined,
-      eventDate: form.eventDate ? new Date(form.eventDate).toISOString() : undefined,
-      startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
-      endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+      eventDate: form.eventDate ? localDatetimeInputToUTC(form.eventDate) : undefined,
+      startDate: form.startDate ? localDatetimeInputToUTC(form.startDate) : undefined,
+      endDate: form.endDate ? localDatetimeInputToUTC(form.endDate) : undefined,
       duration: form.duration || undefined,
       meetingLink: form.meetingLink || undefined,
       youtubeLink: form.youtubeLink || undefined,
@@ -259,14 +253,8 @@ export default function WebinarsAdmin() {
   };
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "—";
-    return formatDateCustomSafe(dateStr, {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    if (!dateStr) return "\u2014";
+    return formatDateTimeBrazil(dateStr);
   };
 
   const stats = useMemo(() => {

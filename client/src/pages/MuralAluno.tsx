@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { formatDateCustomSafe } from "@/lib/dateUtils";
+import { formatDateCustomSafe, formatDateTimeBrazil } from "@/lib/dateUtils";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,16 +30,17 @@ function formatDate(dateStr: string | Date | null | undefined): string {
 }
 
 function formatDateTime(dateStr: string | Date | null | undefined): string {
-  return formatDateCustomSafe(dateStr, {
+  return formatDateTimeBrazil(dateStr, {
     day: "2-digit", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit"
+    hour: "2-digit", minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
   });
 }
 
 function formatTimeOnly(dateStr: string | Date | null | undefined): string {
   if (!dateStr) return "";
   const d = new Date(dateStr);
-  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 }
 
 function daysUntil(dateStr: string | Date | null | undefined): number {

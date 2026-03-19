@@ -1,5 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
-import { formatDateCustomSafe } from "@/lib/dateUtils";
+import { formatDateTimeBrazil, utcToLocalDatetimeInput, localDatetimeInputToUTC } from "@/lib/dateUtils";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -199,8 +199,8 @@ export default function AvisosAdmin() {
       actionUrl: form.actionUrl || undefined,
       actionLabel: form.actionLabel || undefined,
       priority: form.priority,
-      publishAt: form.publishAt || undefined,
-      expiresAt: form.expiresAt || undefined,
+      publishAt: form.publishAt ? localDatetimeInputToUTC(form.publishAt) : undefined,
+      expiresAt: form.expiresAt ? localDatetimeInputToUTC(form.expiresAt) : undefined,
       isActive: form.isActive,
     };
 
@@ -225,12 +225,8 @@ export default function AvisosAdmin() {
       actionUrl: announcement.actionUrl || "",
       actionLabel: announcement.actionLabel || "",
       priority: announcement.priority || 0,
-      publishAt: announcement.publishAt
-        ? new Date(announcement.publishAt).toISOString().slice(0, 16)
-        : "",
-      expiresAt: announcement.expiresAt
-        ? new Date(announcement.expiresAt).toISOString().slice(0, 16)
-        : "",
+      publishAt: utcToLocalDatetimeInput(announcement.publishAt),
+      expiresAt: utcToLocalDatetimeInput(announcement.expiresAt),
       isActive: announcement.isActive ? 1 : 0,
     });
     setImageFile(null);
@@ -257,12 +253,13 @@ export default function AvisosAdmin() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
-    return formatDateCustomSafe(dateStr, {
+    return formatDateTimeBrazil(dateStr, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "America/Sao_Paulo",
     });
   };
 
