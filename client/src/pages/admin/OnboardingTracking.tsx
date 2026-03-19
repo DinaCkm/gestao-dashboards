@@ -13,8 +13,7 @@ const STEP_LABELS = [
   'Cadastro Preenchido',
   'Teste Realizado',
   'Mentoria Agendada',
-  'PDI Publicado',
-  'Termo Assinado',
+  'Aceite Onboarding',
 ] as const;
 
 const STEP_KEYS = [
@@ -22,8 +21,7 @@ const STEP_KEYS = [
   'cadastroPreenchido',
   'testeRealizado',
   'mentoriaAgendada',
-  'pdiPublicado',
-  'termoAssinado',
+  'aceiteOnboarding',
 ] as const;
 
 type StepKey = typeof STEP_KEYS[number];
@@ -42,8 +40,8 @@ interface StudentTracking {
   aceiteRealizadoEm: unknown;
 }
 
-function ProgressBar({ steps, completedSteps }: { steps: Record<StepKey, boolean>; completedSteps: number }) {
-  const percentage = Math.round((completedSteps / 6) * 100);
+function ProgressBar({ steps, completedSteps, totalSteps }: { steps: Record<StepKey, boolean>; completedSteps: number; totalSteps: number }) {
+  const percentage = Math.round((completedSteps / totalSteps) * 100);
 
   return (
     <div className="w-full">
@@ -119,47 +117,35 @@ function StudentRow({ student, isExpanded, onToggle }: { student: StudentTrackin
         className="flex items-center gap-4 p-4 cursor-pointer hover:bg-muted/30 transition-colors"
         onClick={onToggle}
       >
-        {/* Name + email */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-medium text-sm truncate">{student.name || 'Sem nome'}</p>
-            <Badge variant={isComplete ? 'default' : 'secondary'} className={`text-[10px] px-1.5 py-0 shrink-0 ${isComplete ? 'bg-emerald-500' : ''}`}>
+            <span className="font-medium text-sm truncate">{student.name || 'Sem nome'}</span>
+            <Badge variant={isComplete ? 'default' : 'secondary'} className={`text-[10px] px-1.5 py-0 ${isComplete ? 'bg-emerald-500' : ''}`}>
               {percentage}%
             </Badge>
           </div>
-          <p className="text-xs text-muted-foreground truncate">{student.email || '—'}</p>
+          <p className="text-xs text-muted-foreground truncate">{student.email}</p>
         </div>
 
-        {/* Program/Turma */}
-        <div className="hidden md:block text-xs text-muted-foreground min-w-[120px]">
-          {student.programName && <p className="truncate">{student.programName}</p>}
-          {student.turmaName && <p className="truncate text-[10px]">{student.turmaName}</p>}
+        <div className="hidden md:flex flex-col items-end text-right">
+          <span className="text-xs font-medium">{student.programName || '—'}</span>
+          <span className="text-[10px] text-muted-foreground">{student.turmaName || ''}</span>
         </div>
 
-        {/* Step count */}
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-          {isComplete ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-          ) : (
-            <Clock className="w-4 h-4" />
-          )}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Clock className="w-3.5 h-3.5" />
           <span>{student.completedSteps}/{student.totalSteps}</span>
         </div>
 
-        {/* Expand toggle */}
-        <div className="shrink-0">
-          {isExpanded ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          )}
-        </div>
+        {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
       </div>
 
-      {/* Expanded progress bar */}
+      {/* Expanded detail */}
       {isExpanded && (
-        <div className="px-4 pb-4 pt-0">
-          <ProgressBar steps={student.steps} completedSteps={student.completedSteps} />
+        <div className="px-4 pb-4 pt-0 border-t border-border/50">
+          <div className="pt-3">
+            <ProgressBar steps={student.steps} completedSteps={student.completedSteps} totalSteps={student.totalSteps} />
+          </div>
         </div>
       )}
     </div>
@@ -167,13 +153,11 @@ function StudentRow({ student, isExpanded, onToggle }: { student: StudentTrackin
 }
 
 export default function OnboardingTracking() {
-  const [search, setSearch] = useState('');
-  const [programFilter, setProgramFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
-
   const { data: students = [], isLoading } = trpc.onboardingTracking.list.useQuery();
-  const { data: programsList = [] } = trpc.programs.list.useQuery();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [programFilter, setProgramFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const toggleExpanded = (id: number) => {
     setExpandedIds(prev => {
@@ -185,48 +169,39 @@ export default function OnboardingTracking() {
   };
 
   const expandAll = () => {
-    setExpandedIds(new Set(filteredStudents.map(s => s.alunoId)));
+    setExpandedIds(new Set((students as StudentTracking[]).map(s => s.alunoId)));
   };
 
   const collapseAll = () => {
     setExpandedIds(new Set());
   };
 
+  // Filtered students
   const filteredStudents = useMemo(() => {
     let result = students as StudentTracking[];
 
-    // Search filter
-    if (search) {
-      const q = search.toLowerCase();
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       result = result.filter(s =>
-        (s.name || '').toLowerCase().includes(q) ||
-        (s.email || '').toLowerCase().includes(q)
+        (s.name || '').toLowerCase().includes(term) ||
+        (s.email || '').toLowerCase().includes(term)
       );
     }
 
-    // Program filter
     if (programFilter !== 'all') {
       result = result.filter(s => s.programName === programFilter);
     }
 
-    // Status filter
     if (statusFilter === 'complete') {
       result = result.filter(s => s.completedSteps === s.totalSteps);
-    } else if (statusFilter === 'in_progress') {
-      result = result.filter(s => s.completedSteps > 0 && s.completedSteps < s.totalSteps);
-    } else if (statusFilter === 'not_started') {
-      result = result.filter(s => s.completedSteps <= 1); // Only invite sent
+    } else if (statusFilter === 'inProgress') {
+      result = result.filter(s => s.completedSteps > 1 && s.completedSteps < s.totalSteps);
+    } else if (statusFilter === 'notStarted') {
+      result = result.filter(s => s.completedSteps <= 1);
     }
 
-    // Sort: in progress first, then by completion
-    result.sort((a, b) => {
-      if (a.completedSteps === a.totalSteps && b.completedSteps !== b.totalSteps) return 1;
-      if (a.completedSteps !== a.totalSteps && b.completedSteps === b.totalSteps) return -1;
-      return b.completedSteps - a.completedSteps;
-    });
-
     return result;
-  }, [students, search, programFilter, statusFilter]);
+  }, [students, searchTerm, programFilter, statusFilter]);
 
   // Stats
   const stats = useMemo(() => {
@@ -255,7 +230,7 @@ export default function OnboardingTracking() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Acompanhamento de Onboarding</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Acompanhe o progresso de cada aluno nas etapas do onboarding
+          Acompanhe o progresso de cada aluno nas etapas do onboarding (apenas alunos sem PDI)
         </p>
       </div>
 
@@ -289,7 +264,7 @@ export default function OnboardingTracking() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setStatusFilter('in_progress')}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setStatusFilter('inProgress')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950">
@@ -303,14 +278,14 @@ export default function OnboardingTracking() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setStatusFilter('not_started')}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setStatusFilter('notStarted')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-900">
                 <Filter className="w-5 h-5 text-gray-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-500">{stats.notStarted}</p>
+                <p className="text-2xl font-bold">{stats.notStarted}</p>
                 <p className="text-xs text-muted-foreground">Não Iniciados</p>
               </div>
             </div>
@@ -321,20 +296,19 @@ export default function OnboardingTracking() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome ou email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-9"
               />
             </div>
-
             <Select value={programFilter} onValueChange={setProgramFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Programa" />
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Todos os Programas" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os Programas</SelectItem>
@@ -343,16 +317,15 @@ export default function OnboardingTracking() {
                 ))}
               </SelectContent>
             </Select>
-
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Status" />
+              <SelectTrigger className="w-full md:w-[160px]">
+                <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="complete">Concluídos</SelectItem>
-                <SelectItem value="in_progress">Em Progresso</SelectItem>
-                <SelectItem value="not_started">Não Iniciados</SelectItem>
+                <SelectItem value="inProgress">Em Progresso</SelectItem>
+                <SelectItem value="notStarted">Não Iniciados</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -363,10 +336,8 @@ export default function OnboardingTracking() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">
-              Alunos ({filteredStudents.length})
-            </CardTitle>
-            <div className="flex gap-2">
+            <CardTitle className="text-lg">Alunos ({filteredStudents.length})</CardTitle>
+            <div className="flex items-center gap-2">
               <button
                 onClick={expandAll}
                 className="text-xs text-primary hover:underline"
@@ -425,6 +396,9 @@ export default function OnboardingTracking() {
               </div>
             ))}
           </div>
+          <p className="text-[10px] text-muted-foreground mt-2 italic">
+            Alunos que já possuem PDI publicado não aparecem nesta lista.
+          </p>
         </CardContent>
       </Card>
     </div>

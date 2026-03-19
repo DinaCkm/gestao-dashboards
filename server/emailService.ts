@@ -849,3 +849,88 @@ Este é um email automático do ECOSSISTEMA DO BEM.
 
   return { subject, html, text };
 }
+
+
+// ============ ONBOARDING REMINDER EMAIL (24h) ============
+
+export function buildOnboardingReminderEmail(data: {
+  alunoName: string;
+  etapaPendente: string;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `🌟 Estamos te esperando, ${data.alunoName}! — ECOSSISTEMA DO BEM`;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#0f2b3c 0%,#1a4a6e 100%);padding:32px 40px;text-align:center;">
+            <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">ECOSSISTEMA DO BEM</h1>
+            <p style="color:#e8913a;margin:8px 0 0;font-size:13px;letter-spacing:1px;">TRILHA DE ONBOARDING</p>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:40px;">
+            <h2 style="color:#0f2b3c;margin:0 0 16px;font-size:20px;">Olá, ${data.alunoName}! 👋</h2>
+            <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;">
+              Estamos te esperando para realizar o <strong style="color:#e8913a;">${data.etapaPendente}</strong>.
+            </p>
+            <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 24px;">
+              Seguir na trilha é uma <strong>grande conquista</strong> para o seu desenvolvimento. 
+              Cada etapa concluída te aproxima de alcançar todo o seu potencial!
+            </p>
+            <!-- CTA Button -->
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr><td align="center" style="padding:8px 0 24px;">
+                <a href="${data.loginUrl}" style="display:inline-block;background:linear-gradient(135deg,#e8913a,#d4782e);color:#fff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:600;letter-spacing:0.5px;">
+                  Acessar a Plataforma
+                </a>
+              </td></tr>
+            </table>
+            <!-- Motivational quote -->
+            <div style="background:#f0f7ff;border-left:4px solid #1a4a6e;padding:16px 20px;border-radius:0 8px 8px 0;margin:0 0 16px;">
+              <p style="color:#1a4a6e;font-size:14px;margin:0;font-style:italic;">
+                "O caminho do desenvolvimento é feito de pequenos passos consistentes. Cada etapa concluída é uma vitória!"
+              </p>
+            </div>
+            <p style="color:#888;font-size:12px;margin:16px 0 0;">
+              Sua próxima etapa: <strong>${data.etapaPendente}</strong>
+            </p>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f8f9fa;padding:20px 40px;text-align:center;border-top:1px solid #eee;">
+            <p style="color:#999;font-size:11px;margin:0;">
+              Este é um lembrete automático do ECOSSISTEMA DO BEM.<br>
+              © ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Olá, ${data.alunoName}!
+
+Estamos te esperando para realizar o ${data.etapaPendente}.
+
+Seguir na trilha é uma grande conquista para o seu desenvolvimento. Cada etapa concluída te aproxima de alcançar todo o seu potencial!
+
+Acesse a plataforma: ${data.loginUrl}
+
+"O caminho do desenvolvimento é feito de pequenos passos consistentes. Cada etapa concluída é uma vitória!"
+
+Este é um lembrete automático do ECOSSISTEMA DO BEM.
+© ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.`;
+
+  return { subject, html, text };
+}

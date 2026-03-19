@@ -2671,3 +2671,16 @@
 - [x] Rota /onboarding-tracking registrada no App.tsx
 - [x] Vitest: testes para onboardingTracking.list (admin access, student rejection, shape validation)
 - [x] Templates de email: buildOnboardingStepEmail e buildPdiPublishedInviteEmail criados
+
+## Lembretes Automáticos de Onboarding (24h) - 19/03/2026
+- [x] Criar template de email motivacional: "Estamos te esperando para realizar o [etapa]... seguir na trilha é uma grande conquista"
+- [x] Criar cron job que roda a cada hora verificando alunos parados há 24h+ na mesma etapa
+- [x] Adicionar campo lastReminderSentAt na tabela onboarding_jornada para evitar spam (usando emailAlertasLog)
+- [x] Enviar lembrete apenas 1x por etapa pendente (a cada 24h sem avanço)
+- [x] Vitest para a lógica de lembretes
+
+## Correção Onboarding Tracking - Filtrar alunos sem PDI - 19/03/2026
+- [x] Filtrar lista de onboarding para mostrar APENAS alunos que NÃO têm PDI publicado
+- [x] Alunos com PDI não devem aparecer na lista nem receber lembretes automáticos
+- [x] Ajustar etapas da régua: remover "PDI Publicado" (pois quem tem PDI sai da lista)
+- [x] Atualizar contadores (Total, Concluídos, Em Progresso, Não Iniciados) para refletir filtro

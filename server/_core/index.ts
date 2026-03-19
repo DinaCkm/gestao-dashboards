@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { iniciarCronAlertasMentoria } from "../cronAlertasMentoria";
+import { iniciarCronOnboardingReminders } from "../cronOnboardingReminders";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -62,6 +63,8 @@ async function startServer() {
     console.log(`Server running on http://localhost:${port}/`);
     // Iniciar cron job de alertas de mentoria (verifica diariamente alunos sem sessão há 30+ dias)
     iniciarCronAlertasMentoria();
+    // Iniciar cron job de lembretes de onboarding (verifica a cada 1h alunos parados há 24h+)
+    iniciarCronOnboardingReminders();
   });
 }
 

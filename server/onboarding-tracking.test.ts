@@ -69,7 +69,7 @@ describe("onboardingTracking", () => {
       expect(Array.isArray(result)).toBe(true);
     });
 
-    it("each student has the expected shape with steps object", async () => {
+    it("each student has the expected shape with 5-step model (no PDI students)", async () => {
       const { ctx } = createAdminContext();
       const caller = appRouter.createCaller(ctx);
 
@@ -85,20 +85,23 @@ describe("onboardingTracking", () => {
         expect(student).toHaveProperty("completedSteps");
         expect(student).toHaveProperty("totalSteps");
 
-        // Check steps object has all 6 step keys
+        // Check steps object has all 5 step keys (no pdiPublicado or termoAssinado)
         expect(student.steps).toHaveProperty("conviteEnviado");
         expect(student.steps).toHaveProperty("cadastroPreenchido");
         expect(student.steps).toHaveProperty("testeRealizado");
         expect(student.steps).toHaveProperty("mentoriaAgendada");
-        expect(student.steps).toHaveProperty("pdiPublicado");
-        expect(student.steps).toHaveProperty("termoAssinado");
+        expect(student.steps).toHaveProperty("aceiteOnboarding");
 
-        // totalSteps should always be 6
-        expect(student.totalSteps).toBe(6);
+        // Should NOT have pdiPublicado or termoAssinado (students with PDI are excluded)
+        expect(student.steps).not.toHaveProperty("pdiPublicado");
+        expect(student.steps).not.toHaveProperty("termoAssinado");
 
-        // completedSteps should be between 0 and 6
+        // totalSteps should always be 5
+        expect(student.totalSteps).toBe(5);
+
+        // completedSteps should be between 0 and 5
         expect(student.completedSteps).toBeGreaterThanOrEqual(0);
-        expect(student.completedSteps).toBeLessThanOrEqual(6);
+        expect(student.completedSteps).toBeLessThanOrEqual(5);
       }
     });
 
@@ -117,5 +120,49 @@ describe("onboardingTracking", () => {
       const result = await caller.onboardingTracking.list({ programId: 1 });
       expect(Array.isArray(result)).toBe(true);
     });
+  });
+});
+
+describe("cronOnboardingReminders", () => {
+  it("exports verificarEEnviarLembretesOnboarding function", async () => {
+    const cronModule = await import('./cronOnboardingReminders');
+    expect(typeof cronModule.verificarEEnviarLembretesOnboarding).toBe('function');
+  });
+
+  it("exports iniciarCronOnboardingReminders function", async () => {
+    const cronModule = await import('./cronOnboardingReminders');
+    expect(typeof cronModule.iniciarCronOnboardingReminders).toBe('function');
+  });
+
+  it("verificarEEnviarLembretesOnboarding returns expected structure in dry run", async () => {
+    const { verificarEEnviarLembretesOnboarding } = await import('./cronOnboardingReminders');
+    const result = await verificarEEnviarLembretesOnboarding({ dryRun: true });
+
+    expect(result).toHaveProperty('success');
+    expect(result).toHaveProperty('totalAlunos');
+    expect(result).toHaveProperty('totalLembretes');
+    expect(result).toHaveProperty('emailsEnviados');
+    expect(result).toHaveProperty('jaEnviadosIgnorados');
+    expect(result).toHaveProperty('lembretes');
+    expect(Array.isArray(result.lembretes)).toBe(true);
+    expect(result.success).toBe(true);
+    // In dry run, no emails should be sent
+    expect(result.emailsEnviados).toBe(0);
+  });
+
+  it("each reminder item has the expected shape", async () => {
+    const { verificarEEnviarLembretesOnboarding } = await import('./cronOnboardingReminders');
+    const result = await verificarEEnviarLembretesOnboarding({ dryRun: true });
+
+    if (result.lembretes.length > 0) {
+      const lembrete = result.lembretes[0];
+      expect(lembrete).toHaveProperty('alunoId');
+      expect(lembrete).toHaveProperty('alunoName');
+      expect(lembrete).toHaveProperty('alunoEmail');
+      expect(lembrete).toHaveProperty('etapaPendente');
+      expect(lembrete).toHaveProperty('emailEnviado');
+      // In dry run, emailEnviado should be false
+      expect(lembrete.emailEnviado).toBe(false);
+    }
   });
 });

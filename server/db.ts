@@ -8235,22 +8235,21 @@ export async function getOnboardingTrackingList(programId?: number) {
   const allTurmas = await database.select().from(turmas);
   const turmaMap = new Map(allTurmas.map(t => [t.id, t.name]));
 
-  // Build result
-  return alunosList.map(aluno => {
+  // Build result — only include students who do NOT have PDI yet
+  return alunosList
+    .filter(aluno => !pdiMap.get(aluno.id)) // Exclude students with PDI
+    .map(aluno => {
     const jornada = jornadaMap.get(aluno.id);
     const hasDISC = discMap.get(aluno.id) || false;
     const hasAppointment = appointmentMap.get(aluno.id) || false;
-    const hasPdi = pdiMap.get(aluno.id) || false;
-    const aceiteRealizado = jornada?.aceiteRealizado === 1;
 
-    // Calculate step statuses
+    // Calculate step statuses (5 steps — PDI and Termo removed since students with PDI leave the list)
     const steps = {
       conviteEnviado: aluno.cadastradoPorAdmin === 1,
       cadastroPreenchido: jornada?.cadastroConfirmado === 1,
       testeRealizado: hasDISC,
       mentoriaAgendada: hasAppointment,
-      pdiPublicado: hasPdi,
-      termoAssinado: aceiteRealizado,
+      aceiteOnboarding: jornada?.aceiteRealizado === 1,
     };
 
     // Count completed steps
@@ -8264,7 +8263,7 @@ export async function getOnboardingTrackingList(programId?: number) {
       turmaName: aluno.turmaId ? turmaMap.get(aluno.turmaId) || null : null,
       steps,
       completedSteps,
-      totalSteps: 6,
+      totalSteps: 5,
       createdAt: aluno.createdAt,
       // Timestamps for detail view
       cadastroConfirmadoEm: jornada?.cadastroConfirmadoEm || null,
