@@ -7,7 +7,7 @@
 
 import { getDb } from './db';
 import { getAlunos, getConsultors, getPrograms, getAllStudentsSessionProgress } from './db';
-import { emailAlertasLog, mentoringSessions } from '../drizzle/schema';
+import { emailAlertasLog, mentoringSessions, assessmentPdi } from '../drizzle/schema';
 import { eq, and, gte, desc } from 'drizzle-orm';
 import { sendEmail, buildMentoringAlertEmail } from './emailService';
 
@@ -92,11 +92,19 @@ export async function verificarEEnviarAlertasMentoria(options?: {
     allProgress.filter(p => p.cicloCompleto).map(p => p.alunoId)
   );
 
+  // Exclude onboarding students (those who don't have a PDI yet)
+  // Students still in onboarding should NOT receive "days without mentoring" alerts
+  const allPdis = await db.select({ alunoId: assessmentPdi.alunoId }).from(assessmentPdi);
+  const alunosComPdi = new Set(allPdis.map(p => p.alunoId));
+
   for (const aluno of allAlunos) {
     if (!aluno.email) continue;
 
     // Skip alunos who completed all their sessions (ciclo completo)
     if (cicloCompletoAlunoIds.has(aluno.id)) continue;
+
+    // Skip alunos still in onboarding (no PDI published yet)
+    if (!alunosComPdi.has(aluno.id)) continue;
 
     // Get current mentor
     const mentor = aluno.consultorId ? consultorMap.get(aluno.consultorId) : null;
@@ -144,7 +152,7 @@ export async function verificarEEnviarAlertasMentoria(options?: {
 
       if (!dryRun) {
         try {
-          const loginUrl = process.env.VITE_OAUTH_PORTAL_URL || 'https://ecolider.evoluirckm.com';
+          const loginUrl = 'https://ecolider.evoluirckm.com';
           const emailData = buildMentoringAlertEmail({
             alunoName: aluno.name,
             mentorName: mentor.name,

@@ -4947,7 +4947,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           : 'Horário não definido';
         
         // Determine login URL
-        const loginUrl = process.env.VITE_APP_URL || 'https://ecolider.evoluirckm.com';
+        const loginUrl = 'https://ecolider.evoluirckm.com';
         
         // === 1. CREATE IN-APP NOTIFICATIONS FOR STUDENTS ONLY (they have user accounts) ===
         const notificationMessage = `Evento: ${webinar.title}\nData: ${eventDateStr} às ${eventTimeStr} (horário de Brasília)${webinar.speaker ? `\nPalestrante: ${webinar.speaker}` : ''}${webinar.meetingLink ? `\nLink: ${webinar.meetingLink}` : ''}`;
@@ -7328,7 +7328,7 @@ Responda APENAS em JSON com o formato especificado.`
             
             if (!dryRun && aluno.email) {
               try {
-                const loginUrl = process.env.VITE_OAUTH_PORTAL_URL || 'https://ecolider.evoluirckm.com';
+                const loginUrl = 'https://ecolider.evoluirckm.com';
                 const emailData = buildMentoringAlertEmail({
                   alunoName: aluno.name,
                   mentorName: mentor.name,
@@ -7398,7 +7398,7 @@ Responda APENAS em JSON com o formato especificado.`
         const program = aluno.programId ? allPrograms.find(p => p.id === aluno.programId) : null;
 
         // Build login URL
-        const loginUrl = `${process.env.VITE_OAUTH_PORTAL_URL || 'https://app.manus.im/login'}?app_id=${process.env.VITE_APP_ID || ''}`;
+        const loginUrl = 'https://ecolider.evoluirckm.com/';
 
         // Send invite email
         const { sendEmail, buildOnboardingInviteEmail } = await import('./emailService');

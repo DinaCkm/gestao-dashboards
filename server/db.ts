@@ -8255,7 +8255,7 @@ export async function getOnboardingTrackingList(programId?: number) {
 
     // Apply cumulative logic: if step N is done, steps 1..N-1 are also done
     const steps = {
-      conviteEnviado: rawConvite || rawCadastro || rawTeste || rawMentoria || rawAceite,
+      conviteEnviado: true, // All students in the system had an invite sent
       cadastroPreenchido: rawCadastro || rawTeste || rawMentoria || rawAceite,
       testeRealizado: rawTeste || rawMentoria || rawAceite,
       mentoriaAgendada: rawMentoria || rawAceite,

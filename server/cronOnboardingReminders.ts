@@ -83,7 +83,7 @@ export async function verificarEEnviarLembretesOnboarding(options?: {
 
   const lembretes: OnboardingReminderResult[] = [];
   let jaEnviadosIgnorados = 0;
-  const loginUrl = process.env.VITE_OAUTH_PORTAL_URL || 'https://ecolider.evoluirckm.com';
+  const loginUrl = 'https://ecolider.evoluirckm.com';
 
   for (const student of students) {
     if (!student.email) continue;
