@@ -1,0 +1,23 @@
+{
+  "query": "SELECT id, openId, name, email, cpf, role, alunoId, isActive, loginMethod, createdAt, lastSignedIn FROM users WHERE email = 'drikadeus@gmail.com' OR alunoId = 570088;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, openId, name, email, cpf, role, alunoId, isActive, loginMethod, createdAt, lastSignedIn FROM users WHERE email = 'drikadeus@gmail.com' OR alunoId = 570088;",
+  "rows": [
+    {
+      "id": "4294814",
+      "openId": "access_user_051107",
+      "name": "Adriana Deus",
+      "email": "drikadeus@gmail.com",
+      "cpf": "051107",
+      "role": "user",
+      "alunoId": "570088",
+      "isActive": "1",
+      "loginMethod": "email_cpf",
+      "createdAt": "2026-03-16 23:12:13",
+      "lastSignedIn": "2026-03-16 23:12:13"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tname\temail\tcpf\trole\talunoId\tisActive\tloginMethod\tcreatedAt\tlastSignedIn\n4294814\taccess_user_051107\tAdriana Deus\tdrikadeus@gmail.com\t051107\tuser\t570088\t1\temail_cpf\t2026-03-16 23:12:13\t2026-03-16 23:12:13\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

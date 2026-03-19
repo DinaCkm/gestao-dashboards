@@ -2706,5 +2706,12 @@
 - [x] Escrever testes unitários para o cron de vencimento
 
 ## Bug: Aluna cancelada ainda consegue acessar - 19/03/2026
-- [ ] Investigar por que Adriana Pereira de Deus ainda acessa o sistema após cancelamento
-- [ ] Corrigir fluxo de login para bloquear alunos com isActive=0 ou canLogin=0
+- [x] Investigar por que Adriana Pereira de Deus ainda acessa o sistema após cancelamento
+- [x] Corrigir fluxo de login para bloquear alunos com isActive=0 ou canLogin=0
+- [x] Desativar conta da Adriana no banco (users.isActive=0, alunos.canLogin=0)
+- [x] Corrigir toggleAlunoStatus para sincronizar canLogin e users.isActive
+- [x] Blindar createOrUpdateAlunoSession: verificar isActive do aluno antes de criar sessão
+- [x] Blindar toggleAccessUserStatus: sincronizar isActive do aluno vinculado
+- [x] Blindar passo 1 do login (users): verificar se aluno vinculado está ativo
+- [x] Blindar customLogin: verificar isActive do user existente antes de criar sessão
+- [x] Escrever testes para validar bloqueio de login de alunos inativos

@@ -128,6 +128,13 @@ export const appRouter = router({
         
         // Criar usuário no sistema se não existir e criar sessão
         const openId = `custom_${input.type}_${result.user.id}`;
+        
+        // Verificação de segurança: se já existe um user com este openId e está inativo, bloquear
+        const existingCustomUser = await db.getUserByOpenId(openId);
+        if (existingCustomUser && existingCustomUser.isActive === 0) {
+          return { success: false, message: "Sua conta está inativa. Entre em contato com o administrador." };
+        }
+        
         await db.upsertUser({
           openId,
           name: result.user.name,

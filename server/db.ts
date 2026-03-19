@@ -1145,7 +1145,10 @@ export async function toggleAlunoStatus(alunoId: number): Promise<{ success: boo
   const [aluno] = await db.select({ isActive: alunos.isActive, name: alunos.name }).from(alunos).where(eq(alunos.id, alunoId)).limit(1);
   if (!aluno) throw new Error('Aluno não encontrado');
   const newStatus = aluno.isActive === 1 ? 0 : 1;
-  await db.update(alunos).set({ isActive: newStatus }).where(eq(alunos.id, alunoId));
+  // Atualizar status do aluno e canLogin
+  await db.update(alunos).set({ isActive: newStatus, canLogin: newStatus }).where(eq(alunos.id, alunoId));
+  // Sincronizar: desativar/reativar a conta de usuário vinculada ao aluno
+  await db.update(users).set({ isActive: newStatus }).where(eq(users.alunoId, alunoId));
   return { success: true, isActive: newStatus, name: aluno.name };
 }
 
@@ -2014,6 +2017,28 @@ export async function authenticateByEmailCpf(email: string, credential: string):
     .limit(1);
   
   if (user) {
+    // Verificação extra: se o user tem alunoId vinculado, verificar se o aluno está ativo
+    if (user.alunoId) {
+      const [linkedAluno] = await db.select({ isActive: alunos.isActive, canLogin: alunos.canLogin })
+        .from(alunos)
+        .where(eq(alunos.id, user.alunoId))
+        .limit(1);
+      if (linkedAluno && (linkedAluno.isActive === 0 || linkedAluno.canLogin === 0)) {
+        return { success: false, message: "Sua conta está inativa. Entre em contato com o administrador." };
+      }
+    }
+    
+    // Verificação extra: se o user tem consultorId vinculado, verificar se o consultor está ativo
+    if (user.consultorId) {
+      const [linkedConsultor] = await db.select({ isActive: consultors.isActive })
+        .from(consultors)
+        .where(eq(consultors.id, user.consultorId))
+        .limit(1);
+      if (linkedConsultor && linkedConsultor.isActive === 0) {
+        return { success: false, message: "Sua conta está inativa. Entre em contato com o administrador." };
+      }
+    }
+    
     await db.update(users)
       .set({ lastSignedIn: new Date() })
       .where(eq(users.id, user.id));
@@ -2145,6 +2170,11 @@ export async function authenticateByEmailCpf(email: string, credential: string):
  * Helper: cria ou atualiza sessão de aluno na tabela users
  */
 async function createOrUpdateAlunoSession(db: any, aluno: any, normalizedCredential: string) {
+  // Verificação de segurança: bloquear se aluno está inativo
+  if (aluno.isActive === 0 || aluno.canLogin === 0) {
+    return { success: false, message: "Sua conta está inativa. Entre em contato com o administrador." };
+  }
+  
   const openId = `aluno_${aluno.id}`;
   
   const [existingUser] = await db.select()
@@ -2153,6 +2183,11 @@ async function createOrUpdateAlunoSession(db: any, aluno: any, normalizedCredent
     .limit(1);
   
   if (existingUser) {
+    // Verificação extra: se o user está inativo, bloquear
+    if (existingUser.isActive === 0) {
+      return { success: false, message: "Sua conta está inativa. Entre em contato com o administrador." };
+    }
+    
     await db.update(users)
       .set({ lastSignedIn: new Date() })
       .where(eq(users.id, existingUser.id));
@@ -2405,6 +2440,20 @@ export async function toggleAccessUserStatus(userId: number): Promise<{ success:
   await db.update(users)
     .set({ isActive: newStatus })
     .where(eq(users.id, userId));
+  
+  // Sincronizar: se o user tem alunoId vinculado, atualizar isActive e canLogin do aluno também
+  if (user.alunoId) {
+    await db.update(alunos)
+      .set({ isActive: newStatus, canLogin: newStatus })
+      .where(eq(alunos.id, user.alunoId));
+  }
+  
+  // Sincronizar: se o user tem consultorId vinculado, atualizar isActive e canLogin do consultor
+  if (user.consultorId) {
+    await db.update(consultors)
+      .set({ isActive: newStatus, canLogin: newStatus })
+      .where(eq(consultors.id, user.consultorId));
+  }
   
   return { success: true };
 }
