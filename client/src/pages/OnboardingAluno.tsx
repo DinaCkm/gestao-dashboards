@@ -474,123 +474,127 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
         <p className="text-gray-500 mt-1">Conheça as profissionais disponíveis e escolha quem vai acompanhar sua jornada</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {mentoras.map((mentora) => (
           <Card
             key={mentora.id}
-            className={`overflow-hidden transition-all duration-300 hover:shadow-lg cursor-pointer group ${
+            className={`transition-all duration-300 hover:shadow-lg cursor-pointer group ${
               selectedMentora?.id === mentora.id
                 ? "ring-2 ring-[#F5991F] shadow-lg shadow-[#F5991F]/10"
                 : "hover:shadow-md"
             } ${!mentora.disponivel ? "opacity-60" : ""}`}
           >
-            <CardContent className="p-0">
-              <div className="relative h-48 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
-                {mentora.foto ? (
-                  <img
-                    src={mentora.foto}
-                    alt={mentora.nome}
-                    className="w-full h-full object-cover object-[center_20%] group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#0A1E3E] to-[#1a3a6e] flex items-center justify-center">
-                    <span className="text-4xl font-bold text-white/80">
-                      {mentora.nome.split(' ').map(n => n[0]).slice(0, 2).join('')}
-                    </span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3">
-                  <h3 className="text-white font-bold text-lg">{mentora.nome}</h3>
-                  <p className="text-white/80 text-sm">{mentora.especialidade}</p>
-                </div>
-                {!mentora.disponivel && (
-                  <div className="absolute top-3 right-3">
-                    <Badge className="bg-red-500 text-white border-0 text-xs">
-                      Inativa
-                    </Badge>
-                  </div>
-                )}
-                {mentora.disponivel && !loadingAvailability && availabilityMap[mentora.id] === false && (
-                  <div className="absolute top-3 right-3">
-                    <Badge className="bg-orange-500 text-white border-0 text-xs animate-pulse">
-                      Sem agenda disponível
-                    </Badge>
-                  </div>
-                )}
-                {mentora.disponivel && !loadingAvailability && availabilityMap[mentora.id] === true && (
-                  <div className="absolute top-3 left-3">
-                    <Badge className="bg-emerald-500 text-white border-0 text-xs">
-                      Agenda disponível
-                    </Badge>
-                  </div>
-                )}
-                {selectedMentora?.id === mentora.id && (
-                  <div className="absolute top-3 right-3">
-                    <div className="w-8 h-8 bg-[#F5991F] rounded-full flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-white" />
+            <CardContent className="p-5">
+              {/* Header: Avatar + Info */}
+              <div className="flex items-start gap-4">
+                {/* Foto circular */}
+                <div className="shrink-0">
+                  {mentora.foto ? (
+                    <img
+                      src={mentora.foto}
+                      alt={mentora.nome}
+                      className="w-16 h-16 rounded-full object-cover object-top border-2 border-[#0A1E3E]/10 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#0A1E3E] to-[#1a3a6e] flex items-center justify-center border-2 border-[#0A1E3E]/10 shadow-sm">
+                      <span className="text-lg font-bold text-white/90">
+                        {mentora.nome.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                      </span>
                     </div>
+                  )}
+                </div>
+
+                {/* Nome, especialidade e status */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-gray-900 text-sm leading-tight truncate">{mentora.nome}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">{mentora.especialidade}</p>
+                    </div>
+                    {selectedMentora?.id === mentora.id && (
+                      <div className="shrink-0 w-6 h-6 bg-[#F5991F] rounded-full flex items-center justify-center">
+                        <CheckCircle2 className="h-4 w-4 text-white" />
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  {/* Badge de disponibilidade */}
+                  <div className="mt-1.5">
+                    {!mentora.disponivel ? (
+                      <Badge className="bg-red-100 text-red-700 border-0 text-[10px] px-1.5 py-0">
+                        Inativa
+                      </Badge>
+                    ) : !loadingAvailability && availabilityMap[mentora.id] === false ? (
+                      <Badge className="bg-orange-100 text-orange-700 border-0 text-[10px] px-1.5 py-0">
+                        Sem agenda disponível
+                      </Badge>
+                    ) : !loadingAvailability && availabilityMap[mentora.id] === true ? (
+                      <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[10px] px-1.5 py-0">
+                        Agenda disponível
+                      </Badge>
+                    ) : null}
+                  </div>
+                </div>
               </div>
 
-              <div className="p-4 space-y-3">
-                <p className="text-sm text-gray-600 line-clamp-3">{mentora.miniCurriculo}</p>
+              {/* Mini currículo */}
+              <p className="text-xs text-gray-500 mt-3 line-clamp-2 leading-relaxed">{mentora.miniCurriculo}</p>
 
-                <div className="flex flex-wrap gap-1">
-                  {mentora.areasAtuacao.slice(0, 3).map((area) => (
-                    <Badge key={area} variant="outline" className="text-xs bg-[#0A1E3E]/5 text-[#0A1E3E] border-[#0A1E3E]/20">
-                      {area}
-                    </Badge>
-                  ))}
-                </div>
+              {/* Áreas de atuação */}
+              <div className="flex flex-wrap gap-1 mt-2.5">
+                {mentora.areasAtuacao.slice(0, 3).map((area) => (
+                  <Badge key={area} variant="outline" className="text-[10px] px-1.5 py-0 bg-[#0A1E3E]/5 text-[#0A1E3E] border-[#0A1E3E]/15">
+                    {area}
+                  </Badge>
+                ))}
+              </div>
 
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-xs"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDetailMentora(mentora);
-                    }}
-                  >
-                    <Eye className="h-3 w-3 mr-1" /> Ver Currículo
-                  </Button>
-                  {mentora.disponivel && !readOnly ? (
-                    availabilityMap[mentora.id] === false && !loadingAvailability ? (
-                      <Button size="sm" variant="outline" className="flex-1 text-xs text-orange-600 border-orange-300" disabled>
-                        Sem agenda
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className={`flex-1 text-xs ${
-                          selectedMentora?.id === mentora.id
-                            ? "bg-[#F5991F] hover:bg-[#F5991F]/90"
-                            : "bg-[#0A1E3E] hover:bg-[#0A1E3E]/90"
-                        }`}
-                        disabled={loadingAvailability}
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          setSelectedMentora(mentora);
-                        }}
-                      >
-                        {loadingAvailability ? (
-                          <><Clock className="h-3 w-3 mr-1 animate-spin" /> Verificando...</>
-                        ) : selectedMentora?.id === mentora.id ? (
-                          <><CheckCircle2 className="h-3 w-3 mr-1" /> Selecionada</>
-                        ) : (
-                          <><Heart className="h-3 w-3 mr-1" /> Escolher</>
-                        )}
-                      </Button>
-                    )
-                  ) : !readOnly ? (
-                    <Button size="sm" variant="outline" className="flex-1 text-xs" disabled>
-                      Indisponível
+              {/* Botões de ação */}
+              <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs h-8"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDetailMentora(mentora);
+                  }}
+                >
+                  <Eye className="h-3 w-3 mr-1" /> Ver Currículo
+                </Button>
+                {mentora.disponivel && !readOnly ? (
+                  availabilityMap[mentora.id] === false && !loadingAvailability ? (
+                    <Button size="sm" variant="outline" className="flex-1 text-xs h-8 text-orange-600 border-orange-300" disabled>
+                      Sem agenda
                     </Button>
-                  ) : null}
-                </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className={`flex-1 text-xs h-8 ${
+                        selectedMentora?.id === mentora.id
+                          ? "bg-[#F5991F] hover:bg-[#F5991F]/90"
+                          : "bg-[#0A1E3E] hover:bg-[#0A1E3E]/90"
+                      }`}
+                      disabled={loadingAvailability}
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        setSelectedMentora(mentora);
+                      }}
+                    >
+                      {loadingAvailability ? (
+                        <><Clock className="h-3 w-3 mr-1 animate-spin" /> Verificando...</>
+                      ) : selectedMentora?.id === mentora.id ? (
+                        <><CheckCircle2 className="h-3 w-3 mr-1" /> Selecionada</>
+                      ) : (
+                        <><Heart className="h-3 w-3 mr-1" /> Escolher</>
+                      )}
+                    </Button>
+                  )
+                ) : !readOnly ? (
+                  <Button size="sm" variant="outline" className="flex-1 text-xs h-8" disabled>
+                    Indisponível
+                  </Button>
+                ) : null}
               </div>
             </CardContent>
           </Card>

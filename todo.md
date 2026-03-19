@@ -2578,3 +2578,10 @@
 - [x] Fotos das mentoras nos cards estão muito próximas/cortadas - melhorar enquadramento
 - [x] Reduzir tamanho da foto no card para não ocupar toda a área
 - [x] Garantir que o rosto fique visível e bem enquadrado (object-position)
+
+## Redesign Cards de Mentoras - Layout com Foto Circular (18/03/2026)
+- [x] Trocar layout de foto grande no card para foto circular pequena (avatar)
+- [x] Nome e especialidade ao lado da foto circular
+- [x] Botão para ver currículo completo
+- [x] Badges de disponibilidade e áreas de atuação
+- [x] Botão de seleção da mentora
