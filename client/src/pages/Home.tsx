@@ -34,9 +34,12 @@ export default function Home() {
     
     if (user.role === "manager") {
       const userAny = user as any;
-      if (userAny.consultorId && !userAny.alunoId) {
+      if (userAny.consultorId && !userAny.alunoId && userAny.consultorRole === 'mentor') {
         // É um mentor puro → vai para dashboard do mentor
         setLocation("/dashboard/mentor");
+      } else if (userAny.consultorId && !userAny.alunoId && userAny.consultorRole === 'gerente') {
+        // É um gestor puro (criado via createGerentePuro) → vai para dashboard da empresa
+        setLocation("/dashboard/gestor");
       } else if (userAny.alunoId) {
         // É gerente + aluno (visão dupla) → modo padrão é ALUNO
         // Verificar se tem activeRole salvo no sessionStorage

@@ -1,0 +1,50 @@
+{
+  "query": "\nSELECT 'users' as tabela, u.id, u.name, u.openId, u.role, u.consultorId, u.isActive, u.cpf\nFROM users u\nWHERE (u.email = 'emanoel.querette@embrapii.org.br' OR u.email = 'leandro.rodrigues@embrapii.org.br')\nAND u.isActive = 1\nUNION ALL\nSELECT 'consultors', c.id, c.name, '', c.role, NULL, c.isActive, c.cpf\nFROM consultors c\nWHERE (c.email = 'emanoel.querette@embrapii.org.br' OR c.email = 'leandro.rodrigues@embrapii.org.br')\nAND c.isActive = 1\nORDER BY tabela, id DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT 'users' as tabela, u.id, u.name, u.openId, u.role, u.consultorId, u.isActive, u.cpf\nFROM users u\nWHERE (u.email = 'emanoel.querette@embrapii.org.br' OR u.email = 'leandro.rodrigues@embrapii.org.br')\nAND u.isActive = 1\nUNION ALL\nSELECT 'consultors', c.id, c.name, '', c.role, NULL, c.isActive, c.cpf\nFROM consultors c\nWHERE (c.email = 'emanoel.querette@embrapii.org.br' OR c.email = 'leandro.rodrigues@embrapii.org.br')\nAND c.isActive = 1\nORDER BY tabela, id DESC;\n",
+  "rows": [
+    {
+      "tabela": "consultors",
+      "id": "180003",
+      "name": "Emanoel Loreto Querette",
+      "openId": "",
+      "role": "gerente",
+      "consultorId": "NULL",
+      "isActive": "1",
+      "cpf": "12700000005"
+    },
+    {
+      "tabela": "consultors",
+      "id": "120001",
+      "name": "Leandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br",
+      "openId": "",
+      "role": "gerente",
+      "consultorId": "NULL",
+      "isActive": "1",
+      "cpf": "12300000001"
+    },
+    {
+      "tabela": "users",
+      "id": "4590725",
+      "name": "Emanoel Loreto Querette",
+      "openId": "gerente_puro_180003",
+      "role": "manager",
+      "consultorId": "180003",
+      "isActive": "1",
+      "cpf": "12700000005"
+    },
+    {
+      "tabela": "users",
+      "id": "4381885",
+      "name": "Leandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br",
+      "openId": "gerente_puro_120001",
+      "role": "manager",
+      "consultorId": "120001",
+      "isActive": "1",
+      "cpf": "12300000001"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\tid\tname\topenId\trole\tconsultorId\tisActive\tcpf\nconsultors\t180003\tEmanoel Loreto Querette\t\tgerente\tNULL\t1\t12700000005\nconsultors\t120001\tLeandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br\t\tgerente\tNULL\t1\t12300000001\nusers\t4590725\tEmanoel Loreto Querette\tgerente_puro_180003\tmanager\t180003\t1\t12700000005\nusers\t4381885\tLeandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br\tgerente_puro_120001\tmanager\t120001\t1\t12300000001\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

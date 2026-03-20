@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE users SET isActive = 0 WHERE id IN (4560474, 4560420) AND name = 'Emanoel Loreto Querette';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nUPDATE users SET isActive = 0 WHERE id IN (4560474, 4560420) AND name = 'Emanoel Loreto Querette';\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 63
+}

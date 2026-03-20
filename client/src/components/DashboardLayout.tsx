@@ -175,26 +175,27 @@ type MenuItemExtended = {
   label: string;
   path: string;
   roles: ("admin" | "manager" | "user")[];
-  requireConsultorId?: boolean;
-  hideIfConsultorId?: boolean;
+  requireConsultorRole?: 'mentor' | 'gerente'; // Filtra por tipo de consultor
+  requireConsultorId?: boolean; // Legacy: mantido para compatibilidade
+  hideIfConsultorId?: boolean; // Legacy: mantido para compatibilidade
 };
 
 const otherMenuItems: MenuItemExtended[] = [
   // === MENTOR ===
-  { icon: UserCheck, label: "Meu Dashboard", path: "/dashboard/mentor", roles: ["manager"], requireConsultorId: true },
-  { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria", roles: ["manager"], requireConsultorId: true },
-  { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment", roles: ["manager"], requireConsultorId: true },
-  { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["manager"], requireConsultorId: true },
-  { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas", roles: ["manager"], requireConsultorId: true },
-  { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas", roles: ["manager"], requireConsultorId: true },
-  { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorId: true },
-  { icon: Settings, label: "Configurações", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorId: true },
+  { icon: UserCheck, label: "Meu Dashboard", path: "/dashboard/mentor", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: Settings, label: "Configurações", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   
   // === GERENTE DE EMPRESA ===
-  { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], hideIfConsultorId: true },
-  { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], hideIfConsultorId: true },
-  { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], hideIfConsultorId: true },
-  { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], hideIfConsultorId: true },
+  { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'gerente' },
   
   // === ALUNO ===
   { icon: Compass, label: "Portal do Aluno", path: "/meu-dashboard", roles: ["user"] },
@@ -277,6 +278,7 @@ function DashboardLayoutContent({
 
   const isAdmin = user?.role === "admin";
   const hasConsultorId = !!(user as any)?.consultorId;
+  const consultorRole = (user as any)?.consultorRole as string | null | undefined;
 
   // Para admin, determinar qual grupo está ativo (para abrir automaticamente)
   const activeGroupIndex = useMemo(() => {
@@ -314,11 +316,22 @@ function DashboardLayoutContent({
     const userRole = user?.role || "user";
     return otherMenuItems.filter(item => {
       if (!item.roles.includes(userRole as "admin" | "manager" | "user")) return false;
+      // Nova lógica: usar consultorRole para distinguir mentor de gestor
+      if (item.requireConsultorRole) {
+        if (item.requireConsultorRole === 'mentor') {
+          return consultorRole === 'mentor';
+        }
+        if (item.requireConsultorRole === 'gerente') {
+          // Gestor puro (consultorRole=gerente) OU gestor sem consultorId (promovido de aluno)
+          return consultorRole === 'gerente' || (!hasConsultorId && userRole === 'manager' && !(user as any)?.alunoId);
+        }
+      }
+      // Legacy fallback
       if (item.requireConsultorId && !hasConsultorId) return false;
       if (item.hideIfConsultorId && hasConsultorId) return false;
       return true;
     });
-  }, [user?.role, hasConsultorId]);
+  }, [user?.role, hasConsultorId, consultorRole]);
 
   // Encontrar label ativo para mobile header
   const activeLabel = useMemo(() => {
@@ -374,14 +387,14 @@ function DashboardLayoutContent({
     };
   }, [isResizing, setSidebarWidth]);
 
-  const getRoleBadge = (role: string, hasConsultor: boolean) => {
+  const getRoleBadge = (role: string, cRole: string | null | undefined) => {
     if (role === 'admin') return { label: "Admin", className: "bg-primary/20 text-primary" };
-    if (role === 'manager' && hasConsultor) return { label: "Mentor", className: "bg-orange-100 text-orange-700" };
+    if (role === 'manager' && cRole === 'mentor') return { label: "Mentor", className: "bg-orange-100 text-orange-700" };
     if (role === 'manager') return { label: "Gerente", className: "bg-secondary/20 text-secondary" };
     return { label: "Aluno", className: "bg-green-100 text-green-700" };
   };
 
-  const badge = getRoleBadge(user?.role || "user", hasConsultorId);
+  const badge = getRoleBadge(user?.role || "user", consultorRole);
 
   // Verifica se um path está ativo (considerando query params e sub-rotas)
   const isPathActive = (path: string) => {
@@ -634,8 +647,10 @@ function DashboardLayoutContent({
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem
                   onClick={() => {
-                    if (hasConsultorId) {
+                    if (consultorRole === 'mentor') {
                       setLocation("/mentor/configuracoes");
+                    } else if (consultorRole === 'gerente') {
+                      setLocation("/dashboard/gestor");
                     } else if (user?.role === 'user') {
                       setLocation("/meu-dashboard");
                     } else {

@@ -47,9 +47,11 @@ const ROLE_COLORS: Record<string, string> = {
   user: "bg-green-600",
 };
 
-// Helper to determine display role (mentor vs manager)
+// Helper to determine display role (mentor vs manager vs gerente)
 function getDisplayRole(user: any): string {
-  if (user.role === 'manager' && user.consultorId) return 'mentor';
+  if (user.role === 'manager' && user.consultorRole === 'mentor') return 'mentor';
+  if (user.role === 'manager' && user.consultorRole === 'gerente') return 'gerente';
+  if (user.role === 'manager') return 'gerente';
   return user.role;
 }
 

@@ -2715,3 +2715,51 @@
 - [x] Blindar passo 1 do login (users): verificar se aluno vinculado está ativo
 - [x] Blindar customLogin: verificar isActive do user existente antes de criar sessão
 - [x] Escrever testes para validar bloqueio de login de alunos inativos
+
+## Relatório de Impacto (Evolução do Case de Sucesso) (20/03/2026)
+
+### Schema e Banco de Dados
+- [ ] Criar tabela relatorio_impacto no schema (alunoId, trilhaId, macrocicloId, oQueAprendi, oQueMudei, resultadoMensuravel, antesDepois, evidenciaUrl, evidenciaKey, notaMentora, comentarioMentora, status: pendente/enviado/avaliado, createdAt, updatedAt)
+- [ ] Migrar banco de dados com pnpm db:push
+
+### Backend - Endpoints tRPC
+- [ ] Criar endpoint para aluno enviar relatório de impacto (submitRelatorioImpacto)
+- [ ] Criar endpoint para aluno consultar seus relatórios (meusRelatoriosImpacto)
+- [ ] Criar endpoint para mentora avaliar relatório (avaliarRelatorioImpacto - nota 1-5 + comentário)
+- [ ] Criar endpoint para gestor listar relatórios da empresa (relatoriosImpactoEmpresa)
+- [ ] Criar endpoint para admin listar todos os relatórios (relatoriosImpactoAdmin)
+- [ ] Criar helpers no db.ts para CRUD de relatórios de impacto
+
+### Frontend - Portal do Aluno
+- [ ] Substituir upload de arquivo por formulário estruturado na seção Cases de Sucesso
+- [ ] Formulário com 5 campos: O que aprendi, O que mudei, Resultado mensurável, Antes vs Depois, Evidência (upload opcional)
+- [ ] Card por trilha com status: Pendente / Enviado / Avaliado pela mentora
+- [ ] Visualização do relatório enviado com nota e comentário da mentora
+
+### Frontend - Dashboard do Gestor
+- [ ] Nova seção "Impacto do Programa" no Dashboard do Gestor
+- [ ] Card resumo: X de Y alunos reportaram impacto prático (barra de progresso)
+- [ ] Top 5 mudanças reportadas (nome aluno, competência, resultado mensurável)
+- [ ] Filtro por turma/trilha
+- [ ] Coluna "Impacto" na tabela de alunos (ícone verde/cinza)
+- [ ] Ao clicar no aluno, mostrar relatório completo
+
+### Frontend - Dashboard Admin / Mentora
+- [ ] Aba "Relatórios de Impacto" no DashboardAluno (visão admin)
+- [ ] Card "Relatórios de Impacto" na visão geral (contagem)
+- [ ] Interface para mentora avaliar relatório (nota 1-5 estrelas + comentário)
+
+### Relatório Excel
+- [ ] Nova aba "Impacto Prático" nos relatórios exportados (Aluno, Empresa, Turma, Trilha, O que aprendeu, O que mudou, Resultado mensurável, Nota mentora)
+
+### Testes
+- [ ] Escrever testes vitest para endpoints de relatório de impacto
+- [ ] Testar fluxo completo: envio pelo aluno, avaliação pela mentora, visualização pelo gestor
+
+## Bug: Gestor puro vê página de mentor ao fazer login (20/03/2026)
+- [x] Investigar por que gestor puro cadastrado visualiza a página como mentor ao fazer login
+- [x] Corrigir fluxo de login/redirecionamento para gestor puro (sem vínculo de aluno)
+- [x] Testar fluxo completo do gestor puro após correção
+- [x] Bug: Gestores puros criados via createGerentePuro (Emanoel, Leandro) não aparecem na lista de gerentes em Cadastros
+- [x] Corrigir query que carrega lista de gerentes para incluir todos os tipos de gestores puros
+- [x] Adicionar proteção contra duplicação no createGerentePuro (verificar email existente)

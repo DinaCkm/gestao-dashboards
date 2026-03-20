@@ -131,7 +131,14 @@ export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  if (result.length === 0) return undefined;
+  const user = result[0];
+  // Enriquecer com consultorRole (mentor/gerente) se o user tem consultorId
+  if (user.consultorId) {
+    const [consultor] = await db.select({ role: consultors.role }).from(consultors).where(eq(consultors.id, user.consultorId)).limit(1);
+    return { ...user, consultorRole: consultor?.role || null } as typeof user & { consultorRole: string | null };
+  }
+  return { ...user, consultorRole: null } as typeof user & { consultorRole: string | null };
 }
 
 export async function getAllUsers() {
@@ -6599,6 +6606,30 @@ export async function createGerentePuro(data: {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
 
+  // Verificar se já existe um gerente ativo com o mesmo email
+  const normalizedEmail = data.email.toLowerCase().trim();
+  const [existingGerente] = await db.select()
+    .from(consultors)
+    .where(and(
+      eq(consultors.email, normalizedEmail),
+      eq(consultors.role, 'gerente'),
+      eq(consultors.isActive, 1)
+    ))
+    .limit(1);
+  
+  if (existingGerente) {
+    return { success: false, message: `Já existe um gerente cadastrado com o email ${normalizedEmail}. Verifique a lista de gerentes.` };
+  }
+
+  // Verificar CPF duplicado antecipadamente
+  if (data.cpf) {
+    const normalizedCpf = data.cpf.replace(/\D/g, '');
+    const [existingCpfUser] = await db.select().from(users).where(and(eq(users.cpf, normalizedCpf), eq(users.isActive, 1))).limit(1);
+    if (existingCpfUser) {
+      return { success: false, message: "Este CPF já está cadastrado no sistema." };
+    }
+  }
+
   // Criar registro na tabela consultors
   const [consultorResult] = await db.insert(consultors).values({
     name: data.name,
@@ -6616,12 +6647,6 @@ export async function createGerentePuro(data: {
   if (data.cpf) {
     const normalizedCpf = data.cpf.replace(/\D/g, '');
     const openId = `gerente_puro_${consultorId}`;
-
-    // Verificar CPF duplicado
-    const [existingCpf] = await db.select().from(users).where(eq(users.cpf, normalizedCpf)).limit(1);
-    if (existingCpf) {
-      return { success: false, message: "Este CPF já está cadastrado no sistema." };
-    }
 
     await db.insert(users).values({
       openId,
@@ -6702,9 +6727,16 @@ export async function getGerentesEmpresa(): Promise<any[]> {
 
   return managerUsers
     .filter(u => {
-      // Filtrar: só gerentes de empresa (sem consultorId) OU gerentes com alunoId
-      // Excluir mentores (que têm consultorId mas não são gerentes de empresa)
-      return !u.consultorId || u.alunoId;
+      // Incluir:
+      // 1. Gerentes sem consultorId (criados via Gestão de Acesso)
+      // 2. Gerentes com alunoId (aluno promovido a gerente)
+      // 3. Gerentes puros com consultorId vinculado a consultor role='gerente' (criados via createGerentePuro)
+      // Excluir: mentores (consultorId vinculado a consultor role='mentor')
+      if (!u.consultorId) return true; // Sem consultorId = gerente de acesso
+      if (u.alunoId) return true; // Tem alunoId = aluno+gerente
+      // Tem consultorId: verificar se é gerente ou mentor
+      const consultor = consultorMap.get(u.consultorId);
+      return consultor?.role === 'gerente'; // Incluir se for gerente puro
     })
     .map(u => {
       const aluno = u.alunoId ? alunoMap.get(u.alunoId) : null;

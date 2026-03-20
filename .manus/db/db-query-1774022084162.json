@@ -1,0 +1,230 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.role, u.isActive, u.alunoId, u.programId, u.openId, u.loginMethod \nFROM users u \nWHERE u.role = 'manager' \nORDER BY u.id DESC \nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.role, u.isActive, u.alunoId, u.programId, u.openId, u.loginMethod \nFROM users u \nWHERE u.role = 'manager' \nORDER BY u.id DESC \nLIMIT 20;",
+  "rows": [
+    {
+      "id": "4593130",
+      "name": "Test Gestor 1773960557339",
+      "email": "gestor.test.1773960557339@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73960557339",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4593071",
+      "name": "Test Gestor 1773960071956",
+      "email": "gestor.test.1773960071956@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73960071956",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4593059",
+      "name": "Test Gestor 1773960050863",
+      "email": "gestor.test.1773960050863@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73960050863",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4593014",
+      "name": "Test Gestor 1773958895061",
+      "email": "gestor.test.1773958895061@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73958895061",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4592697",
+      "name": "Test Gestor 1773957546711",
+      "email": "gestor.test.1773957546711@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73957546711",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4590967",
+      "name": "Test Gestor 1773950926780",
+      "email": "gestor.test.1773950926780@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73950926780",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4590728",
+      "name": "Test Gestor 1773948088842",
+      "email": "gestor.test.1773948088842@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73948088842",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4590725",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "manager",
+      "isActive": "1",
+      "alunoId": "NULL",
+      "programId": "18",
+      "openId": "gerente_puro_180003",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4590714",
+      "name": "Test Gestor 1773948066902",
+      "email": "gestor.test.1773948066902@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73948066902",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4590703",
+      "name": "Test Gestor 1773948046327",
+      "email": "gestor.test.1773948046327@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73948046327",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4590414",
+      "name": "Test Gestor 1773945413084",
+      "email": "gestor.test.1773945413084@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73945413084",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4560474",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "manager",
+      "isActive": "1",
+      "alunoId": "NULL",
+      "programId": "18",
+      "openId": "gerente_puro_150004",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4560420",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "manager",
+      "isActive": "1",
+      "alunoId": "NULL",
+      "programId": "18",
+      "openId": "gerente_puro_150001",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4444027",
+      "name": "Test Gestor 1773885208468",
+      "email": "gestor.test.1773885208468@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73885208468",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4444018",
+      "name": "Test Gestor 1773885189418",
+      "email": "gestor.test.1773885189418@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73885189418",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4444003",
+      "name": "Test Gestor 1773885170257",
+      "email": "gestor.test.1773885170257@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73885170257",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4443791",
+      "name": "Test Gestor 1773884136664",
+      "email": "gestor.test.1773884136664@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73884136664",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4443224",
+      "name": "Test Gestor 1773880515212",
+      "email": "gestor.test.1773880515212@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73880515212",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4441546",
+      "name": "Test Gestor 1773864474336",
+      "email": "gestor.test.1773864474336@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73864474336",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "4386380",
+      "name": "Test Gestor 1773797011433",
+      "email": "gestor.test.1773797011433@example.com",
+      "role": "manager",
+      "isActive": "0",
+      "alunoId": "NULL",
+      "programId": "1",
+      "openId": "access_manager_73797011433",
+      "loginMethod": "email_cpf"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tisActive\talunoId\tprogramId\topenId\tloginMethod\n4593130\tTest Gestor 1773960557339\tgestor.test.1773960557339@example.com\tmanager\t0\tNULL\t1\taccess_manager_73960557339\temail_cpf\n4593071\tTest Gestor 1773960071956\tgestor.test.1773960071956@example.com\tmanager\t0\tNULL\t1\taccess_manager_73960071956\temail_cpf\n4593059\tTest Gestor 1773960050863\tgestor.test.1773960050863@example.com\tmanager\t0\tNULL\t1\taccess_manager_73960050863\temail_cpf\n4593014\tTest Gestor 1773958895061\tgestor.test.1773958895061@example.com\tmanager\t0\tNULL\t1\taccess_manager_73958895061\temail_cpf\n4592697\tTest Gestor 1773957546711\tgestor.test.1773957546711@example.com\tmanager\t0\tNULL\t1\taccess_manager_73957546711\temail_cpf\n4590967\tTest Gestor 1773950926780\tgestor.test.1773950926780@example.com\tmanager\t0\tNULL\t1\taccess_manager_73950926780\temail_cpf\n4590728\tTest Gestor 1773948088842\tgestor.test.1773948088842@example.com\tmanager\t0\tNULL\t1\taccess_manager_73948088842\temail_cpf\n4590725\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tmanager\t1\tNULL\t18\tgerente_puro_180003\temail_cpf\n4590714\tTest Gestor 1773948066902\tgestor.test.1773948066902@example.com\tmanager\t0\tNULL\t1\taccess_manager_73948066902\temail_cpf\n4590703\tTest Gestor 1773948046327\tgestor.test.1773948046327@example.com\tmanager\t0\tNULL\t1\taccess_manager_73948046327\temail_cpf\n4590414\tTest Gestor 1773945413084\tgestor.test.1773945413084@example.com\tmanager\t0\tNULL\t1\taccess_manager_73945413084\temail_cpf\n4560474\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tmanager\t1\tNULL\t18\tgerente_puro_150004\temail_cpf\n4560420\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tmanager\t1\tNULL\t18\tgerente_puro_150001\temail_cpf\n4444027\tTest Gestor 1773885208468\tgestor.test.1773885208468@example.com\tmanager\t0\tNULL\t1\taccess_manager_73885208468\temail_cpf\n4444018\tTest Gestor 1773885189418\tgestor.test.1773885189418@example.com\tmanager\t0\tNULL\t1\taccess_manager_73885189418\temail_cpf\n4444003\tTest Gestor 1773885170257\tgestor.test.1773885170257@example.com\tmanager\t0\tNULL\t1\taccess_manager_73885170257\temail_cpf\n4443791\tTest Gestor 1773884136664\tgestor.test.1773884136664@example.com\tmanager\t0\tNULL\t1\taccess_manager_73884136664\temail_cpf\n4443224\tTest Gestor 1773880515212\tgestor.test.1773880515212@example.com\tmanager\t0\tNULL\t1\taccess_manager_73880515212\temail_cpf\n4441546\tTest Gestor 1773864474336\tgestor.test.1773864474336@example.com\tmanager\t0\tNULL\t1\taccess_manager_73864474336\temail_cpf\n4386380\tTest Gestor 1773797011433\tgestor.test.1773797011433@example.com\tmanager\t0\tNULL\t1\taccess_manager_73797011433\temail_cpf\n",
+  "stderr": "",
+  "execution_time_ms": 537
+}
