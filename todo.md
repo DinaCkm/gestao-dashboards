@@ -2767,3 +2767,6 @@
 ## Campo de Pesquisa em Gerentes e Mentores (20/03/2026)
 - [x] Adicionar campo de busca na aba de Gerentes (buscar por nome, email, CPF, empresa)
 - [x] Adicionar campo de busca na aba de Mentores (buscar por nome, email, empresa)
+
+## Bug: Gerente vê aba Financeiro (20/03/2026)
+- [x] Esconder aba Financeiro do Demonstrativo de Sessões de Mentoria para gestores (apenas admin)

@@ -32,6 +32,9 @@ type StatusSessaoFilter = "todos" | "em_dia" | "atrasado_30";
 const ITEMS_PER_PAGE = 30;
 
 export default function DemonstrativoMentorias() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   return (
     <DashboardLayout>
       <div className="container py-6 space-y-6">
@@ -41,9 +44,10 @@ export default function DemonstrativoMentorias() {
             Demonstrativo de Sessões de Mentoria
           </h1>
           <p className="text-gray-500 mt-1">
-            Acompanhe o progresso e financeiro das sessões de mentoria
+            Acompanhe o progresso {isAdmin ? 'e financeiro ' : ''}das sessões de mentoria
           </p>
         </div>
+        {isAdmin ? (
         <Tabs defaultValue="progresso">
           <TabsList>
             <TabsTrigger value="progresso" className="gap-2"><FileText className="h-4 w-4" /> Progresso</TabsTrigger>
@@ -56,6 +60,9 @@ export default function DemonstrativoMentorias() {
             <RelatorioFinanceiro />
           </TabsContent>
         </Tabs>
+        ) : (
+          <DemonstrativoContent />
+        )}
       </div>
     </DashboardLayout>
   );
