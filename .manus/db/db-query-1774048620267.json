@@ -1,0 +1,90 @@
+{
+  "query": "SELECT ms.id, ms.sessionNumber, ms.sessionDate, ms.presence, ms.taskStatus, ms.engagementScore FROM mentoring_sessions ms WHERE ms.alunoId = 30070 ORDER BY ms.sessionNumber;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ms.id, ms.sessionNumber, ms.sessionDate, ms.presence, ms.taskStatus, ms.engagementScore FROM mentoring_sessions ms WHERE ms.alunoId = 30070 ORDER BY ms.sessionNumber;",
+  "rows": [
+    {
+      "id": "60552",
+      "sessionNumber": "1",
+      "sessionDate": "2025-04-28",
+      "presence": "presente",
+      "taskStatus": "nao_entregue",
+      "engagementScore": "3"
+    },
+    {
+      "id": "60676",
+      "sessionNumber": "2",
+      "sessionDate": "2025-05-30",
+      "presence": "presente",
+      "taskStatus": "nao_entregue",
+      "engagementScore": "4"
+    },
+    {
+      "id": "60677",
+      "sessionNumber": "3",
+      "sessionDate": "2025-06-26",
+      "presence": "presente",
+      "taskStatus": "entregue",
+      "engagementScore": "5"
+    },
+    {
+      "id": "60720",
+      "sessionNumber": "4",
+      "sessionDate": "2025-08-01",
+      "presence": "presente",
+      "taskStatus": "entregue",
+      "engagementScore": "6"
+    },
+    {
+      "id": "60721",
+      "sessionNumber": "5",
+      "sessionDate": "2025-08-25",
+      "presence": "presente",
+      "taskStatus": "entregue",
+      "engagementScore": "6"
+    },
+    {
+      "id": "60785",
+      "sessionNumber": "6",
+      "sessionDate": "2025-09-24",
+      "presence": "presente",
+      "taskStatus": "entregue",
+      "engagementScore": "7"
+    },
+    {
+      "id": "60825",
+      "sessionNumber": "7",
+      "sessionDate": "2025-11-14",
+      "presence": "ausente",
+      "taskStatus": "entregue",
+      "engagementScore": "8"
+    },
+    {
+      "id": "120026",
+      "sessionNumber": "8",
+      "sessionDate": "2025-10-24",
+      "presence": "ausente",
+      "taskStatus": "nao_entregue",
+      "engagementScore": "6"
+    },
+    {
+      "id": "120027",
+      "sessionNumber": "9",
+      "sessionDate": "2026-01-24",
+      "presence": "ausente",
+      "taskStatus": "nao_entregue",
+      "engagementScore": "6"
+    },
+    {
+      "id": "120028",
+      "sessionNumber": "10",
+      "sessionDate": "2026-02-25",
+      "presence": "ausente",
+      "taskStatus": "nao_entregue",
+      "engagementScore": "6"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsessionNumber\tsessionDate\tpresence\ttaskStatus\tengagementScore\n60552\t1\t2025-04-28\tpresente\tnao_entregue\t3\n60676\t2\t2025-05-30\tpresente\tnao_entregue\t4\n60677\t3\t2025-06-26\tpresente\tentregue\t5\n60720\t4\t2025-08-01\tpresente\tentregue\t6\n60721\t5\t2025-08-25\tpresente\tentregue\t6\n60785\t6\t2025-09-24\tpresente\tentregue\t7\n60825\t7\t2025-11-14\tausente\tentregue\t8\n120026\t8\t2025-10-24\tausente\tnao_entregue\t6\n120027\t9\t2026-01-24\tausente\tnao_entregue\t6\n120028\t10\t2026-02-25\tausente\tnao_entregue\t6\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

@@ -1838,9 +1838,10 @@ export const appRouter = router({
           nomeAluno: aluno.name,
           empresa: program?.name || 'Desconhecida',
           turma: String(aluno.turmaId || ''),
+          dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
           presenca: session.presence as 'presente' | 'ausente',
-atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa'),
-           engajamento: session.engagementScore || undefined
+          atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa'),
+          engajamento: session.engagementScore || undefined
         });
       }
       
@@ -2461,6 +2462,7 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
             nomeAluno: sessionAluno.name,
             empresa: program?.name || 'Desconhecida',
             turma: String(sessionAluno.turmaId || ''),
+            dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
             presenca: session.presence as 'presente' | 'ausente',
             atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa'),
             engajamento: session.engagementScore || undefined
@@ -4594,6 +4596,15 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       }))
       .mutation(async ({ input }) => {
         const { competencias, ...pdiData } = input;
+        
+        // Guard: verificar se o aluno está ativo antes de criar PDI
+        const alunoCheck = await db.getAlunoById(input.alunoId);
+        if (!alunoCheck) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+        }
+        if (alunoCheck.isActive === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não é possível criar PDI para aluno inativo. Ative o aluno primeiro.' });
+        }
         
         // Validate macro dates
         if (pdiData.macroInicio >= pdiData.macroTermino) {

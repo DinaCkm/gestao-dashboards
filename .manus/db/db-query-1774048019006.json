@@ -1,0 +1,114 @@
+{
+  "query": "SELECT sp.competenciaName, sp.progressoTotal, sp.aulasDisponiveis, sp.aulasConcluidas, sp.mediaAvaliacoesRespondidas, sp.externalCompetenciaId FROM student_performance sp WHERE sp.userName LIKE '%Wandemberg%' ORDER BY sp.competenciaName LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT sp.competenciaName, sp.progressoTotal, sp.aulasDisponiveis, sp.aulasConcluidas, sp.mediaAvaliacoesRespondidas, sp.externalCompetenciaId FROM student_performance sp WHERE sp.userName LIKE '%Wandemberg%' ORDER BY sp.competenciaName LIMIT 20;",
+  "rows": [
+    {
+      "competenciaName": "Adaptabilidade - Essencial",
+      "progressoTotal": "0",
+      "aulasDisponiveis": "0",
+      "aulasConcluidas": "0",
+      "mediaAvaliacoesRespondidas": "NULL",
+      "externalCompetenciaId": "01J87V5ZV1YTH0CTXPCM77AVV1"
+    },
+    {
+      "competenciaName": "Atenção - Básica",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "6",
+      "mediaAvaliacoesRespondidas": "100.00",
+      "externalCompetenciaId": "01J7XFQV2N5Z65PYVRCJV3VM67"
+    },
+    {
+      "competenciaName": "Autopercepção - Básica",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "6",
+      "mediaAvaliacoesRespondidas": "100.00",
+      "externalCompetenciaId": "01J805YN0WJF9BCE0A2KQDBJ5C"
+    },
+    {
+      "competenciaName": "Comunicação Assertiva - Essencial",
+      "progressoTotal": "16",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "1",
+      "mediaAvaliacoesRespondidas": "NULL",
+      "externalCompetenciaId": "01JC66JPST9FD8XKYV3CBEJF0R"
+    },
+    {
+      "competenciaName": "Disciplina - Básica",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "6",
+      "mediaAvaliacoesRespondidas": "100.00",
+      "externalCompetenciaId": "01J80620M940GZ1STEAGG2NJHG"
+    },
+    {
+      "competenciaName": "Empatia - Básica",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "6",
+      "mediaAvaliacoesRespondidas": "96.00",
+      "externalCompetenciaId": "01J8090N7MG9AP6EV0442M0Z0E"
+    },
+    {
+      "competenciaName": "Escuta Ativa - Básica",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "6",
+      "mediaAvaliacoesRespondidas": "100.00",
+      "externalCompetenciaId": "01J8092M9HTM5NY0NT0SXSSVVE"
+    },
+    {
+      "competenciaName": "Gestão do Tempo - Básica",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "7",
+      "aulasConcluidas": "7",
+      "mediaAvaliacoesRespondidas": "100.00",
+      "externalCompetenciaId": "01J8094529YD53AEGPQDAQDYRH"
+    },
+    {
+      "competenciaName": "Inteligência Emocional - Essencial",
+      "progressoTotal": "0",
+      "aulasDisponiveis": "0",
+      "aulasConcluidas": "0",
+      "mediaAvaliacoesRespondidas": "NULL",
+      "externalCompetenciaId": "01JC66KAQVJ0P1HB6THT7P7GZ2"
+    },
+    {
+      "competenciaName": "Leitura de Cenário - Essencial",
+      "progressoTotal": "0",
+      "aulasDisponiveis": "0",
+      "aulasConcluidas": "0",
+      "mediaAvaliacoesRespondidas": "NULL",
+      "externalCompetenciaId": "01J87W0C169724Z0W34RSSG8WZ"
+    },
+    {
+      "competenciaName": "Memória - Básica",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "6",
+      "mediaAvaliacoesRespondidas": "90.00",
+      "externalCompetenciaId": "01J8097B4V48RV5NJXM1XGPFK2"
+    },
+    {
+      "competenciaName": "Planejamento e Organização - Essencial",
+      "progressoTotal": "0",
+      "aulasDisponiveis": "0",
+      "aulasConcluidas": "0",
+      "mediaAvaliacoesRespondidas": "NULL",
+      "externalCompetenciaId": "01JC66HP77TAK7PR820TPENQN7"
+    },
+    {
+      "competenciaName": "Proatividade - Essencial",
+      "progressoTotal": "0",
+      "aulasDisponiveis": "0",
+      "aulasConcluidas": "0",
+      "mediaAvaliacoesRespondidas": "NULL",
+      "externalCompetenciaId": "01JC66NMYZEYKZ5Y3KG7BFV6Y7"
+    }
+  ],
+  "messages": [],
+  "stdout": "competenciaName\tprogressoTotal\taulasDisponiveis\taulasConcluidas\tmediaAvaliacoesRespondidas\texternalCompetenciaId\nAdaptabilidade - Essencial\t0\t0\t0\tNULL\t01J87V5ZV1YTH0CTXPCM77AVV1\nAtenção - Básica\t100\t6\t6\t100.00\t01J7XFQV2N5Z65PYVRCJV3VM67\nAutopercepção - Básica\t100\t6\t6\t100.00\t01J805YN0WJF9BCE0A2KQDBJ5C\nComunicação Assertiva - Essencial\t16\t6\t1\tNULL\t01JC66JPST9FD8XKYV3CBEJF0R\nDisciplina - Básica\t100\t6\t6\t100.00\t01J80620M940GZ1STEAGG2NJHG\nEmpatia - Básica\t100\t6\t6\t96.00\t01J8090N7MG9AP6EV0442M0Z0E\nEscuta Ativa - Básica\t100\t6\t6\t100.00\t01J8092M9HTM5NY0NT0SXSSVVE\nGestão do Tempo - Básica\t100\t7\t7\t100.00\t01J8094529YD53AEGPQDAQDYRH\nInteligência Emocional - Essencial\t0\t0\t0\tNULL\t01JC66KAQVJ0P1HB6THT7P7GZ2\nLeitura de Cenário - Essencial\t0\t0\t0\tNULL\t01J87W0C169724Z0W34RSSG8WZ\nMemória - Básica\t100\t6\t6\t90.00\t01J8097B4V48RV5NJXM1XGPFK2\nPlanejamento e Organização - Essencial\t0\t0\t0\tNULL\t01JC66HP77TAK7PR820TPENQN7\nProatividade - Essencial\t0\t0\t0\tNULL\t01JC66NMYZEYKZ5Y3KG7BFV6Y7\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

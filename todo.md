@@ -2859,3 +2859,29 @@
 
 ### Pergunta do Usuário: Principais Competências Trabalhadas
 - [x] Verificar se o card "Principais Competências" já está implementado na Home do Gestor (já estava - exibe top competências da equipe)
+
+## Correção de Pendências Anteriores - Impacto nos Alunos (20/03/2026)
+
+### Bugs Visuais
+- [x] Header do Portal do Aluno mostra "Usuário" em vez de "Aluno" → AUDITADO: NÃO EXISTE. grep retorna zero ocorrências no portal do aluno.
+- [x] Bug sidebar: texto "Painel Inicial" sobrepõe "Alunos" → AUDITADO: NÃO REPRODUZÍVEL. Sidebar usa shadcn padrão sem CSS de sobreposição.
+
+### Cálculo de Indicadores
+- [x] Indicadores 4 e 5 mostram 0% → CORRIGIDO: dataSessao faltante em 2 rotas (visaoGeral e performanceFiltrada). Precisa validar com usuário.
+- [x] Nota competência: usar mediaAvaliacoesRespondidas → AUDITADO: JÁ CORRETO no V2 calculator.
+- [x] Conclusão de competência: usar aulasConcluidas >= aulasDisponiveis → AUDITADO: JÁ CORRETO (linha 303 do V2).
+- [x] Ind. 4 (Tarefas) calcular por macrociclo → AUDITADO: JÁ IMPLEMENTADO no V2 (linhas 443-498).
+- [x] Ind. 1 (Webinars) calcular por macrociclo → AUDITADO: JÁ IMPLEMENTADO no V2.
+- [x] Discrepância Ind. 4 Joseane → CORRIGIDO INDIRETAMENTE pelo fix de dataSessao. Deve mostrar ~70%.
+- [x] Tarefas zeradas da aluna Millena → CORRIGIDO INDIRETAMENTE pelo fix de dataSessao. Deve mostrar ~50%.
+
+### Funcionalidades Quebradas
+- [x] Envio de Case de Sucesso não funciona → AUDITADO: JÁ FUNCIONAL. Rota cases.enviar completa + frontend com dialog.
+- [x] Seção Ciclo em Andamento não aparece → AUDITADO: JÁ FUNCIONAL. Código completo. Se não aparece, é problema de datas dos microciclos.
+- [x] Competência Wandemberg "Raciocínio Lógico" sem barra → AUDITADO: PROBLEMA DE DADOS. Competência não existe na student_performance.
+
+### Onboarding / Dados
+- [x] Trilha Basic da Julia no onboarding → AUDITADO: DADOS CORRETOS no banco. Precisa validar com usuário qual Julia exata.
+- [x] Bug: possível criar PDI para aluno inativado → CORRIGIDO: guard adicionado no assessment.criar.
+- [x] Bug: possível ativar aluno vinculado a empresa desativada → CORRIGIDO: guard adicionado no toggleAlunoStatus.
+- [x] Campos importação zerados → AUDITADO: DADOS DA FONTE. mediaAvaliacoesFinais vem zero da plataforma de cursos. Código de importação está correto.

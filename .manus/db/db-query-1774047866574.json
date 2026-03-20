@@ -1,0 +1,74 @@
+{
+  "query": "SELECT sp.competenciaName, sp.mediaAvaliacoesRespondidas, sp.mediaAvaliacoesFinais, sp.progressoTotal, sp.aulasDisponiveis, sp.aulasConcluidas FROM student_performance sp WHERE sp.userName LIKE '%Joseane%' LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT sp.competenciaName, sp.mediaAvaliacoesRespondidas, sp.mediaAvaliacoesFinais, sp.progressoTotal, sp.aulasDisponiveis, sp.aulasConcluidas FROM student_performance sp WHERE sp.userName LIKE '%Joseane%' LIMIT 20;",
+  "rows": [
+    {
+      "competenciaName": "Adaptabilidade Dinâmica - Visão de Futuro",
+      "mediaAvaliacoesRespondidas": "NULL",
+      "mediaAvaliacoesFinais": "0.00",
+      "progressoTotal": "0",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "0"
+    },
+    {
+      "competenciaName": "Arquitetura de Mudanças - Visão de Futuro",
+      "mediaAvaliacoesRespondidas": "94.00",
+      "mediaAvaliacoesFinais": "0.00",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "6"
+    },
+    {
+      "competenciaName": "Decisões Ágeis - Visão de Futuro",
+      "mediaAvaliacoesRespondidas": "97.00",
+      "mediaAvaliacoesFinais": "0.00",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "6"
+    },
+    {
+      "competenciaName": "Estratégia de Longo Alcance - Visão de Futuro",
+      "mediaAvaliacoesRespondidas": "100.00",
+      "mediaAvaliacoesFinais": "0.00",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "6"
+    },
+    {
+      "competenciaName": "Gestão da Comunicação - Visão de Futuro",
+      "mediaAvaliacoesRespondidas": "NULL",
+      "mediaAvaliacoesFinais": "0.00",
+      "progressoTotal": "0",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "0"
+    },
+    {
+      "competenciaName": "Inteligência Emocional Tática - Visão de Futuro",
+      "mediaAvaliacoesRespondidas": "NULL",
+      "mediaAvaliacoesFinais": "0.00",
+      "progressoTotal": "0",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "0"
+    },
+    {
+      "competenciaName": "Mentalidade Sistêmica - Visão de Futuro",
+      "mediaAvaliacoesRespondidas": "92.00",
+      "mediaAvaliacoesFinais": "0.00",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "6"
+    },
+    {
+      "competenciaName": "Mindset Visionário - Visão de Futuro",
+      "mediaAvaliacoesRespondidas": "92.00",
+      "mediaAvaliacoesFinais": "0.00",
+      "progressoTotal": "100",
+      "aulasDisponiveis": "6",
+      "aulasConcluidas": "6"
+    }
+  ],
+  "messages": [],
+  "stdout": "competenciaName\tmediaAvaliacoesRespondidas\tmediaAvaliacoesFinais\tprogressoTotal\taulasDisponiveis\taulasConcluidas\nAdaptabilidade Dinâmica - Visão de Futuro\tNULL\t0.00\t0\t6\t0\nArquitetura de Mudanças - Visão de Futuro\t94.00\t0.00\t100\t6\t6\nDecisões Ágeis - Visão de Futuro\t97.00\t0.00\t100\t6\t6\nEstratégia de Longo Alcance - Visão de Futuro\t100.00\t0.00\t100\t6\t6\nGestão da Comunicação - Visão de Futuro\tNULL\t0.00\t0\t6\t0\nInteligência Emocional Tática - Visão de Futuro\tNULL\t0.00\t0\t6\t0\nMentalidade Sistêmica - Visão de Futuro\t92.00\t0.00\t100\t6\t6\nMindset Visionário - Visão de Futuro\t92.00\t0.00\t100\t6\t6\n",
+  "stderr": "",
+  "execution_time_ms": 61
+}

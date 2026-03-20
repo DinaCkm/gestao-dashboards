@@ -1,0 +1,18 @@
+{
+  "query": "SELECT ap.id, ap.trilhaId, t.name, ap.macroInicio, ap.macroTermino, ap.status FROM assessment_pdi ap LEFT JOIN trilhas t ON ap.trilhaId = t.id WHERE ap.alunoId = 30070;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id, ap.trilhaId, t.name, ap.macroInicio, ap.macroTermino, ap.status FROM assessment_pdi ap LEFT JOIN trilhas t ON ap.trilhaId = t.id WHERE ap.alunoId = 30070;",
+  "rows": [
+    {
+      "id": "60407",
+      "trilhaId": "4",
+      "name": "Visão de Futuro",
+      "macroInicio": "2025-04-20",
+      "macroTermino": "2026-03-31",
+      "status": "ativo"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttrilhaId\tname\tmacroInicio\tmacroTermino\tstatus\n60407\t4\tVisão de Futuro\t2025-04-20\t2026-03-31\tativo\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

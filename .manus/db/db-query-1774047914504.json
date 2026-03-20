@@ -1,0 +1,16 @@
+{
+  "query": "SELECT ap.alunoId, a.name, ap.macroInicio, ap.macroTermino FROM assessment_pdi ap JOIN alunos a ON ap.alunoId = a.id WHERE a.name LIKE '%Joseane%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.alunoId, a.name, ap.macroInicio, ap.macroTermino FROM assessment_pdi ap JOIN alunos a ON ap.alunoId = a.id WHERE a.name LIKE '%Joseane%';",
+  "rows": [
+    {
+      "alunoId": "30066",
+      "name": "Joseane Rodrigues Leite",
+      "macroInicio": "2025-04-20",
+      "macroTermino": "2026-03-31"
+    }
+  ],
+  "messages": [],
+  "stdout": "alunoId\tname\tmacroInicio\tmacroTermino\n30066\tJoseane Rodrigues Leite\t2025-04-20\t2026-03-31\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

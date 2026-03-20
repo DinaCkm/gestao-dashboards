@@ -1147,12 +1147,21 @@ export async function toggleConsultorStatus(consultorId: number): Promise<{ succ
 }
 
 // Toggle ativar/inativar aluno
-export async function toggleAlunoStatus(alunoId: number): Promise<{ success: boolean; isActive: number; name: string }> {
+export async function toggleAlunoStatus(alunoId: number): Promise<{ success: boolean; isActive: number; name: string; message?: string }> {
   const db = await getDb();
   if (!db) throw new Error('Banco de dados não disponível');
-  const [aluno] = await db.select({ isActive: alunos.isActive, name: alunos.name }).from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  const [aluno] = await db.select({ isActive: alunos.isActive, name: alunos.name, programId: alunos.programId }).from(alunos).where(eq(alunos.id, alunoId)).limit(1);
   if (!aluno) throw new Error('Aluno não encontrado');
   const newStatus = aluno.isActive === 1 ? 0 : 1;
+  
+  // Guard: ao ATIVAR aluno, verificar se a empresa/programa está ativa
+  if (newStatus === 1 && aluno.programId) {
+    const [prog] = await db.select({ isActive: programs.isActive, name: programs.name }).from(programs).where(eq(programs.id, aluno.programId)).limit(1);
+    if (prog && prog.isActive === 0) {
+      return { success: false, isActive: 0, name: aluno.name, message: `Não é possível ativar o aluno pois a empresa "${prog.name}" está inativa. Ative a empresa primeiro.` };
+    }
+  }
+  
   // Atualizar status do aluno e canLogin
   await db.update(alunos).set({ isActive: newStatus, canLogin: newStatus }).where(eq(alunos.id, alunoId));
   // Sincronizar: desativar/reativar a conta de usuário vinculada ao aluno

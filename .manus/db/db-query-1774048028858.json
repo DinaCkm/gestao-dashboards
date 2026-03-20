@@ -1,0 +1,66 @@
+{
+  "query": "SELECT pi.competenciaId, c.nome as competenciaNome, pi.notaAtual, pi.metaNota, pi.status FROM plano_individual pi JOIN competencias c ON pi.competenciaId = c.id JOIN alunos a ON pi.alunoId = a.id WHERE a.name LIKE '%Wandemberg%' ORDER BY c.nome;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT pi.competenciaId, c.nome as competenciaNome, pi.notaAtual, pi.metaNota, pi.status FROM plano_individual pi JOIN competencias c ON pi.competenciaId = c.id JOIN alunos a ON pi.alunoId = a.id WHERE a.name LIKE '%Wandemberg%' ORDER BY c.nome;",
+  "rows": [
+    {
+      "competenciaId": "30004",
+      "competenciaNome": "Atenção",
+      "notaAtual": "NULL",
+      "metaNota": "7.00",
+      "status": "pendente"
+    },
+    {
+      "competenciaId": "30005",
+      "competenciaNome": "Autopercepção",
+      "notaAtual": "NULL",
+      "metaNota": "7.00",
+      "status": "pendente"
+    },
+    {
+      "competenciaId": "30006",
+      "competenciaNome": "Disciplina",
+      "notaAtual": "NULL",
+      "metaNota": "7.00",
+      "status": "pendente"
+    },
+    {
+      "competenciaId": "30007",
+      "competenciaNome": "Empatia",
+      "notaAtual": "NULL",
+      "metaNota": "7.00",
+      "status": "pendente"
+    },
+    {
+      "competenciaId": "30008",
+      "competenciaNome": "Escuta Ativa",
+      "notaAtual": "NULL",
+      "metaNota": "7.00",
+      "status": "pendente"
+    },
+    {
+      "competenciaId": "30003",
+      "competenciaNome": "Gestão do Tempo",
+      "notaAtual": "NULL",
+      "metaNota": "7.00",
+      "status": "pendente"
+    },
+    {
+      "competenciaId": "30009",
+      "competenciaNome": "Memória",
+      "notaAtual": "NULL",
+      "metaNota": "7.00",
+      "status": "pendente"
+    },
+    {
+      "competenciaId": "30010",
+      "competenciaNome": "Raciocínio Lógico e Espacial",
+      "notaAtual": "NULL",
+      "metaNota": "7.00",
+      "status": "pendente"
+    }
+  ],
+  "messages": [],
+  "stdout": "competenciaId\tcompetenciaNome\tnotaAtual\tmetaNota\tstatus\n30004\tAtenção\tNULL\t7.00\tpendente\n30005\tAutopercepção\tNULL\t7.00\tpendente\n30006\tDisciplina\tNULL\t7.00\tpendente\n30007\tEmpatia\tNULL\t7.00\tpendente\n30008\tEscuta Ativa\tNULL\t7.00\tpendente\n30003\tGestão do Tempo\tNULL\t7.00\tpendente\n30009\tMemória\tNULL\t7.00\tpendente\n30010\tRaciocínio Lógico e Espacial\tNULL\t7.00\tpendente\n",
+  "stderr": "",
+  "execution_time_ms": 68
+}

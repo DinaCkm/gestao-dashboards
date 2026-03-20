@@ -1,0 +1,22 @@
+{
+  "query": "SELECT ac.assessmentPdiId, ap.trilhaId, t.name as trilhaNome, COUNT(*) as numComps FROM assessment_competencias ac JOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id LEFT JOIN trilhas t ON ap.trilhaId = t.id WHERE ap.alunoId = 30082 GROUP BY ac.assessmentPdiId, ap.trilhaId, t.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ac.assessmentPdiId, ap.trilhaId, t.name as trilhaNome, COUNT(*) as numComps FROM assessment_competencias ac JOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id LEFT JOIN trilhas t ON ap.trilhaId = t.id WHERE ap.alunoId = 30082 GROUP BY ac.assessmentPdiId, ap.trilhaId, t.name;",
+  "rows": [
+    {
+      "assessmentPdiId": "60423",
+      "trilhaId": "1",
+      "trilhaNome": "Basic",
+      "numComps": "8"
+    },
+    {
+      "assessmentPdiId": "60378",
+      "trilhaId": "2",
+      "trilhaNome": "Essential",
+      "numComps": "7"
+    }
+  ],
+  "messages": [],
+  "stdout": "assessmentPdiId\ttrilhaId\ttrilhaNome\tnumComps\n60423\t1\tBasic\t8\n60378\t2\tEssential\t7\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}
