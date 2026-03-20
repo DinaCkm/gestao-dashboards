@@ -15,8 +15,9 @@ import {
   CheckCircle2, Circle, Lock, ChevronRight, ExternalLink, Camera, Briefcase,
   GraduationCap, Clock, Calendar, Target, Award,
   Play, ArrowRight, Sparkles, Heart, Eye, AlertCircle, CheckCircle,
-  BookOpen, TrendingUp, BarChart3, Layers, Star, Zap, Trophy, MapPin, Rocket
+  BookOpen, TrendingUp, BarChart3, Layers, Star, Zap, Trophy, MapPin, Rocket, MessageCircle, Send
 } from "lucide-react";
+import confetti from "canvas-confetti";
 // Tipos locais (dados agora vêm do banco real)
 type Mentora = {
   id: number;
@@ -2232,10 +2233,14 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
   const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId }, { enabled: alunoId > 0 });
   const realizarAceite = trpc.onboarding.realizarAceite.useMutation();
+  const solicitarRevisao = trpc.onboarding.solicitarRevisaoAceite.useMutation();
   const utils = trpc.useUtils();
 
   const [nomeAceite, setNomeAceite] = useState("");
   const [aceitou, setAceitou] = useState(false);
+  const [showRevisaoForm, setShowRevisaoForm] = useState(false);
+  const [justificativa, setJustificativa] = useState("");
+  const [revisaoEnviada, setRevisaoEnviada] = useState(false);
   const [checkboxes, setCheckboxes] = useState({
     compromisso1: false, compromisso2: false, compromisso3: false, compromisso4: false,
   });
@@ -2247,6 +2252,7 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   const todosCheckados = Object.values(checkboxes).every(v => v);
   const nomeValido = nomeAceite.trim().length >= 2;
   const jaAceitou = progressoData?.aceiteRealizado;
+  const assinaturaPreenchida = todosCheckados && nomeValido;
 
   // Dados consolidados de todas as trilhas
   const totalCompetencias = allMacroJornadas.reduce((sum: number, mj: any) => sum + (mj.totalCompetencias || 0), 0);
@@ -2255,15 +2261,92 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   const consolidatedInicio = allInicios.length > 0 ? new Date(allInicios[0]) : null;
   const consolidatedTermino = allTerminos.length > 0 ? new Date(allTerminos[allTerminos.length - 1]) : null;
 
-  const handleAceite = async () => {
-    if (readOnly || !todosCheckados || !nomeValido) return;
+  // Função para disparar fogos de artifício
+  const triggerCelebration = () => {
+    // Som de parabéns (fanfarra curta)
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const notes = [
+        { freq: 523.25, start: 0, dur: 0.15 },    // C5
+        { freq: 659.25, start: 0.15, dur: 0.15 },  // E5
+        { freq: 783.99, start: 0.3, dur: 0.15 },   // G5
+        { freq: 1046.50, start: 0.45, dur: 0.4 },  // C6 (sustain)
+        { freq: 783.99, start: 0.55, dur: 0.15 },  // G5
+        { freq: 1046.50, start: 0.7, dur: 0.6 },   // C6 (final)
+      ];
+      notes.forEach(({ freq, start, dur }) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + start + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + start);
+        osc.stop(audioCtx.currentTime + start + dur + 0.1);
+      });
+    } catch (e) { /* audio não suportado, sem problema */ }
+
+    // Fogos de artifício (confetes) - 3 rajadas
+    const duration = 3000;
+    const end = Date.now() + duration;
+
+    const frame = () => {
+      confetti({
+        particleCount: 4,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.7 },
+        colors: ['#0A1E3E', '#F5991F', '#10b981', '#8b5cf6', '#ef4444'],
+      });
+      confetti({
+        particleCount: 4,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.7 },
+        colors: ['#0A1E3E', '#F5991F', '#10b981', '#8b5cf6', '#ef4444'],
+      });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    };
+    frame();
+
+    // Rajada central grande
+    setTimeout(() => {
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.6 },
+        colors: ['#0A1E3E', '#F5991F', '#10b981', '#fbbf24', '#8b5cf6'],
+      });
+    }, 500);
+  };
+
+  const handleDeAcordo = async () => {
+    if (readOnly || !assinaturaPreenchida) return;
     try {
       await realizarAceite.mutateAsync({ alunoId, nomeAceite: nomeAceite.trim() });
       setAceitou(true);
       utils.onboarding.progresso.invalidate();
-      toast.success("🌟 Parabéns! Sua jornada de desenvolvimento começa agora!");
+      utils.aluno.onboardingStatus.invalidate();
+      // Disparar celebração!
+      triggerCelebration();
     } catch (e) {
       toast.error("Erro ao registrar aceite");
+    }
+  };
+
+  const handleGostariaDeRever = async () => {
+    if (!justificativa.trim() || justificativa.trim().length < 5) {
+      toast.error("Por favor, explique o que gostaria de rever.");
+      return;
+    }
+    try {
+      await solicitarRevisao.mutateAsync({ alunoId, justificativa: justificativa.trim() });
+      setRevisaoEnviada(true);
+      toast.success("Sua solicitação foi enviada para a mentora e administração.");
+    } catch (e) {
+      toast.error("Erro ao enviar solicitação");
     }
   };
 
@@ -2415,24 +2498,97 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
         </CardContent>
       </Card>
 
-      {!readOnly && !aceitou && !jaAceitou && (
-        <div className="flex justify-center">
-          <Button
-            className="bg-gradient-to-r from-[#0A1E3E] to-[#F5991F] hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg disabled:opacity-50"
-            onClick={handleAceite}
-            disabled={!todosCheckados || !nomeValido || realizarAceite.isPending}
-          >
-            {realizarAceite.isPending ? (
-              <span className="animate-spin mr-2">...</span>
-            ) : (
-              <Award className="h-5 w-5 mr-2" />
-            )}
-            Aceitar e Iniciar Minha Jornada
-            <Sparkles className="h-5 w-5 ml-2" />
-          </Button>
+      {/* Botões de ação após assinatura */}
+      {!readOnly && !aceitou && !jaAceitou && !revisaoEnviada && (
+        <div className="space-y-4">
+          {/* Mostrar botões somente após assinatura preenchida */}
+          {assinaturaPreenchida && !showRevisaoForm && (
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                className="bg-gradient-to-r from-[#0A1E3E] to-[#F5991F] hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg"
+                onClick={handleDeAcordo}
+                disabled={realizarAceite.isPending}
+              >
+                {realizarAceite.isPending ? (
+                  <span className="animate-spin mr-2">...</span>
+                ) : (
+                  <CheckCircle2 className="h-5 w-5 mr-2" />
+                )}
+                De Acordo
+                <Sparkles className="h-5 w-5 ml-2" />
+              </Button>
+              <Button
+                variant="outline"
+                className="border-2 border-amber-400 text-amber-700 hover:bg-amber-50 px-8 py-4 text-lg"
+                onClick={() => setShowRevisaoForm(true)}
+              >
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Gostaria de Rever
+              </Button>
+            </div>
+          )}
+
+          {/* Formulário de solicitação de revisão */}
+          {showRevisaoForm && (
+            <Card className="border-2 border-amber-200 bg-amber-50/50">
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <MessageCircle className="h-5 w-5 text-amber-600" />
+                  <h3 className="font-bold text-[#0A1E3E]">O que você gostaria de rever?</h3>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Descreva os pontos que gostaria de conversar com sua mentora antes de dar o aceite. 
+                  Sua solicitação será enviada para a mentora e a administração.
+                </p>
+                <Textarea
+                  placeholder="Ex: Gostaria de entender melhor as metas da competência X, ou ajustar o prazo do microciclo Y..."
+                  value={justificativa}
+                  onChange={(e) => setJustificativa(e.target.value)}
+                  className="min-h-[120px] border-2 focus:border-amber-400"
+                />
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setShowRevisaoForm(false); setJustificativa(""); }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    className="bg-amber-500 hover:bg-amber-600 text-white"
+                    onClick={handleGostariaDeRever}
+                    disabled={justificativa.trim().length < 5 || solicitarRevisao.isPending}
+                  >
+                    {solicitarRevisao.isPending ? (
+                      <span className="animate-spin mr-2">...</span>
+                    ) : (
+                      <Send className="h-4 w-4 mr-2" />
+                    )}
+                    Enviar Solicitação
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
+      {/* Mensagem após enviar solicitação de revisão */}
+      {!readOnly && revisaoEnviada && !aceitou && !jaAceitou && (
+        <Card className="border-2 border-amber-200 bg-amber-50">
+          <CardContent className="p-6 text-center space-y-3">
+            <div className="w-16 h-16 mx-auto rounded-full bg-amber-100 flex items-center justify-center">
+              <MessageCircle className="h-8 w-8 text-amber-600" />
+            </div>
+            <h3 className="text-lg font-bold text-[#0A1E3E]">Solicitação Enviada!</h3>
+            <p className="text-sm text-gray-600 max-w-md mx-auto">
+              Sua mentora e a administração receberam sua solicitação de revisão. 
+              Em breve entrarão em contato para conversar sobre os pontos levantados.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tela de celebração após aceite */}
       {(aceitou || jaAceitou) && !readOnly && (
         <div className="flex justify-center">
           <Button

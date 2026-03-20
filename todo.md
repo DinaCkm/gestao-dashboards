@@ -2802,3 +2802,22 @@
 - [x] Corrigir seção Recursos para usar todasCompetencias de todas as trilhas
 - [x] Corrigir EtapaAceite para usar dados consolidados de todas as trilhas
 - [x] Testes unitários para validar lógica multi-trilha (10 testes passando)
+
+## Bloqueio de Menu até Aceite do Onboarding (20/03/2026)
+- [x] Bloquear menu do aluno (Mural, Cursos, Atividades, Minhas Metas) até aceite do compromisso
+- [x] Aplicar regra apenas para alunos cadastrados a partir de 15/03/2026
+- [x] Redirecionar aluno para onboarding se tentar acessar páginas bloqueadas
+- [x] Liberar menu completo após aceite do compromisso (etapa 8)
+- [x] Testes unitários para validar lógica de bloqueio (15 testes passando)
+
+## Refatoração da Etapa de Aceite do Onboarding (20/03/2026)
+- [x] Adicionar botão "De Acordo" após assinatura do termo de compromisso
+- [x] Adicionar botão "Gostaria de Rever" com campo de justificativa
+- [x] Ao clicar "De Acordo": desbloquear menu automaticamente + enviar email de parabéns ao aluno + notificar mentora e admin
+- [x] Ao clicar "Gostaria de Rever": abrir campo de justificativa + enviar email para mentora e admin
+- [x] Botão "Gostaria de Rever" para o aluno pedir revisão do PDI (integrado no fluxo)
+- [x] Garantir desbloqueio automático do menu após aceite (invalidar cache do onboardingStatus)
+- [x] Testes unitários para o fluxo de aceite (13 testes passando)
+- [x] Adicionar efeito de fogos de artifício (canvas-confetti) ao clicar "De Acordo"
+- [x] Adicionar som de parabéns ao clicar "De Acordo"
+- [x] Trocar toda referência de "recusar/recusa" por "gostaria de rever/revisão" (tom mais suave)

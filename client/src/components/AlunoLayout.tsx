@@ -1,24 +1,29 @@
-import { ReactNode } from "react";
+import { ReactNode, useMemo, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
-import { Compass, User, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, GraduationCap, Zap } from "lucide-react";
+import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, GraduationCap, Zap, Lock } from "lucide-react";
 import RoleSwitcher from "@/components/RoleSwitcher";
 
-const NAV_ITEMS = [
-  { label: "Onboarding", path: "/onboarding", icon: ClipboardList },
-  { label: "Mural", path: "/mural", icon: Megaphone },
-  { label: "Portal do Aluno", path: "/meu-dashboard", icon: Compass },
-  { label: "Cursos", path: "/meus-cursos", icon: GraduationCap },
-  { label: "Atividades", path: "/minhas-atividades", icon: Zap },
-  { label: "Minhas Metas", path: "/minhas-metas", icon: Flag },
-  { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle },
+/** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
+const ONBOARDING_CUTOFF_DATE = new Date("2026-03-15T00:00:00Z");
+
+const ALL_NAV_ITEMS = [
+  { label: "Onboarding", path: "/onboarding", icon: ClipboardList, requiresAceite: false },
+  { label: "Mural", path: "/mural", icon: Megaphone, requiresAceite: true },
+  { label: "Portal do Aluno", path: "/meu-dashboard", icon: Compass, requiresAceite: true },
+  { label: "Cursos", path: "/meus-cursos", icon: GraduationCap, requiresAceite: true },
+  { label: "Atividades", path: "/minhas-atividades", icon: Zap, requiresAceite: true },
+  { label: "Minhas Metas", path: "/minhas-metas", icon: Flag, requiresAceite: true },
+  { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle, requiresAceite: false },
 ];
+
+/** Rotas que ficam bloqueadas até o aceite (para alunos novos) */
+const BLOCKED_PATHS = ALL_NAV_ITEMS.filter(i => i.requiresAceite).map(i => i.path);
 
 export default function AlunoLayout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -26,6 +31,37 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => { window.location.href = "/"; },
   });
+
+  // Buscar status de onboarding (aceite + data de criação)
+  const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
+    enabled: !!user && (user.role === 'user' || (user.role === 'manager' && !!(user as any).alunoId)),
+  });
+
+  // Determinar se o menu deve ser bloqueado
+  const menuBloqueado = useMemo(() => {
+    if (!onboardingStatus) return false; // Enquanto carrega, não bloqueia
+    // Regra: só bloqueia alunos cadastrados a partir de 15/03/2026 que NÃO deram aceite
+    if (onboardingStatus.alunoCreatedAt) {
+      const createdAt = new Date(onboardingStatus.alunoCreatedAt);
+      if (createdAt >= ONBOARDING_CUTOFF_DATE && !onboardingStatus.aceiteRealizado) {
+        return true;
+      }
+    }
+    return false;
+  }, [onboardingStatus]);
+
+  // Redirecionar para onboarding se tentar acessar rota bloqueada
+  useEffect(() => {
+    if (menuBloqueado && BLOCKED_PATHS.some(p => location === p)) {
+      setLocation("/onboarding");
+    }
+  }, [menuBloqueado, location, setLocation]);
+
+  // Filtrar itens de navegação
+  const navItems = useMemo(() => {
+    if (!menuBloqueado) return ALL_NAV_ITEMS;
+    return ALL_NAV_ITEMS.filter(item => !item.requiresAceite);
+  }, [menuBloqueado]);
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -40,7 +76,7 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setLocation("/mural")}>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setLocation(menuBloqueado ? "/onboarding" : "/mural")}>
               <img
                 src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
                 alt="B.E.M."
@@ -51,7 +87,7 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
 
             {/* Navegação Desktop */}
             <nav className="hidden md:flex items-center gap-0.5">
-              {NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const isActive = location === item.path;
                 const Icon = item.icon;
                 return (
@@ -71,6 +107,12 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
                   </button>
                 );
               })}
+              {menuBloqueado && (
+                <div className="flex items-center gap-1 px-3 py-2 text-xs text-amber-300/70" title="Complete o onboarding para desbloquear">
+                  <Lock className="h-3 w-3" />
+                  <span className="hidden lg:inline">Conclua o onboarding</span>
+                </div>
+              )}
             </nav>
 
             {/* Alternância de Papel (Gerente ↔ Aluno) */}
@@ -110,7 +152,7 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
         {/* Navegação Mobile */}
         <nav className="md:hidden border-t border-white/10">
           <div className="flex overflow-x-auto scrollbar-hide">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const isActive = location === item.path;
               const Icon = item.icon;
               return (
@@ -130,6 +172,12 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
                 </button>
               );
             })}
+            {menuBloqueado && (
+              <div className="flex items-center gap-1 px-4 py-3 text-xs text-amber-300/70 whitespace-nowrap">
+                <Lock className="h-3 w-3" />
+                Conclua o onboarding
+              </div>
+            )}
           </div>
         </nav>
       </header>

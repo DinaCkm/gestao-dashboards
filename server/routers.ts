@@ -6703,7 +6703,7 @@ Responda APENAS em JSON com o formato:
         return { success: true, todosAssistidos };
       }),
 
-    // Realizar aceite formal (etapa 8)
+    // Realizar aceite formal (etapa 8) — "De Acordo"
     realizarAceite: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
@@ -6720,25 +6720,98 @@ Responda APENAS em JSON com o formato:
           nomeAceite: input.nomeAceite,
         });
 
-        // Notificar admin + dina sobre aceite realizado
+        // Enviar emails: parabéns para aluno + notificação para mentora e admin
         try {
           const aluno = await db.getAlunoById(input.alunoId);
           if (aluno) {
-            const { sendEmail, buildOnboardingStepEmail } = await import('./emailService');
+            const { sendEmail, buildAceiteParabensEmail, buildAceiteNotificacaoEmail } = await import('./emailService');
             const adminEmail = process.env.SMTP_USER || '';
-            const emailData = buildOnboardingStepEmail({
+            const loginUrl = process.env.VITE_OAUTH_PORTAL_URL || 'https://gestaodash-5n7arrgn.manus.space';
+
+            // Buscar mentora do aluno
+            let mentorName = 'Sua Mentora';
+            let mentorEmail = '';
+            if (aluno.consultorId) {
+              const mentor = await db.getConsultorById(aluno.consultorId);
+              if (mentor) {
+                mentorName = mentor.name;
+                mentorEmail = mentor.email || '';
+              }
+            }
+
+            // 1) Email de parabéns para o aluno
+            if (aluno.email) {
+              const parabensData = buildAceiteParabensEmail({
+                alunoName: aluno.name || 'Aluno',
+                mentorName,
+                loginUrl,
+              });
+              console.log(`[Onboarding Aceite] Enviando email de parabéns para aluno=${aluno.email}`);
+              await sendEmail({ to: aluno.email, subject: parabensData.subject, html: parabensData.html, text: parabensData.text });
+            }
+
+            // 2) Notificação para mentora e admin
+            const notifData = buildAceiteNotificacaoEmail({
               alunoName: aluno.name || 'Aluno',
-              stepName: 'Termo de Compromisso Assinado',
-              stepNumber: 6,
-              totalSteps: 6,
+              mentorName,
+              loginUrl,
             });
-            console.log(`[Onboarding Step] Enviando email de avanço (Aceite) para admin=${adminEmail}, cc=dina@ckmtalents.net, aluno=${aluno.name}`);
-            const result = await sendEmail({ to: adminEmail || 'dina@ckmtalents.net', cc: adminEmail ? 'dina@ckmtalents.net' : undefined, subject: emailData.subject, html: emailData.html, text: emailData.text });
-            console.log(`[Onboarding Step] Resultado envio (Aceite): ${JSON.stringify(result)}`);
+            // Enviar para admin (to) + mentora e dina em cc
+            const ccList = [mentorEmail, 'dina@ckmtalents.net'].filter(Boolean).join(', ');
+            console.log(`[Onboarding Aceite] Enviando notificação para admin=${adminEmail}, cc=${ccList}`);
+            await sendEmail({ to: adminEmail || 'dina@ckmtalents.net', cc: ccList || undefined, subject: notifData.subject, html: notifData.html, text: notifData.text });
           }
-        } catch (e) { console.warn('[Onboarding] Erro ao enviar email de avanço (aceite):', e); }
+        } catch (e) { console.warn('[Onboarding] Erro ao enviar emails de aceite:', e); }
 
         return { success: true };
+      }),
+
+    // Solicitar revisão do aceite ("Gostaria de Rever") — envia justificativa para mentora e admin
+    solicitarRevisaoAceite: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        justificativa: z.string().min(5, 'Por favor, explique o que gostaria de rever.'),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
+        }
+
+        // Enviar email de solicitação de revisão para mentora e admin
+        try {
+          const aluno = await db.getAlunoById(input.alunoId);
+          if (aluno) {
+            const { sendEmail, buildRevisaoAceiteEmail } = await import('./emailService');
+            const adminEmail = process.env.SMTP_USER || '';
+            const loginUrl = process.env.VITE_OAUTH_PORTAL_URL || 'https://gestaodash-5n7arrgn.manus.space';
+
+            // Buscar mentora do aluno
+            let mentorName = 'Mentora não definida';
+            let mentorEmail = '';
+            if (aluno.consultorId) {
+              const mentor = await db.getConsultorById(aluno.consultorId);
+              if (mentor) {
+                mentorName = mentor.name;
+                mentorEmail = mentor.email || '';
+              }
+            }
+
+            const revisaoData = buildRevisaoAceiteEmail({
+              alunoName: aluno.name || 'Aluno',
+              alunoEmail: aluno.email || '',
+              mentorName,
+              justificativa: input.justificativa,
+              loginUrl,
+            });
+
+            const ccList = [mentorEmail, 'dina@ckmtalents.net'].filter(Boolean).join(', ');
+            console.log(`[Onboarding Revisão] Enviando email de solicitação de revisão para admin=${adminEmail}, cc=${ccList}, aluno=${aluno.name}`);
+            await sendEmail({ to: adminEmail || 'dina@ckmtalents.net', cc: ccList || undefined, subject: revisaoData.subject, html: revisaoData.html, text: revisaoData.text });
+          }
+        } catch (e) { console.warn('[Onboarding] Erro ao enviar email de revisão:', e); }
+
+        return { success: true, message: 'Sua solicitação de revisão foi enviada para a mentora e administração.' };
       }),
 
     // Listar vídeos do onboarding

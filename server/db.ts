@@ -6070,13 +6070,15 @@ export async function getAlunoOnboardingStatus(user: {
   hasPdi: boolean;
   onboardingLiberado: boolean;
   alunoId: number | null;
+  aceiteRealizado: boolean;
+  alunoCreatedAt: string | null;
 }> {
   const db = await getDb();
-  if (!db) return { needsOnboarding: false, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null };
+  if (!db) return { needsOnboarding: false, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null, aceiteRealizado: false, alunoCreatedAt: null };
 
   // Só se aplica a alunos (role === 'user') ou managers com alunoId (visão dupla)
   if (user.role !== 'user' && !(user.role === 'manager' && user.alunoId)) {
-    return { needsOnboarding: false, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null };
+    return { needsOnboarding: false, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null, aceiteRealizado: false, alunoCreatedAt: null };
   }
 
   // Buscar aluno: primeiro pelo alunoId, depois pelo email
@@ -6100,11 +6102,20 @@ export async function getAlunoOnboardingStatus(user: {
 
   if (!aluno) {
     // Aluno não encontrado na tabela alunos - precisa de onboarding
-    return { needsOnboarding: true, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null };
+    return { needsOnboarding: true, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null, aceiteRealizado: false, alunoCreatedAt: null };
   }
 
   const hasMentor = !!aluno.consultorId;
   const onboardingLiberado = aluno.onboardingLiberado === 1;
+  const alunoCreatedAt = aluno.createdAt ? new Date(aluno.createdAt).toISOString() : null;
+
+  // Verificar se o aluno já deu aceite no onboarding
+  const [jornadaRow] = await db.select({ aceiteRealizado: onboardingJornada.aceiteRealizado })
+    .from(onboardingJornada)
+    .where(eq(onboardingJornada.alunoId, aluno.id))
+    .orderBy(sql`${onboardingJornada.ciclo} DESC`)
+    .limit(1);
+  const aceiteRealizado = (jornadaRow?.aceiteRealizado ?? 0) === 1;
 
   // Verificar se o aluno tem PDI (assessment_pdi)
   const [pdiCount] = await db.select({ count: sql<number>`COUNT(*)` })
@@ -6129,6 +6140,8 @@ export async function getAlunoOnboardingStatus(user: {
     hasPdi,
     onboardingLiberado,
     alunoId: aluno.id,
+    aceiteRealizado,
+    alunoCreatedAt,
   };
 }
 

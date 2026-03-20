@@ -1120,3 +1120,317 @@ Este e-mail foi enviado automaticamente. Mentor(a), administração e coordenaç
 
   return { subject, html, text };
 }
+
+
+// ============ EMAIL DE PARABÉNS - ACEITE DO ONBOARDING ============
+
+export function buildAceiteParabensEmail(data: {
+  alunoName: string;
+  mentorName: string;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `🎉 Parabéns, ${data.alunoName}! Bem-vindo(a) à sua Jornada de Desenvolvimento!`;
+
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+          
+          <!-- Header com gradiente -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #0A1E3E 0%, #1a3a6a 50%, #F5991F 100%); padding: 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display: block; margin: 0 auto 16px;" />
+              <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 8px; font-weight: 800;">🎉 Parabéns!</h1>
+              <p style="color: rgba(255,255,255,0.9); font-size: 16px; margin: 0;">Sua jornada de desenvolvimento começa agora!</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="color: #0A1E3E; font-size: 18px; font-weight: 700; margin: 0 0 16px;">
+                Olá, ${data.alunoName}! 🌟
+              </p>
+              
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
+                Você acaba de dar o passo mais importante: <strong>assinou o Termo de Compromisso</strong> e se comprometeu com o seu próprio crescimento profissional e pessoal.
+              </p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+                <tr>
+                  <td style="background-color: #ecfdf5; border: 2px solid #a7f3d0; border-radius: 12px; padding: 20px; text-align: center;">
+                    <p style="color: #065f46; font-size: 20px; font-weight: 700; margin: 0 0 8px;">
+                      ✅ Onboarding Concluído com Sucesso!
+                    </p>
+                    <p style="color: #047857; font-size: 14px; margin: 0;">
+                      Todas as etapas foram finalizadas. Seu portal está liberado!
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 16px;">
+                <strong>O que vem agora:</strong>
+              </p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+                <tr>
+                  <td style="padding: 12px 16px; background-color: #f0f9ff; border-left: 4px solid #0A1E3E; border-radius: 0 8px 8px 0; margin-bottom: 8px;">
+                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>📚 Cursos e Webinars</strong> — Acesse os conteúdos disponíveis no seu portal</p>
+                  </td>
+                </tr>
+                <tr><td style="height: 8px;"></td></tr>
+                <tr>
+                  <td style="padding: 12px 16px; background-color: #fff7ed; border-left: 4px solid #F5991F; border-radius: 0 8px 8px 0;">
+                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>🎯 Metas e Atividades</strong> — Acompanhe suas metas de desenvolvimento</p>
+                  </td>
+                </tr>
+                <tr><td style="height: 8px;"></td></tr>
+                <tr>
+                  <td style="padding: 12px 16px; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 0 8px 8px 0;">
+                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>🤝 Mentoria com ${data.mentorName}</strong> — Sua mentora está pronta para te guiar</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #0A1E3E, #F5991F); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 16px; font-weight: 700;">
+                      Acessar Meu Portal →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0; text-align: center; font-style: italic;">
+                "O sucesso é a soma de pequenos esforços repetidos dia após dia." — Robert Collier
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #0A1E3E; padding: 24px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="100" style="display: block; margin: 0 auto 8px; opacity: 0.7;" />
+              <p style="color: rgba(255,255,255,0.5); font-size: 11px; line-height: 1.5; margin: 0;">
+                Este é um email automático do ECOSSISTEMA DO BEM.<br>
+                © ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `🎉 Parabéns, ${data.alunoName}! Bem-vindo(a) à sua Jornada de Desenvolvimento!
+
+Você acaba de assinar o Termo de Compromisso e se comprometeu com o seu próprio crescimento.
+
+✅ Onboarding Concluído com Sucesso!
+
+O que vem agora:
+- 📚 Cursos e Webinars — Acesse os conteúdos disponíveis no seu portal
+- 🎯 Metas e Atividades — Acompanhe suas metas de desenvolvimento
+- 🤝 Mentoria com ${data.mentorName} — Sua mentora está pronta para te guiar
+
+Acesse seu portal: ${data.loginUrl}
+
+© ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.`;
+
+  return { subject, html, text };
+}
+
+
+// ============ EMAIL DE ACEITE REALIZADO - NOTIFICAÇÃO PARA MENTORA E ADMIN ============
+
+export function buildAceiteNotificacaoEmail(data: {
+  alunoName: string;
+  mentorName: string;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `✅ ${data.alunoName} assinou o Termo de Compromisso — Onboarding Concluído!`;
+
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background-color: #ffffff; padding: 30px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="140" style="display: block; margin: 0 auto 8px;" />
+              <p style="color: #6b7280; margin: 4px 0 0; font-size: 12px;">Notificação de Onboarding</p>
+            </td>
+          </tr>
+          <tr><td style="padding: 0 40px;"><hr style="border: none; border-top: 2px solid #10b981; margin: 0;" /></td></tr>
+          <tr>
+            <td style="padding: 30px 40px;">
+              <h2 style="color: #065f46; margin: 0 0 16px; font-size: 20px;">✅ Aceite Realizado com Sucesso!</h2>
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.7; margin: 0 0 20px;">
+                <strong>${data.alunoName}</strong> assinou o Termo de Compromisso e concluiu todas as etapas do onboarding. O portal de desenvolvimento está agora totalmente liberado para este aluno.
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 20px;">
+                <tr>
+                  <td style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 16px 20px;">
+                    <p style="color: #065f46; font-size: 14px; margin: 0;"><strong>Aluno:</strong> ${data.alunoName}</p>
+                    <p style="color: #065f46; font-size: 14px; margin: 4px 0 0;"><strong>Mentora:</strong> ${data.mentorName}</p>
+                    <p style="color: #065f46; font-size: 14px; margin: 4px 0 0;"><strong>Status:</strong> Onboarding 100% concluído</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f8fafc; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #9ca3af; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
+                Este é um email automático do ECOSSISTEMA DO BEM.<br>
+                © ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `✅ ${data.alunoName} assinou o Termo de Compromisso — Onboarding Concluído!
+
+Aluno: ${data.alunoName}
+Mentora: ${data.mentorName}
+Status: Onboarding 100% concluído
+
+O portal de desenvolvimento está agora totalmente liberado.
+
+© ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.`;
+
+  return { subject, html, text };
+}
+
+
+// ============ EMAIL DE SOLICITAÇÃO DE REVISÃO DO ACEITE - NOTIFICAÇÃO PARA MENTORA E ADMIN ============
+
+export function buildRevisaoAceiteEmail(data: {
+  alunoName: string;
+  alunoEmail: string;
+  mentorName: string;
+  justificativa: string;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `📝 ${data.alunoName} gostaria de rever o Plano de Desenvolvimento — Solicitação de Revisão`;
+
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background-color: #ffffff; padding: 30px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="140" style="display: block; margin: 0 auto 8px;" />
+              <p style="color: #6b7280; margin: 4px 0 0; font-size: 12px;">Notificação de Onboarding — Solicitação de Revisão</p>
+            </td>
+          </tr>
+          <tr><td style="padding: 0 40px;"><hr style="border: none; border-top: 2px solid #f59e0b; margin: 0;" /></td></tr>
+          <tr>
+            <td style="padding: 30px 40px;">
+              <h2 style="color: #92400e; margin: 0 0 16px; font-size: 20px;">📝 Solicitação de Revisão</h2>
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.7; margin: 0 0 20px;">
+                <strong>${data.alunoName}</strong> gostaria de <strong>rever alguns pontos</strong> do seu Plano de Desenvolvimento antes de dar o aceite no Termo de Compromisso. Segue a justificativa:
+              </p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 20px;">
+                <tr>
+                  <td style="background-color: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px 20px;">
+                    <p style="color: #92400e; font-size: 12px; font-weight: 700; margin: 0 0 8px; text-transform: uppercase;">O que o aluno gostaria de rever:</p>
+                    <p style="color: #4a5568; font-size: 15px; line-height: 1.7; margin: 0; font-style: italic;">
+                      "${data.justificativa}"
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 20px;">
+                <tr>
+                  <td style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px;">
+                    <p style="color: #334155; font-size: 14px; margin: 0;"><strong>Aluno:</strong> ${data.alunoName}</p>
+                    <p style="color: #334155; font-size: 14px; margin: 4px 0 0;"><strong>Email:</strong> ${data.alunoEmail}</p>
+                    <p style="color: #334155; font-size: 14px; margin: 4px 0 0;"><strong>Mentora:</strong> ${data.mentorName}</p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color: #4a5568; font-size: 14px; line-height: 1.7; margin: 0 0 20px;">
+                <strong>Próximos passos:</strong> Entre em contato com o aluno para conversar sobre os pontos levantados e, se necessário, ajustar o plano de desenvolvimento.
+              </p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="${data.loginUrl}" style="display: inline-block; background-color: #0A1E3E; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-size: 14px; font-weight: 700;">
+                      Acessar Plataforma →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f8fafc; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #9ca3af; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
+                Este é um email automático do ECOSSISTEMA DO BEM.<br>
+                © ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `📝 ${data.alunoName} gostaria de rever o Plano de Desenvolvimento — Solicitação de Revisão
+
+Aluno: ${data.alunoName}
+Email: ${data.alunoEmail}
+Mentora: ${data.mentorName}
+
+O que o aluno gostaria de rever:
+"${data.justificativa}"
+
+Próximos passos: Entre em contato com o aluno para conversar sobre os pontos levantados e, se necessário, ajustar o plano de desenvolvimento.
+
+Acesse a plataforma: ${data.loginUrl}
+
+© ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.`;
+
+  return { subject, html, text };
+}
