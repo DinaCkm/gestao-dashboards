@@ -2821,3 +2821,6 @@
 - [x] Adicionar efeito de fogos de artifício (canvas-confetti) ao clicar "De Acordo"
 - [x] Adicionar som de parabéns ao clicar "De Acordo"
 - [x] Trocar toda referência de "recusar/recusa" por "gostaria de rever/revisão" (tom mais suave)
+
+## Esconder aba Financeiro para Gerente (20/03/2026)
+- [x] Esconder aba "Financeiro" no Demonstrativo de Sessões de Mentoria para o papel Gerente (já implementado - isAdmin guard)

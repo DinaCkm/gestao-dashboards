@@ -1,0 +1,10 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.role FROM users u WHERE u.name LIKE '%Leandro%' OR u.email LIKE '%leandro%'; SELECT c.id, c.nome, c.email, c.role FROM consultors c WHERE c.nome LIKE '%Leandro%' OR c.email LIKE '%leandro%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.role FROM users u WHERE u.name LIKE '%Leandro%' OR u.email LIKE '%leandro%'; SELECT c.id, c.nome, c.email, c.role FROM consultors c WHERE c.nome LIKE '%Leandro%' OR c.email LIKE '%leandro%';",
+  "returncode": 1,
+  "logs": [
+    "id\tname\temail\trole",
+    "4381885\tLeandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br\tleandro.rodrigues@embrapii.org.br\tmanager",
+    "ERROR 1054 (42S22) at line 1: Unknown column 'c.nome' in 'where clause'"
+  ]
+}
