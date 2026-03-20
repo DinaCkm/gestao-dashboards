@@ -69,6 +69,7 @@ import {
   CalendarDays,
   Edit3,
   Footprints,
+  Home,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -192,6 +193,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: Settings, label: "Configurações", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   
   // === GERENTE DE EMPRESA ===
+  { icon: Home, label: "Boas-Vindas", path: "/boas-vindas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },

@@ -2770,3 +2770,12 @@
 
 ## Bug: Gerente vê aba Financeiro (20/03/2026)
 - [x] Esconder aba Financeiro do Demonstrativo de Sessões de Mentoria para gestores (apenas admin)
+
+## Página de Boas-Vindas do Gestor Puro (20/03/2026)
+- [x] Criar página de boas-vindas premium para gestor puro
+- [x] Apresentar o Programa de Certificação de Liderança com visual impactante
+- [x] Explicar cada item do menu e o que o gestor vai encontrar em cada página
+- [x] Botão de solicitar reunião de apresentação (envia email para CKM)
+- [x] Redirecionar gestor puro automaticamente para esta página ao logar
+- [x] Registrar rota no App.tsx
+- [x] Adicionar item "Boas-Vindas" no menu do DashboardLayout para gestor
