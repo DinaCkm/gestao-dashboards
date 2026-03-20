@@ -3078,6 +3078,11 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
       return await db.getAllStudentsSessionProgress();
     }),
 
+    // Estatísticas da equipe do gestor (colaboradores, mentorias, competências, top competências)
+    gestorTeamStats: managerProcedure.input(z.object({ programId: z.number() })).query(async ({ input }) => {
+      return await db.getGestorTeamStats(input.programId);
+    }),
+
     // Enviar notificação ao admin sobre alunos a 1 sessão de fechar o ciclo
     notificarCicloQuaseFechando: managerProcedure.mutation(async () => {
       const allProgress = await db.getAllStudentsSessionProgress();
@@ -4578,6 +4583,11 @@ atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as
           competenciaId: z.number(),
           peso: z.enum(['obrigatoria', 'opcional']),
           notaCorte: z.string(),
+          nivelAtual: z.number().nullable().optional(),
+          metaCiclo1: z.number().nullable().optional(),
+          metaCiclo2: z.number().nullable().optional(),
+          metaFinal: z.number().nullable().optional(),
+          justificativa: z.string().nullable().optional(),
           microInicio: z.string().nullable().optional(),
           microTermino: z.string().nullable().optional(),
         })),
@@ -6827,6 +6837,50 @@ Responda APENAS em JSON com o formato:
         });
         console.log(`[Onboarding Revisão] Solicitação registrada no banco: id=${revisao.id}, alunoId=${input.alunoId}`);
 
+        // Criar notificações in-app para mentor e admins
+        try {
+          const aluno = await db.getAlunoById(input.alunoId);
+          const alunoNome = aluno?.name || 'Aluno';
+          const notificacoes: Array<{ userId: number; title: string; message: string; type: 'action'; category: string; link: string }> = [];
+
+          // Notificar o mentor do aluno (se tiver user vinculado)
+          if (aluno?.consultorId) {
+            const allUsers = await db.getAllUsers();
+            const mentorUser = allUsers.find((u: any) => u.consultorId === aluno.consultorId);
+            if (mentorUser) {
+              notificacoes.push({
+                userId: mentorUser.id,
+                title: 'Solicitação de Revisão do PDI',
+                message: `O aluno ${alunoNome} solicitou revisão do PDI: "${input.justificativa.substring(0, 100)}${input.justificativa.length > 100 ? '...' : ''}"`,
+                type: 'action',
+                category: 'revisao_pdi',
+                link: '/painel-revisoes',
+              });
+            }
+          }
+
+          // Notificar todos os admins
+          const allUsers2 = await db.getAllUsers();
+          const adminUsers = allUsers2.filter((u: any) => u.role === 'admin');
+          for (const adminUser of adminUsers) {
+            notificacoes.push({
+              userId: adminUser.id,
+              title: 'Solicitação de Revisão do PDI',
+              message: `O aluno ${alunoNome} solicitou revisão do PDI: "${input.justificativa.substring(0, 100)}${input.justificativa.length > 100 ? '...' : ''}"`,
+              type: 'action',
+              category: 'revisao_pdi',
+              link: '/painel-revisoes',
+            });
+          }
+
+          if (notificacoes.length > 0) {
+            await db.createNotifications(notificacoes);
+            console.log(`[Onboarding Revisão] ${notificacoes.length} notificações in-app criadas`);
+          }
+        } catch (notifErr) {
+          console.warn('[Onboarding Revisão] Erro ao criar notificações in-app:', notifErr);
+        }
+
         return { success: true, message: 'Sua solicitação de revisão foi enviada para a mentora e administração.', revisaoId: revisao.id };
       }),
 
@@ -6834,6 +6888,36 @@ Responda APENAS em JSON com o formato:
     videos: protectedProcedure.query(async () => {
       return await db.getOnboardingVideos();
     }),
+
+    // ============ REVISÕES DO PDI ============
+    // Listar revisões com dados enriquecidos (admin/mentor)
+    listarRevisoes: managerProcedure
+      .input(z.object({ status: z.enum(['pendente', 'em_analise', 'resolvida', 'cancelada']).optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.onboardingRevisoesDb.getEnriquecidas(input?.status);
+      }),
+
+    // Contar revisões pendentes (para badge)
+    contarRevisoesPendentes: managerProcedure.query(async () => {
+      const pendentes = await db.onboardingRevisoesDb.getPendentes();
+      return { count: pendentes.length };
+    }),
+
+    // Responder/atualizar uma revisão
+    responderRevisao: managerProcedure
+      .input(z.object({
+        revisaoId: z.number(),
+        status: z.enum(['em_analise', 'resolvida', 'cancelada']),
+        respostaAdmin: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.onboardingRevisoesDb.update(input.revisaoId, {
+          status: input.status,
+          respostaAdmin: input.respostaAdmin,
+          resolvidoPor: ctx.user.id,
+        });
+        return { success: true };
+      }),
   }),
 
   // ============ IN-APP NOTIFICATIONS ============

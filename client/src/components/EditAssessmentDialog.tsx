@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
+import ContratoInfoReadonly from "@/components/ContratoInfoReadonly";
 import { toast } from "sonner";
 import {
   Pencil,
@@ -377,20 +378,8 @@ export default function EditAssessmentDialog({
                 </div>
               </div>
 
-              {/* Total de Sessões Previstas */}
-              <div className="space-y-2">
-                <Label className="font-medium">Total de Sessões de Mentoria Previstas</Label>
-                <Input 
-                  type="number" 
-                  min="1" 
-                  placeholder="Ex: 12 (se vazio, calcula pela duração do contrato)" 
-                  value={totalSessoesPrevistas} 
-                  onChange={e => setTotalSessoesPrevistas(e.target.value)} 
-                />
-                <p className="text-xs text-muted-foreground">
-                  Quantidade total de sessões que devem ser realizadas dentro do período do contrato. Se vazio, calcula automaticamente (1 sessão/mês).
-                </p>
-              </div>
+              {/* Info do contrato - somente leitura (definido pelo admin) */}
+              <ContratoInfoReadonly alunoId={pdi.alunoId} />
 
               {/* Observações */}
               <div className="space-y-2">

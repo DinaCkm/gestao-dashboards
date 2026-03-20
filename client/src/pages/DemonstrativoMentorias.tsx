@@ -550,7 +550,7 @@ function DemonstrativoContent() {
             </div>
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <Info className="h-3.5 w-3.5" />
-              <span>Clique na linha para ver detalhes</span>
+              <span>Clique sobre o nome do aluno e abra o card com todas as informações detalhadas</span>
             </div>
           </div>
         </CardHeader>

@@ -4065,6 +4065,11 @@ export async function createAssessmentPdi(
     competenciaId: number;
     peso: 'obrigatoria' | 'opcional';
     notaCorte: string;
+    nivelAtual?: number | null;
+    metaCiclo1?: number | null;
+    metaCiclo2?: number | null;
+    metaFinal?: number | null;
+    justificativa?: string | null;
     microInicio?: string | null;
     microTermino?: string | null;
   }>
@@ -4106,6 +4111,11 @@ export async function createAssessmentPdi(
         competenciaId: c.competenciaId,
         peso: c.peso,
         notaCorte: c.notaCorte,
+        nivelAtual: c.nivelAtual != null ? String(c.nivelAtual) : null,
+        metaCiclo1: c.metaCiclo1 != null ? String(c.metaCiclo1) : null,
+        metaCiclo2: c.metaCiclo2 != null ? String(c.metaCiclo2) : null,
+        metaFinal: c.metaFinal != null ? String(c.metaFinal) : null,
+        justificativa: c.justificativa || null,
         microInicio: c.microInicio ? new Date(c.microInicio + 'T00:00:00') : null,
         microTermino: c.microTermino ? new Date(c.microTermino + 'T00:00:00') : null,
       }))
@@ -8440,6 +8450,46 @@ async function getOnboardingRevisoesPendentes() {
 }
 
 /**
+ * Listar TODAS as solicitações de revisão com dados enriquecidos (aluno, programa, mentor)
+ */
+async function getOnboardingRevisoesEnriquecidas(statusFilter?: 'pendente' | 'em_analise' | 'resolvida' | 'cancelada') {
+  const db = await getDb();
+  if (!db) return [];
+  let revisoes;
+  if (statusFilter) {
+    revisoes = await db.select().from(onboardingRevisoes).where(eq(onboardingRevisoes.status, statusFilter)).orderBy(desc(onboardingRevisoes.createdAt));
+  } else {
+    revisoes = await db.select().from(onboardingRevisoes).orderBy(desc(onboardingRevisoes.createdAt));
+  }
+  if (revisoes.length === 0) return [];
+  
+  const allAlunos = await db.select().from(alunos);
+  const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
+  const allConsultors = await db.select().from(consultors);
+  const consultorMap = new Map(allConsultors.map(c => [c.id, c]));
+  const allPrograms = await db.select().from(programs);
+  const programMap = new Map(allPrograms.map(p => [p.id, p]));
+  const allUsers = await db.select().from(users);
+  const userMap = new Map(allUsers.map(u => [u.id, u]));
+  
+  return revisoes.map(r => {
+    const aluno = alunoMap.get(r.alunoId);
+    const mentor = aluno?.consultorId ? consultorMap.get(aluno.consultorId) : null;
+    const programa = aluno?.programId ? programMap.get(aluno.programId) : null;
+    const resolvidoPorUser = r.resolvidoPor ? userMap.get(r.resolvidoPor) : null;
+    return {
+      ...r,
+      alunoNome: aluno?.name || 'Desconhecido',
+      alunoEmail: aluno?.email || null,
+      mentorNome: mentor?.name || null,
+      mentorEmail: mentor?.email || null,
+      programaNome: programa?.name || null,
+      resolvidoPorNome: resolvidoPorUser?.name || null,
+    };
+  });
+}
+
+/**
  * Atualizar status de uma solicitação de revisão
  */
 async function updateOnboardingRevisao(id: number, data: { status: 'pendente' | 'em_analise' | 'resolvida' | 'cancelada'; respostaAdmin?: string; resolvidoPor?: number }) {
@@ -8467,6 +8517,72 @@ export const onboardingRevisoesDb = {
   create: createOnboardingRevisao,
   getByAluno: getOnboardingRevisoesByAluno,
   getPendentes: getOnboardingRevisoesPendentes,
+  getEnriquecidas: getOnboardingRevisoesEnriquecidas,
   update: updateOnboardingRevisao,
   countByAluno: countOnboardingRevisoesByAluno,
 };
+
+
+/**
+ * Retorna estatísticas da equipe do gestor:
+ * - totalColaboradores: número de alunos da empresa
+ * - totalMentorias: sessões de mentoria realizadas
+ * - totalCompetencias: competências distintas sendo desenvolvidas
+ * - principaisCompetencias: top 5 competências mais trabalhadas
+ */
+export async function getGestorTeamStats(programId: number) {
+  const db = await getDb();
+  if (!db) return { totalColaboradores: 0, totalMentorias: 0, totalCompetencias: 0, principaisCompetencias: [] as { nome: string; totalAlunos: number }[] };
+
+  // Total de colaboradores (alunos) da empresa
+  const [alunosCount] = await db.select({ count: sql<number>`COUNT(DISTINCT ${alunos.id})` })
+    .from(alunos)
+    .where(eq(alunos.programId, programId));
+
+  // Total de mentorias realizadas
+  const [mentoriasCount] = await db.select({ count: sql<number>`COUNT(*)` })
+    .from(mentoringSessions)
+    .innerJoin(alunos, eq(mentoringSessions.alunoId, alunos.id))
+    .where(eq(alunos.programId, programId));
+
+  // Total de competências distintas sendo desenvolvidas
+  const [compCount] = await db.select({ count: sql<number>`COUNT(DISTINCT ${assessmentCompetencias.competenciaId})` })
+    .from(assessmentCompetencias)
+    .innerJoin(assessmentPdi, eq(assessmentCompetencias.assessmentPdiId, assessmentPdi.id))
+    .innerJoin(alunos, eq(assessmentPdi.alunoId, alunos.id))
+    .where(and(eq(alunos.programId, programId), eq(assessmentPdi.status, 'ativo')));
+
+  // Top 5 competências mais trabalhadas
+  const topComps = await db.select({
+    competenciaId: assessmentCompetencias.competenciaId,
+    totalAlunos: sql<number>`COUNT(DISTINCT ${assessmentPdi.alunoId})`,
+  })
+    .from(assessmentCompetencias)
+    .innerJoin(assessmentPdi, eq(assessmentCompetencias.assessmentPdiId, assessmentPdi.id))
+    .innerJoin(alunos, eq(assessmentPdi.alunoId, alunos.id))
+    .where(and(eq(alunos.programId, programId), eq(assessmentPdi.status, 'ativo')))
+    .groupBy(assessmentCompetencias.competenciaId)
+    .orderBy(sql`COUNT(DISTINCT ${assessmentPdi.alunoId}) DESC`)
+    .limit(5);
+
+  // Buscar nomes das competências
+  const compIds = topComps.map(c => c.competenciaId);
+  let principaisCompetencias: { nome: string; totalAlunos: number }[] = [];
+  if (compIds.length > 0) {
+    const compNames = await db.select({ id: competencias.id, nome: competencias.nome })
+      .from(competencias)
+      .where(sql`${competencias.id} IN (${sql.join(compIds.map(id => sql`${id}`), sql`, `)})`);
+    const nameMap = new Map(compNames.map(c => [c.id, c.nome]));
+    principaisCompetencias = topComps.map(c => ({
+      nome: nameMap.get(c.competenciaId) || 'Desconhecida',
+      totalAlunos: Number(c.totalAlunos),
+    }));
+  }
+
+  return {
+    totalColaboradores: Number(alunosCount?.count || 0),
+    totalMentorias: Number(mentoriasCount?.count || 0),
+    totalCompetencias: Number(compCount?.count || 0),
+    principaisCompetencias,
+  };
+}

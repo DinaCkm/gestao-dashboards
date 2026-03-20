@@ -1,0 +1,16 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(DISTINCT id) FROM alunos WHERE programId = 18) as total_alunos,\n  (SELECT COUNT(*) FROM mentoring_sessions ms JOIN alunos a ON ms.alunoId = a.id WHERE a.programId = 18) as total_mentorias,\n  (SELECT COUNT(DISTINCT ac.competenciaId) FROM assessment_competencias ac JOIN assessment_pdi ap ON ac.id = ap.id JOIN alunos a ON ap.alunoId = a.id WHERE a.programId = 18) as total_competencias,\n  (SELECT name FROM programs WHERE id = 18) as programa_nome;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT \n  (SELECT COUNT(DISTINCT id) FROM alunos WHERE programId = 18) as total_alunos,\n  (SELECT COUNT(*) FROM mentoring_sessions ms JOIN alunos a ON ms.alunoId = a.id WHERE a.programId = 18) as total_mentorias,\n  (SELECT COUNT(DISTINCT ac.competenciaId) FROM assessment_competencias ac JOIN assessment_pdi ap ON ac.id = ap.id JOIN alunos a ON ap.alunoId = a.id WHERE a.programId = 18) as total_competencias,\n  (SELECT name FROM programs WHERE id = 18) as programa_nome;",
+  "rows": [
+    {
+      "total_alunos": "16",
+      "total_mentorias": "168",
+      "total_competencias": "0",
+      "programa_nome": "EMBRAPII"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_alunos\ttotal_mentorias\ttotal_competencias\tprograma_nome\n16\t168\t0\tEMBRAPII\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}

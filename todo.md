@@ -2829,3 +2829,33 @@
 - [x] Verificar site publicado funcionando corretamente (login page OK)
 - [x] Registrar solicitações de revisão do PDI no banco de dados (tabela onboarding_revisoes + limite 5)
 - [x] Verificar página Meu PDI (fora do onboarding) para multi-trilha (já OK - itera sobre todas)
+
+## Ajustes Consolidados - Prioridade Aluno → Mentor → Gestor (20/03/2026)
+
+### ALUNO
+- [x] Filtrar competências abaixo de 4 na autopercepção do assessment (ordem: Básicas → Essenciais → Master → Jornada do Futuro)
+
+### MENTOR
+- [x] Incluir campos de nível e meta ao cadastrar trilha/competência do aluno (campos já existiam no form, corrigido envio ao servidor)
+- [x] Remover campo de quantidade de mentorias do formulário do PDI do mentor
+- [x] Exibir dados do contrato (definidos pelo admin) no plano de desenvolvimento (componente ContratoInfoReadonly)
+- [x] Exibir tempo de duração do contrato na página de assessment do mentor (ContratoInfoReadonly no card do aluno + Step 1 do diálogo)
+
+### GESTOR
+- [x] Corrigir cards da Home do Gerente para mostrar dados reais da equipe (Colaboradores, Sessões Realizadas, Progresso Médio, Trilhas Ativas)
+- [x] Corrigir filtro de alunos no relatório individual do gerente (fix: usar consultorRole em vez de consultorId para distinguir mentor de gerente)
+- [x] Investigar e corrigir erro no Fale Conosco (fix: system.notifyOwner mudado de adminProcedure para protectedProcedure)
+- [x] Adicionar texto informativo "(clique sobre o nome do aluno...)" no Demonstrativo de Mentorias
+- [x] Ajustar cards do Gerente: Volume de Colaboradores, Total de Mentorias, Total de Competências Desenvolvidas + Principais Competências
+
+## Painel de Revisões PDI e Notificações (20/03/2026)
+- [x] Criar função getOnboardingRevisoesEnriquecidas no db.ts (dados enriquecidos com aluno, mentor, programa)
+- [x] Criar rotas tRPC: listarRevisoes, contarRevisoesPendentes, responderRevisao (onboarding router)
+- [x] Criar página PainelRevisoes.tsx (admin/mentor) com filtros por status, busca, cards de stats, dialog de resposta
+- [x] Adicionar rota /painel-revisoes no App.tsx
+- [x] Adicionar "Painel de Revisões PDI" no menu do admin (grupo Alunos) e do mentor
+- [x] Criar notificações in-app para mentor e admins quando aluno solicita revisão do PDI
+- [x] Testes unitários para permissões (notifyOwner, listarRevisoes, contarRevisoesPendentes) - 8 testes passando
+
+### Pergunta do Usuário: Principais Competências Trabalhadas
+- [x] Verificar se o card "Principais Competências" já está implementado na Home do Gestor (já estava - exibe top competências da equipe)

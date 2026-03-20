@@ -25,7 +25,7 @@ import {
   Lightbulb,
   Rocket
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -77,6 +77,14 @@ function BoasVindasContent() {
   };
 
   const userName = (user as any)?.name?.split(' ')[0] || 'Gestor';
+
+  // Buscar estatísticas da equipe do gestor (colaboradores, mentorias, competências, top competências)
+  const { data: teamStats } = trpc.mentor.gestorTeamStats.useQuery(
+    { programId: (user as any)?.programId || 0 },
+    { enabled: !!user && user.role === 'manager' && !!(user as any)?.programId }
+  );
+
+  const stats = teamStats || { totalColaboradores: 0, totalMentorias: 0, totalCompetencias: 0, principaisCompetencias: [] };
 
   return (
     <div className="min-h-screen -m-6">
@@ -146,30 +154,46 @@ function BoasVindasContent() {
               </div>
             </div>
 
-            {/* Right side - Stats cards */}
+            {/* Right side - Stats cards (dados reais da equipe) */}
             <div className="flex-shrink-0 w-full md:w-auto">
               <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
                 <div className="p-5 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <Award className="w-8 h-8 mx-auto mb-2" style={{ color: '#F5A623' }} />
-                  <div className="text-2xl font-bold text-white">4</div>
-                  <div className="text-xs text-white/60">Trilhas de Desenvolvimento</div>
+                  <Users className="w-8 h-8 mx-auto mb-2" style={{ color: '#F5A623' }} />
+                  <div className="text-2xl font-bold text-white">{stats.totalColaboradores}</div>
+                  <div className="text-xs text-white/60">Colaboradores</div>
                 </div>
                 <div className="p-5 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
                   <Target className="w-8 h-8 mx-auto mb-2" style={{ color: '#F5A623' }} />
-                  <div className="text-2xl font-bold text-white">12</div>
-                  <div className="text-xs text-white/60">Sessões de Mentoria</div>
-                </div>
-                <div className="p-5 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <Users className="w-8 h-8 mx-auto mb-2" style={{ color: '#F5A623' }} />
-                  <div className="text-2xl font-bold text-white">100%</div>
-                  <div className="text-xs text-white/60">Acompanhamento Individual</div>
+                  <div className="text-2xl font-bold text-white">{stats.totalMentorias}</div>
+                  <div className="text-xs text-white/60">Total de Mentorias</div>
                 </div>
                 <div className="p-5 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
                   <TrendingUp className="w-8 h-8 mx-auto mb-2" style={{ color: '#F5A623' }} />
-                  <div className="text-2xl font-bold text-white">PDI</div>
-                  <div className="text-xs text-white/60">Plano de Desenvolvimento</div>
+                  <div className="text-2xl font-bold text-white">{stats.totalCompetencias}</div>
+                  <div className="text-xs text-white/60">Competências Desenvolvidas</div>
+                </div>
+                <div className="p-5 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <Award className="w-8 h-8 mx-auto mb-2" style={{ color: '#F5A623' }} />
+                  <div className="text-2xl font-bold text-white">{stats.principaisCompetencias.length}</div>
+                  <div className="text-xs text-white/60">Top Competências</div>
                 </div>
               </div>
+              {/* Principais Competências Trabalhadas */}
+              {stats.principaisCompetencias.length > 0 && (
+                <div className="mt-4 p-4 rounded-2xl max-w-sm mx-auto" style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">Principais Competências</div>
+                  <div className="space-y-2">
+                    {stats.principaisCompetencias.map((comp, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <span className="text-sm text-white/80 truncate mr-2">{comp.nome}</span>
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(245, 166, 35, 0.2)', color: '#F5A623' }}>
+                          {comp.totalAlunos} aluno{comp.totalAlunos !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -35,10 +35,13 @@ export default function ReportsPage() {
   const [historyExpanded, setHistoryExpanded] = useState(true);
 
   const isAdmin = user?.role === "admin";
-  const isMentor = !!(user as any)?.consultorId; // Mentor = user com consultorId
+  const consultorRole = (user as any)?.consultorRole as string | null | undefined;
+  // Mentor = user com consultorId E consultorRole='mentor' (não inclui gerente puro)
+  const isMentor = !!(user as any)?.consultorId && consultorRole === 'mentor';
+  // Gestor de empresa = manager com consultorRole='gerente' OU manager sem consultorId
+  const isGestorEmpresa = user?.role === "manager" && !isMentor;
   // A5 FIX: Mentores (com consultorId) também devem ver a opção Gerencial
   const isManager = user?.role === "manager" || isAdmin || isMentor;
-  const isGestorEmpresa = user?.role === "manager" && !isMentor; // Gestor = manager sem consultorId
 
   // Fetch alunos list for individual report filter
   const { data: alunos } = trpc.alunos.list.useQuery(undefined, {
@@ -50,11 +53,11 @@ export default function ReportsPage() {
     enabled: isManager,
   });
 
-  // Fetch mentor's own alunos if user is a mentor
+  // Fetch mentor's own alunos if user is a mentor (not gerente puro)
   const consultorId = (user as any)?.consultorId;
   const { data: mentorAlunos } = trpc.alunos.byConsultor.useQuery(
     { consultorId: consultorId! },
-    { enabled: !!consultorId && reportType === "individual" }
+    { enabled: !!consultorId && isMentor && reportType === "individual" }
   );
 
   // Filter alunos by manager's company or mentor's linked alunos
@@ -64,6 +67,7 @@ export default function ReportsPage() {
       return mentorAlunos;
     }
     if (!alunos) return [];
+    // Gestor de empresa: filtrar pela empresa (programId)
     if (user?.role === "manager" && user.programId) {
       return alunos.filter((a: any) => a.programId === user.programId);
     }

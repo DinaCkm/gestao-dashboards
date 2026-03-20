@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
+import ContratoInfoReadonly from "@/components/ContratoInfoReadonly";
 import { toast } from "sonner";
 import {
   ClipboardCheck,
@@ -471,30 +472,101 @@ function AssessmentContent() {
                 <Star className="h-4 w-4 text-[#F5991F]" />
                 2. Autopercepção de Competências (Percepção Pessoal)
               </h4>
-              {autopercepcoesAluno.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {autopercepcoesAluno.map((ap: any) => {
-                    const comp = competenciasList.find((c: any) => c.id === ap.competenciaId);
-                    return (
-                      <div key={ap.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                        <span className="text-sm text-gray-700">{comp?.nome || `Competência #${ap.competenciaId}`}</span>
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map(n => (
-                            <div
-                              key={n}
-                              className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                                n <= ap.nota ? 'bg-[#F5991F] text-white' : 'bg-gray-200 text-gray-400'
-                              }`}
-                            >
-                              {n}
-                            </div>
-                          ))}
-                        </div>
+              {autopercepcoesAluno.length > 0 ? (() => {
+                // Filtrar apenas competências com nota abaixo de 4
+                const abaixoDe4 = autopercepcoesAluno.filter((ap: any) => ap.nota < 4);
+                
+                // Ordem das trilhas: Basic(1) → Essential(2) → Master(3) → Visão de Futuro(4) → demais
+                const ordemTrilhas = [1, 2, 3, 4];
+                const trilhaOrdemMap = new Map(ordemTrilhas.map((id, idx) => [id, idx]));
+                
+                // Agrupar por trilha
+                const porTrilha = new Map<number, any[]>();
+                for (const ap of abaixoDe4) {
+                  const tid = ap.trilhaId;
+                  if (!porTrilha.has(tid)) porTrilha.set(tid, []);
+                  porTrilha.get(tid)!.push(ap);
+                }
+                
+                // Ordenar trilhas pela ordem definida
+                const trilhasOrdenadas = Array.from(porTrilha.keys()).sort((a, b) => {
+                  const oa = trilhaOrdemMap.get(a) ?? 99;
+                  const ob = trilhaOrdemMap.get(b) ?? 99;
+                  return oa - ob;
+                });
+                
+                if (abaixoDe4.length === 0) {
+                  return (
+                    <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-emerald-800">Todas as competências com nota 4 ou superior</p>
+                        <p className="text-xs text-emerald-600 mt-0.5">
+                          Este aluno avaliou todas as suas competências com nota 4 ou 5 na autopercepção.
+                        </p>
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                      <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                      <p className="text-xs text-amber-700">
+                        Exibindo apenas competências com autopercepção <strong>abaixo de 4</strong> — pontos de atenção para o desenvolvimento.
+                        Total: <strong>{abaixoDe4.length}</strong> competência(s) identificada(s).
+                      </p>
+                    </div>
+                    {trilhasOrdenadas.map(trilhaId => {
+                      const trilha = trilhas.find((t: any) => t.id === trilhaId);
+                      const trilhaNome = trilha?.name || `Trilha #${trilhaId}`;
+                      const aps = porTrilha.get(trilhaId) || [];
+                      const trilhaColors: Record<string, string> = {
+                        'Basic': 'border-blue-300 bg-blue-50',
+                        'Essential': 'border-emerald-300 bg-emerald-50',
+                        'Master': 'border-purple-300 bg-purple-50',
+                        'Visão de Futuro': 'border-amber-300 bg-amber-50',
+                      };
+                      const colorClass = trilhaColors[trilhaNome] || 'border-gray-300 bg-gray-50';
+                      
+                      return (
+                        <div key={trilhaId} className={`border rounded-lg p-3 ${colorClass}`}>
+                          <h5 className="text-sm font-semibold text-[#0A1E3E] mb-2 flex items-center gap-2">
+                            <Route className="h-3.5 w-3.5" />
+                            {trilhaNome}
+                            <Badge variant="outline" className="text-xs">{aps.length} competência(s)</Badge>
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {aps.map((ap: any) => {
+                              const comp = competenciasList.find((c: any) => c.id === ap.competenciaId);
+                              return (
+                                <div key={ap.id} className="flex items-center justify-between p-2 bg-white/80 rounded-md">
+                                  <span className="text-sm text-gray-700">{comp?.nome || `Competência #${ap.competenciaId}`}</span>
+                                  <div className="flex items-center gap-1">
+                                    {[1, 2, 3, 4, 5].map(n => (
+                                      <div
+                                        key={n}
+                                        className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                                          n <= ap.nota
+                                            ? ap.nota <= 2 ? 'bg-red-500 text-white' : 'bg-[#F5991F] text-white'
+                                            : 'bg-gray-200 text-gray-400'
+                                        }`}
+                                      >
+                                        {n}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })() : (
                 <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
                   <div>
@@ -573,6 +645,10 @@ function AssessmentContent() {
                     {assessments.filter(a => a.status === "ativo").length} ativa{assessments.filter(a => a.status === "ativo").length !== 1 ? "s" : ""}
                   </Badge>
                 </div>
+              </div>
+              {/* Dados do contrato do aluno - visível para o mentor */}
+              <div className="mb-3">
+                <ContratoInfoReadonly alunoId={selectedAlunoId} />
               </div>
               {assessments.length > 0 && (() => {
                 // Agrupar assessments por turma
@@ -1431,6 +1507,11 @@ function CreateAssessmentDialog({
         competenciaId: c.competenciaId,
         peso: c.peso,
         notaCorte: c.notaCorte,
+        nivelAtual: c.nivelAtual ? parseInt(c.nivelAtual) : null,
+        metaCiclo1: c.metaCiclo1 ? parseInt(c.metaCiclo1) : null,
+        metaCiclo2: c.metaCiclo2 ? parseInt(c.metaCiclo2) : null,
+        metaFinal: c.metaFinal ? parseInt(c.metaFinal) : null,
+        justificativa: c.justificativa || null,
         microInicio: c.microInicio || null,
         microTermino: c.microTermino || null,
       })),
@@ -1521,22 +1602,8 @@ function CreateAssessmentDialog({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="font-medium flex items-center gap-1.5">
-                <FileText className="h-3.5 w-3.5" />
-                Total de Sessões de Mentoria Previstas
-              </Label>
-              <Input 
-                type="number" 
-                min="1" 
-                placeholder="Ex: 12 (se não preenchido, calcula pela duração do contrato)" 
-                value={totalSessoesPrevistas} 
-                onChange={e => setTotalSessoesPrevistas(e.target.value)} 
-              />
-              <p className="text-xs text-muted-foreground">
-                Quantidade total de sessões que devem ser realizadas dentro do período do contrato. Se não preenchido, o sistema calcula automaticamente (1 sessão por mês).
-              </p>
-            </div>
+            {/* Info do contrato - somente leitura (definido pelo admin) */}
+            <ContratoInfoReadonly alunoId={alunoId} />
 
             <DialogFooter>
               <Button variant="outline" onClick={onClose}>Cancelar</Button>

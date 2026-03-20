@@ -112,6 +112,7 @@ const adminMenuGroups: MenuGroup[] = [
     label: "Alunos",
     items: [
       { icon: Footprints, label: "Onboarding Tracking", path: "/onboarding-tracking" },
+      { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes" },
       { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment" },
       { icon: Target, label: "Plano Individual", path: "/plano-individual" },
       { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas" },
@@ -189,6 +190,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: Settings, label: "Configurações", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   

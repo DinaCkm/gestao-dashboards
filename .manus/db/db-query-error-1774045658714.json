@@ -1,0 +1,8 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(DISTINCT id) FROM alunos WHERE programId = 18) as total_alunos,\n  (SELECT COUNT(*) FROM sessoes_mentoria sm JOIN alunos a ON sm.alunoId = a.id WHERE a.programId = 18) as total_sessoes,\n  (SELECT COUNT(DISTINCT trilhaId) FROM assessment_competencias ac JOIN assessment_pdi ap ON ac.assessmentId = ap.id JOIN alunos a ON ap.alunoId = a.id WHERE a.programId = 18) as trilhas_ativas,\n  (SELECT name FROM programs WHERE id = 18) as programa_nome;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT \n  (SELECT COUNT(DISTINCT id) FROM alunos WHERE programId = 18) as total_alunos,\n  (SELECT COUNT(*) FROM sessoes_mentoria sm JOIN alunos a ON sm.alunoId = a.id WHERE a.programId = 18) as total_sessoes,\n  (SELECT COUNT(DISTINCT trilhaId) FROM assessment_competencias ac JOIN assessment_pdi ap ON ac.assessmentId = ap.id JOIN alunos a ON ap.alunoId = a.id WHERE a.programId = 18) as trilhas_ativas,\n  (SELECT name FROM programs WHERE id = 18) as programa_nome;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table '5n7arrgnhjndofcmzygxcy.sessoes_mentoria' doesn't exist"
+  ]
+}
