@@ -2824,3 +2824,8 @@
 
 ## Esconder aba Financeiro para Gerente (20/03/2026)
 - [x] Esconder aba "Financeiro" no Demonstrativo de Sessões de Mentoria para o papel Gerente (já implementado - isAdmin guard)
+
+## Melhorias Pós-Publicação (20/03/2026)
+- [x] Verificar site publicado funcionando corretamente (login page OK)
+- [x] Registrar solicitações de revisão do PDI no banco de dados (tabela onboarding_revisoes + limite 5)
+- [x] Verificar página Meu PDI (fora do onboarding) para multi-trilha (já OK - itera sobre todas)

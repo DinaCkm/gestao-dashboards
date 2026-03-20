@@ -1089,3 +1089,23 @@ export const onboardingVideos = mysqlTable("onboarding_videos", {
 });
 export type OnboardingVideo = typeof onboardingVideos.$inferSelect;
 export type InsertOnboardingVideo = typeof onboardingVideos.$inferInsert;
+
+
+/**
+ * Solicitações de revisão do PDI feitas pelo aluno durante o onboarding (Etapa 8 - "Gostaria de Rever")
+ * Registra cada solicitação com justificativa, status e resposta da mentora/admin
+ */
+export const onboardingRevisoes = mysqlTable("onboarding_revisoes", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  justificativa: text("justificativa").notNull(), // Texto do aluno explicando o que gostaria de rever
+  status: mysqlEnum("status", ["pendente", "em_analise", "resolvida", "cancelada"]).default("pendente").notNull(),
+  respostaAdmin: text("respostaAdmin"), // Resposta da mentora/admin
+  resolvidoPor: int("resolvidoPor"), // userId de quem resolveu
+  resolvidoEm: timestamp("resolvidoEm"),
+  emailEnviado: int("emailEnviado").default(0).notNull(), // 1 = email enviado com sucesso
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type OnboardingRevisao = typeof onboardingRevisoes.$inferSelect;
+export type InsertOnboardingRevisao = typeof onboardingRevisoes.$inferInsert;

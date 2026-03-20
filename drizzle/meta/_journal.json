@@ -379,6 +379,13 @@
       "when": 1773884816896,
       "tag": "0053_ancient_blue_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "5",
+      "when": 1774041905077,
+      "tag": "0054_stiff_toad",
+      "breakpoints": true
     }
   ]
 }

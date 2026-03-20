@@ -6778,7 +6778,14 @@ Responda APENAS em JSON com o formato:
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
 
+        // Verificar limite de solicitações (máximo 5)
+        const totalRevisoes = await db.onboardingRevisoesDb.countByAluno(input.alunoId);
+        if (totalRevisoes >= 5) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Você atingiu o limite de 5 solicitações de revisão.' });
+        }
+
         // Enviar email de solicitação de revisão para mentora e admin
+        let emailEnviado = false;
         try {
           const aluno = await db.getAlunoById(input.alunoId);
           if (aluno) {
@@ -6808,10 +6815,19 @@ Responda APENAS em JSON com o formato:
             const ccList = [mentorEmail, 'dina@ckmtalents.net'].filter(Boolean).join(', ');
             console.log(`[Onboarding Revisão] Enviando email de solicitação de revisão para admin=${adminEmail}, cc=${ccList}, aluno=${aluno.name}`);
             await sendEmail({ to: adminEmail || 'dina@ckmtalents.net', cc: ccList || undefined, subject: revisaoData.subject, html: revisaoData.html, text: revisaoData.text });
+            emailEnviado = true;
           }
         } catch (e) { console.warn('[Onboarding] Erro ao enviar email de revisão:', e); }
 
-        return { success: true, message: 'Sua solicitação de revisão foi enviada para a mentora e administração.' };
+        // Registrar solicitação no banco de dados
+        const revisao = await db.onboardingRevisoesDb.create({
+          alunoId: input.alunoId,
+          justificativa: input.justificativa,
+          emailEnviado,
+        });
+        console.log(`[Onboarding Revisão] Solicitação registrada no banco: id=${revisao.id}, alunoId=${input.alunoId}`);
+
+        return { success: true, message: 'Sua solicitação de revisão foi enviada para a mentora e administração.', revisaoId: revisao.id };
       }),
 
     // Listar vídeos do onboarding

@@ -46,7 +46,8 @@ import {
   mentorDateAvailability, InsertMentorDateAvailability, MentorDateAvailability,
   onboardingJornada, InsertOnboardingJornada, OnboardingJornada,
   onboardingVideos, InsertOnboardingVideo, OnboardingVideo,
-  emailAlertasLog, InsertEmailAlertaLog, EmailAlertaLog,} from "../drizzle/schema";
+  emailAlertasLog, InsertEmailAlertaLog, EmailAlertaLog,
+  onboardingRevisoes, InsertOnboardingRevisao, OnboardingRevisao,} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -8403,3 +8404,69 @@ export async function getOnboardingTrackingList(programId?: number) {
     return dateB - dateA;
   });
 }
+
+// ============ ONBOARDING REVISÕES FUNCTIONS ============
+
+/**
+ * Criar uma solicitação de revisão do PDI
+ */
+async function createOnboardingRevisao(data: { alunoId: number; justificativa: string; emailEnviado?: boolean }) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  const result = await db.insert(onboardingRevisoes).values({
+    alunoId: data.alunoId,
+    justificativa: data.justificativa,
+    emailEnviado: data.emailEnviado ? 1 : 0,
+  });
+  return { id: result[0].insertId };
+}
+
+/**
+ * Listar solicitações de revisão de um aluno
+ */
+async function getOnboardingRevisoesByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(onboardingRevisoes).where(eq(onboardingRevisoes.alunoId, alunoId)).orderBy(desc(onboardingRevisoes.createdAt));
+}
+
+/**
+ * Listar todas as solicitações de revisão pendentes (para admin/mentora)
+ */
+async function getOnboardingRevisoesPendentes() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(onboardingRevisoes).where(eq(onboardingRevisoes.status, 'pendente')).orderBy(desc(onboardingRevisoes.createdAt));
+}
+
+/**
+ * Atualizar status de uma solicitação de revisão
+ */
+async function updateOnboardingRevisao(id: number, data: { status: 'pendente' | 'em_analise' | 'resolvida' | 'cancelada'; respostaAdmin?: string; resolvidoPor?: number }) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  await db.update(onboardingRevisoes).set({
+    status: data.status,
+    respostaAdmin: data.respostaAdmin,
+    resolvidoPor: data.resolvidoPor,
+    resolvidoEm: data.status === 'resolvida' || data.status === 'cancelada' ? new Date() : undefined,
+  }).where(eq(onboardingRevisoes.id, id));
+}
+
+/**
+ * Contar solicitações de revisão pendentes de um aluno (para limitar a 5)
+ */
+async function countOnboardingRevisoesByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select({ count: sql<number>`count(*)` }).from(onboardingRevisoes).where(eq(onboardingRevisoes.alunoId, alunoId));
+  return result[0]?.count || 0;
+}
+
+export const onboardingRevisoesDb = {
+  create: createOnboardingRevisao,
+  getByAluno: getOnboardingRevisoesByAluno,
+  getPendentes: getOnboardingRevisoesPendentes,
+  update: updateOnboardingRevisao,
+  countByAluno: countOnboardingRevisoesByAluno,
+};
