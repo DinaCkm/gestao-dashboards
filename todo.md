@@ -2779,3 +2779,8 @@
 - [x] Redirecionar gestor puro automaticamente para esta página ao logar
 - [x] Registrar rota no App.tsx
 - [x] Adicionar item "Boas-Vindas" no menu do DashboardLayout para gestor
+
+## Onboarding - Lembrete Elio + Campos Obrigatórios (20/03/2026)
+- [x] Enviar email de lembrete de onboarding para Elio (elio@dgsolucoesestrategicas.com.br)
+- [x] Tornar minicurrículo obrigatório no onboarding (não permitir avançar sem preencher)
+- [x] Tornar "Quem é você" obrigatório no onboarding (não permitir avançar sem preencher)

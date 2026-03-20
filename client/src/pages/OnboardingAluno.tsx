@@ -253,6 +253,14 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
       toast.error("Erro: aluno não identificado. Tente recarregar a página.");
       return;
     }
+    if (!perfil.minicurriculo || perfil.minicurriculo.trim().length < 10) {
+      toast.error("O campo Minicurrículo é obrigatório. Por favor, descreva brevemente sua formação e experiências (mínimo 10 caracteres).");
+      return;
+    }
+    if (!perfil.quemEVoce || perfil.quemEVoce.trim().length < 10) {
+      toast.error("O campo 'Quem é você' é obrigatório. Por favor, conte um pouco sobre você (mínimo 10 caracteres).");
+      return;
+    }
     setSaving(true);
     try {
       await salvarCadastro.mutateAsync({
@@ -358,7 +366,7 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700">Minicurrículo</label>
+              <label className="text-sm font-medium text-gray-700">Minicurrículo <span className="text-red-500">*</span></label>
               <Textarea
                 value={perfil.minicurriculo}
                 onChange={(e) => setPerfil({...perfil, minicurriculo: e.target.value})}
@@ -369,7 +377,7 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700">Quem é você? Conte um pouco como você se define como pessoa.</label>
+              <label className="text-sm font-medium text-gray-700">Quem é você? Conte um pouco como você se define como pessoa. <span className="text-red-500">*</span></label>
               <Textarea
                 value={perfil.quemEVoce}
                 onChange={(e) => setPerfil({...perfil, quemEVoce: e.target.value})}
