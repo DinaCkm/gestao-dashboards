@@ -1376,6 +1376,7 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editMentor, setEditMentor] = useState<any>(null);
+  const [searchMentor, setSearchMentor] = useState("");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpfMentor, setCpfMentor] = useState("");
@@ -1623,6 +1624,22 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
+          <>
+          {/* Campo de busca */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, email, especialidade ou CPF..."
+              value={searchMentor}
+              onChange={(e) => setSearchMentor(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {searchMentor && (
+              <button onClick={() => setSearchMentor("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -1639,7 +1656,19 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[...mentores].sort((a, b) => (b.canLogin ? 1 : 0) - (a.canLogin ? 1 : 0)).map((mentor) => (
+              {[...mentores]
+                .filter((m) => {
+                  const term = searchMentor.toLowerCase().trim();
+                  if (!term) return true;
+                  return (
+                    (m.name || "").toLowerCase().includes(term) ||
+                    (m.email || "").toLowerCase().includes(term) ||
+                    (m.especialidade || "").toLowerCase().includes(term) ||
+                    (m.cpf || "").includes(term.replace(/\D/g, '')) ||
+                    (m.loginId || "").toLowerCase().includes(term)
+                  );
+                })
+                .sort((a, b) => (b.canLogin ? 1 : 0) - (a.canLogin ? 1 : 0)).map((mentor) => (
                 <TableRow key={mentor.id}>
                   <TableCell>{mentor.id}</TableCell>
                   <TableCell className="font-medium">{mentor.name}</TableCell>
@@ -1701,13 +1730,14 @@ function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, is
               ))}
               {mentores.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                    Nenhum mentor cadastrado
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                    {searchMentor ? "Nenhum mentor encontrado com os filtros aplicados." : "Nenhum mentor cadastrado"}
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+          </>
         )}
 
         {/* Dialog de Precificação Flexível */}
@@ -2123,6 +2153,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   const [selectedProgramId, setSelectedProgramId] = useState("");
   const [searchAluno, setSearchAluno] = useState("");
   const [selectedAlunoId, setSelectedAlunoId] = useState("");
+  const [searchGerente, setSearchGerente] = useState("");
 
   // Gerente Puro form
   const [puroNome, setPuroNome] = useState("");
@@ -2344,6 +2375,22 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
               </AlertDescription>
             </Alert>
 
+            {/* Campo de busca */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, email, CPF, empresa ou mentor..."
+                value={searchGerente}
+                onChange={(e) => setSearchGerente(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchGerente && (
+                <button onClick={() => setSearchGerente("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
             <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -2359,7 +2406,20 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {gerentesEmpresa.map((g: any) => (
+                {gerentesEmpresa
+                  .filter((g: any) => {
+                    const term = searchGerente.toLowerCase().trim();
+                    if (!term) return true;
+                    return (
+                      (g.name || "").toLowerCase().includes(term) ||
+                      (g.email || "").toLowerCase().includes(term) ||
+                      (g.cpf || "").includes(term.replace(/\D/g, '')) ||
+                      (g.programName || "").toLowerCase().includes(term) ||
+                      (g.turmaName || "").toLowerCase().includes(term) ||
+                      (g.mentorName || "").toLowerCase().includes(term)
+                    );
+                  })
+                  .map((g: any) => (
                   <TableRow key={g.id}>
                     <TableCell className="font-medium">
                       <div>
@@ -2407,10 +2467,27 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                     </TableCell>
                   </TableRow>
                 ))}
-                {gerentesEmpresa.length === 0 && (
+                {gerentesEmpresa.length === 0 && !searchGerente && (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       Nenhum gerente de empresa com visão dupla cadastrado. Use "Promover Aluno" ou "Gerente Puro" para adicionar.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {gerentesEmpresa.length > 0 && searchGerente && gerentesEmpresa.filter((g: any) => {
+                    const term = searchGerente.toLowerCase().trim();
+                    return (
+                      (g.name || "").toLowerCase().includes(term) ||
+                      (g.email || "").toLowerCase().includes(term) ||
+                      (g.cpf || "").includes(term.replace(/\D/g, '')) ||
+                      (g.programName || "").toLowerCase().includes(term) ||
+                      (g.turmaName || "").toLowerCase().includes(term) ||
+                      (g.mentorName || "").toLowerCase().includes(term)
+                    );
+                  }).length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                      Nenhum gerente encontrado com os filtros aplicados.
                     </TableCell>
                   </TableRow>
                 )}

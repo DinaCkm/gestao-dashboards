@@ -2763,3 +2763,7 @@
 - [x] Bug: Gestores puros criados via createGerentePuro (Emanoel, Leandro) não aparecem na lista de gerentes em Cadastros
 - [x] Corrigir query que carrega lista de gerentes para incluir todos os tipos de gestores puros
 - [x] Adicionar proteção contra duplicação no createGerentePuro (verificar email existente)
+
+## Campo de Pesquisa em Gerentes e Mentores (20/03/2026)
+- [x] Adicionar campo de busca na aba de Gerentes (buscar por nome, email, CPF, empresa)
+- [x] Adicionar campo de busca na aba de Mentores (buscar por nome, email, empresa)
