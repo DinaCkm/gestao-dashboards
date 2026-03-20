@@ -1,0 +1,43 @@
+{
+  "query": "SELECT id, name, email, cpf, turmaId, trilhaId, isActive, canLogin, onboardingLiberado FROM alunos WHERE name LIKE '%makiyama%' OR name LIKE '%julia%souza%' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, cpf, turmaId, trilhaId, isActive, canLogin, onboardingLiberado FROM alunos WHERE name LIKE '%makiyama%' OR name LIKE '%julia%souza%' LIMIT 10;",
+  "rows": [
+    {
+      "id": "90013",
+      "name": "Dina Makiyama",
+      "email": "dina@ckmtalents.net",
+      "cpf": "NULL",
+      "turmaId": "36",
+      "trilhaId": "NULL",
+      "isActive": "0",
+      "canLogin": "1",
+      "onboardingLiberado": "0"
+    },
+    {
+      "id": "270001",
+      "name": "Carlos Makiyama",
+      "email": "dina@makiyama.com.br",
+      "cpf": "NULL",
+      "turmaId": "NULL",
+      "trilhaId": "NULL",
+      "isActive": "0",
+      "canLogin": "1",
+      "onboardingLiberado": "0"
+    },
+    {
+      "id": "660014",
+      "name": "Julia Souza Makiyama",
+      "email": "jumakiyama@gmail.com",
+      "cpf": "NULL",
+      "turmaId": "NULL",
+      "trilhaId": "NULL",
+      "isActive": "1",
+      "canLogin": "1",
+      "onboardingLiberado": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tcpf\tturmaId\ttrilhaId\tisActive\tcanLogin\tonboardingLiberado\n90013\tDina Makiyama\tdina@ckmtalents.net\tNULL\t36\tNULL\t0\t1\t0\n270001\tCarlos Makiyama\tdina@makiyama.com.br\tNULL\tNULL\tNULL\t0\t1\t0\n660014\tJulia Souza Makiyama\tjumakiyama@gmail.com\tNULL\tNULL\tNULL\t1\t1\t0\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

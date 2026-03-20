@@ -1,0 +1,23 @@
+{
+  "query": "SELECT id, name, email, turmaId, trilhaId, consultorId, programId, isActive, canLogin, onboardingLiberado, bypassOnboarding FROM alunos WHERE id = 660014;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, turmaId, trilhaId, consultorId, programId, isActive, canLogin, onboardingLiberado, bypassOnboarding FROM alunos WHERE id = 660014;",
+  "rows": [
+    {
+      "id": "660014",
+      "name": "Julia Souza Makiyama",
+      "email": "jumakiyama@gmail.com",
+      "turmaId": "NULL",
+      "trilhaId": "NULL",
+      "consultorId": "39",
+      "programId": "90002",
+      "isActive": "1",
+      "canLogin": "1",
+      "onboardingLiberado": "0",
+      "bypassOnboarding": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tturmaId\ttrilhaId\tconsultorId\tprogramId\tisActive\tcanLogin\tonboardingLiberado\tbypassOnboarding\n660014\tJulia Souza Makiyama\tjumakiyama@gmail.com\tNULL\tNULL\t39\t90002\t1\t1\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

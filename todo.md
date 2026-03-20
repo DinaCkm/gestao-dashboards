@@ -2784,3 +2784,21 @@
 - [x] Enviar email de lembrete de onboarding para Elio (elio@dgsolucoesestrategicas.com.br)
 - [x] Tornar minicurrículo obrigatório no onboarding (não permitir avançar sem preencher)
 - [x] Tornar "Quem é você" obrigatório no onboarding (não permitir avançar sem preencher)
+
+## Investigação: Dados da Julia Makiyama não aparecem completos (20/03/2026)
+- [ ] Verificar assessment, competências, trilhas e metas da Julia no banco
+- [ ] Identificar o que está faltando na tela de aluna
+
+## Bug: Onboarding Julia - Trilha Basic não aparece (20/03/2026)
+- [ ] Investigar por que a trilha Basic (3 competências) não aparece na Sua Jornada da Julia
+- [ ] Corrigir query para mostrar todas as trilhas do assessment PDI no onboarding
+- [ ] Verificar se o onboarding filtra por ciclo e exclui a trilha Basic
+
+## Bug Fix - Onboarding PDI Multi-Trilha (20/03/2026)
+- [x] Corrigir EtapaMeuPDI para mostrar TODAS as trilhas/macroJornadas (não apenas macroJornadas[0])
+- [x] Consolidar totais de competências, sessões, metas de todas as trilhas no Hero Card
+- [x] Agrupar competências por trilha com cabeçalho visual de cada trilha (cores distintas)
+- [x] Corrigir Visão Geral para mostrar microciclos de todas as trilhas
+- [x] Corrigir seção Recursos para usar todasCompetencias de todas as trilhas
+- [x] Corrigir EtapaAceite para usar dados consolidados de todas as trilhas
+- [x] Testes unitários para validar lógica multi-trilha (10 testes passando)

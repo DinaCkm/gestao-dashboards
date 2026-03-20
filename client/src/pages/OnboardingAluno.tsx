@@ -1228,16 +1228,25 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   const utils = trpc.useUtils();
   const [visualizado, setVisualizado] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('visao-geral');
-  const [expandedComp, setExpandedComp] = useState<number | null>(null);
+  const [expandedComp, setExpandedComp] = useState<string | null>(null);
+  const [expandedTrilha, setExpandedTrilha] = useState<number | null>(null);
 
-  const macroJornada = jornadaData?.macroJornadas?.[0];
-  const competencias = macroJornada?.microJornadas || [];
+  // === TODAS as macroJornadas (trilhas) ===
+  const allMacroJornadas = jornadaData?.macroJornadas || [];
+  const hasPdi = allMacroJornadas.length > 0;
+
+  // Consolidar TODAS as competências de todas as trilhas
+  const todasCompetencias = allMacroJornadas.flatMap((mj: any) => 
+    (mj.microJornadas || []).map((micro: any) => ({ ...micro, trilhaNome: mj.trilhaNome, trilhaId: mj.trilhaId }))
+  );
   const metas = metasData?.metas || [];
   const aluno = dashData?.found ? dashData.aluno : null;
 
-  // Calcular dados do macrociclo
-  const macroInicio = macroJornada?.macroInicio ? new Date(macroJornada.macroInicio) : null;
-  const macroTermino = macroJornada?.macroTermino ? new Date(macroJornada.macroTermino) : null;
+  // Calcular dados consolidados do macrociclo (início mais antigo, término mais recente)
+  const allInicios = allMacroJornadas.map((mj: any) => mj.macroInicio).filter(Boolean).sort();
+  const allTerminos = allMacroJornadas.map((mj: any) => mj.macroTermino).filter(Boolean).sort();
+  const macroInicio = allInicios.length > 0 ? new Date(allInicios[0]) : null;
+  const macroTermino = allTerminos.length > 0 ? new Date(allTerminos[allTerminos.length - 1]) : null;
   const totalMeses = macroInicio && macroTermino 
     ? Math.max(1, (macroTermino.getFullYear() - macroInicio.getFullYear()) * 12 + (macroTermino.getMonth() - macroInicio.getMonth()))
     : 0;
@@ -1248,7 +1257,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
 
   // Dados de sessões
   const sessoesRealizadas = dashData?.found ? (dashData as any).sessoesAluno?.filter((s: any) => s.presence === 'presente' && !s.isAssessment)?.length || 0 : 0;
-  const totalSessoesPrevistas = (macroJornada as any)?.totalSessoesEsperadas || totalMeses;
+  const totalSessoesPrevistas = totalMeses;
 
   // Dados de tarefas
   const tarefasEntregues = dashData?.found ? (dashData as any).indicadores?.atividadesEntregues || 0 : 0;
@@ -1257,6 +1266,15 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   // Dados de eventos
   const eventosPresente = dashData?.found ? (dashData as any).indicadores?.eventosPresente || 0 : 0;
   const totalEventos = dashData?.found ? (dashData as any).indicadores?.totalEventos || 0 : 0;
+
+  // Cores por trilha
+  const TRILHA_COLORS = [
+    { gradient: 'from-purple-600 to-indigo-600', bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', badge: 'bg-purple-100 text-purple-700', bar: 'bg-purple-500' },
+    { gradient: 'from-blue-600 to-cyan-600', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', badge: 'bg-blue-100 text-blue-700', bar: 'bg-blue-500' },
+    { gradient: 'from-emerald-600 to-teal-600', bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700', bar: 'bg-emerald-500' },
+    { gradient: 'from-amber-600 to-orange-600', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-700', bar: 'bg-amber-500' },
+    { gradient: 'from-rose-600 to-pink-600', bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700', badge: 'bg-rose-100 text-rose-700', bar: 'bg-rose-500' },
+  ];
 
   const handleVisualizar = async () => {
     if (readOnly) return;
@@ -1302,27 +1320,42 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
               descobrir e potencializar suas melhores habilidades.
             </p>
 
-            {macroJornada && (
-              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
-                  <Trophy className="h-6 w-6 text-[#F5991F] mx-auto mb-1" />
-                  <p className="text-2xl font-bold">{competencias.length}</p>
-                  <p className="text-xs text-white/60">Competências</p>
+            {hasPdi && (
+              <div className="mt-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                    <Trophy className="h-6 w-6 text-[#F5991F] mx-auto mb-1" />
+                    <p className="text-2xl font-bold">{todasCompetencias.length}</p>
+                    <p className="text-xs text-white/60">Competências</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                    <Layers className="h-6 w-6 text-purple-400 mx-auto mb-1" />
+                    <p className="text-2xl font-bold">{allMacroJornadas.length}</p>
+                    <p className="text-xs text-white/60">{allMacroJornadas.length === 1 ? 'Trilha' : 'Trilhas'}</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                    <Calendar className="h-6 w-6 text-emerald-400 mx-auto mb-1" />
+                    <p className="text-2xl font-bold">{totalMeses}</p>
+                    <p className="text-xs text-white/60">Meses de Jornada</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                    <Users2 className="h-6 w-6 text-amber-400 mx-auto mb-1" />
+                    <p className="text-2xl font-bold">{totalSessoesPrevistas || '---'}</p>
+                    <p className="text-xs text-white/60">Meses de Mentoria</p>
+                  </div>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
-                  <Users2 className="h-6 w-6 text-purple-400 mx-auto mb-1" />
-                  <p className="text-2xl font-bold">{totalSessoesPrevistas || '---'}</p>
-                  <p className="text-xs text-white/60">Sessões de Mentoria</p>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
-                  <Calendar className="h-6 w-6 text-emerald-400 mx-auto mb-1" />
-                  <p className="text-2xl font-bold">{totalMeses}</p>
-                  <p className="text-xs text-white/60">Meses de Jornada</p>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
-                  <Star className="h-6 w-6 text-amber-400 mx-auto mb-1" />
-                  <p className="text-2xl font-bold">{macroJornada.trilhaNome?.split(' ').slice(0, 2).join(' ') || 'PDI'}</p>
-                  <p className="text-xs text-white/60">Sua Trilha</p>
+                {/* Lista de trilhas */}
+                <div className="flex flex-wrap gap-2">
+                  {allMacroJornadas.map((mj: any, idx: number) => {
+                    const tc = TRILHA_COLORS[idx % TRILHA_COLORS.length];
+                    return (
+                      <div key={mj.id || idx} className="bg-white/15 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20 flex items-center gap-2">
+                        <Star className="h-4 w-4 text-amber-300" />
+                        <span className="text-sm font-medium">{mj.trilhaNome}</span>
+                        <Badge className="bg-white/20 text-white border-white/30 text-[10px]">{(mj.microJornadas || []).length} comp.</Badge>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1344,7 +1377,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
         </div>
       </div>
 
-      {macroJornada ? (
+      {hasPdi ? (
         <>
           {/* Section Navigation */}
           <div className="flex gap-2 overflow-x-auto pb-2">
@@ -1400,43 +1433,60 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                     </div>
                   </div>
 
-                  {/* Microciclos Timeline */}
-                  {competencias.length > 0 && (
-                    <div className="mt-6">
-                      <p className="text-sm font-medium text-gray-500 mb-3">Microciclos de Desenvolvimento</p>
-                      <div className="space-y-2">
-                        {competencias.map((comp: any, idx: number) => {
-                          const compInicio = comp.microInicio ? new Date(comp.microInicio) : null;
-                          const compTermino = comp.microTermino ? new Date(comp.microTermino) : null;
-                          const now = new Date();
-                          const isActive = compInicio && compTermino && now >= compInicio && now <= compTermino;
-                          const isPast = compTermino && now > compTermino;
-                          const colors = [
-                            'from-purple-500 to-indigo-500', 'from-blue-500 to-cyan-500', 'from-emerald-500 to-teal-500',
-                            'from-amber-500 to-orange-500', 'from-rose-500 to-pink-500', 'from-violet-500 to-purple-500',
-                            'from-sky-500 to-blue-500', 'from-lime-500 to-green-500', 'from-fuchsia-500 to-pink-500'
-                          ];
-                          return (
-                            <div key={comp.id || idx} className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-                              isActive ? 'bg-blue-50 border-2 border-blue-300 shadow-sm' : isPast ? 'bg-gray-50 border border-gray-200' : 'bg-white border border-gray-100'
-                            }`}>
-                              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${colors[idx % colors.length]} flex items-center justify-center shrink-0`}>
-                                {isPast ? <CheckCircle2 className="h-4 w-4 text-white" /> : <span className="text-xs font-bold text-white">{idx + 1}</span>}
+                  {/* Microciclos Timeline - POR TRILHA */}
+                  {allMacroJornadas.map((mj: any, trilhaIdx: number) => {
+                    const tc = TRILHA_COLORS[trilhaIdx % TRILHA_COLORS.length];
+                    const comps = mj.microJornadas || [];
+                    if (comps.length === 0) return null;
+                    const mjInicio = mj.macroInicio ? new Date(mj.macroInicio) : null;
+                    const mjTermino = mj.macroTermino ? new Date(mj.macroTermino) : null;
+                    return (
+                      <div key={mj.id || trilhaIdx} className="mt-6">
+                        <div className={`flex items-center gap-2 mb-3 ${tc.bg} ${tc.border} border rounded-lg px-3 py-2`}>
+                          <Star className={`h-4 w-4 ${tc.text}`} />
+                          <span className={`text-sm font-bold ${tc.text}`}>{mj.trilhaNome}</span>
+                          <Badge className={`${tc.badge} text-[10px] ml-auto`}>{comps.length} competências</Badge>
+                        </div>
+                        {mjInicio && mjTermino && (
+                          <div className="flex items-center gap-2 text-xs text-gray-500 mb-2 ml-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>Período: {mjInicio.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })} a {mjTermino.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          {comps.map((comp: any, idx: number) => {
+                            const compInicio = comp.microInicio ? new Date(comp.microInicio) : null;
+                            const compTermino = comp.microTermino ? new Date(comp.microTermino) : null;
+                            const now = new Date();
+                            const isActive = compInicio && compTermino && now >= compInicio && now <= compTermino;
+                            const isPast = compTermino && now > compTermino;
+                            const colors = [
+                              'from-purple-500 to-indigo-500', 'from-blue-500 to-cyan-500', 'from-emerald-500 to-teal-500',
+                              'from-amber-500 to-orange-500', 'from-rose-500 to-pink-500', 'from-violet-500 to-purple-500',
+                              'from-sky-500 to-blue-500', 'from-lime-500 to-green-500', 'from-fuchsia-500 to-pink-500'
+                            ];
+                            return (
+                              <div key={comp.id || idx} className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                                isActive ? 'bg-blue-50 border-2 border-blue-300 shadow-sm' : isPast ? 'bg-gray-50 border border-gray-200' : 'bg-white border border-gray-100'
+                              }`}>
+                                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${colors[idx % colors.length]} flex items-center justify-center shrink-0`}>
+                                  {isPast ? <CheckCircle2 className="h-4 w-4 text-white" /> : <span className="text-xs font-bold text-white">{idx + 1}</span>}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-[#0A1E3E] truncate">{comp.competenciaNome}</p>
+                                  <p className="text-xs text-gray-400">
+                                    {compInicio?.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} — {compTermino?.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                  </p>
+                                </div>
+                                {isActive && <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[10px]">Agora</Badge>}
+                                {isPast && <Badge className="bg-gray-100 text-gray-500 border-gray-200 text-[10px]">Concluído</Badge>}
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-[#0A1E3E] truncate">{comp.competenciaNome}</p>
-                                <p className="text-xs text-gray-400">
-                                  {compInicio?.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} — {compTermino?.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
-                                </p>
-                              </div>
-                              {isActive && <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[10px]">Agora</Badge>}
-                              {isPast && <Badge className="bg-gray-100 text-gray-500 border-gray-200 text-[10px]">Concluído</Badge>}
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })}
                 </CardContent>
               </Card>
 
@@ -1484,156 +1534,196 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
 
           {/* ===== SEÇÃO: COMPETÊNCIAS ===== */}
           {activeSection === 'competencias' && (
-            <Card className="border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="font-bold text-[#0A1E3E] flex items-center gap-2">
-                    <Target className="h-5 w-5 text-purple-600" />
-                    Suas Competências de Desenvolvimento
-                  </h3>
-                  <div className="flex gap-2">
-                    <Badge className="bg-red-50 text-red-600 border-red-200">{macroJornada.obrigatorias} obrigatórias</Badge>
-                    <Badge className="bg-gray-50 text-gray-500 border-gray-200">{macroJornada.opcionais} opcionais</Badge>
-                  </div>
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-[#0A1E3E] flex items-center gap-2">
+                  <Target className="h-5 w-5 text-purple-600" />
+                  Suas Competências de Desenvolvimento
+                </h3>
+                <div className="flex gap-2">
+                  <Badge className="bg-red-50 text-red-600 border-red-200">
+                    {todasCompetencias.filter((c: any) => c.peso === 'obrigatoria').length} obrigatórias
+                  </Badge>
+                  <Badge className="bg-gray-50 text-gray-500 border-gray-200">
+                    {todasCompetencias.filter((c: any) => c.peso !== 'obrigatoria').length} opcionais
+                  </Badge>
                 </div>
+              </div>
 
-                <p className="text-sm text-gray-500 mb-5 leading-relaxed">
-                  Cada competência abaixo representa uma área de crescimento mapeada no seu perfil. 
-                  Clique em uma competência para ver mais detalhes sobre seu progresso e metas.
-                </p>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Cada competência abaixo representa uma área de crescimento mapeada no seu perfil. 
+                Clique em uma competência para ver mais detalhes sobre seu progresso e metas.
+              </p>
 
-                <div className="space-y-3">
-                  {competencias.map((comp: any, idx: number) => {
-                    const isExpanded = expandedComp === idx;
-                    const nivel = comp.nivelAtual !== null ? Math.round(comp.nivelAtual) : null;
-                    const meta = comp.metaFinal !== null ? Math.round(comp.metaFinal) : null;
-                    const progressoCurso = comp.progressoPlataforma !== null ? Math.round(comp.progressoPlataforma) : null;
-                    const colors = [
-                      { bg: 'bg-purple-50', border: 'border-purple-200', accent: 'text-purple-600', bar: 'bg-purple-500' },
-                      { bg: 'bg-blue-50', border: 'border-blue-200', accent: 'text-blue-600', bar: 'bg-blue-500' },
-                      { bg: 'bg-emerald-50', border: 'border-emerald-200', accent: 'text-emerald-600', bar: 'bg-emerald-500' },
-                      { bg: 'bg-amber-50', border: 'border-amber-200', accent: 'text-amber-600', bar: 'bg-amber-500' },
-                      { bg: 'bg-rose-50', border: 'border-rose-200', accent: 'text-rose-600', bar: 'bg-rose-500' },
-                      { bg: 'bg-violet-50', border: 'border-violet-200', accent: 'text-violet-600', bar: 'bg-violet-500' },
-                      { bg: 'bg-sky-50', border: 'border-sky-200', accent: 'text-sky-600', bar: 'bg-sky-500' },
-                      { bg: 'bg-lime-50', border: 'border-lime-200', accent: 'text-lime-600', bar: 'bg-lime-500' },
-                      { bg: 'bg-fuchsia-50', border: 'border-fuchsia-200', accent: 'text-fuchsia-600', bar: 'bg-fuchsia-500' },
-                    ];
-                    const c = colors[idx % colors.length];
+              {/* Iterar por CADA TRILHA */}
+              {allMacroJornadas.map((mj: any, trilhaIdx: number) => {
+                const tc = TRILHA_COLORS[trilhaIdx % TRILHA_COLORS.length];
+                const comps = mj.microJornadas || [];
+                if (comps.length === 0) return null;
 
-                    return (
-                      <div key={comp.id || idx} className={`border-2 rounded-xl overflow-hidden transition-all duration-300 ${
-                        isExpanded ? `${c.border} shadow-md` : 'border-gray-100 hover:border-gray-200 hover:shadow-sm'
-                      }`}>
-                        <div
-                          className="p-4 cursor-pointer flex items-center gap-4"
-                          onClick={() => setExpandedComp(isExpanded ? null : idx)}
-                        >
-                          <div className={`w-12 h-12 rounded-xl ${c.bg} flex items-center justify-center shrink-0`}>
-                            <span className={`text-lg font-bold ${c.accent}`}>{idx + 1}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-[#0A1E3E]">{comp.competenciaNome}</h4>
-                            <div className="flex items-center gap-2 mt-1">
-                              {nivel !== null && (
-                                <span className="text-xs text-gray-500">Nível: <span className={`font-semibold ${c.accent}`}>{nivel}%</span></span>
-                              )}
-                              {meta !== null && (
-                                <span className="text-xs text-gray-400">Meta: {meta}%</span>
-                              )}
-                              <Badge variant="outline" className={`text-[10px] ${
-                                comp.peso === 'obrigatoria' ? 'border-red-300 text-red-600' : 'border-gray-300 text-gray-500'
-                              }`}>
-                                {comp.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
-                              </Badge>
-                            </div>
-                          </div>
-                          <ChevronRight className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                return (
+                  <Card key={mj.id || trilhaIdx} className="border-0 shadow-lg">
+                    <CardContent className="p-6">
+                      {/* Cabeçalho da Trilha */}
+                      <div className={`flex items-center gap-3 mb-5 ${tc.bg} ${tc.border} border rounded-xl px-4 py-3`}>
+                        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${tc.gradient} flex items-center justify-center shrink-0`}>
+                          <Star className="h-5 w-5 text-white" />
                         </div>
-
-                        {isExpanded && (
-                          <div className={`px-4 pb-4 space-y-4 border-t ${c.border} pt-4 ${c.bg}`}>
-                            {/* Barra de progresso nível vs meta */}
-                            {(nivel !== null || meta !== null) && (
-                              <div>
-                                <div className="flex justify-between text-xs mb-1">
-                                  <span className="text-gray-500">Nível Atual</span>
-                                  {meta !== null && <span className="text-gray-400">Meta: {meta}%</span>}
-                                </div>
-                                <div className="h-3 bg-white rounded-full overflow-hidden relative">
-                                  {meta !== null && (
-                                    <div className="absolute top-0 h-full border-r-2 border-dashed border-gray-400 z-10" style={{ left: `${meta}%` }} />
-                                  )}
-                                  <div className={`h-full ${c.bar} rounded-full transition-all duration-700`} style={{ width: `${nivel || 0}%` }} />
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Progresso do curso na plataforma */}
-                            {progressoCurso !== null && (
-                              <div className="bg-white rounded-lg p-3 border border-gray-100">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <BookOpen className="h-4 w-4 text-blue-500" />
-                                  <span className="text-xs font-medium text-gray-600">Curso na Plataforma</span>
-                                </div>
-                                <div className="grid grid-cols-3 gap-2 text-center">
-                                  <div>
-                                    <p className="text-lg font-bold text-blue-600">{progressoCurso}%</p>
-                                    <p className="text-[10px] text-gray-400">Progresso</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-lg font-bold text-emerald-600">{comp.aulasConcluidas || 0}/{comp.aulasDisponiveis || 0}</p>
-                                    <p className="text-[10px] text-gray-400">Aulas</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-lg font-bold text-amber-600">{comp.avaliacoesRespondidas || 0}/{comp.avaliacoesDisponiveis || 0}</p>
-                                    <p className="text-[10px] text-gray-400">Avaliações</p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Período */}
-                            {comp.microInicio && (
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <Calendar className="h-3.5 w-3.5" />
-                                <span>
-                                  Período: {new Date(comp.microInicio).toLocaleDateString('pt-BR')} a {comp.microTermino ? new Date(comp.microTermino).toLocaleDateString('pt-BR') : '---'}
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Metas do ciclo */}
-                            {(comp.metaCiclo1 !== null || comp.metaCiclo2 !== null) && (
-                              <div className="flex gap-3">
-                                {comp.metaCiclo1 !== null && (
-                                  <div className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center flex-1">
-                                    <p className="text-xs text-gray-400">Meta Ciclo 1</p>
-                                    <p className={`text-sm font-bold ${c.accent}`}>{Math.round(comp.metaCiclo1)}%</p>
-                                  </div>
-                                )}
-                                {comp.metaCiclo2 !== null && (
-                                  <div className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center flex-1">
-                                    <p className="text-xs text-gray-400">Meta Ciclo 2</p>
-                                    <p className={`text-sm font-bold ${c.accent}`}>{Math.round(comp.metaCiclo2)}%</p>
-                                  </div>
-                                )}
-                                {comp.metaFinal !== null && (
-                                  <div className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center flex-1">
-                                    <p className="text-xs text-gray-400">Meta Final</p>
-                                    <p className={`text-sm font-bold ${c.accent}`}>{Math.round(comp.metaFinal)}%</p>
-                                  </div>
-                                )}
-                              </div>
+                        <div className="flex-1">
+                          <h4 className={`font-bold ${tc.text}`}>{mj.trilhaNome}</h4>
+                          <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+                            <span>{comps.length} competências</span>
+                            {mj.macroInicio && mj.macroTermino && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(mj.macroInicio).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })} a {new Date(mj.macroTermino).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                              </span>
                             )}
                           </div>
-                        )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Badge className={`${tc.badge} text-[10px]`}>{mj.obrigatorias || 0} obrig.</Badge>
+                          <Badge className="bg-gray-100 text-gray-500 text-[10px]">{mj.opcionais || 0} opc.</Badge>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+
+                      {/* Competências desta trilha */}
+                      <div className="space-y-3">
+                        {comps.map((comp: any, idx: number) => {
+                          const compKey = `${trilhaIdx}-${idx}`;
+                          const isExpanded = expandedComp === compKey;
+                          const nivel = comp.nivelAtual !== null ? Math.round(comp.nivelAtual) : null;
+                          const meta = comp.metaFinal !== null ? Math.round(comp.metaFinal) : null;
+                          const progressoCurso = comp.progressoPlataforma !== null ? Math.round(comp.progressoPlataforma) : null;
+                          const colors = [
+                            { bg: 'bg-purple-50', border: 'border-purple-200', accent: 'text-purple-600', bar: 'bg-purple-500' },
+                            { bg: 'bg-blue-50', border: 'border-blue-200', accent: 'text-blue-600', bar: 'bg-blue-500' },
+                            { bg: 'bg-emerald-50', border: 'border-emerald-200', accent: 'text-emerald-600', bar: 'bg-emerald-500' },
+                            { bg: 'bg-amber-50', border: 'border-amber-200', accent: 'text-amber-600', bar: 'bg-amber-500' },
+                            { bg: 'bg-rose-50', border: 'border-rose-200', accent: 'text-rose-600', bar: 'bg-rose-500' },
+                            { bg: 'bg-violet-50', border: 'border-violet-200', accent: 'text-violet-600', bar: 'bg-violet-500' },
+                            { bg: 'bg-sky-50', border: 'border-sky-200', accent: 'text-sky-600', bar: 'bg-sky-500' },
+                            { bg: 'bg-lime-50', border: 'border-lime-200', accent: 'text-lime-600', bar: 'bg-lime-500' },
+                            { bg: 'bg-fuchsia-50', border: 'border-fuchsia-200', accent: 'text-fuchsia-600', bar: 'bg-fuchsia-500' },
+                          ];
+                          const c = colors[idx % colors.length];
+
+                          return (
+                            <div key={comp.id || compKey} className={`border-2 rounded-xl overflow-hidden transition-all duration-300 ${
+                              isExpanded ? `${c.border} shadow-md` : 'border-gray-100 hover:border-gray-200 hover:shadow-sm'
+                            }`}>
+                              <div
+                                className="p-4 cursor-pointer flex items-center gap-4"
+                                onClick={() => setExpandedComp(isExpanded ? null : compKey)}
+                              >
+                                <div className={`w-12 h-12 rounded-xl ${c.bg} flex items-center justify-center shrink-0`}>
+                                  <span className={`text-lg font-bold ${c.accent}`}>{idx + 1}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-[#0A1E3E]">{comp.competenciaNome}</h4>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {nivel !== null && (
+                                      <span className="text-xs text-gray-500">Nível: <span className={`font-semibold ${c.accent}`}>{nivel}%</span></span>
+                                    )}
+                                    {meta !== null && (
+                                      <span className="text-xs text-gray-400">Meta: {meta}%</span>
+                                    )}
+                                    <Badge variant="outline" className={`text-[10px] ${
+                                      comp.peso === 'obrigatoria' ? 'border-red-300 text-red-600' : 'border-gray-300 text-gray-500'
+                                    }`}>
+                                      {comp.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <ChevronRight className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                              </div>
+
+                              {isExpanded && (
+                                <div className={`px-4 pb-4 space-y-4 border-t ${c.border} pt-4 ${c.bg}`}>
+                                  {/* Barra de progresso nível vs meta */}
+                                  {(nivel !== null || meta !== null) && (
+                                    <div>
+                                      <div className="flex justify-between text-xs mb-1">
+                                        <span className="text-gray-500">Nível Atual</span>
+                                        {meta !== null && <span className="text-gray-400">Meta: {meta}%</span>}
+                                      </div>
+                                      <div className="h-3 bg-white rounded-full overflow-hidden relative">
+                                        {meta !== null && (
+                                          <div className="absolute top-0 h-full border-r-2 border-dashed border-gray-400 z-10" style={{ left: `${meta}%` }} />
+                                        )}
+                                        <div className={`h-full ${c.bar} rounded-full transition-all duration-700`} style={{ width: `${nivel || 0}%` }} />
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Progresso do curso na plataforma */}
+                                  {progressoCurso !== null && (
+                                    <div className="bg-white rounded-lg p-3 border border-gray-100">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <BookOpen className="h-4 w-4 text-blue-500" />
+                                        <span className="text-xs font-medium text-gray-600">Curso na Plataforma</span>
+                                      </div>
+                                      <div className="grid grid-cols-3 gap-2 text-center">
+                                        <div>
+                                          <p className="text-lg font-bold text-blue-600">{progressoCurso}%</p>
+                                          <p className="text-[10px] text-gray-400">Progresso</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-lg font-bold text-emerald-600">{comp.aulasConcluidas || 0}/{comp.aulasDisponiveis || 0}</p>
+                                          <p className="text-[10px] text-gray-400">Aulas</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-lg font-bold text-amber-600">{comp.avaliacoesRespondidas || 0}/{comp.avaliacoesDisponiveis || 0}</p>
+                                          <p className="text-[10px] text-gray-400">Avaliações</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Período */}
+                                  {comp.microInicio && (
+                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                      <Calendar className="h-3.5 w-3.5" />
+                                      <span>
+                                        Período: {new Date(comp.microInicio).toLocaleDateString('pt-BR')} a {comp.microTermino ? new Date(comp.microTermino).toLocaleDateString('pt-BR') : '---'}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {/* Metas do ciclo */}
+                                  {(comp.metaCiclo1 !== null || comp.metaCiclo2 !== null) && (
+                                    <div className="flex gap-3">
+                                      {comp.metaCiclo1 !== null && (
+                                        <div className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center flex-1">
+                                          <p className="text-xs text-gray-400">Meta Ciclo 1</p>
+                                          <p className={`text-sm font-bold ${c.accent}`}>{Math.round(comp.metaCiclo1)}%</p>
+                                        </div>
+                                      )}
+                                      {comp.metaCiclo2 !== null && (
+                                        <div className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center flex-1">
+                                          <p className="text-xs text-gray-400">Meta Ciclo 2</p>
+                                          <p className={`text-sm font-bold ${c.accent}`}>{Math.round(comp.metaCiclo2)}%</p>
+                                        </div>
+                                      )}
+                                      {comp.metaFinal !== null && (
+                                        <div className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center flex-1">
+                                          <p className="text-xs text-gray-400">Meta Final</p>
+                                          <p className={`text-sm font-bold ${c.accent}`}>{Math.round(comp.metaFinal)}%</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           )}
 
           {/* ===== SEÇÃO: ETAPAS DA JORNADA ===== */}
@@ -1726,9 +1816,9 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                           Estude no seu ritmo e aprofunde seus conhecimentos!
                         </p>
                         <div className="flex items-center gap-4 text-xs">
-                          {competencias.filter((c: any) => c.progressoPlataforma !== null).length > 0 ? (
+                          {todasCompetencias.filter((c: any) => c.progressoPlataforma !== null).length > 0 ? (
                             <span className="flex items-center gap-1 text-amber-600 font-medium">
-                              <BookOpen className="h-3.5 w-3.5" /> {competencias.filter((c: any) => c.competenciaConcluida).length} cursos concluídos
+                              <BookOpen className="h-3.5 w-3.5" /> {todasCompetencias.filter((c: any) => c.competenciaConcluida).length} cursos concluídos
                             </span>
                           ) : (
                             <span className="text-gray-400">Cursos vinculados às suas competências</span>
@@ -1813,7 +1903,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                         Conteúdos alinhados às suas competências para estudar no seu ritmo.
                       </p>
                       <div className="space-y-2">
-                        {competencias.filter((c: any) => c.totalAulas !== null && c.totalAulas > 0).slice(0, 3).map((comp: any, idx: number) => (
+                        {todasCompetencias.filter((c: any) => c.totalAulas !== null && c.totalAulas > 0).slice(0, 3).map((comp: any, idx: number) => (
                           <div key={idx} className="bg-white rounded-lg p-2.5 border border-amber-100">
                             <p className="text-xs font-medium text-[#0A1E3E] truncate">{comp.competenciaNome}</p>
                             <div className="flex items-center gap-2 mt-1">
@@ -1824,7 +1914,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                             </div>
                           </div>
                         ))}
-                        {competencias.filter((c: any) => c.totalAulas !== null && c.totalAulas > 0).length === 0 && (
+                        {todasCompetencias.filter((c: any) => c.totalAulas !== null && c.totalAulas > 0).length === 0 && (
                           <p className="text-xs text-amber-400">Cursos serão vinculados às suas competências!</p>
                         )}
                       </div>
@@ -1904,7 +1994,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
         </Card>
       )}
 
-      {!readOnly && macroJornada && (
+      {!readOnly && hasPdi && (
         <div className="flex justify-center">
           <Button
             className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg"
@@ -2150,11 +2240,20 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
     compromisso1: false, compromisso2: false, compromisso3: false, compromisso4: false,
   });
 
-  const macroJornada = jornadaData?.macroJornadas?.[0];
+  // Consolidar TODAS as trilhas
+  const allMacroJornadas = jornadaData?.macroJornadas || [];
+  const hasPdi = allMacroJornadas.length > 0;
   const aluno = dashData?.found ? dashData.aluno : null;
   const todosCheckados = Object.values(checkboxes).every(v => v);
   const nomeValido = nomeAceite.trim().length >= 2;
   const jaAceitou = progressoData?.aceiteRealizado;
+
+  // Dados consolidados de todas as trilhas
+  const totalCompetencias = allMacroJornadas.reduce((sum: number, mj: any) => sum + (mj.totalCompetencias || 0), 0);
+  const allInicios = allMacroJornadas.map((mj: any) => mj.macroInicio).filter(Boolean).sort();
+  const allTerminos = allMacroJornadas.map((mj: any) => mj.macroTermino).filter(Boolean).sort();
+  const consolidatedInicio = allInicios.length > 0 ? new Date(allInicios[0]) : null;
+  const consolidatedTermino = allTerminos.length > 0 ? new Date(allTerminos[allTerminos.length - 1]) : null;
 
   const handleAceite = async () => {
     if (readOnly || !todosCheckados || !nomeValido) return;
@@ -2225,7 +2324,7 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
           ) : (
             <div className="space-y-6">
               {/* Resumo do PDI */}
-              {macroJornada && (
+              {hasPdi && (
                 <div className="bg-gray-50 rounded-xl p-5">
                   <h3 className="font-bold text-[#0A1E3E] mb-3 flex items-center gap-2">
                     <Target className="h-5 w-5 text-purple-600" />
@@ -2233,9 +2332,9 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {(() => {
-                      // Calcular duração do ciclo em meses e quinzenas
-                      const inicio = macroJornada.macroInicio ? new Date(macroJornada.macroInicio) : null;
-                      const termino = macroJornada.macroTermino ? new Date(macroJornada.macroTermino) : null;
+                      // Calcular duração do ciclo em meses e quinzenas (consolidado de todas as trilhas)
+                      const inicio = consolidatedInicio;
+                      const termino = consolidatedTermino;
                       let totalMeses = 0;
                       let totalQuinzenas = 0;
                       if (inicio && termino) {
@@ -2246,7 +2345,7 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                       const totalWebinares = totalQuinzenas; // 1 por quinzena
                       const totalTarefas = totalMentorias; // ~1 por sessão de mentoria
                       const cards = [
-                        { valor: String(macroJornada.totalCompetencias || 0), label: 'Competências', cor: 'text-purple-600', link: '/trilhas-competencias' },
+                        { valor: String(totalCompetencias), label: 'Competências', cor: 'text-purple-600', link: '/trilhas-competencias' },
                         { valor: inicio && termino ? `≈${totalWebinares}` : '---', label: 'Webinares', cor: 'text-blue-600', link: '/cursos' },
                         { valor: inicio && termino ? `≈${totalMentorias}` : '---', label: 'Mentorias', cor: 'text-teal-600', link: '/meu-dashboard' },
                         { valor: inicio && termino ? `≈${totalTarefas}` : '---', label: 'Tarefas', cor: 'text-amber-600', link: '/minhas-atividades' },

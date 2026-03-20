@@ -1,0 +1,8 @@
+{
+  "query": "SELECT ap.id, ap.trilhaId, t.nome as trilhaNome, ap.status, ap.macroInicio, ap.macroTermino,\n  (SELECT COUNT(*) FROM assessment_competencias ac WHERE ac.assessmentPdiId = ap.id) as numCompetencias\nFROM assessment_pdi ap\nLEFT JOIN trilhas t ON t.id = ap.trilhaId\nWHERE ap.alunoId = 660014\nORDER BY ap.createdAt DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id, ap.trilhaId, t.nome as trilhaNome, ap.status, ap.macroInicio, ap.macroTermino,\n  (SELECT COUNT(*) FROM assessment_competencias ac WHERE ac.assessmentPdiId = ap.id) as numCompetencias\nFROM assessment_pdi ap\nLEFT JOIN trilhas t ON t.id = ap.trilhaId\nWHERE ap.alunoId = 660014\nORDER BY ap.createdAt DESC",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 't.nome' in 'field list'"
+  ]
+}
