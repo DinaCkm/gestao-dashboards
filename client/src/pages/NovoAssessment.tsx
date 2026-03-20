@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, useParams } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
@@ -22,13 +23,15 @@ import {
   ChevronRight,
   ListChecks,
   User,
+  FileText,
+  Info,
 } from "lucide-react";
 
 // ============ Step Indicator ============
 function StepIndicator({ currentStep }: { currentStep: number }) {
   const steps = [
     { number: 1, title: "Configuração", icon: Calendar, description: "Trilha e período" },
-    { number: 2, title: "Competências", icon: ListChecks, description: "Seleção e pesos" },
+    { number: 2, title: "Competências", icon: ListChecks, description: "Seleção, nível e metas" },
   ];
 
   return (
@@ -73,6 +76,81 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
   );
 }
 
+// ============ Contract Info Card ============
+function ContratoInfoCard({ contratos, alunoName, tipoMentoria }: { contratos: any[]; alunoName: string; tipoMentoria?: string | null }) {
+  if (!contratos || contratos.length === 0) {
+    return (
+      <div className="mb-6 border border-amber-200 bg-amber-50 rounded-lg px-4 py-3 flex items-start gap-3">
+        <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-medium text-amber-800">Nenhum contrato cadastrado para {alunoName}</p>
+          <p className="text-xs text-amber-600 mt-0.5">
+            O administrador precisa cadastrar o contrato do aluno antes de definir os macrociclos e microciclos.
+            Os períodos do assessment devem estar dentro do período do contrato.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const activeContratos = contratos.filter((c: any) => c.isActive === 1);
+  const contrato = activeContratos[0] || contratos[0];
+
+  const formatDate = (d: any) => {
+    if (!d) return "—";
+    const date = new Date(d);
+    return date.toLocaleDateString("pt-BR");
+  };
+
+  const inicio = new Date(contrato.periodoInicio);
+  const fim = new Date(contrato.periodoTermino);
+  const diffMs = fim.getTime() - inicio.getTime();
+  const diffMeses = Math.round(diffMs / (1000 * 60 * 60 * 24 * 30));
+
+  return (
+    <div className="mb-6 border border-blue-200 bg-blue-50/50 rounded-lg px-5 py-4">
+      <div className="flex items-center gap-2 mb-3">
+        <FileText className="h-5 w-5 text-blue-600" />
+        <h3 className="text-sm font-semibold text-blue-800">Informações do Contrato</h3>
+        <Badge variant="outline" className="ml-auto text-xs border-blue-300 text-blue-700">
+          {contrato.isActive === 1 ? "Ativo" : "Inativo"}
+        </Badge>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div>
+          <p className="text-[11px] text-blue-600 uppercase tracking-wide font-medium">Início do Contrato</p>
+          <p className="text-sm font-semibold text-blue-900">{formatDate(contrato.periodoInicio)}</p>
+        </div>
+        <div>
+          <p className="text-[11px] text-blue-600 uppercase tracking-wide font-medium">Término do Contrato</p>
+          <p className="text-sm font-semibold text-blue-900">{formatDate(contrato.periodoTermino)}</p>
+        </div>
+        <div>
+          <p className="text-[11px] text-blue-600 uppercase tracking-wide font-medium">Duração</p>
+          <p className="text-sm font-semibold text-blue-900">{diffMeses} meses</p>
+        </div>
+        <div>
+          <p className="text-[11px] text-blue-600 uppercase tracking-wide font-medium">Sessões Contratadas</p>
+          <p className="text-sm font-semibold text-blue-900">{contrato.totalSessoesContratadas || "—"}</p>
+        </div>
+        <div>
+          <p className="text-[11px] text-blue-600 uppercase tracking-wide font-medium">Tipo de Mentoria</p>
+          <p className="text-sm font-semibold text-blue-900">
+            {tipoMentoria === 'grupo' ? 'Em Grupo' : tipoMentoria === 'individual' ? 'Individual' : '—'}
+          </p>
+        </div>
+      </div>
+      {contrato.observacoes && (
+        <p className="text-xs text-blue-600 mt-2 italic">Obs: {contrato.observacoes}</p>
+      )}
+      <div className="mt-2 flex items-center gap-1.5 text-xs text-blue-500">
+        <Info className="h-3.5 w-3.5" />
+        Os macrociclos e microciclos devem estar dentro do período do contrato.
+      </div>
+    </div>
+  );
+}
+
 // ============ Main Page ============
 export default function NovoAssessment() {
   const { user } = useAuth();
@@ -92,13 +170,18 @@ export default function NovoAssessment() {
   const [macroInicio, setMacroInicio] = useState("");
   const [macroTermino, setMacroTermino] = useState("");
 
-  // Step 2 state
+  // Step 2 state - now includes nivelAtual, metaFinal, metaCiclo1, metaCiclo2, justificativa
   const [competenciasConfig, setCompetenciasConfig] = useState<Array<{
     competenciaId: number;
     nome: string;
     selected: boolean;
     peso: "obrigatoria" | "opcional";
     notaCorte: string;
+    nivelAtual: string;
+    metaFinal: string;
+    metaCiclo1: string;
+    metaCiclo2: string;
+    justificativa: string;
     microInicio: string;
     microTermino: string;
   }>>([]);
@@ -111,6 +194,12 @@ export default function NovoAssessment() {
   const { data: trilhas = [] } = trpc.trilhas.list.useQuery();
   const { data: mentores = [] } = trpc.mentor.list.useQuery();
   const { data: allPrograms = [] } = trpc.programs.list.useQuery(undefined, { enabled: isAdmin });
+
+  // Fetch contract data for this student (Item 2.3)
+  const { data: contratos = [] } = trpc.contratos.byAluno.useQuery(
+    { alunoId },
+    { enabled: alunoId > 0 }
+  );
 
   // Get aluno info - admin sees all, mentor sees own
   const { data: adminAlunos = [] } = trpc.alunos.list.useQuery(
@@ -150,6 +239,11 @@ export default function NovoAssessment() {
           selected: true,
           peso: "obrigatoria" as const,
           notaCorte: "80",
+          nivelAtual: "",
+          metaFinal: "",
+          metaCiclo1: "",
+          metaCiclo2: "",
+          justificativa: "",
           microInicio: "",
           microTermino: "",
         }))
@@ -205,6 +299,11 @@ export default function NovoAssessment() {
         competenciaId: c.competenciaId,
         peso: c.peso,
         notaCorte: c.notaCorte,
+        nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+        metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
+        metaCiclo1: c.metaCiclo1 ? parseFloat(c.metaCiclo1) : null,
+        metaCiclo2: c.metaCiclo2 ? parseFloat(c.metaCiclo2) : null,
+        justificativa: c.justificativa || null,
         microInicio: c.microInicio || null,
         microTermino: c.microTermino || null,
       })),
@@ -221,11 +320,8 @@ export default function NovoAssessment() {
 
   const selectedTrilha = trilhas.find((t: any) => t.id === parseInt(selectedTrilhaId));
 
-  const sidebarItems = isAdmin
-    ? [{ label: "Assessment / PDI", icon: ClipboardCheck, href: "/assessment" }]
-    : isManager
-    ? [{ label: "Assessment / PDI", icon: ClipboardCheck, href: "/assessment" }]
-    : [{ label: "Assessment / PDI", icon: ClipboardCheck, href: "/assessment" }];
+  // Expanded competencia detail state
+  const [expandedComp, setExpandedComp] = useState<number | null>(null);
 
   return (
     <DashboardLayout>
@@ -251,6 +347,9 @@ export default function NovoAssessment() {
             )}
           </div>
         </div>
+
+        {/* Contract Info Card (Item 2.3) */}
+        <ContratoInfoCard contratos={contratos} alunoName={selectedAluno?.name || "este aluno"} tipoMentoria={selectedAluno?.tipoMentoria} />
 
         {/* Step Indicator */}
         <StepIndicator currentStep={step} />
@@ -349,11 +448,11 @@ export default function NovoAssessment() {
           </Card>
         )}
 
-        {/* ============ STEP 2: Competências ============ */}
+        {/* ============ STEP 2: Competências com Nível e Meta ============ */}
         {step === 2 && (
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <ListChecks className="h-5 w-5 text-secondary" />
@@ -380,79 +479,198 @@ export default function NovoAssessment() {
                     <TableRow className="bg-muted/30">
                       <TableHead className="w-12 text-center"></TableHead>
                       <TableHead className="text-sm font-semibold">Competência</TableHead>
-                      <TableHead className="text-sm font-semibold text-center w-32">Peso</TableHead>
-                      <TableHead className="text-sm font-semibold text-center w-44">Micro Jornada Início</TableHead>
-                      <TableHead className="text-sm font-semibold text-center w-44">Micro Jornada Término</TableHead>
+                      <TableHead className="text-sm font-semibold text-center w-28">Peso</TableHead>
+                      <TableHead className="text-sm font-semibold text-center w-24">Nível Atual (%)</TableHead>
+                      <TableHead className="text-sm font-semibold text-center w-24">Meta Final (%)</TableHead>
+                      <TableHead className="text-sm font-semibold text-center w-36">Micro Início</TableHead>
+                      <TableHead className="text-sm font-semibold text-center w-36">Micro Término</TableHead>
+                      <TableHead className="text-sm font-semibold text-center w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {competenciasConfig.map((comp, idx) => (
-                      <TableRow key={comp.competenciaId} className={`${!comp.selected ? "opacity-40 bg-muted/20" : "hover:bg-muted/10"}`}>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={comp.selected}
-                            onCheckedChange={(checked) => {
-                              setCompetenciasConfig(prev => {
-                                const next = [...prev];
-                                next[idx] = { ...next[idx], selected: !!checked };
-                                return next;
-                              });
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">{comp.nome}</TableCell>
-                        <TableCell className="text-center">
-                          <select
-                            value={comp.peso}
-                            onChange={(e) => {
-                              setCompetenciasConfig(prev => {
-                                const next = [...prev];
-                                next[idx] = { ...next[idx], peso: e.target.value as "obrigatoria" | "opcional" };
-                                return next;
-                              });
-                            }}
-                            disabled={!comp.selected}
-                            className="h-9 text-sm rounded-md border border-input bg-background px-3 w-full"
-                          >
-                            <option value="obrigatoria">Obrigatória</option>
-                            <option value="opcional">Opcional</option>
-                          </select>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Input
-                            type="date"
-                            value={comp.microInicio}
-                            min={macroInicio}
-                            max={macroTermino}
-                            onChange={(e) => {
-                              setCompetenciasConfig(prev => {
-                                const next = [...prev];
-                                next[idx] = { ...next[idx], microInicio: e.target.value };
-                                return next;
-                              });
-                            }}
-                            disabled={!comp.selected}
-                            className="h-9"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Input
-                            type="date"
-                            value={comp.microTermino}
-                            min={comp.microInicio || macroInicio}
-                            max={macroTermino}
-                            onChange={(e) => {
-                              setCompetenciasConfig(prev => {
-                                const next = [...prev];
-                                next[idx] = { ...next[idx], microTermino: e.target.value };
-                                return next;
-                              });
-                            }}
-                            disabled={!comp.selected}
-                            className="h-9"
-                          />
-                        </TableCell>
-                      </TableRow>
+                      <>
+                        <TableRow key={comp.competenciaId} className={`${!comp.selected ? "opacity-40 bg-muted/20" : "hover:bg-muted/10"}`}>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={comp.selected}
+                              onCheckedChange={(checked) => {
+                                setCompetenciasConfig(prev => {
+                                  const next = [...prev];
+                                  next[idx] = { ...next[idx], selected: !!checked };
+                                  return next;
+                                });
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{comp.nome}</TableCell>
+                          <TableCell className="text-center">
+                            <select
+                              value={comp.peso}
+                              onChange={(e) => {
+                                setCompetenciasConfig(prev => {
+                                  const next = [...prev];
+                                  next[idx] = { ...next[idx], peso: e.target.value as "obrigatoria" | "opcional" };
+                                  return next;
+                                });
+                              }}
+                              disabled={!comp.selected}
+                              className="h-9 text-sm rounded-md border border-input bg-background px-2 w-full"
+                            >
+                              <option value="obrigatoria">Obrigatória</option>
+                              <option value="opcional">Opcional</option>
+                            </select>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              placeholder="0"
+                              value={comp.nivelAtual}
+                              onChange={(e) => {
+                                setCompetenciasConfig(prev => {
+                                  const next = [...prev];
+                                  next[idx] = { ...next[idx], nivelAtual: e.target.value };
+                                  return next;
+                                });
+                              }}
+                              disabled={!comp.selected}
+                              className="h-9 text-center w-20 mx-auto"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              placeholder="100"
+                              value={comp.metaFinal}
+                              onChange={(e) => {
+                                setCompetenciasConfig(prev => {
+                                  const next = [...prev];
+                                  next[idx] = { ...next[idx], metaFinal: e.target.value };
+                                  return next;
+                                });
+                              }}
+                              disabled={!comp.selected}
+                              className="h-9 text-center w-20 mx-auto"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Input
+                              type="date"
+                              value={comp.microInicio}
+                              min={macroInicio}
+                              max={macroTermino}
+                              onChange={(e) => {
+                                setCompetenciasConfig(prev => {
+                                  const next = [...prev];
+                                  next[idx] = { ...next[idx], microInicio: e.target.value };
+                                  return next;
+                                });
+                              }}
+                              disabled={!comp.selected}
+                              className="h-9"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Input
+                              type="date"
+                              value={comp.microTermino}
+                              min={comp.microInicio || macroInicio}
+                              max={macroTermino}
+                              onChange={(e) => {
+                                setCompetenciasConfig(prev => {
+                                  const next = [...prev];
+                                  next[idx] = { ...next[idx], microTermino: e.target.value };
+                                  return next;
+                                });
+                              }}
+                              disabled={!comp.selected}
+                              className="h-9"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              disabled={!comp.selected}
+                              onClick={() => setExpandedComp(expandedComp === comp.competenciaId ? null : comp.competenciaId)}
+                              title="Detalhes (metas por ciclo e justificativa)"
+                            >
+                              <ChevronRight className={`h-4 w-4 transition-transform ${expandedComp === comp.competenciaId ? "rotate-90" : ""}`} />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                        {/* Expanded row for meta ciclo1, ciclo2, justificativa */}
+                        {expandedComp === comp.competenciaId && comp.selected && (
+                          <TableRow key={`${comp.competenciaId}-detail`} className="bg-muted/10">
+                            <TableCell colSpan={8}>
+                              <div className="py-2 px-4 space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Meta Ciclo 1 (%)</Label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="1"
+                                      placeholder="Ex: 50"
+                                      value={comp.metaCiclo1}
+                                      onChange={(e) => {
+                                        setCompetenciasConfig(prev => {
+                                          const next = [...prev];
+                                          next[idx] = { ...next[idx], metaCiclo1: e.target.value };
+                                          return next;
+                                        });
+                                      }}
+                                      className="h-9"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Meta Ciclo 2 (%)</Label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="1"
+                                      placeholder="Ex: 80"
+                                      value={comp.metaCiclo2}
+                                      onChange={(e) => {
+                                        setCompetenciasConfig(prev => {
+                                          const next = [...prev];
+                                          next[idx] = { ...next[idx], metaCiclo2: e.target.value };
+                                          return next;
+                                        });
+                                      }}
+                                      className="h-9"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Justificativa da Meta</Label>
+                                    <Textarea
+                                      placeholder="Justificativa para a meta definida..."
+                                      value={comp.justificativa}
+                                      onChange={(e) => {
+                                        setCompetenciasConfig(prev => {
+                                          const next = [...prev];
+                                          next[idx] = { ...next[idx], justificativa: e.target.value };
+                                          return next;
+                                        });
+                                      }}
+                                      className="min-h-[60px] resize-none"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
                     ))}
                   </TableBody>
                 </Table>
@@ -461,6 +679,11 @@ export default function NovoAssessment() {
               <div className="mt-3 text-sm text-muted-foreground flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
                 <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
                 Micro Jornadas não podem ultrapassar as datas da Macro Jornada ({macroInicio} → {macroTermino})
+              </div>
+
+              <div className="mt-2 text-sm text-muted-foreground flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
+                <Info className="h-4 w-4 text-blue-500 shrink-0" />
+                Clique na seta à direita de cada competência para definir metas por ciclo e justificativa.
               </div>
 
               <Separator className="my-6" />
@@ -490,8 +713,6 @@ export default function NovoAssessment() {
             </CardContent>
           </Card>
         )}
-
-        {/* Step 3 removido - progresso é calculado automaticamente pelas metas/desafios cumpridos */}
       </div>
     </DashboardLayout>
   );

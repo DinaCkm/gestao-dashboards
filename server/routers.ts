@@ -4015,6 +4015,8 @@ export const appRouter = router({
         programId: z.number().optional(),
         contratoInicio: z.string().optional(),
         contratoFim: z.string().optional(),
+        totalSessoesContratadas: z.number().optional(),
+        tipoMentoria: z.enum(['individual', 'grupo']).optional(),
       }))
       .mutation(async ({ input }) => {
         const result = await db.createAluno(input);
@@ -4187,6 +4189,7 @@ export const appRouter = router({
         turmaId: z.number().nullable().optional(),
         contratoInicio: z.string().optional(),
         contratoFim: z.string().optional(),
+        totalSessoesContratadas: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
         const result = await db.createAlunoDireto(input);

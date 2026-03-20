@@ -1850,7 +1850,7 @@ export async function updateAluno(alunoId: number, data: {
   return { success: true };
 }
 
-export async function createAluno(data: { name: string; email: string; externalId: string; programId?: number; contratoInicio?: string; contratoFim?: string }) {
+export async function createAluno(data: { name: string; email: string; externalId: string; programId?: number; contratoInicio?: string; contratoFim?: string; totalSessoesContratadas?: number; tipoMentoria?: 'individual' | 'grupo' }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
   
@@ -1896,6 +1896,7 @@ export async function createAluno(data: { name: string; email: string; externalI
     isActive: 1,
     contratoInicio: data.contratoInicio ? new Date(data.contratoInicio) : null,
     contratoFim: data.contratoFim ? new Date(data.contratoFim) : null,
+    tipoMentoria: data.tipoMentoria || 'individual',
   });
 
   const alunoId = result.insertId;
@@ -1914,6 +1915,23 @@ export async function createAluno(data: { name: string; email: string; externalI
     isActive: 1,
     lastSignedIn: new Date(),
   });
+
+  // 3. Criar registro de contrato se houver dados de contrato
+  if (data.contratoInicio && data.contratoFim && data.programId) {
+    try {
+      await db.insert(contratosAluno).values({
+        alunoId: Number(alunoId),
+        programId: data.programId,
+        periodoInicio: new Date(data.contratoInicio),
+        periodoTermino: new Date(data.contratoFim),
+        totalSessoesContratadas: data.totalSessoesContratadas || 0,
+        isActive: 1,
+      });
+      console.log(`[Cadastro Onboarding] Contrato criado para aluno ${alunoId}: ${data.contratoInicio} a ${data.contratoFim}, ${data.totalSessoesContratadas || 0} sessões`);
+    } catch (err) {
+      console.error(`[Cadastro Onboarding] Erro ao criar contrato:`, err);
+    }
+  }
 
   console.log(`[Cadastro Onboarding] Aluno criado: ${data.name} (ID: ${normalizedId}, Email: ${data.email}) - alunoId: ${alunoId}`);
   
@@ -5461,7 +5479,14 @@ export async function getJornadaCompleta(alunoId: number) {
     .orderBy(desc(contratosAluno.createdAt))
     .limit(1);
   
-  const contrato = contratos[0] || null;
+  const contratoRaw = contratos[0] || null;
+  
+  // Enriquecer contrato com tipoMentoria do aluno
+  let contrato: (typeof contratoRaw & { tipoMentoria?: string | null }) | null = contratoRaw;
+  if (contrato) {
+    const alunoRow = await db.select({ tipoMentoria: alunos.tipoMentoria }).from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+    contrato = { ...contrato, tipoMentoria: alunoRow[0]?.tipoMentoria || 'individual' };
+  }
   
   // 2. Buscar PDIs (Macro Jornadas) do aluno
   const pdis = await db.select().from(assessmentPdi)

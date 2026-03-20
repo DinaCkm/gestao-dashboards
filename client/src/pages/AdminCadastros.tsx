@@ -247,18 +247,6 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro ao cadastrar aluno: ${err.message}`),
   });
 
-  const createAlunoDireto = trpc.admin.createAlunoDireto.useMutation({
-    onSuccess: (data) => {
-      if (data.success) {
-        toast.success("Aluno cadastrado com sucesso! Mentor vinculado e bypass de onboarding ativado.");
-        refetchAccessUsers();
-        refetchAllAlunos();
-      } else {
-        toast.error(data.message || "Erro ao cadastrar aluno");
-      }
-    },
-    onError: (err) => toast.error(`Erro ao cadastrar aluno: ${err.message}`),
-  });
 
   const toggleAlunoStatus = trpc.admin.toggleAlunoStatus.useMutation({
     onSuccess: (data: any) => {
@@ -381,8 +369,7 @@ export default function AdminCadastros() {
               onUpdate={updateAluno.mutate}
               onCreateAluno={createAluno.mutate}
               isCreatingAluno={createAluno.isPending}
-              onCreateDireto={createAlunoDireto.mutate}
-              isCreatingDireto={createAlunoDireto.isPending}
+
               isUpdating={updateAluno.isPending}
               onDelete={deleteAluno.mutate}
               isDeleting={deleteAluno.isPending}
@@ -441,7 +428,7 @@ export default function AdminCadastros() {
 }
 
 // ============ ALUNOS TAB ============
-function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, onCreateDireto, isCreatingDireto, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding }: {
+function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding }: {
   alunos: any[];
   empresas: any[];
   mentoresList: any[];
@@ -450,8 +437,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   onUpdate: (data: any) => void;
   onCreateAluno: (data: any) => void;
   isCreatingAluno: boolean;
-  onCreateDireto: (data: any) => void;
-  isCreatingDireto: boolean;
+
   isUpdating: boolean;
   onDelete: (data: any) => void;
   isDeleting: boolean;
@@ -585,6 +571,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [onboardProgramId, setOnboardProgramId] = useState("");
   const [onboardContratoInicio, setOnboardContratoInicio] = useState("");
   const [onboardContratoFim, setOnboardContratoFim] = useState("");
+  const [onboardTotalSessoes, setOnboardTotalSessoes] = useState("");
+  const [onboardTipoMentoria, setOnboardTipoMentoria] = useState<'individual' | 'grupo'>('individual');
 
   const handleOnboardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -604,6 +592,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       programId: parseInt(onboardProgramId),
       contratoInicio: onboardContratoInicio || undefined,
       contratoFim: onboardContratoFim || undefined,
+      totalSessoesContratadas: onboardTotalSessoes ? parseInt(onboardTotalSessoes) : undefined,
+      tipoMentoria: onboardTipoMentoria,
     });
     setOnboardNome("");
     setOnboardEmail("");
@@ -611,51 +601,12 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     setOnboardProgramId("");
     setOnboardContratoInicio("");
     setOnboardContratoFim("");
+    setOnboardTotalSessoes("");
+    setOnboardTipoMentoria('individual');
     setOnboardOpen(false);
   };
 
-  // Create form (Cadastro Direto - com mentor vinculado)
-  const [diretoOpen, setDiretoOpen] = useState(false);
-  const [diretoNome, setDiretoNome] = useState("");
-  const [diretoEmail, setDiretoEmail] = useState("");
-  const [diretoCpf, setDiretoCpf] = useState("");
-  const [diretoProgramId, setDiretoProgramId] = useState("");
-  const [diretoConsultorId, setDiretoConsultorId] = useState("");
-  const [diretoTurmaId, setDiretoTurmaId] = useState("");
-  const [diretoContratoInicio, setDiretoContratoInicio] = useState("");
-  const [diretoContratoFim, setDiretoContratoFim] = useState("");
-
-  const handleDiretoSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const credentialDigits = diretoCpf.replace(/\D/g, '');
-    if (credentialDigits.length === 0) {
-      toast.error("ID do aluno deve ser informado");
-      return;
-    }
-    if (!diretoProgramId) {
-      toast.error("Selecione a empresa vinculada");
-      return;
-    }
-    onCreateDireto({
-      name: diretoNome,
-      email: diretoEmail,
-      cpf: credentialDigits,
-      programId: parseInt(diretoProgramId),
-      consultorId: diretoConsultorId ? parseInt(diretoConsultorId) : null,
-      turmaId: diretoTurmaId ? parseInt(diretoTurmaId) : null,
-      contratoInicio: diretoContratoInicio || undefined,
-      contratoFim: diretoContratoFim || undefined,
-    });
-    setDiretoNome("");
-    setDiretoEmail("");
-    setDiretoCpf("");
-    setDiretoProgramId("");
-    setDiretoConsultorId("");
-    setDiretoTurmaId("");
-    setDiretoContratoInicio("");
-    setDiretoContratoFim("");
-    setDiretoOpen(false);
-  };
+  // Cadastro Direto removido - manter apenas Cadastrar Aluno para Onboarding
 
   // Edit form
   const [editNome, setEditNome] = useState("");
@@ -764,15 +715,28 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                     </select>
                   </div>
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><CalendarDays className="h-3.5 w-3.5" /> Período do Contrato (Opcional)</p>
+                    <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><CalendarDays className="h-3.5 w-3.5" /> Dados do Contrato</p>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs">Início</Label>
+                        <Label className="text-xs">Início do Contrato</Label>
                         <Input type="date" value={onboardContratoInicio} onChange={(e) => setOnboardContratoInicio(e.target.value)} className="text-sm" />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Fim</Label>
+                        <Label className="text-xs">Fim do Contrato</Label>
                         <Input type="date" value={onboardContratoFim} onChange={(e) => setOnboardContratoFim(e.target.value)} className="text-sm" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Total de Sessões Contratadas</Label>
+                        <Input type="number" min="0" placeholder="Ex: 12" value={onboardTotalSessoes} onChange={(e) => setOnboardTotalSessoes(e.target.value)} className="text-sm" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Tipo de Mentoria</Label>
+                        <select value={onboardTipoMentoria} onChange={(e) => setOnboardTipoMentoria(e.target.value as 'individual' | 'grupo')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                          <option value="individual">Individual</option>
+                          <option value="grupo">Em Grupo</option>
+                        </select>
                       </div>
                     </div>
                   </div>
@@ -787,80 +751,6 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
             </DialogContent>
           </Dialog>
 
-          {/* Cadastro Direto Dialog */}
-          <Dialog open={diretoOpen} onOpenChange={setDiretoOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-emerald-600 hover:bg-emerald-700"><UserCheck className="h-4 w-4 mr-2" /> Cadastro Direto</Button>
-            </DialogTrigger>
-            <DialogContent className="z-50 max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
-              <form onSubmit={handleDiretoSubmit}>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <UserCheck className="h-5 w-5 text-emerald-600" />
-                    Cadastro Direto de Aluno
-                  </DialogTitle>
-                  <DialogDescription>
-                    Cadastre o aluno. O mentor será escolhido pelo aluno durante o onboarding.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Nome Completo *</Label>
-                    <Input value={diretoNome} onChange={(e) => setDiretoNome(e.target.value)} placeholder="Nome completo" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email *</Label>
-                    <Input type="email" value={diretoEmail} onChange={(e) => setDiretoEmail(e.target.value)} placeholder="email@exemplo.com" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>ID do Aluno *</Label>
-                    <Input value={diretoCpf} onChange={(e) => setDiretoCpf(e.target.value.replace(/\D/g, ''))} placeholder="Ex: 667306" required maxLength={10} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Empresa Vinculada *</Label>
-                    <select value={diretoProgramId} onChange={(e) => setDiretoProgramId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" required>
-                      <option value="">Selecione a empresa</option>
-                      {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Turma (Opcional)</Label>
-                    <select value={diretoTurmaId} onChange={(e) => setDiretoTurmaId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                      <option value="">Nenhuma turma</option>
-                      {turmasList.map((t: any) => (<option key={t.id} value={t.id.toString()}>{t.name}</option>))}
-                    </select>
-                  </div>
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><CalendarDays className="h-3.5 w-3.5" /> Período do Contrato (Opcional)</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Início</Label>
-                        <Input type="date" value={diretoContratoInicio} onChange={(e) => setDiretoContratoInicio(e.target.value)} className="text-sm" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Fim</Label>
-                        <Input type="date" value={diretoContratoFim} onChange={(e) => setDiretoContratoFim(e.target.value)} className="text-sm" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground">Mentor(a) (Opcional)</Label>
-                    <select value={diretoConsultorId} onChange={(e) => setDiretoConsultorId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                      <option value="">Aluno escolherá no onboarding</option>
-                      {mentoresList.map((m: any) => (<option key={m.id} value={m.id.toString()}>{m.name}</option>))}
-                    </select>
-                    <p className="text-xs text-muted-foreground">O aluno sempre passará pelo onboarding e poderá escolher o mentor na etapa 3.</p>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setDiretoOpen(false)}>Cancelar</Button>
-                  <Button type="submit" disabled={isCreatingDireto} className="bg-emerald-600 hover:bg-emerald-700">
-                    {isCreatingDireto ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Cadastrando...</> : "Cadastrar Aluno"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
         </div>
 
         {/* Edit Dialog */}

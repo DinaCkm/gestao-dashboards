@@ -1416,7 +1416,7 @@ function CreateAssessmentDialog({
   const [selectedConsultorId, setSelectedConsultorId] = useState<string>(consultorId ? String(consultorId) : "");
   const [macroInicio, setMacroInicio] = useState("");
   const [macroTermino, setMacroTermino] = useState("");
-  const [totalSessoesPrevistas, setTotalSessoesPrevistas] = useState<string>("");
+  // Campo totalSessoesPrevistas removido - definido pelo admin no contrato
   const [competenciasConfig, setCompetenciasConfig] = useState<Array<{
     competenciaId: number;
     nome: string;
@@ -1502,7 +1502,7 @@ function CreateAssessmentDialog({
       consultorId: selectedConsultorId ? parseInt(selectedConsultorId) : null,
       macroInicio,
       macroTermino,
-      totalSessoesPrevistas: totalSessoesPrevistas ? parseInt(totalSessoesPrevistas) : null,
+      // totalSessoesPrevistas removido - definido pelo admin no contrato
       competencias: selectedComps.map(c => ({
         competenciaId: c.competenciaId,
         peso: c.peso,

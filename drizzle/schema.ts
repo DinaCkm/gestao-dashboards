@@ -191,6 +191,7 @@ export const alunos = mysqlTable("alunos", {
   cadastradoPorAdmin: int("cadastradoPorAdmin").default(0).notNull(), // 1 = cadastrado diretamente pelo admin
   contratoInicio: timestamp("contratoInicio"), // Data início do período contratual
   contratoFim: timestamp("contratoFim"), // Data fim do período contratual
+  tipoMentoria: mysqlEnum("tipoMentoria", ["individual", "grupo"]).default("individual"), // Tipo de sessão de mentoria contratada
   telefone: varchar("telefone", { length: 20 }),
   cargo: varchar("cargo", { length: 255 }),
   areaAtuacao: varchar("areaAtuacao", { length: 255 }),

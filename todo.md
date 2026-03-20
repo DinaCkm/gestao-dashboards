@@ -2885,3 +2885,50 @@
 - [x] Bug: possível criar PDI para aluno inativado → CORRIGIDO: guard adicionado no assessment.criar.
 - [x] Bug: possível ativar aluno vinculado a empresa desativada → CORRIGIDO: guard adicionado no toggleAlunoStatus.
 - [x] Campos importação zerados → AUDITADO: DADOS DA FONTE. mediaAvaliacoesFinais vem zero da plataforma de cursos. Código de importação está correto.
+
+## Itens do Relatório do Usuário - Impacto nos Alunos (20/03/2026)
+
+### 2.1 Portal do Aluno - Dados Fake (linhas 1071-1076)
+- [ ] Verificar e remover dados fake de webinários no PortalAluno
+- [ ] Verificar e remover dados fake de tarefas práticas no PortalAluno
+- [ ] Verificar e remover dados fake de cursos no PortalAluno
+- [ ] Verificar e remover dados fake de sessões de mentoria no PortalAluno
+- [ ] Verificar e remover dados fake de trilha/competências no PortalAluno
+- [ ] Verificar e remover dados fake de mentoras no Onboarding
+
+### 2.2 Cálculo de Indicadores (linhas 1211-2263)
+- [ ] Verificar Ind. 4 e 5 zerados (dataSessao já corrigido, validar resultado)
+- [ ] Verificar nota competência usa campo correto (auditado: já correto no V2)
+- [ ] Verificar Ind. 4 por macrociclo (auditado: já implementado no V2)
+- [ ] Verificar Ind. 1 por macrociclo (auditado: já implementado no V2)
+- [ ] Verificar discrepância Ind. 4 Joseane (dataSessao fix deve resolver)
+- [ ] Verificar tarefas zeradas Millena (dataSessao fix deve resolver)
+
+### 2.3 Onboarding Julia (linhas 2789-2795)
+- [ ] Verificar trilha Basic da Julia no onboarding
+- [ ] Verificar dados da Julia no banco
+
+### 2.4 Bugs que Afetam Alunos
+- [ ] Verificar header "Usuário" no Portal (auditado: não encontrado)
+- [ ] Verificar envio de Case de Sucesso (auditado: já funcional)
+- [ ] Verificar Ciclo em Andamento (auditado: já funcional, problema de datas)
+- [ ] Verificar competência Wandemberg sem barra (auditado: problema de dados)
+- [ ] Verificar PDI aluno inativo (já corrigido: guard adicionado)
+- [ ] Verificar campos importação zerados (auditado: dados da fonte)
+
+### 2.5 Funcionalidades Futuras Aluno
+- [ ] Implementar sistema de presença + reflexão do aluno por webinar
+- [ ] Implementar alertas visuais de encerramento de microciclos
+- [ ] Implementar card de metas no Portal e Mural do aluno
+
+## Plano Consolidado - Itens que Impactam o MENTOR (20/03/2026)
+
+- [x] 2.1: Incluir nível e meta ao cadastrar trilha do aluno (formulário do mentor) - campos nivelAtual, metaFinal, metaCiclo1, metaCiclo2, justificativa no NovoAssessment Step 2
+- [x] 2.2: Remover campo de quantidade de mentorias do formulário do PDI do mentor - removido de Assessment.tsx e PlanoIndividual.tsx
+- [x] 2.3: Exibir tempo de duração do contrato no assessment (card informativo com início, fim, duração, sessões e tipo mentoria)
+- [x] Adicionar campo "Total de Sessões Contratadas" no formulário de cadastro de aluno novo (Onboarding)
+- [x] Garantir que período do contrato e total sessões sejam salvos corretamente no backend ao cadastrar aluno (createAluno cria registro em contratosAluno)
+- [x] Remover botão/formulário "Cadastro Direto de Aluno" da aba Alunos (manter apenas "Cadastrar Aluno para Onboarding")
+- [x] Incluir campo "Tipo de Mentoria" (Individual ou Grupo) no formulário de cadastro do aluno
+- [x] Exibir tipo de mentoria e total de sessões contratadas no card informativo do Assessment (visível para o mentor)
+- [x] Exibir tipo de mentoria e total de sessões contratadas no Plano de Desenvolvimento do aluno (PlanoIndividual header + DashboardMeuPerfil contrato card)

@@ -1066,6 +1066,9 @@ export default function DashboardMeuPerfil() {
                             <p className="text-xs text-gray-600">
                               {formatDateSafe(jornadaData.contrato.periodoInicio)} a {formatDateSafe(jornadaData.contrato.periodoTermino)}
                             </p>
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-200 text-blue-800 font-medium mt-1">
+                              Mentoria: {jornadaData.contrato.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'}
+                            </span>
                           </div>
                         </div>
                         {jornadaData.saldo && (

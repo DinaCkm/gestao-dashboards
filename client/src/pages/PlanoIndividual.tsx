@@ -502,7 +502,7 @@ function PlanoContent() {
       consultorId: novoConsultorId ? parseInt(novoConsultorId) : null,
       macroInicio: novoMacroInicio,
       macroTermino: novoMacroTermino,
-      totalSessoesPrevistas: novoTotalSessoes ? parseInt(novoTotalSessoes) : null,
+      // totalSessoesPrevistas removido - definido pelo admin no contrato
       competencias: selectedComps.map(c => ({
         competenciaId: c.competenciaId,
         peso: c.peso,
@@ -750,6 +750,16 @@ function PlanoContent() {
                       <p className="text-sm text-muted-foreground">
                         ID: {selectedAlunoData?.externalId} | {selectedAlunoData?.competenciasObrigatorias} competências obrigatórias | {selectedAlunoData?.competenciasConcluidas} concluídas
                       </p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                          Mentoria: {(selectedAlunoData as any)?.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'}
+                        </span>
+                        {contratos.length > 0 && (
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+                            {contratos[0]?.totalSessoesContratadas || '—'} sessões contratadas
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setSelectedAluno(null)}>Trocar aluno</Button>
                   </div>
@@ -1488,11 +1498,7 @@ function PlanoContent() {
                   </div>
                 </div>
               </div>
-              {/* Total Sessões */}
-              <div>
-                <Label className="mb-1.5 block text-sm font-medium">Total de Sessões de Mentoria Previstas</Label>
-                <Input type="number" min="0" placeholder="Ex: 12" value={novoTotalSessoes} onChange={(e) => setNovoTotalSessoes(e.target.value)} />
-              </div>
+              {/* Campo Total Sessões removido - definido pelo admin no contrato */}
             </div>
           ) : (
             <div className="space-y-3 py-2">
