@@ -985,6 +985,52 @@ export default function DashboardMeuPerfil() {
           </div>
         )}
 
+        {/* Meta de Certificação LÍDER NÍVEL I */}
+        <div className="mt-4 rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50/80 to-white p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Award className="h-5 w-5 text-purple-600" />
+            <h3 className="text-sm font-bold text-purple-800 uppercase tracking-wide">Meta de Certificação — LÍDER NÍVEL I</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Evidências */}
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-white border border-purple-100 shadow-sm">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <FileText className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-800 mb-1">Evidências de Desenvolvimento</p>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Comprovar através de cases reais de aplicabilidade de cada jornada, relatadas e confirmadas pela liderança ou mentor em cada trilha de desenvolvimento.
+                </p>
+              </div>
+            </div>
+            {/* Engajamento */}
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-white border border-purple-100 shadow-sm">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                <Star className="h-4 w-4 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-800 mb-1">Engajamento Final mínimo de 80%</p>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Engajamento mínimo de 80% com a participação nos webinares, mentorias, cursos e tarefas ao longo de toda a jornada.
+                </p>
+              </div>
+            </div>
+            {/* Desafios */}
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-white border border-purple-100 shadow-sm">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                <Target className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-800 mb-1">Desafios cumpridos em mínimo de 80%</p>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Cumprimento das metas desafiadoras que foram assumidas no início da jornada, atingindo pelo menos 80% dos objetivos estabelecidos.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Card ECO_EVOLUIR - apenas para SEBRAE TO */}
         {aluno.programa && aluno.programa.toUpperCase().includes('SEBRAE') && aluno.programa.toUpperCase().includes('TO') && (
         <a

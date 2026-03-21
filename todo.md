@@ -3105,3 +3105,9 @@
 
 ## BUG - getAllAlunosForAdmin não retornava totalSessoesContratadas e tipoMentoria
 - [x] Adicionados campos totalSessoesContratadas e tipoMentoria ao select de getAllAlunosForAdmin
+
+## Textos descritivos da Meta de Certificação no Portal do Aluno
+- [x] Adicionar abaixo dos cards de indicadores (Webinars, Avaliações, Competências, Tarefas, Engajamento, Case) os textos:
+  - Evidências: "Comprovar através de cases reais de aplicabilidade de cada jornada"
+  - Engajamento: "Engajamento mínimo de 80% com a participação nos webinares, mentorias, cursos e tarefas"
+  - Desafios: "Cumprimento das metas desafiadoras que foram assumidas no início da jornada"
