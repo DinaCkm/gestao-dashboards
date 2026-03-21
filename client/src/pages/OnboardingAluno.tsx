@@ -2773,10 +2773,10 @@ export default function OnboardingAluno() {
             </div>
             <Button
               size="sm"
-              className="bg-[#5B3A7D] hover:bg-[#4a2f66] text-white shrink-0"
+              className="bg-red-600 hover:bg-red-700 text-white shrink-0"
               onClick={() => setCurrentStep(progressStep)}
             >
-              Voltar para etapa atual
+              Ir para a etapa atual
             </Button>
           </div>
         )}
