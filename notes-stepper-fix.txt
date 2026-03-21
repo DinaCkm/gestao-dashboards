@@ -1,0 +1,13 @@
+Screenshot after stepper fix:
+- Sidebar is purple as expected (global change working)
+- Admin home page showing correctly with purple sidebar
+- TypeScript: No errors
+- LSP: No errors
+- HMR update for OnboardingAluno.tsx applied successfully
+
+The fix adds:
+1. progressStep state to track the real progress step from backend
+2. isViewingPreviousStep flag when currentStep < progressStep
+3. readOnly is forced when viewing previous steps
+4. A yellow banner "Etapa já concluída" with "Voltar para etapa atual" button appears when viewing previous steps
+5. The stepper still shows all steps as clickable but previous steps are now read-only

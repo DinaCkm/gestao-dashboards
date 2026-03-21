@@ -3029,3 +3029,8 @@
 - [x] Frontend aluno: formulário estruturado com os 5 campos obrigatórios
 - [x] Frontend admin/mentor: visualização detalhada do Relatório de Impacto (renomeado em todas as páginas)
 - [x] Testes vitest para as novas procedures (7/7 passed)
+
+## Bug: Stepper do Onboarding - Etapas já concluídas reabrem como vazias
+- [x] Bug: quando aluno já na fase Aceite clica em "Cadastro" no stepper, a tela reabre como se não tivesse preenchido
+- [x] Investigar lógica do stepper: como determina qual etapa mostrar quando clica em etapa anterior
+- [x] Corrigir: etapas já concluídas mostram dados preenchidos em readOnly + banner "Voltar para etapa atual" (13 testes passando)

@@ -2640,6 +2640,7 @@ export default function OnboardingAluno() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
+  const [progressStep, setProgressStep] = useState(1); // Step real do progresso do aluno
   const [stepInitialized, setStepInitialized] = useState(false);
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
@@ -2663,6 +2664,7 @@ export default function OnboardingAluno() {
   useEffect(() => {
     if (progressoData && !stepInitialized) {
       setCurrentStep(progressoData.step);
+      setProgressStep(progressoData.step);
       setStepInitialized(true);
     }
   }, [progressoData, stepInitialized]);
@@ -2690,8 +2692,12 @@ export default function OnboardingAluno() {
   // - Aluno COM PDI e SEM onboarding liberado = readOnly (veterano visualizando)
   // - Aluno COM onboardingCompleto = readOnly (completou o fluxo)
   // - Aluno SEM PDI ou COM onboarding liberado = pode editar (aluno novo ou novo ciclo)
-  const readOnly = !!(progressoData?.onboardingCompleto) || 
+  const globalReadOnly = !!(progressoData?.onboardingCompleto) || 
     !!(onboardingStatus?.hasPdi && !onboardingStatus?.needsOnboarding);
+  
+  // Etapas anteriores ao progresso real ficam em readOnly (para não refazer)
+  const isViewingPreviousStep = !globalReadOnly && currentStep < progressStep;
+  const readOnly = globalReadOnly || isViewingPreviousStep;
   const reassessmentElegivel = !!(progressoData?.reassessmentElegivel);
 
   // Aguardar carregamento do status de onboarding para evitar flash de conteúdo incorreto
@@ -2743,16 +2749,36 @@ export default function OnboardingAluno() {
         {/* Stepper */}
         <OnboardingStepper currentStep={currentStep} onStepClick={(step) => {
           // Bloquear navegação para etapas 3 (Mentora) e 4 (Agendamento) se o aluno já passou dessas etapas
-          // (currentStep >= 5 significa que já agendou e está no 1° Encontro ou além)
-          if (!readOnly && currentStep >= 5 && (step === 3 || step === 4)) {
+          // (progressStep >= 5 significa que já agendou e está no 1° Encontro ou além)
+          if (!globalReadOnly && progressStep >= 5 && (step === 3 || step === 4)) {
             toast.info("Você já escolheu sua mentora e agendou seu encontro. Não é possível alterar.");
             return;
           }
           setCurrentStep(step);
-        }} readOnly={readOnly} />
+        }} readOnly={globalReadOnly} />
+
+        {/* Banner: Visualizando etapa anterior */}
+        {isViewingPreviousStep && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-amber-600 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800">Etapa já concluída</p>
+                <p className="text-xs text-amber-600">Você está visualizando uma etapa que já foi preenchida. Os dados estão em modo somente leitura.</p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              className="bg-[#5B3A7D] hover:bg-[#4a2f66] text-white shrink-0"
+              onClick={() => setCurrentStep(progressStep)}
+            >
+              Voltar para etapa atual
+            </Button>
+          </div>
+        )}
 
         {/* Banner de modo somente leitura */}
-        {readOnly && !reassessmentElegivel && (
+        {globalReadOnly && !reassessmentElegivel && (
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
             <Lock className="h-5 w-5 text-blue-600 shrink-0" />
             <div>
