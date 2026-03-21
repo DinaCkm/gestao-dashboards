@@ -1263,9 +1263,12 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
     : 0;
   const progressoTempo = totalMeses > 0 ? Math.min(100, Math.round((mesesDecorridos / totalMeses) * 100)) : 0;
 
-  // Dados de sessões
+  // Dados de sessões - usar totalSessoesContratadas do contrato se disponível
   const sessoesRealizadas = dashData?.found ? (dashData as any).sessoesAluno?.filter((s: any) => s.presence === 'presente' && !s.isAssessment)?.length || 0 : 0;
-  const totalSessoesPrevistas = totalMeses;
+  const contrato = jornadaData?.contrato;
+  const sessoesContratadas = contrato?.totalSessoesContratadas || 0;
+  const totalSessoesPrevistas = sessoesContratadas > 0 ? sessoesContratadas : totalMeses;
+  const tipoMentoriaContrato = (contrato as any)?.tipoMentoria || 'individual';
 
   // Dados de tarefas
   const tarefasEntregues = dashData?.found ? (dashData as any).indicadores?.atividadesEntregues || 0 : 0;
@@ -1348,7 +1351,8 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
                     <Users2 className="h-6 w-6 text-amber-400 mx-auto mb-1" />
                     <p className="text-2xl font-bold">{totalSessoesPrevistas || '---'}</p>
-                    <p className="text-xs text-white/60">Meses de Mentoria</p>
+                    <p className="text-xs text-white/60">{sessoesContratadas > 0 ? 'Sessões de Mentoria' : 'Meses de Jornada'}</p>
+                    {sessoesContratadas > 0 && <p className="text-[10px] text-white/40 mt-0.5">{tipoMentoriaContrato === 'grupo' ? 'Em Grupo' : 'Individual'}</p>}
                   </div>
                 </div>
                 {/* Lista de trilhas */}
@@ -1505,7 +1509,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                       <Users2 className="h-5 w-5 text-purple-600" />
                     </div>
                     <p className="text-2xl font-bold text-purple-700">{sessoesRealizadas}/{totalSessoesPrevistas}</p>
-                    <p className="text-xs text-purple-500">Mentorias</p>
+                    <p className="text-xs text-purple-500">Mentorias{sessoesContratadas > 0 ? ` (${tipoMentoriaContrato === 'grupo' ? 'Grupo' : 'Ind.'})` : ''}</p>
                   </CardContent>
                 </Card>
                 <Card className="border-0 shadow-md bg-gradient-to-br from-emerald-50 to-teal-50">
@@ -2446,25 +2450,42 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {(() => {
-                      // Calcular duração do ciclo em meses e quinzenas (consolidado de todas as trilhas)
-                      const inicio = consolidatedInicio;
-                      const termino = consolidatedTermino;
-                      let totalMeses = 0;
-                      let totalQuinzenas = 0;
+                      // Dados do contrato (fonte primária para webinares e período)
+                      const contrato = jornadaData?.contrato;
+                      const contratoInicio = contrato?.periodoInicio ? new Date(contrato.periodoInicio) : null;
+                      const contratoFim = contrato?.periodoTermino ? new Date(contrato.periodoTermino) : null;
+                      
+                      // Fallback: usar datas do PDI se não houver contrato
+                      const inicio = contratoInicio || consolidatedInicio;
+                      const termino = contratoFim || consolidatedTermino;
+                      
+                      // Webinares: 2 por mês, baseado no período do contrato
+                      let totalMesesContrato = 0;
                       if (inicio && termino) {
-                        totalMeses = Math.max(1, Math.round((termino.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
-                        totalQuinzenas = Math.max(1, Math.round((termino.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 15.22)));
+                        totalMesesContrato = Math.max(1, Math.round((termino.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
                       }
-                      const totalMentorias = totalMeses; // 1 por mês
-                      const totalWebinares = totalQuinzenas; // 1 por quinzena
-                      const totalTarefas = totalMentorias; // ~1 por sessão de mentoria
+                      const totalWebinares = totalMesesContrato * 2; // 2 webinares por mês
+                      
+                      // Mentorias: buscar do contrato (totalSessoesContratadas)
+                      const sessoesContratadas = contrato?.totalSessoesContratadas || 0;
+                      const tipoMentoria = contrato?.tipoMentoria || 'individual';
+                      const temMentoria = sessoesContratadas > 0;
+                      
+                      // Tarefas: igual ao número de mentorias
+                      const totalTarefas = sessoesContratadas;
+                      
+                      // Texto de mentoria
+                      const mentoriaLabel = temMentoria 
+                        ? `${sessoesContratadas} (${tipoMentoria === 'grupo' ? 'Grupo' : 'Individual'})`
+                        : 'Sem mentoria';
+                      
                       const cards = [
-                        { valor: String(totalCompetencias), label: 'Competências', cor: 'text-purple-600', link: '/trilhas-competencias' },
-                        { valor: inicio && termino ? `≈${totalWebinares}` : '---', label: 'Webinares', cor: 'text-blue-600', link: '/cursos' },
-                        { valor: inicio && termino ? `≈${totalMentorias}` : '---', label: 'Mentorias', cor: 'text-teal-600', link: '/meu-dashboard' },
-                        { valor: inicio && termino ? `≈${totalTarefas}` : '---', label: 'Tarefas', cor: 'text-amber-600', link: '/minhas-atividades' },
-                        { valor: inicio ? inicio.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---', label: 'Início', cor: 'text-[#0A1E3E]', link: '/meu-dashboard' },
-                        { valor: termino ? termino.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---', label: 'Término', cor: 'text-[#F5991F]', link: '/meu-dashboard' },
+                        { valor: String(totalCompetencias), label: 'Competências', cor: 'text-purple-600', link: '/trilhas-competencias', subtitle: '' },
+                        { valor: totalWebinares > 0 ? String(totalWebinares) : '---', label: 'Webinares', cor: 'text-blue-600', link: '/cursos', subtitle: totalWebinares > 0 ? '(2 por mês)' : '' },
+                        { valor: temMentoria ? String(sessoesContratadas) : '---', label: 'Mentorias', cor: 'text-teal-600', link: '/meu-dashboard', subtitle: temMentoria ? (tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual') : 'Sem mentoria' },
+                        { valor: temMentoria ? String(totalTarefas) : '---', label: 'Tarefas', cor: 'text-amber-600', link: '/minhas-atividades', subtitle: temMentoria ? 'A critério da mentora' : '' },
+                        { valor: inicio ? inicio.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---', label: 'Início', cor: 'text-[#0A1E3E]', link: '/meu-dashboard', subtitle: '' },
+                        { valor: termino ? termino.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---', label: 'Término', cor: 'text-[#F5991F]', link: '/meu-dashboard', subtitle: '' },
                       ];
                       return (
                         <>
@@ -2476,6 +2497,7 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                             >
                               <p className={`text-2xl font-bold ${card.cor}`}>{card.valor}</p>
                               <p className="text-xs text-gray-500 group-hover:text-[#0A1E3E] transition-colors">{card.label}</p>
+                              {card.subtitle && <p className="text-[10px] text-gray-400 mt-0.5">{card.subtitle}</p>}
                             </div>
                           ))}
                         </>
@@ -2484,6 +2506,32 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                   </div>
                 </div>
               )}
+
+              {/* Meta de Certificação */}
+              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-5">
+                <h3 className="font-bold text-[#5B3A7D] mb-3 flex items-center gap-2">
+                  <Award className="h-5 w-5 text-[#5B3A7D]" />
+                  Meta: LÍDER NÍVEL I — CERTIFICADO
+                </h3>
+                <p className="text-sm text-gray-700 mb-3 leading-relaxed">
+                  Para conquistar o título de <strong className="text-[#5B3A7D]">Líder Nível I — Certificado</strong>, você precisa cumprir todos os requisitos abaixo:
+                </p>
+                <div className="space-y-2">
+                  {[
+                    { icon: '📝', text: 'Evidências de desenvolvimento relatadas e confirmadas pela liderança ou mentor em cada trilha de Desenvolvimento' },
+                    { icon: '📊', text: 'Engajamento Final mínimo de 80%' },
+                    { icon: '🎯', text: 'Desafios cumpridos em mínimo de 80%' },
+                  ].map((req, idx) => (
+                    <div key={idx} className="flex items-start gap-3 bg-white/60 rounded-lg p-3 border border-purple-100">
+                      <span className="text-lg shrink-0">{req.icon}</span>
+                      <p className="text-sm text-gray-700">{req.text}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-[#5B3A7D] mt-3 font-medium">
+                  Todos estes indicadores juntos conferem o título de LÍDER NÍVEL I — CERTIFICADO.
+                </p>
+              </div>
 
               {/* Compromissos */}
               <div>

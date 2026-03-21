@@ -1,0 +1,15 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM alunos WHERE contratoInicio IS NOT NULL) as alunos_com_contrato_inline,\n  (SELECT COUNT(*) FROM contratos_aluno WHERE isActive = 1) as contratos_tabela,\n  (SELECT COUNT(*) FROM alunos WHERE isActive = 1) as total_alunos_ativos;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT \n  (SELECT COUNT(*) FROM alunos WHERE contratoInicio IS NOT NULL) as alunos_com_contrato_inline,\n  (SELECT COUNT(*) FROM contratos_aluno WHERE isActive = 1) as contratos_tabela,\n  (SELECT COUNT(*) FROM alunos WHERE isActive = 1) as total_alunos_ativos;",
+  "rows": [
+    {
+      "alunos_com_contrato_inline": "27",
+      "contratos_tabela": "4",
+      "total_alunos_ativos": "143"
+    }
+  ],
+  "messages": [],
+  "stdout": "alunos_com_contrato_inline\tcontratos_tabela\ttotal_alunos_ativos\n27\t4\t143\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}

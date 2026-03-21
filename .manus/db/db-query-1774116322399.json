@@ -1,0 +1,30 @@
+{
+  "query": "SELECT a.id, a.name, a.tipoMentoria, a.contratoInicio, a.contratoFim, ca.periodoInicio, ca.periodoTermino, ca.totalSessoesContratadas FROM alunos a LEFT JOIN contratos_aluno ca ON ca.alunoId = a.id AND ca.isActive = 1 WHERE a.name LIKE '%Julia%' OR a.name LIKE '%Júlia%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.tipoMentoria, a.contratoInicio, a.contratoFim, ca.periodoInicio, ca.periodoTermino, ca.totalSessoesContratadas FROM alunos a LEFT JOIN contratos_aluno ca ON ca.alunoId = a.id AND ca.isActive = 1 WHERE a.name LIKE '%Julia%' OR a.name LIKE '%Júlia%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "30082",
+      "name": "Juliana Masson Prediger",
+      "tipoMentoria": "individual",
+      "contratoInicio": "NULL",
+      "contratoFim": "NULL",
+      "periodoInicio": "NULL",
+      "periodoTermino": "NULL",
+      "totalSessoesContratadas": "NULL"
+    },
+    {
+      "id": "660014",
+      "name": "Julia Souza Makiyama",
+      "tipoMentoria": "individual",
+      "contratoInicio": "2026-04-01 00:00:00",
+      "contratoFim": "2026-09-09 00:00:00",
+      "periodoInicio": "NULL",
+      "periodoTermino": "NULL",
+      "totalSessoesContratadas": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttipoMentoria\tcontratoInicio\tcontratoFim\tperiodoInicio\tperiodoTermino\ttotalSessoesContratadas\n30082\tJuliana Masson Prediger\tindividual\tNULL\tNULL\tNULL\tNULL\tNULL\n660014\tJulia Souza Makiyama\tindividual\t2026-04-01 00:00:00\t2026-09-09 00:00:00\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

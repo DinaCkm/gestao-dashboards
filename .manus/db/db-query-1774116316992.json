@@ -1,0 +1,62 @@
+{
+  "query": "SELECT ca.id, ca.alunoId, ca.programId, ca.periodoInicio, ca.periodoTermino, ca.totalSessoesContratadas, ca.isActive, a.name, a.tipoMentoria, a.contratoInicio, a.contratoFim FROM contratos_aluno ca JOIN alunos a ON a.id = ca.alunoId WHERE ca.isActive = 1 LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ca.id, ca.alunoId, ca.programId, ca.periodoInicio, ca.periodoTermino, ca.totalSessoesContratadas, ca.isActive, a.name, a.tipoMentoria, a.contratoInicio, a.contratoFim FROM contratos_aluno ca JOIN alunos a ON a.id = ca.alunoId WHERE ca.isActive = 1 LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "alunoId": "570031",
+      "programId": "19",
+      "periodoInicio": "2025-12-31",
+      "periodoTermino": "2026-07-30",
+      "totalSessoesContratadas": "6",
+      "isActive": "1",
+      "name": "Maria teste",
+      "tipoMentoria": "individual",
+      "contratoInicio": "2026-04-09 00:00:00",
+      "contratoFim": "2026-09-02 00:00:00"
+    },
+    {
+      "id": "30001",
+      "alunoId": "720017",
+      "programId": "17",
+      "periodoInicio": "2025-12-31",
+      "periodoTermino": "2026-12-30",
+      "totalSessoesContratadas": "0",
+      "isActive": "1",
+      "name": "Teste Contrato A7",
+      "tipoMentoria": "individual",
+      "contratoInicio": "2026-01-01 00:00:00",
+      "contratoFim": "2026-12-31 00:00:00"
+    },
+    {
+      "id": "30002",
+      "alunoId": "720023",
+      "programId": "17",
+      "periodoInicio": "2025-12-31",
+      "periodoTermino": "2026-12-30",
+      "totalSessoesContratadas": "0",
+      "isActive": "1",
+      "name": "Teste Contrato A7",
+      "tipoMentoria": "individual",
+      "contratoInicio": "2026-01-01 00:00:00",
+      "contratoFim": "2026-12-31 00:00:00"
+    },
+    {
+      "id": "30003",
+      "alunoId": "720029",
+      "programId": "17",
+      "periodoInicio": "2025-12-31",
+      "periodoTermino": "2026-12-30",
+      "totalSessoesContratadas": "0",
+      "isActive": "1",
+      "name": "Teste Contrato A7",
+      "tipoMentoria": "individual",
+      "contratoInicio": "2026-01-01 00:00:00",
+      "contratoFim": "2026-12-31 00:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tprogramId\tperiodoInicio\tperiodoTermino\ttotalSessoesContratadas\tisActive\tname\ttipoMentoria\tcontratoInicio\tcontratoFim\n1\t570031\t19\t2025-12-31\t2026-07-30\t6\t1\tMaria teste\tindividual\t2026-04-09 00:00:00\t2026-09-02 00:00:00\n30001\t720017\t17\t2025-12-31\t2026-12-30\t0\t1\tTeste Contrato A7\tindividual\t2026-01-01 00:00:00\t2026-12-31 00:00:00\n30002\t720023\t17\t2025-12-31\t2026-12-30\t0\t1\tTeste Contrato A7\tindividual\t2026-01-01 00:00:00\t2026-12-31 00:00:00\n30003\t720029\t17\t2025-12-31\t2026-12-30\t0\t1\tTeste Contrato A7\tindividual\t2026-01-01 00:00:00\t2026-12-31 00:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 885
+}

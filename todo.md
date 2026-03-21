@@ -3060,3 +3060,10 @@
 - [x] Botão "Explorei meu PDI" na etapa 7 não avança para etapa 8 (Aceite) - CORRIGIDO: adicionado onComplete() após marcarPdi
 - [x] Verificado: TODAS as 8 etapas chamam onComplete() corretamente
 - [x] Causa raiz: handleVisualizar marcava pdiVisualizado mas não chamava onComplete()
+
+## Correções no Resumo do Plano (Onboarding - Etapa Aceite)
+- [x] Webinares: calcular com base no período do contrato (2 webinares por mês)
+- [x] Mentorias: buscar totalSessoesContratadas + tipoMentoria do cadastro/contrato do aluno (campos já existiam no sistema)
+- [x] Mentorias: mostrar tipo (individual/grupal) ou se contrato não tem mentoria
+- [x] Tarefas: igual ao número de mentorias, com texto informando que depende da liberalidade da mentora
+- [x] Meta de Certificação: adicionar seção LÍDER NÍVEL I - CERTIFICADO com requisitos (evidências + 80% engajamento + 80% desafios)
