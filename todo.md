@@ -3138,3 +3138,13 @@
 - [x] Nota provisória do aluno com badge "Pendente de avaliação da mentora"
 - [x] Renomear Ind. 6 de "Case (Bônus)" para "Aplicabilidade Prática"
 - [x] Enviar e-mail para aluna do case existente (alunoId 30098) pedindo para preencher novo formulário
+
+## Instruções para mentora na seção Atividade Prática / Tarefa
+- [x] Mostrar no "Status da Tarefa" qual foi a tarefa solicitada na sessão anterior (ou se não houve)
+- [x] Adicionar texto instrucional claro na seção "Atividade Prática / Tarefa" orientando que é para definir tarefa para o PRÓXIMO encontro
+
+## Reorganização do formulário de Registro de Sessão de Mentoria
+- [x] Separar formulário em PARTE 1 (Registro da Sessão Atual) e PARTE 2 (Tarefa para o Próximo Encontro)
+- [x] Na Parte 1: mostrar qual era a tarefa da sessão anterior (se houve) antes do Status da Tarefa
+- [x] Na Parte 2: mover TaskSelector para baixo com título "Tarefa para o Próximo Encontro" e instruções claras
+- [x] Aplicar mesma reorganização no formulário de edição de sessão

@@ -42,7 +42,10 @@ import {
   Library,
   Pencil,
   FileEdit,
-  Ban
+  Ban,
+  ArrowRight,
+  Info,
+  ListChecks
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -184,6 +187,40 @@ export default function RegistroMentoria() {
     if (!viewingSession) return null;
     return sessions.find(s => s.id === viewingSession) || null;
   }, [sessions, viewingSession]);
+
+  // Previous session (to show what task was assigned)
+  const previousSession = useMemo(() => {
+    if (!sessions || sessions.length === 0) return null;
+    // Sort by sessionNumber descending and get the latest
+    const sorted = [...sessions].sort((a, b) => (b.sessionNumber ?? 0) - (a.sessionNumber ?? 0));
+    return sorted[0] || null;
+  }, [sessions]);
+
+  // Helper to get task name from previous session
+  const getPreviousTaskDescription = (session: any) => {
+    if (!session) return null;
+    if (session.taskMode === 'sem_tarefa' || (!session.taskId && !session.customTaskTitle)) {
+      return null;
+    }
+    if (session.customTaskTitle) {
+      return {
+        title: session.customTaskTitle,
+        description: session.customTaskDescription || null,
+        mode: session.taskMode || 'livre',
+        deadline: session.taskDeadline,
+      };
+    }
+    if (session.taskId) {
+      const task = taskLibrary.find(t => t.id === session.taskId);
+      return {
+        title: task?.nome || `Tarefa #${session.taskId}`,
+        description: task?.resumo || task?.oQueFazer || null,
+        mode: session.taskMode || 'biblioteca',
+        deadline: session.taskDeadline,
+      };
+    }
+    return null;
+  };
 
   // Group task library by competencia
   const groupedTasks = useMemo(() => {
@@ -828,78 +865,213 @@ export default function RegistroMentoria() {
             <CardContent>
               {/* Formulário de Nova Sessão */}
               {showNewSession && (
-                <div className="mb-6 border-2 border-[#0A1E3E]/20 rounded-xl p-6 bg-[#0A1E3E]/5 space-y-6">
-                  <h3 className="text-lg font-bold text-[#0A1E3E] flex items-center gap-2">
-                    <Plus className="h-5 w-5" />
-                    Nova Sessão de Mentoria
+                <div className="mb-6 space-y-6">
+                  {/* Header */}
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-bold text-[#0A1E3E] flex items-center gap-2">
+                      <Plus className="h-5 w-5" />
+                      Nova Sessão de Mentoria
+                    </h3>
                     <Badge className="bg-[#0A1E3E] text-white border-0">
                       Sessão {sessions.length > 0 ? Math.max(...sessions.map(s => s.sessionNumber ?? 0)) + 1 : 1}
                     </Badge>
-                  </h3>
-
-                  {/* Seção 1: Data */}
-                  <div>
-                    <Label className="flex items-center gap-2 mb-2">
-                      <Calendar className="h-4 w-4 text-[#0A1E3E]" />
-                      Data da Sessão *
-                    </Label>
-                    <Input type="date" value={newSessionDate} onChange={(e) => setNewSessionDate(e.target.value)} className="max-w-xs" />
                   </div>
 
-                  {/* Seção 2: Presença */}
-                  <div>
-                    <Label className="flex items-center gap-2 mb-2">
-                      <CheckCircle2 className="h-4 w-4 text-[#0A1E3E]" />
-                      Presença *
-                    </Label>
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setNewPresence("presente")}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
-                          newPresence === "presente" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-gray-200 bg-white hover:border-gray-300"
-                        }`}
-                      >
-                        <CheckCircle2 className="h-4 w-4" /> Presente
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNewPresence("ausente")}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
-                          newPresence === "ausente" ? "border-red-500 bg-red-50 text-red-800" : "border-gray-200 bg-white hover:border-gray-300"
-                        }`}
-                      >
-                        <XCircle className="h-4 w-4" /> Ausente
-                      </button>
+                  {/* ═══════════════════════════════════════════════════════════ */}
+                  {/* PARTE 1 - REGISTRO DA SESSÃO ATUAL                        */}
+                  {/* ═══════════════════════════════════════════════════════════ */}
+                  <div className="border-2 border-[#0A1E3E]/20 rounded-xl p-6 bg-[#0A1E3E]/5 space-y-6">
+                    <div className="flex items-center gap-2 pb-3 border-b border-[#0A1E3E]/10">
+                      <ListChecks className="h-5 w-5 text-[#0A1E3E]" />
+                      <h4 className="text-base font-bold text-[#0A1E3E]">Parte 1 — Registro da Sessão Atual</h4>
                     </div>
-                  </div>
 
-                  {/* Seção 3: Tarefa */}
-                  <div>
-                    <Label className="flex items-center gap-2 mb-2">
-                      <ClipboardCheck className="h-4 w-4 text-[#0A1E3E]" />
-                      Status da Tarefa
-                    </Label>
-                    <div className="flex gap-3 mb-3">
-                      {["entregue", "nao_entregue", "sem_tarefa"].map(status => (
+                    {/* Data da Sessão */}
+                    <div>
+                      <Label className="flex items-center gap-2 mb-2">
+                        <Calendar className="h-4 w-4 text-[#0A1E3E]" />
+                        Data da Sessão *
+                      </Label>
+                      <Input type="date" value={newSessionDate} onChange={(e) => setNewSessionDate(e.target.value)} className="max-w-xs" />
+                    </div>
+
+                    {/* Presença */}
+                    <div>
+                      <Label className="flex items-center gap-2 mb-2">
+                        <CheckCircle2 className="h-4 w-4 text-[#0A1E3E]" />
+                        Presença *
+                      </Label>
+                      <div className="flex gap-3">
                         <button
-                          key={status}
                           type="button"
-                          onClick={() => setNewTaskStatus(status)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all text-sm ${
-                            newTaskStatus === status 
-                              ? status === "entregue" ? "border-emerald-500 bg-emerald-50 text-emerald-800"
-                                : status === "nao_entregue" ? "border-red-500 bg-red-50 text-red-800"
-                                : "border-gray-500 bg-gray-50 text-gray-800"
-                              : "border-gray-200 bg-white hover:border-gray-300"
+                          onClick={() => setNewPresence("presente")}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                            newPresence === "presente" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-gray-200 bg-white hover:border-gray-300"
                           }`}
                         >
-                          {status === "entregue" ? <><CheckCircle2 className="h-4 w-4" /> Entregue</> 
-                            : status === "nao_entregue" ? <><XCircle className="h-4 w-4" /> Não Entregue</> 
-                            : "Sem Tarefa"}
+                          <CheckCircle2 className="h-4 w-4" /> Presente
                         </button>
-                      ))}
+                        <button
+                          type="button"
+                          onClick={() => setNewPresence("ausente")}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                            newPresence === "ausente" ? "border-red-500 bg-red-50 text-red-800" : "border-gray-200 bg-white hover:border-gray-300"
+                          }`}
+                        >
+                          <XCircle className="h-4 w-4" /> Ausente
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Avaliação da Tarefa da Sessão Anterior */}
+                    <div className="space-y-3">
+                      <Label className="flex items-center gap-2 mb-1">
+                        <ClipboardCheck className="h-4 w-4 text-[#0A1E3E]" />
+                        Avaliação da Tarefa da Sessão Anterior
+                      </Label>
+
+                      {/* Mostrar qual era a tarefa anterior */}
+                      {(() => {
+                        const prevTask = getPreviousTaskDescription(previousSession);
+                        const isFirstSession = sessions.length === 0;
+                        if (isFirstSession) {
+                          return (
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center gap-2">
+                              <Info className="h-4 w-4 text-gray-400 shrink-0" />
+                              <p className="text-sm text-gray-500">Esta é a primeira sessão. Não há tarefa anterior para avaliar.</p>
+                            </div>
+                          );
+                        }
+                        if (!prevTask) {
+                          return (
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center gap-2">
+                              <Info className="h-4 w-4 text-gray-400 shrink-0" />
+                              <p className="text-sm text-gray-500">Nenhuma tarefa foi atribuída na sessão anterior (Sessão {previousSession?.sessionNumber}).</p>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className={`rounded-lg p-3 border ${
+                            prevTask.mode === 'personalizada' ? 'bg-purple-50/50 border-purple-200' 
+                            : prevTask.mode === 'livre' ? 'bg-amber-50/50 border-amber-200'
+                            : 'bg-blue-50/50 border-blue-200'
+                          }`}>
+                            <p className="text-xs text-gray-500 mb-1">Tarefa solicitada na Sessão {previousSession?.sessionNumber}:</p>
+                            <p className="font-medium text-sm text-gray-900">{prevTask.title}</p>
+                            {prevTask.description && (
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">{prevTask.description}</p>
+                            )}
+                            {prevTask.deadline && (
+                              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                <Clock className="h-3 w-3" /> Prazo: {formatDateSafe(prevTask.deadline)}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* Status da Tarefa */}
+                      {sessions.length > 0 && (
+                        <div>
+                          <Label className="text-sm text-gray-700 mb-2 block">O aluno entregou a tarefa?</Label>
+                          <div className="flex gap-3">
+                            {["entregue", "nao_entregue", "sem_tarefa"].map(status => (
+                              <button
+                                key={status}
+                                type="button"
+                                onClick={() => setNewTaskStatus(status)}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all text-sm ${
+                                  newTaskStatus === status 
+                                    ? status === "entregue" ? "border-emerald-500 bg-emerald-50 text-emerald-800"
+                                      : status === "nao_entregue" ? "border-red-500 bg-red-50 text-red-800"
+                                      : "border-gray-500 bg-gray-50 text-gray-800"
+                                    : "border-gray-200 bg-white hover:border-gray-300"
+                                }`}
+                              >
+                                {status === "entregue" ? <><CheckCircle2 className="h-4 w-4" /> Entregue</> 
+                                  : status === "nao_entregue" ? <><XCircle className="h-4 w-4" /> Não Entregue</> 
+                                  : "Sem Tarefa"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Avaliação de Aplicabilidade Prática */}
+                    <div className="space-y-3 border rounded-lg p-4 bg-amber-50/50">
+                      <Label className="flex items-center gap-2 text-amber-800 font-semibold">
+                        <Target className="h-4 w-4" />
+                        Avaliação de Aplicabilidade Prática
+                      </Label>
+                      <p className="text-xs text-gray-600">Avalie de 0 a 10 a aplicabilidade prática demonstrada pelo aluno na tarefa anterior. Esta avaliação é obrigatória quando o aluno entregou a tarefa com registro de aplicabilidade.</p>
+                      <div className="flex gap-1 flex-wrap">
+                        {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
+                          <Button
+                            key={n}
+                            type="button"
+                            variant={newNotaMentoraAplic === n ? 'default' : 'outline'}
+                            size="sm"
+                            className={`w-9 h-9 text-xs ${newNotaMentoraAplic === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
+                            onClick={() => setNewNotaMentoraAplic(n)}
+                          >
+                            {n}
+                          </Button>
+                        ))}
+                      </div>
+                      {newNotaMentoraAplic !== null && (
+                        <p className="text-sm font-medium text-amber-700">Nota selecionada: {newNotaMentoraAplic}/10</p>
+                      )}
+                    </div>
+
+                    {/* Nível de Engajamento */}
+                    <StageSelector value={newSelectedStage} onChange={setNewSelectedStage} />
+
+                    {/* Feedback ao Aluno */}
+                    <div>
+                      <Label className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-[#0A1E3E]" />
+                        Feedback ao Aluno
+                      </Label>
+                      <p className="text-xs text-gray-500 mb-2">Esta mensagem será visível ao aluno no dashboard dele</p>
+                      <Textarea
+                        value={newMensagemAluno}
+                        onChange={(e) => setNewMensagemAluno(e.target.value)}
+                        placeholder="Escreva aqui o feedback para o aluno..."
+                        rows={3}
+                      />
+                    </div>
+
+                    {/* Observações internas */}
+                    <div>
+                      <Label>Observações Internas (não visível ao aluno)</Label>
+                      <Textarea
+                        value={newFeedback}
+                        onChange={(e) => setNewFeedback(e.target.value)}
+                        placeholder="Observações internas sobre a sessão..."
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+
+                  {/* ═══════════════════════════════════════════════════════════ */}
+                  {/* PARTE 2 - TAREFA PARA O PRÓXIMO ENCONTRO                   */}
+                  {/* ═══════════════════════════════════════════════════════════ */}
+                  <div className="border-2 border-emerald-500/20 rounded-xl p-6 bg-emerald-50/30 space-y-5">
+                    <div className="flex items-center gap-2 pb-3 border-b border-emerald-500/10">
+                      <ArrowRight className="h-5 w-5 text-emerald-700" />
+                      <h4 className="text-base font-bold text-emerald-800">Parte 2 — Tarefa para o Próximo Encontro</h4>
+                    </div>
+
+                    {/* Instrução clara */}
+                    <div className="bg-white/70 border border-emerald-200 rounded-lg p-3 flex items-start gap-2">
+                      <Info className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
+                      <p className="text-sm text-emerald-800">
+                        Defina abaixo uma tarefa ou peça ao seu mentorado para trazer uma <strong>aplicabilidade prática</strong> para o próximo encontro.
+                        A tarefa definida aqui será exibida ao aluno no portal e avaliada na próxima sessão.
+                      </p>
+                    </div>
+
                     <TaskSelector 
                       value={newTaskId} 
                       onChange={setNewTaskId}
@@ -911,61 +1083,6 @@ export default function RegistroMentoria() {
                       onCustomTitleChange={setNewCustomTaskTitle}
                       customDescription={newCustomTaskDescription}
                       onCustomDescriptionChange={setNewCustomTaskDescription}
-                    />
-                  </div>
-
-                  {/* Seção 4: Nível de Engajamento */}
-                  <StageSelector value={newSelectedStage} onChange={setNewSelectedStage} />
-
-                  {/* Seção 5: Feedback ao Aluno */}
-                  <div>
-                    <Label className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-[#0A1E3E]" />
-                      Feedback ao Aluno
-                    </Label>
-                    <p className="text-xs text-gray-500 mb-2">Esta mensagem será visível ao aluno no dashboard dele</p>
-                    <Textarea
-                      value={newMensagemAluno}
-                      onChange={(e) => setNewMensagemAluno(e.target.value)}
-                      placeholder="Escreva aqui o feedback para o aluno..."
-                      rows={3}
-                    />
-                  </div>
-
-                  {/* Seção 6: Aplicabilidade Prática da Tarefa Anterior */}
-                  <div className="space-y-3 border rounded-lg p-4 bg-amber-50/50">
-                    <Label className="flex items-center gap-2 text-amber-800 font-semibold">
-                      <Target className="h-4 w-4" />
-                      Avaliação de Aplicabilidade Prática
-                    </Label>
-                    <p className="text-xs text-gray-600">Avalie de 0 a 10 a aplicabilidade prática demonstrada pelo aluno na tarefa anterior. Esta avaliação é obrigatória quando o aluno entregou a tarefa com registro de aplicabilidade.</p>
-                    <div className="flex gap-1 flex-wrap">
-                      {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
-                        <Button
-                          key={n}
-                          type="button"
-                          variant={newNotaMentoraAplic === n ? 'default' : 'outline'}
-                          size="sm"
-                          className={`w-9 h-9 text-xs ${newNotaMentoraAplic === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
-                          onClick={() => setNewNotaMentoraAplic(n)}
-                        >
-                          {n}
-                        </Button>
-                      ))}
-                    </div>
-                    {newNotaMentoraAplic !== null && (
-                      <p className="text-sm font-medium text-amber-700">Nota selecionada: {newNotaMentoraAplic}/10</p>
-                    )}
-                  </div>
-
-                  {/* Observações internas */}
-                  <div>
-                    <Label>Observações Internas (não visível ao aluno)</Label>
-                    <Textarea
-                      value={newFeedback}
-                      onChange={(e) => setNewFeedback(e.target.value)}
-                      placeholder="Observações internas sobre a sessão..."
-                      rows={2}
                     />
                   </div>
 
@@ -1011,97 +1128,160 @@ export default function RegistroMentoria() {
                                 </Button>
                               </div>
                             </div>
-                            
-                            {/* Presença */}
-                            <div>
-                              <Label className="flex items-center gap-2 mb-2">Presença</Label>
-                              <div className="flex gap-3">
-                                <button type="button" onClick={() => setEditPresence("presente")}
-                                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-sm ${editPresence === "presente" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-gray-200"}`}>
-                                  <CheckCircle2 className="h-3 w-3" /> Presente
-                                </button>
-                                <button type="button" onClick={() => setEditPresence("ausente")}
-                                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-sm ${editPresence === "ausente" ? "border-red-500 bg-red-50 text-red-800" : "border-gray-200"}`}>
-                                  <XCircle className="h-3 w-3" /> Ausente
-                                </button>
-                              </div>
-                            </div>
 
-                            {/* Status da Tarefa */}
-                            <div>
-                              <Label className="flex items-center gap-2 mb-2">Status da Tarefa</Label>
-                              <div className="flex gap-3">
-                                {["entregue", "nao_entregue", "sem_tarefa"].map(status => (
-                                  <button key={status} type="button" onClick={() => setEditTaskStatus(status)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-sm ${
-                                      editTaskStatus === status 
-                                        ? status === "entregue" ? "border-emerald-500 bg-emerald-50 text-emerald-800"
-                                          : status === "nao_entregue" ? "border-red-500 bg-red-50 text-red-800"
-                                          : "border-gray-500 bg-gray-50"
-                                        : "border-gray-200"
-                                    }`}>
-                                    {status === "entregue" ? "Entregue" : status === "nao_entregue" ? "Não Entregue" : "Sem Tarefa"}
+                            {/* ═══ PARTE 1 - REGISTRO DA SESSÃO ATUAL ═══ */}
+                            <div className="border-2 border-[#0A1E3E]/15 rounded-xl p-4 bg-[#0A1E3E]/5 space-y-4">
+                              <div className="flex items-center gap-2 pb-2 border-b border-[#0A1E3E]/10">
+                                <ListChecks className="h-4 w-4 text-[#0A1E3E]" />
+                                <h5 className="text-sm font-bold text-[#0A1E3E]">Parte 1 — Registro da Sessão Atual</h5>
+                              </div>
+                            
+                              {/* Presença */}
+                              <div>
+                                <Label className="flex items-center gap-2 mb-2">Presença</Label>
+                                <div className="flex gap-3">
+                                  <button type="button" onClick={() => setEditPresence("presente")}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-sm ${editPresence === "presente" ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-gray-200"}`}>
+                                    <CheckCircle2 className="h-3 w-3" /> Presente
                                   </button>
-                                ))}
+                                  <button type="button" onClick={() => setEditPresence("ausente")}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-sm ${editPresence === "ausente" ? "border-red-500 bg-red-50 text-red-800" : "border-gray-200"}`}>
+                                    <XCircle className="h-3 w-3" /> Ausente
+                                  </button>
+                                </div>
                               </div>
-                            </div>
 
-                            {/* Tarefa da Biblioteca */}
-                            <TaskSelector 
-                              value={editTaskId} 
-                              onChange={setEditTaskId} 
-                              deadline={editTaskDeadline} 
-                              onDeadlineChange={setEditTaskDeadline}
-                              taskMode={editTaskMode}
-                              onTaskModeChange={setEditTaskMode}
-                              customTitle={editCustomTaskTitle}
-                              onCustomTitleChange={setEditCustomTaskTitle}
-                              customDescription={editCustomTaskDescription}
-                              onCustomDescriptionChange={setEditCustomTaskDescription}
-                            />
+                              {/* Avaliação da Tarefa da Sessão Anterior */}
+                              <div className="space-y-3">
+                                <Label className="flex items-center gap-2">Avaliação da Tarefa Anterior</Label>
+                                {/* Mostrar contexto da tarefa anterior para esta sessão */}
+                                {(() => {
+                                  // Para edição, buscar a sessão anterior a esta
+                                  const currentSessionNum = session.sessionNumber ?? 0;
+                                  const prevSess = sessions
+                                    .filter(s => (s.sessionNumber ?? 0) < currentSessionNum)
+                                    .sort((a, b) => (b.sessionNumber ?? 0) - (a.sessionNumber ?? 0))[0];
+                                  const prevTask = getPreviousTaskDescription(prevSess);
+                                  if (currentSessionNum <= 1) {
+                                    return (
+                                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 flex items-center gap-2">
+                                        <Info className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                        <p className="text-xs text-gray-500">Primeira sessão — sem tarefa anterior.</p>
+                                      </div>
+                                    );
+                                  }
+                                  if (!prevTask) {
+                                    return (
+                                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 flex items-center gap-2">
+                                        <Info className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                        <p className="text-xs text-gray-500">Nenhuma tarefa atribuída na sessão anterior{prevSess ? ` (Sessão ${prevSess.sessionNumber})` : ''}.</p>
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <div className={`rounded-lg p-2 border text-xs ${
+                                      prevTask.mode === 'personalizada' ? 'bg-purple-50/50 border-purple-200' 
+                                      : prevTask.mode === 'livre' ? 'bg-amber-50/50 border-amber-200'
+                                      : 'bg-blue-50/50 border-blue-200'
+                                    }`}>
+                                      <p className="text-gray-500 mb-0.5">Tarefa da Sessão {prevSess?.sessionNumber}:</p>
+                                      <p className="font-medium text-gray-900">{prevTask.title}</p>
+                                      {prevTask.description && <p className="text-gray-600 mt-0.5 line-clamp-2">{prevTask.description}</p>}
+                                    </div>
+                                  );
+                                })()}
 
-                            {/* Nível de Engajamento */}
-                            <StageSelector value={selectedStage} onChange={setSelectedStage} />
+                                {/* Status da Tarefa */}
+                                <div>
+                                  <Label className="text-xs text-gray-700 mb-2 block">O aluno entregou a tarefa?</Label>
+                                  <div className="flex gap-3">
+                                    {["entregue", "nao_entregue", "sem_tarefa"].map(status => (
+                                      <button key={status} type="button" onClick={() => setEditTaskStatus(status)}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 text-sm ${
+                                          editTaskStatus === status 
+                                            ? status === "entregue" ? "border-emerald-500 bg-emerald-50 text-emerald-800"
+                                              : status === "nao_entregue" ? "border-red-500 bg-red-50 text-red-800"
+                                              : "border-gray-500 bg-gray-50"
+                                            : "border-gray-200"
+                                        }`}>
+                                        {status === "entregue" ? "Entregue" : status === "nao_entregue" ? "Não Entregue" : "Sem Tarefa"}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Avaliação de Aplicabilidade Prática */}
+                              <div className="space-y-3 border rounded-lg p-4 bg-amber-50/50">
+                                <Label className="flex items-center gap-2 text-amber-800 font-semibold">
+                                  <Target className="h-4 w-4" />
+                                  Avaliação de Aplicabilidade Prática
+                                </Label>
+                                <p className="text-xs text-gray-600">Avalie de 0 a 10 a aplicabilidade prática demonstrada pelo aluno.</p>
+                                <div className="flex gap-1 flex-wrap">
+                                  {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
+                                    <Button
+                                      key={n}
+                                      type="button"
+                                      variant={editNotaMentoraAplic === n ? 'default' : 'outline'}
+                                      size="sm"
+                                      className={`w-9 h-9 text-xs ${editNotaMentoraAplic === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
+                                      onClick={() => setEditNotaMentoraAplic(n)}
+                                    >
+                                      {n}
+                                    </Button>
+                                  ))}
+                                </div>
+                                {editNotaMentoraAplic !== null && (
+                                  <p className="text-sm font-medium text-amber-700">Nota selecionada: {editNotaMentoraAplic}/10</p>
+                                )}
+                              </div>
+
+                              {/* Nível de Engajamento */}
+                              <StageSelector value={selectedStage} onChange={setSelectedStage} />
                             
-                            {/* Feedback ao Aluno */}
-                            <div>
-                              <Label className="flex items-center gap-2">
-                                <BookOpen className="h-4 w-4 text-[#0A1E3E]" />
-                                Feedback ao Aluno (visível ao aluno)
-                              </Label>
-                              <Textarea value={mensagemAluno} onChange={(e) => setMensagemAluno(e.target.value)} placeholder="Mensagem para o aluno..." className="mt-1" rows={2} />
-                            </div>
-
-                            {/* Avaliação de Aplicabilidade Prática */}
-                            <div className="space-y-3 border rounded-lg p-4 bg-amber-50/50">
-                              <Label className="flex items-center gap-2 text-amber-800 font-semibold">
-                                <Target className="h-4 w-4" />
-                                Avaliação de Aplicabilidade Prática
-                              </Label>
-                              <p className="text-xs text-gray-600">Avalie de 0 a 10 a aplicabilidade prática demonstrada pelo aluno.</p>
-                              <div className="flex gap-1 flex-wrap">
-                                {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
-                                  <Button
-                                    key={n}
-                                    type="button"
-                                    variant={editNotaMentoraAplic === n ? 'default' : 'outline'}
-                                    size="sm"
-                                    className={`w-9 h-9 text-xs ${editNotaMentoraAplic === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
-                                    onClick={() => setEditNotaMentoraAplic(n)}
-                                  >
-                                    {n}
-                                  </Button>
-                                ))}
+                              {/* Feedback ao Aluno */}
+                              <div>
+                                <Label className="flex items-center gap-2">
+                                  <BookOpen className="h-4 w-4 text-[#0A1E3E]" />
+                                  Feedback ao Aluno (visível ao aluno)
+                                </Label>
+                                <Textarea value={mensagemAluno} onChange={(e) => setMensagemAluno(e.target.value)} placeholder="Mensagem para o aluno..." className="mt-1" rows={2} />
                               </div>
-                              {editNotaMentoraAplic !== null && (
-                                <p className="text-sm font-medium text-amber-700">Nota selecionada: {editNotaMentoraAplic}/10</p>
-                              )}
+
+                              {/* Observações internas */}
+                              <div>
+                                <Label>Observações Internas</Label>
+                                <Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Observações internas..." className="mt-1" rows={2} />
+                              </div>
                             </div>
 
-                            {/* Observações internas */}
-                            <div>
-                              <Label>Observações Internas</Label>
-                              <Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Observações internas..." className="mt-1" rows={2} />
+                            {/* ═══ PARTE 2 - TAREFA PARA O PRÓXIMO ENCONTRO ═══ */}
+                            <div className="border-2 border-emerald-500/15 rounded-xl p-4 bg-emerald-50/30 space-y-4">
+                              <div className="flex items-center gap-2 pb-2 border-b border-emerald-500/10">
+                                <ArrowRight className="h-4 w-4 text-emerald-700" />
+                                <h5 className="text-sm font-bold text-emerald-800">Parte 2 — Tarefa para o Próximo Encontro</h5>
+                              </div>
+
+                              <div className="bg-white/70 border border-emerald-200 rounded-lg p-2 flex items-start gap-2">
+                                <Info className="h-3.5 w-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                                <p className="text-xs text-emerald-800">
+                                  Defina abaixo uma tarefa ou peça ao mentorado para trazer uma <strong>aplicabilidade prática</strong> para o próximo encontro.
+                                </p>
+                              </div>
+
+                              <TaskSelector 
+                                value={editTaskId} 
+                                onChange={setEditTaskId} 
+                                deadline={editTaskDeadline} 
+                                onDeadlineChange={setEditTaskDeadline}
+                                taskMode={editTaskMode}
+                                onTaskModeChange={setEditTaskMode}
+                                customTitle={editCustomTaskTitle}
+                                onCustomTitleChange={setEditCustomTaskTitle}
+                                customDescription={editCustomTaskDescription}
+                                onCustomDescriptionChange={setEditCustomTaskDescription}
+                              />
                             </div>
                           </div>
                         ) : (
