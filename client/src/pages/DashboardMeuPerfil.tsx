@@ -183,6 +183,10 @@ export default function DashboardMeuPerfil() {
   const evidenceFileRef = useRef<HTMLInputElement>(null);
   const [taskDetailOpen, setTaskDetailOpen] = useState<number | null>(null);
 
+  // State para aplicabilidade prática (Indicador 6)
+  const [aplicabilidadeText, setAplicabilidadeText] = useState<Record<number, string>>({});
+  const [aplicabilidadeNota, setAplicabilidadeNota] = useState<Record<number, number>>({});
+
   // State para reflexão de webinar e eventos importados
   const [reflexaoText, setReflexaoText] = useState<Record<number, string>>({});
   const [expandedWebinar, setExpandedWebinar] = useState<number | null>(null);
@@ -202,6 +206,11 @@ export default function DashboardMeuPerfil() {
       setEvidenceLink({});
       setEvidenceFile({});
       setTaskDetailOpen(null);
+    },
+  });
+  const submitAplicabilidade = trpc.attendance.submitAplicabilidade.useMutation({
+    onSuccess: () => {
+      utils.attendance.myTasks.invalidate();
     },
   });
 
@@ -250,6 +259,7 @@ export default function DashboardMeuPerfil() {
   const [caseAntesVsDepois, setCaseAntesVsDepois] = useState("");
   const [caseFile, setCaseFile] = useState<File | null>(null);
   const [caseEvidencia, setCaseEvidencia] = useState<File | null>(null);
+  const [caseNotaAplicabilidade, setCaseNotaAplicabilidade] = useState<number>(5);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const evidenciaInputRef = useRef<HTMLInputElement>(null);
 
@@ -266,6 +276,7 @@ export default function DashboardMeuPerfil() {
       setCaseFile(null);
       setCaseEvidencia(null);
       setCaseTrilhaId(null);
+      setCaseNotaAplicabilidade(5);
     },
   });
 
@@ -290,6 +301,7 @@ export default function DashboardMeuPerfil() {
       oQueMudei: caseOQueMudei,
       resultadoMensuravel: caseResultadoMensuravel,
       antesVsDepois: caseAntesVsDepois,
+      notaAlunoAplicabilidade: caseNotaAplicabilidade,
     };
 
     // Arquivo principal (opcional)
@@ -719,7 +731,7 @@ export default function DashboardMeuPerfil() {
               {v2Filtrado && (
                 <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
                   <p className="font-semibold mb-1 text-white/90">Ind. 7 — Engajamento Final:</p>
-                  <p>Média dos 5 indicadores: ({(v2Filtrado.ind1_webinars ?? 0).toFixed(0)} + {(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)} + {(v2Filtrado.ind3_competencias ?? 0).toFixed(0)} + {(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)} + {(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}) / 5 = <span className="text-[#F5991F] font-bold">{(v2Filtrado.ind7_engajamentoFinal ?? 0).toFixed(0)}%</span>{v2Filtrado.ind6_aplicabilidade > 0 ? <span className="text-green-400 ml-1">(Case entregue: +10% no Engajamento)</span> : null}</p>
+                  <p>Média dos 5 indicadores: ({(v2Filtrado.ind1_webinars ?? 0).toFixed(0)} + {(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)} + {(v2Filtrado.ind3_competencias ?? 0).toFixed(0)} + {(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)} + {(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}) / 5 = <span className="text-[#F5991F] font-bold">{(v2Filtrado.ind7_engajamentoFinal ?? 0).toFixed(0)}%</span>{(data.aplicabilidadePratica?.bonusEngajamento || v2Filtrado.ind6_aplicabilidade > 0) ? <span className="text-green-400 ml-1">(Aplicabilidade Prática: +10% no Engajamento)</span> : null}</p>
                 </div>
               )}
             </CardContent>
@@ -771,6 +783,7 @@ export default function DashboardMeuPerfil() {
                 }
               : undefined
           }
+          aplicabilidade={data.aplicabilidadePratica ?? null}
         />
 
         {/* Aviso de PDI Congelado */}
@@ -976,11 +989,11 @@ export default function DashboardMeuPerfil() {
               regras={[INDICADORES_INFO.ind5.explicacao, INDICADORES_INFO.ind5.formula]}
             />
             <IndicadorCardAluno
-              numero={6} icon={Briefcase} label="Case (Bônus)"
-              valor={v2Filtrado.ind6_aplicabilidade > 0 ? "Entregue ✅" : "Pendente"} total="+10% no Ind.5"
-              percentual={v2Filtrado.ind6_aplicabilidade ?? 0}
+              numero={6} icon={Briefcase} label="Aplicabilidade"
+              valor={data.aplicabilidadePratica?.percentual != null && data.aplicabilidadePratica.percentual > 0 ? `${data.aplicabilidadePratica.percentual}%` : (v2Filtrado.ind6_aplicabilidade > 0 ? "Entregue ✅" : "Pendente")} total="Meta: 80%"
+              percentual={data.aplicabilidadePratica?.percentual ?? v2Filtrado.ind6_aplicabilidade ?? 0}
               color="bg-rose-100 text-rose-600" borderColor="border-rose-200"
-              regras={[INDICADORES_INFO.ind6.explicacao, INDICADORES_INFO.ind6.formula]}
+              regras={["Avaliação da aplicabilidade prática dos conteúdos (60% mentora + 40% aluno). Meta: 80%. Bônus +10% no Engajamento se nota 8-10.", "Válido a partir de 01/04/2026. Cases e tarefas anteriores não impactam."]}
             />
           </div>
         )}
@@ -2314,17 +2327,66 @@ export default function DashboardMeuPerfil() {
                                   />
                                 </div>
 
+                                {/* Aplicabilidade Prática - obrigatório a partir de 01/04/2026 */}
+                                <div className="space-y-3 border-t pt-3 mt-2">
+                                  <div className="flex items-center gap-2">
+                                    <Target className="h-4 w-4 text-amber-600" />
+                                    <Label className="text-xs font-semibold text-gray-800">Aplicabilidade Prática</Label>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-xs text-gray-700">Como você aplicou na prática o que aprendeu nesta tarefa? <span className="text-red-500">*</span></Label>
+                                    <Textarea
+                                      placeholder="Descreva uma situação real em que você aplicou o conhecimento desta tarefa no seu dia a dia..."
+                                      value={aplicabilidadeText[sessao.id] || ''}
+                                      onChange={(e) => setAplicabilidadeText(prev => ({ ...prev, [sessao.id]: e.target.value }))}
+                                      className="text-sm min-h-[80px] overflow-auto"
+                                      maxLength={500}
+                                    />
+                                    <p className="text-xs text-gray-400 text-right">{(aplicabilidadeText[sessao.id] || '').length}/500</p>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-xs text-gray-700">De 0 a 10, o quanto esta tarefa ampliou seu conhecimento ou habilidade prática? <span className="text-red-500">*</span></Label>
+                                    <div className="flex gap-1 flex-wrap">
+                                      {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
+                                        <Button
+                                          key={n}
+                                          type="button"
+                                          variant={aplicabilidadeNota[sessao.id] === n ? 'default' : 'outline'}
+                                          size="sm"
+                                          className={`w-9 h-9 text-xs ${aplicabilidadeNota[sessao.id] === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
+                                          onClick={() => setAplicabilidadeNota(prev => ({ ...prev, [sessao.id]: n }))}
+                                        >
+                                          {n}
+                                        </Button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+
                                 {/* Botão de envio */}
                                 <Button
                                   onClick={async () => {
+                                    if (!aplicabilidadeText[sessao.id]?.trim()) {
+                                      toast.error('Preencha o campo de aplicabilidade prática');
+                                      return;
+                                    }
+                                    if (aplicabilidadeNota[sessao.id] === undefined) {
+                                      toast.error('Selecione uma nota de 0 a 10 para a aplicabilidade prática');
+                                      return;
+                                    }
                                     if (relatoText[sessao.id]) {
                                       await submitRelato.mutateAsync({ sessionId: sessao.id, relatoAluno: relatoText[sessao.id] });
                                     }
+                                    await submitAplicabilidade.mutateAsync({
+                                      sessionId: sessao.id,
+                                      textoAplicabilidade: aplicabilidadeText[sessao.id],
+                                      notaAlunoAplicabilidade: aplicabilidadeNota[sessao.id],
+                                    });
                                     await handleEvidenceSubmit(sessao.id);
                                     toast.success('Atividade enviada com sucesso!');
                                     setTimeout(() => setTaskDetailOpen(null), 100);
                                   }}
-                                  disabled={(!evidenceLink[sessao.id] && !evidenceFile[sessao.id]) || submitEvidence.isPending}
+                                  disabled={(!evidenceLink[sessao.id] && !evidenceFile[sessao.id]) || submitEvidence.isPending || !aplicabilidadeText[sessao.id]?.trim() || aplicabilidadeNota[sessao.id] === undefined}
                                   className="w-full bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
                                 >
                                   <Send className="h-4 w-4 mr-2" />
@@ -2553,14 +2615,65 @@ export default function DashboardMeuPerfil() {
                                         className="text-sm min-h-[60px]"
                                       />
                                     </div>
+
+                                    {/* Aplicabilidade Prática - obrigatório */}
+                                    <div className="space-y-3 border-t pt-3 mt-2">
+                                      <div className="flex items-center gap-2">
+                                        <Target className="h-4 w-4 text-amber-600" />
+                                        <Label className="text-xs font-semibold text-gray-800">Aplicabilidade Prática</Label>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-xs text-gray-700">Como você aplicou na prática o que aprendeu nesta tarefa? <span className="text-red-500">*</span></Label>
+                                        <Textarea
+                                          placeholder="Descreva uma situação real em que você aplicou o conhecimento desta tarefa no seu dia a dia..."
+                                          value={aplicabilidadeText[task.sessionId] || ''}
+                                          onChange={(e) => setAplicabilidadeText(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
+                                          className="text-sm min-h-[80px]"
+                                          maxLength={500}
+                                        />
+                                        <p className="text-xs text-gray-400 text-right">{(aplicabilidadeText[task.sessionId] || '').length}/500</p>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-xs text-gray-700">De 0 a 10, o quanto esta tarefa ampliou seu conhecimento ou habilidade prática? <span className="text-red-500">*</span></Label>
+                                        <div className="flex gap-1 flex-wrap">
+                                          {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
+                                            <Button
+                                              key={n}
+                                              type="button"
+                                              variant={aplicabilidadeNota[task.sessionId] === n ? 'default' : 'outline'}
+                                              size="sm"
+                                              className={`w-9 h-9 text-xs ${aplicabilidadeNota[task.sessionId] === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
+                                              onClick={() => setAplicabilidadeNota(prev => ({ ...prev, [task.sessionId]: n }))}
+                                            >
+                                              {n}
+                                            </Button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+
                                     <Button
                                       onClick={async () => {
+                                        if (!aplicabilidadeText[task.sessionId]?.trim()) {
+                                          toast.error('Preencha o campo de aplicabilidade prática');
+                                          return;
+                                        }
+                                        if (aplicabilidadeNota[task.sessionId] === undefined) {
+                                          toast.error('Selecione uma nota de 0 a 10 para a aplicabilidade prática');
+                                          return;
+                                        }
                                         if (relatoText[task.sessionId]) {
                                           await submitRelato.mutateAsync({ sessionId: task.sessionId, relatoAluno: relatoText[task.sessionId] });
                                         }
+                                        await submitAplicabilidade.mutateAsync({
+                                          sessionId: task.sessionId,
+                                          textoAplicabilidade: aplicabilidadeText[task.sessionId],
+                                          notaAlunoAplicabilidade: aplicabilidadeNota[task.sessionId],
+                                        });
                                         await handleEvidenceSubmit(task.sessionId);
+                                        toast.success('Evidência enviada com sucesso!');
                                       }}
-                                      disabled={(!evidenceLink[task.sessionId] && !evidenceFile[task.sessionId]) || submitEvidence.isPending}
+                                      disabled={(!evidenceLink[task.sessionId] && !evidenceFile[task.sessionId]) || submitEvidence.isPending || !aplicabilidadeText[task.sessionId]?.trim() || aplicabilidadeNota[task.sessionId] === undefined}
                                       className="w-full bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
                                     >
                                       <Send className="h-4 w-4 mr-2" />
@@ -2982,6 +3095,33 @@ export default function DashboardMeuPerfil() {
                   onChange={e => setCaseDescricao(e.target.value)}
                   rows={2}
                 />
+              </div>
+
+              {/* Nota de Aplicabilidade Prática */}
+              <div className="space-y-3 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-purple-600" />
+                  <Label className="text-sm font-semibold text-purple-800">Aplicabilidade Prática</Label>
+                </div>
+                <p className="text-xs text-purple-600">De 0 a 10, o quanto este case ampliou seu conhecimento ou habilidade prática?</p>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min={0}
+                    max={10}
+                    step={1}
+                    value={caseNotaAplicabilidade}
+                    onChange={e => setCaseNotaAplicabilidade(Number(e.target.value))}
+                    className="flex-1 accent-purple-600"
+                  />
+                  <span className={`text-2xl font-bold min-w-[3rem] text-center ${
+                    caseNotaAplicabilidade >= 8 ? 'text-emerald-600' : caseNotaAplicabilidade >= 6 ? 'text-amber-600' : 'text-red-600'
+                  }`}>{caseNotaAplicabilidade}</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-purple-400">
+                  <span>Nenhum impacto</span>
+                  <span>Impacto máximo</span>
+                </div>
               </div>
             </div>
             <DialogFooter>

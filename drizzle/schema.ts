@@ -240,6 +240,11 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   // Campos de validação (mentor valida a entrega)
   validatedBy: int("validatedBy"), // ID do consultor/mentor que validou
   validatedAt: timestamp("validatedAt"), // Data/hora da validação
+  // === Aplicabilidade Prática (Indicador 6) ===
+  textoAplicabilidade: text("textoAplicabilidade"), // Descrição do aluno sobre como aplicou na prática
+  notaAlunoAplicabilidade: int("notaAlunoAplicabilidade"), // Autoavaliação do aluno (0-10)
+  notaMentoraAplicabilidade: int("notaMentoraAplicabilidade"), // Avaliação da mentora (0-10)
+  aplicabilidadeAvaliadaEm: timestamp("aplicabilidadeAvaliadaEm"), // Data/hora que a mentora avaliou
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -680,6 +685,10 @@ export const casesSucesso = mysqlTable("cases_sucesso", {
   evidenciaUrl: varchar("evidenciaUrl", { length: 1000 }), // URL da evidência (foto, print, documento) no S3
   evidenciaKey: varchar("evidenciaKey", { length: 500 }), // Chave da evidência no S3
   evidenciaFileName: varchar("evidenciaFileName", { length: 500 }), // Nome original do arquivo de evidência
+  // === Aplicabilidade Prática (Indicador 6) ===
+  notaAlunoAplicabilidade: int("notaAlunoAplicabilidade"), // Autoavaliação do aluno (0-10)
+  notaMentoraAplicabilidade: int("notaMentoraAplicabilidade"), // Avaliação da mentora (0-10)
+  aplicabilidadeAvaliadaEm: timestamp("aplicabilidadeAvaliadaEm"), // Data/hora que a mentora avaliou
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

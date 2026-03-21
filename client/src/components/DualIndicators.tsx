@@ -110,6 +110,18 @@ function StatusBadge({ value, target }: { value: number; target: number }) {
 // ============================================================
 // DUAL INDICATORS COMPONENT
 // ============================================================
+export interface AplicabilidadeData {
+  notaFinal: number | null;
+  percentual: number;
+  provisoria: boolean;
+  bonusEngajamento: boolean;
+  mediaAluno: number | null;
+  mediaMentora: number | null;
+  totalAvaliacoes: number;
+  avaliacoesAluno: number;
+  avaliacoesMentora: number;
+}
+
 export interface DualIndicatorsProps {
   /** Engajamento value (0-100) - from ind7_engajamentoFinal or average of 5 indicators */
   engajamento: number;
@@ -130,6 +142,8 @@ export interface DualIndicatorsProps {
     total: number;
     cumpridas: number;
   };
+  /** Optional: Aplicabilidade Prática data */
+  aplicabilidade?: AplicabilidadeData | null;
 }
 
 export default function DualIndicators({
@@ -138,13 +152,14 @@ export default function DualIndicators({
   compact = false,
   engajamentoDetalhes,
   desenvolvimentoDetalhes,
+  aplicabilidade,
 }: DualIndicatorsProps) {
   const ringSize = compact ? 90 : 120;
   const ringStroke = compact ? 8 : 10;
 
   return (
     <TooltipProvider>
-      <div className={`grid ${compact ? 'grid-cols-2 gap-3' : 'grid-cols-1 md:grid-cols-2 gap-4'}`}>
+      <div className={`grid ${compact ? 'grid-cols-2 gap-3' : aplicabilidade ? 'grid-cols-1 md:grid-cols-3 gap-4' : 'grid-cols-1 md:grid-cols-2 gap-4'}`}>
         {/* ============================================================ */}
         {/* ENGAJAMENTO INDICATOR */}
         {/* ============================================================ */}
@@ -280,6 +295,105 @@ export default function DualIndicators({
             </div>
           </CardContent>
         </Card>
+        {/* ============================================================ */}
+        {/* APLICABILIDADE PRÁTICA INDICATOR */}
+        {/* ============================================================ */}
+        {aplicabilidade && (
+          <Card className={`border-2 shadow-sm ${
+            aplicabilidade.percentual >= 80 ? 'border-emerald-100 bg-gradient-to-br from-emerald-50/80 to-white' :
+            aplicabilidade.percentual >= 60 ? 'border-amber-100 bg-gradient-to-br from-amber-50/80 to-white' :
+            'border-red-100 bg-gradient-to-br from-red-50/80 to-white'
+          }`}>
+            <CardContent className={compact ? "p-3" : "p-5"}>
+              <div className="flex items-start gap-4">
+                {/* Ring */}
+                <div className="shrink-0">
+                  <ProgressRing
+                    value={aplicabilidade.percentual}
+                    target={80}
+                    size={ringSize}
+                    strokeWidth={ringStroke}
+                    color={aplicabilidade.percentual >= 80 ? 'text-emerald-500' : aplicabilidade.percentual >= 60 ? 'text-amber-500' : 'text-red-500'}
+                    bgColor={aplicabilidade.percentual >= 80 ? 'text-emerald-100' : aplicabilidade.percentual >= 60 ? 'text-amber-100' : 'text-red-100'}
+                  />
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Target className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} ${
+                      aplicabilidade.percentual >= 80 ? 'text-emerald-600' : aplicabilidade.percentual >= 60 ? 'text-amber-600' : 'text-red-600'
+                    }`} />
+                    <h3 className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-gray-800`}>
+                      Aplicabilidade
+                    </h3>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button className="text-gray-400 hover:text-gray-600">
+                          <Info className="h-3.5 w-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="text-xs leading-relaxed">
+                          <strong>Indicador de Aplicabilidade Prática (meta: 80%)</strong><br />
+                          Mede o quanto você está aplicando na prática o que aprendeu.<br />
+                          Composto pela avaliação do aluno (40%) e da mentora (60%).<br />
+                          Se atingir nota 8-10, você ganha +10% no Engajamento Final!
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  {aplicabilidade.provisoria ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      Provisória
+                    </span>
+                  ) : (
+                    aplicabilidade.percentual >= 80 ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        Atingido
+                      </span>
+                    ) : aplicabilidade.percentual >= 60 ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        Atenção
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                        Crítico
+                      </span>
+                    )
+                  )}
+                  {!compact && (
+                    <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                      Avaliação da aplicabilidade prática dos conteúdos.
+                      {aplicabilidade.totalAvaliacoes === 0
+                        ? ' Disponível a partir das próximas tarefas (01/04/2026).'
+                        : ` ${aplicabilidade.totalAvaliacoes} avaliação(s) registrada(s).`
+                      }
+                    </p>
+                  )}
+                  {!compact && aplicabilidade.totalAvaliacoes > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {aplicabilidade.mediaAluno !== null && (
+                        <DetailBar label="Sua nota" value={aplicabilidade.mediaAluno * 10} />
+                      )}
+                      {aplicabilidade.mediaMentora !== null && (
+                        <DetailBar label="Nota Mentora" value={aplicabilidade.mediaMentora * 10} />
+                      )}
+                    </div>
+                  )}
+                  {aplicabilidade.bonusEngajamento && !compact && (
+                    <div className="mt-2 px-2 py-1 bg-green-50 border border-green-200 rounded text-xs text-green-700 font-medium">
+                      ✨ Bônus +10% no Engajamento Final ativo!
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </TooltipProvider>
   );

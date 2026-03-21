@@ -83,6 +83,9 @@ export default function RegistroMentoria() {
   const [editTaskMode, setEditTaskMode] = useState<"biblioteca" | "personalizada" | "livre" | "sem_tarefa">("sem_tarefa");
   const [editCustomTaskTitle, setEditCustomTaskTitle] = useState<string>("");
   const [editCustomTaskDescription, setEditCustomTaskDescription] = useState<string>("");
+  // Aplicabilidade Prática - nota da mentora
+  const [newNotaMentoraAplic, setNewNotaMentoraAplic] = useState<number | null>(null);
+  const [editNotaMentoraAplic, setEditNotaMentoraAplic] = useState<number | null>(null);
 
   // Queries
   const { data: allPrograms = [] } = trpc.programs.list.useQuery(undefined, { enabled: isAdmin });
@@ -239,6 +242,7 @@ export default function RegistroMentoria() {
       taskMode: editTaskMode,
       customTaskTitle: editCustomTaskTitle || null,
       customTaskDescription: editCustomTaskDescription || null,
+      notaMentoraAplicabilidade: editNotaMentoraAplic ?? undefined,
     });
   };
 
@@ -247,6 +251,7 @@ export default function RegistroMentoria() {
     setSelectedStage(null);
     setFeedback("");
     setMensagemAluno("");
+    setEditNotaMentoraAplic(null);
   };
 
   const resetNewSessionForm = () => {
@@ -263,6 +268,7 @@ export default function RegistroMentoria() {
     setNewTaskMode("sem_tarefa");
     setNewCustomTaskTitle("");
     setNewCustomTaskDescription("");
+    setNewNotaMentoraAplic(null);
   };
 
   const handleCreateSession = () => {
@@ -285,6 +291,7 @@ export default function RegistroMentoria() {
       taskMode: newTaskMode,
       customTaskTitle: newCustomTaskTitle || null,
       customTaskDescription: newCustomTaskDescription || null,
+      notaMentoraAplicabilidade: newNotaMentoraAplic ?? undefined,
     });
   };
 
@@ -925,6 +932,32 @@ export default function RegistroMentoria() {
                     />
                   </div>
 
+                  {/* Seção 6: Aplicabilidade Prática da Tarefa Anterior */}
+                  <div className="space-y-3 border rounded-lg p-4 bg-amber-50/50">
+                    <Label className="flex items-center gap-2 text-amber-800 font-semibold">
+                      <Target className="h-4 w-4" />
+                      Avaliação de Aplicabilidade Prática
+                    </Label>
+                    <p className="text-xs text-gray-600">Avalie de 0 a 10 a aplicabilidade prática demonstrada pelo aluno na tarefa anterior. Esta avaliação é obrigatória quando o aluno entregou a tarefa com registro de aplicabilidade.</p>
+                    <div className="flex gap-1 flex-wrap">
+                      {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
+                        <Button
+                          key={n}
+                          type="button"
+                          variant={newNotaMentoraAplic === n ? 'default' : 'outline'}
+                          size="sm"
+                          className={`w-9 h-9 text-xs ${newNotaMentoraAplic === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
+                          onClick={() => setNewNotaMentoraAplic(n)}
+                        >
+                          {n}
+                        </Button>
+                      ))}
+                    </div>
+                    {newNotaMentoraAplic !== null && (
+                      <p className="text-sm font-medium text-amber-700">Nota selecionada: {newNotaMentoraAplic}/10</p>
+                    )}
+                  </div>
+
                   {/* Observações internas */}
                   <div>
                     <Label>Observações Internas (não visível ao aluno)</Label>
@@ -1037,6 +1070,32 @@ export default function RegistroMentoria() {
                                 Feedback ao Aluno (visível ao aluno)
                               </Label>
                               <Textarea value={mensagemAluno} onChange={(e) => setMensagemAluno(e.target.value)} placeholder="Mensagem para o aluno..." className="mt-1" rows={2} />
+                            </div>
+
+                            {/* Avaliação de Aplicabilidade Prática */}
+                            <div className="space-y-3 border rounded-lg p-4 bg-amber-50/50">
+                              <Label className="flex items-center gap-2 text-amber-800 font-semibold">
+                                <Target className="h-4 w-4" />
+                                Avaliação de Aplicabilidade Prática
+                              </Label>
+                              <p className="text-xs text-gray-600">Avalie de 0 a 10 a aplicabilidade prática demonstrada pelo aluno.</p>
+                              <div className="flex gap-1 flex-wrap">
+                                {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
+                                  <Button
+                                    key={n}
+                                    type="button"
+                                    variant={editNotaMentoraAplic === n ? 'default' : 'outline'}
+                                    size="sm"
+                                    className={`w-9 h-9 text-xs ${editNotaMentoraAplic === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
+                                    onClick={() => setEditNotaMentoraAplic(n)}
+                                  >
+                                    {n}
+                                  </Button>
+                                ))}
+                              </div>
+                              {editNotaMentoraAplic !== null && (
+                                <p className="text-sm font-medium text-amber-700">Nota selecionada: {editNotaMentoraAplic}/10</p>
+                              )}
                             </div>
 
                             {/* Observações internas */}

@@ -1,0 +1,34 @@
+{
+  "query": "SELECT cs.* FROM cases_sucesso cs WHERE cs.entregue = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT cs.* FROM cases_sucesso cs WHERE cs.entregue = 1;",
+  "rows": [
+    {
+      "id": "1",
+      "alunoId": "30098",
+      "trilhaId": "1",
+      "trilhaNome": "Basic",
+      "entregue": "1",
+      "dataEntrega": "2026-03-18 12:26:05",
+      "titulo": "Case_Sucessores_Feedback e Empatia",
+      "descricao": "NULL",
+      "avaliadoPor": "NULL",
+      "observacao": "NULL",
+      "createdAt": "2026-03-18 12:26:05",
+      "updatedAt": "2026-03-18 12:26:05",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/cases-sucesso/aluno-30098/case-trilha-1-k48mbs7d.pdf",
+      "fileKey": "cases-sucesso/aluno-30098/case-trilha-1-k48mbs7d.pdf",
+      "fileName": "Case_Sucessores_Luciana_Feedback_Empatia.pdf",
+      "oQueAprendi": "NULL",
+      "oQueMudei": "NULL",
+      "resultadoMensuravel": "NULL",
+      "antesVsDepois": "NULL",
+      "evidenciaUrl": "NULL",
+      "evidenciaKey": "NULL",
+      "evidenciaFileName": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\ttrilhaId\ttrilhaNome\tentregue\tdataEntrega\ttitulo\tdescricao\tavaliadoPor\tobservacao\tcreatedAt\tupdatedAt\tfileUrl\tfileKey\tfileName\toQueAprendi\toQueMudei\tresultadoMensuravel\tantesVsDepois\tevidenciaUrl\tevidenciaKey\tevidenciaFileName\n1\t30098\t1\tBasic\t1\t2026-03-18 12:26:05\tCase_Sucessores_Feedback e Empatia\tNULL\tNULL\tNULL\t2026-03-18 12:26:05\t2026-03-18 12:26:05\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/cases-sucesso/aluno-30098/case-trilha-1-k48mbs7d.pdf\tcases-sucesso/aluno-30098/case-trilha-1-k48mbs7d.pdf\tCase_Sucessores_Luciana_Feedback_Empatia.pdf\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

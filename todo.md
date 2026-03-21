@@ -3120,3 +3120,21 @@
 
 ## Correção - Menu header Cursos deve permanecer original
 - [x] Reverter AlunoLayout: aba "Cursos" no menu header volta ao original (label "Cursos", sem externalUrl, navega para /meus-cursos)
+
+## Indicador 6 - Aplicabilidade Prática (nova funcionalidade)
+- [x] Schema: adicionar campos notaAlunoAplicabilidade (int 0-10), textoAplicabilidade (text) na tabela de tarefas do aluno
+- [x] Schema: adicionar campos notaAlunoAplicabilidade (int 0-10), notaMentoraAplicabilidade (int 0-10) na tabela cases_sucesso
+- [x] Schema: adicionar campo notaMentoraAplicabilidade (int 0-10) na tabela de tarefas/entregas do aluno
+- [x] Backend: procedure para salvar aplicabilidade na conclusão de tarefa
+- [x] Backend: procedure para mentora avaliar aplicabilidade ao fechar sessão
+- [x] Backend: procedure para calcular Indicador 6 (média 60% mentora + 40% aluno)4/2026)
+- [x] Frontend aluno: formulário de aplicabilidade na conclusão de tarefa (texto + nota 0-10, obrigatório)
+- [x] Frontend aluno: formulário de aplicabilidade no case (nota 0-10)
+- [x] Frontend mentora: avaliação obrigatória de aplicabilidade ao fechar sessão de mentoria
+- [x] Frontend Portal do Aluno: card "Aplicabilidade Prática" ao lado de Engajamento e Desenvolvimento
+- [x] Cores do card: verde (>=80%), amarelo (60-79%), vermelho (<60%)
+- [x] Bônus +10% engajamento se Ind. 6 entre 8-10
+- [x] Corte temporal: só tarefas e cases a partir de 01/04/2026
+- [x] Nota provisória do aluno com badge "Pendente de avaliação da mentora"
+- [x] Renomear Ind. 6 de "Case (Bônus)" para "Aplicabilidade Prática"
+- [x] Enviar e-mail para aluna do case existente (alunoId 30098) pedindo para preencher novo formulário

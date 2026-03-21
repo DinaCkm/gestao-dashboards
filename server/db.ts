@@ -722,6 +722,10 @@ export async function updateMentoringSession(sessionId: number, data: {
   customTaskDescription?: string | null;
   taskMode?: "biblioteca" | "personalizada" | "livre" | "sem_tarefa";
   validatedAt?: Date | null;
+  textoAplicabilidade?: string;
+  notaAlunoAplicabilidade?: number | null;
+  notaMentoraAplicabilidade?: number | null;
+  aplicabilidadeAvaliadaEm?: Date | null;
 }): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
@@ -748,6 +752,10 @@ export async function updateMentoringSession(sessionId: number, data: {
   if (data.customTaskTitle !== undefined) updateData.customTaskTitle = data.customTaskTitle;
   if (data.customTaskDescription !== undefined) updateData.customTaskDescription = data.customTaskDescription;
   if (data.taskMode !== undefined) updateData.taskMode = data.taskMode;
+  if (data.textoAplicabilidade !== undefined) updateData.textoAplicabilidade = data.textoAplicabilidade;
+  if (data.notaAlunoAplicabilidade !== undefined) updateData.notaAlunoAplicabilidade = data.notaAlunoAplicabilidade;
+  if (data.notaMentoraAplicabilidade !== undefined) updateData.notaMentoraAplicabilidade = data.notaMentoraAplicabilidade;
+  if (data.aplicabilidadeAvaliadaEm !== undefined) updateData.aplicabilidadeAvaliadaEm = data.aplicabilidadeAvaliadaEm;
   
   if (Object.keys(updateData).length === 0) return true;
   
@@ -782,6 +790,8 @@ export async function createMentoringSession(data: {
   customTaskTitle?: string | null;
   customTaskDescription?: string | null;
   taskMode?: "biblioteca" | "personalizada" | "livre" | "sem_tarefa";
+  notaMentoraAplicabilidade?: number | null;
+  aplicabilidadeAvaliadaEm?: Date | null;
 }): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -804,6 +814,8 @@ export async function createMentoringSession(data: {
     customTaskTitle: data.customTaskTitle ?? null,
     customTaskDescription: data.customTaskDescription ?? null,
     taskMode: data.taskMode ?? "sem_tarefa",
+    notaMentoraAplicabilidade: data.notaMentoraAplicabilidade ?? null,
+    aplicabilidadeAvaliadaEm: data.aplicabilidadeAvaliadaEm ?? null,
   });
   return result[0].insertId;
 }

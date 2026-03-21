@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, name, email FROM alunos WHERE id = 30098",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email FROM alunos WHERE id = 30098",
+  "rows": [
+    {
+      "id": "30098",
+      "name": "Luciana Carvalho de Aguiar",
+      "email": "luciana@to.sebrae.com.br"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\n30098\tLuciana Carvalho de Aguiar\tluciana@to.sebrae.com.br\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

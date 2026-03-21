@@ -1,0 +1,8 @@
+{
+  "query": "SELECT c.alunoId, a.nome, a.email FROM cases_sucesso c JOIN alunos a ON a.id = c.alunoId WHERE c.alunoId = 30098 LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT c.alunoId, a.nome, a.email FROM cases_sucesso c JOIN alunos a ON a.id = c.alunoId WHERE c.alunoId = 30098 LIMIT 5",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'a.nome' in 'field list'"
+  ]
+}

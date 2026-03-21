@@ -3015,6 +3015,94 @@ export const appRouter = router({
           fileName: c.fileName,
           observacao: c.observacao,
         })),
+        // === Indicador 6: Aplicabilidade Prática ===
+        aplicabilidadePratica: await (async () => {
+          const CUTOFF_DATE = new Date('2026-04-01');
+          
+          // Buscar sessões com notas de aplicabilidade (após 01/04/2026)
+          const todasSessoes = await db.getMentoringSessionsByAluno(aluno!.id);
+          const sessoesComAplic = todasSessoes.filter(s => {
+            const dataSession = s.sessionDate ? new Date(s.sessionDate) : null;
+            return dataSession && dataSession >= CUTOFF_DATE && (
+              s.notaAlunoAplicabilidade !== null || s.notaMentoraAplicabilidade !== null
+            );
+          });
+          
+          // Buscar cases com notas de aplicabilidade (após 01/04/2026)
+          const casesComAplic = casesAluno.filter(c => {
+            const dataCase = c.dataEntrega ? new Date(c.dataEntrega) : null;
+            return dataCase && dataCase >= CUTOFF_DATE && c.entregue === 1 && (
+              (c as any).notaAlunoAplicabilidade !== null || (c as any).notaMentoraAplicabilidade !== null
+            );
+          });
+          
+          // Calcular médias
+          let somaNotaAluno = 0, countNotaAluno = 0;
+          let somaNotaMentora = 0, countNotaMentora = 0;
+          
+          for (const s of sessoesComAplic) {
+            if (s.notaAlunoAplicabilidade !== null && s.notaAlunoAplicabilidade !== undefined) {
+              somaNotaAluno += Number(s.notaAlunoAplicabilidade);
+              countNotaAluno++;
+            }
+            if (s.notaMentoraAplicabilidade !== null && s.notaMentoraAplicabilidade !== undefined) {
+              somaNotaMentora += Number(s.notaMentoraAplicabilidade);
+              countNotaMentora++;
+            }
+          }
+          
+          for (const c of casesComAplic) {
+            if ((c as any).notaAlunoAplicabilidade !== null) {
+              somaNotaAluno += Number((c as any).notaAlunoAplicabilidade);
+              countNotaAluno++;
+            }
+            if ((c as any).notaMentoraAplicabilidade !== null) {
+              somaNotaMentora += Number((c as any).notaMentoraAplicabilidade);
+              countNotaMentora++;
+            }
+          }
+          
+          const mediaAluno = countNotaAluno > 0 ? somaNotaAluno / countNotaAluno : null;
+          const mediaMentora = countNotaMentora > 0 ? somaNotaMentora / countNotaMentora : null;
+          
+          // Cálculo final: 60% mentora + 40% aluno
+          let notaFinal: number | null = null;
+          let provisoria = false;
+          if (mediaMentora !== null && mediaAluno !== null) {
+            notaFinal = mediaMentora * 0.6 + mediaAluno * 0.4;
+          } else if (mediaAluno !== null) {
+            notaFinal = mediaAluno; // provisória
+            provisoria = true;
+          } else if (mediaMentora !== null) {
+            notaFinal = mediaMentora;
+          }
+          
+          const percentual = notaFinal !== null ? Math.round(notaFinal * 10) : 0;
+          const bonusEngajamento = notaFinal !== null && notaFinal >= 8; // +10% se >= 8
+          
+          // Detalhes por sessão
+          const detalhes = sessoesComAplic.map(s => ({
+            sessionId: s.id,
+            sessionNumber: s.sessionNumber,
+            sessionDate: s.sessionDate,
+            notaAluno: s.notaAlunoAplicabilidade,
+            notaMentora: s.notaMentoraAplicabilidade,
+            textoAplicabilidade: s.textoAplicabilidade || null,
+          }));
+          
+          return {
+            notaFinal: notaFinal !== null ? Math.round(notaFinal * 100) / 100 : null,
+            percentual,
+            provisoria,
+            bonusEngajamento,
+            mediaAluno: mediaAluno !== null ? Math.round(mediaAluno * 100) / 100 : null,
+            mediaMentora: mediaMentora !== null ? Math.round(mediaMentora * 100) / 100 : null,
+            totalAvaliacoes: sessoesComAplic.length + casesComAplic.length,
+            avaliacoesAluno: countNotaAluno,
+            avaliacoesMentora: countNotaMentora,
+            detalhes,
+          };
+        })(),
         // Trilhas disponíveis para o aluno (apenas as que ele tem PDI)
         trilhasDisponiveis: await (async () => {
           const allTrilhas = await db.getAllTrilhas();
@@ -3139,10 +3227,15 @@ export const appRouter = router({
         customTaskTitle: z.string().nullable().optional(),
         customTaskDescription: z.string().nullable().optional(),
         taskMode: z.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
+        notaMentoraAplicabilidade: z.number().min(0).max(10).nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         const { sessionId, ...data } = input;
-        const success = await db.updateMentoringSession(sessionId, data);
+        const updateData: any = { ...data };
+        if (input.notaMentoraAplicabilidade != null) {
+          updateData.aplicabilidadeAvaliadaEm = new Date();
+        }
+        const success = await db.updateMentoringSession(sessionId, updateData);
         return { success };
       }),
 
@@ -3162,6 +3255,7 @@ export const appRouter = router({
         customTaskTitle: z.string().nullable().optional(),
         customTaskDescription: z.string().nullable().optional(),
         taskMode: z.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
+        notaMentoraAplicabilidade: z.number().min(0).max(10).nullable().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // Buscar consultor vinculado ao usuário logado
@@ -3211,6 +3305,8 @@ export const appRouter = router({
           customTaskTitle: input.customTaskTitle ?? null,
           customTaskDescription: input.customTaskDescription ?? null,
           taskMode: input.taskMode ?? "sem_tarefa",
+          notaMentoraAplicabilidade: input.notaMentoraAplicabilidade ?? null,
+          aplicabilidadeAvaliadaEm: input.notaMentoraAplicabilidade != null ? new Date() : null,
         });
 
         // Notificar o aluno sobre a nova sessão registrada (Item 7)
@@ -5462,6 +5558,34 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Aluno envia avaliação de aplicabilidade prática ao concluir tarefa
+    submitAplicabilidade: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        textoAplicabilidade: z.string().min(1, 'Descreva como aplicou na prática'),
+        notaAlunoAplicabilidade: z.number().min(0).max(10),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+
+        const session = await db.getMentoringSessionById(input.sessionId);
+        if (!session || session.alunoId !== aluno.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Sessão não pertence a este aluno' });
+        }
+
+        if (session.taskStatus === 'validada') {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Atividade já foi validada, não pode ser alterada' });
+        }
+
+        await db.updateMentoringSession(input.sessionId, {
+          textoAplicabilidade: input.textoAplicabilidade,
+          notaAlunoAplicabilidade: input.notaAlunoAplicabilidade,
+        });
+
+        return { success: true };
+      }),
+
     // Aluno visualiza comentários de uma sessão
     myTaskComments: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
@@ -5747,10 +5871,12 @@ export const appRouter = router({
         fileBase64: z.string().optional(),
         fileName: z.string().optional(),
         mimeType: z.string().optional(),
-        // Evid\u00eancia (foto, print, documento)
+            // Evidência (foto, print, documento)
         evidenciaBase64: z.string().optional(),
         evidenciaFileName: z.string().optional(),
         evidenciaMimeType: z.string().optional(),
+        // Aplicabilidade prática
+        notaAlunoAplicabilidade: z.number().min(0).max(10).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -5806,6 +5932,7 @@ export const appRouter = router({
           evidenciaUrl,
           evidenciaKey,
           evidenciaFileName: evidenciaFileNameSaved,
+          notaAlunoAplicabilidade: input.notaAlunoAplicabilidade ?? null,
         };
 
         // Verificar se j\u00e1 existe um case para esta trilha
