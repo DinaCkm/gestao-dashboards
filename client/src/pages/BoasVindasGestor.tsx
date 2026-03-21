@@ -90,14 +90,14 @@ function BoasVindasContent() {
     <div className="min-h-screen -m-6">
       {/* Hero Section */}
       <section className="relative overflow-hidden" style={{ 
-        background: 'linear-gradient(135deg, #1E3A5F 0%, #2A4F7F 40%, #1E3A5F 70%, #152C47 100%)'
+        background: 'linear-gradient(135deg, #3D2060 0%, #5B3A7D 40%, #3D2060 70%, #2A1545 100%)'
       }}>
         {/* Decorative elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full opacity-10" 
-               style={{ background: 'radial-gradient(circle, #F5A623 0%, transparent 70%)' }} />
+               style={{ background: 'radial-gradient(circle, #3BBFBF 0%, transparent 70%)' }} />
           <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-5" 
-               style={{ background: 'radial-gradient(circle, #F5A623 0%, transparent 70%)' }} />
+               style={{ background: 'radial-gradient(circle, #3BBFBF 0%, transparent 70%)' }} />
           <div className="absolute top-1/2 left-1/3 w-64 h-64 rounded-full opacity-5" 
                style={{ background: 'radial-gradient(circle, #fff 0%, transparent 70%)' }} />
           {/* Subtle grid pattern */}
@@ -112,14 +112,14 @@ function BoasVindasContent() {
             {/* Left content */}
             <div className="flex-1 text-center md:text-left">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
-                   style={{ background: 'rgba(245, 166, 35, 0.15)', border: '1px solid rgba(245, 166, 35, 0.3)' }}>
-                <Sparkles className="w-4 h-4" style={{ color: '#F5A623' }} />
-                <span className="text-sm font-medium" style={{ color: '#F5A623' }}>Programa de Certificação</span>
+                   style={{ background: 'rgba(59, 191, 191, 0.15)', border: '1px solid rgba(59, 191, 191, 0.3)' }}>
+                <Sparkles className="w-4 h-4" style={{ color: '#3BBFBF' }} />
+                <span className="text-sm font-medium" style={{ color: '#3BBFBF' }}>Programa de Certificação</span>
               </div>
               
               <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight mb-4">
                 Bem-vindo(a),{" "}
-                <span style={{ color: '#F5A623' }}>{userName}</span>!
+                <span style={{ color: '#3BBFBF' }}>{userName}</span>!
               </h1>
               
               <p className="text-lg md:text-xl text-white/80 mb-3 leading-relaxed max-w-xl">
@@ -134,7 +134,7 @@ function BoasVindasContent() {
                 <Button 
                   size="lg"
                   className="text-base font-semibold px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                  style={{ background: '#F5A623', color: '#1E3A5F' }}
+                  style={{ background: '#3BBFBF', color: '#2A1545' }}
                   onClick={() => setLocation("/dashboard/gestor")}
                 >
                   <Building2 className="w-5 h-5 mr-2" />
@@ -158,22 +158,22 @@ function BoasVindasContent() {
             <div className="flex-shrink-0 w-full md:w-auto">
               <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
                 <div className="p-5 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <Users className="w-8 h-8 mx-auto mb-2" style={{ color: '#F5A623' }} />
+                  <Users className="w-8 h-8 mx-auto mb-2" style={{ color: '#3BBFBF' }} />
                   <div className="text-2xl font-bold text-white">{stats.totalColaboradores}</div>
                   <div className="text-xs text-white/60">Colaboradores</div>
                 </div>
                 <div className="p-5 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <Target className="w-8 h-8 mx-auto mb-2" style={{ color: '#F5A623' }} />
+                  <Target className="w-8 h-8 mx-auto mb-2" style={{ color: '#3BBFBF' }} />
                   <div className="text-2xl font-bold text-white">{stats.totalMentorias}</div>
                   <div className="text-xs text-white/60">Total de Mentorias</div>
                 </div>
                 <div className="p-5 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <TrendingUp className="w-8 h-8 mx-auto mb-2" style={{ color: '#F5A623' }} />
+                  <TrendingUp className="w-8 h-8 mx-auto mb-2" style={{ color: '#3BBFBF' }} />
                   <div className="text-2xl font-bold text-white">{stats.totalCompetencias}</div>
                   <div className="text-xs text-white/60">Competências Desenvolvidas</div>
                 </div>
                 <div className="p-5 rounded-2xl text-center" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <Award className="w-8 h-8 mx-auto mb-2" style={{ color: '#F5A623' }} />
+                  <Award className="w-8 h-8 mx-auto mb-2" style={{ color: '#3BBFBF' }} />
                   <div className="text-2xl font-bold text-white">{stats.principaisCompetencias.length}</div>
                   <div className="text-xs text-white/60">Top Competências</div>
                 </div>
@@ -186,7 +186,7 @@ function BoasVindasContent() {
                     {stats.principaisCompetencias.map((comp, i) => (
                       <div key={i} className="flex items-center justify-between">
                         <span className="text-sm text-white/80 truncate mr-2">{comp.nome}</span>
-                        <span className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(245, 166, 35, 0.2)', color: '#F5A623' }}>
+                        <span className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(59, 191, 191, 0.2)', color: '#3BBFBF' }}>
                           {comp.totalAlunos} aluno{comp.totalAlunos !== 1 ? 's' : ''}
                         </span>
                       </div>
@@ -225,11 +225,11 @@ function BoasVindasContent() {
         {/* Program pillars */}
         <div className="grid md:grid-cols-3 gap-6 mb-16">
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
-            <div className="h-1.5 w-full" style={{ background: '#F5A623' }} />
+            <div className="h-1.5 w-full" style={{ background: '#3BBFBF' }} />
             <CardContent className="p-8">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
-                   style={{ background: 'rgba(245, 166, 35, 0.1)' }}>
-                <BookOpen className="w-7 h-7" style={{ color: '#F5A623' }} />
+                   style={{ background: 'rgba(59, 191, 191, 0.1)' }}>
+                <BookOpen className="w-7 h-7" style={{ color: '#3BBFBF' }} />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Trilhas de Desenvolvimento</h3>
               <p className="text-muted-foreground leading-relaxed">
@@ -240,11 +240,11 @@ function BoasVindasContent() {
           </Card>
 
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
-            <div className="h-1.5 w-full" style={{ background: '#1E3A5F' }} />
+            <div className="h-1.5 w-full" style={{ background: '#5B3A7D' }} />
             <CardContent className="p-8">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
-                   style={{ background: 'rgba(30, 58, 95, 0.1)' }}>
-                <Users className="w-7 h-7" style={{ color: '#1E3A5F' }} />
+                   style={{ background: 'rgba(91, 58, 125, 0.1)' }}>
+                <Users className="w-7 h-7" style={{ color: '#5B3A7D' }} />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Mentoria Individual</h3>
               <p className="text-muted-foreground leading-relaxed">
@@ -255,11 +255,11 @@ function BoasVindasContent() {
           </Card>
 
           <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
-            <div className="h-1.5 w-full" style={{ background: '#F5A623' }} />
+            <div className="h-1.5 w-full" style={{ background: '#3BBFBF' }} />
             <CardContent className="p-8">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
-                   style={{ background: 'rgba(245, 166, 35, 0.1)' }}>
-                <ClipboardCheck className="w-7 h-7" style={{ color: '#F5A623' }} />
+                   style={{ background: 'rgba(59, 191, 191, 0.1)' }}>
+                <ClipboardCheck className="w-7 h-7" style={{ color: '#3BBFBF' }} />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Assessment DISC</h3>
               <p className="text-muted-foreground leading-relaxed">
@@ -289,12 +289,12 @@ function BoasVindasContent() {
             {/* Minha Empresa */}
             <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card hover:border-primary/30 transition-all duration-300 hover:shadow-lg cursor-pointer"
                  onClick={() => setLocation("/dashboard/gestor")}>
-              <div className="absolute top-0 left-0 w-1 h-full transition-all duration-300" style={{ background: '#1E3A5F' }} />
+              <div className="absolute top-0 left-0 w-1 h-full transition-all duration-300" style={{ background: '#5B3A7D' }} />
               <div className="p-8 pl-10">
                 <div className="flex items-start gap-5">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
-                       style={{ background: 'rgba(30, 58, 95, 0.1)' }}>
-                    <Building2 className="w-7 h-7" style={{ color: '#1E3A5F' }} />
+                       style={{ background: 'rgba(91, 58, 125, 0.1)' }}>
+                    <Building2 className="w-7 h-7" style={{ color: '#5B3A7D' }} />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -318,12 +318,12 @@ function BoasVindasContent() {
             {/* Sessões de Mentoria */}
             <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card hover:border-primary/30 transition-all duration-300 hover:shadow-lg cursor-pointer"
                  onClick={() => setLocation("/demonstrativo-mentorias")}>
-              <div className="absolute top-0 left-0 w-1 h-full transition-all duration-300" style={{ background: '#F5A623' }} />
+              <div className="absolute top-0 left-0 w-1 h-full transition-all duration-300" style={{ background: '#3BBFBF' }} />
               <div className="p-8 pl-10">
                 <div className="flex items-start gap-5">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
-                       style={{ background: 'rgba(245, 166, 35, 0.1)' }}>
-                    <Calendar className="w-7 h-7" style={{ color: '#F5A623' }} />
+                       style={{ background: 'rgba(59, 191, 191, 0.1)' }}>
+                    <Calendar className="w-7 h-7" style={{ color: '#3BBFBF' }} />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -347,12 +347,12 @@ function BoasVindasContent() {
             {/* Metas de Desenvolvimento */}
             <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card hover:border-primary/30 transition-all duration-300 hover:shadow-lg cursor-pointer"
                  onClick={() => setLocation("/metas-gestor")}>
-              <div className="absolute top-0 left-0 w-1 h-full transition-all duration-300" style={{ background: '#1E3A5F' }} />
+              <div className="absolute top-0 left-0 w-1 h-full transition-all duration-300" style={{ background: '#5B3A7D' }} />
               <div className="p-8 pl-10">
                 <div className="flex items-start gap-5">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
-                       style={{ background: 'rgba(30, 58, 95, 0.1)' }}>
-                    <Flag className="w-7 h-7" style={{ color: '#1E3A5F' }} />
+                       style={{ background: 'rgba(91, 58, 125, 0.1)' }}>
+                    <Flag className="w-7 h-7" style={{ color: '#5B3A7D' }} />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -376,12 +376,12 @@ function BoasVindasContent() {
             {/* Relatórios */}
             <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card hover:border-primary/30 transition-all duration-300 hover:shadow-lg cursor-pointer"
                  onClick={() => setLocation("/relatorios")}>
-              <div className="absolute top-0 left-0 w-1 h-full transition-all duration-300" style={{ background: '#F5A623' }} />
+              <div className="absolute top-0 left-0 w-1 h-full transition-all duration-300" style={{ background: '#3BBFBF' }} />
               <div className="p-8 pl-10">
                 <div className="flex items-start gap-5">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
-                       style={{ background: 'rgba(245, 166, 35, 0.1)' }}>
-                    <FileText className="w-7 h-7" style={{ color: '#F5A623' }} />
+                       style={{ background: 'rgba(59, 191, 191, 0.1)' }}>
+                    <FileText className="w-7 h-7" style={{ color: '#3BBFBF' }} />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -407,7 +407,7 @@ function BoasVindasContent() {
         {/* Benefits Section */}
         <div className="mb-16">
           <div className="rounded-3xl overflow-hidden" style={{ 
-            background: 'linear-gradient(135deg, #1E3A5F 0%, #2A4F7F 100%)'
+            background: 'linear-gradient(135deg, #3D2060 0%, #5B3A7D 100%)'
           }}>
             <div className="p-10 md:p-14">
               <div className="text-center mb-10">
@@ -427,8 +427,8 @@ function BoasVindasContent() {
                   { icon: Target, title: "Desenvolvimento Contínuo", desc: "PDI personalizado com metas e acompanhamento durante todo o ciclo" },
                 ].map((item, i) => (
                   <div key={i} className="text-center p-6 rounded-2xl" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(245, 166, 35, 0.15)' }}>
-                      <item.icon className="w-6 h-6" style={{ color: '#F5A623' }} />
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(59, 191, 191, 0.15)' }}>
+                      <item.icon className="w-6 h-6" style={{ color: '#3BBFBF' }} />
                     </div>
                     <h4 className="font-bold text-white mb-2">{item.title}</h4>
                     <p className="text-sm text-white/60 leading-relaxed">{item.desc}</p>
@@ -444,7 +444,7 @@ function BoasVindasContent() {
           <Card className="border-0 shadow-xl overflow-hidden">
             <div className="relative">
               <div className="absolute inset-0 opacity-5" style={{
-                background: 'radial-gradient(circle at 80% 50%, #F5A623 0%, transparent 50%), radial-gradient(circle at 20% 50%, #1E3A5F 0%, transparent 50%)'
+                background: 'radial-gradient(circle at 80% 50%, #3BBFBF 0%, transparent 50%), radial-gradient(circle at 20% 50%, #5B3A7D 0%, transparent 50%)'
               }} />
               <CardContent className="relative p-10 md:p-14">
                 <div className="flex flex-col lg:flex-row items-center gap-10">
@@ -471,7 +471,7 @@ function BoasVindasContent() {
                         <Button 
                           size="lg"
                           className="text-base font-semibold px-10 py-7 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                          style={{ background: '#F5A623', color: '#1E3A5F' }}
+                          style={{ background: '#3BBFBF', color: '#2A1545' }}
                           onClick={() => setShowReuniao(true)}
                         >
                           <Mail className="w-5 h-5 mr-2" />
@@ -497,7 +497,7 @@ function BoasVindasContent() {
                         <div className="flex gap-3">
                           <Button 
                             className="flex-1 font-semibold py-6 rounded-xl"
-                            style={{ background: '#F5A623', color: '#1E3A5F' }}
+                            style={{ background: '#3BBFBF', color: '#2A1545' }}
                             onClick={handleSolicitarReuniao}
                             disabled={enviando}
                           >

@@ -73,7 +73,7 @@ describe('Email Templates - Aceite Flow', () => {
 // ============ TESTES DA LÓGICA DE BLOQUEIO DE MENU ============
 
 describe('Menu Blocking Logic - Aceite Flow', () => {
-  const ONBOARDING_CUTOFF_DATE = new Date('2026-03-15T00:00:00');
+  const ONBOARDING_CUTOFF_DATE = new Date('2026-03-01T00:00:00');
 
   function shouldBlockMenu(onboardingStatus: {
     aceiteRealizado: boolean;
@@ -89,7 +89,7 @@ describe('Menu Blocking Logic - Aceite Flow', () => {
     return false;
   }
 
-  it('bloqueia menu para aluno novo (pós 15/03/2026) sem aceite', () => {
+  it('bloqueia menu para aluno novo (pós 01/03/2026) sem aceite', () => {
     expect(shouldBlockMenu({
       aceiteRealizado: false,
       alunoCreatedAt: '2026-03-20T10:00:00',
@@ -103,7 +103,7 @@ describe('Menu Blocking Logic - Aceite Flow', () => {
     })).toBe(false);
   });
 
-  it('não bloqueia menu para aluno veterano (antes de 15/03/2026)', () => {
+  it('não bloqueia menu para aluno veterano (antes de 01/03/2026)', () => {
     expect(shouldBlockMenu({
       aceiteRealizado: false,
       alunoCreatedAt: '2026-01-10T10:00:00',

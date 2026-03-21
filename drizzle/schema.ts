@@ -1083,6 +1083,7 @@ export const onboardingVideos = mysqlTable("onboarding_videos", {
   descricao: text("descricao"),
   videoUrl: text("videoUrl"), // URL do YouTube/Vimeo
   thumbnailUrl: text("thumbnailUrl"),
+  textoExplicativo: text("textoExplicativo"), // Texto alternativo para acessibilidade (deficientes auditivos)
   ordem: int("ordem").default(0).notNull(),
   isActive: int("isActive").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

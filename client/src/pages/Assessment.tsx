@@ -1206,7 +1206,7 @@ function AssessmentCard({
             </div>
             <div className="bg-emerald-50 rounded-lg p-3 text-center border border-emerald-200">
               <div className="text-2xl font-bold text-emerald-600">{mediaAtual}%</div>
-              <div className="text-xs text-emerald-700">Nível Atual</div>
+              <div className="text-xs text-emerald-700">Nível Identificado</div>
             </div>
             <div className="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
               <div className="text-2xl font-bold text-blue-600">{mediaMetaFinal}%</div>
@@ -1245,7 +1245,7 @@ function AssessmentCard({
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                           <div className="space-y-1">
-                            <Label className="text-xs font-medium text-muted-foreground">Nível Atual (%)</Label>
+                            <Label className="text-xs font-medium text-muted-foreground">Nível Identificado (%)</Label>
                             <Input
                               type="number"
                               min="0"
@@ -1257,7 +1257,7 @@ function AssessmentCard({
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs font-medium text-muted-foreground">Meta Ciclo 1 (%)</Label>
+                            <Label className="text-xs font-medium text-muted-foreground">Evolução no Período 1 (%)</Label>
                             <Input
                               type="number"
                               min="0"
@@ -1269,7 +1269,7 @@ function AssessmentCard({
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs font-medium text-muted-foreground">Meta Ciclo 2 (%)</Label>
+                            <Label className="text-xs font-medium text-muted-foreground">Evolução no Período 2 (%)</Label>
                             <Input
                               type="number"
                               min="0"
@@ -1356,11 +1356,11 @@ function AssessmentCard({
                           <ProgressBar
                             value={nivelAtual ?? 0}
                             meta={metaFinal ?? undefined}
-                            label={`Nível Atual: ${nivelAtual ?? 0}%`}
+                            label={`Nível Identificado: ${nivelAtual ?? 0}%`}
                           />
                           <div className="flex gap-4 text-[10px] text-muted-foreground">
-                            {metaCiclo1 !== null && <span>Meta C1: <strong className="text-foreground">{metaCiclo1}%</strong></span>}
-                            {metaCiclo2 !== null && <span>Meta C2: <strong className="text-foreground">{metaCiclo2}%</strong></span>}
+                            {metaCiclo1 !== null && <span>Evol. P1: <strong className="text-foreground">{metaCiclo1}%</strong></span>}
+                            {metaCiclo2 !== null && <span>Evol. P2: <strong className="text-foreground">{metaCiclo2}%</strong></span>}
                             {metaFinal !== null && <span>Meta Final: <strong className="text-blue-600">{metaFinal}%</strong></span>}
                           </div>
                         </div>
@@ -1766,7 +1766,7 @@ function CreateAssessmentDialog({
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Nível Atual (%)</Label>
+                            <Label className="text-xs text-muted-foreground">Nível Identificado (%)</Label>
                             <Input
                               type="number"
                               min="0"
@@ -1784,7 +1784,7 @@ function CreateAssessmentDialog({
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Meta Ciclo 1 (%)</Label>
+                            <Label className="text-xs text-muted-foreground">Evolução no Período 1 (%)</Label>
                             <Input
                               type="number"
                               min="0"
@@ -1802,7 +1802,7 @@ function CreateAssessmentDialog({
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Meta Ciclo 2 (%)</Label>
+                            <Label className="text-xs text-muted-foreground">Evolução no Período 2 (%)</Label>
                             <Input
                               type="number"
                               min="0"

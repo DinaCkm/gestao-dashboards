@@ -10,7 +10,7 @@ import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Fla
 import RoleSwitcher from "@/components/RoleSwitcher";
 
 /** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
-const ONBOARDING_CUTOFF_DATE = new Date("2026-03-15T00:00:00Z");
+const ONBOARDING_CUTOFF_DATE = new Date("2026-03-01T00:00:00Z");
 
 const ALL_NAV_ITEMS = [
   { label: "Onboarding", path: "/onboarding", icon: ClipboardList, requiresAceite: false },

@@ -393,6 +393,13 @@
       "when": 1774050500260,
       "tag": "0055_plain_jane_foster",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "5",
+      "when": 1774056830638,
+      "tag": "0056_slow_firebrand",
+      "breakpoints": true
     }
   ]
 }

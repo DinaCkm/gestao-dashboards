@@ -2,12 +2,12 @@ import { describe, it, expect } from "vitest";
 
 /**
  * Testes da lógica de bloqueio de menu do aluno:
- * - Alunos cadastrados ANTES de 15/03/2026 → menu sempre liberado (veteranos)
- * - Alunos cadastrados A PARTIR de 15/03/2026 → menu bloqueado até aceite
+ * - Alunos cadastrados ANTES de 01/03/2026 → menu sempre liberado (veteranos)
+ * - Alunos cadastrados A PARTIR de 01/03/2026 → menu bloqueado até aceite
  * - Após aceite → menu liberado
  */
 
-const ONBOARDING_CUTOFF_DATE = new Date("2026-03-15T00:00:00Z");
+const ONBOARDING_CUTOFF_DATE = new Date("2026-03-01T00:00:00Z");
 
 /** Simula a lógica do AlunoLayout.tsx */
 function isMenuBloqueado(onboardingStatus: {
@@ -30,7 +30,7 @@ const ALLOWED_PATHS = ["/onboarding", "/tutoriais"];
 
 describe("Bloqueio de Menu do Aluno até Aceite", () => {
 
-  describe("Alunos veteranos (antes de 15/03/2026)", () => {
+  describe("Alunos veteranos (antes de 01/03/2026)", () => {
     it("menu liberado para aluno criado em 01/01/2026 SEM aceite", () => {
       const status = {
         aceiteRealizado: false,
@@ -39,10 +39,10 @@ describe("Bloqueio de Menu do Aluno até Aceite", () => {
       expect(isMenuBloqueado(status)).toBe(false);
     });
 
-    it("menu liberado para aluno criado em 14/03/2026 SEM aceite", () => {
+    it("menu liberado para aluno criado em 28/02/2026 SEM aceite", () => {
       const status = {
         aceiteRealizado: false,
-        alunoCreatedAt: "2026-03-14T23:59:59.000Z",
+        alunoCreatedAt: "2026-02-28T23:59:59.000Z",
       };
       expect(isMenuBloqueado(status)).toBe(false);
     });
@@ -56,11 +56,11 @@ describe("Bloqueio de Menu do Aluno até Aceite", () => {
     });
   });
 
-  describe("Alunos novos (a partir de 15/03/2026)", () => {
-    it("menu BLOQUEADO para aluno criado em 15/03/2026 SEM aceite", () => {
+  describe("Alunos novos (a partir de 01/03/2026)", () => {
+    it("menu BLOQUEADO para aluno criado em 01/03/2026 SEM aceite", () => {
       const status = {
         aceiteRealizado: false,
-        alunoCreatedAt: "2026-03-15T00:00:00.000Z",
+        alunoCreatedAt: "2026-03-01T00:00:00.000Z",
       };
       expect(isMenuBloqueado(status)).toBe(true);
     });
@@ -73,10 +73,10 @@ describe("Bloqueio de Menu do Aluno até Aceite", () => {
       expect(isMenuBloqueado(status)).toBe(true);
     });
 
-    it("menu LIBERADO para aluno criado em 15/03/2026 COM aceite", () => {
+    it("menu LIBERADO para aluno criado em 01/03/2026 COM aceite", () => {
       const status = {
         aceiteRealizado: true,
-        alunoCreatedAt: "2026-03-15T00:00:00.000Z",
+        alunoCreatedAt: "2026-03-01T00:00:00.000Z",
       };
       expect(isMenuBloqueado(status)).toBe(false);
     });

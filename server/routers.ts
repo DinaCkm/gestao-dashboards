@@ -6629,6 +6629,10 @@ Responda APENAS em JSON com o formato:
         // 2. Fez o assessment/PDI
         const encontroRealizado = presencaRegistrada && assessmentFeito;
 
+        // Data da primeira sessão com presença registrada (para exibir "Reunião Realizada em XX/XX/XXXX")
+        const sessaoRealizada = sessoes.find(s => s.presence === 'presente');
+        const encontroData = sessaoRealizada?.sessionDate ? String(sessaoRealizada.sessionDate) : null;
+
         // Buscar progresso da jornada (etapas 6-8)
         const jornada = await db.getOnboardingJornada(alunoId);
         const pdiVisualizado = !!(jornada?.pdiVisualizado);
@@ -6660,14 +6664,21 @@ Responda APENAS em JSON com o formato:
         const cadastroConfirmado = !!(jornada?.cadastroConfirmado);
 
         // Determinar step atual
+        // Fluxo: 1.Cadastro → 2.Assessment → 3.Mentora → 4.Agendamento → 5.1º Encontro → 6.Sua Jornada → 7.Meu PDI → 8.Aceite
+        // Nota: Sua Jornada (6) pode ser acessada enquanto aguarda o encontro (após agendamento)
+        // Meu PDI (7) só habilita quando mentora cria o PDI (assessmentFeito)
+        // Aceite (8) só habilita quando Meu PDI foi visualizado
         let step = 1;
-        if (cadastroConfirmado) step = 2; // Cadastro confirmado, vai para assessment
-        if (cadastroConfirmado && discCompleto && autopercepCompleta) step = 3; // Pula para mentora
-        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida) step = 4; // Pula para agendamento
-        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito) step = 5; // Pula para 1º encontro
-        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado) step = 6; // 1º encontro feito, vai para Meu PDI
-        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado && pdiVisualizado) step = 7; // PDI visualizado, vai para Sua Jornada
-        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado && pdiVisualizado && todosVideosAssistidos) step = 8; // Vídeos assistidos, vai para Aceite
+        if (cadastroConfirmado) step = 2;
+        if (cadastroConfirmado && discCompleto && autopercepCompleta) step = 3;
+        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida) step = 4;
+        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito) step = 5;
+        // Após agendamento, Sua Jornada (6) fica disponível (pode assistir vídeos enquanto aguarda)
+        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && (encontroRealizado || todosVideosAssistidos)) step = 6;
+        // Meu PDI (7) só habilita quando: encontro realizado + mentora criou PDI + vídeos assistidos
+        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado && assessmentFeito && todosVideosAssistidos) step = 7;
+        // Aceite (8) só habilita quando Meu PDI foi visualizado
+        if (cadastroConfirmado && discCompleto && autopercepCompleta && mentoraEscolhida && agendamentoFeito && encontroRealizado && assessmentFeito && todosVideosAssistidos && pdiVisualizado) step = 8;
 
         // Quando onboarding está completo, forçar step 8 para que todas as etapas
         // apareçam como concluídas e o aluno possa navegar livremente em modo visualização
@@ -6688,6 +6699,7 @@ Responda APENAS em JSON com o formato:
           assessmentFeito,
           relatorioFeito,
           encontroRealizado,
+          encontroData,
           onboardingCompleto,
           reassessmentElegivel,
           contratoTermino,

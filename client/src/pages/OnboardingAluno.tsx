@@ -15,7 +15,7 @@ import {
   CheckCircle2, Circle, Lock, ChevronRight, ExternalLink, Camera, Briefcase,
   GraduationCap, Clock, Calendar, Target, Award,
   Play, ArrowRight, Sparkles, Heart, Eye, AlertCircle, CheckCircle,
-  BookOpen, TrendingUp, BarChart3, Layers, Star, Zap, Trophy, MapPin, Rocket, MessageCircle, Send
+  BookOpen, TrendingUp, BarChart3, Layers, Star, Zap, Trophy, MapPin, Rocket, MessageCircle, Send, FileText
 } from "lucide-react";
 import confetti from "canvas-confetti";
 // Tipos locais (dados agora vêm do banco real)
@@ -149,8 +149,8 @@ const ONBOARDING_STEPS = [
   { id: 3, label: "Mentora", icon: Users2, description: "Escolha sua mentora" },
   { id: 4, label: "Agendamento", icon: CalendarDays, description: "Agende o 1º encontro" },
   { id: 5, label: "1º Encontro", icon: VideoIcon, description: "Participe da reunião" },
-  { id: 6, label: "Meu PDI", icon: Target, description: "Conheça seu plano" },
-  { id: 7, label: "Sua Jornada", icon: Play, description: "Descubra os recursos" },
+  { id: 6, label: "Sua Jornada", icon: Play, description: "Descubra os recursos" },
+  { id: 7, label: "Meu PDI", icon: Target, description: "Conheça seu plano" },
   { id: 8, label: "Aceite", icon: Award, description: "Confirme e comece" },
 ];
 
@@ -161,7 +161,7 @@ function OnboardingStepper({ currentStep, onStepClick, readOnly = false }: { cur
         {/* Linha de conexão */}
         <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-200 z-0" />
         <div
-          className="absolute top-6 left-0 h-0.5 bg-gradient-to-r from-[#0A1E3E] to-[#F5991F] z-0 transition-all duration-700"
+          className="absolute top-6 left-0 h-0.5 bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] z-0 transition-all duration-700"
           style={{ width: readOnly ? '100%' : `${((currentStep - 1) / (ONBOARDING_STEPS.length - 1)) * 100}%` }}
         />
 
@@ -177,16 +177,17 @@ function OnboardingStepper({ currentStep, onStepClick, readOnly = false }: { cur
               className="flex flex-col items-center relative z-10 cursor-pointer group"
               onClick={() => {
                 if (readOnly || isCompleted || isCurrent) onStepClick(step.id);
+                else if (isLocked) toast.info("Esta etapa ainda não está habilitada");
                 else toast.info("Complete as etapas anteriores primeiro");
               }}
             >
               <div className={`
                 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2
                 ${isCompleted
-                  ? "bg-[#0A1E3E] border-[#0A1E3E] text-white shadow-lg shadow-[#0A1E3E]/30"
+                  ? "bg-[#1E40AF] border-[#1E40AF] text-white shadow-lg shadow-blue-500/30"
                   : isCurrent
-                    ? "bg-white border-[#F5991F] text-[#F5991F] shadow-lg shadow-[#F5991F]/30 ring-4 ring-[#F5991F]/20"
-                    : "bg-gray-100 border-gray-300 text-gray-400"
+                    ? "bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/40 ring-4 ring-red-400/30 animate-pulse"
+                    : "bg-gray-100 border-red-300 text-red-400"
                 }
                 ${!isLocked ? "group-hover:scale-110" : ""}
               `}>
@@ -199,12 +200,12 @@ function OnboardingStepper({ currentStep, onStepClick, readOnly = false }: { cur
                 )}
               </div>
               <span className={`mt-2 text-xs font-medium text-center ${
-                isCompleted ? "text-[#0A1E3E]" : isCurrent ? "text-[#F5991F]" : "text-gray-400"
+                isCompleted ? "text-[#1E40AF]" : isCurrent ? "text-red-600 font-bold" : "text-red-400"
               }`}>
                 {step.label}
               </span>
               <span className={`text-[10px] text-center ${
-                isCurrent ? "text-[#F5991F]/70" : "text-gray-400"
+                isCurrent ? "text-red-500" : isCompleted ? "text-blue-400" : "text-red-300"
               }`}>
                 {step.description}
               </span>
@@ -1055,6 +1056,7 @@ function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData, readOnly = 
     assessmentFeito?: boolean;
     relatorioFeito?: boolean;
     encontroRealizado?: boolean;
+    encontroData?: string | null;
     agendamentoData?: string | null;
     agendamentoHora?: string | null;
     agendamentoMeetLink?: string | null;
@@ -1092,10 +1094,12 @@ function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData, readOnly = 
                   <CheckCircle2 className="h-10 w-10 text-emerald-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Encontro Inicial Realizado!</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Reunião Realizada{progressoData?.encontroData ? ` em ${new Date(progressoData.encontroData).toLocaleDateString('pt-BR')}` : '!'}
+                  </h3>
                   <p className="text-gray-500 text-sm max-w-md mx-auto">
                     Seu primeiro encontro com {mentora?.nome || "sua mentora"} foi registrado com sucesso.
-                    A mentora definiu sua trilha de desenvolvimento e atribuiu sua primeira tarefa prática.
+                    A mentora definiu sua trilha de desenvolvimento. Agora prossiga para as próximas etapas.
                   </p>
                 </div>
 
@@ -1119,7 +1123,7 @@ function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData, readOnly = 
                 <div className="bg-amber-50 rounded-lg p-4">
                   <p className="text-sm text-amber-700 flex items-start gap-2">
                     <Sparkles className="h-4 w-4 mt-0.5 shrink-0" />
-                    Parabéns! Você completou o onboarding. Agora você terá acesso ao portal completo do programa de desenvolvimento.
+                    Seu encontro foi registrado com sucesso. Prossiga para as próximas etapas da sua jornada de desenvolvimento.
                   </p>
                 </div>
               </>
@@ -1202,12 +1206,12 @@ function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData, readOnly = 
           <Button
             className="bg-gradient-to-r from-[#0A1E3E] to-[#F5991F] hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg"
             onClick={() => {
-              toast.success("Excelente! Vamos conhecer seu Plano de Desenvolvimento!");
+              toast.success("Excelente! Vamos para a próxima etapa!");
               onComplete();
             }}
           >
             <Sparkles className="h-5 w-5 mr-2" />
-            Conhecer Meu Plano de Desenvolvimento
+            Próxima Etapa
             <ArrowRight className="h-5 w-5 ml-2" />
           </Button>
         </div>
@@ -1291,8 +1295,6 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   const SECTIONS = [
     { id: 'visao-geral', label: 'Visão Geral', icon: Layers },
     { id: 'competencias', label: 'Competências', icon: Target },
-    { id: 'jornada', label: 'Etapas', icon: MapPin },
-    { id: 'recursos', label: 'Recursos', icon: BookOpen },
   ];
 
   return (
@@ -1645,7 +1647,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                                   {(nivel !== null || meta !== null) && (
                                     <div>
                                       <div className="flex justify-between text-xs mb-1">
-                                        <span className="text-gray-500">Nível Atual</span>
+                                        <span className="text-gray-500">Nível Identificado</span>
                                         {meta !== null && <span className="text-gray-400">Meta: {meta}%</span>}
                                       </div>
                                       <div className="h-3 bg-white rounded-full overflow-hidden relative">
@@ -1696,13 +1698,13 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                                     <div className="flex gap-3">
                                       {comp.metaCiclo1 !== null && (
                                         <div className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center flex-1">
-                                          <p className="text-xs text-gray-400">Meta Ciclo 1</p>
+                                          <p className="text-xs text-gray-400">Evolução Período 1</p>
                                           <p className={`text-sm font-bold ${c.accent}`}>{Math.round(comp.metaCiclo1)}%</p>
                                         </div>
                                       )}
                                       {comp.metaCiclo2 !== null && (
                                         <div className="bg-white rounded-lg px-3 py-2 border border-gray-100 text-center flex-1">
-                                          <p className="text-xs text-gray-400">Meta Ciclo 2</p>
+                                          <p className="text-xs text-gray-400">Evolução Período 2</p>
                                           <p className={`text-sm font-bold ${c.accent}`}>{Math.round(comp.metaCiclo2)}%</p>
                                         </div>
                                       )}
@@ -1727,8 +1729,8 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
             </div>
           )}
 
-          {/* ===== SEÇÃO: ETAPAS DA JORNADA ===== */}
-          {activeSection === 'jornada' && (
+          {/* SEÇÕES ETAPAS E RECURSOS REMOVIDAS - conteúdo já explicado nos vídeos de Sua Jornada */}
+          {false && activeSection === 'jornada' && (
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">
                 <h3 className="font-bold text-[#0A1E3E] mb-5 flex items-center gap-2">
@@ -1853,8 +1855,8 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
             </Card>
           )}
 
-          {/* ===== SEÇÃO: RECURSOS ===== */}
-          {activeSection === 'recursos' && (
+          {/* SEÇÃO RECURSOS REMOVIDA */}
+          {false && activeSection === 'recursos' && (
             <div className="space-y-5">
               <Card className="border-0 shadow-lg">
                 <CardContent className="p-6">
@@ -2030,6 +2032,7 @@ function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete
     boas_vindas: false, competencias: false, webinars: false, tarefas: false, metas: false,
   });
   const [expandedVideo, setExpandedVideo] = useState<string | null>(null);
+  const [showTexto, setShowTexto] = useState<Record<string, boolean>>({});
 
   // Sincronizar com dados do backend
   useEffect(() => {
@@ -2163,6 +2166,30 @@ function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete
                             <p className="text-sm text-gray-400">Vídeo em breve</p>
                             <p className="text-xs text-gray-300 mt-1">O conteúdo será disponibilizado pela coordenação</p>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Botão de texto explicativo para acessibilidade */}
+                      {video.textoExplicativo && (
+                        <div>
+                          <Button
+                            variant="outline"
+                            className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                            onClick={(e) => { e.stopPropagation(); setShowTexto(prev => ({ ...prev, [video.chave]: !prev[video.chave] })); }}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            {showTexto[video.chave] ? 'Ocultar Texto Explicativo' : 'Ver Texto Explicativo'}
+                            <span className="ml-auto text-xs text-blue-400">(Acessibilidade)</span>
+                          </Button>
+                          {showTexto[video.chave] && (
+                            <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                              <div className="flex items-start gap-2 mb-2">
+                                <FileText className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                                <span className="text-sm font-semibold text-blue-800">Texto Explicativo do Vídeo</span>
+                              </div>
+                              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{video.textoExplicativo}</p>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -2765,8 +2792,8 @@ export default function OnboardingAluno() {
         )}
         {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
         {currentStep === 5 && <EtapaPrimeiroEncontro mentora={selectedMentora} onComplete={handleStepComplete} progressoData={progressoData ?? undefined} readOnly={readOnly} />}
-        {currentStep === 6 && <EtapaMeuPDI onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
-        {currentStep === 7 && <EtapaSuaJornada onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
+        {currentStep === 6 && <EtapaSuaJornada onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
+        {currentStep === 7 && <EtapaMeuPDI onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
         {currentStep === 8 && <EtapaAceite onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
       </div>
     </AlunoLayout>

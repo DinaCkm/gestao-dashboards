@@ -2967,3 +2967,34 @@
 - [ ] Adicionar filtros ao Painel de Revisões PDI (programa, mentor, aluno, período) para facilitar visualização quando houver muitos registros
 - [x] Backend: mentor deve ver apenas revisões dos seus próprios alunos (não todas)
 - [x] Badge: contar apenas revisões pendentes dos alunos do mentor (não todas)
+
+## ajustes20.docx - Novos Ajustes (20/03/2026)
+
+- [x] A20-1: Quando mentora finaliza plano individual do aluno, tela do onboarding muda para "Reunião Realizada em XX/XX/XXXX"
+- [x] A20-2: Renomear títulos no Plano Individual: "Nível Atual" → "Nível Identificado"; "Meta Ciclo 1/Ciclo 2" → "Evolução no Período 1/2" - Atualizado em 4 arquivos (Assessment, NovoAssessment, EditAssessmentDialog, OnboardingAluno)
+- [x] A20-3: Remover botões "Etapas" e "Recursos" do portal do aluno (já explicado nos vídeos de Sua Jornada)
+- [x] A20-4: Na página "Sua Jornada", incluir abaixo de cada vídeo um botão para acessar texto explicativo (acessibilidade para deficientes auditivos) + campo textoExplicativo adicionado ao banco
+- [x] A20-5: Corrigir fluxo completo de onboarding:
+  - [x] Fix: aluno com PDI mas sem aceite deve continuar no onboarding (não marcar como concluído)
+  - [x] Cores: Azul = etapa concluída (congelada, só visualização), Vermelho = etapa não habilitada (não abre nada)
+  - [x] Meu PDI e Aceite só habilitam quando mentora cria o PDI
+  - [x] Sua Jornada pode ser acessada enquanto aguarda o encontro
+  - [x] 1º Encontro: trocar 'Agendado em' por 'Realizado em' quando mentora registra presença
+  - [x] Portal do aluno (Mural, Cursos, etc.) bloqueado até aceite ser dado
+  - [x] Etapas concluídas ficam congeladas (só visualização)
+  - [x] Etapas não habilitadas não abrem nada
+  - [x] IMPORTANTE: Mudanças só afetam alunos novos (a partir de 01/03/2026), veteranos não são afetados
+- [x] A20-6: Botão de etapa pendente do onboarding em VERMELHO e PISCANDO (implementado no OnboardingStepper com cores azul/vermelho/cinza)
+- [x] A20-7: Perguntas sobre Case de Sucesso: RESPONDIDO - Ninguém é notificado (pode ser adicionado). Pontuação: Entregue=100 (Ind.6), +10% bônus Ind.5, não entra na média
+- [x] A20-8: Cor do menu e da página de boas vindas do líder/gerente precisam ser do mesmo tom de azul
+
+## Funcionalidade: Admin liberar onboarding para veterano (20/03/2026)
+- [ ] Criar painel no admin para selecionar quais etapas do onboarding reabrir para um aluno veterano
+- [ ] Etapas selecionáveis: Cadastro, Assessment, Mentora, Agendamento, 1º Encontro, Sua Jornada, Meu PDI, Aceite
+- [ ] Aluno veterano com onboarding reaberto volta a ter acesso às etapas selecionadas
+- [ ] Etapas não selecionadas ficam como concluídas (azul, somente visualização)
+
+## A20-8: Cores do Gestor - Identidade Visual Logo (20/03/2026)
+- [x] Sidebar do gestor: mudar cores para roxo (#5B3A7D) + turquesa (#3BBFBF) do logo
+- [x] Página Boas-Vindas do gestor: mudar cores para roxo + turquesa do logo
+- [ ] Manter cores dos outros perfis (admin, mentor, aluno) inalteradas por enquanto

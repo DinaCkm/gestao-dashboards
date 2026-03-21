@@ -614,7 +614,7 @@ export default function EditAssessmentDialog({
                             {/* Níveis and Metas */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                               <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Nível Atual (%)</Label>
+                                <Label className="text-xs text-muted-foreground">Nível Identificado (%)</Label>
                                 <Input
                                   type="number"
                                   min="0"
@@ -632,7 +632,7 @@ export default function EditAssessmentDialog({
                                 />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Meta Ciclo 1 (%)</Label>
+                                <Label className="text-xs text-muted-foreground">Evolução no Período 1 (%)</Label>
                                 <Input
                                   type="number"
                                   min="0"
@@ -650,7 +650,7 @@ export default function EditAssessmentDialog({
                                 />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Meta Ciclo 2 (%)</Label>
+                                <Label className="text-xs text-muted-foreground">Evolução no Período 2 (%)</Label>
                                 <Input
                                   type="number"
                                   min="0"
@@ -763,7 +763,7 @@ export default function EditAssessmentDialog({
                                 <span className="font-medium">{formatDateDisplay(comp.microTermino)}</span>
                               </div>
                               <div>
-                                <span className="text-muted-foreground">Nível Atual:</span>{" "}
+                                <span className="text-muted-foreground">Nível Identificado:</span>{" "}
                                 <span className="font-medium">{comp.nivelAtualEfetivo ?? comp.nivelAtual ?? "—"}%</span>
                               </div>
                               <div>

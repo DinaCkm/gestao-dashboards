@@ -6176,15 +6176,20 @@ export async function getAlunoOnboardingStatus(user: {
     .where(eq(assessmentPdi.alunoId, aluno.id));
   const hasPdi = (pdiCount?.count ?? 0) > 0;
 
+  // Data de corte: alunos cadastrados a partir desta data passam pelo onboarding completo
+  const ONBOARDING_CUTOFF = new Date('2026-03-01T00:00:00Z');
+  const isAlunoNovo = alunoCreatedAt ? new Date(alunoCreatedAt) >= ONBOARDING_CUTOFF : false;
+
   // REGRA PRINCIPAL:
-  // - Aluno SEM PDI = aluno novo → precisa de onboarding
-  // - Aluno COM PDI = veterano → NÃO precisa (a menos que admin liberou novo ciclo)
-  // - Aluno COM PDI + onboardingLiberado = renovação → precisa de onboarding (novo ciclo)
+  // - Aluno VETERANO (antes de 01/03/2026): NÃO precisa de onboarding (acesso direto ao portal)
+  // - Aluno NOVO (a partir de 01/03/2026) SEM aceite: precisa completar onboarding
+  // - Aluno NOVO COM aceite: onboarding concluído, portal liberado
+  // - Qualquer aluno COM onboardingLiberado: admin liberou novo ciclo → precisa de onboarding
   let needsOnboarding = false;
-  if (!hasPdi) {
-    needsOnboarding = true; // Aluno novo, sem PDI
-  } else if (onboardingLiberado) {
+  if (onboardingLiberado) {
     needsOnboarding = true; // Admin liberou novo ciclo
+  } else if (isAlunoNovo && !aceiteRealizado) {
+    needsOnboarding = true; // Aluno novo que ainda não deu aceite
   }
 
   return {
@@ -8382,10 +8387,20 @@ export async function getOnboardingTrackingList(programId?: number) {
   const allTurmas = await database.select().from(turmas);
   const turmaMap = new Map(allTurmas.map(t => [t.id, t.name]));
 
-  // Build result — only include students who do NOT have PDI yet
+  // Build result — only include students cadastrados a partir de 01/03/2026 (alunos novos)
+  // que ainda não completaram o aceite do onboarding
+  const ONBOARDING_CUTOFF = new Date('2026-03-01T00:00:00Z');
   const now = new Date();
   return alunosList
-    .filter(aluno => !pdiMap.get(aluno.id)) // Exclude students with PDI
+    .filter(aluno => {
+      // Só alunos novos (cadastrados a partir de 01/03/2026) aparecem no tracking
+      const createdAt = aluno.createdAt ? new Date(aluno.createdAt) : null;
+      if (!createdAt || createdAt < ONBOARDING_CUTOFF) return false; // Veterano, não aparece
+      // Aluno novo: verificar se já deu aceite
+      const jornada = jornadaMap.get(aluno.id);
+      const aceiteFeito = jornada?.aceiteRealizado === 1;
+      return !aceiteFeito; // Include if aceite not done yet
+    })
     .map(aluno => {
     const jornada = jornadaMap.get(aluno.id);
     const discInfo = discMap.get(aluno.id);

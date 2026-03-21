@@ -480,7 +480,7 @@ export default function NovoAssessment() {
                       <TableHead className="w-12 text-center"></TableHead>
                       <TableHead className="text-sm font-semibold">Competência</TableHead>
                       <TableHead className="text-sm font-semibold text-center w-28">Peso</TableHead>
-                      <TableHead className="text-sm font-semibold text-center w-24">Nível Atual (%)</TableHead>
+                      <TableHead className="text-sm font-semibold text-center w-24">Nível Identificado (%)</TableHead>
                       <TableHead className="text-sm font-semibold text-center w-24">Meta Final (%)</TableHead>
                       <TableHead className="text-sm font-semibold text-center w-36">Micro Início</TableHead>
                       <TableHead className="text-sm font-semibold text-center w-36">Micro Término</TableHead>
@@ -613,7 +613,7 @@ export default function NovoAssessment() {
                               <div className="py-2 px-4 space-y-3">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                   <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Meta Ciclo 1 (%)</Label>
+                                    <Label className="text-xs text-muted-foreground">Evolução no Período 1 (%)</Label>
                                     <Input
                                       type="number"
                                       min="0"
@@ -632,7 +632,7 @@ export default function NovoAssessment() {
                                     />
                                   </div>
                                   <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Meta Ciclo 2 (%)</Label>
+                                    <Label className="text-xs text-muted-foreground">Evolução no Período 2 (%)</Label>
                                     <Input
                                       type="number"
                                       min="0"
