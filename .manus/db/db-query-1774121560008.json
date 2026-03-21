@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, name, tipoMentoria, totalSessoesContratadas, contratoInicio, contratoFim FROM alunos WHERE name LIKE '%Julia%Makiyama%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, tipoMentoria, totalSessoesContratadas, contratoInicio, contratoFim FROM alunos WHERE name LIKE '%Julia%Makiyama%'",
+  "rows": [
+    {
+      "id": "660014",
+      "name": "Julia Souza Makiyama",
+      "tipoMentoria": "individual",
+      "totalSessoesContratadas": "6",
+      "contratoInicio": "2026-04-01 00:00:00",
+      "contratoFim": "2026-09-09 00:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttipoMentoria\ttotalSessoesContratadas\tcontratoInicio\tcontratoFim\n660014\tJulia Souza Makiyama\tindividual\t6\t2026-04-01 00:00:00\t2026-09-09 00:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

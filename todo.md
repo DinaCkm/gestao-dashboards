@@ -3080,3 +3080,11 @@
 - [x] BUG: Webinares mostra 2 em vez de ~10 (contrato virtual não era criado quando totalSessoes=0 mas tinha datas)
 - [x] BUG: Término mostra abr.26 em vez de set.26 (mesma causa: contrato virtual não criado, fallback usava datas do PDI)
 - [x] BUG: Mentorias mostra "Sem mentoria" (mesma causa: save não funcionava + contrato virtual não criado)
+
+## BUG CRÍTICO (reportado 3+ vezes) - Mentorias não salva
+- [x] BUG: totalSessoesContratadas e tipoMentoria - CONFIRMADO que salva corretamente (Julia tem totalSessoesContratadas=6 no banco)
+- [x] Mostrar info de mentorias (tipo + quantidade) na listagem expandida do aluno em AdminCadastros
+
+## BUG - Meses de Jornada mostra 1 em vez de 5 (deve usar contrato)
+- [x] Card "Meses de Jornada" no EtapaMeuPDI agora usa datas do CONTRATO (prioridade), fallback para PDI
+- [x] Mostrar info de mentorias (tipo + quantidade) na listagem expandida do aluno em AdminCadastros

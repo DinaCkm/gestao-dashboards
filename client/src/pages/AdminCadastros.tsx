@@ -1112,6 +1112,20 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                               )}
                             </span>
                           </div>
+                          <div className="flex items-center gap-2">
+                            <Users2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Mentorias:</span>
+                            <span>
+                              {aluno.totalSessoesContratadas && aluno.totalSessoesContratadas > 0 ? (
+                                <>
+                                  <span className="font-medium">{aluno.totalSessoesContratadas} sessões</span>
+                                  <span className="text-muted-foreground"> ({aluno.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'})</span>
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground italic">não definido</span>
+                              )}
+                            </span>
+                          </div>
                         </div>
                         {/* Ações */}
                         <div className="flex gap-2 mt-3 pt-3 border-t">

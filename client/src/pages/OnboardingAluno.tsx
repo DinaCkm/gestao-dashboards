@@ -1255,13 +1255,22 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   const allTerminos = allMacroJornadas.map((mj: any) => mj.macroTermino).filter(Boolean).sort();
   const macroInicio = allInicios.length > 0 ? new Date(allInicios[0]) : null;
   const macroTermino = allTerminos.length > 0 ? new Date(allTerminos[allTerminos.length - 1]) : null;
-  const totalMeses = macroInicio && macroTermino 
-    ? Math.max(1, (macroTermino.getFullYear() - macroInicio.getFullYear()) * 12 + (macroTermino.getMonth() - macroInicio.getMonth()))
+
+  // PRIORIDADE: usar datas do CONTRATO do aluno, fallback para datas do PDI
+  const contratoObj = jornadaData?.contrato;
+  const contratoInicioDate = contratoObj?.periodoInicio ? new Date(contratoObj.periodoInicio) : null;
+  const contratoFimDate = contratoObj?.periodoTermino ? new Date(contratoObj.periodoTermino) : null;
+  const jornadaInicio = contratoInicioDate || macroInicio;
+  const jornadaFim = contratoFimDate || macroTermino;
+  
+  const totalMeses = jornadaInicio && jornadaFim 
+    ? Math.max(1, Math.round((jornadaFim.getTime() - jornadaInicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)))
     : 0;
-  const mesesDecorridos = macroInicio 
-    ? Math.max(0, (new Date().getFullYear() - macroInicio.getFullYear()) * 12 + (new Date().getMonth() - macroInicio.getMonth()))
+  const mesesDecorridos = jornadaInicio 
+    ? Math.max(0, Math.round((new Date().getTime() - jornadaInicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)))
     : 0;
   const progressoTempo = totalMeses > 0 ? Math.min(100, Math.round((mesesDecorridos / totalMeses) * 100)) : 0;
+  const usandoDatasContrato = !!(contratoInicioDate || contratoFimDate);
 
   // Dados de sessões - usar totalSessoesContratadas do contrato se disponível
   const sessoesRealizadas = dashData?.found ? (dashData as any).sessoesAluno?.filter((s: any) => s.presence === 'presente' && !s.isAssessment)?.length || 0 : 0;
@@ -1346,7 +1355,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
                     <Calendar className="h-6 w-6 text-emerald-400 mx-auto mb-1" />
                     <p className="text-2xl font-bold">{totalMeses}</p>
-                    <p className="text-xs text-white/60">Meses de Jornada</p>
+                    <p className="text-xs text-white/60">{usandoDatasContrato ? 'Meses de Contrato' : 'Meses de Jornada'}</p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
                     <Users2 className="h-6 w-6 text-amber-400 mx-auto mb-1" />
@@ -1424,10 +1433,10 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                   <div className="relative">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                        Início: {macroInicio?.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                        Início: {jornadaInicio?.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
                       </span>
                       <span className="text-xs font-medium text-[#F5991F] bg-amber-50 px-2 py-1 rounded-full">
-                        Término: {macroTermino?.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                        Término: {jornadaFim?.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
                       </span>
                     </div>
                     <div className="h-4 bg-gray-100 rounded-full overflow-hidden relative">
