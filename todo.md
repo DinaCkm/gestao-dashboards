@@ -3074,3 +3074,9 @@
 - [x] Adicionar totalSessoesContratadas na tabela alunos (schema + migration)
 - [x] Criar contrato virtual no getJornadaCompleta quando aluno tem dados inline mas não tem registro em contratos_aluno
 - [x] 23 testes vitest passando
+
+## Bugs Reportados - Resumo do Plano
+- [x] BUG: totalSessoesContratadas não salva ao editar aluno no formulário (faltava tipoMentoria/totalSessoesContratadas no db.ts updateAluno)
+- [x] BUG: Webinares mostra 2 em vez de ~10 (contrato virtual não era criado quando totalSessoes=0 mas tinha datas)
+- [x] BUG: Término mostra abr.26 em vez de set.26 (mesma causa: contrato virtual não criado, fallback usava datas do PDI)
+- [x] BUG: Mentorias mostra "Sem mentoria" (mesma causa: save não funcionava + contrato virtual não criado)

@@ -181,10 +181,11 @@ describe("Contrato Virtual - Fallback da tabela alunos", () => {
     contratoInicio: Date | null;
     contratoFim: Date | null;
   }) {
-    if (alunoData.totalSessoesContratadas && alunoData.totalSessoesContratadas > 0) {
+    // Cria contrato virtual quando tem datas de contrato OU totalSessoesContratadas > 0
+    if (alunoData.contratoInicio || alunoData.contratoFim || (alunoData.totalSessoesContratadas && alunoData.totalSessoesContratadas > 0)) {
       return {
         id: 0,
-        totalSessoesContratadas: alunoData.totalSessoesContratadas,
+        totalSessoesContratadas: alunoData.totalSessoesContratadas || 0,
         tipoMentoria: alunoData.tipoMentoria || "individual",
         periodoInicio: alunoData.contratoInicio ? alunoData.contratoInicio.toISOString().split("T")[0] : null,
         periodoTermino: alunoData.contratoFim ? alunoData.contratoFim.toISOString().split("T")[0] : null,
@@ -207,24 +208,46 @@ describe("Contrato Virtual - Fallback da tabela alunos", () => {
     expect(contrato!.periodoTermino).toBe("2026-09-09");
   });
 
-  it("deve retornar null quando totalSessoesContratadas é 0", () => {
+  it("deve criar contrato virtual quando totalSessoesContratadas é 0 mas tem datas", () => {
     const contrato = criarContratoVirtual({
       totalSessoesContratadas: 0,
       tipoMentoria: "individual",
       contratoInicio: new Date("2026-04-01"),
       contratoFim: new Date("2026-09-09"),
     });
+    expect(contrato).not.toBeNull();
+    expect(contrato!.totalSessoesContratadas).toBe(0);
+    expect(contrato!.periodoInicio).toBe("2026-04-01");
+    expect(contrato!.periodoTermino).toBe("2026-09-09");
+  });
+
+  it("deve retornar null quando não tem datas nem sessões", () => {
+    const contrato = criarContratoVirtual({
+      totalSessoesContratadas: null,
+      tipoMentoria: "individual",
+      contratoInicio: null,
+      contratoFim: null,
+    });
     expect(contrato).toBeNull();
   });
 
-  it("deve retornar null quando totalSessoesContratadas é null", () => {
+  it("deve criar contrato virtual com datas mesmo sem sessões (caso Julia)", () => {
+    // Julia: tem contratoInicio/Fim mas totalSessoesContratadas=0
     const contrato = criarContratoVirtual({
-      totalSessoesContratadas: null,
+      totalSessoesContratadas: 0,
       tipoMentoria: "individual",
       contratoInicio: new Date("2026-04-01"),
       contratoFim: new Date("2026-09-09"),
     });
-    expect(contrato).toBeNull();
+    expect(contrato).not.toBeNull();
+    expect(contrato!.periodoInicio).toBe("2026-04-01");
+    expect(contrato!.periodoTermino).toBe("2026-09-09");
+    // Webinares: 5 meses * 2 = 10
+    const inicio = new Date(contrato!.periodoInicio!);
+    const termino = new Date(contrato!.periodoTermino!);
+    const meses = Math.max(1, Math.round((termino.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
+    expect(meses).toBe(5);
+    expect(meses * 2).toBe(10); // 10 webinares
   });
 
   it("deve usar individual como padrão quando tipoMentoria é null", () => {

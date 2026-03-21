@@ -1798,6 +1798,8 @@ export async function updateAluno(alunoId: number, data: {
   quemEVoce?: string | null;
   contratoInicio?: Date | null;
   contratoFim?: Date | null;
+  tipoMentoria?: string | null;
+  totalSessoesContratadas?: number | null;
 }): Promise<{ success: boolean; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
@@ -1816,6 +1818,8 @@ export async function updateAluno(alunoId: number, data: {
   if (data.quemEVoce !== undefined) updateData.quemEVoce = data.quemEVoce;
   if (data.contratoInicio !== undefined) updateData.contratoInicio = data.contratoInicio;
   if (data.contratoFim !== undefined) updateData.contratoFim = data.contratoFim;
+  if (data.tipoMentoria !== undefined) updateData.tipoMentoria = data.tipoMentoria;
+  if (data.totalSessoesContratadas !== undefined) updateData.totalSessoesContratadas = data.totalSessoesContratadas;
   
   if (data.cpf !== undefined) {
     if (data.cpf === null || data.cpf === '') {
@@ -5495,8 +5499,9 @@ export async function getJornadaCompleta(alunoId: number) {
   let contrato: (typeof contratoRaw & { tipoMentoria?: string | null }) | null = contratoRaw;
   if (contrato) {
     contrato = { ...contrato, tipoMentoria: alunoData2?.tipoMentoria || 'individual' };
-  } else if (alunoData2?.totalSessoesContratadas && alunoData2.totalSessoesContratadas > 0) {
+  } else if (alunoData2 && (alunoData2.contratoInicio || alunoData2.contratoFim || (alunoData2.totalSessoesContratadas && alunoData2.totalSessoesContratadas > 0))) {
     // Fallback: criar contrato virtual a partir dos dados inline do aluno
+    // Cria quando tem datas de contrato OU totalSessoesContratadas > 0
     contrato = {
       id: 0,
       alunoId,
@@ -5504,7 +5509,7 @@ export async function getJornadaCompleta(alunoId: number) {
       turmaId: null,
       periodoInicio: alunoData2.contratoInicio ? new Date(alunoData2.contratoInicio).toISOString().split('T')[0] : null,
       periodoTermino: alunoData2.contratoFim ? new Date(alunoData2.contratoFim).toISOString().split('T')[0] : null,
-      totalSessoesContratadas: alunoData2.totalSessoesContratadas,
+      totalSessoesContratadas: alunoData2.totalSessoesContratadas || 0,
       observacoes: null,
       criadoPor: null,
       isActive: 1,
