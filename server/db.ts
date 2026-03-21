@@ -5481,11 +5481,37 @@ export async function getJornadaCompleta(alunoId: number) {
   
   const contratoRaw = contratos[0] || null;
   
+  // Buscar dados do aluno para enriquecer contrato
+  const alunoRow = await db.select({
+    tipoMentoria: alunos.tipoMentoria,
+    totalSessoesContratadas: alunos.totalSessoesContratadas,
+    contratoInicio: alunos.contratoInicio,
+    contratoFim: alunos.contratoFim,
+  }).from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  const alunoData2 = alunoRow[0];
+  
   // Enriquecer contrato com tipoMentoria do aluno
+  // Se não tem contrato na tabela contratos_aluno, criar um contrato virtual com dados do aluno
   let contrato: (typeof contratoRaw & { tipoMentoria?: string | null }) | null = contratoRaw;
   if (contrato) {
-    const alunoRow = await db.select({ tipoMentoria: alunos.tipoMentoria }).from(alunos).where(eq(alunos.id, alunoId)).limit(1);
-    contrato = { ...contrato, tipoMentoria: alunoRow[0]?.tipoMentoria || 'individual' };
+    contrato = { ...contrato, tipoMentoria: alunoData2?.tipoMentoria || 'individual' };
+  } else if (alunoData2?.totalSessoesContratadas && alunoData2.totalSessoesContratadas > 0) {
+    // Fallback: criar contrato virtual a partir dos dados inline do aluno
+    contrato = {
+      id: 0,
+      alunoId,
+      programId: 0,
+      turmaId: null,
+      periodoInicio: alunoData2.contratoInicio ? new Date(alunoData2.contratoInicio).toISOString().split('T')[0] : null,
+      periodoTermino: alunoData2.contratoFim ? new Date(alunoData2.contratoFim).toISOString().split('T')[0] : null,
+      totalSessoesContratadas: alunoData2.totalSessoesContratadas,
+      observacoes: null,
+      criadoPor: null,
+      isActive: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      tipoMentoria: alunoData2.tipoMentoria || 'individual',
+    } as any;
   }
   
   // 2. Buscar PDIs (Macro Jornadas) do aluno

@@ -4097,6 +4097,8 @@ export const appRouter = router({
         turmaId: z.number().nullable().optional(),
         contratoInicio: z.string().nullable().optional(),
         contratoFim: z.string().nullable().optional(),
+        tipoMentoria: z.enum(['individual', 'grupo']).nullable().optional(),
+        totalSessoesContratadas: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         const { alunoId, contratoInicio, contratoFim, ...data } = input;

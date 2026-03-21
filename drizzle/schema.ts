@@ -192,6 +192,7 @@ export const alunos = mysqlTable("alunos", {
   contratoInicio: timestamp("contratoInicio"), // Data início do período contratual
   contratoFim: timestamp("contratoFim"), // Data fim do período contratual
   tipoMentoria: mysqlEnum("tipoMentoria", ["individual", "grupo"]).default("individual"), // Tipo de sessão de mentoria contratada
+  totalSessoesContratadas: int("totalSessoesContratadas").default(0), // Nº total de sessões de mentoria contratadas
   telefone: varchar("telefone", { length: 20 }),
   cargo: varchar("cargo", { length: 255 }),
   areaAtuacao: varchar("areaAtuacao", { length: 255 }),

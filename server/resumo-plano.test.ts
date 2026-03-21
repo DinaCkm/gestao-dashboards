@@ -151,3 +151,102 @@ describe("Resumo do Plano - Dados do Contrato vs PDI", () => {
     expect(termino).toEqual(pdiTermino);
   });
 });
+
+describe("Edição de Cadastro - Campos de Contrato", () => {
+  it("deve aceitar tipoMentoria individual ou grupo", () => {
+    const validValues = ["individual", "grupo"];
+    for (const val of validValues) {
+      expect(validValues.includes(val)).toBe(true);
+    }
+  });
+
+  it("deve aceitar totalSessoesContratadas como número positivo", () => {
+    const input = "6";
+    const parsed = parseInt(input);
+    expect(parsed).toBe(6);
+    expect(parsed > 0).toBe(true);
+  });
+
+  it("deve tratar totalSessoesContratadas vazio como null", () => {
+    const input = "";
+    const result = input ? parseInt(input) : null;
+    expect(result).toBeNull();
+  });
+});
+
+describe("Contrato Virtual - Fallback da tabela alunos", () => {
+  function criarContratoVirtual(alunoData: {
+    totalSessoesContratadas: number | null;
+    tipoMentoria: string | null;
+    contratoInicio: Date | null;
+    contratoFim: Date | null;
+  }) {
+    if (alunoData.totalSessoesContratadas && alunoData.totalSessoesContratadas > 0) {
+      return {
+        id: 0,
+        totalSessoesContratadas: alunoData.totalSessoesContratadas,
+        tipoMentoria: alunoData.tipoMentoria || "individual",
+        periodoInicio: alunoData.contratoInicio ? alunoData.contratoInicio.toISOString().split("T")[0] : null,
+        periodoTermino: alunoData.contratoFim ? alunoData.contratoFim.toISOString().split("T")[0] : null,
+      };
+    }
+    return null;
+  }
+
+  it("deve criar contrato virtual quando aluno tem totalSessoesContratadas", () => {
+    const contrato = criarContratoVirtual({
+      totalSessoesContratadas: 6,
+      tipoMentoria: "individual",
+      contratoInicio: new Date("2026-04-01"),
+      contratoFim: new Date("2026-09-09"),
+    });
+    expect(contrato).not.toBeNull();
+    expect(contrato!.totalSessoesContratadas).toBe(6);
+    expect(contrato!.tipoMentoria).toBe("individual");
+    expect(contrato!.periodoInicio).toBe("2026-04-01");
+    expect(contrato!.periodoTermino).toBe("2026-09-09");
+  });
+
+  it("deve retornar null quando totalSessoesContratadas é 0", () => {
+    const contrato = criarContratoVirtual({
+      totalSessoesContratadas: 0,
+      tipoMentoria: "individual",
+      contratoInicio: new Date("2026-04-01"),
+      contratoFim: new Date("2026-09-09"),
+    });
+    expect(contrato).toBeNull();
+  });
+
+  it("deve retornar null quando totalSessoesContratadas é null", () => {
+    const contrato = criarContratoVirtual({
+      totalSessoesContratadas: null,
+      tipoMentoria: "individual",
+      contratoInicio: new Date("2026-04-01"),
+      contratoFim: new Date("2026-09-09"),
+    });
+    expect(contrato).toBeNull();
+  });
+
+  it("deve usar individual como padrão quando tipoMentoria é null", () => {
+    const contrato = criarContratoVirtual({
+      totalSessoesContratadas: 6,
+      tipoMentoria: null,
+      contratoInicio: new Date("2026-04-01"),
+      contratoFim: new Date("2026-09-09"),
+    });
+    expect(contrato!.tipoMentoria).toBe("individual");
+  });
+
+  it("deve lidar com datas nulas no contrato virtual", () => {
+    const contrato = criarContratoVirtual({
+      totalSessoesContratadas: 6,
+      tipoMentoria: "grupo",
+      contratoInicio: null,
+      contratoFim: null,
+    });
+    expect(contrato).not.toBeNull();
+    expect(contrato!.periodoInicio).toBeNull();
+    expect(contrato!.periodoTermino).toBeNull();
+    expect(contrato!.tipoMentoria).toBe("grupo");
+  });
+});

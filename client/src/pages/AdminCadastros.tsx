@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square } from "lucide-react";
+import { Loader2, Plus, Building2, Users, Users2, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -668,6 +668,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [editTurmaId, setEditTurmaId] = useState("");
   const [editContratoInicio, setEditContratoInicio] = useState("");
   const [editContratoFim, setEditContratoFim] = useState("");
+  const [editTipoMentoria, setEditTipoMentoria] = useState("individual");
+  const [editTotalSessoes, setEditTotalSessoes] = useState("");
 
   const handleEditOpen = (aluno: any) => {
     setEditAluno(aluno);
@@ -681,6 +683,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     // Formatar datas de contrato para input type="date" (YYYY-MM-DD)
     setEditContratoInicio(aluno.contratoInicio ? new Date(aluno.contratoInicio).toISOString().split('T')[0] : "");
     setEditContratoFim(aluno.contratoFim ? new Date(aluno.contratoFim).toISOString().split('T')[0] : "");
+    setEditTipoMentoria(aluno.tipoMentoria || "individual");
+    setEditTotalSessoes(aluno.totalSessoesContratadas ? aluno.totalSessoesContratadas.toString() : "");
     setEditOpen(true);
   };
 
@@ -703,6 +707,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       turmaId: editTurmaId ? parseInt(editTurmaId) : null,
       contratoInicio: editContratoInicio || null,
       contratoFim: editContratoFim || null,
+      tipoMentoria: editTipoMentoria as 'individual' | 'grupo',
+      totalSessoesContratadas: editTotalSessoes ? parseInt(editTotalSessoes) : null,
     });
     setEditOpen(false);
     setEditAluno(null);
@@ -856,7 +862,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                     {turmasList.map((t: any) => (<option key={t.id} value={t.id.toString()}>{t.name}</option>))}
                   </select>
                 </div>
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
                   <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><CalendarDays className="h-3.5 w-3.5" /> Período do Contrato</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
@@ -867,6 +873,23 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                       <Label className="text-xs">Fim</Label>
                       <Input type="date" value={editContratoFim} onChange={(e) => setEditContratoFim(e.target.value)} className="text-sm" />
                     </div>
+                  </div>
+                  <div className="border-t border-amber-200 pt-3">
+                    <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><Users2 className="h-3.5 w-3.5" /> Mentorias do Contrato</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Tipo de Mentoria</Label>
+                        <select value={editTipoMentoria} onChange={(e) => setEditTipoMentoria(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                          <option value="individual">Individual</option>
+                          <option value="grupo">Em Grupo</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Total de Sessões Contratadas</Label>
+                        <Input type="number" min="0" value={editTotalSessoes} onChange={(e) => setEditTotalSessoes(e.target.value)} className="text-sm" placeholder="Ex: 6" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-amber-600 mt-1">Informe o número total de mentorias previstas no contrato e o tipo (individual ou em grupo).</p>
                   </div>
                 </div>
               </div>

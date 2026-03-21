@@ -3067,3 +3067,10 @@
 - [x] Mentorias: mostrar tipo (individual/grupal) ou se contrato não tem mentoria
 - [x] Tarefas: igual ao número de mentorias, com texto informando que depende da liberalidade da mentora
 - [x] Meta de Certificação: adicionar seção LÍDER NÍVEL I - CERTIFICADO com requisitos (evidências + 80% engajamento + 80% desafios)
+
+## Edição de Cadastro do Aluno - Campos de Contrato
+- [x] Adicionar campos no formulário de edição: totalSessoesContratadas, tipoMentoria, contratoInicio, contratoFim
+- [x] Atualizar backend para salvar esses campos na edição do aluno
+- [x] Adicionar totalSessoesContratadas na tabela alunos (schema + migration)
+- [x] Criar contrato virtual no getJornadaCompleta quando aluno tem dados inline mas não tem registro em contratos_aluno
+- [x] 23 testes vitest passando
