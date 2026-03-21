@@ -3164,3 +3164,9 @@
 - [x] Mostrar na seção "Avaliação da Tarefa da Sessão Anterior" se o aluno já enviou evidência de entrega
 - [x] Exibir link de evidência, imagem, relato do aluno e data/hora de submissão
 - [x] Aplicar tanto no formulário de nova sessão quanto no de edição
+
+## Adicionar envio de comprovação nas Tarefas Práticas Atribuídas (Portal do Aluno)
+- [x] Adicionar botão "Enviar Comprovação" dentro de cada tarefa expandida na seção "Tarefas Práticas Atribuídas" (aba Mentorias) [JÁ EXISTIA - corrigido taskStatus no backend]
+- [x] Incluir campos: link de evidência, imagem (upload), relato, aplicabilidade prática (texto + nota 0-10) [JÁ EXISTIA]
+- [x] Conectar ao backend existente (submitEvidence, submitRelato, submitAplicabilidade) [JÁ EXISTIA]
+- [x] Mostrar status de envio (já enviado vs pendente) dentro da tarefa expandida [CORRIGIDO: taskStatus agora é nao_entregue quando tarefa é atribuída]

@@ -3235,6 +3235,10 @@ export const appRouter = router({
         if (input.notaMentoraAplicabilidade != null) {
           updateData.aplicabilidadeAvaliadaEm = new Date();
         }
+        // Se a mentora atribuiu uma tarefa, forçar taskStatus para nao_entregue
+        if (input.taskMode && input.taskMode !== 'sem_tarefa') {
+          updateData.taskStatus = 'nao_entregue';
+        }
         const success = await db.updateMentoringSession(sessionId, updateData);
         return { success };
       }),
@@ -3287,6 +3291,13 @@ export const appRouter = router({
           ? Math.max(...sessions.map(s => s.sessionNumber ?? 0)) + 1 
           : 1;
 
+        // Se a mentora atribuiu uma tarefa nesta sessão, o taskStatus deve ser 'nao_entregue'
+        // para que o aluno veja o botão 'Entregar' no Portal
+        const effectiveTaskMode = input.taskMode ?? "sem_tarefa";
+        const effectiveTaskStatus = effectiveTaskMode !== "sem_tarefa" 
+          ? "nao_entregue" 
+          : (input.taskStatus ?? "sem_tarefa");
+
         const sessionId = await db.createMentoringSession({
           alunoId: input.alunoId,
           consultorId,
@@ -3295,7 +3306,7 @@ export const appRouter = router({
           sessionNumber: nextSessionNumber,
           sessionDate: input.sessionDate,
           presence: input.presence,
-          taskStatus: input.taskStatus ?? "sem_tarefa",
+          taskStatus: effectiveTaskStatus,
           engagementScore: input.engagementScore ?? null,
           notaEvolucao: input.notaEvolucao ?? null,
           feedback: input.feedback,

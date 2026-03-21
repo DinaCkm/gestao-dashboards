@@ -1,0 +1,30 @@
+{
+  "query": "SELECT COUNT(*) as total, taskStatus, taskMode FROM mentoring_sessions WHERE taskMode IS NOT NULL AND taskMode != 'sem_tarefa' GROUP BY taskStatus, taskMode;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total, taskStatus, taskMode FROM mentoring_sessions WHERE taskMode IS NOT NULL AND taskMode != 'sem_tarefa' GROUP BY taskStatus, taskMode;",
+  "rows": [
+    {
+      "total": "1",
+      "taskStatus": "sem_tarefa",
+      "taskMode": "personalizada"
+    },
+    {
+      "total": "1",
+      "taskStatus": "sem_tarefa",
+      "taskMode": "biblioteca"
+    },
+    {
+      "total": "3",
+      "taskStatus": "entregue",
+      "taskMode": "livre"
+    },
+    {
+      "total": "1",
+      "taskStatus": "nao_entregue",
+      "taskMode": "personalizada"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\ttaskStatus\ttaskMode\n1\tsem_tarefa\tpersonalizada\n1\tsem_tarefa\tbiblioteca\n3\tentregue\tlivre\n1\tnao_entregue\tpersonalizada\n",
+  "stderr": "",
+  "execution_time_ms": 107
+}
