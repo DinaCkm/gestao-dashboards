@@ -342,9 +342,9 @@ export default function DashboardVisaoGeral() {
               valor={visaoGeral.mediaInd6 || visaoGeral.mediaParticipacaoEventos}
               icone={<PartyPopper className="h-4 w-4" />}
               cor="#1976D2"
-              descricao="Case de Sucesso (bônus de +10% no Engajamento)"
+              descricao="Relatório de Impacto (bônus de +10% no Engajamento)"
               regras={[
-                "Case entregue = +10% no indicador de Engajamento",
+                "Relatório entregue = +10% no indicador de Engajamento",
                 "Não entra na média dos 5 indicadores",
                 "É um bônus adicional"
               ]}

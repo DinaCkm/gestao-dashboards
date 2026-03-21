@@ -671,6 +671,14 @@ export const casesSucesso = mysqlTable("cases_sucesso", {
   fileUrl: varchar("fileUrl", { length: 1000 }), // URL do arquivo no S3
   fileKey: varchar("fileKey", { length: 500 }), // Chave do arquivo no S3
   fileName: varchar("fileName", { length: 500 }), // Nome original do arquivo
+  // === Relatório de Impacto (campos estruturados) ===
+  oQueAprendi: text("oQueAprendi"), // "O que aprendi" - Resumo do conhecimento adquirido
+  oQueMudei: text("oQueMudei"), // "O que mudei na minha rotina" - Ação concreta implementada
+  resultadoMensuravel: text("resultadoMensuravel"), // "Resultado mensurável" - Dado concreto de melhoria
+  antesVsDepois: text("antesVsDepois"), // "Antes vs. Depois" - Comparativo visual ou descritivo
+  evidenciaUrl: varchar("evidenciaUrl", { length: 1000 }), // URL da evidência (foto, print, documento) no S3
+  evidenciaKey: varchar("evidenciaKey", { length: 500 }), // Chave da evidência no S3
+  evidenciaFileName: varchar("evidenciaFileName", { length: 500 }), // Nome original do arquivo de evidência
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

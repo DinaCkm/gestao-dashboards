@@ -5729,15 +5729,26 @@ export const appRouter = router({
     }),
 
     // Enviar case de sucesso (aluno logado)
+    // Enviar Relatório de Impacto (antigo Case de Sucesso) - aluno logado
     enviar: protectedProcedure
       .input(z.object({
         trilhaId: z.number(),
         trilhaNome: z.string(),
-        titulo: z.string().min(1, 'Título é obrigatório'),
+        titulo: z.string().min(1, 'T\u00edtulo \u00e9 obrigat\u00f3rio'),
         descricao: z.string().optional(),
-        fileBase64: z.string().min(1, 'Arquivo é obrigatório'),
-        fileName: z.string().min(1),
-        mimeType: z.string().min(1),
+        // Campos estruturados do Relat\u00f3rio de Impacto
+        oQueAprendi: z.string().min(1, 'Campo "O que aprendi" \u00e9 obrigat\u00f3rio'),
+        oQueMudei: z.string().min(1, 'Campo "O que mudei" \u00e9 obrigat\u00f3rio'),
+        resultadoMensuravel: z.string().min(1, 'Campo "Resultado mensur\u00e1vel" \u00e9 obrigat\u00f3rio'),
+        antesVsDepois: z.string().min(1, 'Campo "Antes vs. Depois" \u00e9 obrigat\u00f3rio'),
+        // Arquivo principal (opcional agora, pois o relat\u00f3rio \u00e9 o formul\u00e1rio)
+        fileBase64: z.string().optional(),
+        fileName: z.string().optional(),
+        mimeType: z.string().optional(),
+        // Evid\u00eancia (foto, print, documento)
+        evidenciaBase64: z.string().optional(),
+        evidenciaFileName: z.string().optional(),
+        evidenciaMimeType: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -5748,47 +5759,130 @@ export const appRouter = router({
         }
         if (!aluno && ctx.user.email) aluno = await db.getAlunoByEmail(ctx.user.email);
         if (!aluno) aluno = await db.getAlunoByExternalId(ctx.user.openId);
-        if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Perfil de aluno não encontrado' });
+        if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Perfil de aluno n\u00e3o encontrado' });
 
-        // Upload do arquivo para S3
-        const buffer = Buffer.from(input.fileBase64, 'base64');
-        const ext = input.fileName.split('.').pop() || 'pdf';
-        const randomSuffix = Math.random().toString(36).substring(2, 10);
-        const fileKey = `cases-sucesso/aluno-${aluno.id}/case-trilha-${input.trilhaId}-${randomSuffix}.${ext}`;
-        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        // Upload do arquivo principal para S3 (se fornecido)
+        let fileUrl: string | null = null;
+        let fileKey: string | null = null;
+        let fileNameSaved: string | null = null;
+        if (input.fileBase64 && input.fileName && input.mimeType) {
+          const buffer = Buffer.from(input.fileBase64, 'base64');
+          const ext = input.fileName.split('.').pop() || 'pdf';
+          const randomSuffix = Math.random().toString(36).substring(2, 10);
+          fileKey = `cases-sucesso/aluno-${aluno.id}/relatorio-trilha-${input.trilhaId}-${randomSuffix}.${ext}`;
+          const result = await storagePut(fileKey, buffer, input.mimeType);
+          fileUrl = result.url;
+          fileNameSaved = input.fileName;
+        }
 
-        // Verificar se já existe um case para esta trilha
+        // Upload da evid\u00eancia para S3 (se fornecida)
+        let evidenciaUrl: string | null = null;
+        let evidenciaKey: string | null = null;
+        let evidenciaFileNameSaved: string | null = null;
+        if (input.evidenciaBase64 && input.evidenciaFileName && input.evidenciaMimeType) {
+          const buffer = Buffer.from(input.evidenciaBase64, 'base64');
+          const ext = input.evidenciaFileName.split('.').pop() || 'png';
+          const randomSuffix = Math.random().toString(36).substring(2, 10);
+          evidenciaKey = `cases-sucesso/aluno-${aluno.id}/evidencia-trilha-${input.trilhaId}-${randomSuffix}.${ext}`;
+          const result = await storagePut(evidenciaKey, buffer, input.evidenciaMimeType);
+          evidenciaUrl = result.url;
+          evidenciaFileNameSaved = input.evidenciaFileName;
+        }
+
+        const caseData = {
+          titulo: input.titulo,
+          descricao: input.descricao || null,
+          fileUrl,
+          fileKey,
+          fileName: fileNameSaved,
+          entregue: 1,
+          dataEntrega: new Date(),
+          oQueAprendi: input.oQueAprendi,
+          oQueMudei: input.oQueMudei,
+          resultadoMensuravel: input.resultadoMensuravel,
+          antesVsDepois: input.antesVsDepois,
+          evidenciaUrl,
+          evidenciaKey,
+          evidenciaFileName: evidenciaFileNameSaved,
+        };
+
+        // Verificar se j\u00e1 existe um case para esta trilha
         const casesExistentes = await db.getCasesSucessoByAluno(aluno.id);
         const caseExistente = casesExistentes.find(c => c.trilhaId === input.trilhaId);
 
+        let resultId: number = 0;
+        let updated = false;
         if (caseExistente) {
-          // Atualizar o case existente
-          await db.updateCaseSucesso(caseExistente.id, {
-            titulo: input.titulo,
-            descricao: input.descricao || null,
-            fileUrl: url,
-            fileKey: fileKey,
-            fileName: input.fileName,
-            entregue: 1,
-            dataEntrega: new Date(),
-          });
-          return { id: caseExistente.id, url, updated: true };
+          await db.updateCaseSucesso(caseExistente.id, caseData);
+          resultId = caseExistente.id;
+          updated = true;
         } else {
-          // Criar novo case
-          const id = await db.createCaseSucesso({
+          const newId = await db.createCaseSucesso({
             alunoId: aluno.id,
             trilhaId: input.trilhaId,
             trilhaNome: input.trilhaNome,
-            titulo: input.titulo,
-            descricao: input.descricao || null,
-            fileUrl: url,
-            fileKey: fileKey,
-            fileName: input.fileName,
-            entregue: 1,
-            dataEntrega: new Date(),
+            ...caseData,
           });
-          return { id, url, updated: false };
+          resultId = newId ?? 0;
         }
+
+        // === NOTIFICA\u00c7\u00c3O AUTOM\u00c1TICA ao admin/mentor/gestor ===
+        try {
+          const alunoNome = aluno.name || 'Aluno';
+          const trilhaNome = input.trilhaNome || 'N/A';
+          const notifTitle = `\ud83d\udcca Relat\u00f3rio de Impacto enviado por ${alunoNome}`;
+          const notifContent = [
+            `O aluno **${alunoNome}** enviou um Relat\u00f3rio de Impacto para a trilha **${trilhaNome}**.`,
+            ``,
+            `**T\u00edtulo:** ${input.titulo}`,
+            `**O que aprendi:** ${input.oQueAprendi.substring(0, 150)}${input.oQueAprendi.length > 150 ? '...' : ''}`,
+            `**O que mudei:** ${input.oQueMudei.substring(0, 150)}${input.oQueMudei.length > 150 ? '...' : ''}`,
+            `**Resultado mensur\u00e1vel:** ${input.resultadoMensuravel.substring(0, 150)}${input.resultadoMensuravel.length > 150 ? '...' : ''}`,
+          ].join('\n');
+
+          // 1. Notificar o owner (admin) via notifyOwner
+          await notifyOwner({ title: notifTitle, content: notifContent });
+
+          // 2. Notificar mentor e gestor via notifica\u00e7\u00f5es in-app
+          const allConsultors = await db.getConsultors();
+          const mentorDoAluno = aluno.consultorId ? allConsultors.find(c => c.id === aluno.consultorId) : null;
+          const gestoresDoPrograma = allConsultors.filter(c => c.role === 'gerente' && c.managedProgramId === aluno.programId);
+
+          // Buscar users correspondentes para criar notifica\u00e7\u00f5es in-app
+          const allUsers = await db.getAllUsers();
+          const usersToNotify: number[] = [];
+
+          if (mentorDoAluno?.email) {
+            const mentorUser = allUsers.find(u => u.email?.toLowerCase() === mentorDoAluno.email?.toLowerCase());
+            if (mentorUser) usersToNotify.push(mentorUser.id);
+          }
+          for (const gestor of gestoresDoPrograma) {
+            if (gestor.email) {
+              const gestorUser = allUsers.find(u => u.email?.toLowerCase() === gestor.email?.toLowerCase());
+              if (gestorUser && !usersToNotify.includes(gestorUser.id)) usersToNotify.push(gestorUser.id);
+            }
+          }
+
+          // Criar notifica\u00e7\u00f5es in-app para mentor e gestor
+          for (const userId of usersToNotify) {
+            try {
+              await db.createNotification({
+                userId,
+                title: notifTitle,
+                message: `O aluno ${alunoNome} enviou um Relat\u00f3rio de Impacto para a trilha ${trilhaNome}. T\u00edtulo: ${input.titulo}`,
+                type: 'info',
+                category: 'relatorio_impacto',
+              });
+            } catch (e) {
+              console.error('Erro ao criar notifica\u00e7\u00e3o in-app:', e);
+            }
+          }
+        } catch (notifError) {
+          console.error('Erro ao enviar notifica\u00e7\u00f5es do Relat\u00f3rio de Impacto:', notifError);
+          // N\u00e3o falhar o envio do relat\u00f3rio por causa de notifica\u00e7\u00e3o
+        }
+
+        return { id: resultId, url: fileUrl, updated };
       }),
   }),
 

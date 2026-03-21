@@ -3020,3 +3020,12 @@
 - [x] Frontend: botão "Liberar Onboarding em Massa" com confirmação
 - [x] Frontend: seleção automática de todos elegíveis (checkbox "Selecionar todos")
 - [x] Testar compilação e funcionalidade (vitest 3/3 passed, TypeScript OK)
+
+## Reformular Case de Sucesso como Relatório de Impacto (21/03/2026)
+- [x] Analisar sistema atual de Case de Sucesso (schema, routers, páginas)
+- [x] Schema: adicionar campos estruturados (oQueAprendi, oQueMudei, resultadoMensuravel, evidenciaUrl, antesVsDepois)
+- [x] Backend: atualizar procedures de envio/visualização do Relatório de Impacto
+- [x] Backend: adicionar notificação automática ao admin/mentor/GESTOR quando aluno enviar
+- [x] Frontend aluno: formulário estruturado com os 5 campos obrigatórios
+- [x] Frontend admin/mentor: visualização detalhada do Relatório de Impacto (renomeado em todas as páginas)
+- [x] Testes vitest para as novas procedures (7/7 passed)

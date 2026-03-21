@@ -238,13 +238,20 @@ export default function DashboardMeuPerfil() {
   });
 
   // === Case de Sucesso ===
+  // === Relatório de Impacto (antigo Case de Sucesso) ===
   const [caseDialogOpen, setCaseDialogOpen] = useState(false);
   const [caseTrilhaId, setCaseTrilhaId] = useState<number | null>(null);
   const [caseTrilhaNome, setCaseTrilhaNome] = useState("");
   const [caseTitulo, setCaseTitulo] = useState("");
   const [caseDescricao, setCaseDescricao] = useState("");
+  const [caseOQueAprendi, setCaseOQueAprendi] = useState("");
+  const [caseOQueMudei, setCaseOQueMudei] = useState("");
+  const [caseResultadoMensuravel, setCaseResultadoMensuravel] = useState("");
+  const [caseAntesVsDepois, setCaseAntesVsDepois] = useState("");
   const [caseFile, setCaseFile] = useState<File | null>(null);
+  const [caseEvidencia, setCaseEvidencia] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const evidenciaInputRef = useRef<HTMLInputElement>(null);
 
   const enviarCase = trpc.cases.enviar.useMutation({
     onSuccess: () => {
@@ -252,27 +259,54 @@ export default function DashboardMeuPerfil() {
       setCaseDialogOpen(false);
       setCaseTitulo("");
       setCaseDescricao("");
+      setCaseOQueAprendi("");
+      setCaseOQueMudei("");
+      setCaseResultadoMensuravel("");
+      setCaseAntesVsDepois("");
       setCaseFile(null);
+      setCaseEvidencia(null);
       setCaseTrilhaId(null);
     },
   });
 
+  const readFileAsBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleCaseSubmit = async () => {
-    if (!caseFile || !caseTrilhaId || !caseTitulo) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = (reader.result as string).split(',')[1];
-      await enviarCase.mutateAsync({
-        trilhaId: caseTrilhaId,
-        trilhaNome: caseTrilhaNome,
-        titulo: caseTitulo,
-        descricao: caseDescricao || undefined,
-        fileBase64: base64,
-        fileName: caseFile.name,
-        mimeType: caseFile.type || 'application/pdf',
-      });
+    if (!caseTrilhaId || !caseTitulo || !caseOQueAprendi || !caseOQueMudei || !caseResultadoMensuravel || !caseAntesVsDepois) return;
+
+    const payload: any = {
+      trilhaId: caseTrilhaId,
+      trilhaNome: caseTrilhaNome,
+      titulo: caseTitulo,
+      descricao: caseDescricao || undefined,
+      oQueAprendi: caseOQueAprendi,
+      oQueMudei: caseOQueMudei,
+      resultadoMensuravel: caseResultadoMensuravel,
+      antesVsDepois: caseAntesVsDepois,
     };
-    reader.readAsDataURL(caseFile);
+
+    // Arquivo principal (opcional)
+    if (caseFile) {
+      payload.fileBase64 = await readFileAsBase64(caseFile);
+      payload.fileName = caseFile.name;
+      payload.mimeType = caseFile.type || 'application/pdf';
+    }
+
+    // Evidência (opcional)
+    if (caseEvidencia) {
+      payload.evidenciaBase64 = await readFileAsBase64(caseEvidencia);
+      payload.evidenciaFileName = caseEvidencia.name;
+      payload.evidenciaMimeType = caseEvidencia.type || 'image/png';
+    }
+
+    await enviarCase.mutateAsync(payload);
   };
 
   // Cases do aluno e trilhas disponíveis
@@ -780,7 +814,7 @@ export default function DashboardMeuPerfil() {
           </Card>
         )}
 
-        {/* Convite para Case de Sucesso */}
+        {/* Convite para Relatório de Impacto */}
         {v2?.alertaCasePendente && v2.alertaCasePendente.length > 0 && (
           <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 shadow-md">
             <CardContent className="p-5">
@@ -802,7 +836,7 @@ export default function DashboardMeuPerfil() {
                           Bônus de +10% no Engajamento
                         </p>
                         <p className="text-xs text-amber-700 mt-1">
-                          Ao entregar o Case de Sucesso, você recebe um bônus de <strong>+10%</strong> no seu 
+                          Ao entregar o Relatório de Impacto, você recebe um bônus de <strong>+10%</strong> no seu 
                           Indicador 5 (Engajamento), aumentando sua nota final. É a sua chance de valorizar 
                           ainda mais sua jornada de desenvolvimento!
                         </p>
@@ -828,7 +862,7 @@ export default function DashboardMeuPerfil() {
                           }}
                         >
                           <FileUp className="h-3.5 w-3.5 mr-1.5" />
-                          Enviar Case
+                          Enviar Relatório de Impacto
                         </Button>
                       </div>
                     </div>
@@ -865,7 +899,7 @@ export default function DashboardMeuPerfil() {
                   { termo: "Webinar", desc: GLOSSARIO.webinar, icon: Video, color: "bg-orange-50 border-orange-200 text-orange-700" },
                   { termo: "Mentoria", desc: GLOSSARIO.mentoria, icon: MessageSquare, color: "bg-pink-50 border-pink-200 text-pink-700" },
                   { termo: "Tarefa Prática", desc: GLOSSARIO.tarefa, icon: ClipboardCheck, color: "bg-teal-50 border-teal-200 text-teal-700" },
-                  { termo: "Case de Sucesso", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
+                  { termo: "Relatório de Impacto", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
                 ]).map(({ termo, desc, icon: Icon, color }) => (
                   <div key={termo} className={`p-3 rounded-lg border ${color}`}>
                     <div className="flex items-center gap-2 mb-1">
@@ -2594,9 +2628,9 @@ export default function DashboardMeuPerfil() {
                   <div className="flex items-start gap-3">
                     <Briefcase className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
                     <div>
-                      <p className="font-semibold text-amber-800 text-sm">Case de Sucesso</p>
+                      <p className="font-semibold text-amber-800 text-sm">Relatório de Impacto</p>
                       <p className="text-xs text-amber-700 mt-1">
-                        Ao final de cada trilha (Basic, Essential, Master, etc.), você deve entregar um Case de Sucesso 
+                        Ao final de cada trilha (Basic, Essential, Master, etc.), você deve entregar um Relatório de Impacto 
                         documentando a aplicação prática dos aprendizados. A entrega do case é obrigatória e impacta 
                         diretamente no seu Indicador 6 (Aplicabilidade Prática).
                       </p>
@@ -2623,7 +2657,7 @@ export default function DashboardMeuPerfil() {
                             </div>
                             <div>
                               <p className="font-semibold text-sm text-gray-800">Trilha {trilha.name}</p>
-                              <InfoTooltip text="Case de Sucesso: documento que comprova a aplicação prática dos aprendizados da trilha" />
+                              <InfoTooltip text="Relatório de Impacto: formulário estruturado que comprova a aplicação prática dos aprendizados da trilha" />
                             </div>
                           </div>
                           <Badge className={caseEntregue?.entregue 
@@ -2669,7 +2703,7 @@ export default function DashboardMeuPerfil() {
                         ) : (
                           <div className="space-y-3">
                             <p className="text-xs text-gray-500">
-                              Envie seu Case de Sucesso para a trilha {trilha.name}. 
+                              Envie seu Relatório de Impacto para a trilha {trilha.name}. 
                               Formatos aceitos: PDF, DOC, DOCX, PPT, PPTX (máx. 10MB).
                             </p>
                             <Button
@@ -2683,7 +2717,7 @@ export default function DashboardMeuPerfil() {
                                 setCaseDialogOpen(true);
                               }}
                             >
-                              <FileUp className="h-4 w-4 mr-2" /> Enviar Case de Sucesso
+                              <FileUp className="h-4 w-4 mr-2" /> Enviar Relatório de Impacto
                             </Button>
                           </div>
                         )}
@@ -2720,55 +2754,154 @@ export default function DashboardMeuPerfil() {
           </TabsContent>
         </Tabs>
 
-        {/* Dialog de envio de Case */}
+        {/* Dialog de envio de Relatório de Impacto */}
         <Dialog open={caseDialogOpen} onOpenChange={setCaseDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-amber-600" />
-                Enviar Case de Sucesso
+                <FileBarChart className="h-5 w-5 text-[#5B3A7D]" />
+                Relatório de Impacto
               </DialogTitle>
               <DialogDescription>
-                Trilha: <strong>{caseTrilhaNome}</strong>
+                Trilha: <strong>{caseTrilhaNome}</strong> — Descreva o impacto real do que você aprendeu
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
+              {/* Título */}
               <div className="space-y-2">
-                <Label htmlFor="case-titulo">Título do Case *</Label>
+                <Label htmlFor="case-titulo">Título do Relatório *</Label>
                 <Input 
                   id="case-titulo" 
-                  placeholder="Ex: Implementação de melhoria no processo de atendimento"
+                  placeholder="Ex: Aplicação da Matriz de Eisenhower na gestão do tempo"
                   value={caseTitulo}
                   onChange={e => setCaseTitulo(e.target.value)}
                 />
               </div>
+
+              {/* 1. O que aprendi */}
               <div className="space-y-2">
-                <Label htmlFor="case-descricao">Descrição (opcional)</Label>
+                <Label htmlFor="case-aprendi" className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#5B3A7D] text-white text-xs font-bold">1</span>
+                  O que aprendi *
+                </Label>
+                <p className="text-xs text-gray-500">Resumo do conhecimento adquirido na competência</p>
                 <Textarea 
-                  id="case-descricao" 
-                  placeholder="Descreva brevemente o que foi aplicado e os resultados obtidos..."
-                  value={caseDescricao}
-                  onChange={e => setCaseDescricao(e.target.value)}
+                  id="case-aprendi" 
+                  placeholder="Ex: Aprendi técnicas de gestão do tempo com a Matriz de Eisenhower"
+                  value={caseOQueAprendi}
+                  onChange={e => setCaseOQueAprendi(e.target.value)}
                   rows={3}
                 />
               </div>
+
+              {/* 2. O que mudei na minha rotina */}
               <div className="space-y-2">
-                <Label>Arquivo do Case *</Label>
+                <Label htmlFor="case-mudei" className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#5B3A7D] text-white text-xs font-bold">2</span>
+                  O que mudei na minha rotina *
+                </Label>
+                <p className="text-xs text-gray-500">Ação concreta implementada no dia a dia</p>
+                <Textarea 
+                  id="case-mudei" 
+                  placeholder="Ex: Passei a classificar minhas demandas em urgente/importante toda segunda-feira"
+                  value={caseOQueMudei}
+                  onChange={e => setCaseOQueMudei(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* 3. Resultado mensurável */}
+              <div className="space-y-2">
+                <Label htmlFor="case-resultado" className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#3BBFBF] text-white text-xs font-bold">3</span>
+                  Resultado mensurável *
+                </Label>
+                <p className="text-xs text-gray-500">Dado concreto de melhoria (tempo, produtividade, qualidade)</p>
+                <Textarea 
+                  id="case-resultado" 
+                  placeholder="Ex: Reduzi em 40% o tempo gasto com demandas não urgentes"
+                  value={caseResultadoMensuravel}
+                  onChange={e => setCaseResultadoMensuravel(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* 4. Antes vs. Depois */}
+              <div className="space-y-2">
+                <Label htmlFor="case-antes-depois" className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#3BBFBF] text-white text-xs font-bold">4</span>
+                  Antes vs. Depois *
+                </Label>
+                <p className="text-xs text-gray-500">Comparativo visual ou descritivo da mudança</p>
+                <Textarea 
+                  id="case-antes-depois" 
+                  placeholder="Ex: Antes: 3h/dia em reuniões improdutivas. Depois: 1h30/dia focada"
+                  value={caseAntesVsDepois}
+                  onChange={e => setCaseAntesVsDepois(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* 5. Evidência */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#5B3A7D] text-white text-xs font-bold">5</span>
+                  Evidência (opcional)
+                </Label>
+                <p className="text-xs text-gray-500">Foto, print ou documento que comprove a mudança</p>
                 <div 
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-amber-400 hover:bg-amber-50/50 transition-colors"
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#5B3A7D]/50 hover:bg-purple-50/30 transition-colors"
+                  onClick={() => evidenciaInputRef.current?.click()}
+                >
+                  {caseEvidencia ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <Paperclip className="h-4 w-4 text-[#5B3A7D]" />
+                      <span className="text-sm text-gray-700 font-medium">{caseEvidencia.name}</span>
+                      <span className="text-xs text-gray-500">({(caseEvidencia.size / 1024 / 1024).toFixed(1)} MB)</span>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload className="h-6 w-6 mx-auto text-gray-400 mb-1" />
+                      <p className="text-xs text-gray-600">Clique para anexar evidência</p>
+                      <p className="text-xs text-gray-400">Imagem, PDF, DOC (máx. 10MB)</p>
+                    </div>
+                  )}
+                </div>
+                <input 
+                  ref={evidenciaInputRef}
+                  type="file" 
+                  className="hidden" 
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.webp"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file && file.size <= 10 * 1024 * 1024) {
+                      setCaseEvidencia(file);
+                    } else if (file) {
+                      alert('Arquivo muito grande. Máximo: 10MB');
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Arquivo complementar (opcional) */}
+              <div className="space-y-2">
+                <Label>Arquivo complementar (opcional)</Label>
+                <p className="text-xs text-gray-500">Documento adicional de apoio (PDF, DOC, PPT)</p>
+                <div 
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#3BBFBF]/50 hover:bg-teal-50/30 transition-colors"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {caseFile ? (
                     <div className="flex items-center justify-center gap-2">
-                      <Paperclip className="h-5 w-5 text-amber-600" />
+                      <Paperclip className="h-4 w-4 text-[#3BBFBF]" />
                       <span className="text-sm text-gray-700 font-medium">{caseFile.name}</span>
                       <span className="text-xs text-gray-500">({(caseFile.size / 1024 / 1024).toFixed(1)} MB)</span>
                     </div>
                   ) : (
                     <div>
-                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Clique para selecionar o arquivo</p>
-                      <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, PPT, PPTX (máx. 10MB)</p>
+                      <FileUp className="h-6 w-6 mx-auto text-gray-400 mb-1" />
+                      <p className="text-xs text-gray-600">Clique para anexar documento</p>
+                      <p className="text-xs text-gray-400">PDF, DOC, DOCX, PPT, PPTX (máx. 10MB)</p>
                     </div>
                   )}
                 </div>
@@ -2787,23 +2920,35 @@ export default function DashboardMeuPerfil() {
                   }}
                 />
               </div>
+
+              {/* Descrição adicional */}
+              <div className="space-y-2">
+                <Label htmlFor="case-descricao">Observações adicionais (opcional)</Label>
+                <Textarea 
+                  id="case-descricao" 
+                  placeholder="Alguma observação ou contexto adicional..."
+                  value={caseDescricao}
+                  onChange={e => setCaseDescricao(e.target.value)}
+                  rows={2}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setCaseDialogOpen(false)}>Cancelar</Button>
               <Button 
-                className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
+                className="bg-[#5B3A7D] hover:bg-[#5B3A7D]/90 text-white"
                 onClick={handleCaseSubmit}
-                disabled={!caseTitulo || !caseFile || !caseTrilhaId || enviarCase.isPending}
+                disabled={!caseTitulo || !caseOQueAprendi || !caseOQueMudei || !caseResultadoMensuravel || !caseAntesVsDepois || !caseTrilhaId || enviarCase.isPending}
               >
                 {enviarCase.isPending ? (
                   <><Clock className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
                 ) : (
-                  <><Send className="h-4 w-4 mr-2" /> Enviar Case</>
+                  <><Send className="h-4 w-4 mr-2" /> Enviar Relatório</>
                 )}
               </Button>
             </DialogFooter>
             {enviarCase.isError && (
-              <p className="text-xs text-red-600 mt-2">{enviarCase.error?.message || 'Erro ao enviar case'}</p>
+              <p className="text-xs text-red-600 mt-2">{enviarCase.error?.message || 'Erro ao enviar relatório'}</p>
             )}
           </DialogContent>
         </Dialog>

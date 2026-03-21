@@ -126,7 +126,7 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
               <p className="text-sm font-bold">{(aluno.consolidado?.ind5_engajamento ?? aluno.performanceAprendizado ?? 0).toFixed(0)}%</p>
             </div>
             <div className="p-2 rounded bg-background border text-center">
-              <p className="text-xs text-muted-foreground">6. Case (Bônus)</p>
+              <p className="text-xs text-muted-foreground">6. Relatório (Bônus)</p>
               <p className="text-sm font-bold">{(aluno.consolidado?.ind6_aplicabilidade ?? 0).toFixed(0)}%</p>
             </div>
           </div>
@@ -462,7 +462,7 @@ export default function DashboardEmpresa() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd6 || visaoEmpresa.mediaParticipacaoEventos).toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Case de Sucesso</p>
+              <p className="text-xs text-muted-foreground">Relatório de Impacto</p>
             </CardContent>
           </Card>
 
@@ -654,7 +654,7 @@ export default function DashboardEmpresa() {
                           <span className="font-bold text-orange-600">6.</span>
                           <div>
                             <p className="font-medium">Aplicabilidade (Bônus)</p>
-                            <p className="text-xs text-muted-foreground">Case de Sucesso (+10% no Engajamento) — não entra na média</p>
+                            <p className="text-xs text-muted-foreground">Relatório de Impacto (+10% no Engajamento) — não entra na média</p>
                           </div>
                         </div>
                       </div>
