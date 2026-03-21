@@ -3034,3 +3034,24 @@
 - [x] Bug: quando aluno já na fase Aceite clica em "Cadastro" no stepper, a tela reabre como se não tivesse preenchido
 - [x] Investigar lógica do stepper: como determina qual etapa mostrar quando clica em etapa anterior
 - [x] Corrigir: etapas já concluídas mostram dados preenchidos em readOnly + banner "Voltar para etapa atual" (13 testes passando)
+
+## Bug PERSISTENTE: Stepper do Onboarding - Correção anterior não funcionou em produção
+- [ ] Investigar: print mostra Leandro logado em ecolider.evoluirckm.com/onboarding com stepper em step 1 (Cadastro ativo, demais com cadeado)
+- [ ] Hipótese 1: progressoData.step retorna 1 porque cadastroConfirmado é false no banco
+- [ ] Hipótese 2: a tabela onboarding_jornada não tem registro para este aluno
+- [ ] Hipótese 3: o aluno tem perfil dual e o alunoId não está sendo resolvido corretamente
+- [ ] Corrigir definitivamente o bug
+
+## Bug CRÍTICO: Leandro (gerente) vendo tela de onboarding de aluno
+- [ ] Investigar: Leandro é gerente mas está vendo /onboarding com stepper de aluno
+- [ ] Verificar roteamento: por que gerente é direcionado para OnboardingAluno
+- [ ] Verificar no banco: Leandro tem perfil dual (gerente + aluno)?
+- [ ] Corrigir: gerente não deve ver tela de onboarding de aluno
+
+## Bug Visual do Stepper: ícones voltam a vermelho/cadeado ao clicar em etapa anterior
+- [x] O banner "Etapa já concluída" aparece (correção parcial funcionou)
+- [x] Stepper visual agora usa progressStep para manter ícones azuis/concluídos
+- [x] Causa corrigida: OnboardingStepper agora recebe progressStep e usa effectiveStep
+- [x] Corrigido: progressStep passado para o stepper, determina ícones concluídos
+- [x] Bug: etapas concluídas agora permitem navegação e abrem em readOnly
+- [x] Causa corrigida: removido bloqueio de steps 3/4, agora qualquer step <= progressStep é navegável

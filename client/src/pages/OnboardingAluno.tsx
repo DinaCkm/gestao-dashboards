@@ -154,7 +154,10 @@ const ONBOARDING_STEPS = [
   { id: 8, label: "Aceite", icon: Award, description: "Confirme e comece" },
 ];
 
-function OnboardingStepper({ currentStep, onStepClick, readOnly = false }: { currentStep: number; onStepClick: (step: number) => void; readOnly?: boolean }) {
+function OnboardingStepper({ currentStep, progressStep, onStepClick, readOnly = false }: { currentStep: number; progressStep?: number; onStepClick: (step: number) => void; readOnly?: boolean }) {
+  // Use progressStep (real progress) to determine which steps are completed
+  // This prevents the visual regression when navigating to a previous step
+  const effectiveStep = progressStep && progressStep > currentStep ? progressStep : currentStep;
   return (
     <div className="w-full mb-8">
       <div className="flex items-center justify-between relative">
@@ -162,13 +165,13 @@ function OnboardingStepper({ currentStep, onStepClick, readOnly = false }: { cur
         <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-200 z-0" />
         <div
           className="absolute top-6 left-0 h-0.5 bg-gradient-to-r from-[#1E40AF] to-[#3B82F6] z-0 transition-all duration-700"
-          style={{ width: readOnly ? '100%' : `${((currentStep - 1) / (ONBOARDING_STEPS.length - 1)) * 100}%` }}
+          style={{ width: readOnly ? '100%' : `${((effectiveStep - 1) / (ONBOARDING_STEPS.length - 1)) * 100}%` }}
         />
 
         {ONBOARDING_STEPS.map((step) => {
-          const isCompleted = readOnly ? step.id !== currentStep : step.id < currentStep;
+          const isCompleted = readOnly ? step.id !== currentStep : step.id < effectiveStep;
           const isCurrent = step.id === currentStep;
-          const isLocked = readOnly ? false : step.id > currentStep;
+          const isLocked = readOnly ? false : step.id > effectiveStep;
           const StepIcon = step.icon;
 
           return (
@@ -2747,14 +2750,14 @@ export default function OnboardingAluno() {
         </div>
 
         {/* Stepper */}
-        <OnboardingStepper currentStep={currentStep} onStepClick={(step) => {
-          // Bloquear navegação para etapas 3 (Mentora) e 4 (Agendamento) se o aluno já passou dessas etapas
-          // (progressStep >= 5 significa que já agendou e está no 1° Encontro ou além)
-          if (!globalReadOnly && progressStep >= 5 && (step === 3 || step === 4)) {
-            toast.info("Você já escolheu sua mentora e agendou seu encontro. Não é possível alterar.");
-            return;
+        <OnboardingStepper currentStep={currentStep} progressStep={progressStep} onStepClick={(step) => {
+          // Permitir navegação para qualquer etapa já concluída (step <= progressStep)
+          // Essas etapas abrirão em modo readOnly automaticamente (isViewingPreviousStep)
+          if (step <= progressStep || globalReadOnly) {
+            setCurrentStep(step);
+          } else {
+            toast.info("Esta etapa ainda não está habilitada.");
           }
-          setCurrentStep(step);
         }} readOnly={globalReadOnly} />
 
         {/* Banner: Visualizando etapa anterior */}
