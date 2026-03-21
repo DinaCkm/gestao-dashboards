@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { iniciarCronAlertasMentoria } from "../cronAlertasMentoria";
 import { iniciarCronOnboardingReminders } from "../cronOnboardingReminders";
 import { iniciarCronVencimentoCiclo } from "../cronVencimentoCiclo";
+import { iniciarCronLembreteAplicabilidade } from "../cronLembreteAplicabilidade";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -68,6 +69,8 @@ async function startServer() {
     iniciarCronOnboardingReminders();
     // Iniciar cron job de alertas de vencimento de macrociclo (verifica diariamente PDIs próximos do vencimento)
     iniciarCronVencimentoCiclo();
+    // Iniciar cron job de lembretes de aplicabilidade prática (verifica a cada 12h sessões agendadas nas próximas 48h)
+    iniciarCronLembreteAplicabilidade();
   });
 }
 

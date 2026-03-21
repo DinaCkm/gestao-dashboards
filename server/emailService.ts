@@ -1434,3 +1434,184 @@ Acesse a plataforma: ${data.loginUrl}
 
   return { subject, html, text };
 }
+
+
+// ============ LEMBRETE DE APLICABILIDADE PRÁTICA (48h antes da sessão) ============
+
+export function buildLembreteAplicabilidadeEmail(data: {
+  alunoName: string;
+  mentorName: string;
+  appointmentDate: string; // "2026-03-15"
+  appointmentTime: string; // "09:00"
+  tarefaTitulo: string;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const dateParts = data.appointmentDate.split('-');
+  const dateFormatted = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : data.appointmentDate;
+
+  const subject = `Lembrete: registre sua aplicabilidade prática antes da mentoria de ${dateFormatted}`;
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #0A1E3E 0%, #1a3a5c 100%); padding: 30px 40px; text-align: center;">
+              <h1 style="color: #e8a838; font-size: 22px; margin: 0; font-weight: 700;">ECOSSISTEMA DO BEM</h1>
+              <p style="color: #94a3b8; font-size: 13px; margin: 8px 0 0;">Programa de Mentoria</p>
+            </td>
+          </tr>
+          <!-- Reminder Banner -->
+          <tr>
+            <td style="background-color: #eff6ff; padding: 20px 40px; text-align: center; border-bottom: 2px solid #bfdbfe;">
+              <p style="color: #1e40af; font-size: 18px; font-weight: 700; margin: 0;">
+                Lembrete: Registre sua Aplicabilidade Prática
+              </p>
+              <p style="color: #3b82f6; font-size: 14px; margin: 8px 0 0;">
+                Sua mentoria está agendada para <strong>${dateFormatted}</strong> às <strong>${data.appointmentTime}</strong>
+              </p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="color: #0f2b3c; margin: 0 0 20px; font-size: 20px;">
+                Olá, ${data.alunoName}!
+              </h2>
+              
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
+                Sua próxima sessão de mentoria com <strong>${data.mentorName}</strong> está chegando! 
+                Antes do encontro, é muito importante que você registre como aplicou na prática o conhecimento da tarefa anterior.
+              </p>
+
+              <!-- Task Info Box -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 25px;">
+                <tr>
+                  <td style="background-color: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 20px;">
+                    <p style="color: #92400e; font-size: 14px; font-weight: 700; margin: 0 0 8px;">Tarefa pendente:</p>
+                    <p style="color: #78350f; font-size: 15px; margin: 0; font-weight: 600;">${data.tarefaTitulo}</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Steps -->
+              <p style="color: #0f2b3c; font-size: 15px; font-weight: 700; margin: 0 0 12px;">O que você precisa fazer:</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 25px;">
+                <tr>
+                  <td style="padding: 8px 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="background-color: #0A1E3E; color: #e8a838; width: 28px; height: 28px; border-radius: 50%; text-align: center; font-size: 14px; font-weight: 700; vertical-align: middle;">1</td>
+                        <td style="padding-left: 12px; color: #4a5568; font-size: 14px;">Acesse o seu portal na plataforma</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="background-color: #0A1E3E; color: #e8a838; width: 28px; height: 28px; border-radius: 50%; text-align: center; font-size: 14px; font-weight: 700; vertical-align: middle;">2</td>
+                        <td style="padding-left: 12px; color: #4a5568; font-size: 14px;">Vá até a tarefa pendente da última sessão</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="background-color: #0A1E3E; color: #e8a838; width: 28px; height: 28px; border-radius: 50%; text-align: center; font-size: 14px; font-weight: 700; vertical-align: middle;">3</td>
+                        <td style="padding-left: 12px; color: #4a5568; font-size: 14px;">Descreva como aplicou o conhecimento na prática</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="background-color: #0A1E3E; color: #e8a838; width: 28px; height: 28px; border-radius: 50%; text-align: center; font-size: 14px; font-weight: 700; vertical-align: middle;">4</td>
+                        <td style="padding-left: 12px; color: #4a5568; font-size: 14px;">Dê uma nota de 0 a 10 para sua aplicação</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Why Important Box -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 25px;">
+                <tr>
+                  <td style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px;">
+                    <p style="color: #166534; font-size: 14px; font-weight: 700; margin: 0 0 8px;">Por que isso é importante?</p>
+                    <p style="color: #15803d; font-size: 14px; line-height: 1.6; margin: 0;">
+                      Sua autoavaliação será comparada com a avaliação da mentora e juntas formam o 
+                      <strong>Indicador de Aplicabilidade Prática</strong>. Se você atingir nota entre 8 e 10, 
+                      ganha um <strong>bônus de +10% no engajamento final</strong> — um passo a mais rumo à certificação!
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.loginUrl}" 
+                       style="display: inline-block; background: linear-gradient(135deg, #e8a838 0%, #d4922e 100%); color: #0f2b3c; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
+                      Registrar Minha Aplicabilidade
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; text-align: center;">
+                Nos vemos em breve! Boa preparação.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #9ca3af; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
+                Este e-mail foi enviado automaticamente pelo ECOSSISTEMA DO BEM.<br>
+                &copy; ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Lembrete: Registre sua Aplicabilidade Prática - ECOSSISTEMA DO BEM
+
+Olá, ${data.alunoName}!
+
+Sua próxima sessão de mentoria com ${data.mentorName} está agendada para ${dateFormatted} às ${data.appointmentTime}.
+
+Antes do encontro, registre como você aplicou na prática o conhecimento da tarefa anterior:
+- Tarefa: ${data.tarefaTitulo}
+
+O que você precisa fazer:
+1. Acesse o seu portal na plataforma
+2. Vá até a tarefa pendente da última sessão
+3. Descreva como aplicou o conhecimento na prática
+4. Dê uma nota de 0 a 10 para sua aplicação
+
+Por que isso é importante?
+Sua autoavaliação será comparada com a avaliação da mentora e juntas formam o Indicador de Aplicabilidade Prática. Se você atingir nota entre 8 e 10, ganha um bônus de +10% no engajamento final!
+
+Acesse a plataforma: ${data.loginUrl}
+
+© ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.`;
+
+  return { subject, html, text };
+}

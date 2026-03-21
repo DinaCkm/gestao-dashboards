@@ -3154,3 +3154,8 @@
 - [x] Mostrar a nota que o aluno se deu (0-10) para sua própria aplicação
 - [x] Indicar visualmente se o aluno já preencheu ou não o registro de aplicabilidade
 - [x] Aplicar tanto no formulário de nova sessão quanto no de edição
+
+## Melhorias na Aplicabilidade Prática (Sessão de Mentoria)
+- [x] Tornar avaliação da mentora obrigatória quando aluno entregou tarefa com registro de aplicabilidade (impedir salvar sem nota)
+- [x] E-mail automático 48h antes da sessão agendada lembrando o aluno de registrar aplicabilidade prática
+- [x] Comparativo visual nota do aluno vs nota da mentora lado a lado na visualização da sessão
