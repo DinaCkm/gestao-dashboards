@@ -3055,3 +3055,8 @@
 - [x] Corrigido: progressStep passado para o stepper, determina ícones concluídos
 - [x] Bug: etapas concluídas agora permitem navegação e abrem em readOnly
 - [x] Causa corrigida: removido bloqueio de steps 3/4, agora qualquer step <= progressStep é navegável
+
+## Bug: Botão "Explorei meu PDI" não avança para Aceite
+- [x] Botão "Explorei meu PDI" na etapa 7 não avança para etapa 8 (Aceite) - CORRIGIDO: adicionado onComplete() após marcarPdi
+- [x] Verificado: TODAS as 8 etapas chamam onComplete() corretamente
+- [x] Causa raiz: handleVisualizar marcava pdiVisualizado mas não chamava onComplete()

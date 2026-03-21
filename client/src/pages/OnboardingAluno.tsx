@@ -1290,6 +1290,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
       await marcarPdi.mutateAsync({ alunoId });
       setVisualizado(true);
       utils.onboarding.progresso.invalidate();
+      onComplete();
     } catch (e) {
       toast.error("Erro ao registrar visualização");
     }

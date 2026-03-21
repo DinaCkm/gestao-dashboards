@@ -1,0 +1,16 @@
+ANÁLISE: Quais etapas chamam onComplete() corretamente?
+
+Etapa 1 - Cadastro (line 227): onComplete() na line 283 ✅ (após salvar cadastro)
+Etapa 2 - Assessment (TesteDiscOnboarding.tsx): precisa verificar separadamente
+Etapa 3 - Mentora (line 430): onComplete() na line 710 ✅ (após selecionar mentora)
+Etapa 4 - Agendamento (line 737): onComplete() na line 1024 ✅ (após agendar)
+Etapa 5 - PrimeiroEncontro (line 1054): onComplete() na line 1213 ✅ (após confirmar)
+Etapa 6 - SuaJornada (line 2029): onComplete() na line 2245 ✅ (mas SÓ aparece quando todosAssistidos=true)
+Etapa 7 - MeuPDI (line 1230): onComplete() na line 1293 ✅ (CORRIGIDO AGORA - antes não chamava)
+Etapa 8 - Aceite (line 2261): handleDeAcordo NÃO chama onComplete() - mas é a última etapa, redireciona para meu-dashboard
+
+PROBLEMA PRINCIPAL CORRIGIDO: EtapaMeuPDI.handleVisualizar agora chama onComplete() após marcarPdi
+
+NOTA: O handleStepComplete (line 2717) faz:
+- Se currentStep < 8: setCurrentStep(currentStep + 1)
+- Se currentStep === 8: toast + redirect para /meu-dashboard
