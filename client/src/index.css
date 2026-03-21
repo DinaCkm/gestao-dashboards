@@ -146,6 +146,16 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
+  /* Global title colors: roxo (#5B3A7D) for all page headings */
+  main h1,
+  main h2 {
+    color: #5B3A7D;
+  }
+  /* Exclude elements that already have inline styles or special classes */
+  main h1 .text-gradient,
+  main h2 .text-gradient {
+    color: unset;
+  }
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
@@ -231,7 +241,7 @@
 
   /* Text gradient - B.E.M. colors */
   .text-gradient {
-    background: linear-gradient(135deg, oklch(0.35 0.08 240), oklch(0.75 0.16 70));
+    background: linear-gradient(135deg, #5B3A7D, #3BBFBF);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

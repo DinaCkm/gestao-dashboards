@@ -1,0 +1,7 @@
+Screenshot after global CSS change:
+- Home page title "Bem-vindo ao ECOSSISTEMA DO BEM" - the h1 is now showing in purple (roxo) - the text-gradient part still shows gradient correctly
+- "Ações Rápidas" h2 is now in purple too
+- Sidebar remains purple as before
+- No compilation errors
+- The global CSS rule `main h1, main h2 { color: #5B3A7D; }` is working correctly
+- This applies to ALL pages automatically without editing individual files

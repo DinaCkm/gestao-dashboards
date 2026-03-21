@@ -3005,3 +3005,10 @@
 - [x] Página Boas-Vindas: letras em roxo (#5B3A7D) e azul celeste (#3BBFBF)
 - [x] Página Boas-Vindas: layout conforme print - badge turquesa, nome em turquesa, stats cards à direita com bordas
 - [x] Fundo claro mantido nas demais páginas do gestor
+
+## Consistência Visual: Cores roxo/turquesa em todos os títulos (21/03/2026)
+- [x] Aplicar cores roxo (#5B3A7D) e turquesa (#3BBFBF) nos títulos de todas as páginas do admin
+- [x] Aplicar cores roxo/turquesa nos títulos de todas as páginas do mentor
+- [x] Aplicar cores roxo/turquesa nos títulos de todas as páginas do gestor (exceto Boas-Vindas já feito)
+- [x] Aplicar cores roxo/turquesa nos títulos de todas as páginas do aluno
+- [x] Verificar consistência visual em todas as páginas (via CSS global em index.css)
