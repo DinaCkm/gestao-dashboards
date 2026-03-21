@@ -3148,3 +3148,9 @@
 - [x] Na Parte 1: mostrar qual era a tarefa da sessão anterior (se houve) antes do Status da Tarefa
 - [x] Na Parte 2: mover TaskSelector para baixo com título "Tarefa para o Próximo Encontro" e instruções claras
 - [x] Aplicar mesma reorganização no formulário de edição de sessão
+
+## Exibir registro de aplicabilidade do aluno na seção de Avaliação da mentora
+- [x] Mostrar na seção "Avaliação de Aplicabilidade Prática" o texto que o aluno registrou (aplicabilidade prática)
+- [x] Mostrar a nota que o aluno se deu (0-10) para sua própria aplicação
+- [x] Indicar visualmente se o aluno já preencheu ou não o registro de aplicabilidade
+- [x] Aplicar tanto no formulário de nova sessão quanto no de edição

@@ -1005,19 +1005,58 @@ export default function RegistroMentoria() {
                         Avaliação de Aplicabilidade Prática
                       </Label>
                       <p className="text-xs text-gray-600">Avalie de 0 a 10 a aplicabilidade prática demonstrada pelo aluno na tarefa anterior. Esta avaliação é obrigatória quando o aluno entregou a tarefa com registro de aplicabilidade.</p>
-                      <div className="flex gap-1 flex-wrap">
-                        {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
-                          <Button
-                            key={n}
-                            type="button"
-                            variant={newNotaMentoraAplic === n ? 'default' : 'outline'}
-                            size="sm"
-                            className={`w-9 h-9 text-xs ${newNotaMentoraAplic === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
-                            onClick={() => setNewNotaMentoraAplic(n)}
-                          >
-                            {n}
-                          </Button>
-                        ))}
+
+                      {/* Registro do aluno (se preencheu) */}
+                      {(() => {
+                        if (!previousSession) return null;
+                        const hasAplic = previousSession.textoAplicabilidade || previousSession.notaAlunoAplicabilidade !== null;
+                        if (!hasAplic) {
+                          return (
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center gap-2">
+                              <Info className="h-4 w-4 text-gray-400 shrink-0" />
+                              <p className="text-sm text-gray-500">O aluno ainda não registrou a aplicabilidade prática desta tarefa.</p>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="bg-white border border-amber-300 rounded-lg p-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Registro do Aluno</p>
+                              {previousSession.notaAlunoAplicabilidade !== null && previousSession.notaAlunoAplicabilidade !== undefined && (
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                  Number(previousSession.notaAlunoAplicabilidade) >= 8 ? 'bg-emerald-100 text-emerald-800' 
+                                  : Number(previousSession.notaAlunoAplicabilidade) >= 5 ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-red-100 text-red-800'
+                                }`}>
+                                  Autoavaliação: {previousSession.notaAlunoAplicabilidade}/10
+                                </span>
+                              )}
+                            </div>
+                            {previousSession.textoAplicabilidade && (
+                              <div className="bg-amber-50/50 rounded p-3 border border-amber-200/50">
+                                <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{previousSession.textoAplicabilidade}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      <div>
+                        <p className="text-xs font-medium text-amber-800 mb-2">Sua avaliação como mentora (0-10):</p>
+                        <div className="flex gap-1 flex-wrap">
+                          {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
+                            <Button
+                              key={n}
+                              type="button"
+                              variant={newNotaMentoraAplic === n ? 'default' : 'outline'}
+                              size="sm"
+                              className={`w-9 h-9 text-xs ${newNotaMentoraAplic === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
+                              onClick={() => setNewNotaMentoraAplic(n)}
+                            >
+                              {n}
+                            </Button>
+                          ))}
+                        </div>
                       </div>
                       {newNotaMentoraAplic !== null && (
                         <p className="text-sm font-medium text-amber-700">Nota selecionada: {newNotaMentoraAplic}/10</p>
@@ -1218,19 +1257,62 @@ export default function RegistroMentoria() {
                                   Avaliação de Aplicabilidade Prática
                                 </Label>
                                 <p className="text-xs text-gray-600">Avalie de 0 a 10 a aplicabilidade prática demonstrada pelo aluno.</p>
-                                <div className="flex gap-1 flex-wrap">
-                                  {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
-                                    <Button
-                                      key={n}
-                                      type="button"
-                                      variant={editNotaMentoraAplic === n ? 'default' : 'outline'}
-                                      size="sm"
-                                      className={`w-9 h-9 text-xs ${editNotaMentoraAplic === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
-                                      onClick={() => setEditNotaMentoraAplic(n)}
-                                    >
-                                      {n}
-                                    </Button>
-                                  ))}
+
+                                {/* Registro do aluno (se preencheu) - para edição */}
+                                {(() => {
+                                  const currentSessionNum = session.sessionNumber ?? 0;
+                                  const prevSess = sessions
+                                    .filter(s => (s.sessionNumber ?? 0) < currentSessionNum)
+                                    .sort((a, b) => (b.sessionNumber ?? 0) - (a.sessionNumber ?? 0))[0];
+                                  if (!prevSess) return null;
+                                  const hasAplic = prevSess.textoAplicabilidade || prevSess.notaAlunoAplicabilidade !== null;
+                                  if (!hasAplic) {
+                                    return (
+                                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 flex items-center gap-2">
+                                        <Info className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                        <p className="text-xs text-gray-500">O aluno não registrou a aplicabilidade prática desta tarefa.</p>
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <div className="bg-white border border-amber-300 rounded-lg p-3 space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Registro do Aluno</p>
+                                        {prevSess.notaAlunoAplicabilidade !== null && prevSess.notaAlunoAplicabilidade !== undefined && (
+                                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${
+                                            Number(prevSess.notaAlunoAplicabilidade) >= 8 ? 'bg-emerald-100 text-emerald-800' 
+                                            : Number(prevSess.notaAlunoAplicabilidade) >= 5 ? 'bg-amber-100 text-amber-800'
+                                            : 'bg-red-100 text-red-800'
+                                          }`}>
+                                            Autoavaliação: {prevSess.notaAlunoAplicabilidade}/10
+                                          </span>
+                                        )}
+                                      </div>
+                                      {prevSess.textoAplicabilidade && (
+                                        <div className="bg-amber-50/50 rounded p-2 border border-amber-200/50">
+                                          <p className="text-xs text-gray-800 whitespace-pre-wrap leading-relaxed">{prevSess.textoAplicabilidade}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+
+                                <div>
+                                  <p className="text-xs font-medium text-amber-800 mb-2">Sua avaliação como mentora (0-10):</p>
+                                  <div className="flex gap-1 flex-wrap">
+                                    {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
+                                      <Button
+                                        key={n}
+                                        type="button"
+                                        variant={editNotaMentoraAplic === n ? 'default' : 'outline'}
+                                        size="sm"
+                                        className={`w-9 h-9 text-xs ${editNotaMentoraAplic === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
+                                        onClick={() => setEditNotaMentoraAplic(n)}
+                                      >
+                                        {n}
+                                      </Button>
+                                    ))}
+                                  </div>
                                 </div>
                                 {editNotaMentoraAplic !== null && (
                                   <p className="text-sm font-medium text-amber-700">Nota selecionada: {editNotaMentoraAplic}/10</p>
