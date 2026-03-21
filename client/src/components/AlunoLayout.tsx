@@ -16,7 +16,7 @@ const ALL_NAV_ITEMS = [
   { label: "Onboarding", path: "/onboarding", icon: ClipboardList, requiresAceite: false },
   { label: "Mural", path: "/mural", icon: Megaphone, requiresAceite: true },
   { label: "Portal do Aluno", path: "/meu-dashboard", icon: Compass, requiresAceite: true },
-  { label: "Cursos", path: "/meus-cursos", icon: GraduationCap, requiresAceite: true, externalUrl: "https://sebraeto.competenciasdobem.com.br/auth/signin" },
+  { label: "Mini_Cursos", path: "/meus-cursos", icon: GraduationCap, requiresAceite: true, externalUrl: "https://sebraeto.competenciasdobem.com.br/auth/signin" },
   { label: "Atividades", path: "/minhas-atividades", icon: Zap, requiresAceite: true },
   { label: "Minhas Metas", path: "/minhas-metas", icon: Flag, requiresAceite: true },
   { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle, requiresAceite: false },

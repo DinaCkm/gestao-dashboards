@@ -3114,3 +3114,6 @@
 
 ## Aba Cursos no Portal do Aluno - redirecionar para link externo
 - [x] Aba "Cursos" no Portal do Aluno deve redirecionar para https://sebraeto.competenciasdobem.com.br/auth/signin
+
+## Renomear aba Cursos para Mini_Cursos
+- [x] Trocar label "Cursos" para "Mini_Cursos" no header (AlunoLayout) e na aba de tabs (DashboardMeuPerfil)

@@ -1123,7 +1123,7 @@ export default function DashboardMeuPerfil() {
               rel="noopener noreferrer"
               className="flex-1 min-w-[120px] inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-gray-600 hover:bg-[#0A1E3E] hover:text-white cursor-pointer"
             >
-              <GraduationCap className="h-4 w-4 mr-1" /> Cursos <ExternalLink className="h-3 w-3 ml-1 opacity-60" />
+              <GraduationCap className="h-4 w-4 mr-1" /> Mini_Cursos <ExternalLink className="h-3 w-3 ml-1 opacity-60" />
             </a>
             <TabsTrigger value="cases" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <Briefcase className="h-4 w-4 mr-1" /> Cases de Sucesso
