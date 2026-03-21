@@ -3159,3 +3159,8 @@
 - [x] Tornar avaliação da mentora obrigatória quando aluno entregou tarefa com registro de aplicabilidade (impedir salvar sem nota)
 - [x] E-mail automático 48h antes da sessão agendada lembrando o aluno de registrar aplicabilidade prática
 - [x] Comparativo visual nota do aluno vs nota da mentora lado a lado na visualização da sessão
+
+## Exibir evidência de entrega do aluno na Avaliação da Tarefa
+- [x] Mostrar na seção "Avaliação da Tarefa da Sessão Anterior" se o aluno já enviou evidência de entrega
+- [x] Exibir link de evidência, imagem, relato do aluno e data/hora de submissão
+- [x] Aplicar tanto no formulário de nova sessão quanto no de edição

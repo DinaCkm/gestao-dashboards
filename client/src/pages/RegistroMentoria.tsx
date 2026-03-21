@@ -993,6 +993,67 @@ export default function RegistroMentoria() {
                         );
                       })()}
 
+                      {/* Evidência de Entrega do Aluno */}
+                      {sessions.length > 0 && previousSession && (() => {
+                        const prevTask = getPreviousTaskDescription(previousSession);
+                        if (!prevTask) return null;
+                        const hasEvidence = previousSession.evidenceLink || previousSession.evidenceImageUrl || previousSession.relatoAluno || previousSession.submittedAt;
+                        return (
+                          <div className={`rounded-lg p-3 border ${
+                            hasEvidence ? 'bg-emerald-50/50 border-emerald-200' : 'bg-orange-50/50 border-orange-200'
+                          }`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileText className={`h-4 w-4 ${hasEvidence ? 'text-emerald-600' : 'text-orange-500'}`} />
+                              <span className={`text-sm font-medium ${hasEvidence ? 'text-emerald-800' : 'text-orange-700'}`}>
+                                {hasEvidence ? 'Evidência enviada pelo aluno' : 'Aluno ainda não enviou evidência de entrega'}
+                              </span>
+                              {hasEvidence && (
+                                <Badge className="bg-emerald-100 text-emerald-700 text-xs">Enviado</Badge>
+                              )}
+                              {!hasEvidence && (
+                                <Badge className="bg-orange-100 text-orange-700 text-xs">Pendente</Badge>
+                              )}
+                            </div>
+                            {hasEvidence ? (
+                              <div className="space-y-2 pl-6">
+                                {previousSession.submittedAt && (
+                                  <p className="text-xs text-gray-500 flex items-center gap-1">
+                                    <Clock className="h-3 w-3" /> Enviado em: {new Date(previousSession.submittedAt).toLocaleString('pt-BR')}
+                                  </p>
+                                )}
+                                {previousSession.evidenceLink && (
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-1">Link de evidência:</p>
+                                    <a href={previousSession.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                      <ExternalLink className="h-3 w-3" /> {previousSession.evidenceLink}
+                                    </a>
+                                  </div>
+                                )}
+                                {previousSession.evidenceImageUrl && (
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-1">Imagem de evidência:</p>
+                                    <img 
+                                      src={previousSession.evidenceImageUrl} 
+                                      alt="Evidência do aluno" 
+                                      className="max-w-full max-h-48 rounded-lg border cursor-pointer hover:opacity-90 transition-opacity" 
+                                      onClick={() => window.open(previousSession.evidenceImageUrl!, '_blank')} 
+                                    />
+                                  </div>
+                                )}
+                                {previousSession.relatoAluno && (
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-1">Relato do aluno:</p>
+                                    <p className="text-sm text-gray-800 whitespace-pre-wrap bg-white/60 rounded p-2 border border-gray-100">{previousSession.relatoAluno}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-orange-600 pl-6">O aluno ainda não enviou link, imagem ou relato sobre esta tarefa.</p>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       {/* Status da Tarefa */}
                       {sessions.length > 0 && (
                         <div>
@@ -1249,6 +1310,66 @@ export default function RegistroMentoria() {
                                       <p className="text-gray-500 mb-0.5">Tarefa da Sessão {prevSess?.sessionNumber}:</p>
                                       <p className="font-medium text-gray-900">{prevTask.title}</p>
                                       {prevTask.description && <p className="text-gray-600 mt-0.5 line-clamp-2">{prevTask.description}</p>}
+                                    </div>
+                                  );
+                                })()}
+
+                                {/* Evidência de Entrega do Aluno (Edição) */}
+                                {(() => {
+                                  const currentSessionNum = session.sessionNumber ?? 0;
+                                  const prevSess = sessions
+                                    .filter(s => (s.sessionNumber ?? 0) < currentSessionNum)
+                                    .sort((a, b) => (b.sessionNumber ?? 0) - (a.sessionNumber ?? 0))[0];
+                                  if (!prevSess || currentSessionNum <= 1) return null;
+                                  const prevTask = getPreviousTaskDescription(prevSess);
+                                  if (!prevTask) return null;
+                                  const hasEvidence = prevSess.evidenceLink || prevSess.evidenceImageUrl || prevSess.relatoAluno || prevSess.submittedAt;
+                                  return (
+                                    <div className={`rounded-lg p-2 border text-xs ${
+                                      hasEvidence ? 'bg-emerald-50/50 border-emerald-200' : 'bg-orange-50/50 border-orange-200'
+                                    }`}>
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <FileText className={`h-3.5 w-3.5 ${hasEvidence ? 'text-emerald-600' : 'text-orange-500'}`} />
+                                        <span className={`text-xs font-medium ${hasEvidence ? 'text-emerald-800' : 'text-orange-700'}`}>
+                                          {hasEvidence ? 'Evidência enviada pelo aluno' : 'Aluno não enviou evidência'}
+                                        </span>
+                                        {hasEvidence ? (
+                                          <Badge className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0">Enviado</Badge>
+                                        ) : (
+                                          <Badge className="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0">Pendente</Badge>
+                                        )}
+                                      </div>
+                                      {hasEvidence ? (
+                                        <div className="space-y-1.5 pl-5">
+                                          {prevSess.submittedAt && (
+                                            <p className="text-[11px] text-gray-500 flex items-center gap-1">
+                                              <Clock className="h-3 w-3" /> Enviado em: {new Date(prevSess.submittedAt).toLocaleString('pt-BR')}
+                                            </p>
+                                          )}
+                                          {prevSess.evidenceLink && (
+                                            <div>
+                                              <p className="text-[11px] text-gray-500">Link:</p>
+                                              <a href={prevSess.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-600 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="h-3 w-3" /> {prevSess.evidenceLink}
+                                              </a>
+                                            </div>
+                                          )}
+                                          {prevSess.evidenceImageUrl && (
+                                            <div>
+                                              <p className="text-[11px] text-gray-500">Imagem:</p>
+                                              <img src={prevSess.evidenceImageUrl} alt="Evidência" className="max-w-full max-h-32 rounded border cursor-pointer hover:opacity-90" onClick={() => window.open(prevSess.evidenceImageUrl!, '_blank')} />
+                                            </div>
+                                          )}
+                                          {prevSess.relatoAluno && (
+                                            <div>
+                                              <p className="text-[11px] text-gray-500">Relato do aluno:</p>
+                                              <p className="text-xs text-gray-800 whitespace-pre-wrap bg-white/60 rounded p-1.5 border border-gray-100">{prevSess.relatoAluno}</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <p className="text-[11px] text-orange-600 pl-5">Nenhum link, imagem ou relato enviado.</p>
+                                      )}
                                     </div>
                                   );
                                 })()}
