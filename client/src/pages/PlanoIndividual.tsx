@@ -754,11 +754,25 @@ function PlanoContent() {
                         <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
                           Mentoria: {(selectedAlunoData as any)?.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'}
                         </span>
-                        {contratos.length > 0 && (
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
-                            {contratos[0]?.totalSessoesContratadas || '—'} sessões contratadas
-                          </span>
-                        )}
+                        {(() => {
+                          const sessoes = contratos.length > 0
+                            ? contratos[0]?.totalSessoesContratadas
+                            : (selectedAlunoData as any)?.totalSessoesContratadas;
+                          return sessoes ? (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+                              {sessoes} sessões contratadas
+                            </span>
+                          ) : null;
+                        })()}
+                        {(() => {
+                          const cInicio = (selectedAlunoData as any)?.contratoInicio;
+                          const cFim = (selectedAlunoData as any)?.contratoFim;
+                          return (cInicio || cFim) ? (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                              Contrato: {cInicio ? new Date(cInicio).toLocaleDateString('pt-BR') : '—'} a {cFim ? new Date(cFim).toLocaleDateString('pt-BR') : '—'}
+                            </span>
+                          ) : null;
+                        })()}
                       </div>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setSelectedAluno(null)}>Trocar aluno</Button>
@@ -783,7 +797,40 @@ function PlanoContent() {
                 </CardHeader>
                 <CardContent>
                   {contratos.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum contrato registrado</p>
+                    (() => {
+                      const cInicio = (selectedAlunoData as any)?.contratoInicio;
+                      const cFim = (selectedAlunoData as any)?.contratoFim;
+                      const sessoes = (selectedAlunoData as any)?.totalSessoesContratadas;
+                      const tipoM = (selectedAlunoData as any)?.tipoMentoria;
+                      const hasInlineData = cInicio || cFim || sessoes || tipoM;
+                      return hasInlineData ? (
+                        <div className="space-y-3">
+                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p className="text-xs font-medium text-amber-700 mb-3">Dados do cadastro do aluno (nenhum contrato formal registrado)</p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              <div className="text-center">
+                                <p className="text-lg font-bold text-primary">{cInicio ? new Date(cInicio).toLocaleDateString('pt-BR') : '—'}</p>
+                                <p className="text-xs text-muted-foreground">Início</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-lg font-bold text-primary">{cFim ? new Date(cFim).toLocaleDateString('pt-BR') : '—'}</p>
+                                <p className="text-xs text-muted-foreground">Término</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-lg font-bold text-emerald-600">{sessoes || '—'}</p>
+                                <p className="text-xs text-muted-foreground">Sessões Contratadas</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-lg font-bold text-blue-600">{tipoM === 'grupo' ? 'Em Grupo' : tipoM === 'individual' ? 'Individual' : '—'}</p>
+                                <p className="text-xs text-muted-foreground">Tipo Mentoria</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">Nenhum contrato registrado</p>
+                      );
+                    })()
                   ) : (
                     <div className="space-y-3">
                       {/* Saldo resumo */}

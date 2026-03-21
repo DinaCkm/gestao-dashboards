@@ -3088,3 +3088,12 @@
 ## BUG - Meses de Jornada mostra 1 em vez de 5 (deve usar contrato)
 - [x] Card "Meses de Jornada" no EtapaMeuPDI agora usa datas do CONTRATO (prioridade), fallback para PDI
 - [x] Mostrar info de mentorias (tipo + quantidade) na listagem expandida do aluno em AdminCadastros
+
+## BUG - Área do Mentor: Contrato mostra "Nenhum contrato registrado"
+- [x] Seção Contrato no Plano Individual do mentor mostra dados inline do aluno como fallback
+- [x] Exibir contrato inline (contratoInicio, contratoFim, totalSessoesContratadas, tipoMentoria) quando não há registro em contratos_aluno
+
+## Área do Mentor - Mostrar dados do contrato inline
+- [x] Seção Contrato no Plano Individual: mostrar dados inline do aluno quando não há registro em contratos_aluno
+- [x] Badge de sessões contratadas + período do contrato no card do aluno mesmo sem contratos_aluno
+- [x] ContratoInfoReadonly: mostra dados inline do aluno (período, sessões, tipo mentoria) como fallback em todas as telas

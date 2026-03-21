@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Calendar, Hash, AlertCircle } from "lucide-react";
+import { FileText, Calendar, Hash, AlertCircle, Users2 } from "lucide-react";
 
 interface ContratoInfoReadonlyProps {
   alunoId: number;
@@ -12,6 +12,10 @@ export default function ContratoInfoReadonly({ alunoId }: ContratoInfoReadonlyPr
     { alunoId },
     { enabled: !!alunoId }
   );
+
+  // Buscar dados do aluno para fallback inline
+  const { data: alunoData } = trpc.planoIndividual.alunosWithPlano.useQuery();
+  const aluno = alunoData?.find((a: any) => a.id === alunoId) as any;
 
   const contratoAtivo = contratos?.find((c: any) => c.isActive === 1) || contratos?.[0];
 
@@ -26,7 +30,66 @@ export default function ContratoInfoReadonly({ alunoId }: ContratoInfoReadonlyPr
     );
   }
 
+  const formatDate = (d: any) => {
+    if (!d) return "—";
+    const date = new Date(d);
+    return date.toLocaleDateString("pt-BR");
+  };
+
+  // Se não tem contrato na tabela contratos_aluno, usar dados inline do aluno
   if (!contratoAtivo) {
+    const cInicio = aluno?.contratoInicio;
+    const cFim = aluno?.contratoFim;
+    const sessoes = aluno?.totalSessoesContratadas;
+    const tipoM = aluno?.tipoMentoria;
+    const hasInlineData = cInicio || cFim || sessoes || tipoM;
+
+    if (hasInlineData) {
+      return (
+        <Card className="border-blue-200 bg-blue-50/30">
+          <CardContent className="p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-blue-800 flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5" />
+                Dados do Contrato
+              </p>
+              <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">
+                Cadastro do Aluno
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-muted-foreground">Período:</span>
+                <span className="font-medium">
+                  {formatDate(cInicio)} — {formatDate(cFim)}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-muted-foreground">Sessões de Mentoria:</span>
+                <span className="font-medium">{sessoes || "—"}</span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <Users2 className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-muted-foreground">Tipo de Mentoria:</span>
+                <span className="font-medium">
+                  {tipoM === 'grupo' ? 'Em Grupo' : tipoM === 'individual' ? 'Individual' : tipoM === 'sem_mentoria' ? 'Sem Mentoria' : '—'}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground italic">
+              Dados do cadastro do aluno. Para registrar um contrato formal, use a seção de Contratos no Plano Individual.
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
+
     return (
       <Card className="border-amber-200 bg-amber-50/50">
         <CardContent className="p-3">
@@ -35,7 +98,7 @@ export default function ContratoInfoReadonly({ alunoId }: ContratoInfoReadonlyPr
             <div>
               <p className="text-sm font-medium text-amber-800">Sem contrato ativo</p>
               <p className="text-xs text-amber-600">
-                O administrador precisa cadastrar um contrato para este aluno antes de definir o assessment.
+                O administrador precisa cadastrar o contrato do aluno (período, sessões de mentoria e tipo) no cadastro do aluno ou na seção de Contratos.
               </p>
             </div>
           </div>
@@ -43,12 +106,6 @@ export default function ContratoInfoReadonly({ alunoId }: ContratoInfoReadonlyPr
       </Card>
     );
   }
-
-  const formatDate = (d: any) => {
-    if (!d) return "—";
-    const date = new Date(d);
-    return date.toLocaleDateString("pt-BR");
-  };
 
   const totalSessoes = contratoAtivo.totalSessoesContratadas;
 
@@ -79,8 +136,6 @@ export default function ContratoInfoReadonly({ alunoId }: ContratoInfoReadonlyPr
             <span className="text-muted-foreground">Total de Sessões:</span>
             <span className="font-medium">{totalSessoes || "—"}</span>
           </div>
-
-
 
           <div className="flex items-center gap-1.5">
             <span className="text-muted-foreground">Status:</span>
