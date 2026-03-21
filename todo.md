@@ -3111,3 +3111,6 @@
   - Evidências: "Comprovar através de cases reais de aplicabilidade de cada jornada"
   - Engajamento: "Engajamento mínimo de 80% com a participação nos webinares, mentorias, cursos e tarefas"
   - Desafios: "Cumprimento das metas desafiadoras que foram assumidas no início da jornada"
+
+## Aba Cursos no Portal do Aluno - redirecionar para link externo
+- [x] Aba "Cursos" no Portal do Aluno deve redirecionar para https://sebraeto.competenciasdobem.com.br/auth/signin

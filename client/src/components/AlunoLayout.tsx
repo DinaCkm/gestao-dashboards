@@ -6,7 +6,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
-import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, GraduationCap, Zap, Lock } from "lucide-react";
+import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, GraduationCap, Zap, Lock, ExternalLink } from "lucide-react";
 import RoleSwitcher from "@/components/RoleSwitcher";
 
 /** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
@@ -16,7 +16,7 @@ const ALL_NAV_ITEMS = [
   { label: "Onboarding", path: "/onboarding", icon: ClipboardList, requiresAceite: false },
   { label: "Mural", path: "/mural", icon: Megaphone, requiresAceite: true },
   { label: "Portal do Aluno", path: "/meu-dashboard", icon: Compass, requiresAceite: true },
-  { label: "Cursos", path: "/meus-cursos", icon: GraduationCap, requiresAceite: true },
+  { label: "Cursos", path: "/meus-cursos", icon: GraduationCap, requiresAceite: true, externalUrl: "https://sebraeto.competenciasdobem.com.br/auth/signin" },
   { label: "Atividades", path: "/minhas-atividades", icon: Zap, requiresAceite: true },
   { label: "Minhas Metas", path: "/minhas-metas", icon: Flag, requiresAceite: true },
   { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle, requiresAceite: false },
@@ -90,6 +90,21 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
               {navItems.map((item) => {
                 const isActive = location === item.path;
                 const Icon = item.icon;
+                if ((item as any).externalUrl) {
+                  return (
+                    <a
+                      key={item.path}
+                      href={(item as any).externalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 text-white/70 hover:text-white hover:bg-white/10"
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {item.label}
+                      <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                    </a>
+                  );
+                }
                 return (
                   <button
                     key={item.path}
@@ -155,6 +170,21 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
             {navItems.map((item) => {
               const isActive = location === item.path;
               const Icon = item.icon;
+              if ((item as any).externalUrl) {
+                return (
+                  <a
+                    key={item.path}
+                    href={(item as any).externalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-4 py-3 text-xs font-medium whitespace-nowrap transition-all text-white/60 hover:text-white border-b-2 border-transparent"
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {item.label}
+                    <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                  </a>
+                );
+              }
               return (
                 <button
                   key={item.path}
