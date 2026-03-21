@@ -2910,6 +2910,8 @@ export const appRouter = router({
           mensagemAluno: s.mensagemAluno,
           taskId: s.taskId,
           taskDeadline: s.taskDeadline,
+          customTaskTitle: s.customTaskTitle,
+          taskMode: s.taskMode,
           relatoAluno: s.relatoAluno,
           ciclo: s.ciclo,
         })),
@@ -3699,18 +3701,29 @@ export const appRouter = router({
 
   // ==================== ATIVIDADES PRÁTICAS (ADMIN) ====================
   practicalActivities: router({
-    // Admin: consulta de entregas com filtros
-    submissions: adminProcedure
+    // Admin + Mentor: consulta de entregas com filtros
+    submissions: protectedProcedure
       .input(z.object({
         consultorId: z.number().optional(),
         alunoId: z.number().optional(),
         turmaId: z.number().optional(),
+        programId: z.number().optional(),
         status: z.string().optional(),
         dateFrom: z.string().optional(),
         dateTo: z.string().optional(),
       }).optional())
-      .query(async ({ input }) => {
-        const sessions = await db.getActivitySubmissionsForAdmin(input);
+      .query(async ({ ctx, input }) => {
+        // Mentor: forçar filtro por consultorId para ver apenas seus alunos
+        const isAdmin = ctx.user.role === 'admin';
+        const isMentor = ctx.user.role === 'manager' && ctx.user.consultorId;
+        if (!isAdmin && !isMentor) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito a administradores e mentores' });
+        }
+        const filters = { ...input };
+        if (isMentor) {
+          filters.consultorId = ctx.user.consultorId!;
+        }
+        const sessions = await db.getActivitySubmissionsForAdmin(filters);
         const allAlunos = await db.getAlunos();
         const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
         const consultors = await db.getConsultors();
@@ -3752,12 +3765,21 @@ export const appRouter = router({
         return result;
       }),
 
-    // Admin: detalhe de uma entrega
-    submissionDetail: adminProcedure
+    // Admin + Mentor: detalhe de uma entrega
+    submissionDetail: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        const isAdmin = ctx.user.role === 'admin';
+        const isMentor = ctx.user.role === 'manager' && ctx.user.consultorId;
+        if (!isAdmin && !isMentor) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito a administradores e mentores' });
+        }
         const session = await db.getMentoringSessionById(input.sessionId);
         if (!session) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sessão não encontrada' });
+        // Mentor só pode ver detalhes de sessões dos seus alunos
+        if (isMentor && session.consultorId !== ctx.user.consultorId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Você só pode ver atividades dos seus alunos' });
+        }
         const task = session.taskId ? await db.getTaskLibraryById(session.taskId) : null;
         const comments = await db.getCommentsBySessionId(input.sessionId);
         const allAlunos = await db.getAlunos();
@@ -3793,18 +3815,32 @@ export const appRouter = router({
         };
       }),
 
-    // Admin: adicionar comentário
-    addComment: adminProcedure
+    // Admin + Mentor: adicionar comentário
+    addComment: protectedProcedure
       .input(z.object({
         sessionId: z.number(),
         comment: z.string().min(1),
       }))
       .mutation(async ({ ctx, input }) => {
+        const isAdmin = ctx.user.role === 'admin';
+        const isMentor = ctx.user.role === 'manager' && ctx.user.consultorId;
+        if (!isAdmin && !isMentor) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito a administradores e mentores' });
+        }
+        // Mentor: verificar se a sessão é de um dos seus alunos
+        if (isMentor) {
+          const session = await db.getMentoringSessionById(input.sessionId);
+          if (!session || session.consultorId !== ctx.user.consultorId) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Você só pode comentar atividades dos seus alunos' });
+          }
+        }
+        const authorRole = isAdmin ? 'admin' : 'mentor';
+        const authorName = ctx.user.name || (isAdmin ? 'Administrador' : 'Mentor');
         const id = await db.addActivityComment({
           sessionId: input.sessionId,
           authorId: ctx.user.id,
-          authorRole: 'admin',
-          authorName: ctx.user.name || 'Administrador',
+          authorRole,
+          authorName,
           comment: input.comment,
         });
         return { success: true, commentId: id };
@@ -6907,13 +6943,17 @@ Responda APENAS em JSON com o formato:
     // Listar revisões com dados enriquecidos (admin/mentor)
     listarRevisoes: managerProcedure
       .input(z.object({ status: z.enum(['pendente', 'em_analise', 'resolvida', 'cancelada']).optional() }).optional())
-      .query(async ({ input }) => {
-        return await db.onboardingRevisoesDb.getEnriquecidas(input?.status);
+      .query(async ({ ctx, input }) => {
+        // Mentor vê apenas revisões dos seus alunos; admin vê tudo
+        const consultorId = ctx.user.role === 'admin' ? undefined : (ctx.user as any).consultorId;
+        return await db.onboardingRevisoesDb.getEnriquecidas(input?.status, consultorId);
       }),
 
     // Contar revisões pendentes (para badge)
-    contarRevisoesPendentes: managerProcedure.query(async () => {
-      const pendentes = await db.onboardingRevisoesDb.getPendentes();
+    contarRevisoesPendentes: managerProcedure.query(async ({ ctx }) => {
+      // Mentor vê apenas pendentes dos seus alunos; admin vê tudo
+      const consultorId = ctx.user.role === 'admin' ? undefined : (ctx.user as any).consultorId;
+      const pendentes = await db.onboardingRevisoesDb.getPendentes(consultorId);
       return { count: pendentes.length };
     }),
 

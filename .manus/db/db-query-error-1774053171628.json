@@ -1,0 +1,8 @@
+{
+  "query": "SELECT 'metas' AS tipo, COUNT(*) AS total FROM metas WHERE alunoId = 660014\nUNION ALL\nSELECT 'sessoes' AS tipo, COUNT(*) AS total FROM mentoring_sessions WHERE alunoId = 660014\nUNION ALL\nSELECT 'disc' AS tipo, COUNT(*) AS total FROM disc_results WHERE alunoId = 660014;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT 'metas' AS tipo, COUNT(*) AS total FROM metas WHERE alunoId = 660014\nUNION ALL\nSELECT 'sessoes' AS tipo, COUNT(*) AS total FROM mentoring_sessions WHERE alunoId = 660014\nUNION ALL\nSELECT 'disc' AS tipo, COUNT(*) AS total FROM disc_results WHERE alunoId = 660014;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table '5n7arrgnhjndofcmzygxcy.disc_results' doesn't exist"
+  ]
+}

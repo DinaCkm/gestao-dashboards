@@ -1,0 +1,16 @@
+{
+  "query": "SHOW TABLES LIKE '%meta%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SHOW TABLES LIKE '%meta%';",
+  "rows": [
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%meta%)": "meta_acompanhamento"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%meta%)": "metas"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%meta%)\nmeta_acompanhamento\nmetas\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

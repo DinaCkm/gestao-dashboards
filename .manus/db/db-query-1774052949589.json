@@ -1,0 +1,28 @@
+{
+  "query": "SELECT a.id, a.name, a.email, a.isActive, a.programId, p.name AS programName, a.consultorId\nFROM alunos a \nLEFT JOIN programs p ON a.programId = p.id\nWHERE a.email IN ('brenno.passoni@embrapii.org.br', 'emanoel.querette@embrapii.org.br', 'leandro.rodrigues@embrapii.org.br', 'joseane@to.sebrae.com.br', 'teste@embrapii.com')\nOR a.name IN ('Brenno Passoni', 'Emanoel Loreto Querette', 'Leandro Rodrigues da Silva', 'Joseane');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.email, a.isActive, a.programId, p.name AS programName, a.consultorId\nFROM alunos a \nLEFT JOIN programs p ON a.programId = p.id\nWHERE a.email IN ('brenno.passoni@embrapii.org.br', 'emanoel.querette@embrapii.org.br', 'leandro.rodrigues@embrapii.org.br', 'joseane@to.sebrae.com.br', 'teste@embrapii.com')\nOR a.name IN ('Brenno Passoni', 'Emanoel Loreto Querette', 'Leandro Rodrigues da Silva', 'Joseane');",
+  "rows": [
+    {
+      "id": "30066",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "isActive": "1",
+      "programId": "17",
+      "programName": "SEBRAE TO",
+      "consultorId": "35"
+    },
+    {
+      "id": "30035",
+      "name": "Brenno Soffredi Passoni",
+      "email": "brenno.passoni@embrapii.org.br",
+      "isActive": "1",
+      "programId": "18",
+      "programName": "EMBRAPII",
+      "consultorId": "28"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tisActive\tprogramId\tprogramName\tconsultorId\n30066\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\t1\t17\tSEBRAE TO\t35\n30035\tBrenno Soffredi Passoni\tbrenno.passoni@embrapii.org.br\t1\t18\tEMBRAPII\t28\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

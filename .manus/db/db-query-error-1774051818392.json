@@ -1,0 +1,8 @@
+{
+  "query": "SELECT ms.id, ms.aluno_id, ms.task_mode, ms.task_id, ms.custom_task_title, tl.nome as task_library_name\nFROM mentoring_sessions ms\nLEFT JOIN task_library tl ON ms.task_id = tl.id\nWHERE ms.task_mode IS NOT NULL AND ms.task_mode != 'sem_tarefa'\nORDER BY ms.id DESC\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ms.id, ms.aluno_id, ms.task_mode, ms.task_id, ms.custom_task_title, tl.nome as task_library_name\nFROM mentoring_sessions ms\nLEFT JOIN task_library tl ON ms.task_id = tl.id\nWHERE ms.task_mode IS NOT NULL AND ms.task_mode != 'sem_tarefa'\nORDER BY ms.id DESC\nLIMIT 20;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'ms.task_id' in 'on clause'"
+  ]
+}

@@ -20,20 +20,29 @@ import {
 export default function AtividadesPraticas() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
+  const isMentor = user?.role === "manager" && !!(user as any)?.consultorId;
 
   // Filtros
   const [filterMentor, setFilterMentor] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterProgram, setFilterProgram] = useState<string>("all");
+  const [filterTurma, setFilterTurma] = useState<string>("all");
+  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
+  const [filterDateTo, setFilterDateTo] = useState<string>("");
   const [searchText, setSearchText] = useState<string>("");
   const [viewingSubmission, setViewingSubmission] = useState<number | null>(null);
   const [commentText, setCommentText] = useState<string>("");
 
   // Queries
   const { data: programs = [] } = trpc.programs.list.useQuery();
+  const { data: turmas = [] } = trpc.turmas.list.useQuery();
   const { data: submissions = [], refetch: refetchSubmissions } = trpc.practicalActivities.submissions.useQuery({
     consultorId: filterMentor !== "all" ? parseInt(filterMentor) : undefined,
     status: filterStatus !== "all" ? filterStatus as any : undefined,
+    programId: filterProgram !== "all" ? parseInt(filterProgram) : undefined,
+    turmaId: filterTurma !== "all" ? parseInt(filterTurma) : undefined,
+    dateFrom: filterDateFrom || undefined,
+    dateTo: filterDateTo || undefined,
   });
 
   const { data: submissionDetail } = trpc.practicalActivities.submissionDetail.useQuery(
@@ -61,6 +70,12 @@ export default function AtividadesPraticas() {
     });
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [submissions]);
+
+  // Turmas filtradas pelo programa selecionado
+  const filteredTurmas = useMemo(() => {
+    if (filterProgram === "all") return turmas;
+    return turmas.filter((t: any) => t.programId === parseInt(filterProgram));
+  }, [turmas, filterProgram]);
 
   // Filtro de busca por texto
   const filteredSubmissions = useMemo(() => {
@@ -91,12 +106,12 @@ export default function AtividadesPraticas() {
     }
   };
 
-  if (!isAdmin) {
+  if (!isAdmin && !isMentor) {
     return (
       <DashboardLayout>
         <div className="p-8 text-center text-gray-500">
           <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>Acesso restrito a administradores.</p>
+          <p>Acesso restrito a administradores e mentores.</p>
         </div>
       </DashboardLayout>
     );
@@ -150,7 +165,7 @@ export default function AtividadesPraticas() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Busca</label>
                 <div className="relative">
@@ -165,7 +180,7 @@ export default function AtividadesPraticas() {
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Programa</label>
-                <Select value={filterProgram} onValueChange={setFilterProgram}>
+                <Select value={filterProgram} onValueChange={(v) => { setFilterProgram(v); setFilterTurma("all"); }}>
                   <SelectTrigger className="text-sm">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
@@ -177,6 +192,21 @@ export default function AtividadesPraticas() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Turma</label>
+                <Select value={filterTurma} onValueChange={setFilterTurma}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as Turmas</SelectItem>
+                    {filteredTurmas.map((t: any) => (
+                      <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {isAdmin && (
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Mentor</label>
                 <Select value={filterMentor} onValueChange={setFilterMentor}>
@@ -191,6 +221,7 @@ export default function AtividadesPraticas() {
                   </SelectContent>
                 </Select>
               </div>
+              )}
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Status</label>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -204,6 +235,42 @@ export default function AtividadesPraticas() {
                     <SelectItem value="validada">Validada</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Período De</label>
+                <Input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Período Até</label>
+                <Input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => {
+                    setFilterMentor("all");
+                    setFilterStatus("all");
+                    setFilterProgram("all");
+                    setFilterTurma("all");
+                    setFilterDateFrom("");
+                    setFilterDateTo("");
+                    setSearchText("");
+                  }}
+                >
+                  Limpar Filtros
+                </Button>
               </div>
             </div>
           </CardContent>

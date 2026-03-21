@@ -1,0 +1,58 @@
+{
+  "query": "SHOW COLUMNS FROM mentoring_sessions LIKE '%task%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SHOW COLUMNS FROM mentoring_sessions LIKE '%task%';",
+  "rows": [
+    {
+      "Field": "taskStatus",
+      "Type": "enum('entregue','nao_entregue','sem_tarefa','validada')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "taskId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "taskDeadline",
+      "Type": "date",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "customTaskTitle",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "customTaskDescription",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "taskMode",
+      "Type": "enum('biblioteca','personalizada','livre','sem_tarefa')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "sem_tarefa",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\ntaskStatus\tenum('entregue','nao_entregue','sem_tarefa','validada')\tYES\t\tNULL\t\ntaskId\tint\tYES\t\tNULL\t\ntaskDeadline\tdate\tYES\t\tNULL\t\ncustomTaskTitle\tvarchar(500)\tYES\t\tNULL\t\ncustomTaskDescription\ttext\tYES\t\tNULL\t\ntaskMode\tenum('biblioteca','personalizada','livre','sem_tarefa')\tYES\t\tsem_tarefa\t\n",
+  "stderr": "",
+  "execution_time_ms": 61
+}

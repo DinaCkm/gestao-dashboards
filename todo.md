@@ -2932,3 +2932,38 @@
 - [x] Incluir campo "Tipo de Mentoria" (Individual ou Grupo) no formulário de cadastro do aluno
 - [x] Exibir tipo de mentoria e total de sessões contratadas no card informativo do Assessment (visível para o mentor)
 - [x] Exibir tipo de mentoria e total de sessões contratadas no Plano de Desenvolvimento do aluno (PlanoIndividual header + DashboardMeuPerfil contrato card)
+
+## Plano Consolidado - Bloco 3 (Prioridade Média) + Bloco 1 restante (20/03/2026)
+
+- [x] 1.1: Cards do Gerente (Leandro) mostram dados individuais em vez da equipe - AUDITADO: JÁ RESOLVIDO. BoasVindasGestor usa gestorTeamStats com dados da equipe
+- [x] 3.1: Atividades Práticas - verificar números + adicionar filtros (empresa, turma, mentor, período, status, busca) + acesso para mentor
+- [x] 3.2: Demonstrativo de Mentorias - texto informativo para o gerente (já implementado)
+- [x] 3.3: Painel de revisões para admin/mentora (já implementado)
+- [x] 1.2: Relatório Individual - filtro de alunos do gerente (já corrigido)
+- [x] 1.3: Gestor não consegue enviar email Fale Conosco (já corrigido)
+- [x] Bug: Na área do aluno, a tarefa não mostra o nome atribuído pelo mentor (customTaskTitle ou nome da biblioteca) - corrigido na sessão anterior
+
+## Atividades Práticas - Acesso para Admin e Mentor (20/03/2026)
+- [x] Página Atividades Práticas acessível para admin e mentor (aluno já tem página própria)
+- [x] Backend: mudar practicalActivities.submissions de adminProcedure para protectedProcedure com lógica de escopo por role
+- [x] Mentor: vê apenas atividades dos seus alunos (filtro automático por consultorId)
+- [x] Admin: vê todas as atividades (como já funciona)
+- [x] Remover guard isAdmin no frontend que bloqueia mentor
+- [x] Adicionar filtros completos: empresa, turma, mentor, período, status, busca + botão Limpar Filtros
+- [x] Filtro Mentor visível apenas para admin (mentor já tem escopo automático)
+- [x] 29 testes unitários passando (permissões + filtros)
+
+## Bug: Gerente EMBRAPII na lista de alunos da mentora Adriana (20/03/2026)
+- [x] Investigar se gerentes puros estão cadastrados na tabela alunos e vinculados a mentores - INVESTIGADO: Alexandre é aluno legítimo com sessões de mentoria com Adriana, não é gerente. Falso alarme confirmado pela usuária.
+
+## Plano Consolidado - Bloco 4 (Prioridade Baixa) - Pendências Antigas (20/03/2026)
+
+- [x] 4.1a: Investigação Julia - verificar assessment, competências, trilhas e metas no banco - JÁ RESOLVIDO (fix multi-trilha anterior). Dados consistentes: 2 PDIs, 4 competências, 2 metas, DISC ok
+- [x] 4.1b: Badge/alerta no painel da mentora quando aluno solicitar revisão do PDI - Badge vermelho pulsante no menu 'Painel de Revisões PDI' (admin + mentor), atualiza a cada 30s
+- [x] 4.1c: Implementar parsers para planilhas de Eventos (SEBRAE ACRE, SEBRAE TO, EMBRAPII) - JÁ IMPLEMENTADO no excelProcessor.ts (função processEventsSheet)
+- [x] 4.1d: Dashboard por Turma - implementar visão por Turma nos dashboards - JÁ IMPLEMENTADO (DashboardGestor + DashboardEmpresa já têm visão porTurma)
+
+## Painel de Revisões PDI - Filtros (20/03/2026)
+- [ ] Adicionar filtros ao Painel de Revisões PDI (programa, mentor, aluno, período) para facilitar visualização quando houver muitos registros
+- [x] Backend: mentor deve ver apenas revisões dos seus próprios alunos (não todas)
+- [x] Badge: contar apenas revisões pendentes dos alunos do mentor (não todas)

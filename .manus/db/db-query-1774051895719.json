@@ -1,0 +1,18 @@
+{
+  "query": "SELECT \n  COUNT(*) as total_com_tarefa,\n  SUM(CASE WHEN customTaskTitle IS NOT NULL AND customTaskTitle != '' THEN 1 ELSE 0 END) as com_titulo_custom,\n  SUM(CASE WHEN taskId IS NOT NULL THEN 1 ELSE 0 END) as com_taskId_biblioteca,\n  SUM(CASE WHEN (customTaskTitle IS NULL OR customTaskTitle = '') AND taskId IS NULL THEN 1 ELSE 0 END) as sem_nome_nenhum,\n  SUM(CASE WHEN taskMode IS NULL OR taskMode = '' THEN 1 ELSE 0 END) as sem_taskMode,\n  SUM(CASE WHEN taskMode = 'sem_tarefa' THEN 1 ELSE 0 END) as modo_sem_tarefa\nFROM mentoring_sessions\nWHERE taskStatus != 'sem_tarefa' AND taskStatus IS NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT \n  COUNT(*) as total_com_tarefa,\n  SUM(CASE WHEN customTaskTitle IS NOT NULL AND customTaskTitle != '' THEN 1 ELSE 0 END) as com_titulo_custom,\n  SUM(CASE WHEN taskId IS NOT NULL THEN 1 ELSE 0 END) as com_taskId_biblioteca,\n  SUM(CASE WHEN (customTaskTitle IS NULL OR customTaskTitle = '') AND taskId IS NULL THEN 1 ELSE 0 END) as sem_nome_nenhum,\n  SUM(CASE WHEN taskMode IS NULL OR taskMode = '' THEN 1 ELSE 0 END) as sem_taskMode,\n  SUM(CASE WHEN taskMode = 'sem_tarefa' THEN 1 ELSE 0 END) as modo_sem_tarefa\nFROM mentoring_sessions\nWHERE taskStatus != 'sem_tarefa' AND taskStatus IS NOT NULL;",
+  "rows": [
+    {
+      "total_com_tarefa": "1222",
+      "com_titulo_custom": "3",
+      "com_taskId_biblioteca": "0",
+      "sem_nome_nenhum": "1219",
+      "sem_taskMode": "0",
+      "modo_sem_tarefa": "1218"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_com_tarefa\tcom_titulo_custom\tcom_taskId_biblioteca\tsem_nome_nenhum\tsem_taskMode\tmodo_sem_tarefa\n1222\t3\t0\t1219\t0\t1218\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}

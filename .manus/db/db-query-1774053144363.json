@@ -1,0 +1,34 @@
+{
+  "query": "SELECT ap.id AS pdiId, ap.alunoId, ap.trilhaId, ap.consultorId, ap.programId, ap.macroInicio, ap.macroTermino, ap.status, ap.totalSessoesPrevistas,\n  (SELECT COUNT(*) FROM assessment_competencias ac WHERE ac.assessmentPdiId = ap.id) AS numCompetencias\nFROM assessment_pdi ap\nWHERE ap.alunoId = 660014;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id AS pdiId, ap.alunoId, ap.trilhaId, ap.consultorId, ap.programId, ap.macroInicio, ap.macroTermino, ap.status, ap.totalSessoesPrevistas,\n  (SELECT COUNT(*) FROM assessment_competencias ac WHERE ac.assessmentPdiId = ap.id) AS numCompetencias\nFROM assessment_pdi ap\nWHERE ap.alunoId = 660014;",
+  "rows": [
+    {
+      "pdiId": "210001",
+      "alunoId": "660014",
+      "trilhaId": "1",
+      "consultorId": "39",
+      "programId": "90002",
+      "macroInicio": "2026-04-01",
+      "macroTermino": "2026-04-30",
+      "status": "ativo",
+      "totalSessoesPrevistas": "NULL",
+      "numCompetencias": "3"
+    },
+    {
+      "pdiId": "210002",
+      "alunoId": "660014",
+      "trilhaId": "2",
+      "consultorId": "39",
+      "programId": "90002",
+      "macroInicio": "2026-05-01",
+      "macroTermino": "2026-05-30",
+      "status": "ativo",
+      "totalSessoesPrevistas": "NULL",
+      "numCompetencias": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "pdiId\talunoId\ttrilhaId\tconsultorId\tprogramId\tmacroInicio\tmacroTermino\tstatus\ttotalSessoesPrevistas\tnumCompetencias\n210001\t660014\t1\t39\t90002\t2026-04-01\t2026-04-30\tativo\tNULL\t3\n210002\t660014\t2\t39\t90002\t2026-05-01\t2026-05-30\tativo\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

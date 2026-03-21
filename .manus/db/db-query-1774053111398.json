@@ -1,0 +1,30 @@
+{
+  "query": "SELECT a.id, a.name, a.email, a.isActive, a.programId, p.name AS programName, a.consultorId, a.turmaId\nFROM alunos a \nLEFT JOIN programs p ON a.programId = p.id\nWHERE a.name LIKE '%Julia%'\nORDER BY a.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.email, a.isActive, a.programId, p.name AS programName, a.consultorId, a.turmaId\nFROM alunos a \nLEFT JOIN programs p ON a.programId = p.id\nWHERE a.name LIKE '%Julia%'\nORDER BY a.name;",
+  "rows": [
+    {
+      "id": "660014",
+      "name": "Julia Souza Makiyama",
+      "email": "jumakiyama@gmail.com",
+      "isActive": "1",
+      "programId": "90002",
+      "programName": "Ckm Talents",
+      "consultorId": "39",
+      "turmaId": "NULL"
+    },
+    {
+      "id": "30082",
+      "name": "Juliana Masson Prediger",
+      "email": "juliana.prediger@to.sebrae.com.br",
+      "isActive": "1",
+      "programId": "17",
+      "programName": "SEBRAE TO",
+      "consultorId": "35",
+      "turmaId": "30005"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tisActive\tprogramId\tprogramName\tconsultorId\tturmaId\n660014\tJulia Souza Makiyama\tjumakiyama@gmail.com\t1\t90002\tCkm Talents\t39\tNULL\n30082\tJuliana Masson Prediger\tjuliana.prediger@to.sebrae.com.br\t1\t17\tSEBRAE TO\t35\t30005\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

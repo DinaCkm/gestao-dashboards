@@ -1,0 +1,28 @@
+{
+  "query": "SELECT a.id, a.name, a.email, a.programId, a.turmaId, a.isActive, p.name AS programName FROM alunos a LEFT JOIN programs p ON a.programId = p.id WHERE a.consultorId = 39 AND a.isActive = 1 ORDER BY a.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.email, a.programId, a.turmaId, a.isActive, p.name AS programName FROM alunos a LEFT JOIN programs p ON a.programId = p.id WHERE a.consultorId = 39 AND a.isActive = 1 ORDER BY a.name;",
+  "rows": [
+    {
+      "id": "660014",
+      "name": "Julia Souza Makiyama",
+      "email": "jumakiyama@gmail.com",
+      "programId": "90002",
+      "turmaId": "NULL",
+      "isActive": "1",
+      "programName": "Ckm Talents"
+    },
+    {
+      "id": "30099",
+      "name": "Vanessa Bertholdo Vargas",
+      "email": "vanessa.vargas@embrapii.org.br",
+      "programId": "18",
+      "turmaId": "30002",
+      "isActive": "1",
+      "programName": "EMBRAPII"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tprogramId\tturmaId\tisActive\tprogramName\n660014\tJulia Souza Makiyama\tjumakiyama@gmail.com\t90002\tNULL\t1\tCkm Talents\n30099\tVanessa Bertholdo Vargas\tvanessa.vargas@embrapii.org.br\t18\t30002\t1\tEMBRAPII\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

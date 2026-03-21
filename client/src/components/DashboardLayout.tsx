@@ -72,6 +72,7 @@ import {
   Home,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
@@ -283,6 +284,14 @@ function DashboardLayoutContent({
   const isAdmin = user?.role === "admin";
   const hasConsultorId = !!(user as any)?.consultorId;
   const consultorRole = (user as any)?.consultorRole as string | null | undefined;
+
+  // Badge de revisões pendentes para admin e mentor
+  const isMentorOrAdmin = isAdmin || consultorRole === 'mentor';
+  const { data: revisoesPendentes } = trpc.onboarding.contarRevisoesPendentes.useQuery(undefined, {
+    enabled: isMentorOrAdmin,
+    refetchInterval: 30000, // Atualiza a cada 30s
+  });
+  const revisoesBadgeCount = revisoesPendentes?.count || 0;
 
   // Para admin, determinar qual grupo está ativo (para abrir automaticamente)
   const activeGroupIndex = useMemo(() => {
@@ -557,6 +566,11 @@ function DashboardLayoutContent({
                                       >
                                         <item.icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
                                         <span>{item.label}</span>
+                                        {item.path === '/painel-revisoes' && revisoesBadgeCount > 0 && (
+                                          <span className="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">
+                                            {revisoesBadgeCount}
+                                          </span>
+                                        )}
                                         {isPlaceholder && (
                                           <span className="ml-auto text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">Em breve</span>
                                         )}
@@ -593,6 +607,11 @@ function DashboardLayoutContent({
                           className={`h-4 w-4 ${isActive ? "text-primary" : "text-muted-foreground"}`}
                         />
                         <span className={isActive ? "text-foreground font-medium" : ""}>{item.label}</span>
+                        {item.path === '/painel-revisoes' && revisoesBadgeCount > 0 && (
+                          <span className="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">
+                            {revisoesBadgeCount}
+                          </span>
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );

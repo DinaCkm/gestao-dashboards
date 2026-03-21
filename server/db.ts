@@ -5951,6 +5951,7 @@ export async function getActivitySubmissionsForAdmin(filters?: {
   consultorId?: number;
   alunoId?: number;
   turmaId?: number;
+  programId?: number;
   status?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -5976,6 +5977,13 @@ export async function getActivitySubmissionsForAdmin(filters?: {
   }
   if (filters?.turmaId) {
     conditions.push(eq(mentoringSessions.turmaId, filters.turmaId));
+  }
+  if (filters?.programId) {
+    // Filtrar por programa: buscar alunos do programa e filtrar sessões
+    const alunosDoPrograma = await db.select({ id: alunos.id }).from(alunos).where(eq(alunos.programId, filters.programId));
+    const alunoIds = alunosDoPrograma.map(a => a.id);
+    if (alunoIds.length === 0) return [];
+    conditions.push(inArray(mentoringSessions.alunoId, alunoIds));
   }
   if (filters?.status) {
     conditions.push(eq(mentoringSessions.taskStatus, filters.status as any));
@@ -8477,21 +8485,43 @@ async function getOnboardingRevisoesByAluno(alunoId: number) {
 /**
  * Listar todas as solicitações de revisão pendentes (para admin/mentora)
  */
-async function getOnboardingRevisoesPendentes() {
+async function getOnboardingRevisoesPendentes(consultorId?: number) {
   const db = await getDb();
   if (!db) return [];
+  if (consultorId) {
+    // Mentor: filtrar apenas revisões dos seus alunos
+    const meusAlunos = await db.select({ id: alunos.id }).from(alunos).where(eq(alunos.consultorId, consultorId));
+    const meusAlunoIds = meusAlunos.map(a => a.id);
+    if (meusAlunoIds.length === 0) return [];
+    return await db.select().from(onboardingRevisoes)
+      .where(and(eq(onboardingRevisoes.status, 'pendente'), inArray(onboardingRevisoes.alunoId, meusAlunoIds)))
+      .orderBy(desc(onboardingRevisoes.createdAt));
+  }
   return await db.select().from(onboardingRevisoes).where(eq(onboardingRevisoes.status, 'pendente')).orderBy(desc(onboardingRevisoes.createdAt));
 }
 
 /**
  * Listar TODAS as solicitações de revisão com dados enriquecidos (aluno, programa, mentor)
  */
-async function getOnboardingRevisoesEnriquecidas(statusFilter?: 'pendente' | 'em_analise' | 'resolvida' | 'cancelada') {
+async function getOnboardingRevisoesEnriquecidas(statusFilter?: 'pendente' | 'em_analise' | 'resolvida' | 'cancelada', consultorId?: number) {
   const db = await getDb();
   if (!db) return [];
+  
+  // Se mentor, buscar apenas alunoIds do mentor
+  let meusAlunoIds: number[] | null = null;
+  if (consultorId) {
+    const meusAlunos = await db.select({ id: alunos.id }).from(alunos).where(eq(alunos.consultorId, consultorId));
+    meusAlunoIds = meusAlunos.map(a => a.id);
+    if (meusAlunoIds.length === 0) return [];
+  }
+  
   let revisoes;
-  if (statusFilter) {
-    revisoes = await db.select().from(onboardingRevisoes).where(eq(onboardingRevisoes.status, statusFilter)).orderBy(desc(onboardingRevisoes.createdAt));
+  const conditions = [];
+  if (statusFilter) conditions.push(eq(onboardingRevisoes.status, statusFilter));
+  if (meusAlunoIds) conditions.push(inArray(onboardingRevisoes.alunoId, meusAlunoIds));
+  
+  if (conditions.length > 0) {
+    revisoes = await db.select().from(onboardingRevisoes).where(and(...conditions)).orderBy(desc(onboardingRevisoes.createdAt));
   } else {
     revisoes = await db.select().from(onboardingRevisoes).orderBy(desc(onboardingRevisoes.createdAt));
   }

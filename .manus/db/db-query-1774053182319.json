@@ -1,0 +1,34 @@
+{
+  "query": "SELECT 'metas' AS tipo, COUNT(*) AS total FROM metas WHERE alunoId = 660014\nUNION ALL\nSELECT 'sessoes' AS tipo, COUNT(*) AS total FROM mentoring_sessions WHERE alunoId = 660014\nUNION ALL\nSELECT 'disc_resultados' AS tipo, COUNT(*) AS total FROM disc_resultados WHERE alunoId = 660014\nUNION ALL\nSELECT 'disc_respostas' AS tipo, COUNT(*) AS total FROM disc_respostas WHERE alunoId = 660014\nUNION ALL\nSELECT 'assessment_pdi' AS tipo, COUNT(*) AS total FROM assessment_pdi WHERE alunoId = 660014\nUNION ALL\nSELECT 'assessment_comp' AS tipo, COUNT(*) AS total FROM assessment_competencias WHERE assessmentPdiId IN (SELECT id FROM assessment_pdi WHERE alunoId = 660014);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT 'metas' AS tipo, COUNT(*) AS total FROM metas WHERE alunoId = 660014\nUNION ALL\nSELECT 'sessoes' AS tipo, COUNT(*) AS total FROM mentoring_sessions WHERE alunoId = 660014\nUNION ALL\nSELECT 'disc_resultados' AS tipo, COUNT(*) AS total FROM disc_resultados WHERE alunoId = 660014\nUNION ALL\nSELECT 'disc_respostas' AS tipo, COUNT(*) AS total FROM disc_respostas WHERE alunoId = 660014\nUNION ALL\nSELECT 'assessment_pdi' AS tipo, COUNT(*) AS total FROM assessment_pdi WHERE alunoId = 660014\nUNION ALL\nSELECT 'assessment_comp' AS tipo, COUNT(*) AS total FROM assessment_competencias WHERE assessmentPdiId IN (SELECT id FROM assessment_pdi WHERE alunoId = 660014);",
+  "rows": [
+    {
+      "tipo": "metas",
+      "total": "2"
+    },
+    {
+      "tipo": "disc_resultados",
+      "total": "1"
+    },
+    {
+      "tipo": "assessment_pdi",
+      "total": "2"
+    },
+    {
+      "tipo": "disc_respostas",
+      "total": "28"
+    },
+    {
+      "tipo": "sessoes",
+      "total": "0"
+    },
+    {
+      "tipo": "assessment_comp",
+      "total": "4"
+    }
+  ],
+  "messages": [],
+  "stdout": "tipo\ttotal\nmetas\t2\ndisc_resultados\t1\nassessment_pdi\t2\ndisc_respostas\t28\nsessoes\t0\nassessment_comp\t4\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

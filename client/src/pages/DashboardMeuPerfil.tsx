@@ -1625,8 +1625,15 @@ export default function DashboardMeuPerfil() {
                             {getTaskIcon(sessao.taskStatus)}
                             <span className="text-gray-600">
                               {sessao.sessionNumber === 1 ? "Assessment (sem tarefa)" :
-                                sessao.taskStatus === "entregue" ? "Atividade entregue" :
-                                sessao.taskStatus === "nao_entregue" ? "Atividade não entregue" : "Sem tarefa"}
+                                sessao.taskStatus === "entregue" || sessao.taskStatus === "nao_entregue" ? (
+                                  <>
+                                    {sessao.taskStatus === "entregue" ? "Entregue" : "Não entregue"}
+                                    {" — "}
+                                    <span className="font-medium text-gray-700">
+                                      {sessao.customTaskTitle || "Tarefa não atribuída"}
+                                    </span>
+                                  </>
+                                ) : "Sem tarefa"}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5" title="Engajamento">

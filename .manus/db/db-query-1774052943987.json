@@ -1,0 +1,55 @@
+{
+  "query": "SELECT c.id, c.name, c.email, c.role, c.programId, p.name AS programName, c.isActive\nFROM consultors c \nLEFT JOIN programs p ON c.programId = p.id\nWHERE c.role = 'gerente' AND c.isActive = 1\nORDER BY c.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT c.id, c.name, c.email, c.role, c.programId, p.name AS programName, c.isActive\nFROM consultors c \nLEFT JOIN programs p ON c.programId = p.id\nWHERE c.role = 'gerente' AND c.isActive = 1\nORDER BY c.name;",
+  "rows": [
+    {
+      "id": "120002",
+      "name": "Brenno Passoni",
+      "email": "brenno.passoni@embrapii.org.br",
+      "role": "gerente",
+      "programId": "NULL",
+      "programName": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "180003",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "gerente",
+      "programId": "NULL",
+      "programName": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90001",
+      "name": "gerente teste",
+      "email": "teste@embrapii.com",
+      "role": "gerente",
+      "programId": "NULL",
+      "programName": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "30001",
+      "name": "Joseane",
+      "email": "joseane@to.sebrae.com.br",
+      "role": "gerente",
+      "programId": "NULL",
+      "programName": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120001",
+      "name": "Leandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br",
+      "email": "leandro.rodrigues@embrapii.org.br",
+      "role": "gerente",
+      "programId": "NULL",
+      "programName": "NULL",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tprogramId\tprogramName\tisActive\n120002\tBrenno Passoni\tbrenno.passoni@embrapii.org.br\tgerente\tNULL\tNULL\t1\n180003\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\tNULL\tNULL\t1\n90001\tgerente teste\tteste@embrapii.com\tgerente\tNULL\tNULL\t1\n30001\tJoseane\tjoseane@to.sebrae.com.br\tgerente\tNULL\tNULL\t1\n120001\tLeandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br\tleandro.rodrigues@embrapii.org.br\tgerente\tNULL\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}
