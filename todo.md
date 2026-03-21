@@ -3117,3 +3117,6 @@
 
 ## Renomear aba Cursos para Mini_Cursos
 - [x] Trocar label "Cursos" para "Mini_Cursos" no header (AlunoLayout) e na aba de tabs (DashboardMeuPerfil)
+
+## Correção - Menu header Cursos deve permanecer original
+- [x] Reverter AlunoLayout: aba "Cursos" no menu header volta ao original (label "Cursos", sem externalUrl, navega para /meus-cursos)
