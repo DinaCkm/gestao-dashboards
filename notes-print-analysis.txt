@@ -1,0 +1,26 @@
+Print 1 (Boas-Vindas Gestor):
+- Sidebar: fundo escuro (parece ser o tema dark padrão do sistema, não roxo puro)
+- Item ativo "Boas-Vindas" com fundo turquesa/teal
+- Itens do menu: Minha Empresa, Sessões de Mentoria, Metas de Desenvolvimento, Relatórios
+- P.D.I Evoluir no rodapé com destaque turquesa
+- Badge "Gerente" ao lado do nome do usuário
+
+Conteúdo da página Boas-Vindas:
+- Fundo BRANCO/claro (não escuro!)
+- Badge "Programa de Certificação" com fundo turquesa claro, texto turquesa
+- Título: "Bem-vindo(a), Leandro!" - nome em TURQUESA/azul celeste
+- Texto descritivo em cinza escuro
+- Botão "Acessar Minha Empresa" com fundo turquesa, texto escuro
+- Botão "Conhecer o Programa" com borda escura, texto escuro
+- Stats cards à DIREITA: 4 cards com bordas arredondadas, ícones turquesa, números grandes
+- Seção "Principais Competências" abaixo dos stats
+
+Print 2 (Dashboard EMBRAPII):
+- Fundo com gradiente suave azul claro/lilás
+- Cards brancos com bordas suaves
+- Texto escuro
+- Barra de progresso com gradiente turquesa/teal
+
+PEDIDO DO USUÁRIO:
+- Menu ROXO para TODAS as páginas (não apenas gestor)
+- Página Boas-Vindas: fundo claro como no print, letras em ROXO e AZUL CELESTE

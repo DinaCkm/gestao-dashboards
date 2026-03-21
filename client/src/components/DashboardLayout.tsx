@@ -286,18 +286,6 @@ function DashboardLayoutContent({
   const consultorRole = (user as any)?.consultorRole as string | null | undefined;
   const isGerente = consultorRole === 'gerente' || (!hasConsultorId && user?.role === 'manager' && !(user as any)?.alunoId);
 
-  // Cores do logo Eco do Bem para o gestor (roxo + turquesa)
-  const gestorSidebarStyles = isGerente ? {
-    '--sidebar': 'oklch(0.25 0.10 305)',
-    '--sidebar-foreground': 'oklch(0.98 0.005 220)',
-    '--sidebar-primary': 'oklch(0.72 0.10 195)',
-    '--sidebar-primary-foreground': 'oklch(0.20 0.08 305)',
-    '--sidebar-accent': 'oklch(0.30 0.10 305)',
-    '--sidebar-accent-foreground': 'oklch(0.98 0.005 220)',
-    '--sidebar-border': 'oklch(0.35 0.08 305)',
-    '--sidebar-ring': 'oklch(0.72 0.10 195)',
-  } as React.CSSProperties : {};
-
   // Badge de revisões pendentes para admin e mentor
   const isMentorOrAdmin = isAdmin || consultorRole === 'mentor';
   const { data: revisoesPendentes } = trpc.onboarding.contarRevisoesPendentes.useQuery(undefined, {
@@ -458,7 +446,7 @@ function DashboardLayoutContent({
 
   return (
     <>
-      <div className="relative" ref={sidebarRef} style={gestorSidebarStyles}>
+      <div className="relative" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
           className="border-r-0 bg-sidebar"

@@ -2998,3 +2998,10 @@
 - [x] Sidebar do gestor: mudar cores para roxo (#5B3A7D) + turquesa (#3BBFBF) do logo
 - [x] Página Boas-Vindas do gestor: mudar cores para roxo + turquesa do logo
 - [ ] Manter cores dos outros perfis (admin, mentor, aluno) inalteradas por enquanto
+
+## A20-8 Revisão: Ajuste de cores conforme feedback do usuário (20/03/2026)
+- [x] Sidebar GLOBAL: mudado de navy blue para roxo (#5B3A7D) para TODOS os perfis
+- [x] Página Boas-Vindas: removido hero escuro, agora usa fundo claro/branco
+- [x] Página Boas-Vindas: letras em roxo (#5B3A7D) e azul celeste (#3BBFBF)
+- [x] Página Boas-Vindas: layout conforme print - badge turquesa, nome em turquesa, stats cards à direita com bordas
+- [x] Fundo claro mantido nas demais páginas do gestor
