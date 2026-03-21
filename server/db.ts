@@ -6109,6 +6109,60 @@ export async function liberarOnboardingAluno(alunoId: number) {
   return { success: true, message: 'Onboarding liberado para novo ciclo' };
 }
 
+export async function liberarOnboardingEmMassa(alunoIds: number[]) {
+  const db = await getDb();
+  if (!db) return { success: false, message: 'Erro de conexão com banco', liberados: 0, erros: [] as string[] };
+
+  if (alunoIds.length === 0) {
+    return { success: false, message: 'Nenhum aluno selecionado', liberados: 0, erros: [] as string[] };
+  }
+
+  // Buscar alunos que existem e têm PDI
+  const alunosEncontrados = await db.select({ id: alunos.id, name: alunos.name, onboardingLiberado: alunos.onboardingLiberado })
+    .from(alunos)
+    .where(inArray(alunos.id, alunoIds));
+
+  const alunosComPdi = await db.select({ alunoId: assessmentPdi.alunoId })
+    .from(assessmentPdi)
+    .where(inArray(assessmentPdi.alunoId, alunoIds))
+    .groupBy(assessmentPdi.alunoId);
+
+  const alunoIdsComPdi = new Set(alunosComPdi.map(a => a.alunoId));
+  const erros: string[] = [];
+  const idsParaLiberar: number[] = [];
+
+  for (const id of alunoIds) {
+    const aluno = alunosEncontrados.find(a => a.id === id);
+    if (!aluno) {
+      erros.push(`Aluno ID ${id}: não encontrado`);
+      continue;
+    }
+    if (!alunoIdsComPdi.has(id)) {
+      erros.push(`${aluno.name}: sem PDI (já deve ir para onboarding automaticamente)`);
+      continue;
+    }
+    if (aluno.onboardingLiberado === 1) {
+      erros.push(`${aluno.name}: onboarding já liberado`);
+      continue;
+    }
+    idsParaLiberar.push(id);
+  }
+
+  if (idsParaLiberar.length > 0) {
+    await db.update(alunos).set({
+      onboardingLiberado: 1,
+      onboardingLiberadoEm: new Date(),
+    }).where(inArray(alunos.id, idsParaLiberar));
+  }
+
+  return {
+    success: true,
+    message: `Onboarding liberado para ${idsParaLiberar.length} aluno(s)${erros.length > 0 ? `. ${erros.length} ignorado(s).` : '.'}`,
+    liberados: idsParaLiberar.length,
+    erros,
+  };
+}
+
 // ============ STATUS DE ONBOARDING DO ALUNO ============
 
 export async function getAlunoOnboardingStatus(user: {

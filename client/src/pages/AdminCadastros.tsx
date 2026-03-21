@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon } from "lucide-react";
+import { Loader2, Plus, Building2, Users, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
@@ -270,6 +271,20 @@ export default function AdminCadastros() {
     },
     onError: (err: any) => toast.error(`Erro ao liberar onboarding: ${err.message}`),
   });
+  const liberarOnboardingEmMassa = trpc.admin.liberarOnboardingEmMassa.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast.success(data.message || `Onboarding liberado para ${data.liberados} aluno(s)!`);
+        if (data.erros && data.erros.length > 0) {
+          data.erros.forEach((e: string) => toast.warning(e));
+        }
+        refetchAllAlunos();
+      } else {
+        toast.error(data.message || "Erro ao liberar onboarding em massa");
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao liberar onboarding em massa: ${err.message}`),
+  });
 
   const deleteAluno = trpc.admin.deleteAluno.useMutation({
     onSuccess: (data: any) => {
@@ -377,6 +392,8 @@ export default function AdminCadastros() {
               isTogglingStatus={toggleAlunoStatus.isPending}
               onLiberarOnboarding={liberarOnboarding.mutate}
               isLiberandoOnboarding={liberarOnboarding.isPending}
+              onLiberarOnboardingEmMassa={liberarOnboardingEmMassa.mutate}
+              isLiberandoEmMassa={liberarOnboardingEmMassa.isPending}
             />
           </TabsContent>
 
@@ -428,7 +445,7 @@ export default function AdminCadastros() {
 }
 
 // ============ ALUNOS TAB ============
-function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding }: {
+function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding, onLiberarOnboardingEmMassa, isLiberandoEmMassa }: {
   alunos: any[];
   empresas: any[];
   mentoresList: any[];
@@ -445,6 +462,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   isTogglingStatus: boolean;
   onLiberarOnboarding: (data: any) => void;
   isLiberandoOnboarding: boolean;
+  onLiberarOnboardingEmMassa: (data: any) => void;
+  isLiberandoEmMassa: boolean;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [editAluno, setEditAluno] = useState<any>(null);
@@ -520,6 +539,37 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     } finally {
       setIsExporting(false);
     }
+  };
+
+  // Selection state for mass operations
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [massConfirmOpen, setMassConfirmOpen] = useState(false);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const elegiveisIds = filteredAlunos
+      .filter((a: any) => a.hasPdi && a.onboardingLiberado !== 1 && a.isActive === 1)
+      .map((a: any) => a.id);
+    const allSelected = elegiveisIds.length > 0 && elegiveisIds.every((id: number) => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(elegiveisIds));
+    }
+  };
+
+  const handleMassLiberar = () => {
+    if (selectedIds.size === 0) return;
+    onLiberarOnboardingEmMassa({ alunoIds: Array.from(selectedIds) });
+    setSelectedIds(new Set());
+    setMassConfirmOpen(false);
   };
 
   // Search/filter state
@@ -896,16 +946,75 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
               })}
             </div>
 
+            {/* Selection action bar */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <CheckSquare className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">{selectedIds.size} aluno(s) selecionado(s)</span>
+                <div className="flex-1" />
+                <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())} className="text-muted-foreground">
+                  Limpar seleção
+                </Button>
+                <Button size="sm" onClick={() => setMassConfirmOpen(true)} disabled={isLiberandoEmMassa} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  {isLiberandoEmMassa ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Liberando...</> : <><RotateCcw className="h-4 w-4 mr-2" /> Liberar Onboarding em Massa</>}
+                </Button>
+              </div>
+            )}
+
+            {/* Mass confirmation dialog */}
+            <Dialog open={massConfirmOpen} onOpenChange={setMassConfirmOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2"><RotateCcw className="h-5 w-5 text-blue-600" /> Liberar Onboarding em Massa</DialogTitle>
+                  <DialogDescription>
+                    Você está prestes a liberar o onboarding para <strong>{selectedIds.size} aluno(s)</strong> selecionado(s). Isso permitirá que eles refaçam o onboarding para um novo ciclo.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-2">
+                  <p className="text-sm text-muted-foreground">Alunos que não possuem PDI ou que já tiveram o onboarding liberado serão ignorados automaticamente.</p>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setMassConfirmOpen(false)}>Cancelar</Button>
+                  <Button onClick={handleMassLiberar} disabled={isLiberandoEmMassa} className="bg-blue-600 hover:bg-blue-700">
+                    {isLiberandoEmMassa ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Liberando...</> : "Confirmar Liberação"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Select all header */}
+            <div className="flex items-center gap-2 mb-2 px-4 py-1.5">
+              <Checkbox
+                checked={(() => {
+                  const elegiveisIds = filteredAlunos.filter((a: any) => a.hasPdi && a.onboardingLiberado !== 1 && a.isActive === 1).map((a: any) => a.id);
+                  return elegiveisIds.length > 0 && elegiveisIds.every((id: number) => selectedIds.has(id));
+                })()}
+                onCheckedChange={toggleSelectAll}
+                className="mr-1"
+              />
+              <span className="text-xs text-muted-foreground">Selecionar todos elegíveis para liberação de onboarding</span>
+            </div>
+
             <div className="space-y-1">
               {filteredAlunos.map((aluno: any) => {
                 const isExpanded = expandedId === aluno.id;
+                const isElegivel = aluno.hasPdi && aluno.onboardingLiberado !== 1 && aluno.isActive === 1;
                 return (
-                  <div key={aluno.id} className={`border rounded-lg transition-all ${aluno.isActive !== 1 ? 'opacity-50' : ''} ${isExpanded ? 'ring-1 ring-primary/30 shadow-sm' : 'hover:bg-muted/30'}`}>
+                  <div key={aluno.id} className={`border rounded-lg transition-all ${aluno.isActive !== 1 ? 'opacity-50' : ''} ${isExpanded ? 'ring-1 ring-primary/30 shadow-sm' : 'hover:bg-muted/30'} ${selectedIds.has(aluno.id) ? 'ring-1 ring-blue-400 bg-blue-50/50' : ''}`}>
                     {/* Linha principal compacta - clicável */}
                     <div
                       className="flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none"
                       onClick={() => setExpandedId(isExpanded ? null : aluno.id)}
                     >
+                      {isElegivel && (
+                        <Checkbox
+                          checked={selectedIds.has(aluno.id)}
+                          onCheckedChange={() => toggleSelect(aluno.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="mr-0"
+                        />
+                      )}
+                      {!isElegivel && <div className="w-4" />}
                       <div className="text-muted-foreground">
                         {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                       </div>

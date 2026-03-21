@@ -4291,6 +4291,11 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.liberarOnboardingAluno(input.alunoId);
       }),
+    liberarOnboardingEmMassa: adminProcedure
+      .input(z.object({ alunoIds: z.array(z.number()).min(1) }))
+      .mutation(async ({ input }) => {
+        return await db.liberarOnboardingEmMassa(input.alunoIds);
+      }),
 
     // ============ PAINEL DE AGENDAMENTOS ============
     allAppointments: adminProcedure

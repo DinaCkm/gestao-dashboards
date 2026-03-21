@@ -3012,3 +3012,11 @@
 - [x] Aplicar cores roxo/turquesa nos títulos de todas as páginas do gestor (exceto Boas-Vindas já feito)
 - [x] Aplicar cores roxo/turquesa nos títulos de todas as páginas do aluno
 - [x] Verificar consistência visual em todas as páginas (via CSS global em index.css)
+
+## Funcionalidade: Liberar Onboarding para Veteranos (21/03/2026)
+- [x] Analisar sistema de onboarding existente (schema, routers, fluxo) - já existe procedure individual
+- [x] Backend: criar procedure de liberação em massa (array de alunoIds)
+- [x] Frontend: adicionar checkboxes de seleção na lista de alunos
+- [x] Frontend: botão "Liberar Onboarding em Massa" com confirmação
+- [x] Frontend: seleção automática de todos elegíveis (checkbox "Selecionar todos")
+- [x] Testar compilação e funcionalidade (vitest 3/3 passed, TypeScript OK)
