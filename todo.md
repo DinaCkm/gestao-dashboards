@@ -3170,3 +3170,6 @@
 - [x] Incluir campos: link de evidência, imagem (upload), relato, aplicabilidade prática (texto + nota 0-10) [JÁ EXISTIA]
 - [x] Conectar ao backend existente (submitEvidence, submitRelato, submitAplicabilidade) [JÁ EXISTIA]
 - [x] Mostrar status de envio (já enviado vs pendente) dentro da tarefa expandida [CORRIGIDO: taskStatus agora é nao_entregue quando tarefa é atribuída]
+
+## Remoção de seção obsoleta
+- [x] Remover seção "Como enviar suas atividades" da aba Tarefas do Portal do Aluno (instrução de salvar na nuvem e compartilhar por e-mail é desnecessária)

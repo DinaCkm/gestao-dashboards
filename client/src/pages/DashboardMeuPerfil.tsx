@@ -2140,32 +2140,6 @@ export default function DashboardMeuPerfil() {
               );
             })()}
 
-            {/* Instrução sobre envio de tarefas na nuvem */}
-            <Card className="bg-blue-50 border border-blue-200 shadow-sm mb-4">
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-start gap-3">
-                  <Cloud className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold text-blue-900 mb-1 flex items-center gap-2">
-                      <Share2 className="h-4 w-4" /> Como enviar suas atividades
-                    </p>
-                    <p className="text-xs text-blue-800 leading-relaxed">
-                      Salve sua atividade na nuvem (Google Drive, OneDrive, Dropbox ou outro serviço de armazenamento) e 
-                      <strong> compartilhe o arquivo com o e-mail do(a) seu(sua) mentor(a)</strong> para que ele(a) possa abrir e analisar.
-                      {aluno.mentorEmail && (
-                        <span className="block mt-1.5 p-2 bg-white/60 rounded border border-blue-200">
-                          <strong>E-mail do(a) mentor(a):</strong>{" "}
-                          <a href={`mailto:${aluno.mentorEmail}`} className="text-blue-700 font-medium hover:underline">{aluno.mentorEmail}</a>
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-blue-700 mt-1.5 italic">
-                      Depois de compartilhar, cole o link do arquivo no campo abaixo para registrar a entrega.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Resumo de atividades por sessão */}
             <Card className="bg-white border border-gray-200 shadow-sm mb-4">
