@@ -77,16 +77,74 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 }
 
 // ============ Contract Info Card ============
-function ContratoInfoCard({ contratos, alunoName, tipoMentoria }: { contratos: any[]; alunoName: string; tipoMentoria?: string | null }) {
+function ContratoInfoCard({ contratos, alunoName, tipoMentoria, aluno }: { contratos: any[]; alunoName: string; tipoMentoria?: string | null; aluno?: any }) {
+  const formatDate = (d: any) => {
+    if (!d) return "—";
+    const date = new Date(d);
+    return date.toLocaleDateString("pt-BR");
+  };
+
   if (!contratos || contratos.length === 0) {
+    // Fallback: mostrar dados inline do aluno
+    const cInicio = aluno?.contratoInicio;
+    const cFim = aluno?.contratoFim;
+    const sessoes = aluno?.totalSessoesContratadas;
+    const tipoM = aluno?.tipoMentoria || tipoMentoria;
+    const hasInlineData = cInicio || cFim || sessoes || tipoM;
+
+    if (hasInlineData) {
+      const inicio = cInicio ? new Date(cInicio) : null;
+      const fim = cFim ? new Date(cFim) : null;
+      const diffMeses = inicio && fim ? Math.round((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30)) : 0;
+
+      return (
+        <div className="mb-6 border border-blue-200 bg-blue-50/50 rounded-lg px-5 py-4">
+          <div className="flex items-center gap-2 mb-3">
+            <FileText className="h-5 w-5 text-blue-600" />
+            <h3 className="text-sm font-semibold text-blue-800">Informações do Contrato</h3>
+            <Badge variant="outline" className="ml-auto text-xs border-blue-300 text-blue-700">
+              Cadastro do Aluno
+            </Badge>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div>
+              <p className="text-[11px] text-blue-600 uppercase tracking-wide font-medium">Início do Contrato</p>
+              <p className="text-sm font-semibold text-blue-900">{formatDate(cInicio)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-blue-600 uppercase tracking-wide font-medium">Término do Contrato</p>
+              <p className="text-sm font-semibold text-blue-900">{formatDate(cFim)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-blue-600 uppercase tracking-wide font-medium">Duração</p>
+              <p className="text-sm font-semibold text-blue-900">{diffMeses > 0 ? `${diffMeses} meses` : '—'}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-blue-600 uppercase tracking-wide font-medium">Sessões Contratadas</p>
+              <p className="text-sm font-semibold text-blue-900">{sessoes || '—'}</p>
+            </div>
+            <div>
+              <p className="text-[11px] text-blue-600 uppercase tracking-wide font-medium">Tipo de Mentoria</p>
+              <p className="text-sm font-semibold text-blue-900">
+                {tipoM === 'grupo' ? 'Em Grupo' : tipoM === 'individual' ? 'Individual' : tipoM === 'sem_mentoria' ? 'Sem Mentoria' : '—'}
+              </p>
+            </div>
+          </div>
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-blue-500">
+            <Info className="h-3.5 w-3.5" />
+            Os macrociclos e microciclos devem estar dentro do período do contrato.
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="mb-6 border border-amber-200 bg-amber-50 rounded-lg px-4 py-3 flex items-start gap-3">
         <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
         <div>
           <p className="text-sm font-medium text-amber-800">Nenhum contrato cadastrado para {alunoName}</p>
           <p className="text-xs text-amber-600 mt-0.5">
-            O administrador precisa cadastrar o contrato do aluno antes de definir os macrociclos e microciclos.
-            Os períodos do assessment devem estar dentro do período do contrato.
+            O administrador precisa cadastrar o contrato do aluno (período, sessões de mentoria e tipo) no cadastro do aluno ou na seção de Contratos.
           </p>
         </div>
       </div>
@@ -95,12 +153,6 @@ function ContratoInfoCard({ contratos, alunoName, tipoMentoria }: { contratos: a
 
   const activeContratos = contratos.filter((c: any) => c.isActive === 1);
   const contrato = activeContratos[0] || contratos[0];
-
-  const formatDate = (d: any) => {
-    if (!d) return "—";
-    const date = new Date(d);
-    return date.toLocaleDateString("pt-BR");
-  };
 
   const inicio = new Date(contrato.periodoInicio);
   const fim = new Date(contrato.periodoTermino);
@@ -349,7 +401,7 @@ export default function NovoAssessment() {
         </div>
 
         {/* Contract Info Card (Item 2.3) */}
-        <ContratoInfoCard contratos={contratos} alunoName={selectedAluno?.name || "este aluno"} tipoMentoria={selectedAluno?.tipoMentoria} />
+        <ContratoInfoCard contratos={contratos} alunoName={selectedAluno?.name || "este aluno"} tipoMentoria={selectedAluno?.tipoMentoria} aluno={selectedAluno} />
 
         {/* Step Indicator */}
         <StepIndicator currentStep={step} />

@@ -1760,6 +1760,8 @@ export async function getAllAlunosForAdmin() {
     createdAt: alunos.createdAt,
     contratoInicio: alunos.contratoInicio,
     contratoFim: alunos.contratoFim,
+    totalSessoesContratadas: alunos.totalSessoesContratadas,
+    tipoMentoria: alunos.tipoMentoria,
     onboardingLiberado: alunos.onboardingLiberado,
     programName: programs.name,
     mentorName: consultors.name,

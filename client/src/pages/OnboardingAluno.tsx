@@ -2527,9 +2527,9 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                 </p>
                 <div className="space-y-2">
                   {[
-                    { icon: '📝', text: 'Evidências de desenvolvimento relatadas e confirmadas pela liderança ou mentor em cada trilha de Desenvolvimento' },
-                    { icon: '📊', text: 'Engajamento Final mínimo de 80%' },
-                    { icon: '🎯', text: 'Desafios cumpridos em mínimo de 80%' },
+                    { icon: '📝', text: 'Comprovar através de cases reais de aplicabilidade de cada jornada — evidências de desenvolvimento relatadas e confirmadas pela liderança ou mentor em cada trilha de Desenvolvimento' },
+                    { icon: '📊', text: 'Engajamento mínimo de 80% com a participação nos webinares, mentorias, cursos e tarefas' },
+                    { icon: '🎯', text: 'Cumprimento das metas desafiadoras que foram assumidas no início da jornada — desafios cumpridos em mínimo de 80%' },
                   ].map((req, idx) => (
                     <div key={idx} className="flex items-start gap-3 bg-white/60 rounded-lg p-3 border border-purple-100">
                       <span className="text-lg shrink-0">{req.icon}</span>

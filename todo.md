@@ -3097,3 +3097,11 @@
 - [x] Seção Contrato no Plano Individual: mostrar dados inline do aluno quando não há registro em contratos_aluno
 - [x] Badge de sessões contratadas + período do contrato no card do aluno mesmo sem contratos_aluno
 - [x] ContratoInfoReadonly: mostra dados inline do aluno (período, sessões, tipo mentoria) como fallback em todas as telas
+
+## Ampliar textos da Meta de Certificação LÍDER NÍVEL I
+- [x] Evidências: "Comprovar através de cases reais de aplicabilidade de cada jornada"
+- [x] Engajamento: "Engajamento mínimo de 80% com a participação nos webinares, mentorias, cursos e tarefas"
+- [x] Desafios: "Cumprimento das metas desafiadoras que foram assumidas no início da jornada"
+
+## BUG - getAllAlunosForAdmin não retornava totalSessoesContratadas e tipoMentoria
+- [x] Adicionados campos totalSessoesContratadas e tipoMentoria ao select de getAllAlunosForAdmin
