@@ -1168,6 +1168,44 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                             </span>
                           </div>
                         </div>
+                        {/* Dados do Onboarding */}
+                        {(aluno.telefone || aluno.cargo || aluno.areaAtuacao || aluno.minicurriculo || aluno.quemEVoce) && (
+                          <div className="mt-3 pt-3 border-t border-blue-200">
+                            <p className="text-xs font-semibold text-blue-600 mb-2">Dados Complementares (Onboarding)</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-1.5 text-sm">
+                              {aluno.telefone && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Telefone:</span>
+                                  <a href={`tel:${aluno.telefone}`} className="hover:underline">{aluno.telefone}</a>
+                                </div>
+                              )}
+                              {aluno.cargo && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Cargo:</span>
+                                  <span>{aluno.cargo}</span>
+                                </div>
+                              )}
+                              {aluno.areaAtuacao && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Área:</span>
+                                  <span>{aluno.areaAtuacao}</span>
+                                </div>
+                              )}
+                            </div>
+                            {aluno.minicurriculo && (
+                              <div className="mt-2 text-sm">
+                                <span className="text-muted-foreground">Minicurrículo:</span>
+                                <p className="mt-0.5 text-xs bg-blue-50 rounded p-2 border border-blue-100">{aluno.minicurriculo}</p>
+                              </div>
+                            )}
+                            {aluno.quemEVoce && (
+                              <div className="mt-2 text-sm">
+                                <span className="text-muted-foreground">Quem é Você:</span>
+                                <p className="mt-0.5 text-xs bg-blue-50 rounded p-2 border border-blue-100">{aluno.quemEVoce}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         {/* Ações */}
                         <div className="flex gap-2 mt-3 pt-3 border-t">
                           <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEditOpen(aluno); }}>

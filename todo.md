@@ -3181,3 +3181,6 @@
 - [x] Unificar cadastro admin + onboarding: admin deve ver e editar TODOS os campos do aluno (incluindo telefone, cargo, área de atuação, minicurrículo, quem é você)
 - [x] Dados visíveis para admin, mentor e aluno devem ser os mesmos (consistência)
 - [x] Mentora ver nome completo, email e telefone de quem agendou na página de agendamento
+
+## Bug Fix (23/03/2026)
+- [x] Mostrar dados do onboarding (telefone, cargo, área, minicurrículo, quem é você) na visualização expandida do card do aluno no AdminCadastros
