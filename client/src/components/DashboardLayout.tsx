@@ -193,7 +193,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: Settings, label: "Configurações", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: CalendarDays, label: "Perfil / Agenda", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   
   // === GERENTE DE EMPRESA ===
   { icon: Home, label: "Boas-Vindas", path: "/boas-vindas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },

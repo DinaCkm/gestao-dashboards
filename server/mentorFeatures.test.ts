@@ -78,10 +78,10 @@ describe('B3: Configurações do Mentor', () => {
     expect(pageContent).toContain('Notificações');
   });
 
-  it('deve ter item de Configurações no menu do mentor', async () => {
+  it('deve ter item de Perfil / Agenda no menu do mentor', async () => {
     const fs = await import('fs');
     const layoutContent = fs.readFileSync('/home/ubuntu/gestao-dashboards/client/src/components/DashboardLayout.tsx', 'utf-8');
-    expect(layoutContent).toContain('Configurações');
+    expect(layoutContent).toContain('Perfil / Agenda');
     expect(layoutContent).toContain('/mentor/configuracoes');
   });
 });

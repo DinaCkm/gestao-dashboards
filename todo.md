@@ -3184,3 +3184,12 @@
 
 ## Bug Fix (23/03/2026)
 - [x] Mostrar dados do onboarding (telefone, cargo, área, minicurrículo, quem é você) na visualização expandida do card do aluno no AdminCadastros
+
+## Melhoria Registro de Mentoria (23/03/2026)
+- [ ] Mostrar o registro de aplicabilidade prática do aluno na tela de registro de mentoria do mentor (quando o aluno entregou a tarefa com aplicabilidade, o mentor precisa ver o que ele escreveu)
+
+## Melhoria Menu Mentora (23/03/2026)
+- [x] Adicionar item "Perfil/Agenda" no menu lateral da mentora apontando para /mentor/configuracoes
+
+## Verificação Aplicabilidade Aluno (23/03/2026)
+- [x] Verificar como o formulário de entrega de tarefa do aluno exibe o campo de aplicabilidade prática e se está funcionando corretamente (JÁ FUNCIONA - campo obrigatório com texto + nota 0-10)
