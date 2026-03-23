@@ -1,0 +1,105 @@
+{
+  "query": "\nSELECT \n  sessionNumber, \n  COUNT(*) as total_sessoes,\n  COUNT(DISTINCT alunoId) as alunos_com_essa_sessao\nFROM mentoring_sessions \nGROUP BY sessionNumber \nORDER BY sessionNumber\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  sessionNumber, \n  COUNT(*) as total_sessoes,\n  COUNT(DISTINCT alunoId) as alunos_com_essa_sessao\nFROM mentoring_sessions \nGROUP BY sessionNumber \nORDER BY sessionNumber\n",
+  "rows": [
+    {
+      "sessionNumber": "NULL",
+      "total_sessoes": "33",
+      "alunos_com_essa_sessao": "33"
+    },
+    {
+      "sessionNumber": "1",
+      "total_sessoes": "120",
+      "alunos_com_essa_sessao": "119"
+    },
+    {
+      "sessionNumber": "2",
+      "total_sessoes": "126",
+      "alunos_com_essa_sessao": "126"
+    },
+    {
+      "sessionNumber": "3",
+      "total_sessoes": "129",
+      "alunos_com_essa_sessao": "125"
+    },
+    {
+      "sessionNumber": "4",
+      "total_sessoes": "125",
+      "alunos_com_essa_sessao": "123"
+    },
+    {
+      "sessionNumber": "5",
+      "total_sessoes": "123",
+      "alunos_com_essa_sessao": "123"
+    },
+    {
+      "sessionNumber": "6",
+      "total_sessoes": "97",
+      "alunos_com_essa_sessao": "96"
+    },
+    {
+      "sessionNumber": "7",
+      "total_sessoes": "90",
+      "alunos_com_essa_sessao": "90"
+    },
+    {
+      "sessionNumber": "8",
+      "total_sessoes": "87",
+      "alunos_com_essa_sessao": "87"
+    },
+    {
+      "sessionNumber": "9",
+      "total_sessoes": "83",
+      "alunos_com_essa_sessao": "83"
+    },
+    {
+      "sessionNumber": "10",
+      "total_sessoes": "82",
+      "alunos_com_essa_sessao": "82"
+    },
+    {
+      "sessionNumber": "11",
+      "total_sessoes": "66",
+      "alunos_com_essa_sessao": "66"
+    },
+    {
+      "sessionNumber": "12",
+      "total_sessoes": "46",
+      "alunos_com_essa_sessao": "46"
+    },
+    {
+      "sessionNumber": "13",
+      "total_sessoes": "33",
+      "alunos_com_essa_sessao": "33"
+    },
+    {
+      "sessionNumber": "14",
+      "total_sessoes": "31",
+      "alunos_com_essa_sessao": "31"
+    },
+    {
+      "sessionNumber": "15",
+      "total_sessoes": "32",
+      "alunos_com_essa_sessao": "32"
+    },
+    {
+      "sessionNumber": "16",
+      "total_sessoes": "33",
+      "alunos_com_essa_sessao": "33"
+    },
+    {
+      "sessionNumber": "17",
+      "total_sessoes": "23",
+      "alunos_com_essa_sessao": "23"
+    },
+    {
+      "sessionNumber": "18",
+      "total_sessoes": "1",
+      "alunos_com_essa_sessao": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "sessionNumber\ttotal_sessoes\talunos_com_essa_sessao\nNULL\t33\t33\n1\t120\t119\n2\t126\t126\n3\t129\t125\n4\t125\t123\n5\t123\t123\n6\t97\t96\n7\t90\t90\n8\t87\t87\n9\t83\t83\n10\t82\t82\n11\t66\t66\n12\t46\t46\n13\t33\t33\n14\t31\t31\n15\t32\t32\n16\t33\t33\n17\t23\t23\n18\t1\t1\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}

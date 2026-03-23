@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  t.name as trilha,\n  p.name as programa,\n  p.totalSessoes as sessoes_previstas_programa,\n  COUNT(DISTINCT ms.alunoId) as alunos\nFROM mentoring_sessions ms\nJOIN trilhas t ON ms.trilhaId = t.id\nJOIN programs p ON t.programId = p.id\nGROUP BY t.id, t.name, p.name, p.totalSessoes\nORDER BY t.name\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  t.name as trilha,\n  p.name as programa,\n  p.totalSessoes as sessoes_previstas_programa,\n  COUNT(DISTINCT ms.alunoId) as alunos\nFROM mentoring_sessions ms\nJOIN trilhas t ON ms.trilhaId = t.id\nJOIN programs p ON t.programId = p.id\nGROUP BY t.id, t.name, p.name, p.totalSessoes\nORDER BY t.name\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'p.totalsessoes' in 'group statement'"
+  ]
+}

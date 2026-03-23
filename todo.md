@@ -3173,3 +3173,11 @@
 
 ## Remoção de seção obsoleta
 - [x] Remover seção "Como enviar suas atividades" da aba Tarefas do Portal do Aluno (instrução de salvar na nuvem e compartilhar por e-mail é desnecessária)
+
+## Correção de texto do card Aplicabilidade
+- [ ] Corrigir texto e tooltip do card Aplicabilidade no dashboard do aluno para dizer que é o cálculo da aplicabilidade das tarefas e dos cases entregues
+
+## Melhorias Solicitadas (23/03/2026)
+- [x] Unificar cadastro admin + onboarding: admin deve ver e editar TODOS os campos do aluno (incluindo telefone, cargo, área de atuação, minicurrículo, quem é você)
+- [x] Dados visíveis para admin, mentor e aluno devem ser os mesmos (consistência)
+- [x] Mentora ver nome completo, email e telefone de quem agendou na página de agendamento

@@ -1002,18 +1002,43 @@ function MentorAgendamentosTab({ consultorId }: { consultorId: number }) {
                         )}
                       </div>
                       {appt.description && <p className="text-sm text-muted-foreground mt-1">{appt.description}</p>}
-                      <div className="flex flex-wrap gap-1 mt-2">
+                      <div className="mt-3 space-y-2">
                         {appt.participants.map((p: any) => (
-                          <Badge key={p.id} variant="outline" className={`text-xs ${
-                            p.status === 'confirmado' ? 'border-green-400 text-green-700' :
-                            p.status === 'recusado' ? 'border-red-400 text-red-700' :
-                            'border-amber-400 text-amber-700'
+                          <div key={p.id} className={`flex items-start gap-3 p-2 rounded-md border text-sm ${
+                            p.status === 'confirmado' ? 'border-green-200 bg-green-50' :
+                            p.status === 'recusado' ? 'border-red-200 bg-red-50' :
+                            'border-amber-200 bg-amber-50'
                           }`}>
-                            {p.status === 'confirmado' && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                            {p.status === 'recusado' && <XCircle className="h-3 w-3 mr-1" />}
-                            {p.status === 'convidado' && <AlertCircle className="h-3 w-3 mr-1" />}
-                            {p.alunoName}
-                          </Badge>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className={`text-xs shrink-0 ${
+                                  p.status === 'confirmado' ? 'border-green-400 text-green-700' :
+                                  p.status === 'recusado' ? 'border-red-400 text-red-700' :
+                                  'border-amber-400 text-amber-700'
+                                }`}>
+                                  {p.status === 'confirmado' && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                                  {p.status === 'recusado' && <XCircle className="h-3 w-3 mr-1" />}
+                                  {p.status === 'convidado' && <AlertCircle className="h-3 w-3 mr-1" />}
+                                  {p.status === 'confirmado' ? 'Confirmado' : p.status === 'recusado' ? 'Recusado' : 'Convidado'}
+                                </Badge>
+                                <span className="font-medium truncate">{p.alunoName}</span>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-muted-foreground">
+                                {p.alunoEmail && (
+                                  <a href={`mailto:${p.alunoEmail}`} className="flex items-center gap-1 hover:text-foreground hover:underline">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" /><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" /></svg>
+                                    {p.alunoEmail}
+                                  </a>
+                                )}
+                                {p.alunoTelefone && (
+                                  <a href={`tel:${p.alunoTelefone}`} className="flex items-center gap-1 hover:text-foreground hover:underline">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" /></svg>
+                                    {p.alunoTelefone}
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>

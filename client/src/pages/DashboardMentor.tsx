@@ -422,9 +422,21 @@ function DashboardMentorContent() {
                                 {appt.startTime} — {appt.endTime}
                               </span>
                             </div>
-                            <div className="flex flex-wrap gap-1">
+                            <div className="space-y-1 mt-1">
                               {appt.participants.slice(0, 3).map((p: any) => (
-                                <span key={p.id} className="text-xs text-muted-foreground">{p.alunoName}</span>
+                                <div key={p.id} className="text-xs text-muted-foreground">
+                                  <span className="font-medium text-foreground">{p.alunoName}</span>
+                                  {p.alunoEmail && (
+                                    <span className="ml-2">
+                                      <a href={`mailto:${p.alunoEmail}`} className="hover:underline">{p.alunoEmail}</a>
+                                    </span>
+                                  )}
+                                  {p.alunoTelefone && (
+                                    <span className="ml-2">
+                                      <a href={`tel:${p.alunoTelefone}`} className="hover:underline">{p.alunoTelefone}</a>
+                                    </span>
+                                  )}
+                                </div>
                               ))}
                               {appt.participants.length > 3 && (
                                 <span className="text-xs text-muted-foreground">+{appt.participants.length - 3} mais</span>

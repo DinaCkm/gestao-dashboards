@@ -670,6 +670,11 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [editContratoFim, setEditContratoFim] = useState("");
   const [editTipoMentoria, setEditTipoMentoria] = useState("individual");
   const [editTotalSessoes, setEditTotalSessoes] = useState("");
+  const [editTelefone, setEditTelefone] = useState("");
+  const [editCargo, setEditCargo] = useState("");
+  const [editAreaAtuacao, setEditAreaAtuacao] = useState("");
+  const [editMinicurriculo, setEditMinicurriculo] = useState("");
+  const [editQuemEVoce, setEditQuemEVoce] = useState("");
 
   const handleEditOpen = (aluno: any) => {
     setEditAluno(aluno);
@@ -685,6 +690,11 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     setEditContratoFim(aluno.contratoFim ? new Date(aluno.contratoFim).toISOString().split('T')[0] : "");
     setEditTipoMentoria(aluno.tipoMentoria || "individual");
     setEditTotalSessoes(aluno.totalSessoesContratadas ? aluno.totalSessoesContratadas.toString() : "");
+    setEditTelefone(aluno.telefone || "");
+    setEditCargo(aluno.cargo || "");
+    setEditAreaAtuacao(aluno.areaAtuacao || "");
+    setEditMinicurriculo(aluno.minicurriculo || "");
+    setEditQuemEVoce(aluno.quemEVoce || "");
     setEditOpen(true);
   };
 
@@ -709,6 +719,11 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       contratoFim: editContratoFim || null,
       tipoMentoria: editTipoMentoria as 'individual' | 'grupo',
       totalSessoesContratadas: editTotalSessoes ? parseInt(editTotalSessoes) : null,
+      telefone: editTelefone || null,
+      cargo: editCargo || null,
+      areaAtuacao: editAreaAtuacao || null,
+      minicurriculo: editMinicurriculo || null,
+      quemEVoce: editQuemEVoce || null,
     });
     setEditOpen(false);
     setEditAluno(null);
@@ -891,6 +906,32 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                     </div>
                     <p className="text-[10px] text-amber-600 mt-1">Informe o número total de mentorias previstas no contrato e o tipo (individual ou em grupo).</p>
                   </div>
+                </div>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                  <p className="text-xs text-blue-700 font-semibold flex items-center gap-1 mb-2">Dados Complementares (Onboarding do Aluno)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Telefone</Label>
+                      <Input value={editTelefone} onChange={(e) => setEditTelefone(e.target.value)} className="text-sm" placeholder="(11) 99999-9999" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Cargo</Label>
+                      <Input value={editCargo} onChange={(e) => setEditCargo(e.target.value)} className="text-sm" placeholder="Ex: Gerente de Projetos" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Área de Atuação</Label>
+                    <Input value={editAreaAtuacao} onChange={(e) => setEditAreaAtuacao(e.target.value)} className="text-sm" placeholder="Ex: Tecnologia da Informação" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Minicurrículo</Label>
+                    <textarea value={editMinicurriculo} onChange={(e) => setEditMinicurriculo(e.target.value)} className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring min-h-[60px]" placeholder="Breve descrição profissional do aluno" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Quem é Você (Apresentação Pessoal)</Label>
+                    <textarea value={editQuemEVoce} onChange={(e) => setEditQuemEVoce(e.target.value)} className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring min-h-[60px]" placeholder="Apresentação pessoal do aluno" />
+                  </div>
+                  <p className="text-[10px] text-blue-600">Estes campos são preenchidos pelo aluno durante o onboarding. O admin pode visualizar e editar quando necessário.</p>
                 </div>
               </div>
               <DialogFooter className="pt-4 border-t">

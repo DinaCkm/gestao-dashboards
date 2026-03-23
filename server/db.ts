@@ -1775,6 +1775,11 @@ export async function getAllAlunosForAdmin() {
     totalSessoesContratadas: alunos.totalSessoesContratadas,
     tipoMentoria: alunos.tipoMentoria,
     onboardingLiberado: alunos.onboardingLiberado,
+    telefone: alunos.telefone,
+    cargo: alunos.cargo,
+    areaAtuacao: alunos.areaAtuacao,
+    minicurriculo: alunos.minicurriculo,
+    quemEVoce: alunos.quemEVoce,
     programName: programs.name,
     mentorName: consultors.name,
     turmaName: turmas.name,
@@ -6472,6 +6477,7 @@ export async function getMentorAppointments(consultorId: number, filters?: {
       ...p,
       alunoName: alunoMap.get(p.alunoId)?.name || 'Desconhecido',
       alunoEmail: alunoMap.get(p.alunoId)?.email || '',
+      alunoTelefone: alunoMap.get(p.alunoId)?.telefone || '',
     }));
 
     result.push({
