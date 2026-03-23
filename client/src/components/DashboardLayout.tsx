@@ -192,8 +192,8 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: CalendarDays, label: "Perfil / Agenda", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
   
   // === GERENTE DE EMPRESA ===
   { icon: Home, label: "Boas-Vindas", path: "/boas-vindas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
@@ -590,7 +590,7 @@ function DashboardLayoutContent({
               </>
             ) : (
               /* MENU PARA MENTOR / GESTOR / ALUNO (flat, sem grupos) */
-              <SidebarMenu className="px-2 py-1">
+              <SidebarMenu className="px-2 py-1 pb-2">
                 {filteredOtherItems.map(item => {
                   const isActive = location === item.path;
                   return (
@@ -621,7 +621,7 @@ function DashboardLayoutContent({
             )}
 
             {/* Botão P.D.I Evoluir - sai do sistema e redireciona */}
-            <SidebarMenu className="px-2 py-1 mt-4">
+            <SidebarMenu className="px-2 py-1 mt-2 mb-2">
               <SidebarMenuItem>
                 <SidebarMenuButton
                   tooltip="P.D.I Evoluir"

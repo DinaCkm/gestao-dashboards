@@ -3193,3 +3193,12 @@
 
 ## Verificação Aplicabilidade Aluno (23/03/2026)
 - [x] Verificar como o formulário de entrega de tarefa do aluno exibe o campo de aplicabilidade prática e se está funcionando corretamente (JÁ FUNCIONA - campo obrigatório com texto + nota 0-10)
+
+## Reformulação Formulário Entrega Tarefa (23/03/2026)
+- [ ] Redesenhar formulário de entrega de tarefa do aluno com investigação detalhada de aplicabilidade prática
+- [ ] Adicionar pergunta "Esta tarefa teve aplicabilidade prática? Sim/Não"
+- [ ] Se Sim: questionário detalhado obrigatório (similar ao case de sucesso) + nota obrigatória
+- [ ] Se Não: apenas entrega simples (link/evidência)
+
+## Bug Menu Mentora (23/03/2026)
+- [x] Corrigir sobreposição do item "Perfil / Agenda" com o link "P.D.I Evoluir" no menu lateral da mentora
