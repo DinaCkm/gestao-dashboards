@@ -3,10 +3,11 @@
  * 
  * Regras:
  * 1. Precificação por Empresa × Mentor × Tipo de Sessão (com validade temporal)
- * 2. Prioridade: empresa+mentor > só mentor > só empresa > fallback legado > R$ 0
- * 3. Sessão grupal: 1 pagamento por agendamento (não multiplica por aluno)
- * 4. Sessão sem agendamento: marcada como "pendente de validação"
- * 5. Sessões históricas (sem tipoSessao ou appointmentId): usam cálculo legado
+ * 2. Regra exata obrigatória: empresa + mentor (sem regras genéricas)
+ * 3. Fallback: se não houver regra V2, usa cálculo legado
+ * 4. Sessão grupal: 1 pagamento por agendamento (não multiplica por aluno)
+ * 5. Sessão sem agendamento: marcada como "pendente de validação"
+ * 6. Sessões históricas (sem tipoSessao ou appointmentId): usam cálculo legado
  */
 
 import { eq, and, or, isNull, lte, gte } from "drizzle-orm";
@@ -42,7 +43,7 @@ export interface SessionFinancialInfo {
   appointmentId: number | null;
   appointmentType: "individual" | "grupo" | null;
   valor: number;
-  origemPreco: "empresa_mentor" | "mentor" | "empresa" | "legado_faixa" | "legado_padrao" | "zero";
+  origemPreco: "empresa_mentor" | "legado_faixa" | "legado_padrao" | "zero";
   isGrupal: boolean;
   isPendente: boolean; // sessão sem agendamento = pendente de validação
   alertas: string[];
@@ -81,8 +82,9 @@ export interface FinancialReportV2 {
 // ============ FUNÇÕES AUXILIARES ============
 
 /**
- * Busca a regra de precificação V2 mais específica para uma sessão.
- * Prioridade: empresa+mentor > só mentor > só empresa > null
+ * Encontra a regra de precificação V2 exata para uma sessão.
+ * Requer combinação exata: empresa + mentor + tipo de sessão.
+ * Se não encontrar, retorna null (cai no fallback legado).
  */
 function findBestPricingRule(
   rules: MentorSessionTypePricing[],
@@ -103,20 +105,10 @@ function findBestPricingRule(
     return true;
   });
 
-  // 1. Regra empresa + mentor (mais específica)
+  // Regra exata: empresa + mentor (obrigatórios)
   if (programId) {
     const empresaMentor = applicable.find(r => r.programId === programId && r.consultorId === consultorId);
     if (empresaMentor) return { rule: empresaMentor, origem: "empresa_mentor" };
-  }
-
-  // 2. Regra só mentor (global para o mentor)
-  const soMentor = applicable.find(r => r.consultorId === consultorId && !r.programId);
-  if (soMentor) return { rule: soMentor, origem: "mentor" };
-
-  // 3. Regra só empresa (global para a empresa)
-  if (programId) {
-    const soEmpresa = applicable.find(r => r.programId === programId && !r.consultorId);
-    if (soEmpresa) return { rule: soEmpresa, origem: "empresa" };
   }
 
   return { rule: null, origem: "zero" };

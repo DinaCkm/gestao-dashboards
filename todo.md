@@ -3221,3 +3221,10 @@
 - [x] Etapa 7: Testes unitários para cálculo financeiro V2 (8/8 passando)
 - [x] Etapa 7: Testes de integração: agendamento → registro → cálculo (coberto nos testes V2)
 - [x] Bug: Datas de vigência aparecem como "Invalid Date" na tela de Precificação de Sessões V2 (Drizzle retorna Date objects, normalizado com instanceof check)
+- [x] Precificação V2: Tornar Empresa obrigatória (remover opção "Todas")
+- [x] Precificação V2: Tornar Mentor obrigatório (remover opção "Todos")
+- [x] Precificação V2: Validação backend — programId e consultorId NOT NULL
+- [x] Precificação V2: Validação de duplicidade — impedir mesma combinação empresa+mentor+tipo com datas sobrepostas
+- [x] Precificação V2: Remover lógica de fallback por prioridade no cálculo (regra exata ou legado)
+- [x] Precificação V2: Limpar regras genéricas existentes no banco (4 regras removidas)
+- [x] Precificação V2: Corrigir bug de Invalid Date (schema mode string)

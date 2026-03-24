@@ -120,16 +120,8 @@ export default function PrecificacaoSessoes() {
     setFormTipoSessao(rule.tipoSessao);
     setFormValor(rule.valor);
     setFormDescricao(rule.descricao || "");
-    setFormValidoDesde(
-      rule.validoDesde instanceof Date 
-        ? rule.validoDesde.toISOString().slice(0, 10) 
-        : rule.validoDesde ? String(rule.validoDesde).slice(0, 10) : ""
-    );
-    setFormValidoAte(
-      rule.validoAte instanceof Date 
-        ? rule.validoAte.toISOString().slice(0, 10) 
-        : rule.validoAte ? String(rule.validoAte).slice(0, 10) : ""
-    );
+    setFormValidoDesde(rule.validoDesde ? String(rule.validoDesde).slice(0, 10) : "");
+    setFormValidoAte(rule.validoAte ? String(rule.validoAte).slice(0, 10) : "");
     setDialogOpen(true);
   };
 
@@ -139,14 +131,14 @@ export default function PrecificacaoSessoes() {
   };
 
   const handleSave = () => {
-    if (!formValor || !formValidoDesde) {
-      toast.error("Valor e Data de Início são obrigatórios.");
+    if (!formProgramId || !formConsultorId || !formValor || !formValidoDesde) {
+      toast.error("Empresa, Mentor, Valor e Data de Início são obrigatórios.");
       return;
     }
 
     const data = {
-      programId: formProgramId ? Number(formProgramId) : null,
-      consultorId: formConsultorId ? Number(formConsultorId) : null,
+      programId: Number(formProgramId),
+      consultorId: Number(formConsultorId),
       tipoSessao: formTipoSessao as any,
       valor: formValor,
       descricao: formDescricao || undefined,
@@ -157,7 +149,7 @@ export default function PrecificacaoSessoes() {
     if (editingRule) {
       updateMutation.mutate({ id: editingRule.id, ...data });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(data as any);
     }
   };
 
@@ -190,12 +182,12 @@ export default function PrecificacaoSessoes() {
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
             <div className="text-sm text-blue-800 space-y-1">
-              <p className="font-medium">Regras de Prioridade na Precificação:</p>
+              <p className="font-medium">Como funciona a Precificação:</p>
               <ol className="list-decimal list-inside space-y-0.5 text-blue-700">
-                <li><strong>Empresa + Mentor</strong> — regra mais específica (ex: SEBRAE + Ana Carolina)</li>
-                <li><strong>Só Mentor</strong> — valor padrão do mentor para qualquer empresa</li>
-                <li><strong>Só Empresa</strong> — valor padrão da empresa para qualquer mentor</li>
-                <li><strong>Fallback Legado</strong> — precificação por faixa de sessão (sistema antigo)</li>
+                <li>Cada regra define o valor para uma combinação <strong>Empresa + Mentor + Tipo de Sessão</strong></li>
+                <li>Não é permitido cadastrar regras genéricas (sem empresa ou sem mentor)</li>
+                <li>O sistema impede duplicidade: mesma combinação com datas sobrepostas é bloqueada</li>
+                <li>Sessões sem regra cadastrada usam o <strong>Fallback Legado</strong> (sistema antigo)</li>
               </ol>
               <p className="text-blue-600 mt-2">
                 Sessões grupais são cobradas uma única vez por agendamento (não multiplica por aluno).
@@ -289,13 +281,9 @@ export default function PrecificacaoSessoes() {
                   {filteredRules.map((rule: any) => {
                     const isActive = rule.isActive === 1;
                     const hoje = new Date().toISOString().slice(0, 10);
-                    // Normalizar datas: podem vir como Date object ou string
-                    const desdeStr = rule.validoDesde instanceof Date 
-                      ? rule.validoDesde.toISOString().slice(0, 10) 
-                      : rule.validoDesde ? String(rule.validoDesde).slice(0, 10) : null;
-                    const ateStr = rule.validoAte instanceof Date 
-                      ? rule.validoAte.toISOString().slice(0, 10) 
-                      : rule.validoAte ? String(rule.validoAte).slice(0, 10) : null;
+                    // validoDesde/validoAte são strings YYYY-MM-DD (schema mode: "string")
+                    const desdeStr = rule.validoDesde ? String(rule.validoDesde).slice(0, 10) : null;
+                    const ateStr = rule.validoAte ? String(rule.validoAte).slice(0, 10) : null;
                     const vigente = isActive && 
                       (!desdeStr || desdeStr <= hoje) && 
                       (!ateStr || ateStr >= hoje);
@@ -387,15 +375,15 @@ export default function PrecificacaoSessoes() {
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {/* Empresa */}
+            {/* Empresa (obrigatório) */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Empresa (opcional)</label>
-              <Select value={formProgramId || "none"} onValueChange={(v) => setFormProgramId(v === "none" ? "" : v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as empresas" />
+              <label className="text-sm font-medium text-gray-700">Empresa <span className="text-red-500">*</span></label>
+              <Select value={formProgramId || "placeholder"} onValueChange={(v) => setFormProgramId(v === "placeholder" ? "" : v)}>
+                <SelectTrigger className={!formProgramId ? "text-muted-foreground" : ""}>
+                  <SelectValue placeholder="Selecione a empresa" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Todas as empresas (regra global)</SelectItem>
+                  <SelectItem value="placeholder" disabled>Selecione a empresa</SelectItem>
                   {empresaOptions.map((e: any) => (
                     <SelectItem key={e.id} value={String(e.id)}>{e.name}</SelectItem>
                   ))}
@@ -403,15 +391,15 @@ export default function PrecificacaoSessoes() {
               </Select>
             </div>
 
-            {/* Mentor */}
+            {/* Mentor (obrigatório) */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">Mentor (opcional)</label>
-              <Select value={formConsultorId || "none"} onValueChange={(v) => setFormConsultorId(v === "none" ? "" : v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os mentores" />
+              <label className="text-sm font-medium text-gray-700">Mentor <span className="text-red-500">*</span></label>
+              <Select value={formConsultorId || "placeholder"} onValueChange={(v) => setFormConsultorId(v === "placeholder" ? "" : v)}>
+                <SelectTrigger className={!formConsultorId ? "text-muted-foreground" : ""}>
+                  <SelectValue placeholder="Selecione o mentor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Todos os mentores (regra global)</SelectItem>
+                  <SelectItem value="placeholder" disabled>Selecione o mentor</SelectItem>
                   {mentorOptions.map((m: any) => (
                     <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>
                   ))}

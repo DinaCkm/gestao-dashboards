@@ -1035,8 +1035,8 @@ export const mentorSessionTypePricing = mysqlTable("mentor_session_type_pricing"
   tipoSessao: mysqlEnum("tipoSessao", ["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).notNull(),
   valor: decimal("valor", { precision: 10, scale: 2 }).notNull(), // Valor em R$
   descricao: varchar("descricao", { length: 255 }), // Descrição opcional
-  validoDesde: date("validoDesde").notNull(), // Data de início da vigência
-  validoAte: date("validoAte"), // Data de fim da vigência (NULL = vigente indefinidamente)
+  validoDesde: date("validoDesde", { mode: "string" }).notNull(), // Data de início da vigência (YYYY-MM-DD)
+  validoAte: date("validoAte", { mode: "string" }), // Data de fim da vigência (NULL = vigente indefinidamente)
   isActive: int("isActive").default(1).notNull(), // 1 = ativo, 0 = inativo
   createdBy: int("createdBy"), // FK para users (admin que criou)
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -3833,8 +3833,8 @@ export const appRouter = router({
 
     createPricingRuleV2: adminProcedure
       .input(z.object({
-        programId: z.number().nullable(),
-        consultorId: z.number().nullable(),
+        programId: z.number(), // Obrigatório: empresa específica
+        consultorId: z.number(), // Obrigatório: mentor específico
         tipoSessao: z.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]),
         valor: z.string(),
         descricao: z.string().optional(),
@@ -3844,6 +3844,23 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const dbConn = await getDb();
         if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        // Validação de duplicidade: mesma empresa + mentor + tipo com datas sobrepostas
+        const existing = await getSessionTypePricingRules(dbConn);
+        const conflito = existing.find((r: any) =>
+          r.programId === input.programId &&
+          r.consultorId === input.consultorId &&
+          r.tipoSessao === input.tipoSessao &&
+          r.isActive === 1 &&
+          // Verificar sobreposição de datas
+          (!r.validoAte || !input.validoDesde || String(r.validoAte) >= input.validoDesde) &&
+          (!input.validoAte || !r.validoDesde || input.validoAte >= String(r.validoDesde))
+        );
+        if (conflito) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: `Já existe uma regra ativa para esta combinação (Empresa + Mentor + Tipo) com datas sobrepostas (ID ${conflito.id}). Desative ou edite a regra existente.`,
+          });
+        }
         const id = await createSessionTypePricingRule(dbConn, {
           ...input,
           createdBy: ctx.user.id,
@@ -3854,8 +3871,8 @@ export const appRouter = router({
     updatePricingRuleV2: adminProcedure
       .input(z.object({
         id: z.number(),
-        programId: z.number().nullable().optional(),
-        consultorId: z.number().nullable().optional(),
+        programId: z.number().optional(), // Obrigatório na prática
+        consultorId: z.number().optional(), // Obrigatório na prática
         tipoSessao: z.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
         valor: z.string().optional(),
         descricao: z.string().optional(),
@@ -3867,6 +3884,31 @@ export const appRouter = router({
         const dbConn = await getDb();
         if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
         const { id, ...data } = input;
+        // Validação de duplicidade ao editar (se mudou empresa/mentor/tipo)
+        if (data.programId !== undefined || data.consultorId !== undefined || data.tipoSessao !== undefined) {
+          const existing = await getSessionTypePricingRules(dbConn);
+          const current = existing.find((r: any) => r.id === id);
+          const checkProgramId = data.programId ?? current?.programId;
+          const checkConsultorId = data.consultorId ?? current?.consultorId;
+          const checkTipo = data.tipoSessao ?? current?.tipoSessao;
+          const checkDesde = data.validoDesde ?? (current?.validoDesde ? String(current.validoDesde) : null);
+          const checkAte = data.validoAte !== undefined ? data.validoAte : (current?.validoAte ? String(current.validoAte) : null);
+          const conflito = existing.find((r: any) =>
+            r.id !== id &&
+            r.programId === checkProgramId &&
+            r.consultorId === checkConsultorId &&
+            r.tipoSessao === checkTipo &&
+            r.isActive === 1 &&
+            (!r.validoAte || !checkDesde || String(r.validoAte) >= checkDesde) &&
+            (!checkAte || !r.validoDesde || checkAte >= String(r.validoDesde))
+          );
+          if (conflito) {
+            throw new TRPCError({
+              code: 'CONFLICT',
+              message: `Já existe outra regra ativa para esta combinação com datas sobrepostas (ID ${conflito.id}).`,
+            });
+          }
+        }
         await updateSessionTypePricingRule(dbConn, id, data as any);
         return { success: true };
       }),

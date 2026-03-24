@@ -208,15 +208,15 @@ describe("CRUD Precificação V2", () => {
     const ctx = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
-    // Criar regra
+    // Criar regra (empresa e mentor obrigatórios)
     const newRuleId = await caller.mentor.createPricingRuleV2({
-      programId: null,
-      consultorId: null,
+      programId: 90002, // Ckm Talents (empresa de teste)
+      consultorId: 39, // Adriana Deus (mentora de teste)
       tipoSessao: "individual_normal",
       valor: "999.99",
       descricao: "Regra de teste unitário",
-      validoDesde: "2026-01-01",
-      validoAte: "2026-12-31",
+      validoDesde: "2099-01-01",
+      validoAte: "2099-12-31",
     });
 
     // Retorno é { id, success }
