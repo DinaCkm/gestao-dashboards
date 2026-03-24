@@ -3246,3 +3246,5 @@
 - [x] Reorganizar aba Financeiro: exportação do demonstrativo em documento (Markdown) com logo e somatório
 - [x] Reorganizar aba Financeiro: exportação CSV do demonstrativo
 - [x] Remover tipo financeiro da página de Relatórios (evitar duplicidade)
+- [x] Permitir que a mentora crie agendamentos com data retroativa (datas no passado)
+- [x] Permitir que a mentora edite a data de um agendamento existente (quando aluno solicita alteração)

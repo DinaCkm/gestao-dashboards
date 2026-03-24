@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ import {
   Mail,
   Settings,
   Shield,
+  Pencil,
 } from "lucide-react";
 
 const DAYS_OF_WEEK = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -406,7 +408,7 @@ function DateSpecificSection({ consultorId, dateAvailability, saveDateMutation, 
               <Input
                 type="date"
                 value={newDateSlot.specificDate}
-                min={new Date().toISOString().slice(0, 10)}
+                // min removido para permitir datas retroativas
                 onChange={e => setNewDateSlot(p => ({ ...p, specificDate: e.target.value }))}
               />
             </div>
@@ -785,7 +787,10 @@ function MentorAgendamentosTab({ consultorId }: { consultorId: number }) {
   const cancelMutation = trpc.mentor.cancelAppointment.useMutation();
   const utils = trpc.useUtils();
 
+  const updateMutation = trpc.mentor.updateAppointment.useMutation();
+
   const [showGroupForm, setShowGroupForm] = useState(false);
+  const [editingAppt, setEditingAppt] = useState<{ id: number; scheduledDate: string; startTime: string; endTime: string; googleMeetLink: string } | null>(null);
   const [groupForm, setGroupForm] = useState({
     title: '',
     description: '',
@@ -818,6 +823,24 @@ function MentorAgendamentosTab({ consultorId }: { consultorId: number }) {
       setGroupForm({ title: '', description: '', scheduledDate: '', startTime: '09:00', endTime: '10:00', googleMeetLink: '', alunoIds: [] });
     } catch (e: any) {
       toast.error(e.message || 'Erro ao criar sessão');
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!editingAppt) return;
+    try {
+      await updateMutation.mutateAsync({
+        appointmentId: editingAppt.id,
+        scheduledDate: editingAppt.scheduledDate,
+        startTime: editingAppt.startTime,
+        endTime: editingAppt.endTime,
+        googleMeetLink: editingAppt.googleMeetLink || undefined,
+      });
+      utils.mentor.getAppointments.invalidate();
+      toast.success('Agendamento reagendado com sucesso!');
+      setEditingAppt(null);
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao reagendar');
     }
   };
 
@@ -1042,9 +1065,20 @@ function MentorAgendamentosTab({ consultorId }: { consultorId: number }) {
                         ))}
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700" onClick={() => handleCancel(appt.id)}>
-                      <XCircle className="h-4 w-4 mr-1" /> Cancelar
-                    </Button>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800" onClick={() => setEditingAppt({
+                        id: appt.id,
+                        scheduledDate: appt.scheduledDate,
+                        startTime: appt.startTime,
+                        endTime: appt.endTime,
+                        googleMeetLink: appt.googleMeetLink || '',
+                      })}>
+                        <Pencil className="h-4 w-4 mr-1" /> Reagendar
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700" onClick={() => handleCancel(appt.id)}>
+                        <XCircle className="h-4 w-4 mr-1" /> Cancelar
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1079,6 +1113,65 @@ function MentorAgendamentosTab({ consultorId }: { consultorId: number }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Dialog de Reagendamento */}
+      <Dialog open={!!editingAppt} onOpenChange={(open) => { if (!open) setEditingAppt(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5 text-blue-600" />
+              Reagendar Sessão
+            </DialogTitle>
+            <DialogDescription>
+              Altere a data e/ou horário do agendamento. Os participantes serão mantidos.
+            </DialogDescription>
+          </DialogHeader>
+          {editingAppt && (
+            <div className="space-y-4 py-2">
+              <div>
+                <Label>Nova Data</Label>
+                <Input
+                  type="date"
+                  value={editingAppt.scheduledDate}
+                  onChange={e => setEditingAppt(prev => prev ? { ...prev, scheduledDate: e.target.value } : null)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Horário Início</Label>
+                  <Input
+                    type="time"
+                    value={editingAppt.startTime}
+                    onChange={e => setEditingAppt(prev => prev ? { ...prev, startTime: e.target.value } : null)}
+                  />
+                </div>
+                <div>
+                  <Label>Horário Fim</Label>
+                  <Input
+                    type="time"
+                    value={editingAppt.endTime}
+                    onChange={e => setEditingAppt(prev => prev ? { ...prev, endTime: e.target.value } : null)}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Link do Google Meet</Label>
+                <Input
+                  placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                  value={editingAppt.googleMeetLink}
+                  onChange={e => setEditingAppt(prev => prev ? { ...prev, googleMeetLink: e.target.value } : null)}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingAppt(null)}>Cancelar</Button>
+            <Button onClick={handleUpdate} disabled={updateMutation.isPending} className="bg-[#1E3A5F] hover:bg-[#2a4f7f]">
+              {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

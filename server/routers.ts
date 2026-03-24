@@ -3718,6 +3718,24 @@ export const appRouter = router({
         return await db.cancelAppointment(input.appointmentId);
       }),
 
+    // Reagendar agendamento (alterar data/horário)
+    updateAppointment: managerProcedure
+      .input(z.object({
+        appointmentId: z.number(),
+        scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        startTime: z.string().regex(/^\d{2}:\d{2}$/),
+        endTime: z.string().regex(/^\d{2}:\d{2}$/),
+        googleMeetLink: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.updateAppointmentSchedule(input.appointmentId, {
+          scheduledDate: input.scheduledDate,
+          startTime: input.startTime,
+          endTime: input.endTime,
+          googleMeetLink: input.googleMeetLink ?? null,
+        });
+      }),
+
     // Listar convites pendentes do aluno
     getMyInvites: protectedProcedure
       .query(async ({ ctx }) => {

@@ -1,0 +1,37 @@
+{
+  "query": "SELECT id, name, email, createdAt, onboardingLiberado, onboardingLiberadoEm, isActive FROM alunos WHERE name LIKE '%Hide%' OR name LIKE '%hide%' OR name LIKE '%Antonio%' OR name LIKE '%antonio%' OR name LIKE '%Cursino%' OR name LIKE '%cursino%' ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, createdAt, onboardingLiberado, onboardingLiberadoEm, isActive FROM alunos WHERE name LIKE '%Hide%' OR name LIKE '%hide%' OR name LIKE '%Antonio%' OR name LIKE '%antonio%' OR name LIKE '%Cursino%' OR name LIKE '%cursino%' ORDER BY name;",
+  "rows": [
+    {
+      "id": "30055",
+      "name": "Antonio Louça Curcino",
+      "email": "antonio.curcino@to.sebrae.com.br",
+      "createdAt": "2026-02-13 14:13:20",
+      "onboardingLiberado": "0",
+      "onboardingLiberadoEm": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "30092",
+      "name": "Antonio Luis Ferreira dos Anjos Filho",
+      "email": "antonio.filho@to.sebrae.com.br",
+      "createdAt": "2026-02-13 14:13:21",
+      "onboardingLiberado": "0",
+      "onboardingLiberadoEm": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "30064",
+      "name": "Hide Senna De Sousa Soares",
+      "email": "hide.senna@to.sebrae.com.br",
+      "createdAt": "2026-02-13 14:13:20",
+      "onboardingLiberado": "0",
+      "onboardingLiberadoEm": "NULL",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tcreatedAt\tonboardingLiberado\tonboardingLiberadoEm\tisActive\n30055\tAntonio Louça Curcino\tantonio.curcino@to.sebrae.com.br\t2026-02-13 14:13:20\t0\tNULL\t1\n30092\tAntonio Luis Ferreira dos Anjos Filho\tantonio.filho@to.sebrae.com.br\t2026-02-13 14:13:21\t0\tNULL\t1\n30064\tHide Senna De Sousa Soares\thide.senna@to.sebrae.com.br\t2026-02-13 14:13:20\t0\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1065
+}

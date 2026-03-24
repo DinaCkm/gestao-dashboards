@@ -6642,6 +6642,28 @@ export async function cancelAppointment(appointmentId: number) {
   return { success: true };
 }
 
+export async function updateAppointmentSchedule(appointmentId: number, data: {
+  scheduledDate: string;
+  startTime: string;
+  endTime: string;
+  googleMeetLink?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return { success: false };
+  const updateData: any = {
+    scheduledDate: data.scheduledDate,
+    startTime: data.startTime,
+    endTime: data.endTime,
+  };
+  if (data.googleMeetLink !== undefined) {
+    updateData.googleMeetLink = data.googleMeetLink;
+  }
+  await db.update(mentorAppointments)
+    .set(updateData)
+    .where(eq(mentorAppointments.id, appointmentId));
+  return { success: true };
+}
+
 export async function getAlunoInvites(alunoId: number) {
   const db = await getDb();
   if (!db) return [];

@@ -1,0 +1,74 @@
+{
+  "query": "SELECT eal.id, eal.alunoId, a.name, eal.tipoAlerta, eal.emailEnviado, eal.createdAt \nFROM email_alertas_log eal \nJOIN alunos a ON a.id = eal.alunoId \nWHERE eal.alunoId IN (30055, 30064) \nORDER BY eal.createdAt DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT eal.id, eal.alunoId, a.name, eal.tipoAlerta, eal.emailEnviado, eal.createdAt \nFROM email_alertas_log eal \nJOIN alunos a ON a.id = eal.alunoId \nWHERE eal.alunoId IN (30055, 30064) \nORDER BY eal.createdAt DESC;",
+  "rows": [
+    {
+      "id": "420186",
+      "alunoId": "30055",
+      "name": "Antonio Louça Curcino",
+      "tipoAlerta": "mentoria_30dias",
+      "emailEnviado": "1",
+      "createdAt": "2026-03-24 02:48:15"
+    },
+    {
+      "id": "420169",
+      "alunoId": "30055",
+      "name": "Antonio Louça Curcino",
+      "tipoAlerta": "mentoria_30dias",
+      "emailEnviado": "1",
+      "createdAt": "2026-03-24 02:47:32"
+    },
+    {
+      "id": "420019",
+      "alunoId": "30064",
+      "name": "Hide Senna De Sousa Soares",
+      "tipoAlerta": "vencimento_ciclo_7d",
+      "emailEnviado": "1",
+      "createdAt": "2026-03-23 13:46:46"
+    },
+    {
+      "id": "420011",
+      "alunoId": "30055",
+      "name": "Antonio Louça Curcino",
+      "tipoAlerta": "vencimento_ciclo_7d",
+      "emailEnviado": "1",
+      "createdAt": "2026-03-23 13:46:40"
+    },
+    {
+      "id": "120135",
+      "alunoId": "30064",
+      "name": "Hide Senna De Sousa Soares",
+      "tipoAlerta": "onboarding_lembrete_24h",
+      "emailEnviado": "1",
+      "createdAt": "2026-03-21 01:05:34"
+    },
+    {
+      "id": "120127",
+      "alunoId": "30055",
+      "name": "Antonio Louça Curcino",
+      "tipoAlerta": "onboarding_lembrete_24h",
+      "emailEnviado": "1",
+      "createdAt": "2026-03-21 01:05:28"
+    },
+    {
+      "id": "57",
+      "alunoId": "30064",
+      "name": "Hide Senna De Sousa Soares",
+      "tipoAlerta": "mentoria_30dias",
+      "emailEnviado": "1",
+      "createdAt": "2026-03-17 02:28:25"
+    },
+    {
+      "id": "50",
+      "alunoId": "30055",
+      "name": "Antonio Louça Curcino",
+      "tipoAlerta": "mentoria_30dias",
+      "emailEnviado": "1",
+      "createdAt": "2026-03-17 02:28:19"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tname\ttipoAlerta\temailEnviado\tcreatedAt\n420186\t30055\tAntonio Louça Curcino\tmentoria_30dias\t1\t2026-03-24 02:48:15\n420169\t30055\tAntonio Louça Curcino\tmentoria_30dias\t1\t2026-03-24 02:47:32\n420019\t30064\tHide Senna De Sousa Soares\tvencimento_ciclo_7d\t1\t2026-03-23 13:46:46\n420011\t30055\tAntonio Louça Curcino\tvencimento_ciclo_7d\t1\t2026-03-23 13:46:40\n120135\t30064\tHide Senna De Sousa Soares\tonboarding_lembrete_24h\t1\t2026-03-21 01:05:34\n120127\t30055\tAntonio Louça Curcino\tonboarding_lembrete_24h\t1\t2026-03-21 01:05:28\n57\t30064\tHide Senna De Sousa Soares\tmentoria_30dias\t1\t2026-03-17 02:28:25\n50\t30055\tAntonio Louça Curcino\tmentoria_30dias\t1\t2026-03-17 02:28:19\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}
