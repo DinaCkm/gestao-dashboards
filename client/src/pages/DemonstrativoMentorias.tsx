@@ -14,10 +14,11 @@ import {
 import { 
   Users, Calendar, CheckCircle2, AlertTriangle, Search, 
   Download, Filter, X, TrendingUp, Clock, UserCheck, DollarSign, FileText,
-  Mail, AlertCircle, Loader2, ChevronLeft, ChevronRight, Eye, Info
+  Mail, AlertCircle, Loader2, ChevronLeft, ChevronRight, Eye, Info,
+  ArrowLeft, FileDown, Printer
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
@@ -939,16 +940,29 @@ const ORIGEM_PRECO_LABELS: Record<string, string> = {
   zero: "Sem preço",
 };
 
+const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+
 function RelatorioFinanceiro() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [appliedFrom, setAppliedFrom] = useState<string | undefined>();
   const [appliedTo, setAppliedTo] = useState<string | undefined>();
   const [expandedMentor, setExpandedMentor] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<"resumo" | "detalhado">("resumo");
+  const [viewMode, setViewMode] = useState<"resumo" | "detalhado" | "demonstrativo">("resumo");
+  const [selectedMentorId, setSelectedMentorId] = useState<number | null>(null);
 
   const { data, isLoading } = trpc.mentor.relatorioFinanceiroV2.useQuery(
     appliedFrom || appliedTo ? { dateFrom: appliedFrom, dateTo: appliedTo } : undefined
+  );
+
+  // Query para demonstrativo detalhado do mentor selecionado
+  const mentorDetailQuery = trpc.mentor.relatorioDetalhadoMentor.useQuery(
+    {
+      consultorId: selectedMentorId!,
+      dateFrom: appliedFrom || '2020-01-01',
+      dateTo: appliedTo || new Date().toISOString().slice(0, 10),
+    },
+    { enabled: viewMode === 'demonstrativo' && !!selectedMentorId }
   );
 
   const handleFilter = () => {
@@ -963,45 +977,60 @@ function RelatorioFinanceiro() {
     setAppliedTo(undefined);
   };
 
+  const handleVerDemonstrativo = useCallback((consultorId: number) => {
+    setSelectedMentorId(consultorId);
+    setViewMode('demonstrativo');
+  }, []);
+
+  const handleVoltarResumo = useCallback(() => {
+    setViewMode('resumo');
+    setSelectedMentorId(null);
+  }, []);
+
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
+  const formatDateBR = (d: string | null) => {
+    if (!d) return '-';
+    return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR');
+  };
+
+  // ===== Exportação CSV Resumo =====
   const handleExportCSV = () => {
     if (!data?.mentores.length) return;
-    const headers = ["Mentor", "Tipo", "Individuais", "Grupais", "Total Sessões", "Pendentes", "Total (R$)"];
+    const headers = ["Mentor", "Individuais", "Grupais", "Total Sessões", "Pendentes", "Total (R$)"];
     const rows = data.mentores.map(m => [
       m.consultorNome,
-      "-",
       m.totalSessoesIndividuais,
       m.totalSessoesGrupais,
       m.totalSessoes,
       m.totalPendentes,
       m.totalValor.toFixed(2),
     ]);
-    rows.push(["", "", "", "", String(data.totalSessoesGeral), String(data.totalPendentes), data.totalGeral.toFixed(2)]);
+    rows.push(["", "", "", String(data.totalSessoesGeral), String(data.totalPendentes), data.totalGeral.toFixed(2)]);
     const csvContent = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
     const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `relatorio-financeiro-v2-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `relatorio-financeiro-resumo-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
+  // ===== Exportação CSV Detalhado =====
   const handleExportDetailedCSV = () => {
     if (!data?.mentores.length) return;
-    const headers = ["Mentor", "Data", "Aluno", "Empresa", "Tipo Sessão", "Modalidade", "Sessão #", "Valor (R$)", "Origem Preço", "Agendamento", "Alertas"];
+    const headers = ["Mentor", "Data", "Aluno", "Empresa", "Tipo Sessão", "Sessão #", "Valor (R$)", "Origem Preço", "Agendamento", "Alertas"];
     const rows: string[][] = [];
     for (const m of data.mentores) {
       for (const s of m.sessoes) {
         rows.push([
           s.consultorNome,
-          s.sessionDate ? new Date(s.sessionDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-',
+          formatDateBR(s.sessionDate),
           s.alunoNome,
           s.programNome,
           TIPO_SESSAO_LABELS[s.tipoSessao] || s.tipoSessao,
-          s.isGrupal ? "Grupo" : "Individual",
           String(s.sessionNumber || '-'),
           s.valor.toFixed(2),
           ORIGEM_PRECO_LABELS[s.origemPreco] || s.origemPreco,
@@ -1015,31 +1044,132 @@ function RelatorioFinanceiro() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `relatorio-financeiro-v2-detalhado-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `relatorio-financeiro-detalhado-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
+  // ===== Exportação Markdown do Demonstrativo do Mentor =====
+  const handleExportMentorMarkdown = useCallback(() => {
+    const detail = mentorDetailQuery.data;
+    if (!detail) return;
+
+    const periodoStr = `${formatDateBR(detail.periodo.de)} a ${formatDateBR(detail.periodo.ate)}`;
+    const now = new Date().toLocaleString('pt-BR');
+
+    let md = '';
+    md += `# Demonstrativo de Sessões de Mentoria\n\n`;
+    md += `**Plataforma:** Ecossistema do B.E.M.\n\n`;
+    md += `---\n\n`;
+    md += `## Mentor(a): ${detail.mentor.nome}\n\n`;
+    md += `**E-mail:** ${detail.mentor.email || '-'}\n\n`;
+    md += `**Período:** ${periodoStr}\n\n`;
+    md += `**Data de emissão:** ${now}\n\n`;
+    md += `---\n\n`;
+
+    // Resumo
+    md += `## Resumo\n\n`;
+    md += `| Indicador | Valor |\n`;
+    md += `|---|---|\n`;
+    md += `| Total de Sessões | ${detail.resumo.totalSessoes} |\n`;
+    md += `| Sessões Individuais | ${detail.resumo.totalIndividuais} |\n`;
+    md += `| Sessões Grupais | ${detail.resumo.totalGrupais} |\n`;
+    md += `| Sessões Pendentes (sem agendamento) | ${detail.resumo.totalPendentes} |\n`;
+    md += `| **Valor Total** | **${formatCurrency(detail.resumo.totalValor)}** |\n`;
+    md += `\n`;
+
+    // Detalhamento
+    md += `## Detalhamento das Sessões\n\n`;
+    if (detail.linhas.length > 0) {
+      md += `| # | Data Sessão | Agendamento | Aluno | Empresa | Tipo | Valor |\n`;
+      md += `|---|---|---|---|---|---|---|\n`;
+      let seq = 0;
+      for (const l of detail.linhas) {
+        seq++;
+        const dataSessao = formatDateBR(l.sessionDate);
+        const agendInfo = l.appointmentDate
+          ? `${formatDateBR(l.appointmentDate)} ${l.appointmentTime || ''}`
+          : 'Sem agendamento';
+        const tipo = TIPO_SESSAO_LABELS[l.tipoSessao] || l.tipoSessao;
+        md += `| ${seq} | ${dataSessao} | ${agendInfo} | ${l.alunoNome} | ${l.empresaNome} | ${tipo} | ${formatCurrency(l.valor)} |\n`;
+      }
+      md += `\n`;
+    } else {
+      md += `Nenhuma sessão registrada no período.\n\n`;
+    }
+
+    // Gaps
+    if (detail.gapsAgendamento && detail.gapsAgendamento.length > 0) {
+      md += `## Agendamentos sem Sessão Registrada\n\n`;
+      md += `| Data | Agendamento | Tipo | Participantes |\n`;
+      md += `|---|---|---|---|\n`;
+      for (const g of detail.gapsAgendamento) {
+        const data2 = g.appointmentDate ? formatDateBR(g.appointmentDate) : '-';
+        const titulo = g.appointmentTitle || `#${g.appointmentId}`;
+        const tipo = g.appointmentType === 'grupo' ? 'Grupo' : 'Individual';
+        const parts = g.participantes.map((p: any) => p.alunoNome).join(', ');
+        md += `| ${data2} | ${titulo} | ${tipo} | ${parts} |\n`;
+      }
+      md += `\n`;
+    }
+
+    // Rodapé
+    md += `---\n\n`;
+    md += `### Total a Pagar: ${formatCurrency(detail.resumo.totalValor)}\n\n`;
+    md += `*Documento gerado automaticamente pela plataforma Ecossistema do B.E.M.*\n`;
+
+    // Download
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const mentorSlug = detail.mentor.nome.replace(/\s+/g, '-').toLowerCase();
+    link.download = `demonstrativo-${mentorSlug}-${detail.periodo.de}-a-${detail.periodo.ate}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Demonstrativo exportado em Markdown');
+  }, [mentorDetailQuery.data]);
+
+  // ===== Exportação CSV do Demonstrativo do Mentor =====
+  const handleExportMentorCSV = useCallback(() => {
+    const detail = mentorDetailQuery.data;
+    if (!detail) return;
+
+    const headers = ["#", "Data Sessão", "Data Agendamento", "Horário Agendamento", "Aluno", "Empresa", "Tipo", "Participantes", "Valor (R$)", "Origem Preço", "Alertas"];
+    const rows: string[][] = [];
+    let seq = 0;
+    for (const l of detail.linhas) {
+      seq++;
+      rows.push([
+        String(seq),
+        formatDateBR(l.sessionDate),
+        formatDateBR(l.appointmentDate),
+        l.appointmentTime || '-',
+        l.alunoNome,
+        l.empresaNome,
+        TIPO_SESSAO_LABELS[l.tipoSessao] || l.tipoSessao,
+        l.participantes.join('; '),
+        l.valor.toFixed(2),
+        ORIGEM_PRECO_LABELS[l.origemPreco] || l.origemPreco,
+        l.alertas.join(' | ') || '-',
+      ]);
+    }
+    rows.push(["", "", "", "", "", "", "", "TOTAL", detail.resumo.totalValor.toFixed(2), "", ""]);
+    const csvContent = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const mentorSlug = detail.mentor.nome.replace(/\s+/g, '-').toLowerCase();
+    link.download = `demonstrativo-${mentorSlug}-${detail.periodo.de}-a-${detail.periodo.ate}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Demonstrativo exportado em CSV');
+  }, [mentorDetailQuery.data]);
+
   return (
     <div className="space-y-6">
-      {/* Alertas Globais */}
-      {data && data.alertas.length > 0 && (
-        <Card className="border-amber-300 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-              <div>
-                <p className="font-medium text-amber-800">Alertas de Auditoria</p>
-                <ul className="text-sm text-amber-700 mt-1 space-y-0.5">
-                  {data.alertas.map((a, i) => <li key={i}>{a}</li>)}
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Filtros de período */}
+      {/* ===== FILTRO DE PERÍODO (topo, compartilhado) ===== */}
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-wrap items-end gap-4">
@@ -1059,20 +1189,35 @@ function RelatorioFinanceiro() {
                 <X className="h-4 w-4" /> Limpar
               </Button>
             )}
-            <div className="ml-auto flex gap-2">
-              <Button onClick={handleExportCSV} variant="outline" className="gap-2" disabled={!data?.mentores.length}>
-                <Download className="h-4 w-4" /> Resumo CSV
-              </Button>
-              <Button onClick={handleExportDetailedCSV} variant="outline" className="gap-2" disabled={!data?.mentores.length}>
-                <Download className="h-4 w-4" /> Detalhado CSV
-              </Button>
+            <div className="ml-auto text-sm text-gray-500">
+              {appliedFrom || appliedTo
+                ? `Período: ${appliedFrom ? formatDateBR(appliedFrom) : 'Início'} a ${appliedTo ? formatDateBR(appliedTo) : 'Hoje'}`
+                : 'Todas as sessões (sem filtro de período)'
+              }
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* KPIs */}
-      {data && (
+      {/* ===== ALERTAS GLOBAIS ===== */}
+      {data && data.alertas.length > 0 && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium text-amber-800">Alertas de Auditoria</p>
+                <ul className="text-sm text-amber-700 mt-1 space-y-0.5">
+                  {data.alertas.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ===== KPIs ===== */}
+      {data && viewMode !== 'demonstrativo' && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-[#1E3A5F]">
             <CardContent className="p-4">
@@ -1118,35 +1263,46 @@ function RelatorioFinanceiro() {
         </div>
       )}
 
-      {/* Toggle Resumo / Detalhado */}
-      <div className="flex gap-2">
-        <Button
-          variant={viewMode === "resumo" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setViewMode("resumo")}
-        >
-          Resumo por Mentor
-        </Button>
-        <Button
-          variant={viewMode === "detalhado" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setViewMode("detalhado")}
-        >
-          Detalhado por Sessão
-        </Button>
-      </div>
+      {/* ===== TOGGLE: Resumo / Detalhado ===== */}
+      {viewMode !== 'demonstrativo' && (
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === "resumo" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("resumo")}
+          >
+            Resumo por Mentor
+          </Button>
+          <Button
+            variant={viewMode === "detalhado" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("detalhado")}
+          >
+            Detalhado por Sessão
+          </Button>
+        </div>
+      )}
 
-      {/* Tabela Resumo por Mentor */}
+      {/* ===== VISÃO 1: RESUMO POR MENTOR ===== */}
       {viewMode === "resumo" && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Demonstrativo Financeiro por Mentor (V2)</CardTitle>
-            <CardDescription>
-              {appliedFrom || appliedTo
-                ? `Período: ${appliedFrom ? new Date(appliedFrom + 'T12:00:00').toLocaleDateString('pt-BR') : 'Início'} a ${appliedTo ? new Date(appliedTo + 'T12:00:00').toLocaleDateString('pt-BR') : 'Hoje'}`
-                : 'Todas as sessões (sem filtro de período)'
-              }
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">Demonstrativo Financeiro por Mentor</CardTitle>
+                <CardDescription className="mt-1">
+                  Clique em "Ver Demonstrativo" para abrir o detalhamento individual do mentor
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleExportCSV} variant="outline" size="sm" className="gap-2" disabled={!data?.mentores.length}>
+                  <Download className="h-4 w-4" /> Resumo CSV
+                </Button>
+                <Button onClick={handleExportDetailedCSV} variant="outline" size="sm" className="gap-2" disabled={!data?.mentores.length}>
+                  <Download className="h-4 w-4" /> Detalhado CSV
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -1169,12 +1325,12 @@ function RelatorioFinanceiro() {
                       <TableHead className="text-right">Total Sessões</TableHead>
                       <TableHead className="text-right">Pendentes</TableHead>
                       <TableHead className="text-right">Total (R$)</TableHead>
-                      <TableHead className="text-center">Detalhe</TableHead>
+                      <TableHead className="text-center">Ação</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {data.mentores.map((m) => (
-                      <TableRow key={m.consultorId} className="cursor-pointer hover:bg-gray-50" onClick={() => setExpandedMentor(expandedMentor === m.consultorId ? null : m.consultorId)}>
+                      <TableRow key={m.consultorId} className="hover:bg-gray-50">
                         <TableCell className="font-medium">{m.consultorNome}</TableCell>
                         <TableCell className="text-right font-mono">{m.totalSessoesIndividuais}</TableCell>
                         <TableCell className="text-right font-mono">{m.totalSessoesGrupais}</TableCell>
@@ -1192,7 +1348,18 @@ function RelatorioFinanceiro() {
                           {formatCurrency(m.totalValor)}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Eye className="h-4 w-4 text-gray-400 mx-auto" />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleVerDemonstrativo(m.consultorId);
+                            }}
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                            Ver Demonstrativo
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1226,77 +1393,8 @@ function RelatorioFinanceiro() {
         </Card>
       )}
 
-      {/* Detalhe do Mentor Expandido (no modo resumo) */}
-      {viewMode === "resumo" && expandedMentor && data && (() => {
-        const mentor = data.mentores.find(m => m.consultorId === expandedMentor);
-        if (!mentor) return null;
-        return (
-          <Card className="border-[#1E3A5F]/30">
-            <CardHeader>
-              <CardTitle className="text-base">Sessões de {mentor.consultorNome}</CardTitle>
-              <CardDescription>{mentor.totalSessoes} sessões | {formatCurrency(mentor.totalValor)}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Aluno</TableHead>
-                      <TableHead>Empresa</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead className="text-right">#</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                      <TableHead>Origem</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mentor.sessoes.map((s) => (
-                      <TableRow key={s.sessionId} className={s.isPendente ? "bg-amber-50/50" : ""}>
-                        <TableCell className="text-sm">
-                          {s.sessionDate ? new Date(s.sessionDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}
-                        </TableCell>
-                        <TableCell className="text-sm">{s.alunoNome}</TableCell>
-                        <TableCell className="text-sm">{s.programNome}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {TIPO_SESSAO_LABELS[s.tipoSessao] || s.tipoSessao}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right text-sm font-mono">{s.sessionNumber || '-'}</TableCell>
-                        <TableCell className="text-right text-sm font-mono font-semibold">
-                          {formatCurrency(s.valor)}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-xs text-gray-500">{ORIGEM_PRECO_LABELS[s.origemPreco] || s.origemPreco}</span>
-                        </TableCell>
-                        <TableCell>
-                          {s.alertas.length > 0 ? (
-                            <div className="flex flex-col gap-0.5">
-                              {s.alertas.map((a, i) => (
-                                <Badge key={i} variant="outline" className="text-[10px] text-amber-700 border-amber-300 whitespace-nowrap">
-                                  {a}
-                                </Badge>
-                              ))}
-                            </div>
-                          ) : (
-                            <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 text-[10px]">OK</Badge>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })()}
-
-      {/* Visão Detalhada (todas as sessões) */}
-      {/* Gaps: Agendamentos sem Sessão */}
-      {data && data.gapsAgendamento && data.gapsAgendamento.length > 0 && (
+      {/* ===== GAPS: Agendamentos sem Sessão ===== */}
+      {viewMode !== 'demonstrativo' && data && data.gapsAgendamento && data.gapsAgendamento.length > 0 && (
         <Card className="border-red-200">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2 text-red-700">
@@ -1305,7 +1403,6 @@ function RelatorioFinanceiro() {
             </CardTitle>
             <CardDescription>
               {data.gapsAgendamento.length} agendamento(s) passado(s) com participantes sem sessão registrada no sistema.
-              Estes representam possíveis sessões realizadas mas não registradas pela mentora.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1325,7 +1422,7 @@ function RelatorioFinanceiro() {
                   {data.gapsAgendamento.map((g) => (
                     <TableRow key={g.appointmentId} className="bg-red-50/30">
                       <TableCell className="text-sm whitespace-nowrap">
-                        {g.appointmentDate ? new Date(g.appointmentDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}
+                        {formatDateBR(g.appointmentDate)}
                       </TableCell>
                       <TableCell className="text-sm">
                         <span className="font-medium">{g.appointmentTitle || `Agendamento #${g.appointmentId}`}</span>
@@ -1357,16 +1454,21 @@ function RelatorioFinanceiro() {
         </Card>
       )}
 
+      {/* ===== VISÃO 2: DETALHADO POR SESSÃO ===== */}
       {viewMode === "detalhado" && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Todas as Sessões — Visão Detalhada</CardTitle>
-            <CardDescription>
-              {appliedFrom || appliedTo
-                ? `Período: ${appliedFrom ? new Date(appliedFrom + 'T12:00:00').toLocaleDateString('pt-BR') : 'Início'} a ${appliedTo ? new Date(appliedTo + 'T12:00:00').toLocaleDateString('pt-BR') : 'Hoje'}`
-                : 'Todas as sessões (sem filtro de período)'
-              }
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">Todas as Sessões — Visão Detalhada</CardTitle>
+                <CardDescription className="mt-1">
+                  Lista completa de todas as sessões com valores e status
+                </CardDescription>
+              </div>
+              <Button onClick={handleExportDetailedCSV} variant="outline" size="sm" className="gap-2" disabled={!data?.mentores.length}>
+                <Download className="h-4 w-4" /> Detalhado CSV
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -1403,7 +1505,7 @@ function RelatorioFinanceiro() {
                     }).map((s) => (
                       <TableRow key={s.sessionId} className={s.isPendente ? "bg-amber-50/50" : ""}>
                         <TableCell className="text-sm whitespace-nowrap">
-                          {s.sessionDate ? new Date(s.sessionDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}
+                          {formatDateBR(s.sessionDate)}
                         </TableCell>
                         <TableCell className="text-sm">{s.consultorNome}</TableCell>
                         <TableCell className="text-sm">{s.alunoNome}</TableCell>
@@ -1449,6 +1551,309 @@ function RelatorioFinanceiro() {
           </CardContent>
         </Card>
       )}
+
+      {/* ===== VISÃO 3: DEMONSTRATIVO INDIVIDUAL DO MENTOR ===== */}
+      {viewMode === 'demonstrativo' && (
+        <DemonstrativoMentor
+          mentorDetailQuery={mentorDetailQuery}
+          onVoltar={handleVoltarResumo}
+          onExportMarkdown={handleExportMentorMarkdown}
+          onExportCSV={handleExportMentorCSV}
+          formatCurrency={formatCurrency}
+          formatDateBR={formatDateBR}
+        />
+      )}
+    </div>
+  );
+}
+
+// ===== Componente: Demonstrativo Individual do Mentor =====
+function DemonstrativoMentor({
+  mentorDetailQuery,
+  onVoltar,
+  onExportMarkdown,
+  onExportCSV,
+  formatCurrency,
+  formatDateBR,
+}: {
+  mentorDetailQuery: any;
+  onVoltar: () => void;
+  onExportMarkdown: () => void;
+  onExportCSV: () => void;
+  formatCurrency: (val: number) => string;
+  formatDateBR: (d: string | null) => string;
+}) {
+  const { data: detail, isLoading, error } = mentorDetailQuery;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center gap-3">
+            <Loader2 className="h-6 w-6 animate-spin text-[#1E3A5F]" />
+            <span className="text-gray-500">Carregando demonstrativo do mentor...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error || !detail) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="text-center">
+            <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
+            <p className="text-red-600">Erro ao carregar demonstrativo</p>
+            <Button variant="outline" className="mt-4 gap-2" onClick={onVoltar}>
+              <ArrowLeft className="h-4 w-4" /> Voltar ao Resumo
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header com botão voltar e ações */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" className="gap-2" onClick={onVoltar}>
+          <ArrowLeft className="h-4 w-4" /> Voltar ao Resumo
+        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={onExportCSV}>
+            <Download className="h-4 w-4" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2" onClick={onExportMarkdown}>
+            <FileDown className="h-4 w-4" /> Markdown
+          </Button>
+        </div>
+      </div>
+
+      {/* Cabeçalho do Demonstrativo */}
+      <Card className="border-[#1E3A5F]/30">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <img src={LOGO_URL} alt="B.E.M." className="h-14 w-auto" />
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-[#1E3A5F]">Demonstrativo de Sessões de Mentoria</h2>
+              <p className="text-sm text-gray-500 mt-1">Ecossistema do B.E.M.</p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <span className="text-xs text-gray-500 block">Mentor(a)</span>
+              <span className="font-semibold text-gray-900">{detail.mentor.nome}</span>
+            </div>
+            <div>
+              <span className="text-xs text-gray-500 block">E-mail</span>
+              <span className="text-sm text-gray-700">{detail.mentor.email || '-'}</span>
+            </div>
+            <div>
+              <span className="text-xs text-gray-500 block">Período</span>
+              <span className="text-sm text-gray-700">
+                {formatDateBR(detail.periodo.de)} a {formatDateBR(detail.periodo.ate)}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* KPIs do Mentor */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <Card className="border-l-4 border-l-blue-500">
+          <CardContent className="p-3">
+            <span className="text-xs text-gray-500">Total Sessões</span>
+            <p className="text-xl font-bold text-blue-600">{detail.resumo.totalSessoes}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-indigo-500">
+          <CardContent className="p-3">
+            <span className="text-xs text-gray-500">Individuais</span>
+            <p className="text-xl font-bold text-indigo-600">{detail.resumo.totalIndividuais}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-purple-500">
+          <CardContent className="p-3">
+            <span className="text-xs text-gray-500">Grupais</span>
+            <p className="text-xl font-bold text-purple-600">{detail.resumo.totalGrupais}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-amber-500">
+          <CardContent className="p-3">
+            <span className="text-xs text-gray-500">Pendentes</span>
+            <p className="text-xl font-bold text-amber-600">{detail.resumo.totalPendentes}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-emerald-500">
+          <CardContent className="p-3">
+            <span className="text-xs text-gray-500">Valor Total</span>
+            <p className="text-xl font-bold text-emerald-600">{formatCurrency(detail.resumo.totalValor)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabela Detalhada de Sessões */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Sessões Detalhadas</CardTitle>
+          <CardDescription>
+            {detail.linhas.length} sessão(ões) registrada(s) | {detail.totalAgendamentos} agendamento(s) no período
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {detail.linhas.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Calendar className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+              <p>Nenhuma sessão registrada no período</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">#</TableHead>
+                    <TableHead>Data Sessão</TableHead>
+                    <TableHead>Agendamento</TableHead>
+                    <TableHead>Aluno</TableHead>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Participantes</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detail.linhas.map((l: any, idx: number) => (
+                    <TableRow key={l.sessionId} className={l.alertas.length > 0 ? "bg-amber-50/30" : ""}>
+                      <TableCell className="text-sm font-mono text-gray-400">{idx + 1}</TableCell>
+                      <TableCell className="text-sm whitespace-nowrap">
+                        {formatDateBR(l.sessionDate)}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {l.appointmentDate ? (
+                          <div>
+                            <span className="font-medium">{formatDateBR(l.appointmentDate)}</span>
+                            {l.appointmentTime && (
+                              <span className="text-xs text-gray-500 ml-1">{l.appointmentTime}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-amber-600 text-xs">Sem agendamento</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">{l.alunoNome}</TableCell>
+                      <TableCell className="text-sm">{l.empresaNome}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {TIPO_SESSAO_LABELS[l.tipoSessao] || l.tipoSessao}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {l.participantes.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {l.participantes.map((p: string, pi: number) => (
+                              <Badge key={pi} variant="secondary" className="text-[10px]">
+                                {p}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-semibold text-sm">
+                        {formatCurrency(l.valor)}
+                      </TableCell>
+                      <TableCell>
+                        {l.alertas.length > 0 ? (
+                          <div className="flex flex-col gap-0.5">
+                            {l.alertas.map((a: string, ai: number) => (
+                              <Badge key={ai} variant="outline" className="text-[10px] text-amber-700 border-amber-300 whitespace-nowrap">
+                                {a}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 text-[10px]">OK</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* Linha de Total */}
+                  <TableRow className="bg-gray-50 font-bold border-t-2">
+                    <TableCell colSpan={7} className="text-right">TOTAL A PAGAR</TableCell>
+                    <TableCell className="text-right font-mono text-emerald-700 text-base">
+                      {formatCurrency(detail.resumo.totalValor)}
+                    </TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Gaps do Mentor */}
+      {detail.gapsAgendamento && detail.gapsAgendamento.length > 0 && (
+        <Card className="border-red-200">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2 text-red-700">
+              <AlertCircle className="h-4 w-4" />
+              Agendamentos sem Sessão Registrada ({detail.gapsAgendamento.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Agendamento</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Participantes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detail.gapsAgendamento.map((g: any) => (
+                    <TableRow key={g.appointmentId} className="bg-red-50/30">
+                      <TableCell className="text-sm">{formatDateBR(g.appointmentDate)}</TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {g.appointmentTitle || `#${g.appointmentId}`}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {g.appointmentType === 'grupo' ? 'Grupo' : 'Individual'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <div className="flex flex-wrap gap-1">
+                          {g.participantes.map((p: any) => (
+                            <Badge key={p.alunoId} variant="secondary" className="text-xs">
+                              {p.alunoNome}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Rodapé do Demonstrativo */}
+      <Card className="bg-gray-50">
+        <CardContent className="p-4 text-center">
+          <p className="text-xs text-gray-500">
+            Documento gerado automaticamente pela plataforma Ecossistema do B.E.M. em {new Date().toLocaleString('pt-BR')}
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -101,10 +101,8 @@ export async function verificarEEnviarAlertasVencimentoCiclo(options?: {
     const aluno = alunoMap.get(pdi.alunoId);
     if (!aluno || !aluno.email) continue;
 
-    // Parse macroTermino
-    const macroTerminoDate = pdi.macroTermino instanceof Date
-      ? pdi.macroTermino
-      : new Date(pdi.macroTermino);
+    // Parse macroTermino (now always string from drizzle mode: 'string')
+    const macroTerminoDate = new Date(pdi.macroTermino + 'T00:00:00');
 
     if (isNaN(macroTerminoDate.getTime())) continue;
 

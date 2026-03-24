@@ -3228,3 +3228,21 @@
 - [x] Precificação V2: Remover lógica de fallback por prioridade no cálculo (regra exata ou legado)
 - [x] Precificação V2: Limpar regras genéricas existentes no banco (4 regras removidas)
 - [x] Precificação V2: Corrigir bug de Invalid Date (schema mode string)
+- [x] Financeiro V2: Adicionar filtro de data (De/Até) na tabela Demonstrativo Financeiro por Mentor para filtrar sessões por período
+- [x] Bug: Visão Detalhada do financeiro V2 não tem filtro de data visível (filtro fica só no topo) — filtro agora é compartilhado no topo
+- [x] Bug: "Invalid Date" na coluna Data da visão detalhada do financeiro V2 — corrigido com formatDateBR helper
+
+## Relatório Detalhado por Mentor (Financeiro)
+- [x] Relatório detalhado por mentor: filtro por mentor e período (De/Até)
+- [x] Relatório detalhado por mentor: data/horário do agendamento e da sessão
+- [x] Relatório detalhado por mentor: tipo de sessão e participantes
+- [x] Relatório detalhado por mentor: valor por sessão e somatório total
+- [x] Relatório detalhado por mentor: exportação em documento (Markdown) com logo da plataforma e somatório
+
+## Reorganização Financeiro (Concentrar na aba Financeiro do Demonstrativo)
+- [x] Reorganizar aba Financeiro: filtro de período visível no topo para todas as visões
+- [x] Reorganizar aba Financeiro: botão "Ver Demonstrativo" em cada mentor na tabela resumo
+- [x] Reorganizar aba Financeiro: demonstrativo individual do mentor com dados agendamento/sessão/participantes/valor
+- [x] Reorganizar aba Financeiro: exportação do demonstrativo em documento (Markdown) com logo e somatório
+- [x] Reorganizar aba Financeiro: exportação CSV do demonstrativo
+- [x] Remover tipo financeiro da página de Relatórios (evitar duplicidade)

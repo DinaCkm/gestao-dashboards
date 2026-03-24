@@ -909,7 +909,7 @@ export async function ensureEventForWebinar(webinarId: number): Promise<number> 
   const result = await db.insert(events).values({
     title: webinar.title,
     eventType: 'webinar',
-    eventDate: webinar.eventDate ? new Date(webinar.eventDate) : null,
+    eventDate: webinar.eventDate ? (typeof webinar.eventDate === 'string' ? webinar.eventDate : new Date(webinar.eventDate).toISOString().split('T')[0]) : null,
     videoLink: webinar.youtubeLink || null,
     programId: webinar.programId || null,
     externalId: `sw-${webinar.id}`,
@@ -979,7 +979,7 @@ export async function getEventsByProgramOrGlobal(programId: number): Promise<Eve
       externalId: `sw-${sw.id}`,
       title: sw.title,
       eventType: 'webinar',
-      eventDate: sw.eventDate ? new Date(sw.eventDate) : null,
+      eventDate: sw.eventDate ? (sw.eventDate instanceof Date ? sw.eventDate.toISOString().split('T')[0] : String(sw.eventDate)) : null,
       videoLink: sw.youtubeLink || null,
       programId: sw.programId,
       trilhaId: null,
@@ -1949,8 +1949,8 @@ export async function createAluno(data: { name: string; email: string; externalI
       await db.insert(contratosAluno).values({
         alunoId: Number(alunoId),
         programId: data.programId,
-        periodoInicio: new Date(data.contratoInicio),
-        periodoTermino: new Date(data.contratoFim),
+        periodoInicio: data.contratoInicio,
+        periodoTermino: data.contratoFim,
         totalSessoesContratadas: data.totalSessoesContratadas || 0,
         isActive: 1,
       });
@@ -2927,8 +2927,8 @@ export async function createCicloExecucao(data: {
   const [result] = await db.insert(ciclosExecucao).values({
     alunoId: data.alunoId,
     nomeCiclo: data.nomeCiclo,
-    dataInicio: new Date(data.dataInicio + 'T00:00:00'),
-    dataFim: new Date(data.dataFim + 'T00:00:00'),
+    dataInicio: data.dataInicio,
+    dataFim: data.dataFim,
     definidoPor: data.definidoPor,
     observacoes: data.observacoes,
   });
@@ -4151,8 +4151,8 @@ export async function createAssessmentPdi(
     turmaId: pdiData.turmaId || null,
     consultorId: pdiData.consultorId || null,
     programId: pdiData.programId || null,
-    macroInicio: new Date(pdiData.macroInicio + 'T00:00:00'),
-    macroTermino: new Date(pdiData.macroTermino + 'T00:00:00'),
+    macroInicio: pdiData.macroInicio,
+    macroTermino: pdiData.macroTermino,
     observacoes: pdiData.observacoes || null,
   });
   const pdiId = result[0].insertId;
@@ -4170,8 +4170,8 @@ export async function createAssessmentPdi(
         metaCiclo2: c.metaCiclo2 != null ? String(c.metaCiclo2) : null,
         metaFinal: c.metaFinal != null ? String(c.metaFinal) : null,
         justificativa: c.justificativa || null,
-        microInicio: c.microInicio ? new Date(c.microInicio + 'T00:00:00') : null,
-        microTermino: c.microTermino ? new Date(c.microTermino + 'T00:00:00') : null,
+        microInicio: c.microInicio || null,
+        microTermino: c.microTermino || null,
       }))
     );
   }
@@ -4237,8 +4237,8 @@ export async function addCompetenciaToAssessment(
   const [pdi] = await db.select().from(assessmentPdi).where(eq(assessmentPdi.id, assessmentPdiId)).limit(1);
   if (!pdi) throw new Error('Assessment PDI não encontrado');
 
-  const macroInicioStr = pdi.macroInicio instanceof Date ? pdi.macroInicio.toISOString().split('T')[0] : String(pdi.macroInicio);
-  const macroTerminoStr = pdi.macroTermino instanceof Date ? pdi.macroTermino.toISOString().split('T')[0] : String(pdi.macroTermino);
+  const macroInicioStr = String(pdi.macroInicio);
+  const macroTerminoStr = String(pdi.macroTermino);
 
   if (data.microInicio && data.microInicio < macroInicioStr) {
     throw new Error('Micro ciclo início não pode ser anterior ao macro ciclo início');
@@ -4260,8 +4260,8 @@ export async function addCompetenciaToAssessment(
     competenciaId: data.competenciaId,
     peso: data.peso,
     notaCorte: data.notaCorte || '8.00',
-    microInicio: data.microInicio ? new Date(data.microInicio + 'T00:00:00') : null,
-    microTermino: data.microTermino ? new Date(data.microTermino + 'T00:00:00') : null,
+    microInicio: data.microInicio || null,
+    microTermino: data.microTermino || null,
     nivelAtual: data.nivelAtual || null,
     metaCiclo1: data.metaCiclo1 || null,
     metaCiclo2: data.metaCiclo2 || null,
@@ -4372,8 +4372,8 @@ export async function updateAssessmentCompetencia(
       const [pdi] = await db.select().from(assessmentPdi)
         .where(eq(assessmentPdi.id, comp.assessmentPdiId)).limit(1);
       if (pdi) {
-        const macroInicioStr = pdi.macroInicio instanceof Date ? pdi.macroInicio.toISOString().split('T')[0] : String(pdi.macroInicio);
-        const macroTerminoStr = pdi.macroTermino instanceof Date ? pdi.macroTermino.toISOString().split('T')[0] : String(pdi.macroTermino);
+        const macroInicioStr = String(pdi.macroInicio);
+        const macroTerminoStr = String(pdi.macroTermino);
         if (data.microInicio && data.microInicio < macroInicioStr) {
           throw new Error('Micro ciclo início não pode ser anterior ao macro ciclo início');
         }
@@ -4388,8 +4388,8 @@ export async function updateAssessmentCompetencia(
   const updateData: Record<string, any> = {};
   if (data.peso !== undefined) updateData.peso = data.peso;
   if (data.notaCorte !== undefined) updateData.notaCorte = data.notaCorte;
-  if (data.microInicio !== undefined) updateData.microInicio = data.microInicio ? new Date(data.microInicio + 'T00:00:00') : null;
-  if (data.microTermino !== undefined) updateData.microTermino = data.microTermino ? new Date(data.microTermino + 'T00:00:00') : null;
+  if (data.microInicio !== undefined) updateData.microInicio = data.microInicio || null;
+  if (data.microTermino !== undefined) updateData.microTermino = data.microTermino || null;
   
   await db.update(assessmentCompetencias).set(updateData).where(eq(assessmentCompetencias.id, id));
 }
@@ -5141,7 +5141,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       externalId: `sw-${sw.id}`,
       title: sw.title,
       eventType: 'webinar',
-      eventDate: sw.eventDate ? new Date(sw.eventDate) : null,
+      eventDate: sw.eventDate ? (sw.eventDate instanceof Date ? sw.eventDate.toISOString().split('T')[0] : String(sw.eventDate)) : null,
       videoLink: sw.youtubeLink || null,
       programId: sw.programId,
       trilhaId: null,
@@ -5963,13 +5963,8 @@ export async function getMacrocicloPorAluno(): Promise<Map<string, { macroInicio
     const alunoKey = alunoMap.get(pdi.alunoId) || String(pdi.alunoId);
     // If student has multiple PDIs, use the one with the widest range
     const existing = result.get(alunoKey);
-    // macroInicio/macroTermino come as Date from drizzle date() type
-    const macroInicioStr = pdi.macroInicio instanceof Date 
-      ? pdi.macroInicio.toISOString().split('T')[0] 
-      : String(pdi.macroInicio);
-    const macroTerminoStr = pdi.macroTermino instanceof Date 
-      ? pdi.macroTermino.toISOString().split('T')[0] 
-      : String(pdi.macroTermino);
+    const macroInicioStr = String(pdi.macroInicio);
+    const macroTerminoStr = String(pdi.macroTermino);
     if (!existing) {
       result.set(alunoKey, { macroInicio: macroInicioStr, macroTermino: macroTerminoStr });
     } else {
@@ -7035,10 +7030,10 @@ export async function getJornadasPorTurma(empresa?: string) {
     turmaNome: string;
     turmaCode: string; // BS1, BS2, BS3
     trilhaNome: string;
-    macroInicio: Date | null;
-    macroTermino: Date | null;
+    macroInicio: string | null;
+    macroTermino: string | null;
     qtdAlunos: number;
-    microCiclos: { competencia: string; microInicio: Date | null; microTermino: Date | null }[];
+    microCiclos: { competencia: string; microInicio: string | null; microTermino: string | null }[];
   }>();
   
   for (const pdi of filteredPdis) {

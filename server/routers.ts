@@ -3921,6 +3921,118 @@ export const appRouter = router({
         await deleteSessionTypePricingRule(dbConn, input.id);
         return { success: true };
       }),
+
+    // Relatório detalhado por mentor com dados de agendamento, sessão, participantes e valor
+    relatorioDetalhadoMentor: managerProcedure
+      .input(z.object({
+        consultorId: z.number(),
+        dateFrom: z.string(), // YYYY-MM-DD
+        dateTo: z.string(), // YYYY-MM-DD
+      }))
+      .query(async ({ input }) => {
+        const dbConn = await getDb();
+        if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        // Buscar dados do mentor
+        const mentor = await db.getConsultorById(input.consultorId);
+        if (!mentor) throw new TRPCError({ code: 'NOT_FOUND', message: 'Mentor não encontrado' });
+
+        // Buscar relatório financeiro V2 filtrado pelo período
+        const report = await getRelatorioFinanceiroV2(dbConn, input.dateFrom, input.dateTo);
+        const mentorData = report.mentores.find(m => m.consultorId === input.consultorId);
+
+        // Buscar agendamentos do mentor (já vem com participants enriquecidos)
+        const allAppointments = await db.getMentorAppointments(input.consultorId);
+        const appointmentsInPeriod = allAppointments.filter(a => {
+          const d = a.scheduledDate;
+          if (!d) return false;
+          return d >= input.dateFrom && d <= input.dateTo;
+        });
+
+        // Montar mapa de participantes por agendamento
+        const participantsByAppt = new Map<number, any[]>();
+        for (const appt of allAppointments) {
+          if (appt.participants && appt.participants.length > 0) {
+            participantsByAppt.set(appt.id, appt.participants);
+          }
+        }
+
+        // Montar linhas detalhadas: cada sessão com dados do agendamento
+        const linhas: Array<{
+          sessionId: number;
+          sessionDate: string | null;
+          sessionNumber: number | null;
+          alunoNome: string;
+          empresaNome: string;
+          tipoSessao: string;
+          valor: number;
+          origemPreco: string;
+          appointmentId: number | null;
+          appointmentDate: string | null;
+          appointmentTime: string | null;
+          appointmentTitle: string | null;
+          appointmentType: string | null;
+          appointmentStatus: string | null;
+          participantes: string[];
+          alertas: string[];
+        }> = [];
+
+        if (mentorData) {
+          for (const s of mentorData.sessoes) {
+            const appt = s.appointmentId ? allAppointments.find(a => a.id === s.appointmentId) : null;
+            const participants = appt ? (participantsByAppt.get(appt.id) || []) : [];
+            const participantNames = participants.map(p => p.alunoName || 'N/A');
+
+            linhas.push({
+              sessionId: s.sessionId,
+              sessionDate: s.sessionDate,
+              sessionNumber: s.sessionNumber,
+              alunoNome: s.alunoNome,
+              empresaNome: s.programNome,
+              tipoSessao: s.tipoSessao,
+              valor: s.valor,
+              origemPreco: s.origemPreco,
+              appointmentId: s.appointmentId,
+              appointmentDate: appt?.scheduledDate || null,
+              appointmentTime: appt ? `${appt.startTime} - ${appt.endTime}` : null,
+              appointmentTitle: appt?.title || null,
+              appointmentType: appt?.type || null,
+              appointmentStatus: appt?.status || null,
+              participantes: participantNames,
+              alertas: s.alertas,
+            });
+          }
+        }
+
+        // Agendamentos sem sessão (gaps)
+        const gapsMentor = report.gapsAgendamento.filter(g => g.consultorId === input.consultorId);
+
+        // Ordenar por data
+        linhas.sort((a, b) => {
+          const da = a.sessionDate || '9999';
+          const db2 = b.sessionDate || '9999';
+          return da.localeCompare(db2);
+        });
+
+        return {
+          mentor: {
+            id: mentor.id,
+            nome: mentor.name,
+            email: mentor.email,
+          },
+          periodo: { de: input.dateFrom, ate: input.dateTo },
+          resumo: {
+            totalSessoes: mentorData?.totalSessoes || 0,
+            totalIndividuais: mentorData?.totalSessoesIndividuais || 0,
+            totalGrupais: mentorData?.totalSessoesGrupais || 0,
+            totalPendentes: mentorData?.totalPendentes || 0,
+            totalValor: mentorData?.totalValor || 0,
+          },
+          linhas,
+          gapsAgendamento: gapsMentor,
+          totalAgendamentos: appointmentsInPeriod.length,
+        };
+      }),
   }),
 
   // ==================== ATIVIDADES PRÁTICAS (ADMIN) ====================

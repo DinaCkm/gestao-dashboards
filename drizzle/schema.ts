@@ -128,8 +128,8 @@ export const ciclosExecucao = mysqlTable("ciclos_execucao", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
   nomeCiclo: varchar("nomeCiclo", { length: 255 }).notNull(), // Ex: "Ciclo 1 - Competências Básicas"
-  dataInicio: date("dataInicio").notNull(), // Data de liberação do ciclo
-  dataFim: date("dataFim").notNull(), // Data limite para conclusão
+  dataInicio: date("dataInicio", { mode: "string" }).notNull(), // Data de liberação do ciclo
+  dataFim: date("dataFim", { mode: "string" }).notNull(), // Data limite para conclusão
   definidoPor: int("definidoPor"), // FK para consultors (mentora que definiu)
   observacoes: text("observacoes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -217,7 +217,7 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   trilhaId: int("trilhaId"),
   ciclo: mysqlEnum("ciclo", ["I", "II", "III", "IV"]),
   sessionNumber: int("sessionNumber"),
-  sessionDate: date("sessionDate"),
+  sessionDate: date("sessionDate", { mode: "string" }),
   isAssessment: int("isAssessment").default(0).notNull(), // 1 = sessão de assessment (não conta no saldo), 0 = sessão normal
   presence: mysqlEnum("presence", ["presente", "ausente"]).notNull(),
   taskStatus: mysqlEnum("taskStatus", ["entregue", "nao_entregue", "sem_tarefa", "validada"]),
@@ -226,7 +226,7 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   feedback: text("feedback"),
   mensagemAluno: text("mensagemAluno"),
   taskId: int("taskId"),
-  taskDeadline: date("taskDeadline"),
+  taskDeadline: date("taskDeadline", { mode: "string" }),
   customTaskTitle: varchar("customTaskTitle", { length: 500 }), // Título da tarefa personalizada/livre
   customTaskDescription: text("customTaskDescription"), // Descrição da tarefa personalizada/livre
   taskMode: mysqlEnum("taskMode", ["biblioteca", "personalizada", "livre", "sem_tarefa"]).default("sem_tarefa"), // Modo de seleção da tarefa
@@ -262,7 +262,7 @@ export const events = mysqlTable("events", {
   externalId: varchar("externalId", { length: 100 }),
   title: varchar("title", { length: 500 }).notNull(),
   eventType: mysqlEnum("eventType", ["webinar", "aula", "workshop", "curso_online", "outro"]).default("webinar"),
-  eventDate: date("eventDate"),
+  eventDate: date("eventDate", { mode: "string" }),
   videoLink: varchar("videoLink", { length: 500 }), // Link da gravação/vídeo do evento (YouTube, etc.)
   programId: int("programId"),
   trilhaId: int("trilhaId"),
@@ -384,8 +384,8 @@ export const assessmentPdi = mysqlTable("assessment_pdi", {
   turmaId: int("turmaId"), // FK para turmas (BS1, BS2, BS3, etc.)
   consultorId: int("consultorId"), // FK para consultors (mentora que criou o assessment)
   programId: int("programId"), // FK para programs
-  macroInicio: date("macroInicio").notNull(), // Data início do macro ciclo (jornada)
-  macroTermino: date("macroTermino").notNull(), // Data término do macro ciclo (jornada)
+  macroInicio: date("macroInicio", { mode: "string" }).notNull(), // Data início do macro ciclo (jornada)
+  macroTermino: date("macroTermino", { mode: "string" }).notNull(), // Data término do macro ciclo (jornada)
   totalSessoesPrevistas: int("totalSessoesPrevistas"), // Total de sessões de mentoria previstas para o período do contrato (se null, calcula pela diferença de meses)
   status: mysqlEnum("status", ["ativo", "congelado"]).default("ativo").notNull(),
   observacoes: text("observacoes"),
@@ -417,8 +417,8 @@ export const assessmentCompetencias = mysqlTable("assessment_competencias", {
   metaCiclo1: decimal("metaCiclo1", { precision: 5, scale: 2 }), // Meta para o ciclo 1 (0-100%)
   metaCiclo2: decimal("metaCiclo2", { precision: 5, scale: 2 }), // Meta para o ciclo 2 (0-100%)
   justificativa: text("justificativa"), // Justificativa da mentora para a meta definida
-  microInicio: date("microInicio"), // Data início da Micro Jornada
-  microTermino: date("microTermino"), // Data término da Micro Jornada
+  microInicio: date("microInicio", { mode: "string" }), // Data início da Micro Jornada
+  microTermino: date("microTermino", { mode: "string" }), // Data término da Micro Jornada
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -629,8 +629,8 @@ export const contratosAluno = mysqlTable("contratos_aluno", {
   alunoId: int("alunoId").notNull(), // FK para alunos
   programId: int("programId").notNull(), // FK para programs (empresa)
   turmaId: int("turmaId"), // FK para turmas
-  periodoInicio: date("periodoInicio").notNull(), // Data de início do contrato
-  periodoTermino: date("periodoTermino").notNull(), // Data de término do contrato
+  periodoInicio: date("periodoInicio", { mode: "string" }).notNull(), // Data de início do contrato
+  periodoTermino: date("periodoTermino", { mode: "string" }).notNull(), // Data de término do contrato
   totalSessoesContratadas: int("totalSessoesContratadas").notNull(), // Nº total de sessões de mentoria
   observacoes: text("observacoes"), // Observações do administrador
   criadoPor: int("criadoPor"), // FK para users (admin que criou)
