@@ -120,8 +120,16 @@ export default function PrecificacaoSessoes() {
     setFormTipoSessao(rule.tipoSessao);
     setFormValor(rule.valor);
     setFormDescricao(rule.descricao || "");
-    setFormValidoDesde(rule.validoDesde ? String(rule.validoDesde).slice(0, 10) : "");
-    setFormValidoAte(rule.validoAte ? String(rule.validoAte).slice(0, 10) : "");
+    setFormValidoDesde(
+      rule.validoDesde instanceof Date 
+        ? rule.validoDesde.toISOString().slice(0, 10) 
+        : rule.validoDesde ? String(rule.validoDesde).slice(0, 10) : ""
+    );
+    setFormValidoAte(
+      rule.validoAte instanceof Date 
+        ? rule.validoAte.toISOString().slice(0, 10) 
+        : rule.validoAte ? String(rule.validoAte).slice(0, 10) : ""
+    );
     setDialogOpen(true);
   };
 
@@ -281,9 +289,16 @@ export default function PrecificacaoSessoes() {
                   {filteredRules.map((rule: any) => {
                     const isActive = rule.isActive === 1;
                     const hoje = new Date().toISOString().slice(0, 10);
+                    // Normalizar datas: podem vir como Date object ou string
+                    const desdeStr = rule.validoDesde instanceof Date 
+                      ? rule.validoDesde.toISOString().slice(0, 10) 
+                      : rule.validoDesde ? String(rule.validoDesde).slice(0, 10) : null;
+                    const ateStr = rule.validoAte instanceof Date 
+                      ? rule.validoAte.toISOString().slice(0, 10) 
+                      : rule.validoAte ? String(rule.validoAte).slice(0, 10) : null;
                     const vigente = isActive && 
-                      (!rule.validoDesde || String(rule.validoDesde).slice(0, 10) <= hoje) && 
-                      (!rule.validoAte || String(rule.validoAte).slice(0, 10) >= hoje);
+                      (!desdeStr || desdeStr <= hoje) && 
+                      (!ateStr || ateStr >= hoje);
 
                     return (
                       <TableRow key={rule.id} className={!isActive ? "opacity-50" : ""}>
@@ -317,11 +332,11 @@ export default function PrecificacaoSessoes() {
                         </TableCell>
                         <TableCell className="text-sm">
                           <span>
-                            {rule.validoDesde ? new Date(rule.validoDesde + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
+                            {desdeStr ? new Date(desdeStr + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
                           </span>
                           <span className="text-gray-400 mx-1">→</span>
                           <span>
-                            {rule.validoAte ? new Date(rule.validoAte + 'T12:00:00').toLocaleDateString('pt-BR') : 'Indefinido'}
+                            {ateStr ? new Date(ateStr + 'T12:00:00').toLocaleDateString('pt-BR') : 'Indefinido'}
                           </span>
                         </TableCell>
                         <TableCell>

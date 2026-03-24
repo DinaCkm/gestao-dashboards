@@ -3220,3 +3220,4 @@
 - [x] Etapa 6: Relatório financeiro provisório com alertas de gaps (sessão sem agendamento, agendamento sem sessão)
 - [x] Etapa 7: Testes unitários para cálculo financeiro V2 (8/8 passando)
 - [x] Etapa 7: Testes de integração: agendamento → registro → cálculo (coberto nos testes V2)
+- [x] Bug: Datas de vigência aparecem como "Invalid Date" na tela de Precificação de Sessões V2 (Drizzle retorna Date objects, normalizado com instanceof check)
