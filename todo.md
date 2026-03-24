@@ -3253,3 +3253,4 @@
 - [x] Reagendamento: enviar email ao aluno quando a data do agendamento for alterada (mentora ou admin)
 - [x] Reagendamento: adicionar funcionalidade de reagendamento na área do admin (AdminAgendamentos)
 - [x] Liberar mentora para criar/reagendar agendamentos com data retroativa (sem bloqueio no backend e frontend)
+- [x] Bug: mentora não consegue criar agenda retroativa - removida validação "data precisa ser hoje ou futura" no handleAddDateSlot

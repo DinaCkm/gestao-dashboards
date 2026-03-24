@@ -323,12 +323,6 @@ function DateSpecificSection({ consultorId, dateAvailability, saveDateMutation, 
       toast.error('Selecione uma data');
       return;
     }
-    // Validar que a data é futura
-    const today = new Date().toISOString().slice(0, 10);
-    if (newDateSlot.specificDate < today) {
-      toast.error('A data precisa ser hoje ou futura');
-      return;
-    }
     try {
       await saveDateMutation.mutateAsync({
         consultorId,
