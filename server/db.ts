@@ -6642,6 +6642,19 @@ export async function cancelAppointment(appointmentId: number) {
   return { success: true };
 }
 
+export async function getAppointmentById(appointmentId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(mentorAppointments).where(eq(mentorAppointments.id, appointmentId));
+  return rows[0] || null;
+}
+
+export async function getAppointmentParticipants(appointmentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(appointmentParticipants).where(eq(appointmentParticipants.appointmentId, appointmentId));
+}
+
 export async function updateAppointmentSchedule(appointmentId: number, data: {
   scheduledDate: string;
   startTime: string;

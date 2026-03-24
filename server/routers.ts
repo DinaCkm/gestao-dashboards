@@ -3719,7 +3719,7 @@ export const appRouter = router({
       }),
 
     // Reagendar agendamento (alterar data/horário)
-    updateAppointment: managerProcedure
+    updateAppointment: protectedProcedure
       .input(z.object({
         appointmentId: z.number(),
         scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -3727,13 +3727,75 @@ export const appRouter = router({
         endTime: z.string().regex(/^\d{2}:\d{2}$/),
         googleMeetLink: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
-        return await db.updateAppointmentSchedule(input.appointmentId, {
+      .mutation(async ({ input, ctx }) => {
+        const userRole = ctx.user.role;
+        // Apenas admin e manager podem reagendar
+        if (userRole !== 'admin' && userRole !== 'manager') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Sem permissão para reagendar' });
+        }
+        // Buscar dados do agendamento antes de atualizar (para o email)
+        const oldAppointment = await db.getAppointmentById(input.appointmentId);
+        // Atualizar o agendamento
+        const result = await db.updateAppointmentSchedule(input.appointmentId, {
           scheduledDate: input.scheduledDate,
           startTime: input.startTime,
           endTime: input.endTime,
           googleMeetLink: input.googleMeetLink ?? null,
         });
+        // Enviar email de notificação aos participantes
+        if (result.success && oldAppointment) {
+          try {
+            const participants = await db.getAppointmentParticipants(input.appointmentId);
+            const mentor = oldAppointment.consultorId ? await db.getConsultorById(oldAppointment.consultorId) : null;
+            const mentorName = mentor?.name || 'Mentor(a)';
+            const oldDateStr = new Date(oldAppointment.scheduledDate + 'T12:00:00').toLocaleDateString('pt-BR');
+            const newDateStr = new Date(input.scheduledDate + 'T12:00:00').toLocaleDateString('pt-BR');
+            const { sendEmail } = await import('./emailService');
+            const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+            for (const p of participants) {
+              const aluno = await db.getAlunoById(p.alunoId);
+              if (!aluno?.email) continue;
+              const subject = `Sessão de mentoria reagendada — ${mentorName}`;
+              const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:40px 20px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <tr><td style="background-color:#ffffff;padding:30px 40px;text-align:center;">
+          <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;" />
+          <p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p>
+        </td></tr>
+        <tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;" /></td></tr>
+        <tr><td style="background-color:#dbeafe;padding:20px 40px;text-align:center;">
+          <p style="color:#1e40af;font-size:18px;font-weight:700;margin:0;">Sessão Reagendada</p>
+        </td></tr>
+        <tr><td style="padding:40px;">
+          <h2 style="color:#0f2b3c;margin:0 0 20px;font-size:20px;">Olá, ${aluno.name || 'Participante'}!</h2>
+          <p style="color:#374151;font-size:15px;line-height:1.6;">Informamos que sua sessão de mentoria com <strong>${mentorName}</strong> foi reagendada.</p>
+          <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+            <tr><td style="padding:12px 16px;background:#fef3c7;border-radius:8px 8px 0 0;font-weight:600;color:#92400e;">Data anterior</td><td style="padding:12px 16px;background:#fef3c7;border-radius:8px 8px 0 0;color:#92400e;">${oldDateStr} às ${oldAppointment.startTime}</td></tr>
+            <tr><td style="padding:12px 16px;background:#d1fae5;border-radius:0 0 8px 8px;font-weight:600;color:#065f46;">Nova data</td><td style="padding:12px 16px;background:#d1fae5;border-radius:0 0 8px 8px;color:#065f46;">${newDateStr} às ${input.startTime}</td></tr>
+          </table>
+          ${input.googleMeetLink ? '<p style="color:#374151;font-size:15px;">Link do Google Meet: <a href="' + input.googleMeetLink + '" style="color:#2563eb;">' + input.googleMeetLink + '</a></p>' : ''}
+          <p style="color:#6b7280;font-size:13px;margin-top:24px;">Se tiver dúvidas, entre em contato com sua mentora.</p>
+        </td></tr>
+        <tr><td style="background-color:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+          <p style="color:#9ca3af;font-size:12px;margin:0;">ECOSSISTEMA DO BEM — Plataforma de Desenvolvimento e Mentoria</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+              await sendEmail({ to: aluno.email, subject, html, text: `Sessão reagendada: de ${oldDateStr} ${oldAppointment.startTime} para ${newDateStr} ${input.startTime}` }).catch(() => {});
+            }
+          } catch (emailErr) {
+            console.error('[Reagendamento] Erro ao enviar emails:', emailErr);
+          }
+        }
+        return result;
       }),
 
     // Listar convites pendentes do aluno

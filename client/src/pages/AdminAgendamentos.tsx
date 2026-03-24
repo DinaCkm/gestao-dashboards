@@ -2,11 +2,14 @@ import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Users, Video, Filter, Search, CalendarDays, UserCheck, XCircle, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar, Clock, Users, Video, Filter, Search, CalendarDays, UserCheck, XCircle, CheckCircle2, AlertCircle, RefreshCw, Pencil } from "lucide-react";
+import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode }> = {
   agendado: { label: "Agendado", variant: "default", icon: <CalendarDays className="w-3 h-3" /> },
@@ -33,6 +36,27 @@ export default function AdminAgendamentos() {
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [editingAppt, setEditingAppt] = useState<{ id: number; scheduledDate: string; startTime: string; endTime: string; googleMeetLink: string } | null>(null);
+
+  const updateMutation = trpc.mentor.updateAppointment.useMutation();
+
+  const handleUpdate = async () => {
+    if (!editingAppt) return;
+    try {
+      await updateMutation.mutateAsync({
+        appointmentId: editingAppt.id,
+        scheduledDate: editingAppt.scheduledDate,
+        startTime: editingAppt.startTime,
+        endTime: editingAppt.endTime,
+        googleMeetLink: editingAppt.googleMeetLink || undefined,
+      });
+      toast.success('Agendamento reagendado com sucesso! Os participantes serão notificados por email.');
+      setEditingAppt(null);
+      refetch();
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao reagendar');
+    }
+  };
 
   const filters = useMemo(() => {
     const f: any = {};
@@ -283,6 +307,7 @@ export default function AdminAgendamentos() {
                     <TableHead className="w-[110px]">Status</TableHead>
                     <TableHead>Título / Observações</TableHead>
                     <TableHead className="w-[80px]">Sala</TableHead>
+                    <TableHead className="w-[100px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -371,6 +396,25 @@ export default function AdminAgendamentos() {
                             <span className="text-xs text-muted-foreground">-</span>
                           )}
                         </TableCell>
+                        <TableCell>
+                          {appt.status !== 'cancelado' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                              onClick={() => setEditingAppt({
+                                id: appt.id,
+                                scheduledDate: appt.scheduledDate,
+                                startTime: appt.startTime,
+                                endTime: appt.endTime,
+                                googleMeetLink: appt.googleMeetLink || '',
+                              })}
+                            >
+                              <Pencil className="w-3 h-3 mr-1" />
+                              Reagendar
+                            </Button>
+                          )}
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -380,6 +424,65 @@ export default function AdminAgendamentos() {
           )}
         </CardContent>
       </Card>
+      {/* Dialog de Reagendamento (Admin - sem restrição de data) */}
+      <Dialog open={!!editingAppt} onOpenChange={(open) => { if (!open) setEditingAppt(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5 text-blue-600" />
+              Reagendar Sessão (Admin)
+            </DialogTitle>
+            <DialogDescription>
+              Como administrador, você pode alterar para qualquer data, inclusive retroativa. Os participantes serão notificados por email.
+            </DialogDescription>
+          </DialogHeader>
+          {editingAppt && (
+            <div className="space-y-4 py-2">
+              <div>
+                <Label>Nova Data</Label>
+                <Input
+                  type="date"
+                  value={editingAppt.scheduledDate}
+                  onChange={e => setEditingAppt(prev => prev ? { ...prev, scheduledDate: e.target.value } : null)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Admin: sem restrição de data (pode ser retroativa ou futura).</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Horário Início</Label>
+                  <Input
+                    type="time"
+                    value={editingAppt.startTime}
+                    onChange={e => setEditingAppt(prev => prev ? { ...prev, startTime: e.target.value } : null)}
+                  />
+                </div>
+                <div>
+                  <Label>Horário Fim</Label>
+                  <Input
+                    type="time"
+                    value={editingAppt.endTime}
+                    onChange={e => setEditingAppt(prev => prev ? { ...prev, endTime: e.target.value } : null)}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Link do Google Meet</Label>
+                <Input
+                  placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                  value={editingAppt.googleMeetLink}
+                  onChange={e => setEditingAppt(prev => prev ? { ...prev, googleMeetLink: e.target.value } : null)}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingAppt(null)}>Cancelar</Button>
+            <Button onClick={handleUpdate} disabled={updateMutation.isPending} className="bg-[#1E3A5F] hover:bg-[#2a4f7f]">
+              {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

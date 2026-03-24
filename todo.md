@@ -3248,3 +3248,8 @@
 - [x] Remover tipo financeiro da página de Relatórios (evitar duplicidade)
 - [x] Permitir que a mentora crie agendamentos com data retroativa (datas no passado)
 - [x] Permitir que a mentora edite a data de um agendamento existente (quando aluno solicita alteração)
+- [x] Reagendamento: mentora só pode reagendar para datas futuras
+- [x] Reagendamento: admin pode reagendar para qualquer data (inclusive retroativa)
+- [x] Reagendamento: enviar email ao aluno quando a data do agendamento for alterada (mentora ou admin)
+- [x] Reagendamento: adicionar funcionalidade de reagendamento na área do admin (AdminAgendamentos)
+- [x] Liberar mentora para criar/reagendar agendamentos com data retroativa (sem bloqueio no backend e frontend)
