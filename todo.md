@@ -3202,3 +3202,21 @@
 
 ## Bug Menu Mentora (23/03/2026)
 - [x] Corrigir sobreposição do item "Perfil / Agenda" com o link "P.D.I Evoluir" no menu lateral da mentora
+
+## Nova Lógica Financeira das Mentorias (Março/2026)
+- [x] Etapa 1: Schema — Adicionar campo tipoSessao (enum) na mentoring_sessions
+- [x] Etapa 1: Schema — Adicionar campo appointmentId (FK) na mentoring_sessions
+- [x] Etapa 1: Schema — Criar tabela mentor_session_type_pricing (empresa×mentor×tipo×modalidade com validade temporal)
+- [x] Etapa 1: Schema — Migrar dados: isAssessment=1 → tipoSessao=individual_assessment (115 sessões migradas)
+- [x] Etapa 2: Criar função de cálculo financeiro V2 (server/financialCalculatorV2.ts)
+- [x] Etapa 2: Regra de prioridade: preço por empresa×mentor×tipo×modalidade > fallback legado > R$0
+- [x] Etapa 2: Sessão grupal: 1 pagamento por agendamento (não multiplica por aluno)
+- [x] Etapa 3: Tela de configuração da nova precificação no admin (Relatórios Financeiros)
+- [x] Etapa 3: CRUD de preços por empresa×mentor×tipo×modalidade com datas de validade
+- [x] Etapa 4: Vincular registro de sessão ao agendamento (campo appointmentId)
+- [x] Etapa 4: Permitir registro sem agendamento com flag de alerta
+- [x] Etapa 5: Alterar dashboard financeiro para usar cálculo V2
+- [x] Etapa 5: Adicionar colunas Modalidade e Tipo da Sessão nos relatórios
+- [x] Etapa 6: Relatório financeiro provisório com alertas de gaps (sessão sem agendamento, agendamento sem sessão)
+- [x] Etapa 7: Testes unitários para cálculo financeiro V2 (8/8 passando)
+- [x] Etapa 7: Testes de integração: agendamento → registro → cálculo (coberto nos testes V2)

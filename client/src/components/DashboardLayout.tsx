@@ -147,6 +147,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Calculator, label: "Fórmulas", path: "/formulas" },
       { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
       { icon: Edit3, label: "Editar Mentorias", path: "/editar-mentorias" },
+      { icon: DollarSign, label: "Precificação de Sessões", path: "/precificacao-sessoes" },
     ],
   },
   {

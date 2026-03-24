@@ -921,15 +921,33 @@ function DemonstrativoContent() {
   );
 }
 
-// ============ RELATÓRIO FINANCEIRO ============
+// ============ RELATÓRIO FINANCEIRO V2 ============
+
+const TIPO_SESSAO_LABELS: Record<string, string> = {
+  individual_normal: "Individual",
+  individual_assessment: "Assessment",
+  grupo_normal: "Grupo",
+  grupo_assessment: "Grupo Assessment",
+};
+
+const ORIGEM_PRECO_LABELS: Record<string, string> = {
+  empresa_mentor: "Empresa+Mentor",
+  mentor: "Mentor",
+  empresa: "Empresa",
+  legado_faixa: "Faixa (legado)",
+  legado_padrao: "Padrão (legado)",
+  zero: "Sem preço",
+};
 
 function RelatorioFinanceiro() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [appliedFrom, setAppliedFrom] = useState<string | undefined>();
   const [appliedTo, setAppliedTo] = useState<string | undefined>();
+  const [expandedMentor, setExpandedMentor] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<"resumo" | "detalhado">("resumo");
 
-  const { data, isLoading } = trpc.mentor.relatorioFinanceiro.useQuery(
+  const { data, isLoading } = trpc.mentor.relatorioFinanceiroV2.useQuery(
     appliedFrom || appliedTo ? { dateFrom: appliedFrom, dateTo: appliedTo } : undefined
   );
 
@@ -945,28 +963,82 @@ function RelatorioFinanceiro() {
     setAppliedTo(undefined);
   };
 
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
   const handleExportCSV = () => {
     if (!data?.mentores.length) return;
-    const headers = ["Mentor", "Valor/Sessão (R$)", "Sessões Realizadas", "Total (R$)"];
+    const headers = ["Mentor", "Tipo", "Individuais", "Grupais", "Total Sessões", "Pendentes", "Total (R$)"];
     const rows = data.mentores.map(m => [
       m.consultorNome,
-      m.valorSessao.toFixed(2),
+      "-",
+      m.totalSessoesIndividuais,
+      m.totalSessoesGrupais,
       m.totalSessoes,
+      m.totalPendentes,
       m.totalValor.toFixed(2),
     ]);
-    rows.push(["", "", String(data.totalSessoesGeral), data.totalGeral.toFixed(2)]);
+    rows.push(["", "", "", "", String(data.totalSessoesGeral), String(data.totalPendentes), data.totalGeral.toFixed(2)]);
     const csvContent = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
-    const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `relatorio-financeiro-mentorias-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `relatorio-financeiro-v2-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportDetailedCSV = () => {
+    if (!data?.mentores.length) return;
+    const headers = ["Mentor", "Data", "Aluno", "Empresa", "Tipo Sessão", "Modalidade", "Sessão #", "Valor (R$)", "Origem Preço", "Agendamento", "Alertas"];
+    const rows: string[][] = [];
+    for (const m of data.mentores) {
+      for (const s of m.sessoes) {
+        rows.push([
+          s.consultorNome,
+          s.sessionDate ? new Date(s.sessionDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-',
+          s.alunoNome,
+          s.programNome,
+          TIPO_SESSAO_LABELS[s.tipoSessao] || s.tipoSessao,
+          s.isGrupal ? "Grupo" : "Individual",
+          String(s.sessionNumber || '-'),
+          s.valor.toFixed(2),
+          ORIGEM_PRECO_LABELS[s.origemPreco] || s.origemPreco,
+          s.appointmentId ? `#${s.appointmentId}` : 'Sem agendamento',
+          s.alertas.join(' | ') || '-',
+        ]);
+      }
+    }
+    const csvContent = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `relatorio-financeiro-v2-detalhado-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
   return (
     <div className="space-y-6">
+      {/* Alertas Globais */}
+      {data && data.alertas.length > 0 && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium text-amber-800">Alertas de Auditoria</p>
+                <ul className="text-sm text-amber-700 mt-1 space-y-0.5">
+                  {data.alertas.map((a, i) => <li key={i}>{a}</li>)}
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filtros de período */}
       <Card>
         <CardContent className="p-4">
@@ -987,9 +1059,12 @@ function RelatorioFinanceiro() {
                 <X className="h-4 w-4" /> Limpar
               </Button>
             )}
-            <div className="ml-auto">
+            <div className="ml-auto flex gap-2">
               <Button onClick={handleExportCSV} variant="outline" className="gap-2" disabled={!data?.mentores.length}>
-                <Download className="h-4 w-4" /> Exportar CSV
+                <Download className="h-4 w-4" /> Resumo CSV
+              </Button>
+              <Button onClick={handleExportDetailedCSV} variant="outline" className="gap-2" disabled={!data?.mentores.length}>
+                <Download className="h-4 w-4" /> Detalhado CSV
               </Button>
             </div>
           </div>
@@ -998,7 +1073,7 @@ function RelatorioFinanceiro() {
 
       {/* KPIs */}
       {data && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-[#1E3A5F]">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
@@ -1024,76 +1099,356 @@ function RelatorioFinanceiro() {
                 <span className="text-xs text-gray-500">Total Geral</span>
               </div>
               <p className="text-2xl font-bold text-emerald-600">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.totalGeral)}
+                {formatCurrency(data.totalGeral)}
               </p>
             </CardContent>
           </Card>
+          {data.totalPendentes > 0 && (
+            <Card className="border-l-4 border-l-amber-500">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <span className="text-xs text-gray-500">Pendentes</span>
+                </div>
+                <p className="text-2xl font-bold text-amber-600">{data.totalPendentes}</p>
+                <p className="text-xs text-gray-400">Sem agendamento</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
-      {/* Tabela por Mentor */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Demonstrativo Financeiro por Mentor</CardTitle>
-          <CardDescription>
-            {appliedFrom || appliedTo
-              ? `Período: ${appliedFrom ? new Date(appliedFrom + 'T12:00:00').toLocaleDateString('pt-BR') : 'Início'} a ${appliedTo ? new Date(appliedTo + 'T12:00:00').toLocaleDateString('pt-BR') : 'Hoje'}`
-              : 'Todas as sessões (sem filtro de período)'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-12" />)}
-            </div>
-          ) : !data?.mentores.length ? (
-            <div className="text-center py-12 text-gray-500">
-              <DollarSign className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p>Nenhuma sessão encontrada no período selecionado</p>
-            </div>
-          ) : (
+      {/* Toggle Resumo / Detalhado */}
+      <div className="flex gap-2">
+        <Button
+          variant={viewMode === "resumo" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setViewMode("resumo")}
+        >
+          Resumo por Mentor
+        </Button>
+        <Button
+          variant={viewMode === "detalhado" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setViewMode("detalhado")}
+        >
+          Detalhado por Sessão
+        </Button>
+      </div>
+
+      {/* Tabela Resumo por Mentor */}
+      {viewMode === "resumo" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Demonstrativo Financeiro por Mentor (V2)</CardTitle>
+            <CardDescription>
+              {appliedFrom || appliedTo
+                ? `Período: ${appliedFrom ? new Date(appliedFrom + 'T12:00:00').toLocaleDateString('pt-BR') : 'Início'} a ${appliedTo ? new Date(appliedTo + 'T12:00:00').toLocaleDateString('pt-BR') : 'Hoje'}`
+                : 'Todas as sessões (sem filtro de período)'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-12" />)}
+              </div>
+            ) : !data?.mentores.length ? (
+              <div className="text-center py-12 text-gray-500">
+                <DollarSign className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p>Nenhuma sessão encontrada no período selecionado</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mentor</TableHead>
+                      <TableHead className="text-right">Individuais</TableHead>
+                      <TableHead className="text-right">Grupais</TableHead>
+                      <TableHead className="text-right">Total Sessões</TableHead>
+                      <TableHead className="text-right">Pendentes</TableHead>
+                      <TableHead className="text-right">Total (R$)</TableHead>
+                      <TableHead className="text-center">Detalhe</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.mentores.map((m) => (
+                      <TableRow key={m.consultorId} className="cursor-pointer hover:bg-gray-50" onClick={() => setExpandedMentor(expandedMentor === m.consultorId ? null : m.consultorId)}>
+                        <TableCell className="font-medium">{m.consultorNome}</TableCell>
+                        <TableCell className="text-right font-mono">{m.totalSessoesIndividuais}</TableCell>
+                        <TableCell className="text-right font-mono">{m.totalSessoesGrupais}</TableCell>
+                        <TableCell className="text-right font-mono">{m.totalSessoes}</TableCell>
+                        <TableCell className="text-right">
+                          {m.totalPendentes > 0 ? (
+                            <Badge variant="outline" className="text-amber-700 border-amber-300">
+                              {m.totalPendentes}
+                            </Badge>
+                          ) : (
+                            <span className="text-gray-400">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-semibold text-emerald-700">
+                          {formatCurrency(m.totalValor)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Eye className="h-4 w-4 text-gray-400 mx-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {/* Linha de Total */}
+                    <TableRow className="bg-gray-50 font-bold border-t-2">
+                      <TableCell>TOTAL GERAL</TableCell>
+                      <TableCell className="text-right font-mono">
+                        {data.mentores.reduce((s, m) => s + m.totalSessoesIndividuais, 0)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {data.mentores.reduce((s, m) => s + m.totalSessoesGrupais, 0)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">{data.totalSessoesGeral}</TableCell>
+                      <TableCell className="text-right">
+                        {data.totalPendentes > 0 && (
+                          <Badge variant="outline" className="text-amber-700 border-amber-300">
+                            {data.totalPendentes}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-emerald-700">
+                        {formatCurrency(data.totalGeral)}
+                      </TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Detalhe do Mentor Expandido (no modo resumo) */}
+      {viewMode === "resumo" && expandedMentor && data && (() => {
+        const mentor = data.mentores.find(m => m.consultorId === expandedMentor);
+        if (!mentor) return null;
+        return (
+          <Card className="border-[#1E3A5F]/30">
+            <CardHeader>
+              <CardTitle className="text-base">Sessões de {mentor.consultorNome}</CardTitle>
+              <CardDescription>{mentor.totalSessoes} sessões | {formatCurrency(mentor.totalValor)}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Aluno</TableHead>
+                      <TableHead>Empresa</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead className="text-right">#</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead>Origem</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mentor.sessoes.map((s) => (
+                      <TableRow key={s.sessionId} className={s.isPendente ? "bg-amber-50/50" : ""}>
+                        <TableCell className="text-sm">
+                          {s.sessionDate ? new Date(s.sessionDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}
+                        </TableCell>
+                        <TableCell className="text-sm">{s.alunoNome}</TableCell>
+                        <TableCell className="text-sm">{s.programNome}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {TIPO_SESSAO_LABELS[s.tipoSessao] || s.tipoSessao}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right text-sm font-mono">{s.sessionNumber || '-'}</TableCell>
+                        <TableCell className="text-right text-sm font-mono font-semibold">
+                          {formatCurrency(s.valor)}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs text-gray-500">{ORIGEM_PRECO_LABELS[s.origemPreco] || s.origemPreco}</span>
+                        </TableCell>
+                        <TableCell>
+                          {s.alertas.length > 0 ? (
+                            <div className="flex flex-col gap-0.5">
+                              {s.alertas.map((a, i) => (
+                                <Badge key={i} variant="outline" className="text-[10px] text-amber-700 border-amber-300 whitespace-nowrap">
+                                  {a}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 text-[10px]">OK</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {/* Visão Detalhada (todas as sessões) */}
+      {/* Gaps: Agendamentos sem Sessão */}
+      {data && data.gapsAgendamento && data.gapsAgendamento.length > 0 && (
+        <Card className="border-red-200">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2 text-red-700">
+              <AlertCircle className="h-5 w-5" />
+              Agendamentos sem Sessão Registrada
+            </CardTitle>
+            <CardDescription>
+              {data.gapsAgendamento.length} agendamento(s) passado(s) com participantes sem sessão registrada no sistema.
+              Estes representam possíveis sessões realizadas mas não registradas pela mentora.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Agendamento</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Mentor</TableHead>
-                    <TableHead className="text-right">Valor/Sessão</TableHead>
-                    <TableHead className="text-right">Sessões Realizadas</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead>Participantes sem Sessão</TableHead>
+                    <TableHead className="text-right">Qtd</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.mentores.map((m) => (
-                    <TableRow key={m.consultorId}>
-                      <TableCell className="font-medium">{m.consultorNome}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {m.valorSessao > 0
-                          ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(m.valorSessao)
-                          : <span className="text-muted-foreground italic">Não definido</span>
-                        }
+                  {data.gapsAgendamento.map((g) => (
+                    <TableRow key={g.appointmentId} className="bg-red-50/30">
+                      <TableCell className="text-sm whitespace-nowrap">
+                        {g.appointmentDate ? new Date(g.appointmentDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}
                       </TableCell>
-                      <TableCell className="text-right font-mono">{m.totalSessoes}</TableCell>
-                      <TableCell className="text-right font-mono font-semibold">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(m.totalValor)}
+                      <TableCell className="text-sm">
+                        <span className="font-medium">{g.appointmentTitle || `Agendamento #${g.appointmentId}`}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {g.appointmentType === 'grupo' ? 'Grupo' : 'Individual'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">{g.consultorNome}</TableCell>
+                      <TableCell className="text-sm">
+                        <div className="flex flex-wrap gap-1">
+                          {g.participantes.map((p) => (
+                            <Badge key={p.alunoId} variant="secondary" className="text-xs">
+                              {p.alunoNome}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-red-700 font-semibold">
+                        {g.participantes.length}
                       </TableCell>
                     </TableRow>
                   ))}
-                  {/* Linha de Total */}
-                  <TableRow className="bg-gray-50 font-bold border-t-2">
-                    <TableCell>TOTAL GERAL</TableCell>
-                    <TableCell></TableCell>
-                    <TableCell className="text-right font-mono">{data.totalSessoesGeral}</TableCell>
-                    <TableCell className="text-right font-mono text-emerald-700">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.totalGeral)}
-                    </TableCell>
-                  </TableRow>
                 </TableBody>
               </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+
+      {viewMode === "detalhado" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Todas as Sessões — Visão Detalhada</CardTitle>
+            <CardDescription>
+              {appliedFrom || appliedTo
+                ? `Período: ${appliedFrom ? new Date(appliedFrom + 'T12:00:00').toLocaleDateString('pt-BR') : 'Início'} a ${appliedTo ? new Date(appliedTo + 'T12:00:00').toLocaleDateString('pt-BR') : 'Hoje'}`
+                : 'Todas as sessões (sem filtro de período)'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-12" />)}
+              </div>
+            ) : !data?.mentores.length ? (
+              <div className="text-center py-12 text-gray-500">
+                <DollarSign className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p>Nenhuma sessão encontrada</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Mentor</TableHead>
+                      <TableHead>Aluno</TableHead>
+                      <TableHead>Empresa</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead className="text-right">#</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead>Origem</TableHead>
+                      <TableHead>Agend.</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.mentores.flatMap(m => m.sessoes).sort((a, b) => {
+                      const dateA = a.sessionDate || '';
+                      const dateB = b.sessionDate || '';
+                      return dateB.localeCompare(dateA);
+                    }).map((s) => (
+                      <TableRow key={s.sessionId} className={s.isPendente ? "bg-amber-50/50" : ""}>
+                        <TableCell className="text-sm whitespace-nowrap">
+                          {s.sessionDate ? new Date(s.sessionDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}
+                        </TableCell>
+                        <TableCell className="text-sm">{s.consultorNome}</TableCell>
+                        <TableCell className="text-sm">{s.alunoNome}</TableCell>
+                        <TableCell className="text-sm">{s.programNome}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {TIPO_SESSAO_LABELS[s.tipoSessao] || s.tipoSessao}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right text-sm font-mono">{s.sessionNumber || '-'}</TableCell>
+                        <TableCell className="text-right text-sm font-mono font-semibold">
+                          {formatCurrency(s.valor)}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs text-gray-500">{ORIGEM_PRECO_LABELS[s.origemPreco] || s.origemPreco}</span>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {s.appointmentId ? (
+                            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 text-[10px]">#{s.appointmentId}</Badge>
+                          ) : (
+                            <span className="text-amber-600 text-xs">Sem</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {s.alertas.length > 0 ? (
+                            <div className="flex flex-col gap-0.5">
+                              {s.alertas.map((a, i) => (
+                                <Badge key={i} variant="outline" className="text-[10px] text-amber-700 border-amber-300 whitespace-nowrap">
+                                  {a}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 text-[10px]">OK</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

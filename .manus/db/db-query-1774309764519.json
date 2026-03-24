@@ -1,0 +1,34 @@
+{
+  "query": "\nSELECT \n  ma.id AS agendamento_id,\n  ma.scheduledDate,\n  ma.title,\n  ma.status,\n  ma.consultorId,\n  c.name AS mentor_nome\nFROM mentor_appointments ma\nLEFT JOIN consultors c ON ma.consultorId = c.id\nWHERE ma.consultorId = 39\nAND ma.scheduledDate IN ('2026-03-01', '2026-03-06', '2026-03-20', '2026-03-21')\nORDER BY ma.scheduledDate;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ma.id AS agendamento_id,\n  ma.scheduledDate,\n  ma.title,\n  ma.status,\n  ma.consultorId,\n  c.name AS mentor_nome\nFROM mentor_appointments ma\nLEFT JOIN consultors c ON ma.consultorId = c.id\nWHERE ma.consultorId = 39\nAND ma.scheduledDate IN ('2026-03-01', '2026-03-06', '2026-03-20', '2026-03-21')\nORDER BY ma.scheduledDate;\n",
+  "rows": [
+    {
+      "agendamento_id": "30001",
+      "scheduledDate": "2026-03-06",
+      "title": "EMBRAPII - 5ªT [CICLO I] Vanessa Bertholdo Vargas",
+      "status": "cancelado",
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus"
+    },
+    {
+      "agendamento_id": "180004",
+      "scheduledDate": "2026-03-20",
+      "title": "Encontro Inicial - Onboarding",
+      "status": "cancelado",
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus"
+    },
+    {
+      "agendamento_id": "270001",
+      "scheduledDate": "2026-03-20",
+      "title": "Encontro Inicial - Onboarding",
+      "status": "agendado",
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus"
+    }
+  ],
+  "messages": [],
+  "stdout": "agendamento_id\tscheduledDate\ttitle\tstatus\tconsultorId\tmentor_nome\n30001\t2026-03-06\tEMBRAPII - 5ªT [CICLO I] Vanessa Bertholdo Vargas\tcancelado\t39\tAdriana Deus\n180004\t2026-03-20\tEncontro Inicial - Onboarding\tcancelado\t39\tAdriana Deus\n270001\t2026-03-20\tEncontro Inicial - Onboarding\tagendado\t39\tAdriana Deus\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

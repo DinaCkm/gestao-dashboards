@@ -792,6 +792,8 @@ export async function createMentoringSession(data: {
   taskMode?: "biblioteca" | "personalizada" | "livre" | "sem_tarefa";
   notaMentoraAplicabilidade?: number | null;
   aplicabilidadeAvaliadaEm?: Date | null;
+  tipoSessao?: string;
+  appointmentId?: number | null;
 }): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -816,7 +818,9 @@ export async function createMentoringSession(data: {
     taskMode: data.taskMode ?? "sem_tarefa",
     notaMentoraAplicabilidade: data.notaMentoraAplicabilidade ?? null,
     aplicabilidadeAvaliadaEm: data.aplicabilidadeAvaliadaEm ?? null,
-  });
+    tipoSessao: data.tipoSessao ?? "individual_normal",
+    appointmentId: data.appointmentId ?? null,
+  } as any);
   return result[0].insertId;
 }
 

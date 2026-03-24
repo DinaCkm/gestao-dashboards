@@ -1,0 +1,18 @@
+{
+  "query": "\nSELECT tipoSessao, COUNT(*) as total FROM mentoring_sessions GROUP BY tipoSessao;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT tipoSessao, COUNT(*) as total FROM mentoring_sessions GROUP BY tipoSessao;\n",
+  "rows": [
+    {
+      "tipoSessao": "individual_normal",
+      "total": "1253"
+    },
+    {
+      "tipoSessao": "individual_assessment",
+      "total": "115"
+    }
+  ],
+  "messages": [],
+  "stdout": "tipoSessao\ttotal\nindividual_normal\t1253\nindividual_assessment\t115\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

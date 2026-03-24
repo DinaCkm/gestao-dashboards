@@ -1,0 +1,50 @@
+{
+  "query": "\nSELECT \n  ms.id, ms.sessionDate, ms.sessionNumber, ms.presence,\n  a.name AS aluno_nome, c.name AS mentor_nome\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN consultors c ON ms.consultorId = c.id\nWHERE ms.alunoId IN (30043, 30045)\nORDER BY ms.sessionDate DESC\nLIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ms.id, ms.sessionDate, ms.sessionNumber, ms.presence,\n  a.name AS aluno_nome, c.name AS mentor_nome\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN consultors c ON ms.consultorId = c.id\nWHERE ms.alunoId IN (30043, 30045)\nORDER BY ms.sessionDate DESC\nLIMIT 5;\n",
+  "rows": [
+    {
+      "id": "150001",
+      "sessionDate": "2026-02-20",
+      "sessionNumber": "12",
+      "presence": "presente",
+      "aluno_nome": "Luan Saldanha Oliveira",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha"
+    },
+    {
+      "id": "150002",
+      "sessionDate": "2026-02-20",
+      "sessionNumber": "12",
+      "presence": "presente",
+      "aluno_nome": "Thiago Bizerra Fideles",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha"
+    },
+    {
+      "id": "61066",
+      "sessionDate": "2026-01-30",
+      "sessionNumber": "11",
+      "presence": "presente",
+      "aluno_nome": "Thiago Bizerra Fideles",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha"
+    },
+    {
+      "id": "61067",
+      "sessionDate": "2026-01-30",
+      "sessionNumber": "11",
+      "presence": "presente",
+      "aluno_nome": "Luan Saldanha Oliveira",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha"
+    },
+    {
+      "id": "61050",
+      "sessionDate": "2025-12-05",
+      "sessionNumber": "10",
+      "presence": "presente",
+      "aluno_nome": "Luan Saldanha Oliveira",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsessionDate\tsessionNumber\tpresence\taluno_nome\tmentor_nome\n150001\t2026-02-20\t12\tpresente\tLuan Saldanha Oliveira\tAna Carolina Cardoso Viana Rocha\n150002\t2026-02-20\t12\tpresente\tThiago Bizerra Fideles\tAna Carolina Cardoso Viana Rocha\n61066\t2026-01-30\t11\tpresente\tThiago Bizerra Fideles\tAna Carolina Cardoso Viana Rocha\n61067\t2026-01-30\t11\tpresente\tLuan Saldanha Oliveira\tAna Carolina Cardoso Viana Rocha\n61050\t2025-12-05\t10\tpresente\tLuan Saldanha Oliveira\tAna Carolina Cardoso Viana Rocha\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

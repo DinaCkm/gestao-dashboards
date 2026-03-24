@@ -1,0 +1,82 @@
+{
+  "query": "\nSELECT \n  ma.id AS agendamento_id,\n  ma.scheduledDate,\n  ma.title,\n  ma.status,\n  ap.alunoId,\n  a.name AS aluno_nome\nFROM mentor_appointments ma\nLEFT JOIN appointment_participants ap ON ap.appointmentId = ma.id\nLEFT JOIN alunos a ON ap.alunoId = a.id\nWHERE ma.consultorId = 39\nAND ma.scheduledDate >= '2026-03-01' AND ma.scheduledDate <= '2026-03-31'\nORDER BY ma.scheduledDate;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ma.id AS agendamento_id,\n  ma.scheduledDate,\n  ma.title,\n  ma.status,\n  ap.alunoId,\n  a.name AS aluno_nome\nFROM mentor_appointments ma\nLEFT JOIN appointment_participants ap ON ap.appointmentId = ma.id\nLEFT JOIN alunos a ON ap.alunoId = a.id\nWHERE ma.consultorId = 39\nAND ma.scheduledDate >= '2026-03-01' AND ma.scheduledDate <= '2026-03-31'\nORDER BY ma.scheduledDate;\n",
+  "rows": [
+    {
+      "agendamento_id": "30001",
+      "scheduledDate": "2026-03-06",
+      "title": "EMBRAPII - 5ªT [CICLO I] Vanessa Bertholdo Vargas",
+      "status": "cancelado",
+      "alunoId": "30040",
+      "aluno_nome": "Flavia Pereira Balieiro Salgado"
+    },
+    {
+      "agendamento_id": "1",
+      "scheduledDate": "2026-03-10",
+      "title": "Treinamento Ecossistema",
+      "status": "cancelado",
+      "alunoId": "30090",
+      "aluno_nome": "Mayara Rodrigues de Freitas"
+    },
+    {
+      "agendamento_id": "1",
+      "scheduledDate": "2026-03-10",
+      "title": "Treinamento Ecossistema",
+      "status": "cancelado",
+      "alunoId": "30099",
+      "aluno_nome": "Vanessa Bertholdo Vargas"
+    },
+    {
+      "agendamento_id": "1",
+      "scheduledDate": "2026-03-10",
+      "title": "Treinamento Ecossistema",
+      "status": "cancelado",
+      "alunoId": "30100",
+      "aluno_nome": "Alexandre Crepory Abbott de Oliveira"
+    },
+    {
+      "agendamento_id": "1",
+      "scheduledDate": "2026-03-10",
+      "title": "Treinamento Ecossistema",
+      "status": "cancelado",
+      "alunoId": "30035",
+      "aluno_nome": "Brenno Soffredi Passoni"
+    },
+    {
+      "agendamento_id": "1",
+      "scheduledDate": "2026-03-10",
+      "title": "Treinamento Ecossistema",
+      "status": "cancelado",
+      "alunoId": "30040",
+      "aluno_nome": "Flavia Pereira Balieiro Salgado"
+    },
+    {
+      "agendamento_id": "180003",
+      "scheduledDate": "2026-03-19",
+      "title": "teste",
+      "status": "cancelado",
+      "alunoId": "330001",
+      "aluno_nome": "Jose da Silva"
+    },
+    {
+      "agendamento_id": "180004",
+      "scheduledDate": "2026-03-20",
+      "title": "Encontro Inicial - Onboarding",
+      "status": "cancelado",
+      "alunoId": "570032",
+      "aluno_nome": "TESTE2"
+    },
+    {
+      "agendamento_id": "270001",
+      "scheduledDate": "2026-03-20",
+      "title": "Encontro Inicial - Onboarding",
+      "status": "agendado",
+      "alunoId": "NULL",
+      "aluno_nome": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "agendamento_id\tscheduledDate\ttitle\tstatus\talunoId\taluno_nome\n30001\t2026-03-06\tEMBRAPII - 5ªT [CICLO I] Vanessa Bertholdo Vargas\tcancelado\t30040\tFlavia Pereira Balieiro Salgado\n1\t2026-03-10\tTreinamento Ecossistema\tcancelado\t30090\tMayara Rodrigues de Freitas\n1\t2026-03-10\tTreinamento Ecossistema\tcancelado\t30099\tVanessa Bertholdo Vargas\n1\t2026-03-10\tTreinamento Ecossistema\tcancelado\t30100\tAlexandre Crepory Abbott de Oliveira\n1\t2026-03-10\tTreinamento Ecossistema\tcancelado\t30035\tBrenno Soffredi Passoni\n1\t2026-03-10\tTreinamento Ecossistema\tcancelado\t30040\tFlavia Pereira Balieiro Salgado\n180003\t2026-03-19\tteste\tcancelado\t330001\tJose da Silva\n180004\t2026-03-20\tEncontro Inicial - Onboarding\tcancelado\t570032\tTESTE2\n270001\t2026-03-20\tEncontro Inicial - Onboarding\tagendado\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

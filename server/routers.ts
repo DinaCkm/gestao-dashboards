@@ -12,6 +12,8 @@ import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno as calcularInd
 import { notifyOwner } from "./_core/notification";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
+import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
+import { getDb } from "./db";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -3260,6 +3262,8 @@ export const appRouter = router({
         customTaskDescription: z.string().nullable().optional(),
         taskMode: z.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
         notaMentoraAplicabilidade: z.number().min(0).max(10).nullable().optional(),
+        tipoSessao: z.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
+        appointmentId: z.number().nullable().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // Buscar consultor vinculado ao usuário logado
@@ -3318,6 +3322,8 @@ export const appRouter = router({
           taskMode: input.taskMode ?? "sem_tarefa",
           notaMentoraAplicabilidade: input.notaMentoraAplicabilidade ?? null,
           aplicabilidadeAvaliadaEm: input.notaMentoraAplicabilidade != null ? new Date() : null,
+          tipoSessao: input.tipoSessao ?? "individual_normal",
+          appointmentId: input.appointmentId ?? null,
         });
 
         // Notificar o aluno sobre a nova sessão registrada (Item 7)
@@ -3795,7 +3801,7 @@ export const appRouter = router({
       };
     }),
 
-    // Relatório financeiro de mentorias por período
+    // Relatório financeiro de mentorias por período (LEGADO - mantido para compatibilidade)
     relatorioFinanceiro: managerProcedure
       .input(z.object({
         dateFrom: z.string().optional(),
@@ -3803,6 +3809,75 @@ export const appRouter = router({
       }).optional())
       .query(async ({ input }) => {
         return await db.getRelatorioFinanceiroMentorias(input?.dateFrom, input?.dateTo);
+      }),
+
+    // Relatório financeiro V2 (nova lógica de precificação)
+    relatorioFinanceiroV2: managerProcedure
+      .input(z.object({
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const dbConn = await getDb();
+        if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        return await getRelatorioFinanceiroV2(dbConn, input?.dateFrom, input?.dateTo);
+      }),
+
+    // CRUD Precificação V2
+    getPricingRulesV2: adminProcedure
+      .query(async () => {
+        const dbConn = await getDb();
+        if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        return await getSessionTypePricingRules(dbConn);
+      }),
+
+    createPricingRuleV2: adminProcedure
+      .input(z.object({
+        programId: z.number().nullable(),
+        consultorId: z.number().nullable(),
+        tipoSessao: z.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]),
+        valor: z.string(),
+        descricao: z.string().optional(),
+        validoDesde: z.string(), // YYYY-MM-DD
+        validoAte: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const dbConn = await getDb();
+        if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        const id = await createSessionTypePricingRule(dbConn, {
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        return { id, success: true };
+      }),
+
+    updatePricingRuleV2: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        programId: z.number().nullable().optional(),
+        consultorId: z.number().nullable().optional(),
+        tipoSessao: z.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
+        valor: z.string().optional(),
+        descricao: z.string().optional(),
+        validoDesde: z.string().optional(),
+        validoAte: z.string().nullable().optional(),
+        isActive: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const dbConn = await getDb();
+        if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        const { id, ...data } = input;
+        await updateSessionTypePricingRule(dbConn, id, data as any);
+        return { success: true };
+      }),
+
+    deletePricingRuleV2: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const dbConn = await getDb();
+        if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        await deleteSessionTypePricingRule(dbConn, input.id);
+        return { success: true };
       }),
   }),
 
@@ -4557,6 +4632,8 @@ export const appRouter = router({
         taskStatus: z.enum(["entregue", "nao_entregue", "sem_tarefa"]),
         notaEvolucao: z.number().min(0).max(10).nullable().optional(),
         feedback: z.string().optional(),
+        tipoSessao: z.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
+        appointmentId: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         // Verificar se já existe sessão com mesmo número para o mesmo aluno
@@ -4593,6 +4670,8 @@ export const appRouter = router({
           customTaskTitle: null,
           customTaskDescription: null,
           taskMode: "sem_tarefa",
+          tipoSessao: input.tipoSessao ?? "individual_normal",
+          appointmentId: input.appointmentId ?? null,
         });
 
         // Notificar admin por e-mail com cópia para dina@makiyama.com.br

@@ -1,0 +1,17 @@
+{
+  "query": "\nSELECT \n  ma.id, ma.scheduledDate, ma.title, ma.status, ma.consultorId\nFROM mentor_appointments ma\nWHERE ma.consultorId = 28\nAND ma.scheduledDate = '2026-03-23'\nAND ma.status != 'cancelado';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ma.id, ma.scheduledDate, ma.title, ma.status, ma.consultorId\nFROM mentor_appointments ma\nWHERE ma.consultorId = 28\nAND ma.scheduledDate = '2026-03-23'\nAND ma.status != 'cancelado';\n",
+  "rows": [
+    {
+      "id": "240001",
+      "scheduledDate": "2026-03-23",
+      "title": "Encontro Inicial - Onboarding",
+      "status": "agendado",
+      "consultorId": "28"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tscheduledDate\ttitle\tstatus\tconsultorId\n240001\t2026-03-23\tEncontro Inicial - Onboarding\tagendado\t28\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

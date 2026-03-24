@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  c.name AS mentor_nome,\n  p.name AS empresa_nome,\n  COUNT(*) AS total_sessoes,\n  SUM(CASE WHEN ms.presence = 'presente' THEN 1 ELSE 0 END) AS presentes,\n  SUM(CASE WHEN ms.presence = 'ausente' THEN 1 ELSE 0 END) AS ausentes,\n  SUM(ms.isAssessment) AS assessments\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN consultors c ON ms.consultorId = c.id\nLEFT JOIN programs p ON a.programId = p.id\nWHERE ms.sessionDate >= '2026-03-01' AND ms.sessionDate <= '2026-03-31'\nGROUP BY ms.consultorId, a.programId\nORDER BY c.name, p.name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  c.name AS mentor_nome,\n  p.name AS empresa_nome,\n  COUNT(*) AS total_sessoes,\n  SUM(CASE WHEN ms.presence = 'presente' THEN 1 ELSE 0 END) AS presentes,\n  SUM(CASE WHEN ms.presence = 'ausente' THEN 1 ELSE 0 END) AS ausentes,\n  SUM(ms.isAssessment) AS assessments\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN consultors c ON ms.consultorId = c.id\nLEFT JOIN programs p ON a.programId = p.id\nWHERE ms.sessionDate >= '2026-03-01' AND ms.sessionDate <= '2026-03-31'\nGROUP BY ms.consultorId, a.programId\nORDER BY c.name, p.name;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1055 (42000) at line 2: Expression #1 of ORDER BY is not in GROUP BY clause and contains nonaggregated column '' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by"
+  ]
+}

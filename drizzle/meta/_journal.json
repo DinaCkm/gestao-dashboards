@@ -421,6 +421,13 @@
       "when": 1774127332734,
       "tag": "0059_slim_gressill",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "5",
+      "when": 1774311072649,
+      "tag": "0060_sturdy_fenris",
+      "breakpoints": true
     }
   ]
 }

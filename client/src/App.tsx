@@ -53,6 +53,7 @@ import EditarMentorias from "./pages/EditarMentorias";
 import OnboardingTracking from "./pages/admin/OnboardingTracking";
 import PainelRevisoes from "./pages/admin/PainelRevisoes";
 import BoasVindasGestor from "./pages/BoasVindasGestor";
+import PrecificacaoSessoes from "./pages/PrecificacaoSessoes";
 
 function Router() {
   return (
@@ -103,6 +104,7 @@ function Router() {
       <Route path={"/painel-revisoes"} component={PainelRevisoes} />
       <Route path={"/mentor/configuracoes"} component={MentorConfiguracoes} />
       <Route path={"/boas-vindas-gestor"} component={BoasVindasGestor} />
+      <Route path={"/precificacao-sessoes"} component={PrecificacaoSessoes} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -1,0 +1,88 @@
+{
+  "query": "\nSELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT\nFROM INFORMATION_SCHEMA.COLUMNS\nWHERE TABLE_NAME = 'mentoring_sessions'\nORDER BY ORDINAL_POSITION\nLIMIT 20 OFFSET 20;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT\nFROM INFORMATION_SCHEMA.COLUMNS\nWHERE TABLE_NAME = 'mentoring_sessions'\nORDER BY ORDINAL_POSITION\nLIMIT 20 OFFSET 20;\n",
+  "rows": [
+    {
+      "COLUMN_NAME": "evidenceLink",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "evidenceImageUrl",
+      "DATA_TYPE": "text",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "evidenceImageKey",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "submittedAt",
+      "DATA_TYPE": "timestamp",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "validatedBy",
+      "DATA_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "validatedAt",
+      "DATA_TYPE": "timestamp",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "customTaskTitle",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "customTaskDescription",
+      "DATA_TYPE": "text",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "taskMode",
+      "DATA_TYPE": "enum",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "sem_tarefa"
+    },
+    {
+      "COLUMN_NAME": "textoAplicabilidade",
+      "DATA_TYPE": "text",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "notaAlunoAplicabilidade",
+      "DATA_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "notaMentoraAplicabilidade",
+      "DATA_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "COLUMN_NAME": "aplicabilidadeAvaliadaEm",
+      "DATA_TYPE": "timestamp",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\tDATA_TYPE\tIS_NULLABLE\tCOLUMN_DEFAULT\nevidenceLink\tvarchar\tYES\tNULL\nevidenceImageUrl\ttext\tYES\tNULL\nevidenceImageKey\tvarchar\tYES\tNULL\nsubmittedAt\ttimestamp\tYES\tNULL\nvalidatedBy\tint\tYES\tNULL\nvalidatedAt\ttimestamp\tYES\tNULL\ncustomTaskTitle\tvarchar\tYES\tNULL\ncustomTaskDescription\ttext\tYES\tNULL\ntaskMode\tenum\tYES\tsem_tarefa\ntextoAplicabilidade\ttext\tYES\tNULL\nnotaAlunoAplicabilidade\tint\tYES\tNULL\nnotaMentoraAplicabilidade\tint\tYES\tNULL\naplicabilidadeAvaliadaEm\ttimestamp\tYES\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

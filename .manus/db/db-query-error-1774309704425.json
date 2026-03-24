@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  ms.id AS sessao_id,\n  ms.sessionDate,\n  ms.alunoId,\n  a.name AS aluno_nome,\n  ms.consultorId,\n  c.name AS mentor_nome,\n  ms.appointmentId,\n  CASE WHEN ms.appointmentId IS NULL THEN 'SEM AGENDAMENTO' ELSE 'VINCULADA' END AS status_vinculo\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN consultors c ON ms.consultorId = c.id\nWHERE ms.sessionDate >= '2026-03-01' AND ms.sessionDate <= '2026-03-31'\nORDER BY ms.appointmentId IS NULL DESC, ms.sessionDate\nLIMIT 20;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ms.id AS sessao_id,\n  ms.sessionDate,\n  ms.alunoId,\n  a.name AS aluno_nome,\n  ms.consultorId,\n  c.name AS mentor_nome,\n  ms.appointmentId,\n  CASE WHEN ms.appointmentId IS NULL THEN 'SEM AGENDAMENTO' ELSE 'VINCULADA' END AS status_vinculo\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN consultors c ON ms.consultorId = c.id\nWHERE ms.sessionDate >= '2026-03-01' AND ms.sessionDate <= '2026-03-31'\nORDER BY ms.appointmentId IS NULL DESC, ms.sessionDate\nLIMIT 20;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'ms.appointmentId' in 'order clause'"
+  ]
+}

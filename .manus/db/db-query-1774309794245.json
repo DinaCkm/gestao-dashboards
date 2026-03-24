@@ -1,0 +1,18 @@
+{
+  "query": "\nSELECT \n  ms.id, ms.sessionDate, ms.alunoId, a.name, ms.consultorId, ms.presence\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nWHERE ms.id = 390004;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ms.id, ms.sessionDate, ms.alunoId, a.name, ms.consultorId, ms.presence\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nWHERE ms.id = 390004;\n",
+  "rows": [
+    {
+      "id": "390004",
+      "sessionDate": "2026-03-23",
+      "alunoId": "570089",
+      "name": "Elio Puperi Alves da Silveira",
+      "consultorId": "28",
+      "presence": "presente"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsessionDate\talunoId\tname\tconsultorId\tpresence\n390004\t2026-03-23\t570089\tElio Puperi Alves da Silveira\t28\tpresente\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

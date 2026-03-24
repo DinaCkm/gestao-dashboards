@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE mentoring_sessions \nSET tipoSessao = 'individual_assessment' \nWHERE isAssessment = 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nUPDATE mentoring_sessions \nSET tipoSessao = 'individual_assessment' \nWHERE isAssessment = 1;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 308
+}

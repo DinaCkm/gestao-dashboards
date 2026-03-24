@@ -1,0 +1,64 @@
+{
+  "query": "\nSELECT \n  ms.consultorId,\n  c.name AS mentor_nome,\n  p.name AS empresa_nome,\n  COUNT(*) AS total_sessoes,\n  SUM(CASE WHEN ms.presence = 'presente' THEN 1 ELSE 0 END) AS presentes,\n  SUM(CASE WHEN ms.presence = 'ausente' THEN 1 ELSE 0 END) AS ausentes,\n  SUM(CASE WHEN ms.isAssessment = 1 THEN 1 ELSE 0 END) AS assessments\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN consultors c ON ms.consultorId = c.id\nLEFT JOIN programs p ON a.programId = p.id\nWHERE ms.sessionDate >= '2026-03-01' AND ms.sessionDate <= '2026-03-31'\nGROUP BY ms.consultorId, c.name, p.name\nORDER BY c.name, p.name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ms.consultorId,\n  c.name AS mentor_nome,\n  p.name AS empresa_nome,\n  COUNT(*) AS total_sessoes,\n  SUM(CASE WHEN ms.presence = 'presente' THEN 1 ELSE 0 END) AS presentes,\n  SUM(CASE WHEN ms.presence = 'ausente' THEN 1 ELSE 0 END) AS ausentes,\n  SUM(CASE WHEN ms.isAssessment = 1 THEN 1 ELSE 0 END) AS assessments\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN consultors c ON ms.consultorId = c.id\nLEFT JOIN programs p ON a.programId = p.id\nWHERE ms.sessionDate >= '2026-03-01' AND ms.sessionDate <= '2026-03-31'\nGROUP BY ms.consultorId, c.name, p.name\nORDER BY c.name, p.name;\n",
+  "rows": [
+    {
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus",
+      "empresa_nome": "Ckm Talents",
+      "total_sessoes": "3",
+      "presentes": "3",
+      "ausentes": "0",
+      "assessments": "0"
+    },
+    {
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus",
+      "empresa_nome": "EMBRAPII",
+      "total_sessoes": "1",
+      "presentes": "1",
+      "ausentes": "0",
+      "assessments": "0"
+    },
+    {
+      "consultorId": "28",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "empresa_nome": "DG ASSESSORIA",
+      "total_sessoes": "1",
+      "presentes": "1",
+      "ausentes": "0",
+      "assessments": "0"
+    },
+    {
+      "consultorId": "28",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "empresa_nome": "SEBRAE ACRE",
+      "total_sessoes": "24",
+      "presentes": "13",
+      "ausentes": "11",
+      "assessments": "0"
+    },
+    {
+      "consultorId": "28",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "empresa_nome": "SEBRAE TO",
+      "total_sessoes": "3",
+      "presentes": "3",
+      "ausentes": "0",
+      "assessments": "0"
+    },
+    {
+      "consultorId": "35",
+      "mentor_nome": "Andressa Santos",
+      "empresa_nome": "SEBRAE TO",
+      "total_sessoes": "3",
+      "presentes": "3",
+      "ausentes": "0",
+      "assessments": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "consultorId\tmentor_nome\tempresa_nome\ttotal_sessoes\tpresentes\tausentes\tassessments\n39\tAdriana Deus\tCkm Talents\t3\t3\t0\t0\n39\tAdriana Deus\tEMBRAPII\t1\t1\t0\t0\n28\tAna Carolina Cardoso Viana Rocha\tDG ASSESSORIA\t1\t1\t0\t0\n28\tAna Carolina Cardoso Viana Rocha\tSEBRAE ACRE\t24\t13\t11\t0\n28\tAna Carolina Cardoso Viana Rocha\tSEBRAE TO\t3\t3\t0\t0\n35\tAndressa Santos\tSEBRAE TO\t3\t3\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}

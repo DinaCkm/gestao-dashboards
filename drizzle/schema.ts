@@ -245,6 +245,9 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   notaAlunoAplicabilidade: int("notaAlunoAplicabilidade"), // Autoavaliação do aluno (0-10)
   notaMentoraAplicabilidade: int("notaMentoraAplicabilidade"), // Avaliação da mentora (0-10)
   aplicabilidadeAvaliadaEm: timestamp("aplicabilidadeAvaliadaEm"), // Data/hora que a mentora avaliou
+  // === Nova Lógica Financeira ===
+  tipoSessao: mysqlEnum("tipoSessao", ["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).default("individual_normal"), // Tipo da sessão para precificação
+  appointmentId: int("appointmentId"), // FK para mentor_appointments (vínculo sessão ↔ agendamento)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -1018,6 +1021,29 @@ export const mentorSessionPricing = mysqlTable("mentor_session_pricing", {
 });
 export type MentorSessionPricing = typeof mentorSessionPricing.$inferSelect;
 export type InsertMentorSessionPricing = typeof mentorSessionPricing.$inferInsert;
+
+/**
+ * Nova Precificação por Empresa × Mentor × Tipo × Modalidade
+ * Substitui a precificação flexível por faixa de sessão.
+ * Cada regra define o valor para uma combinação específica, com validade temporal.
+ * Prioridade: regra específica (empresa+mentor) > regra só mentor > regra só empresa > fallback legado
+ */
+export const mentorSessionTypePricing = mysqlTable("mentor_session_type_pricing", {
+  id: int("id").autoincrement().primaryKey(),
+  programId: int("programId"), // FK para programs (empresa). NULL = regra global para o mentor
+  consultorId: int("consultorId"), // FK para consultors (mentor). NULL = regra global para a empresa
+  tipoSessao: mysqlEnum("tipoSessao", ["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).notNull(),
+  valor: decimal("valor", { precision: 10, scale: 2 }).notNull(), // Valor em R$
+  descricao: varchar("descricao", { length: 255 }), // Descrição opcional
+  validoDesde: date("validoDesde").notNull(), // Data de início da vigência
+  validoAte: date("validoAte"), // Data de fim da vigência (NULL = vigente indefinidamente)
+  isActive: int("isActive").default(1).notNull(), // 1 = ativo, 0 = inativo
+  createdBy: int("createdBy"), // FK para users (admin que criou)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MentorSessionTypePricing = typeof mentorSessionTypePricing.$inferSelect;
+export type InsertMentorSessionTypePricing = typeof mentorSessionTypePricing.$inferInsert;
 
 
 /**

@@ -1,0 +1,109 @@
+{
+  "query": "\nSELECT \n  ma.id AS agendamento_id,\n  ma.scheduledDate,\n  ma.title,\n  c.name AS mentor_nome,\n  ap.alunoId,\n  a.name AS aluno_nome,\n  p.name AS empresa_nome\nFROM mentor_appointments ma\nJOIN appointment_participants ap ON ap.appointmentId = ma.id\nLEFT JOIN alunos a ON ap.alunoId = a.id\nLEFT JOIN consultors c ON ma.consultorId = c.id\nLEFT JOIN programs p ON a.programId = p.id\nWHERE ma.scheduledDate IN ('2026-03-11', '2026-03-20')\nAND ma.status != 'cancelado'\nAND NOT EXISTS (\n  SELECT 1 FROM mentoring_sessions ms\n  WHERE ms.consultorId = ma.consultorId\n  AND ms.sessionDate = ma.scheduledDate\n  AND ms.alunoId = ap.alunoId\n)\nORDER BY ma.scheduledDate, ma.title, a.name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ma.id AS agendamento_id,\n  ma.scheduledDate,\n  ma.title,\n  c.name AS mentor_nome,\n  ap.alunoId,\n  a.name AS aluno_nome,\n  p.name AS empresa_nome\nFROM mentor_appointments ma\nJOIN appointment_participants ap ON ap.appointmentId = ma.id\nLEFT JOIN alunos a ON ap.alunoId = a.id\nLEFT JOIN consultors c ON ma.consultorId = c.id\nLEFT JOIN programs p ON a.programId = p.id\nWHERE ma.scheduledDate IN ('2026-03-11', '2026-03-20')\nAND ma.status != 'cancelado'\nAND NOT EXISTS (\n  SELECT 1 FROM mentoring_sessions ms\n  WHERE ms.consultorId = ma.consultorId\n  AND ms.sessionDate = ma.scheduledDate\n  AND ms.alunoId = ap.alunoId\n)\nORDER BY ma.scheduledDate, ma.title, a.name;\n",
+  "rows": [
+    {
+      "agendamento_id": "60001",
+      "scheduledDate": "2026-03-11",
+      "title": "Encontro Inicial - Onboarding",
+      "mentor_nome": "Luciana Pereira Figueiredo da Silva",
+      "alunoId": "510010",
+      "aluno_nome": "Graça da Silva",
+      "empresa_nome": "BANRISUL"
+    },
+    {
+      "agendamento_id": "120001",
+      "scheduledDate": "2026-03-20",
+      "title": "EMBRAPII - [Projetos] 6ª SESSÃO [Thiago Fideles e Luan Saldanha]",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "alunoId": "30043",
+      "aluno_nome": "Luan Saldanha Oliveira",
+      "empresa_nome": "EMBRAPII"
+    },
+    {
+      "agendamento_id": "120001",
+      "scheduledDate": "2026-03-20",
+      "title": "EMBRAPII - [Projetos] 6ª SESSÃO [Thiago Fideles e Luan Saldanha]",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "alunoId": "30045",
+      "aluno_nome": "Thiago Bizerra Fideles",
+      "empresa_nome": "EMBRAPII"
+    },
+    {
+      "agendamento_id": "120008",
+      "scheduledDate": "2026-03-20",
+      "title": "SEBRAE AC - TURMA A - 17ª TUTORIA",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "alunoId": "30022",
+      "aluno_nome": "Ana Claudia Silva De Oliveira",
+      "empresa_nome": "SEBRAE ACRE"
+    },
+    {
+      "agendamento_id": "120008",
+      "scheduledDate": "2026-03-20",
+      "title": "SEBRAE AC - TURMA A - 17ª TUTORIA",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "alunoId": "30023",
+      "aluno_nome": "Cezarinete Alves Izel Mansour",
+      "empresa_nome": "SEBRAE ACRE"
+    },
+    {
+      "agendamento_id": "120008",
+      "scheduledDate": "2026-03-20",
+      "title": "SEBRAE AC - TURMA A - 17ª TUTORIA",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "alunoId": "30001",
+      "aluno_nome": "Fabio Silva De Oliveira",
+      "empresa_nome": "SEBRAE ACRE"
+    },
+    {
+      "agendamento_id": "120008",
+      "scheduledDate": "2026-03-20",
+      "title": "SEBRAE AC - TURMA A - 17ª TUTORIA",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "alunoId": "30017",
+      "aluno_nome": "Flávia Vanessa Huck Oliveira",
+      "empresa_nome": "SEBRAE ACRE"
+    },
+    {
+      "agendamento_id": "120008",
+      "scheduledDate": "2026-03-20",
+      "title": "SEBRAE AC - TURMA A - 17ª TUTORIA",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "alunoId": "30029",
+      "aluno_nome": "Marcelo Castro Macedo",
+      "empresa_nome": "SEBRAE ACRE"
+    },
+    {
+      "agendamento_id": "120008",
+      "scheduledDate": "2026-03-20",
+      "title": "SEBRAE AC - TURMA A - 17ª TUTORIA",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "alunoId": "30002",
+      "aluno_nome": "Marcos Paulo Maciente",
+      "empresa_nome": "SEBRAE ACRE"
+    },
+    {
+      "agendamento_id": "120008",
+      "scheduledDate": "2026-03-20",
+      "title": "SEBRAE AC - TURMA A - 17ª TUTORIA",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "alunoId": "30009",
+      "aluno_nome": "Ruama Araujo Dos Santos Demir",
+      "empresa_nome": "SEBRAE ACRE"
+    },
+    {
+      "agendamento_id": "120008",
+      "scheduledDate": "2026-03-20",
+      "title": "SEBRAE AC - TURMA A - 17ª TUTORIA",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "alunoId": "30031",
+      "aluno_nome": "Vanessa Melo França",
+      "empresa_nome": "SEBRAE ACRE"
+    }
+  ],
+  "messages": [],
+  "stdout": "agendamento_id\tscheduledDate\ttitle\tmentor_nome\talunoId\taluno_nome\tempresa_nome\n60001\t2026-03-11\tEncontro Inicial - Onboarding\tLuciana Pereira Figueiredo da Silva\t510010\tGraça da Silva\tBANRISUL\n120001\t2026-03-20\tEMBRAPII - [Projetos] 6ª SESSÃO [Thiago Fideles e Luan Saldanha]\tAna Carolina Cardoso Viana Rocha\t30043\tLuan Saldanha Oliveira\tEMBRAPII\n120001\t2026-03-20\tEMBRAPII - [Projetos] 6ª SESSÃO [Thiago Fideles e Luan Saldanha]\tAna Carolina Cardoso Viana Rocha\t30045\tThiago Bizerra Fideles\tEMBRAPII\n120008\t2026-03-20\tSEBRAE AC - TURMA A - 17ª TUTORIA\tAna Carolina Cardoso Viana Rocha\t30022\tAna Claudia Silva De Oliveira\tSEBRAE ACRE\n120008\t2026-03-20\tSEBRAE AC - TURMA A - 17ª TUTORIA\tAna Carolina Cardoso Viana Rocha\t30023\tCezarinete Alves Izel Mansour\tSEBRAE ACRE\n120008\t2026-03-20\tSEBRAE AC - TURMA A - 17ª TUTORIA\tAna Carolina Cardoso Viana Rocha\t30001\tFabio Silva De Oliveira\tSEBRAE ACRE\n120008\t2026-03-20\tSEBRAE AC - TURMA A - 17ª TUTORIA\tAna Carolina Cardoso Viana Rocha\t30017\tFlávia Vanessa Huck Oliveira\tSEBRAE ACRE\n120008\t2026-03-20\tSEBRAE AC - TURMA A - 17ª TUTORIA\tAna Carolina Cardoso Viana Rocha\t30029\tMarcelo Castro Macedo\tSEBRAE ACRE\n120008\t2026-03-20\tSEBRAE AC - TURMA A - 17ª TUTORIA\tAna Carolina Cardoso Viana Rocha\t30002\tMarcos Paulo Maciente\tSEBRAE ACRE\n120008\t2026-03-20\tSEBRAE AC - TURMA A - 17ª TUTORIA\tAna Carolina Cardoso Viana Rocha\t30009\tRuama Araujo Dos Santos Demir\tSEBRAE ACRE\n120008\t2026-03-20\tSEBRAE AC - TURMA A - 17ª TUTORIA\tAna Carolina Cardoso Viana Rocha\t30031\tVanessa Melo França\tSEBRAE ACRE\n",
+  "stderr": "",
+  "execution_time_ms": 70
+}
