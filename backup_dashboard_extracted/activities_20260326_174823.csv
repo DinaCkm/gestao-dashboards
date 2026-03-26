@@ -1,0 +1,865 @@
+id,titulo,descricao,tipo,modalidade,dataInicio,dataFim,local,vagas,instrutor,imagemUrl,competenciaRelacionada,programId,isActive,ordem,createdBy,createdAt,updatedAt
+210039,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-17 22:10:41,2026-03-17 22:10:41
+210040,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 22:10:41,2026-03-17 22:10:41
+210041,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-17 22:10:41,2026-03-17 22:10:41
+210042,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 22:10:41,2026-03-17 22:10:41
+210043,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-17 22:10:41,2026-03-17 22:10:41
+210044,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-17 22:10:41,2026-03-17 22:10:41
+210045,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 22:10:41,2026-03-17 22:10:41
+210046,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-17 22:10:41,2026-03-17 22:10:41
+210047,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-17 22:10:42,2026-03-17 22:10:42
+210048,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-17 22:10:42,2026-03-17 22:10:42
+210049,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 22:10:42,2026-03-17 22:10:42
+210050,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-17 22:10:42,2026-03-17 22:10:42
+210052,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-17 22:10:42,2026-03-17 22:10:42
+210053,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-17 22:10:42,2026-03-17 22:10:42
+210054,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-17 22:10:42,2026-03-17 22:10:42
+210055,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 22:10:43,2026-03-17 22:10:43
+210056,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-17 22:10:43,2026-03-17 22:10:43
+210057,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 22:10:43,2026-03-17 22:10:43
+210058,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210059,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210060,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210061,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210062,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210063,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210064,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210065,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210066,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210067,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210068,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210069,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-17 22:57:19,2026-03-17 22:57:19
+210071,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-17 22:57:20,2026-03-17 22:57:20
+210072,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-17 22:57:20,2026-03-17 22:57:20
+210073,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-17 22:57:20,2026-03-17 22:57:20
+210074,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 22:57:20,2026-03-17 22:57:20
+210075,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-17 22:57:20,2026-03-17 22:57:20
+210076,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 22:57:21,2026-03-17 22:57:21
+210077,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210078,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210079,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210080,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210081,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210082,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210083,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210084,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210085,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210086,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210087,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210088,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-17 23:12:20,2026-03-17 23:12:20
+210090,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-17 23:12:21,2026-03-17 23:12:21
+210091,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-17 23:12:21,2026-03-17 23:12:21
+210092,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-17 23:12:21,2026-03-17 23:12:21
+210093,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:12:21,2026-03-17 23:12:21
+210094,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-17 23:12:22,2026-03-17 23:12:22
+210095,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:12:22,2026-03-17 23:12:22
+210096,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-17 23:37:06,2026-03-17 23:37:06
+210097,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:06,2026-03-17 23:37:06
+210098,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:06,2026-03-17 23:37:06
+210099,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:06,2026-03-17 23:37:06
+210100,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:06,2026-03-17 23:37:06
+210101,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:06,2026-03-17 23:37:06
+210102,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:06,2026-03-17 23:37:06
+210103,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-17 23:37:06,2026-03-17 23:37:06
+210104,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-17 23:37:06,2026-03-17 23:37:06
+210105,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-17 23:37:06,2026-03-17 23:37:06
+210106,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:07,2026-03-17 23:37:07
+210107,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-17 23:37:07,2026-03-17 23:37:07
+210109,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-17 23:37:07,2026-03-17 23:37:07
+210110,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-17 23:37:07,2026-03-17 23:37:07
+210111,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-17 23:37:07,2026-03-17 23:37:07
+210112,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:08,2026-03-17 23:37:08
+210113,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-17 23:37:08,2026-03-17 23:37:08
+210114,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:08,2026-03-17 23:37:08
+210115,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-17 23:37:34,2026-03-17 23:37:34
+210116,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:34,2026-03-17 23:37:34
+210117,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:34,2026-03-17 23:37:34
+210118,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:34,2026-03-17 23:37:34
+210119,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:34,2026-03-17 23:37:34
+210120,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:34,2026-03-17 23:37:34
+210121,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:35,2026-03-17 23:37:35
+210122,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-17 23:37:35,2026-03-17 23:37:35
+210123,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-17 23:37:35,2026-03-17 23:37:35
+210124,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-17 23:37:35,2026-03-17 23:37:35
+210125,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:35,2026-03-17 23:37:35
+210126,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-17 23:37:35,2026-03-17 23:37:35
+210128,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-17 23:37:35,2026-03-17 23:37:35
+210129,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-17 23:37:35,2026-03-17 23:37:35
+210130,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-17 23:37:35,2026-03-17 23:37:35
+210131,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:36,2026-03-17 23:37:36
+210132,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-17 23:37:36,2026-03-17 23:37:36
+210133,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:37:36,2026-03-17 23:37:36
+210134,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-17 23:48:01,2026-03-17 23:48:01
+210135,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:48:01,2026-03-17 23:48:01
+210136,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-17 23:48:01,2026-03-17 23:48:01
+210137,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:48:02,2026-03-17 23:48:02
+210138,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-17 23:48:02,2026-03-17 23:48:02
+210139,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-17 23:48:02,2026-03-17 23:48:02
+210140,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:48:02,2026-03-17 23:48:02
+210141,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-17 23:48:02,2026-03-17 23:48:02
+210142,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-17 23:48:02,2026-03-17 23:48:02
+210143,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-17 23:48:02,2026-03-17 23:48:02
+210144,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:48:02,2026-03-17 23:48:02
+210145,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-17 23:48:02,2026-03-17 23:48:02
+210147,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-17 23:48:02,2026-03-17 23:48:02
+210148,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-17 23:48:02,2026-03-17 23:48:02
+210149,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-17 23:48:03,2026-03-17 23:48:03
+210150,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-17 23:48:03,2026-03-17 23:48:03
+210151,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-17 23:48:03,2026-03-17 23:48:03
+210152,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-17 23:48:04,2026-03-17 23:48:04
+210153,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210154,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210155,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210156,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210157,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210158,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210159,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210160,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210161,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210162,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210163,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210164,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210166,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210167,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210168,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210169,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210170,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210171,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 01:05:12,2026-03-18 01:05:12
+210172,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210173,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210174,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210175,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210176,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210177,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210178,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210179,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210180,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210181,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210182,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210183,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210185,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210186,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210187,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210188,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210189,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210190,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 01:16:40,2026-03-18 01:16:40
+210191,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210192,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210193,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210194,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210195,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210196,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210197,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210198,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210199,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210200,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210201,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210202,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210204,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210205,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210206,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210207,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210208,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+210209,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 01:23:31,2026-03-18 01:23:31
+240001,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-18 20:07:53,2026-03-18 20:07:53
+240002,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 20:07:53,2026-03-18 20:07:53
+240003,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-18 20:07:53,2026-03-18 20:07:53
+240004,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240005,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240006,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240007,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240008,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240009,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240010,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240011,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240012,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240014,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240015,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240016,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240017,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240018,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240019,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-18 20:07:54,2026-03-18 20:07:54
+240020,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240021,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240022,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240023,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240024,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240025,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240026,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240027,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240028,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240029,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240030,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240031,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240033,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240034,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240035,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240036,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240037,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240038,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 00:35:15,2026-03-19 00:35:15
+240039,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240040,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240041,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240042,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240043,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240044,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240045,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240046,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240047,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240048,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240049,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240050,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240052,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240053,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240054,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240055,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240056,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240057,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:35:36,2026-03-19 01:35:36
+240058,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240059,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240060,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240061,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240062,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240063,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240064,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240065,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240066,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240067,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240068,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240069,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240071,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240072,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240073,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240074,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240075,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240076,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:52:50,2026-03-19 01:52:50
+240077,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240078,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240079,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240080,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240081,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240082,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240083,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240084,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240085,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240086,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240087,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240088,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240090,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240091,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240092,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240093,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240094,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240095,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:09,2026-03-19 01:53:09
+240096,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240097,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240098,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240099,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240100,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240101,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240102,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240103,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240104,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240105,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240106,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240107,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240109,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240110,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240111,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240112,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240113,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+240114,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 01:53:28,2026-03-19 01:53:28
+270001,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 18:36:52,2026-03-19 18:36:52
+270002,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 18:36:52,2026-03-19 18:36:52
+270003,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 18:36:52,2026-03-19 18:36:52
+270004,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 18:36:52,2026-03-19 18:36:52
+270005,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 18:36:52,2026-03-19 18:36:52
+270006,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270007,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270008,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270009,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270010,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270011,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270012,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270014,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270015,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270016,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270017,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270018,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270019,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 18:36:53,2026-03-19 18:36:53
+270020,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270021,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270022,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270023,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270024,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270025,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270026,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270027,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270028,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270029,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270030,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270031,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270033,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270034,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270035,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270036,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270037,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270038,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 19:20:46,2026-03-19 19:20:46
+270039,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270040,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270041,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270042,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270043,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270044,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270045,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270046,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270047,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270048,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270049,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270050,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270052,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270053,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270054,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 19:21:06,2026-03-19 19:21:06
+270055,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:07,2026-03-19 19:21:07
+270056,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 19:21:07,2026-03-19 19:21:07
+270057,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:07,2026-03-19 19:21:07
+270058,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270059,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270060,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270061,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270062,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270063,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270064,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270065,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270066,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270067,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270068,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270069,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270071,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270072,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270073,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270074,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270075,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270076,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 19:21:28,2026-03-19 19:21:28
+270077,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270078,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270079,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270080,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270081,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270082,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270083,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270084,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270085,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270086,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270087,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270088,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270090,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270091,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270092,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270093,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270094,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270095,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 20:08:46,2026-03-19 20:08:46
+270096,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270097,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270098,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270099,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270100,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270101,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270102,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270103,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270104,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270105,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270106,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270107,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270109,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270110,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270111,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270112,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270113,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270114,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 21:59:06,2026-03-19 21:59:06
+270115,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 22:21:34,2026-03-19 22:21:34
+270116,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:21:34,2026-03-19 22:21:34
+270117,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 22:21:34,2026-03-19 22:21:34
+270118,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:21:34,2026-03-19 22:21:34
+270119,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 22:21:34,2026-03-19 22:21:34
+270120,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 22:21:34,2026-03-19 22:21:34
+270121,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:21:34,2026-03-19 22:21:34
+270122,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 22:21:34,2026-03-19 22:21:34
+270123,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 22:21:34,2026-03-19 22:21:34
+270124,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 22:21:34,2026-03-19 22:21:35
+270125,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:21:35,2026-03-19 22:21:35
+270126,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 22:21:35,2026-03-19 22:21:35
+270128,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 22:21:35,2026-03-19 22:21:35
+270129,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 22:21:35,2026-03-19 22:21:35
+270130,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 22:21:35,2026-03-19 22:21:35
+270131,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:21:35,2026-03-19 22:21:35
+270132,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 22:21:35,2026-03-19 22:21:35
+270133,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:21:35,2026-03-19 22:21:35
+270134,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270135,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270136,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270137,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270138,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270139,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270140,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270141,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270142,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270143,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270144,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270145,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270147,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270148,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270149,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270150,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270151,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270152,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:40:50,2026-03-19 22:40:50
+270153,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270154,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270155,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270156,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270157,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270158,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270159,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270160,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270161,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270162,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270163,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270164,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270166,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270167,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270168,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270169,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:41:11,2026-03-19 22:41:11
+270170,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 22:41:12,2026-03-19 22:41:12
+270171,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:41:12,2026-03-19 22:41:12
+270172,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270173,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270174,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270175,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270176,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270177,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270178,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270179,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270180,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270181,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270182,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270183,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270185,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270186,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270187,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270188,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270189,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+270190,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-19 22:49:17,2026-03-19 22:49:17
+300001,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300002,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300003,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300004,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300005,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300006,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300007,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300008,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300009,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300010,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300011,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300012,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300014,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300015,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300016,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300017,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300018,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300019,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-20 16:20:21,2026-03-20 16:20:21
+300020,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-20 23:23:01,2026-03-20 23:23:01
+300021,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-20 23:23:01,2026-03-20 23:23:01
+300022,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-20 23:23:01,2026-03-20 23:23:01
+300023,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-20 23:23:01,2026-03-20 23:23:01
+300024,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-20 23:23:01,2026-03-20 23:23:01
+300025,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-20 23:23:01,2026-03-20 23:23:01
+300026,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-20 23:23:01,2026-03-20 23:23:01
+300027,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-20 23:23:01,2026-03-20 23:23:01
+300028,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-20 23:23:01,2026-03-20 23:23:01
+300029,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-20 23:23:01,2026-03-20 23:23:01
+300030,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-20 23:23:02,2026-03-20 23:23:02
+300031,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-20 23:23:02,2026-03-20 23:23:02
+300033,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-20 23:23:02,2026-03-20 23:23:02
+300034,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-20 23:23:02,2026-03-20 23:23:02
+300035,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-20 23:23:02,2026-03-20 23:23:02
+300036,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-20 23:23:02,2026-03-20 23:23:02
+300037,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-20 23:23:02,2026-03-20 23:23:02
+300038,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-20 23:23:02,2026-03-20 23:23:02
+300039,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300040,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300041,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300042,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300043,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300044,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300045,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300046,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300047,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300048,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300049,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300050,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300052,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300053,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300054,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300055,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300056,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300057,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-20 23:56:38,2026-03-20 23:56:38
+300058,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300059,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300060,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300061,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300062,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300063,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300064,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300065,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300066,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300067,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300068,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300069,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300071,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300072,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300073,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300074,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300075,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300076,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 00:22:23,2026-03-21 00:22:23
+300077,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300078,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300079,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300080,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300081,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300082,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300083,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300084,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300085,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300086,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300087,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300088,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300090,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300091,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300092,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300093,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300094,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+300095,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 00:43:12,2026-03-21 00:43:12
+330001,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 19:37:34,2026-03-21 19:37:34
+330002,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330003,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330004,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330005,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330006,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330007,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330008,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330009,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330010,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330011,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330012,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330014,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330015,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330016,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330017,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330018,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330019,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 19:37:35,2026-03-21 19:37:35
+330020,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330021,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330022,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330023,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330024,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330025,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330026,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330027,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330028,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330029,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330030,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330031,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330033,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330034,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330035,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330036,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330037,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330038,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 19:47:32,2026-03-21 19:47:32
+330039,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 19:56:42,2026-03-21 19:56:42
+330040,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 19:56:42,2026-03-21 19:56:42
+330041,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330042,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330043,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330044,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330045,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330046,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330047,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330048,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330049,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330050,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330052,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330053,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330054,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330055,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330056,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330057,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 19:56:43,2026-03-21 19:56:43
+330058,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330059,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330060,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330061,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330062,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330063,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330064,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330065,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330066,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330067,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330068,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330069,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330071,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330072,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330073,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330074,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330075,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+330076,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 20:01:08,2026-03-21 20:01:08
+360001,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360002,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360003,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360004,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360005,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360006,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360007,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360008,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360009,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360010,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360011,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360012,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360014,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360015,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 22:31:36,2026-03-21 22:31:36
+360016,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 22:31:37,2026-03-21 22:31:37
+360017,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:31:37,2026-03-21 22:31:37
+360018,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 22:31:37,2026-03-21 22:31:37
+360019,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:31:37,2026-03-21 22:31:37
+360020,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360021,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360022,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360023,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360024,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360025,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360026,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360027,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360028,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360029,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360030,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360031,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360033,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360034,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360035,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360036,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360037,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360038,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:39:47,2026-03-21 22:39:47
+360039,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360040,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360041,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360042,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360043,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360044,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360045,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360046,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360047,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360048,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360049,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360050,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360052,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360053,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360054,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360055,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360056,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360057,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:36,2026-03-21 22:51:36
+360058,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360059,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360060,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360061,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360062,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360063,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360064,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360065,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360066,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360067,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360068,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360069,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360071,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360072,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360073,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360074,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360075,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360076,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 22:51:59,2026-03-21 22:51:59
+360077,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 23:23:41,2026-03-21 23:23:41
+360078,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 23:23:41,2026-03-21 23:23:41
+360079,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 23:23:41,2026-03-21 23:23:41
+360080,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 23:23:41,2026-03-21 23:23:41
+360081,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 23:23:41,2026-03-21 23:23:41
+360082,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 23:23:41,2026-03-21 23:23:41
+360083,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 23:23:41,2026-03-21 23:23:41
+360084,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 23:23:42,2026-03-21 23:23:42
+360085,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 23:23:42,2026-03-21 23:23:42
+360086,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 23:23:42,2026-03-21 23:23:42
+360087,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 23:23:42,2026-03-21 23:23:42
+360088,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 23:23:42,2026-03-21 23:23:42
+360090,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 23:23:42,2026-03-21 23:23:42
+360091,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 23:23:42,2026-03-21 23:23:42
+360092,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 23:23:42,2026-03-21 23:23:42
+360093,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 23:23:42,2026-03-21 23:23:42
+360094,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 23:23:42,2026-03-21 23:23:42
+360095,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 23:23:42,2026-03-21 23:23:42
+360096,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360097,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360098,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360099,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360100,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360101,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360102,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360103,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360104,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360105,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360106,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360107,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360109,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360110,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360111,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360112,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360113,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+360114,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-21 23:42:07,2026-03-21 23:42:07
+390001,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390002,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390003,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390004,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390005,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390006,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390007,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390008,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390009,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390010,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390011,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390012,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390014,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390015,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390016,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390017,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390018,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390019,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-23 14:50:59,2026-03-23 14:50:59
+390020,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390021,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390022,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390023,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390024,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390025,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390026,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390027,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390028,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390029,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390030,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390031,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390033,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390034,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390035,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390036,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390037,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390038,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-23 14:51:23,2026-03-23 14:51:23
+390039,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390040,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390041,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390042,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390043,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390044,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390045,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390046,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390047,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390048,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390049,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390050,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390052,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390053,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390054,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390055,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390056,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390057,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-23 15:16:58,2026-03-23 15:16:58
+390058,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390059,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390060,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390061,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390062,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390063,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390064,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390065,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390066,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390067,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390068,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390069,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390071,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390072,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390073,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390074,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390075,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-24 00:31:22,2026-03-24 00:31:22
+390076,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 00:31:23,2026-03-24 00:31:23
+390077,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390078,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390079,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390080,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390081,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390082,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390083,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390084,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390085,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390086,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390087,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390088,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390090,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390091,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390092,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390093,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390094,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+390095,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 02:31:19,2026-03-24 02:31:19
+420001,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420002,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420003,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420004,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420005,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420006,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420007,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420008,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420009,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420010,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420011,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420012,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420014,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420015,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-24 15:39:32,2026-03-24 15:39:32
+420016,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-24 15:39:33,2026-03-24 15:39:33
+420017,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 15:39:33,2026-03-24 15:39:33
+420018,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-24 15:39:33,2026-03-24 15:39:33
+420019,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 15:39:33,2026-03-24 15:39:33
+420020,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420021,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420022,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420023,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420024,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420025,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420026,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420027,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420028,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420029,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420030,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420031,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420033,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420034,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420035,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420036,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420037,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+420038,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-24 15:56:19,2026-03-24 15:56:19
+450001,Workshop de Teste Vitest,Descrição do workshop de teste,workshop,presencial,,,Sala 101,30,Prof. Teste,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450002,Atividade tipo workshop,,workshop,presencial,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450003,Atividade tipo treinamento,,treinamento,presencial,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450004,Atividade tipo palestra,,palestra,presencial,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450005,Atividade tipo evento,,evento,presencial,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450006,Atividade tipo outro,,outro,presencial,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450007,Atividade presencial,,workshop,presencial,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450008,Atividade online,,workshop,online,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450009,Atividade hibrido,,workshop,hibrido,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450010,Atualizado com Sucesso,,treinamento,online,,,Nova Sala,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450011,Atividade para testar update,,palestra,presencial,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450012,Para Toggle,,evento,hibrido,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450014,Não pode deletar,,workshop,online,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450015,Atividade para Inscrição,,workshop,presencial,,,,10,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450016,Sem Duplicata,,treinamento,online,,,,10,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450017,Atividade com Turmas,,workshop,presencial,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450018,Atividade Turma Update,,treinamento,online,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16
+450019,Para Cancelar Inscrição,,palestra,presencial,,,,,,,,,1,0,1,2026-03-26 14:58:16,2026-03-26 14:58:16

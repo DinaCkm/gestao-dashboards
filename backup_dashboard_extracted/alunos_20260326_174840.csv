@@ -1,0 +1,295 @@
+id,externalId,name,email,turmaId,trilhaId,consultorId,programId,isActive,createdAt,updatedAt,canLogin,bypassOnboarding,cadastradoPorAdmin,cpf,telefone,cargo,areaAtuacao,minicurriculo,quemEVoce,contratoInicio,contratoFim,discVideoWatchedAt,whatsapp,photoUrl,photoKey,onboardingLiberado,onboardingLiberadoEm,tipoMentoria,totalSessoesContratadas
+199,605198,DANIELA RIVA KELLER,daniela_keller@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,(11) 99999-0000,Analista,Tecnologia,"Formado em Administração, 5 anos de experiência",Sou uma pessoa dedicada e apaixonada por aprender,,,,,,,0,,individual,0
+200,605199,MARIA DE FATIMA MACIEL PEREIRA,Maria_Fatima_Pereira@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+201,605200,MARCO AURELIO MARCONATO,Marco_Marconato@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+202,605201,FABIANA DE BRITO GOMES,Fabiana_Gomes@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+203,605202,MARVIN DE ALMEIDA FONTANA,Marvin_Fontana@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+204,605203,DANIELE FERNANDES OLIVEIRA,danielefoliveira76@gmail.com,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+205,605204,MARCIO PETTINE SANTOS,Marcio_Pettine_Santos@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+206,605205,GABRIEL BASSO DAMO,Gabriel_Damo@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+207,605206,CATIA CARGNIN,Catia_Cargnin@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+208,605207,JOSIANE CLAIRE SCHNEIDER LEMOS,Josiane_Schneider@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+209,605208,DIEGO E SILVA DIAS,Diego_Silva_Dias@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+210,605209,MARCOS PESCE PINTO,campanhasmarcos@gmail.com,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+211,605210,CRISTIANE HENN,Cristiane_Henn@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+212,605211,SANDRA REGINA KOCHEM CAVALHEIRO,Sandra_Kochem@banrisul.com.br,36,,,19,0,2026-01-27 23:03:33,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+213,605212,MARIA EULALIA GOMES BRUNI,lalabruni@yahoo.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+214,605213,FERNANDO BECKER ALVES,Fernando_Becker_Alves@banrisul.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+215,605214,CARINE DONGENSKI,Carine_Dongenski@banrisul.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+216,605215,FERNANDO STRICK CAIEL,Fernando_Caiel@banrisul.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+217,605218,FATIMA CORBELLINI,Fatima_Corbellini@banrisul.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+218,605219,THAIS ROSALIA TEIXEIRA DA SILVA,Thais_Silva@banrisul.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+219,605220,FERNANDA TORZECKI COPETTI,Fernanda_Copetti@banrisul.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+220,605221,FABIANO ROHSLER,Fabiano_Rohsler@banrisul.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+221,605222,FERNANDA DA SILVA,Fernanda_Silva@banrisul.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+222,605223,THAÍS BAGNARA,thais_bagnara@banrisul.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+223,605224,LISIANE DAMBROS,lisiane_dambros@banrisul.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+224,605225,RAFAEL CARVALHO DE SOUZA,Rafael_Carvalho_Souza@banrisul.com.br,36,,,19,0,2026-01-27 23:03:34,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+30001,605349,Fabio Silva De Oliveira,fabio.oliveira@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:19,2026-03-24 15:56:31,1,0,0,,(11) 99999-0000,Analista,Tecnologia,"Formado em Administração, 5 anos de experiência",Sou uma pessoa dedicada e apaixonada por aprender,,,,,,,0,,individual,0
+30002,605350,Marcos Paulo Maciente,marcos.maciente@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:18,1,0,0,,,,,,,,,,,,,0,,individual,0
+30003,605351,Hellen Kelma Araújo Chaves,hellen.chaves@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:17,1,0,0,,,,,,,,,,,,,0,,individual,0
+30004,605353,Joelma Da Silva Mourão,joelma.mourao@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:17,1,0,0,,,,,,,,,,,,,0,,individual,0
+30005,605354,Miriam Nazareth Cardenas Moreno,miriam@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:18,1,0,0,,,,,,,,,,,,,0,,individual,0
+30006,605355,Francimir Do Nascimento Franca,francimir.franca@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:17,1,0,0,,,,,,,,,,,,,0,,individual,0
+30007,605357,Natana Dourado Sousa,natana.sousa@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:19,1,0,0,,,,,,,,,,,,,0,,individual,0
+30008,605359,Izabel Cristina De Oliveira Barros,izabel@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:17,1,0,0,,,,,,,,,,,,,0,,individual,0
+30009,605361,Ruama Araujo Dos Santos Demir,ruama.santos@yahoo.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:19,1,0,0,,,,,,,,,,,,,0,,individual,0
+30010,605362,Julciléia Da Silva Ferreira,julcileia.ferreira@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-03-24 20:00:39,1,0,0,,,,,,,,,2026-03-24 20:00:40,,,,0,,individual,0
+30011,605363,Claudia Maia Da Silva,claudia@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+30012,605365,Adriana Elizabete De Souza Dantas,adriana@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:15,1,0,0,,,,,,,,,,,,,0,,individual,0
+30013,606311,Claudia Veras Baima,claudia.baima@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+30014,607024,Janaina Feitosa,janaina.pinheiro@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:17,1,0,0,,,,,,,,,,,,,0,,individual,0
+30015,607211,Katiele Siqueira Maia,katiele.maia@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:18,1,0,0,,,,,,,,,,,,,0,,individual,0
+30016,607212,Sônia Caroline Suárez da Costa Pinheiro,sonia.pinheiro@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:19,1,0,0,,,,,,,,,,,,,0,,individual,0
+30017,607908,Flávia Vanessa Huck Oliveira,flavia.huck@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+30018,610384,Jailson Barbosa De Araújo,jailson@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:17,1,0,0,,,,,,,,,,,,,0,,individual,0
+30019,612269,Diego Biondi De Faria,diego.faria@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+30020,615723,Adrielle De Araújo Santos Bessa,adrielle.santos@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+30021,615724,Aldemar Dos Santos Maciel,aldemar@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+30022,615725,Ana Claudia Silva De Oliveira,anaclaudia@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+30023,615726,Cezarinete Alves Izel Mansour,cezarinete@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+30024,615728,Francinei Do Socorro Lima Dos Santos,francinei@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:17,1,0,0,,,,,,,,,,,,,0,,individual,0
+30025,615729,Gabriel Botelho Da Silva,gabriel.silva@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:17,1,0,0,,,,,,,,,,,,,0,,individual,0
+30026,615730,Jersey James Da Costa,jersey.costa@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:17,1,0,0,,,,,,,,,,,,,0,,individual,0
+30027,615731,Laiz Maria Montenegro Mappes,laiz@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:18,1,0,0,,,,,,,,,,,,,0,,individual,0
+30028,615732,Livia Nunes De Freitas Maia,livia.freitas@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:18,1,0,0,,,,,,,,,,,,,0,,individual,0
+30029,615733,Marcelo Castro Macedo,marcelo.macedo@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:18,1,0,0,,,,,,,,,,,,,0,,individual,0
+30030,615734,Marinete Lourdes Araujo De Queiroz,marinete.queiroz@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:18,1,0,0,,,,,,,,,,,,,0,,individual,0
+30031,615735,Vanessa Melo França,vanessa@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:19,1,0,0,,,,,,,,,,,,,0,,individual,0
+30032,615736,Yuri Willian De Jesus Lima,yuri.williann@gmail.com,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:19,1,0,0,,,,,,,,,,,,,0,,individual,0
+30033,616662,Adonay Fares Custódio Dos Santos,adonay@ac.sebrae.com.br,30001,1,28,16,1,2026-02-13 14:13:20,2026-02-27 00:54:15,1,0,0,,,,,,,,,,,,,0,,individual,0
+30034,651876,Allan Kassio De Oliveira Santos Ribeiro  ,allan.ribeiro@embrapii.org.br,30002,1,28,18,1,2026-02-13 14:13:20,2026-02-27 01:02:04,1,0,0,,,,,,,,,,,,,0,,individual,0
+30035,651877,Brenno Soffredi Passoni,brenno.passoni@embrapii.org.br,30002,1,28,18,1,2026-02-13 14:13:20,2026-02-27 01:02:04,1,0,0,,,,,,,,,,,,,0,,individual,0
+30036,651878,Carolina Borges Moreira,carolina.moreira@embrapii.org.br,30002,1,28,18,1,2026-02-13 14:13:20,2026-02-27 01:02:04,1,0,0,,,,,,,,,,,,,0,,individual,0
+30037,651879,Diego Renyer de Miranda Araújo,diego.renyer@embrapii.org.br,30002,1,28,18,1,2026-02-13 14:13:20,2026-02-27 01:02:04,1,0,0,,,,,,,,,,,,,0,,individual,0
+30038,651880,Etienne Lopes Ribeiro de Arruda,etienne.arruda@embrapii.org.br,30002,1,28,18,1,2026-02-13 14:13:20,2026-02-27 01:02:04,1,0,0,,,,,,,,,,,,,0,,individual,0
+30039,651881,Fabio Maya Cavalcante,fabio.cavalcante@embrapii.org.br,30002,1,28,18,1,2026-02-13 14:13:20,2026-02-27 01:02:04,1,0,0,,,,,,,,,,,,,0,,individual,0
+30040,651882,Flavia Pereira Balieiro Salgado,flavia.balieiro@embrapii.org.br,30002,1,28,18,1,2026-02-13 14:13:20,2026-02-27 01:02:04,1,0,0,,,,,,,,,,,,,0,,individual,0
+30041,651883,Ilda Bisinotti ,ilda.bisinotti@embrapii.org.br,30002,1,35,18,1,2026-02-13 14:13:20,2026-02-27 01:02:05,1,0,0,,,,,,,,,,,,,0,,individual,0
+30042,651884,Ingrid de Sousa Pereira,ingrid.pereira@embrapii.org.br,30002,1,35,18,1,2026-02-13 14:13:20,2026-02-27 01:02:05,1,0,0,,,,,,,,,,,,,0,,individual,0
+30043,651885,Luan Saldanha Oliveira,luan.saldanha@embrapii.org.br,30002,1,28,18,1,2026-02-13 14:13:20,2026-02-27 01:02:05,1,0,0,,,,,,,,,,,,,0,,individual,0
+30044,651886,Luciano Cunha de Sousa,luciano.sousa@embrapii.org.br,30002,1,28,18,0,2026-02-13 14:13:20,2026-03-17 19:18:06,1,0,0,,,,,,,,,,,,,0,,individual,0
+30045,651887,Thiago Bizerra Fideles,thiago.fideles@embrapii.org.br,30002,1,28,18,1,2026-02-13 14:13:20,2026-02-27 01:02:05,1,0,0,,,,,,,,,,,,,0,,individual,0
+30046,653477,Paulo Borges,paulo.borges@embrapii.org.br,30002,1,28,18,1,2026-02-13 14:13:20,2026-02-27 01:02:05,1,0,0,,,,,,,,,,,,,0,,individual,0
+30047,667257,Admary Monteiro Barbosa,admary.monteiro@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:10:01,1,0,0,83845186100,,,,,,,,,,,,0,,individual,0
+30048,667258,Aldeni Batista Torres,aldeni.torres@to.sebrae.com.br,30003,4,35,17,1,2026-02-13 14:13:20,2026-03-05 23:44:09,1,0,0,00658585142,,,,,,,,,,,,0,,individual,0
+30049,667261,Alencar Hubner Borelli,alencar.borelli@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:44:09,1,0,0,01017472173,,,,,,,,,,,,0,,individual,0
+30050,667262,Alorran de Freitas Barbosa,alorran.barbosa@to.sebrae.com.br,30003,4,28,17,1,2026-02-13 14:13:20,2026-03-05 23:10:01,1,0,0,86622536104,,,,,,,,,,,,0,,individual,0
+30051,667265,Amaggeldo Barbosa,amaggeldo@to.sebrae.com.br,30003,4,35,17,1,2026-02-13 14:13:20,2026-03-05 23:10:01,1,0,0,76727025134,,,,,,,,,,,,0,,individual,0
+30052,667266,Ana Paula Alves Santos,paula.alves@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:44:09,1,0,0,01433867192,,,,,,,,,,,,0,,individual,0
+30053,667267,Andre Silva Gomes,andre.gomes@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:44:09,1,0,0,00888269102,,,,,,,,,,,,0,,individual,0
+30054,667269,Andreia Rodrigues Facundes,andreia.facundes@to.sebrae.com.br,30003,4,28,17,1,2026-02-13 14:13:20,2026-03-05 23:10:02,1,0,0,90944267149,,,,,,,,,,,,0,,individual,0
+30055,667270,Antonio Louça Curcino,antonio.curcino@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:10:02,1,0,0,97641227104,,,,,,,,,,,,0,,individual,0
+30056,667271,Bruno Henrique Vila Verde,bruno.vilaverde@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:44:09,1,0,0,00912378158,,,,,,,,,,,,0,,individual,0
+30057,667272,Bruno Martins Vieira,bruno.vieira@to.sebrae.com.br,30003,4,35,17,1,2026-02-13 14:13:20,2026-03-20 19:11:08,1,0,0,06668878610,,,,,,,,2026-03-20 19:11:09,,,,0,,individual,0
+30058,667275,Cesar Augusto De Sa Moreira,cesar.moreira@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:44:09,1,0,0,01626149186,,,,,,,,,,,,0,,individual,0
+30059,667277,Edvaldo Pereira Lima Junior,edvaldo.lima@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-12 13:30:53,1,0,0,01547689102,,,,,,2025-01-01 00:00:00,2026-06-30 00:00:00,,,,,0,,individual,0
+30060,667278,Eligeneth Resplandes Pimentel Gomes,eligeneth@to.sebrae.com.br,30003,4,35,17,1,2026-02-13 14:13:20,2026-03-05 23:10:01,1,0,0,56076797134,,,,,,,,,,,,0,,individual,0
+30061,667279,Eliwania Dos Santos Silva,eliwania.santos@to.sebrae.com.br,30003,4,28,17,1,2026-02-13 14:13:20,2026-03-05 23:44:10,1,0,0,01206149361,,,,,,,,,,,,0,,individual,0
+30062,667280,Gabriela Tomasi,gabriela@to.sebrae.com.br,30003,4,28,17,0,2026-02-13 14:13:20,2026-03-17 19:17:48,1,0,0,00792361113,,,,,,,,,,,,0,,individual,0
+30063,667282,Gilzane Pereira Amaral,gilzane.pereira@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:10:01,1,0,0,81183500106,,,,,,,,,,,,0,,individual,0
+30064,667283,Hide Senna De Sousa Soares,hide.senna@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:10:42,1,0,0,57389241187,,,,,,,,,,,,0,,individual,0
+30065,667284,Jacirley Pereira Do Nascimento,jacirley.nascimento@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:44:10,1,0,0,00925591157,,,,,,,,,,,,0,,individual,0
+30066,667285,Joseane Rodrigues Leite,joseane@to.sebrae.com.br,30003,4,35,17,1,2026-02-13 14:13:20,2026-03-05 23:10:01,1,0,0,78954231187,,,,,,,,,,,,0,,individual,0
+30067,667286,Layala Cardoso Da Silva Istofel,layala.cardoso@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-16 17:48:08,1,0,0,87809575104,,,,,,,,,,,,0,,individual,0
+30068,667288,Leonardo Campelo Leite Guedes,leonardo.campelo@to.sebrae.com.br,30003,4,28,17,1,2026-02-13 14:13:20,2026-03-05 23:10:02,1,0,0,88020673253,,,,,,,,,,,,0,,individual,0
+30069,667289,Marcus Vinicius Vieira Queiroz,marcus.queiroz@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:44:10,1,0,0,01479169170,,,,,,,,,,,,0,,individual,0
+30070,667292,Millena Pereira Lima Rodrigues,millena.rodrigues@to.sebrae.com.br,30003,4,35,17,1,2026-02-13 14:13:20,2026-03-05 23:10:01,1,0,0,84781971172,,,,,,,,,,,,0,,individual,0
+30071,667293,Nemias Gomes,nemias.gomes@to.sebrae.com.br,30003,4,35,17,1,2026-02-13 14:13:20,2026-03-05 23:10:42,1,0,0,38906210159,,,,,,,,,,,,0,,individual,0
+30072,667295,Paula Dos Reis Coelho Alencar Sousa,paula.alencar@to.sebrae.com.br,30003,4,35,17,1,2026-02-13 14:13:20,2026-03-05 23:44:10,1,0,0,02242849166,,,,,,,,,,,,0,,individual,0
+30073,667297,Pedro Junior Da Rocha Silva,pedro.junior@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:20,2026-03-05 23:44:10,1,0,0,00706433181,,,,,,,,,,,,0,,individual,0
+30074,667298,Renata Moura Alves Simas,renata.alves@to.sebrae.com.br,30003,4,35,17,1,2026-02-13 14:13:20,2026-03-05 23:44:10,1,0,0,01056384123,,,,,,,,,,,,0,,individual,0
+30075,667300,Thais Neres Vieira,thaisvneres@gmail.com,30003,4,28,17,1,2026-02-13 14:13:21,2026-03-05 23:44:10,1,0,0,02728855170,,,,,,,,,,,,0,,individual,0
+30076,667303,Thiago Dias Da Silva,thiago.silva@to.sebrae.com.br,30003,4,35,17,1,2026-02-13 14:13:21,2026-03-05 23:44:10,1,0,0,04436929124,,,,,,,,,,,,0,,individual,0
+30077,667304,Valci Pereira Da Silva Junior,valci.junior@to.sebrae.com.br,30003,4,32,17,1,2026-02-13 14:13:21,2026-03-05 23:44:10,1,0,0,00870879103,,,,,,,,,,,,0,,individual,0
+30078,667306,Vera Lucia Teodoro Braga,vera.braga@to.sebrae.com.br,30003,4,35,17,1,2026-02-13 14:13:21,2026-03-05 23:10:01,1,0,0,48483389134,,,,,,,,,,,,0,,individual,0
+30079,676282,Thiago Milhomem Soares,thiago.soares@to.sebrae.com.br,30005,1,32,17,1,2026-02-13 14:13:21,2026-03-19 21:27:22,1,0,0,71877282120,,,,,,,,,,,,0,,individual,0
+30080,676283,Bruno de Jesus Rodrigues,bruno.rodrigues@to.sebrae.com.br,30005,1,32,17,1,2026-02-13 14:13:21,2026-03-19 21:19:26,1,0,0,06463327328,,,,,,,,,,,,0,,individual,0
+30081,676284,Odilo Junior Oliveira Carvalho,odilo.carvalho@to.sebrae.com.br,30005,1,32,17,1,2026-02-13 14:13:21,2026-03-19 21:22:06,1,0,0,03634062126,,,,,,,,,,,,0,,individual,0
+30082,676285,Juliana Masson Prediger,juliana.prediger@to.sebrae.com.br,30005,1,35,17,1,2026-02-13 14:13:21,2026-03-16 17:01:17,1,0,0,92391842287,,,,,,,,,,,,0,,individual,0
+30083,676286,Wesley Cardoso Batista,wesley.cardoso@to.sebrae.com.br,30005,1,35,17,1,2026-02-13 14:13:21,2026-03-19 21:25:29,1,0,0,03319840592,,,,,,,,,,,,0,,individual,0
+30084,676287,Jackeline de Souza Lima,jackeline.lima@to.sebrae.com.br,30005,1,35,17,1,2026-02-13 14:13:21,2026-03-16 15:51:32,1,0,0,02224365144,,,,,,2025-04-01 00:00:00,2026-04-01 00:00:00,,,,,0,,individual,0
+30085,676288,Francisco de Assis Dias Ramos,francisco.ramos@to.sebrae.com.br,30005,1,35,17,1,2026-02-13 14:13:21,2026-03-16 17:16:02,1,0,0,58693408453,,,,,,,,,,,,0,,individual,0
+30086,676289,Denise da Silva Nunes,denise.nunes@to.sebrae.com.br,30005,1,28,17,1,2026-02-13 14:13:21,2026-03-19 15:08:25,1,0,0,00653927137,,,,,,,,,,,,0,,individual,0
+30087,676290,Wanessa Sobreira dos Santos Martins,wanessa.martins@to.sebrae.com.br,30005,1,32,17,1,2026-02-13 14:13:21,2026-03-19 21:24:59,1,0,0,03651646157,,,,,,,,,,,,0,,individual,0
+30088,676291,Emerson Montenegro Lima,emerson.lima@to.sebrae.com.br,30005,1,32,17,1,2026-02-13 14:13:21,2026-03-19 21:21:02,1,0,0,87238314487,,,,,,,,,,,,0,,individual,0
+30089,676292,Pedro Emilio Rodrigues Alves de Araujo,pedro.araujo@to.sebrae.com.br,30005,1,32,17,1,2026-02-13 14:13:21,2026-03-19 21:23:33,1,0,0,00973002174,,,,,,,,,,,,0,,individual,0
+30090,694318,Mayara Rodrigues de Freitas,mayara.freitas@embrapii.org.br,30009,1,29,18,1,2026-02-13 14:13:21,2026-03-10 16:20:58,1,0,0,,,,,,,2026-03-01 00:00:00,2026-03-30 00:00:00,,,,,0,,individual,0
+30091,696497,Walbenia Lemos da Silva Torres,walbenia.lemos@to.sebrae.com.br,30008,1,32,17,1,2026-02-13 14:13:21,2026-03-05 23:10:01,1,0,0,49954237372,,,,,,,,,,,,0,,individual,0
+30092,696498,Antonio Luis Ferreira dos Anjos Filho,antonio.filho@to.sebrae.com.br,30008,1,32,17,1,2026-02-13 14:13:21,2026-03-05 23:44:10,1,0,0,01027817297,,,,,,,,,,,,0,,individual,0
+30093,696499,Ana Cássia de Oliveira Costa,ana.costa@to.sebrae.com.br,30008,1,32,17,1,2026-02-13 14:13:21,2026-03-05 23:44:10,1,0,0,03313815162,,,,,,,,,,,,0,,individual,0
+30094,696500,Mirelle Soares Milhomens,mirelle.milhomens@to.sebrae.com.br,30008,1,28,17,1,2026-02-13 14:13:21,2026-03-05 23:10:02,1,0,0,99743485104,,,,,,,,,,,,0,,individual,0
+30095,696501,Vivian Nascimento Reis,vivian.reis@to.sebrae.com.br,30008,1,28,17,1,2026-02-13 14:13:21,2026-03-05 23:44:11,1,0,0,00888307136,,,,,,,,,,,,0,,individual,0
+30096,696504,Usuário Teste,leremeg735@nicext.com,30010,3,,16,0,2026-02-13 14:13:21,2026-03-07 21:04:09,1,0,0,,,,,,,,,,,,,0,,individual,0
+30097,702806,Wandemberg Pereira Rodrigues,wandemberg.rodrigues@to.sebrae.com.br,30008,1,28,17,1,2026-02-13 14:13:21,2026-03-05 23:44:11,1,0,0,03005691144,,,,,,,,,,,,0,,individual,0
+30098,702807,Luciana Carvalho de Aguiar,luciana@to.sebrae.com.br,30008,1,28,17,1,2026-02-13 14:13:21,2026-03-05 23:44:11,1,0,0,00151959102,,,,,,,,,,,,0,,individual,0
+30099,709682,Vanessa Bertholdo Vargas,vanessa.vargas@embrapii.org.br,30002,1,39,18,1,2026-02-13 14:13:21,2026-02-27 01:02:05,1,0,0,,,,,,,,,,,,,0,,individual,0
+30100,716197,Alexandre Crepory Abbott de Oliveira,alexandre.oliveira@embrapii.org.br,30002,1,32,18,1,2026-02-13 14:13:21,2026-03-18 00:57:58,1,0,0,,,,,,,2025-09-23 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+90013,667997,Dina Makiyama,dina@ckmtalents.net,36,,39,19,0,2026-03-05 18:50:32,2026-03-26 14:58:16,1,1,1,,,xxxxx,xxxxxxxxx,xxxxxxxxxxxxxx,xxxxxxxxxxxxxxxxxxxxx,,,,,,,0,,individual,0
+240001,000001,Maria Dinamar,dina@makiyama.com.br,36,,39,19,0,2026-03-07 20:37:49,2026-03-26 14:58:16,1,1,1,,,,,,,,,,,,,0,,individual,0
+270001,111111,Carlos Makiyama,dina@makiyama.com.br,,,,19,0,2026-03-08 00:48:02,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+330001,222222,Jose da Silva,jose@teste.com,,,39,19,0,2026-03-08 15:32:46,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+510009,777777,Luciana Gimenez,luciana@teste.com,,,,19,0,2026-03-09 15:32:21,2026-03-26 14:58:16,1,0,0,,,,,,,,,,,,,0,,individual,0
+510010,777777777,Graça da Silva,graca@teste.com,,,32,19,0,2026-03-09 15:35:27,2026-03-26 14:58:16,1,0,0,,11947557071,xxxxxxxxxxxx,xxxxxxxxxxxxxxxx,xxxxxxxxxxxxxxxxxxxxxxxxxx,xxxxxxxxxxxxxxxxxxxxxxxxxxx,,,,,,,0,,individual,0
+570031,99999,Maria teste,faxes68569@qvmao.com,,,,19,0,2026-03-16 18:09:17,2026-03-26 14:58:16,1,0,0,,,,,,,2026-04-09 00:00:00,2026-09-02 00:00:00,,,,,0,,individual,0
+570032,9999999,TESTE2,yisok18727@qvmao.com,,,39,19,0,2026-03-16 18:23:07,2026-03-26 14:58:16,1,0,0,,11947557071,Gerente de Neogvios ,administração,sou uma pessoa que tem experiencia comercial,sou casado e sem filhos e jogo futebol,2026-04-10 00:00:00,2026-10-09 00:00:00,,,,,0,,individual,0
+570088,051107,Adriana Deus,drikadeus@gmail.com,,,,19,0,2026-03-16 23:12:13,2026-03-26 14:58:16,0,0,0,,,,,,,,,,,,,0,,individual,0
+570089,01401,Elio Puperi Alves da Silveira,elio@dgsolucoesestrategicas.com.br,,,28,60001,1,2026-03-16 23:25:05,2026-03-23 14:11:16,1,0,0,,54 999798442,Representante comercial,Vendas,"Bacharel em Ciências Jurídicas e Sociais pela PUCRS, trabalhei por alguns anos como advogado e posteriormente migrando para a área de seguros, onde fiquei por 14 anos em uma Corretora de Seguros atuando na área Comercial e de Sinistros. Posteriormente atuei com representação de joias e numa empresa de Educação Empresarial e capacitação de equipes.","Integridade, lealdade e honestidade são valores importantes. Minha família é a minha motivação, sua segurança e bem estar é o que importa.",2026-04-01 00:00:00,2026-09-30 00:00:00,2026-03-17 19:17:12,,,,0,,individual,
+660014,33333,Julia Souza Makiyama,jumakiyama@gmail.com,,,39,90002,1,2026-03-19 00:57:52,2026-03-21 19:29:36,1,0,0,,11947774715,Designer Instrucional,,XXXXXXXXXXXXXXXXX,XXXXXXXXXXXXXXXXXXXX,2026-04-01 00:00:00,2026-09-09 00:00:00,2026-03-19 21:12:01,,,,0,,individual,6
+690031,000450,Felipe Gramari,felipe@dgsolucoesestrategicas.com.br,,,28,60001,1,2026-03-19 20:58:47,2026-03-24 16:48:24,1,0,0,,16997486490,Gerente de operações,,"Graduado em Sistemas de Informação
+Pós Graduado (MBA) em Gestão de Processos de Negócio com enfase em SOA
+22 Anos de Experiencia com tecnologia, operações e projetos
+13 anos de experiencia com gestão e liderança de equipes
+Certificado em ITIL, COBIT, AGILE SM, AGILE PO, PMP e KANBAN
+Inglês Intermediario
+Espanhol Avançado","Responsável, organizado, focado em resultados e colaboração multua.",2026-04-01 00:00:00,2026-09-30 00:00:00,2026-03-23 13:21:04,,,,0,,individual,0
+690041,900487,Test Turma Number,turma-num-1773958900487@test.com,1,,1,1,1,2026-03-19 22:21:40,2026-03-19 22:21:40,1,0,1,,,,,,,,,,,,,0,,individual,0
+690042,901568,Test Turma Undefined,turma-undef-1773958901568@test.com,,,1,1,1,2026-03-19 22:21:41,2026-03-19 22:21:41,1,0,1,,,,,,,,,,,,,0,,individual,0
+690043,901719,Teste Contrato A7,contrato-a7-1773958901719@test.com,,,,17,1,2026-03-19 22:21:41,2026-03-19 22:21:41,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+690044,902914,Teste Direto Contrato A7,direto-contrato-a7-1773958902914@test.com,,,1,17,1,2026-03-19 22:21:42,2026-03-19 22:21:42,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+690048,057336,Test Turma Undefined,turma-undef-1773960057336@test.com,,,1,1,1,2026-03-19 22:40:57,2026-03-19 22:40:57,1,0,1,,,,,,,,,,,,,0,,individual,0
+690049,057785,Teste Contrato A7,contrato-a7-1773960057785@test.com,,,,17,1,2026-03-19 22:40:57,2026-03-19 22:40:57,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+690050,059032,Teste Direto Contrato A7,direto-contrato-a7-1773960059032@test.com,,,1,17,1,2026-03-19 22:40:59,2026-03-19 22:40:59,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+690052,076419,Test Turma Null,turma-null-1773960076419@test.com,,,1,1,1,2026-03-19 22:41:16,2026-03-19 22:41:16,1,0,1,,,,,,,,,,,,,0,,individual,0
+690054,078367,Test Turma Undefined,turma-undef-1773960078367@test.com,,,1,1,1,2026-03-19 22:41:18,2026-03-19 22:41:18,1,0,1,,,,,,,,,,,,,0,,individual,0
+690055,078441,Teste Contrato A7,contrato-a7-1773960078441@test.com,,,,17,1,2026-03-19 22:41:18,2026-03-19 22:41:18,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+690056,079806,Teste Direto Contrato A7,direto-contrato-a7-1773960079806@test.com,,,1,17,1,2026-03-19 22:41:19,2026-03-19 22:41:19,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+690059,562487,Test Turma Number,turma-num-1773960562487@test.com,1,,1,1,1,2026-03-19 22:49:22,2026-03-19 22:49:22,1,0,1,,,,,,,,,,,,,0,,individual,0
+690060,563261,Test Turma Undefined,turma-undef-1773960563261@test.com,,,1,1,1,2026-03-19 22:49:23,2026-03-19 22:49:23,1,0,1,,,,,,,,,,,,,0,,individual,0
+690061,564336,Teste Contrato A7,contrato-a7-1773960564336@test.com,,,,17,1,2026-03-19 22:49:24,2026-03-19 22:49:24,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+690062,565391,Teste Direto Contrato A7,direto-contrato-a7-1773960565391@test.com,,,1,17,1,2026-03-19 22:49:25,2026-03-19 22:49:25,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+720002,629008,Teste Contrato A7,contrato-a7-1774023629008@test.com,,,,17,1,2026-03-20 16:20:29,2026-03-20 16:20:29,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+720003,629186,Test Turma Null,turma-null-1774023629186@test.com,,,1,1,1,2026-03-20 16:20:29,2026-03-20 16:20:29,1,0,1,,,,,,,,,,,,,0,,individual,0
+720005,630833,Teste Direto Contrato A7,direto-contrato-a7-1774023630833@test.com,,,1,17,1,2026-03-20 16:20:30,2026-03-20 16:20:30,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+720006,631190,Test Turma Undefined,turma-undef-1774023631190@test.com,,,1,1,1,2026-03-20 16:20:31,2026-03-20 16:20:31,1,0,1,,,,,,,,,,,,,0,,individual,0
+720007,985550,Aluno Direto Test,direto-test-1774048985550@test.com,,,1,1,1,2026-03-20 23:23:05,2026-03-20 23:23:05,1,0,1,,,,,,,,,,,,,0,,individual,0
+720008,986933,Test Turma Null,turma-null-1774048986933@test.com,,,1,1,1,2026-03-20 23:23:06,2026-03-20 23:23:06,1,0,1,,,,,,,,,,,,,0,,individual,0
+720009,987803,Test Turma Number,turma-num-1774048987803@test.com,1,,1,1,1,2026-03-20 23:23:07,2026-03-20 23:23:07,1,0,1,,,,,,,,,,,,,0,,individual,0
+720010,988752,Test Turma Undefined,turma-undef-1774048988752@test.com,,,1,1,1,2026-03-20 23:23:08,2026-03-20 23:23:08,1,0,1,,,,,,,,,,,,,0,,individual,0
+720011,989016,Teste Contrato A7,contrato-a7-1774048989016@test.com,,,,17,1,2026-03-20 23:23:09,2026-03-20 23:23:09,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+720012,990165,Teste Direto Contrato A7,direto-contrato-a7-1774048990165@test.com,,,1,17,1,2026-03-20 23:23:10,2026-03-20 23:23:10,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+720013,002353,Aluno Direto Test,direto-test-1774051002353@test.com,,,1,1,1,2026-03-20 23:56:42,2026-03-20 23:56:42,1,0,1,,,,,,,,,,,,,0,,individual,0
+720014,003562,Test Turma Null,turma-null-1774051003562@test.com,,,1,1,1,2026-03-20 23:56:43,2026-03-20 23:56:43,1,0,1,,,,,,,,,,,,,0,,individual,0
+720015,004501,Test Turma Number,turma-num-1774051004501@test.com,1,,1,1,1,2026-03-20 23:56:44,2026-03-20 23:56:44,1,0,1,,,,,,,,,,,,,0,,individual,0
+720016,005375,Test Turma Undefined,turma-undef-1774051005375@test.com,,,1,1,1,2026-03-20 23:56:45,2026-03-20 23:56:45,1,0,1,,,,,,,,,,,,,0,,individual,0
+720017,006431,Teste Contrato A7,contrato-a7-1774051006431@test.com,,,,17,1,2026-03-20 23:56:46,2026-03-20 23:56:46,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+720018,009624,Teste Direto Contrato A7,direto-contrato-a7-1774051009624@test.com,,,1,17,1,2026-03-20 23:56:49,2026-03-20 23:56:49,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+720019,547149,Aluno Direto Test,direto-test-1774052547149@test.com,,,1,1,1,2026-03-21 00:22:27,2026-03-21 00:22:27,1,0,1,,,,,,,,,,,,,0,,individual,0
+720020,548143,Test Turma Null,turma-null-1774052548143@test.com,,,1,1,1,2026-03-21 00:22:28,2026-03-21 00:22:28,1,0,1,,,,,,,,,,,,,0,,individual,0
+720021,549000,Test Turma Number,turma-num-1774052549000@test.com,1,,1,1,1,2026-03-21 00:22:29,2026-03-21 00:22:29,1,0,1,,,,,,,,,,,,,0,,individual,0
+720022,549824,Test Turma Undefined,turma-undef-1774052549824@test.com,,,1,1,1,2026-03-21 00:22:29,2026-03-21 00:22:29,1,0,1,,,,,,,,,,,,,0,,individual,0
+720023,550854,Teste Contrato A7,contrato-a7-1774052550854@test.com,,,,17,1,2026-03-21 00:22:30,2026-03-21 00:22:30,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+720024,552012,Teste Direto Contrato A7,direto-contrato-a7-1774052552012@test.com,,,1,17,1,2026-03-21 00:22:32,2026-03-21 00:22:32,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+720025,795800,Aluno Direto Test,direto-test-1774053795800@test.com,,,1,1,1,2026-03-21 00:43:15,2026-03-21 00:43:15,1,0,1,,,,,,,,,,,,,0,,individual,0
+720026,796711,Test Turma Null,turma-null-1774053796711@test.com,,,1,1,1,2026-03-21 00:43:16,2026-03-21 00:43:16,1,0,1,,,,,,,,,,,,,0,,individual,0
+720027,797578,Test Turma Number,turma-num-1774053797578@test.com,1,,1,1,1,2026-03-21 00:43:17,2026-03-21 00:43:17,1,0,1,,,,,,,,,,,,,0,,individual,0
+720028,798382,Test Turma Undefined,turma-undef-1774053798382@test.com,,,1,1,1,2026-03-21 00:43:18,2026-03-21 00:43:18,1,0,1,,,,,,,,,,,,,0,,individual,0
+720029,800369,Teste Contrato A7,contrato-a7-1774053800369@test.com,,,,17,1,2026-03-21 00:43:20,2026-03-21 00:43:20,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+720030,801303,Teste Direto Contrato A7,direto-contrato-a7-1774053801303@test.com,,,1,17,1,2026-03-21 00:43:21,2026-03-21 00:43:21,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+750001,858655,Aluno Direto Test,direto-test-1774121858655@test.com,,,1,1,1,2026-03-21 19:37:38,2026-03-21 19:37:38,1,0,1,,,,,,,,,,,,,0,,individual,0
+750002,860138,Test Turma Null,turma-null-1774121860138@test.com,,,1,1,1,2026-03-21 19:37:40,2026-03-21 19:37:40,1,0,1,,,,,,,,,,,,,0,,individual,0
+750003,861189,Test Turma Number,turma-num-1774121861189@test.com,1,,1,1,1,2026-03-21 19:37:41,2026-03-21 19:37:41,1,0,1,,,,,,,,,,,,,0,,individual,0
+750004,862444,Test Turma Undefined,turma-undef-1774121862444@test.com,,,1,1,1,2026-03-21 19:37:42,2026-03-21 19:37:42,1,0,1,,,,,,,,,,,,,0,,individual,0
+750005,862580,Teste Contrato A7,contrato-a7-1774121862580@test.com,,,,17,1,2026-03-21 19:37:42,2026-03-21 19:37:42,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+750006,864189,Teste Direto Contrato A7,direto-contrato-a7-1774121864189@test.com,,,1,17,1,2026-03-21 19:37:44,2026-03-21 19:37:44,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+750007,455958,Aluno Direto Test,direto-test-1774122455958@test.com,,,1,1,1,2026-03-21 19:47:36,2026-03-21 19:47:36,1,0,1,,,,,,,,,,,,,0,,individual,0
+750008,457192,Test Turma Null,turma-null-1774122457192@test.com,,,1,1,1,2026-03-21 19:47:37,2026-03-21 19:47:37,1,0,1,,,,,,,,,,,,,0,,individual,0
+750009,458171,Test Turma Number,turma-num-1774122458171@test.com,1,,1,1,1,2026-03-21 19:47:38,2026-03-21 19:47:38,1,0,1,,,,,,,,,,,,,0,,individual,0
+750010,459113,Test Turma Undefined,turma-undef-1774122459113@test.com,,,1,1,1,2026-03-21 19:47:39,2026-03-21 19:47:39,1,0,1,,,,,,,,,,,,,0,,individual,0
+750011,460360,Teste Contrato A7,contrato-a7-1774122460360@test.com,,,,17,1,2026-03-21 19:47:40,2026-03-21 19:47:40,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+750012,461433,Teste Direto Contrato A7,direto-contrato-a7-1774122461433@test.com,,,1,17,1,2026-03-21 19:47:41,2026-03-21 19:47:41,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+750013,006696,Aluno Direto Test,direto-test-1774123006696@test.com,,,1,1,1,2026-03-21 19:56:46,2026-03-21 19:56:46,1,0,1,,,,,,,,,,,,,0,,individual,0
+750014,007752,Test Turma Null,turma-null-1774123007752@test.com,,,1,1,1,2026-03-21 19:56:47,2026-03-21 19:56:47,1,0,1,,,,,,,,,,,,,0,,individual,0
+750015,008728,Test Turma Number,turma-num-1774123008728@test.com,1,,1,1,1,2026-03-21 19:56:48,2026-03-21 19:56:48,1,0,1,,,,,,,,,,,,,0,,individual,0
+750016,009668,Test Turma Undefined,turma-undef-1774123009668@test.com,,,1,1,1,2026-03-21 19:56:49,2026-03-21 19:56:49,1,0,1,,,,,,,,,,,,,0,,individual,0
+750017,010880,Teste Contrato A7,contrato-a7-1774123010880@test.com,,,,17,1,2026-03-21 19:56:51,2026-03-21 19:56:51,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+750018,011988,Teste Direto Contrato A7,direto-contrato-a7-1774123011988@test.com,,,1,17,1,2026-03-21 19:56:52,2026-03-21 19:56:52,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+750019,272111,Aluno Direto Test,direto-test-1774123272111@test.com,,,1,1,1,2026-03-21 20:01:12,2026-03-21 20:01:12,1,0,1,,,,,,,,,,,,,0,,individual,0
+750020,273252,Test Turma Null,turma-null-1774123273252@test.com,,,1,1,1,2026-03-21 20:01:13,2026-03-21 20:01:13,1,0,1,,,,,,,,,,,,,0,,individual,0
+750021,274181,Test Turma Number,turma-num-1774123274181@test.com,1,,1,1,1,2026-03-21 20:01:14,2026-03-21 20:01:14,1,0,1,,,,,,,,,,,,,0,,individual,0
+750022,275091,Test Turma Undefined,turma-undef-1774123275091@test.com,,,1,1,1,2026-03-21 20:01:15,2026-03-21 20:01:15,1,0,1,,,,,,,,,,,,,0,,individual,0
+750023,276391,Teste Contrato A7,contrato-a7-1774123276391@test.com,,,,17,1,2026-03-21 20:01:16,2026-03-21 20:01:16,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+750024,277766,Teste Direto Contrato A7,direto-contrato-a7-1774123277766@test.com,,,1,17,1,2026-03-21 20:01:17,2026-03-21 20:01:17,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+780001,300668,Aluno Direto Test,direto-test-1774132300668@test.com,,,1,1,1,2026-03-21 22:31:40,2026-03-21 22:31:40,1,0,1,,,,,,,,,,,,,0,,individual,0
+780002,302414,Test Turma Null,turma-null-1774132302414@test.com,,,1,1,1,2026-03-21 22:31:42,2026-03-21 22:31:42,1,0,1,,,,,,,,,,,,,0,,individual,0
+780003,303664,Test Turma Number,turma-num-1774132303664@test.com,1,,1,1,1,2026-03-21 22:31:43,2026-03-21 22:31:43,1,0,1,,,,,,,,,,,,,0,,individual,0
+780004,305068,Test Turma Undefined,turma-undef-1774132305068@test.com,,,1,1,1,2026-03-21 22:31:45,2026-03-21 22:31:45,1,0,1,,,,,,,,,,,,,0,,individual,0
+780005,305833,Teste Contrato A7,contrato-a7-1774132305833@test.com,,,,17,1,2026-03-21 22:31:45,2026-03-21 22:31:45,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+780006,307573,Teste Direto Contrato A7,direto-contrato-a7-1774132307573@test.com,,,1,17,1,2026-03-21 22:31:47,2026-03-21 22:31:47,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+780007,790706,Aluno Direto Test,direto-test-1774132790706@test.com,,,1,1,1,2026-03-21 22:39:50,2026-03-21 22:39:50,1,0,1,,,,,,,,,,,,,0,,individual,0
+780008,791841,Test Turma Null,turma-null-1774132791841@test.com,,,1,1,1,2026-03-21 22:39:51,2026-03-21 22:39:51,1,0,1,,,,,,,,,,,,,0,,individual,0
+780009,792855,Test Turma Number,turma-num-1774132792855@test.com,1,,1,1,1,2026-03-21 22:39:52,2026-03-21 22:39:52,1,0,1,,,,,,,,,,,,,0,,individual,0
+780010,794011,Test Turma Undefined,turma-undef-1774132794011@test.com,,,1,1,1,2026-03-21 22:39:54,2026-03-21 22:39:54,1,0,1,,,,,,,,,,,,,0,,individual,0
+780011,795817,Teste Contrato A7,contrato-a7-1774132795817@test.com,,,,17,1,2026-03-21 22:39:56,2026-03-21 22:39:56,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+780012,796994,Teste Direto Contrato A7,direto-contrato-a7-1774132796994@test.com,,,1,17,1,2026-03-21 22:39:57,2026-03-21 22:39:57,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+780013,499613,Aluno Direto Test,direto-test-1774133499613@test.com,,,1,1,1,2026-03-21 22:51:39,2026-03-21 22:51:39,1,0,1,,,,,,,,,,,,,0,,individual,0
+780014,500701,Test Turma Null,turma-null-1774133500701@test.com,,,1,1,1,2026-03-21 22:51:40,2026-03-21 22:51:40,1,0,1,,,,,,,,,,,,,0,,individual,0
+780015,501765,Test Turma Number,turma-num-1774133501765@test.com,1,,1,1,1,2026-03-21 22:51:41,2026-03-21 22:51:41,1,0,1,,,,,,,,,,,,,0,,individual,0
+780016,502980,Test Turma Undefined,turma-undef-1774133502980@test.com,,,1,1,1,2026-03-21 22:51:42,2026-03-21 22:51:42,1,0,1,,,,,,,,,,,,,0,,individual,0
+780017,505042,Teste Contrato A7,contrato-a7-1774133505042@test.com,,,,17,1,2026-03-21 22:51:45,2026-03-21 22:51:45,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+780018,506285,Teste Direto Contrato A7,direto-contrato-a7-1774133506285@test.com,,,1,17,1,2026-03-21 22:51:46,2026-03-21 22:51:46,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+780019,522895,Aluno Direto Test,direto-test-1774133522895@test.com,,,1,1,1,2026-03-21 22:52:03,2026-03-21 22:52:03,1,0,1,,,,,,,,,,,,,0,,individual,0
+780020,523901,Test Turma Null,turma-null-1774133523901@test.com,,,1,1,1,2026-03-21 22:52:03,2026-03-21 22:52:03,1,0,1,,,,,,,,,,,,,0,,individual,0
+780021,524702,Test Turma Number,turma-num-1774133524702@test.com,1,,1,1,1,2026-03-21 22:52:04,2026-03-21 22:52:04,1,0,1,,,,,,,,,,,,,0,,individual,0
+780022,525630,Test Turma Undefined,turma-undef-1774133525630@test.com,,,1,1,1,2026-03-21 22:52:05,2026-03-21 22:52:05,1,0,1,,,,,,,,,,,,,0,,individual,0
+780023,527710,Teste Contrato A7,contrato-a7-1774133527710@test.com,,,,17,1,2026-03-21 22:52:07,2026-03-21 22:52:07,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+780024,528863,Teste Direto Contrato A7,direto-contrato-a7-1774133528863@test.com,,,1,17,1,2026-03-21 22:52:08,2026-03-21 22:52:08,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+780025,425614,Aluno Direto Test,direto-test-1774135425614@test.com,,,1,1,1,2026-03-21 23:23:45,2026-03-21 23:23:45,1,0,1,,,,,,,,,,,,,0,,individual,0
+780026,427024,Test Turma Null,turma-null-1774135427024@test.com,,,1,1,1,2026-03-21 23:23:47,2026-03-21 23:23:47,1,0,1,,,,,,,,,,,,,0,,individual,0
+780027,428129,Test Turma Number,turma-num-1774135428129@test.com,1,,1,1,1,2026-03-21 23:23:48,2026-03-21 23:23:48,1,0,1,,,,,,,,,,,,,0,,individual,0
+780028,429490,Test Turma Undefined,turma-undef-1774135429489@test.com,,,1,1,1,2026-03-21 23:23:49,2026-03-21 23:23:49,1,0,1,,,,,,,,,,,,,0,,individual,0
+780029,430639,Teste Contrato A7,contrato-a7-1774135430639@test.com,,,,17,1,2026-03-21 23:23:50,2026-03-21 23:23:50,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+780030,431887,Teste Direto Contrato A7,direto-contrato-a7-1774135431887@test.com,,,1,17,1,2026-03-21 23:23:51,2026-03-21 23:23:51,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+780031,530754,Aluno Direto Test,direto-test-1774136530754@test.com,,,1,1,1,2026-03-21 23:42:10,2026-03-21 23:42:10,1,0,1,,,,,,,,,,,,,0,,individual,0
+780032,532286,Test Turma Null,turma-null-1774136532286@test.com,,,1,1,1,2026-03-21 23:42:12,2026-03-21 23:42:12,1,0,1,,,,,,,,,,,,,0,,individual,0
+780033,533536,Test Turma Number,turma-num-1774136533536@test.com,1,,1,1,1,2026-03-21 23:42:13,2026-03-21 23:42:13,1,0,1,,,,,,,,,,,,,0,,individual,0
+780034,534757,Test Turma Undefined,turma-undef-1774136534757@test.com,,,1,1,1,2026-03-21 23:42:14,2026-03-21 23:42:14,1,0,1,,,,,,,,,,,,,0,,individual,0
+780035,535915,Teste Contrato A7,contrato-a7-1774136535915@test.com,,,,17,1,2026-03-21 23:42:16,2026-03-21 23:42:16,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+780036,537295,Teste Direto Contrato A7,direto-contrato-a7-1774136537295@test.com,,,1,17,1,2026-03-21 23:42:17,2026-03-21 23:42:17,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+810001,462948,Aluno Direto Test,direto-test-1774277462948@test.com,,,1,1,1,2026-03-23 14:51:03,2026-03-23 14:51:03,1,0,1,,,,,,,,,,,,,0,,individual,0
+810002,464559,Test Turma Null,turma-null-1774277464559@test.com,,,1,1,1,2026-03-23 14:51:04,2026-03-23 14:51:04,1,0,1,,,,,,,,,,,,,0,,individual,0
+810003,465698,Test Turma Number,turma-num-1774277465698@test.com,1,,1,1,1,2026-03-23 14:51:05,2026-03-23 14:51:05,1,0,1,,,,,,,,,,,,,0,,individual,0
+810004,466676,Test Turma Undefined,turma-undef-1774277466676@test.com,,,1,1,1,2026-03-23 14:51:06,2026-03-23 14:51:06,1,0,1,,,,,,,,,,,,,0,,individual,0
+810005,467556,Teste Contrato A7,contrato-a7-1774277467556@test.com,,,,17,1,2026-03-23 14:51:07,2026-03-23 14:51:07,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+810006,468601,Teste Direto Contrato A7,direto-contrato-a7-1774277468601@test.com,,,1,17,1,2026-03-23 14:51:08,2026-03-23 14:51:08,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+810007,486576,Aluno Direto Test,direto-test-1774277486576@test.com,,,1,1,1,2026-03-23 14:51:26,2026-03-23 14:51:26,1,0,1,,,,,,,,,,,,,0,,individual,0
+810008,487882,Test Turma Null,turma-null-1774277487882@test.com,,,1,1,1,2026-03-23 14:51:27,2026-03-23 14:51:27,1,0,1,,,,,,,,,,,,,0,,individual,0
+810009,489038,Test Turma Number,turma-num-1774277489038@test.com,1,,1,1,1,2026-03-23 14:51:29,2026-03-23 14:51:29,1,0,1,,,,,,,,,,,,,0,,individual,0
+810010,490234,Test Turma Undefined,turma-undef-1774277490234@test.com,,,1,1,1,2026-03-23 14:51:30,2026-03-23 14:51:30,1,0,1,,,,,,,,,,,,,0,,individual,0
+810011,491128,Teste Contrato A7,contrato-a7-1774277491128@test.com,,,,17,1,2026-03-23 14:51:31,2026-03-23 14:51:31,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+810012,492586,Teste Direto Contrato A7,direto-contrato-a7-1774277492586@test.com,,,1,17,1,2026-03-23 14:51:32,2026-03-23 14:51:32,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+810013,021591,Aluno Direto Test,direto-test-1774279021591@test.com,,,1,1,1,2026-03-23 15:17:01,2026-03-23 15:17:01,1,0,1,,,,,,,,,,,,,0,,individual,0
+810014,022899,Test Turma Null,turma-null-1774279022899@test.com,,,1,1,1,2026-03-23 15:17:02,2026-03-23 15:17:02,1,0,1,,,,,,,,,,,,,0,,individual,0
+810015,023812,Test Turma Number,turma-num-1774279023812@test.com,1,,1,1,1,2026-03-23 15:17:03,2026-03-23 15:17:03,1,0,1,,,,,,,,,,,,,0,,individual,0
+810016,025749,Test Turma Undefined,turma-undef-1774279025749@test.com,,,1,1,1,2026-03-23 15:17:05,2026-03-23 15:17:05,1,0,1,,,,,,,,,,,,,0,,individual,0
+810017,026570,Teste Contrato A7,contrato-a7-1774279026570@test.com,,,,17,1,2026-03-23 15:17:06,2026-03-23 15:17:06,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+810018,028393,Teste Direto Contrato A7,direto-contrato-a7-1774279028393@test.com,,,1,17,1,2026-03-23 15:17:08,2026-03-23 15:17:08,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+810019,286588,Aluno Direto Test,direto-test-1774312286588@test.com,,,1,1,1,2026-03-24 00:31:26,2026-03-24 00:31:26,1,0,1,,,,,,,,,,,,,0,,individual,0
+810020,288053,Test Turma Null,turma-null-1774312288053@test.com,,,1,1,1,2026-03-24 00:31:28,2026-03-24 00:31:28,1,0,1,,,,,,,,,,,,,0,,individual,0
+810021,289129,Test Turma Number,turma-num-1774312289129@test.com,1,,1,1,1,2026-03-24 00:31:29,2026-03-24 00:31:29,1,0,1,,,,,,,,,,,,,0,,individual,0
+810022,290150,Test Turma Undefined,turma-undef-1774312290150@test.com,,,1,1,1,2026-03-24 00:31:30,2026-03-24 00:31:30,1,0,1,,,,,,,,,,,,,0,,individual,0
+810023,291122,Teste Contrato A7,contrato-a7-1774312291122@test.com,,,,17,1,2026-03-24 00:31:31,2026-03-24 00:31:31,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+810024,292427,Teste Direto Contrato A7,direto-contrato-a7-1774312292427@test.com,,,1,17,1,2026-03-24 00:31:32,2026-03-24 00:31:32,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+810025,483286,Aluno Direto Test,direto-test-1774319483286@test.com,,,1,1,1,2026-03-24 02:31:23,2026-03-24 02:31:23,1,0,1,,,,,,,,,,,,,0,,individual,0
+810026,484608,Test Turma Null,turma-null-1774319484608@test.com,,,1,1,1,2026-03-24 02:31:24,2026-03-24 02:31:24,1,0,1,,,,,,,,,,,,,0,,individual,0
+810027,485450,Test Turma Number,turma-num-1774319485450@test.com,1,,1,1,1,2026-03-24 02:31:25,2026-03-24 02:31:25,1,0,1,,,,,,,,,,,,,0,,individual,0
+810028,486434,Test Turma Undefined,turma-undef-1774319486434@test.com,,,1,1,1,2026-03-24 02:31:26,2026-03-24 02:31:26,1,0,1,,,,,,,,,,,,,0,,individual,0
+810029,487800,Teste Contrato A7,contrato-a7-1774319487800@test.com,,,,17,1,2026-03-24 02:31:27,2026-03-24 02:31:27,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+810030,488758,Teste Direto Contrato A7,direto-contrato-a7-1774319488758@test.com,,,1,17,1,2026-03-24 02:31:28,2026-03-24 02:31:28,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+840001,776641,Aluno Direto Test,direto-test-1774366776641@test.com,,,1,1,1,2026-03-24 15:39:36,2026-03-24 15:39:36,1,0,1,,,,,,,,,,,,,0,,individual,0
+840002,778374,Test Turma Null,turma-null-1774366778374@test.com,,,1,1,1,2026-03-24 15:39:38,2026-03-24 15:39:38,1,0,1,,,,,,,,,,,,,0,,individual,0
+840003,779049,Test Turma Number,turma-num-1774366779049@test.com,1,,1,1,1,2026-03-24 15:39:39,2026-03-24 15:39:39,1,0,1,,,,,,,,,,,,,0,,individual,0
+840004,780118,Test Turma Undefined,turma-undef-1774366780118@test.com,,,1,1,1,2026-03-24 15:39:40,2026-03-24 15:39:40,1,0,1,,,,,,,,,,,,,0,,individual,0
+840005,781917,Teste Contrato A7,contrato-a7-1774366781917@test.com,,,,17,1,2026-03-24 15:39:42,2026-03-24 15:39:42,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+840006,783149,Teste Direto Contrato A7,direto-contrato-a7-1774366783149@test.com,,,1,17,1,2026-03-24 15:39:43,2026-03-24 15:39:43,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+840007,783335,Aluno Direto Test,direto-test-1774367783335@test.com,,,1,1,1,2026-03-24 15:56:23,2026-03-24 15:56:23,1,0,1,,,,,,,,,,,,,0,,individual,0
+840008,784781,Test Turma Null,turma-null-1774367784781@test.com,,,1,1,1,2026-03-24 15:56:24,2026-03-24 15:56:24,1,0,1,,,,,,,,,,,,,0,,individual,0
+840009,786199,Test Turma Number,turma-num-1774367786199@test.com,1,,1,1,1,2026-03-24 15:56:26,2026-03-24 15:56:26,1,0,1,,,,,,,,,,,,,0,,individual,0
+840010,787696,Test Turma Undefined,turma-undef-1774367787696@test.com,,,1,1,1,2026-03-24 15:56:27,2026-03-24 15:56:27,1,0,1,,,,,,,,,,,,,0,,individual,0
+840011,788002,Teste Contrato A7,contrato-a7-1774367788002@test.com,,,,17,1,2026-03-24 15:56:28,2026-03-24 15:56:28,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0
+840012,789259,Teste Direto Contrato A7,direto-contrato-a7-1774367789259@test.com,,,1,17,1,2026-03-24 15:56:29,2026-03-24 15:56:29,1,0,1,,,,,,,2026-03-01 00:00:00,2026-09-30 00:00:00,,,,,0,,individual,0
+870001,100785,Aluno Direto Test,direto-test-1774537100785@test.com,,,1,1,1,2026-03-26 14:58:20,2026-03-26 14:58:20,1,0,1,,,,,,,,,,,,,0,,individual,0
+870002,102025,Test Turma Null,turma-null-1774537102025@test.com,,,1,1,1,2026-03-26 14:58:22,2026-03-26 14:58:22,1,0,1,,,,,,,,,,,,,0,,individual,0
+870003,102864,Test Turma Number,turma-num-1774537102864@test.com,1,,1,1,1,2026-03-26 14:58:22,2026-03-26 14:58:22,1,0,1,,,,,,,,,,,,,0,,individual,0
+870004,103766,Test Turma Undefined,turma-undef-1774537103766@test.com,,,1,1,1,2026-03-26 14:58:23,2026-03-26 14:58:23,1,0,1,,,,,,,,,,,,,0,,individual,0
+870005,105802,Teste Contrato A7,contrato-a7-1774537105802@test.com,,,,17,1,2026-03-26 14:58:25,2026-03-26 14:58:25,1,0,0,,,,,,,2026-01-01 00:00:00,2026-12-31 00:00:00,,,,,0,,individual,0

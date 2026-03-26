@@ -1,0 +1,35 @@
+id,consultorId,availabilityId,scheduledDate,startTime,endTime,googleMeetLink,type,title,description,status,createdBy,createdAt,updatedAt
+1,39,,2026-03-10,09:00,10:00,https://meet.google.com/vsa-iuvq-gpd,grupo,Treinamento Ecossistema,teste de funcionalidade no sistema,cancelado,690412,2026-03-06 02:27:54,2026-03-06 02:28:03
+30001,39,,2026-03-06,10:00,11:00,https://meet.google.com/uva-qfjc-tmz?authuser=0,grupo,EMBRAPII - 5ªT [CICLO I] Vanessa Bertholdo Vargas,EMBRAPII - 5ªT [CICLO I] Vanessa Bertholdo Vargas,cancelado,690412,2026-03-06 19:29:48,2026-03-06 19:31:08
+60001,32,,2026-03-11,09:00,10:00,https://meet.google.com/,grupo,Encontro Inicial - Onboarding,Primeiro encontro de mentoria agendado pelo onboarding,agendado,3120092,2026-03-09 15:43:40,2026-03-09 15:43:40
+90001,35,,2026-03-20,09:00,15:00,https://meet.google.com/wvf-rrdr-xvh?hs=122&authuser=1,grupo,SEBRAE TO - Projeto Ecossistema,Acompanhamento da Fase de Planejamento e execução do Projeto,agendado,2220114,2026-03-10 13:05:06,2026-03-10 13:05:06
+120001,28,,2026-03-20,10:15,11:00,,grupo,EMBRAPII - [Projetos] 6ª SESSÃO [Thiago Fideles e Luan Saldanha],,agendado,720421,2026-03-13 12:38:11,2026-03-13 12:38:11
+120002,28,,2026-03-24,10:15,11:00,,grupo,"EMBRAPII - [Projetos] 6ª SESSÃO [Etienne, Allan e Fábio]",,agendado,720421,2026-03-13 12:44:16,2026-03-13 12:44:16
+120003,28,,2026-03-30,11:00,11:45,,grupo,"EMBRAPII - [Projetos] 6ª SESSÃO [Carolina, Diego e Paulo]",,agendado,720421,2026-03-13 12:45:42,2026-03-13 12:45:42
+120004,28,,2026-03-24,11:00,11:45,,grupo,"SEBRAETO - [Projetos] 6ª SESSÃO [Leonardo, Alorran e Eliwânia]",,agendado,720421,2026-03-13 12:47:16,2026-03-13 12:47:16
+120005,28,,2026-03-18,09:00,09:45,meet.google.com/jae-asuu-buf,grupo," SEBRAETO - [Projetos] 1ª SESSÃO [Luciana, Mirelle e Wandemberg]",,confirmado,720421,2026-03-13 12:58:30,2026-03-16 17:59:42
+120006,28,,2026-03-25,10:15,11:00,https://meet.google.com/rcx-rweh-zys,grupo,"SEBRAETO - [Projetos] 6ª SESSÃO [Andreia, Denise e Thais]",,agendado,720421,2026-03-13 13:58:29,2026-03-13 13:58:29
+120007,28,,2026-03-18,09:00,10:00,,grupo,SEBRAE AC - TURMA B - 17ª TUTORIA,,agendado,720421,2026-03-13 14:04:12,2026-03-13 14:04:12
+120008,28,,2026-03-20,09:00,10:00,meet.google.com/you-wyhz-uig,grupo,SEBRAE AC - TURMA A - 17ª TUTORIA,,agendado,720421,2026-03-13 14:29:32,2026-03-13 14:29:32
+120009,28,,2026-03-19,09:00,10:00,meet.google.com/gvx-zmts-tvj,grupo,SEBRAE AC - TURMA D - 17ª TUTORIA,,agendado,720421,2026-03-13 14:33:33,2026-03-13 14:33:33
+120010,28,,2026-03-16,09:00,10:00,meet.google.com/jbh-mobd-ybq,grupo,SEBRAE AC - TURMA C - 17ª TUTORIA,,agendado,720421,2026-03-13 14:41:00,2026-03-13 14:41:00
+150001,35,,2026-03-24,15:00,15:45,https://meet.google.com/eme-hgku-bec,grupo,Tutoria SEBRAE - TO PFC Conselheiros (Projeto),"Acompanhamento da Fase de planejamento e execução do Projeto, alinhamentos para entrega do Projeto.",agendado,2220114,2026-03-13 18:27:56,2026-03-24 17:54:12
+180001,28,120003,2026-03-23,10:15,11:00,,individual,,,cancelado,660191,2026-03-16 18:02:21,2026-03-18 12:06:02
+180002,35,,2026-03-25,15:00,15:45,meet.google.com/gwp-hxbc-oes,grupo,Projeto: Sistema Unificado de Despesas e Prestação de Contas – SUDPC / UniContas ,Alinhamento para entrega do Projeto.,agendado,2220114,2026-03-16 18:37:11,2026-03-16 18:37:11
+180003,39,,2026-03-19,09:00,10:00,,grupo,teste,teste para individual,cancelado,690412,2026-03-16 19:34:44,2026-03-17 20:27:39
+180004,39,,2026-03-20,10:00,11:00,https://meet.google.com/uva-qfjc-tmz?authuser=0,grupo,Encontro Inicial - Onboarding,Primeiro encontro de mentoria agendado pelo onboarding,cancelado,4293250,2026-03-16 22:59:16,2026-03-17 20:27:35
+210001,35,,2026-03-18,14:00,14:45,meet.google.com/prb-wamq-mik,grupo,Acompanhamento do Projeto Radar de Oportunidades,- Definição da etapa que o projeto será entregue em abril.,cancelado,2220114,2026-03-17 11:42:13,2026-03-20 17:54:35
+240001,28,,2026-03-23,11:00,11:45,,grupo,Encontro Inicial - Onboarding,Primeiro encontro de mentoria agendado pelo onboarding,agendado,4294845,2026-03-17 19:55:01,2026-03-17 19:55:01
+270001,39,,2026-03-20,10:00,11:00,https://meet.google.com/uva-qfjc-tmz?authuser=0,grupo,Encontro Inicial - Onboarding,Primeiro encontro de mentoria agendado pelo onboarding,agendado,4440467,2026-03-18 12:50:10,2026-03-18 12:50:10
+270002,28,,2026-04-16,10:15,11:00,https://meet.google.com/igh-mxjv-vsy,grupo,"SEBRAETO - [Projetos] 2ª SESSÃO [Luciana, Mirelle e Wandemberg]",,agendado,720421,2026-03-18 13:30:55,2026-03-18 13:30:55
+300001,39,,2026-04-03,10:00,11:00,https://meet.google.com/uva-qfjc-tmz?authuser=0,grupo,Encontro Inicial - Onboarding,Primeiro encontro de mentoria agendado pelo onboarding,agendado,4443460,2026-03-19 21:34:58,2026-03-19 21:34:58
+330001,35,,2026-03-25,14:00,14:45,meet.google.com/sda-psjz-ctr,grupo,Acompanhamento do Projeto Radar de Oportunidades,Definição da etapa de entrega do projeto.,agendado,2220114,2026-03-20 17:58:58,2026-03-20 17:58:58
+360001,35,,2026-03-25,09:00,09:45,meet.google.com/oes-rrfq-qon,grupo,Projeto Passaporte do Bem- Mulheres em movimento,Acompanhamento da etapa do projeto e alinhamento final de entrega.,agendado,2220114,2026-03-23 11:42:38,2026-03-23 11:42:38
+360002,28,,2026-04-23,10:15,11:00,https://meet.google.com/rym-bpio-vqw,grupo,1ª TUTORIA [Elio],,agendado,720421,2026-03-23 22:35:19,2026-03-23 22:35:19
+390001,39,,2026-03-24,09:00,10:00,,grupo,TESTE,TESTE FINANCEIRO,agendado,690412,2026-03-24 13:18:26,2026-03-24 13:18:26
+390002,28,,2026-04-24,09:00,10:00,meet.google.com/jbh-mobd-ybq,grupo," SEBRAE AC - TURMA C - 18ª TUTORIA",,agendado,720421,2026-03-24 13:57:12,2026-03-24 13:57:12
+390003,28,,2026-04-23,09:00,10:00,meet.google.com/jhz-jhci-mjn,grupo," SEBRAE AC - TURMA A - 18ª TUTORIA",,agendado,720421,2026-03-24 13:59:21,2026-03-24 13:59:21
+390004,28,,2026-04-17,09:00,10:00,meet.google.com/mjc-wyzn-kri,grupo,SEBRAE AC - TURMA D - 18ª TUTORIA,,agendado,720421,2026-03-24 14:02:45,2026-03-24 14:02:45
+390005,28,,2026-04-29,09:00,10:00,meet.google.com/wqg-zofv-zar,grupo,SEBRAE AC - TURMA B - 18ª TUTORIA,,agendado,720421,2026-03-24 14:05:59,2026-03-24 14:05:59
+390006,28,,2026-03-26,11:00,11:45,https://meet.google.com/rym-bpio-vqw,grupo,Encontro Inicial - Onboarding,Primeiro encontro de mentoria agendado pelo onboarding,agendado,4591270,2026-03-24 16:51:16,2026-03-24 16:51:16
+420001,32,,2026-04-17,09:00,10:00,"SEBRAETO/BS2/8ª MENTORIA - LUCIANA LAYALA ISTOFEL) Sexta-feira, 17 de abril · 09:00 – 10:00 Fuso horário: America/Sao_Paulo Como participar do Google Meet Link da videochamada: https://meet.google.com/jnu-qrwi-xor Ou disque: ‪(BR) +55 11 4949-1705‬ PIN: ‪926 524 283‬# Outros números de telefone: https://tel.meet/jnu-qrwi-xor?pin=3097587609167",grupo,SEBRAETO/BS2/8ª MENTORIA - LUCIANA LAYALA ISTOFEL),Mentoria e atuação de projetos ,agendado,3120133,2026-03-25 01:22:12,2026-03-25 01:22:12

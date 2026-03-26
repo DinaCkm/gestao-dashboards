@@ -1,0 +1,6 @@
+id,chave,titulo,descricao,videoUrl,thumbnailUrl,ordem,isActive,createdAt,updatedAt,textoExplicativo
+1,boas_vindas,Boas-vindas ao Programa,Conheça o Ecossistema do Bem e descubra como essa jornada vai transformar sua carreira!,,,0,1,2026-03-17 23:26:14,2026-03-17 23:26:14,
+2,competencias,Sua Jornada de Competências,Entenda como funciona o desenvolvimento das competências mapeadas no seu assessment e como você vai evoluir em cada uma delas.,,,1,1,2026-03-17 23:26:14,2026-03-17 23:26:14,
+3,webinars,Webinars Quinzenais,Descubra os encontros quinzenais com especialistas que vão ampliar sua visão e acelerar seu crescimento profissional.,,,2,1,2026-03-17 23:26:14,2026-03-17 23:26:14,
+4,tarefas,Tarefas Práticas,Saiba como as atividades práticas entre sessões vão consolidar seu aprendizado e gerar resultados reais no seu dia a dia.,,,3,1,2026-03-17 23:26:14,2026-03-17 23:26:14,
+5,metas,Metas e Desafios,Conheça o sistema de metas que vai te desafiar a sair da zona de conforto e alcançar resultados extraordinários.,,,4,1,2026-03-17 23:26:14,2026-03-17 23:26:14,
