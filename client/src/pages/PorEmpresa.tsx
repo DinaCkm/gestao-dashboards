@@ -1,13 +1,18 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Building2, Users, Target, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 
 export default function PorEmpresa() {
+  const { user } = useAuth();
+  const isManager = user?.role === "manager";
   const { data: empresas, isLoading } = trpc.indicadores.empresas.useQuery();
-  const { data: visaoGeral } = trpc.indicadores.visaoGeral.useQuery();
+  const { data: visaoGeral } = trpc.indicadores.visaoGeral.useQuery(undefined, {
+    enabled: !isManager,
+  });
 
   if (isLoading) {
     return (

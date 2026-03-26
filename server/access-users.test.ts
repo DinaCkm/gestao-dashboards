@@ -311,4 +311,14 @@ describe("manager access", () => {
       expect(error.code).not.toBe("UNAUTHORIZED");
     }
   });
+
+  it("manager sem empresa vinculada não pode acessar porEmpresa", async () => {
+    const { ctx } = createManagerContext(0);
+    (ctx.user as any).programId = null;
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.indicadores.porEmpresa({ empresa: "QUALQUER" }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
 });

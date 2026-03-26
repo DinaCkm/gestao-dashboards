@@ -1948,18 +1948,36 @@ export const appRouter = router({
     // Dashboard por Empresa
     porEmpresa: managerProcedure
       .input(z.object({ empresa: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const mentoringSessions = await db.getAllMentoringSessions();
         const eventParticipations = await db.getAllEventParticipationWithDate();
         const alunosList = await db.getAlunos();
         const programsList = await db.getPrograms();
         const allPlanoItems = await db.getAllPlanoIndividual();
+        const isAdmin = ctx.user.role === 'admin';
+        const managerProgramId = (ctx.user as any).programId as number | null | undefined;
+        let empresaAlvo = input.empresa;
+
+        if (!isAdmin) {
+          if (!managerProgramId) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Gerente sem empresa vinculada' });
+          }
+          const managerProgram = programsList.find(p => p.id === managerProgramId);
+          if (!managerProgram) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Empresa vinculada do gerente não encontrada' });
+          }
+          empresaAlvo = managerProgram.name;
+        }
+
+        const alunosPermitidos = isAdmin || !managerProgramId
+          ? alunosList
+          : alunosList.filter(a => a.programId === managerProgramId);
         
         const mentorias: MentoringRecord[] = [];
         const eventos: EventRecord[] = [];
         const performance: PerformanceRecord[] = [];
         
-        const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+        const alunoMap = new Map(alunosPermitidos.map(a => [a.id, a]));
         const programMap = new Map(programsList.map(p => [p.id, p]));
         
         for (const session of mentoringSessions) {
@@ -2005,7 +2023,7 @@ export const appRouter = router({
           _evtsByProg.set(_prog.id, await db.getEventsByProgramOrGlobal(_prog.id));
         }
         const _macroInicioMap = await db.getAlunoMacroInicioMap();
-        for (const _a of alunosList) {
+        for (const _a of alunosPermitidos) {
           if (!_a.programId) continue;
           const _progEvts = _evtsByProg.get(_a.programId) || [];
           const _participated = _epEvtIds.get(_a.id) || new Set();
@@ -2064,7 +2082,7 @@ export const appRouter = router({
         for (const [, cases] of Array.from(casesMapEmp.entries())) { casesDataEmp.push(...cases); }
         const macrocicloPorAlunoEmp = await db.getMacrocicloPorAluno();
         const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataEmp, undefined, macrocicloPorAlunoEmp);
-        const dashboard = gerarDashboardEmpresa(indicadores, input.empresa);
+        const dashboard = gerarDashboardEmpresa(indicadores, empresaAlvo);
         
         // Enriquecer alunos com turma, trilha, ciclo, competências
         const turmasList = await db.getTurmas();
@@ -2091,7 +2109,7 @@ export const appRouter = router({
         }
         
         const alunosEnriquecidos = dashboard.alunos.map(ind => {
-          const alunoDb = alunosList.find(a => (a.externalId || String(a.id)) === ind.idUsuario);
+          const alunoDb = alunosPermitidos.find(a => (a.externalId || String(a.id)) === ind.idUsuario);
           const turma = alunoDb?.turmaId ? turmaMap.get(alunoDb.turmaId) : null;
           const mentor = alunoDb?.consultorId ? consultorMap.get(alunoDb.consultorId) : null;
           
