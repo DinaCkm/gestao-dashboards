@@ -16,6 +16,7 @@ import Reports from "./pages/Reports";
 import Users from "./pages/Users";
 import Turmas from "./pages/Turmas";
 import Formulas from "./pages/Formulas";
+import Login from "./pages/Login";
 // History page merged into Upload
 import DashboardVisaoGeral from "./pages/DashboardVisaoGeral";
 import DashboardEmpresa from "./pages/DashboardEmpresa";
@@ -58,6 +59,7 @@ import PrecificacaoSessoes from "./pages/PrecificacaoSessoes";
 function Router() {
   return (
     <Switch>
+      <Route path={"/login"} component={Login} />
       <Route path={"/"} component={Home} />
       <Route path={"/upload"} component={Upload} />
       <Route path={"/dashboard/admin"} component={AdminDashboard} />

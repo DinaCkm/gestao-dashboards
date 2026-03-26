@@ -3,11 +3,11 @@ import { formatDateSafe } from "@/lib/dateUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { 
-  Upload, 
-  BarChart3, 
-  Users, 
-  FileSpreadsheet, 
+import {
+  Upload,
+  BarChart3,
+  Users,
+  FileSpreadsheet,
   ArrowRight,
   Building2,
   FileText,
@@ -25,26 +25,30 @@ export default function Home() {
 
   // Verificar status de onboarding do aluno
   const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
-    enabled: !loading && !!user && (user.role === 'user' || (user.role === 'manager' && !!(user as any).alunoId)),
+    enabled: !loading && !!user && (user.role === "user" || (user.role === "manager" && !!(user as any).alunoId)),
   });
 
   // Redirect based on role
   useEffect(() => {
-    if (loading || !user) return;
-    
+    if (loading) return;
+    if (!user) {
+      setLocation("/login");
+      return;
+    }
+
     if (user.role === "manager") {
       const userAny = user as any;
-      if (userAny.consultorId && !userAny.alunoId && userAny.consultorRole === 'mentor') {
+      if (userAny.consultorId && !userAny.alunoId && userAny.consultorRole === "mentor") {
         // É um mentor puro → vai para dashboard do mentor
         setLocation("/dashboard/mentor");
-      } else if (userAny.consultorId && !userAny.alunoId && userAny.consultorRole === 'gerente') {
+      } else if (userAny.consultorId && !userAny.alunoId && userAny.consultorRole === "gerente") {
         // É um gestor puro (criado via createGerentePuro) → vai para página de boas-vindas
         setLocation("/boas-vindas-gestor");
       } else if (userAny.alunoId) {
         // É gerente + aluno (visão dupla) → modo padrão é ALUNO
         // Verificar se tem activeRole salvo no sessionStorage
-        const savedRole = sessionStorage.getItem('activeRole');
-        if (savedRole === 'gerente') {
+        const savedRole = sessionStorage.getItem("activeRole");
+        if (savedRole === "gerente") {
           setLocation("/dashboard/gestor");
         } else {
           // Modo padrão: aluno
@@ -62,7 +66,7 @@ export default function Home() {
       }
       return;
     }
-    
+
     if (user.role === "user") {
       // Verificar se precisa de onboarding
       if (onboardingStatus) {
@@ -91,30 +95,30 @@ export default function Home() {
   const { data: latestBatch } = trpc.dashboard.latestBatch.useQuery();
 
   const quickActions = [
-    { 
-      icon: Upload, 
-      label: "Upload de Planilhas", 
+    {
+      icon: Upload,
+      label: "Upload de Planilhas",
       description: "Carregar novos dados semanais",
       path: "/upload",
       color: "from-primary to-primary/80"
     },
-    { 
-      icon: BarChart3, 
-      label: "Visão Geral", 
+    {
+      icon: BarChart3,
+      label: "Visão Geral",
       description: "Dashboard consolidado",
       path: "/dashboard/visao-geral",
       color: "from-secondary to-secondary/80"
     },
-    { 
-      icon: FileText, 
-      label: "Relatórios", 
+    {
+      icon: FileText,
+      label: "Relatórios",
       description: "Gerar e exportar relatórios",
       path: "/relatorios",
       color: "from-chart-3 to-chart-3/80"
     },
-    { 
-      icon: Users, 
-      label: "Cadastros", 
+    {
+      icon: Users,
+      label: "Cadastros",
       description: "Gerenciar acessos e cadastros",
       path: "/cadastros",
       color: "from-chart-4 to-chart-4/80"
@@ -135,7 +139,6 @@ export default function Home() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        {/* Header */}
         <div className="geometric-accent pl-4">
           <h1 className="text-3xl font-bold tracking-tight">
             Bem-vindo ao <span className="text-gradient">ECOSSISTEMA DO BEM</span>
@@ -145,10 +148,8 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Stats Cards - Admin Only */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Alunos */}
             <Card className="gradient-card card-hover">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -164,7 +165,6 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            {/* Mentores */}
             <Card className="gradient-card card-hover">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -180,7 +180,6 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            {/* Sessões de Mentoria */}
             <Card className="gradient-card card-hover">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -196,7 +195,6 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            {/* Empresas */}
             <Card className="gradient-card card-hover">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -214,7 +212,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Latest Batch Info */}
         {latestBatch && (
           <Card className="gradient-card">
             <CardHeader>
@@ -235,11 +232,11 @@ export default function Home() {
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    latestBatch.status === 'completed' 
-                      ? 'bg-green-500/20 text-green-400' 
-                      : 'bg-yellow-500/20 text-yellow-400'
+                    latestBatch.status === "completed"
+                      ? "bg-green-500/20 text-green-400"
+                      : "bg-yellow-500/20 text-yellow-400"
                   }`}>
-                    {latestBatch.status === 'completed' ? 'Processado' : 'Pendente'}
+                    {latestBatch.status === "completed" ? "Processado" : "Pendente"}
                   </span>
                 </div>
                 <div>
@@ -253,13 +250,12 @@ export default function Home() {
           </Card>
         )}
 
-        {/* Quick Actions */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Ações Rápidas</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {quickActions.map((action) => (
-              <Card 
-                key={action.path} 
+              <Card
+                key={action.path}
                 className="gradient-card card-hover cursor-pointer group"
                 onClick={() => setLocation(action.path)}
               >
@@ -278,7 +274,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Hierarchy Info */}
         <Card className="gradient-card border-primary/20">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
