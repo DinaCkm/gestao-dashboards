@@ -8238,49 +8238,194 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true, email: aluno.email };
       }),
   }),
+
+  // ============ MÓDULO DE CURSOS (27/03/2026) ============
+  course: router({
+    /**
+     * Obter catálogo de cursos para um aluno
+     * Retorna competências com módulos agrupados e progresso
+     */
+    getCatalog: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        microcicloId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        try {
+          const catalog = await db.getCourseCatalog(input.alunoId, input.microcicloId);
+          return catalog;
+        } catch (error) {
+          console.error("[getCatalog] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao carregar catálogo' });
+        }
+      }),
+
+    /**
+     * Iniciar um módulo
+     */
+    startModule: protectedProcedure
+      .input(z.object({
+        moduloId: z.number(),
+        progressoId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          await db.startModule(input.moduloId, input.moduloId, input.progressoId);
+          return { success: true };
+        } catch (error) {
+          console.error("[startModule] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao iniciar módulo' });
+        }
+      }),
+
+    /**
+     * Obter conteúdo completo de um módulo
+     */
+    getModuleContent: protectedProcedure
+      .input(z.object({
+        moduloId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        try {
+          const content = await db.getModuleContent(input.moduloId);
+          return content;
+        } catch (error) {
+          console.error("[getModuleContent] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao carregar conteúdo' });
+        }
+      }),
+
+    /**
+     * Enviar reflexão do aluno
+     */
+    submitReflection: protectedProcedure
+      .input(z.object({
+        moduloId: z.number(),
+        progressoId: z.number(),
+        textoRelato: z.string().min(100, "Reflexão deve ter no mínimo 100 caracteres"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const alunoId = ctx.user.alunoId || 0;
+          await db.submitReflection(alunoId, input.moduloId, input.progressoId, input.textoRelato);
+          return { success: true };
+        } catch (error) {
+          console.error("[submitReflection] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao enviar reflexão' });
+        }
+      }),
+
+    /**
+     * Enviar avaliação/quiz do módulo
+     * Atualiza automaticamente os Indicadores 2 e 3
+     */
+    submitAssessment: protectedProcedure
+      .input(z.object({
+        moduloId: z.number(),
+        progressoId: z.number(),
+        competenciaId: z.number(),
+        microcicloId: z.number(),
+        nota: z.number().min(0).max(10),
+        totalQuestoes: z.number().optional(),
+        questoesAcertadas: z.number().optional(),
+        tempoRespostaMinutos: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const alunoId = ctx.user.alunoId || 0;
+          const result = await db.submitAssessment(
+            alunoId,
+            input.moduloId,
+            input.progressoId,
+            input.competenciaId,
+            input.microcicloId,
+            input.nota,
+            input.totalQuestoes,
+            input.questoesAcertadas,
+            input.tempoRespostaMinutos
+          );
+          return result;
+        } catch (error) {
+          console.error("[submitAssessment] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao enviar avaliação' });
+        }
+      }),
+
+    /**
+     * Solicitar prorrogação de prazo
+     */
+    requestExtension: protectedProcedure
+      .input(z.object({
+        moduloId: z.number(),
+        progressoId: z.number(),
+        dataLimiteSolicitada: z.date(),
+        dataFimContrato: z.date(),
+        motivoSolicitacao: z.string().min(10, "Motivo deve ter no mínimo 10 caracteres"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const alunoId = ctx.user.alunoId || 0;
+          const result = await db.requestExtension(
+            alunoId,
+            input.moduloId,
+            input.progressoId,
+            input.dataLimiteSolicitada,
+            input.dataFimContrato,
+            input.motivoSolicitacao
+          );
+          return result;
+        } catch (error) {
+          console.error("[requestExtension] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao solicitar prorrogação' });
+        }
+      }),
+
+    /**
+     * Aprovar ou rejeitar prorrogação (apenas mentores)
+     */
+    approveExtension: protectedProcedure
+      .input(z.object({
+        prorrogacaoId: z.number(),
+        aprovar: z.boolean(),
+        motivoRejeicao: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          // Verificar se é mentor
+          if (ctx.user.role !== 'manager' && ctx.user.role !== 'admin') {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentores podem aprovar prorrogações' });
+          }
+
+          const result = await db.approveExtension(
+            input.prorrogacaoId,
+            input.aprovar,
+            input.motivoRejeicao
+          );
+          return result;
+        } catch (error) {
+          console.error("[approveExtension] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao processar prorrogação' });
+        }
+      }),
+
+    /**
+     * Obter painel de prorrogações para mentor
+     */
+    getMentorPanel: protectedProcedure
+      .query(async ({ ctx }) => {
+        try {
+          // Verificar se é mentor
+          if (ctx.user.role !== 'manager' && ctx.user.role !== 'admin') {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentores podem acessar este painel' });
+          }
+
+          const mentorId = ctx.user.id || 0;
+          const panel = await db.getMentorExtensionPanel(mentorId);
+          return panel;
+        } catch (error) {
+          console.error("[getMentorPanel] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao carregar painel' });
+        }
+      }),
+  }),
 });
-
-export type AppRouter = typeof appRouter;
-
-// ============ CSV HELPER FUNCTIONS ============
-
-/**
- * Parse a CSV line respecting quoted fields
- */
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    
-    if (char === '"') {
-      if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
-        current += '"';
-        i++; // Skip next quote
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  
-  result.push(current.trim());
-  return result;
-}
-
-/**
- * Get value from parsed CSV row by column name
- */
-function getVal(values: string[], colMap: Record<string, number>, colName: string): string | undefined {
-  const idx = colMap[colName];
-  if (idx === undefined || idx >= values.length) return undefined;
-  const val = values[idx]?.trim();
-  if (!val || val === '-') return undefined;
-  return val;
-}

@@ -1155,3 +1155,179 @@ export const onboardingRevisoes = mysqlTable("onboarding_revisoes", {
 });
 export type OnboardingRevisao = typeof onboardingRevisoes.$inferSelect;
 export type InsertOnboardingRevisao = typeof onboardingRevisoes.$inferInsert;
+
+
+/**
+ * ============================================================================
+ * MÓDULO DE CURSOS COM GENIALLY (27/03/2026)
+ * ============================================================================
+ * Tabelas para gerenciar cursos, progresso dos alunos, reflexões, avaliações
+ * e prorrogações de prazos com integração aos Indicadores 2 e 3.
+ * ============================================================================
+ */
+
+/**
+ * 1. competencias_modulos - Estrutura de conteúdo dos cursos
+ * 6 módulos por competência: Intro, Filme, Vídeo, TedTalk, Podcast, Livro
+ */
+export const competenciasModulos = mysqlTable("competencias_modulos", {
+  id: int("id").autoincrement().primaryKey(),
+  competenciaId: int("competencia_id").notNull(),
+  tipoModulo: mysqlEnum("tipo_modulo", [
+    "intro",
+    "filme",
+    "video",
+    "tedtalk",
+    "podcast",
+    "livro",
+  ])
+    .notNull()
+    .default("intro"),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  urlGenially: varchar("url_genially", { length: 500 }),
+  urlThumbnail: varchar("url_thumbnail", { length: 500 }),
+  duracaoMinutos: int("duracao_minutos").default(15),
+  ordem: int("ordem").default(0),
+  ativo: int("ativo").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CompetenciaModulo = typeof competenciasModulos.$inferSelect;
+export type InsertCompetenciaModulo = typeof competenciasModulos.$inferInsert;
+
+/**
+ * 2. aluno_modulo_progresso - Rastreamento de progresso do aluno
+ * Controla status, prazos originais/prorrogados e indicadores visuais
+ */
+export const alunoModuloProgresso = mysqlTable("aluno_modulo_progresso", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("aluno_id").notNull(),
+  moduloId: int("modulo_id").notNull(),
+  competenciaId: int("competencia_id").notNull(),
+  microcicloId: int("microciclo_id").notNull(),
+
+  // Status do módulo
+  status: mysqlEnum("status", [
+    "nao_iniciado",
+    "em_progresso",
+    "concluido",
+  ])
+    .default("nao_iniciado")
+    .notNull(),
+  dataInicio: timestamp("data_inicio"),
+  dataConclusao: timestamp("data_conclusao"),
+
+  // Controle de prazos
+  dataLimiteOriginal: timestamp("data_limite_original").notNull(),
+  dataLimiteProrrogada: timestamp("data_limite_prorrogada"),
+
+  // Indicadores visuais
+  diasRestantes: int("dias_restantes"),
+  statusSemaforo: mysqlEnum("status_semaforo", [
+    "verde",
+    "amarelo",
+    "vermelho",
+  ])
+    .default("verde")
+    .notNull(),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AlunoModuloProgresso = typeof alunoModuloProgresso.$inferSelect;
+export type InsertAlunoModuloProgresso =
+  typeof alunoModuloProgresso.$inferInsert;
+
+/**
+ * 3. aluno_modulo_relato - Reflexão/relatório do aluno após estudar
+ * Obrigatório: aluno deve escrever reflexão antes de fazer avaliação
+ */
+export const alunoModuloRelato = mysqlTable("aluno_modulo_relato", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("aluno_id").notNull(),
+  moduloId: int("modulo_id").notNull(),
+  progressoId: int("progresso_id").notNull(),
+
+  // Reflexão obrigatória
+  textoRelato: text("texto_relato").notNull(),
+  dataEnvio: timestamp("data_envio").notNull(),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AlunoModuloRelato = typeof alunoModuloRelato.$inferSelect;
+export type InsertAlunoModuloRelato = typeof alunoModuloRelato.$inferInsert;
+
+/**
+ * 4. aluno_modulo_avaliacao - Avaliação/quiz do módulo com nota
+ * Captura nota que alimenta o Indicador 2 (Avaliações)
+ */
+export const alunoModuloAvaliacao = mysqlTable("aluno_modulo_avaliacao", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("aluno_id").notNull(),
+  moduloId: int("modulo_id").notNull(),
+  progressoId: int("progresso_id").notNull(),
+
+  // Avaliação
+  nota: decimal("nota", { precision: 5, scale: 2 }).notNull(),
+  totalQuestoes: int("total_questoes"),
+  questoesAcertadas: int("questoes_acertadas"),
+  tempoRespostaMinutos: int("tempo_resposta_minutos"),
+
+  // Resultado
+  aprovado: int("aprovado").default(1).notNull(),
+  dataAvaliacao: timestamp("data_avaliacao").notNull(),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AlunoModuloAvaliacao = typeof alunoModuloAvaliacao.$inferSelect;
+export type InsertAlunoModuloAvaliacao =
+  typeof alunoModuloAvaliacao.$inferInsert;
+
+/**
+ * 5. aluno_competencia_prorrogacao - Requisições de prorrogação de prazos
+ * Sistema de prorrogação com aprovação de mentor
+ * REGRA CRÍTICA: Prorrogação apenas desbloqueia módulos.
+ * Performance é SEMPRE calculada contra prazos ORIGINAIS.
+ */
+export const alunoCompetenciaProrrogacao = mysqlTable(
+  "aluno_competencia_prorrogacao",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    alunoId: int("aluno_id").notNull(),
+    moduloId: int("modulo_id").notNull(),
+    progressoId: int("progresso_id").notNull(),
+    mentorId: int("mentor_id"),
+
+    // Datas
+    dataSolicitacao: timestamp("data_solicitacao").notNull(),
+    dataLimiteOriginal: timestamp("data_limite_original").notNull(),
+    dataLimiteSolicitada: timestamp("data_limite_solicitada").notNull(),
+    dataLimiteAprovada: timestamp("data_limite_aprovada"),
+
+    // Controle
+    status: mysqlEnum("status", [
+      "pendente",
+      "aprovada",
+      "rejeitada",
+      "cancelada",
+    ])
+      .default("pendente")
+      .notNull(),
+    motivoSolicitacao: text("motivo_solicitacao"),
+    motivoRejeicao: text("motivo_rejeicao"),
+
+    // Validação
+    dentroContrato: int("dentro_contrato").default(1).notNull(),
+    dataFimContrato: timestamp("data_fim_contrato"),
+
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  }
+);
+export type AlunoCompetenciaProrrogacao =
+  typeof alunoCompetenciaProrrogacao.$inferSelect;
+export type InsertAlunoCompetenciaProrrogacao =
+  typeof alunoCompetenciaProrrogacao.$inferInsert;

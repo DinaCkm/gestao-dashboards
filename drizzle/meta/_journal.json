@@ -428,6 +428,13 @@
       "when": 1774311072649,
       "tag": "0060_sturdy_fenris",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "5",
+      "when": 1774663057754,
+      "tag": "0061_far_pride",
+      "breakpoints": true
     }
   ]
 }

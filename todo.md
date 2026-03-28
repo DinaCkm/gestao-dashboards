@@ -3254,3 +3254,172 @@
 - [x] Reagendamento: adicionar funcionalidade de reagendamento na área do admin (AdminAgendamentos)
 - [x] Liberar mentora para criar/reagendar agendamentos com data retroativa (sem bloqueio no backend e frontend)
 - [x] Bug: mentora não consegue criar agenda retroativa - removida validação "data precisa ser hoje ou futura" no handleAddDateSlot
+
+
+---
+
+## 📚 NOVO: Módulo de Cursos com Genially (27/03/2026)
+
+### Fase 1: Banco de Dados (1-2 dias)
+- [ ] Criar tabela `competencias_modulos`
+- [ ] Criar tabela `aluno_modulo_progresso`
+- [ ] Criar tabela `aluno_modulo_relato`
+- [ ] Criar tabela `aluno_modulo_avaliacao`
+- [ ] Criar tabela `aluno_competencia_prorrogacao`
+- [ ] Executar `pnpm db:push`
+- [ ] Validar estrutura no banco
+
+### Fase 2: Backend - Rotas tRPC (2-3 dias)
+- [ ] Criar helpers em `server/db.ts` (queries)
+- [ ] Implementar rota `course.getCatalog`
+- [ ] Implementar rota `course.startModule`
+- [ ] Implementar rota `course.getModuleContent`
+- [ ] Implementar rota `course.submitReflection`
+- [ ] Implementar rota `course.submitAssessment`
+- [ ] Implementar rota `course.requestExtension`
+- [ ] Implementar rota `course.approveExtension`
+- [ ] Implementar rota `course.getMentorPanel`
+- [ ] Escrever testes unitários (Vitest)
+- [ ] Validar integração com indicadores
+
+### Fase 3: Frontend - Catálogo Netflix (2-3 dias)
+- [ ] Criar componente `CourseCatalog.tsx`
+- [ ] Implementar layout Netflix-style com Tailwind
+- [ ] Integrar com `course.getCatalog`
+- [ ] Implementar sistema de semáforo (Verde/Amarelo/Vermelho)
+- [ ] Adicionar cards de competências
+- [ ] Adicionar cards de módulos
+- [ ] Implementar indicador de progresso (X/6)
+- [ ] Adicionar botão "Iniciar" para cada módulo
+
+### Fase 4: Frontend - Estudo + Avaliação (2-3 dias)
+- [ ] Criar componente `ModuleStudy.tsx`
+- [ ] Implementar embed Genially
+- [ ] Criar formulário de reflexão
+- [ ] Criar quiz/avaliação
+- [ ] Integrar com `course.submitReflection`
+- [ ] Integrar com `course.submitAssessment`
+- [ ] Implementar cálculo de nota
+- [ ] Atualizar indicadores após conclusão
+
+### Fase 5: Frontend - Prorrogação (1-2 dias)
+- [ ] Criar componente `ExtensionRequest.tsx` (Aluno)
+- [ ] Criar componente `MentorExtensionPanel.tsx` (Mentor)
+- [ ] Implementar modal de solicitação
+- [ ] Implementar validação de datas (contrato)
+- [ ] Integrar com `course.requestExtension`
+- [ ] Integrar com `course.approveExtension`
+- [ ] Implementar painel de mentor
+- [ ] Adicionar notificações
+
+### Fase 6: Testes e Refinamento (1-2 dias)
+- [ ] Testes end-to-end
+- [ ] Validar cálculos de indicadores
+- [ ] Performance e otimizações
+- [ ] Documentação final
+- [ ] Verificar regra crítica (prorrogação não afeta performance)
+
+### Entrega e Sincronização
+- [ ] Criar checkpoint final
+- [ ] Sincronizar com GitHub
+- [ ] Deploy em produção (Heroku)
+
+
+---
+
+## ✅ MÓDULO DE CURSOS - IMPLEMENTAÇÃO COMPLETA (28/03/2026)
+
+### Fase 1: Banco de Dados ✓
+- [x] Criar tabela `competenciasModulos` (12 colunas)
+- [x] Criar tabela `alunoModuloProgresso` (14 colunas)
+- [x] Criar tabela `alunoModuloRelato` (8 colunas)
+- [x] Criar tabela `alunoModuloAvaliacao` (12 colunas)
+- [x] Criar tabela `alunoCompetenciaProrrogacao` (16 colunas)
+- [x] Executar `pnpm db:push` com sucesso
+
+### Fase 2: Backend ✓
+- [x] Criar 8 helpers em `server/db.ts`:
+  - [x] `getCourseCatalog` - Catálogo com progresso
+  - [x] `startModule` - Iniciar módulo
+  - [x] `getModuleContent` - Conteúdo do módulo
+  - [x] `submitReflection` - Salvar reflexão
+  - [x] `submitAssessment` - Salvar avaliação + atualizar indicadores
+  - [x] `requestExtension` - Solicitar prorrogação
+  - [x] `approveExtension` - Aprovar/rejeitar prorrogação
+  - [x] `getMentorExtensionPanel` - Painel do mentor
+- [x] Criar 8 rotas tRPC em `server/routers.ts`:
+  - [x] `course.getCatalog`
+  - [x] `course.startModule`
+  - [x] `course.getModuleContent`
+  - [x] `course.submitReflection`
+  - [x] `course.submitAssessment`
+  - [x] `course.requestExtension`
+  - [x] `course.approveExtension`
+  - [x] `course.getMentorPanel`
+
+### Fase 3: Frontend - Catálogo ✓
+- [x] Criar `client/src/pages/CourseCatalog.tsx`
+- [x] Layout Netflix-style com gradiente azul-escuro
+- [x] Grid de competências com status (Verde/Amarelo/Vermelho)
+- [x] Cards de módulos com semáforo
+- [x] Indicador de progresso (X/6 módulos)
+- [x] Botão "Iniciar" para cada módulo
+- [x] Integração com `trpc.course.getCatalog`
+- [x] Responsivo (mobile, tablet, desktop)
+
+### Fase 4: Frontend - Estudo + Avaliação ✓
+- [x] Criar `client/src/pages/ModuleStudy.tsx`
+- [x] Fluxo de 4 etapas:
+  - [x] Etapa 1: Conteúdo (Genially embed)
+  - [x] Etapa 2: Reflexão (formulário com validação)
+  - [x] Etapa 3: Avaliação (quiz com 3 questões)
+  - [x] Etapa 4: Conclusão (feedback)
+- [x] Validação de reflexão (mínimo 100 caracteres)
+- [x] Cálculo automático de nota (0-10)
+- [x] Integração com `trpc.course.submitReflection`
+- [x] Integração com `trpc.course.submitAssessment`
+- [x] Atualização automática de indicadores 2 e 3
+
+### Fase 5: Frontend - Prorrogação ✓
+- [x] Criar `client/src/pages/ExtensionRequest.tsx` (Modal para aluno)
+  - [x] Validação de datas (dentro do contrato)
+  - [x] Motivo obrigatório (mínimo 10 caracteres)
+  - [x] Aviso sobre cálculo de performance
+  - [x] Integração com `trpc.course.requestExtension`
+- [x] Criar `client/src/pages/MentorExtensionPanel.tsx` (Painel para mentor)
+  - [x] Abas: Pendentes | Aprovadas | Rejeitadas
+  - [x] Cards com informações de cada solicitação
+  - [x] Botões de Aprovar/Rejeitar
+  - [x] Dialog para motivo de rejeição
+  - [x] Integração com `trpc.course.approveExtension`
+  - [x] Integração com `trpc.course.getMentorPanel`
+
+### Fase 6: Testes ✓
+- [x] Criar `server/course.test.ts` com 17 testes
+- [x] Testes de helpers de banco de dados (8 testes)
+- [x] Testes de validação de dados (3 testes)
+- [x] Testes de integração completa (1 teste)
+- [x] Teste de fluxo completo de estudo
+- [x] **Resultado: 17/17 testes PASSANDO ✓**
+
+### Regra Crítica Implementada ✓
+- [x] **Prorrogação apenas desbloqueia módulos**
+- [x] **Performance é SEMPRE calculada contra prazos ORIGINAIS**
+- [x] Aviso exibido ao aluno durante solicitação
+- [x] Lógica implementada em `submitAssessment`
+
+### Arquivos Criados
+- [x] `/home/ubuntu/gestao-dashboards/drizzle/schema.ts` - 5 novas tabelas
+- [x] `/home/ubuntu/gestao-dashboards/server/db.ts` - 8 helpers
+- [x] `/home/ubuntu/gestao-dashboards/server/routers.ts` - 8 rotas tRPC
+- [x] `/home/ubuntu/gestao-dashboards/client/src/pages/CourseCatalog.tsx` - Catálogo
+- [x] `/home/ubuntu/gestao-dashboards/client/src/pages/ModuleStudy.tsx` - Estudo
+- [x] `/home/ubuntu/gestao-dashboards/client/src/pages/ExtensionRequest.tsx` - Prorrogação (Aluno)
+- [x] `/home/ubuntu/gestao-dashboards/client/src/pages/MentorExtensionPanel.tsx` - Prorrogação (Mentor)
+- [x] `/home/ubuntu/gestao-dashboards/server/course.test.ts` - 17 testes
+
+### Próximas Tarefas
+- [ ] Integrar componentes na navegação principal
+- [ ] Testes E2E (Cypress)
+- [ ] Documentação de API
+- [ ] Deploy em produção

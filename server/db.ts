@@ -47,7 +47,12 @@ import {
   onboardingJornada, InsertOnboardingJornada, OnboardingJornada,
   onboardingVideos, InsertOnboardingVideo, OnboardingVideo,
   emailAlertasLog, InsertEmailAlertaLog, EmailAlertaLog,
-  onboardingRevisoes, InsertOnboardingRevisao, OnboardingRevisao,} from "../drizzle/schema";
+  onboardingRevisoes, InsertOnboardingRevisao, OnboardingRevisao,
+  competenciasModulos, InsertCompetenciaModulo, CompetenciaModulo,
+  alunoModuloProgresso, InsertAlunoModuloProgresso, AlunoModuloProgresso,
+  alunoModuloRelato, InsertAlunoModuloRelato, AlunoModuloRelato,
+  alunoModuloAvaliacao, InsertAlunoModuloAvaliacao, AlunoModuloAvaliacao,
+  alunoCompetenciaProrrogacao, InsertAlunoCompetenciaProrrogacao, AlunoCompetenciaProrrogacao,} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -8803,4 +8808,442 @@ export async function getGestorTeamStats(programId: number) {
     totalCompetencias: Number(compCount?.count || 0),
     principaisCompetencias,
   };
+}
+
+
+// ============ MÓDULO DE CURSOS (27/03/2026) ============
+
+/**
+ * Obter catálogo de cursos para um aluno em um microciclo
+ * Retorna competências com módulos agrupados e progresso
+ */
+export async function getCourseCatalog(alunoId: number, microcicloId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    // Buscar todas as competências com módulos
+    const competenciasComModulos = await db
+      .select({
+        competenciaId: competencias.id,
+        competenciaNome: competencias.nome,
+        modulos: sql<string>`JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'id', ${competenciasModulos.id},
+            'tipo', ${competenciasModulos.tipoModulo},
+            'titulo', ${competenciasModulos.titulo},
+            'descricao', ${competenciasModulos.descricao},
+            'urlGenially', ${competenciasModulos.urlGenially},
+            'urlThumbnail', ${competenciasModulos.urlThumbnail},
+            'duracaoMinutos', ${competenciasModulos.duracaoMinutos}
+          )
+        )`,
+      })
+      .from(competencias)
+      .leftJoin(
+        competenciasModulos,
+        eq(competencias.id, competenciasModulos.competenciaId)
+      )
+      .where(eq(competenciasModulos.ativo, 1))
+      .groupBy(competencias.id);
+
+    // Para cada competência, buscar progresso do aluno
+    const resultado = await Promise.all(
+      competenciasComModulos.map(async (comp) => {
+        const progresso = await db
+          .select({
+            moduloId: alunoModuloProgresso.moduloId,
+            status: alunoModuloProgresso.status,
+            statusSemaforo: alunoModuloProgresso.statusSemaforo,
+            diasRestantes: alunoModuloProgresso.diasRestantes,
+            nota: alunoModuloAvaliacao.nota,
+          })
+          .from(alunoModuloProgresso)
+          .leftJoin(
+            alunoModuloAvaliacao,
+            eq(alunoModuloProgresso.id, alunoModuloAvaliacao.progressoId)
+          )
+          .where(
+            and(
+              eq(alunoModuloProgresso.alunoId, alunoId),
+              eq(alunoModuloProgresso.competenciaId, comp.competenciaId),
+              eq(alunoModuloProgresso.microcicloId, microcicloId)
+            )
+          );
+
+        const modulosArray = JSON.parse(comp.modulos || "[]");
+        const modulosComProgresso = modulosArray.map((mod: any) => {
+          const prog = progresso.find((p) => p.moduloId === mod.id);
+          return {
+            ...mod,
+            status: prog?.status || "nao_iniciado",
+            statusSemaforo: prog?.statusSemaforo || "verde",
+            diasRestantes: prog?.diasRestantes || null,
+            nota: prog?.nota || null,
+          };
+        });
+
+        const concluidos = modulosComProgresso.filter(
+          (m: any) => m.status === "concluido"
+        ).length;
+
+        return {
+          competenciaId: comp.competenciaId,
+          competenciaNome: comp.competenciaNome,
+          progresso: `${concluidos}/${modulosComProgresso.length}`,
+          statusGeral:
+            concluidos === modulosComProgresso.length
+              ? "concluido"
+              : concluidos > 0
+                ? "em_progresso"
+                : "nao_iniciado",
+          modulos: modulosComProgresso,
+        };
+      })
+    );
+
+    return resultado;
+  } catch (error) {
+    console.error("[getCourseCatalog] Error:", error);
+    return [];
+  }
+}
+
+/**
+ * Iniciar um módulo (marcar como em_progresso e registrar data_inicio)
+ */
+export async function startModule(
+  alunoId: number,
+  moduloId: number,
+  progressoId: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    await db
+      .update(alunoModuloProgresso)
+      .set({
+        status: "em_progresso",
+        dataInicio: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(alunoModuloProgresso.id, progressoId));
+
+    return { success: true };
+  } catch (error) {
+    console.error("[startModule] Error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obter conteúdo completo de um módulo
+ */
+export async function getModuleContent(moduloId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const [modulo] = await db
+      .select()
+      .from(competenciasModulos)
+      .where(eq(competenciasModulos.id, moduloId));
+
+    return modulo || null;
+  } catch (error) {
+    console.error("[getModuleContent] Error:", error);
+    return null;
+  }
+}
+
+/**
+ * Enviar reflexão do aluno após estudar o módulo
+ */
+export async function submitReflection(
+  alunoId: number,
+  moduloId: number,
+  progressoId: number,
+  textoRelato: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    await db.insert(alunoModuloRelato).values({
+      alunoId,
+      moduloId,
+      progressoId,
+      textoRelato,
+      dataEnvio: new Date(),
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("[submitReflection] Error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Enviar avaliação/quiz do módulo e atualizar indicadores
+ */
+export async function submitAssessment(
+  alunoId: number,
+  moduloId: number,
+  progressoId: number,
+  competenciaId: number,
+  microcicloId: number,
+  nota: number,
+  totalQuestoes?: number,
+  questoesAcertadas?: number,
+  tempoRespostaMinutos?: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    // 1. Salvar avaliação
+    await db.insert(alunoModuloAvaliacao).values({
+      alunoId,
+      moduloId,
+      progressoId,
+      nota,
+      totalQuestoes: totalQuestoes || 0,
+      questoesAcertadas: questoesAcertadas || 0,
+      tempoRespostaMinutos: tempoRespostaMinutos || 0,
+      aprovado: nota >= 7 ? 1 : 0,
+      dataAvaliacao: new Date(),
+    });
+
+    // 2. Marcar módulo como concluído
+    await db
+      .update(alunoModuloProgresso)
+      .set({
+        status: "concluido",
+        dataConclusao: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(alunoModuloProgresso.id, progressoId));
+
+    // 3. Atualizar Indicador 2 (Avaliações) - média de todas as notas do ciclo
+    const todasAvaliacoes = await db
+      .select({ nota: alunoModuloAvaliacao.nota })
+      .from(alunoModuloAvaliacao)
+      .innerJoin(
+        alunoModuloProgresso,
+        eq(alunoModuloAvaliacao.progressoId, alunoModuloProgresso.id)
+      )
+      .where(
+        and(
+          eq(alunoModuloAvaliacao.alunoId, alunoId),
+          eq(alunoModuloProgresso.microcicloId, microcicloId)
+        )
+      );
+
+    const mediaNotas =
+      todasAvaliacoes.length > 0
+        ? todasAvaliacoes.reduce((sum, a) => sum + Number(a.nota), 0) /
+          todasAvaliacoes.length
+        : 0;
+
+    // 4. Atualizar Indicador 3 (Competências) - módulos concluídos vs disponíveis
+    const modulosConcluidos = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(alunoModuloProgresso)
+      .where(
+        and(
+          eq(alunoModuloProgresso.alunoId, alunoId),
+          eq(alunoModuloProgresso.microcicloId, microcicloId),
+          eq(alunoModuloProgresso.status, "concluido")
+        )
+      );
+
+    const modulosDisponiveis = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(alunoModuloProgresso)
+      .where(
+        and(
+          eq(alunoModuloProgresso.alunoId, alunoId),
+          eq(alunoModuloProgresso.microcicloId, microcicloId)
+        )
+      );
+
+    const aulasConcluidas = Number(modulosConcluidos[0]?.count || 0);
+    const aulasDisponiveis = Number(modulosDisponiveis[0]?.count || 0);
+
+    // 5. Atualizar student_performance com os novos indicadores
+    await db
+      .update(studentPerformance)
+      .set({
+        notaAvaliacao: mediaNotas,
+        aulasConcluidas,
+        aulasDisponiveis,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(studentPerformance.alunoId, alunoId),
+          eq(studentPerformance.microcicloId, microcicloId)
+        )
+      );
+
+    return { success: true, mediaNotas, aulasConcluidas, aulasDisponiveis };
+  } catch (error) {
+    console.error("[submitAssessment] Error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Solicitar prorrogação de prazo
+ */
+export async function requestExtension(
+  alunoId: number,
+  moduloId: number,
+  progressoId: number,
+  dataLimiteSolicitada: Date,
+  dataFimContrato: Date,
+  motivoSolicitacao: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    // Validar se novo prazo está dentro do contrato
+    const dentroContrato = dataLimiteSolicitada <= dataFimContrato ? 1 : 0;
+
+    // Buscar prazo original
+    const [progresso] = await db
+      .select({ dataLimiteOriginal: alunoModuloProgresso.dataLimiteOriginal })
+      .from(alunoModuloProgresso)
+      .where(eq(alunoModuloProgresso.id, progressoId));
+
+    if (!progresso) throw new Error("Progresso not found");
+
+    // Criar solicitação
+    const [result] = await db
+      .insert(alunoCompetenciaProrrogacao)
+      .values({
+        alunoId,
+        moduloId,
+        progressoId,
+        dataSolicitacao: new Date(),
+        dataLimiteOriginal: progresso.dataLimiteOriginal,
+        dataLimiteSolicitada,
+        motivoSolicitacao,
+        dentroContrato,
+        dataFimContrato,
+        status: "pendente",
+      })
+      .$returningId();
+
+    return { success: true, prorrogacaoId: result?.id };
+  } catch (error) {
+    console.error("[requestExtension] Error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Aprovar ou rejeitar prorrogação (apenas mentores)
+ */
+export async function approveExtension(
+  prorrogacaoId: number,
+  aprovar: boolean,
+  motivoRejeicao?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  try {
+    // Buscar prorrogação
+    const [prorrogacao] = await db
+      .select()
+      .from(alunoCompetenciaProrrogacao)
+      .where(eq(alunoCompetenciaProrrogacao.id, prorrogacaoId));
+
+    if (!prorrogacao) throw new Error("Prorrogação not found");
+
+    if (aprovar) {
+      // Atualizar prorrogação como aprovada
+      await db
+        .update(alunoCompetenciaProrrogacao)
+        .set({
+          status: "aprovada",
+          dataLimiteAprovada: prorrogacao.dataLimiteSolicitada,
+          updatedAt: new Date(),
+        })
+        .where(eq(alunoCompetenciaProrrogacao.id, prorrogacaoId));
+
+      // Atualizar progresso com novo prazo
+      await db
+        .update(alunoModuloProgresso)
+        .set({
+          dataLimiteProrrogada: prorrogacao.dataLimiteSolicitada,
+          updatedAt: new Date(),
+        })
+        .where(eq(alunoModuloProgresso.id, prorrogacao.progressoId));
+    } else {
+      // Rejeitar prorrogação
+      await db
+        .update(alunoCompetenciaProrrogacao)
+        .set({
+          status: "rejeitada",
+          motivoRejeicao: motivoRejeicao || "",
+          updatedAt: new Date(),
+        })
+        .where(eq(alunoCompetenciaProrrogacao.id, prorrogacaoId));
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("[approveExtension] Error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obter painel de prorrogações para mentor
+ */
+export async function getMentorExtensionPanel(mentorId: number) {
+  const db = await getDb();
+  if (!db) return { pendentes: [], aprovadas: [], rejeitadas: [] };
+
+  try {
+    const prorrogacoes = await db
+      .select({
+        id: alunoCompetenciaProrrogacao.id,
+        alunoId: alunoCompetenciaProrrogacao.alunoId,
+        alunoNome: alunos.nome,
+        moduloId: alunoCompetenciaProrrogacao.moduloId,
+        moduloTitulo: competenciasModulos.titulo,
+        competenciaNome: competencias.nome,
+        dataLimiteOriginal: alunoCompetenciaProrrogacao.dataLimiteOriginal,
+        dataLimiteSolicitada: alunoCompetenciaProrrogacao.dataLimiteSolicitada,
+        motivoSolicitacao: alunoCompetenciaProrrogacao.motivoSolicitacao,
+        status: alunoCompetenciaProrrogacao.status,
+        dataSolicitacao: alunoCompetenciaProrrogacao.dataSolicitacao,
+      })
+      .from(alunoCompetenciaProrrogacao)
+      .innerJoin(alunos, eq(alunoCompetenciaProrrogacao.alunoId, alunos.id))
+      .innerJoin(
+        competenciasModulos,
+        eq(alunoCompetenciaProrrogacao.moduloId, competenciasModulos.id)
+      )
+      .innerJoin(
+        competencias,
+        eq(competenciasModulos.competenciaId, competencias.id)
+      );
+
+    // Agrupar por status
+    const pendentes = prorrogacoes.filter((p) => p.status === "pendente");
+    const aprovadas = prorrogacoes.filter((p) => p.status === "aprovada");
+    const rejeitadas = prorrogacoes.filter((p) => p.status === "rejeitada");
+
+    return { pendentes, aprovadas, rejeitadas };
+  } catch (error) {
+    console.error("[getMentorExtensionPanel] Error:", error);
+    return { pendentes: [], aprovadas: [], rejeitadas: [] };
+  }
 }
