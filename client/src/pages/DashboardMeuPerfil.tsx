@@ -214,28 +214,46 @@ export default function DashboardMeuPerfil() {
     },
   });
 
-  const handleEvidenceSubmit = async (sessionId: number) => {
-    const link = evidenceLink[sessionId];
-    const file = evidenceFile[sessionId];
-    if (!link && !file) return;
-    let base64: string | undefined;
-    let fileName: string | undefined;
-    if (file) {
-      const reader = new FileReader();
-      const result = await new Promise<string>((resolve) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-      base64 = result.split(',')[1];
-      fileName = file.name;
+const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
+  const link = (evidenceLink[sessionId] || '').trim();
+  const file = evidenceFile[sessionId];
+
+  if (!link && !file) return false;
+
+  let normalizedLink: string | undefined = undefined;
+
+  if (link) {
+    try {
+      const parsed = new URL(link);
+      normalizedLink = parsed.toString();
+    } catch {
+      toast.error("Cole um link válido, começando com https://, ou deixe esse campo em branco se for enviar só a imagem.");
+      return false;
     }
-    await submitEvidence.mutateAsync({
-      sessionId,
-      evidenceLink: link || undefined,
-      evidenceImageBase64: base64,
-      evidenceImageName: fileName,
+  }
+
+  let base64: string | undefined;
+  let fileName: string | undefined;
+
+  if (file) {
+    const reader = new FileReader();
+    const result = await new Promise<string>((resolve) => {
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
     });
-  };
+    base64 = result.split(',')[1];
+    fileName = file.name;
+  }
+
+  await submitEvidence.mutateAsync({
+    sessionId,
+    evidenceLink: normalizedLink,
+    evidenceImageBase64: base64,
+    evidenceImageName: fileName,
+  });
+
+  return true;
+};
   const markPresence = trpc.attendance.markPresence.useMutation({
     onSuccess: () => {
       utils.attendance.myAttendance.invalidate();
@@ -2243,11 +2261,11 @@ export default function DashboardMeuPerfil() {
                                 {/* Campo de link */}
                                 <div className="space-y-2">
                                   <Label className="text-xs text-gray-700 flex items-center gap-1">
-                                    <Link2 className="h-3 w-3" /> Link do arquivo na nuvem
-                                  </Label>
-                                  <Input
-                                    type="url"
-                                    placeholder="https://drive.google.com/... ou https://onedrive.live.com/..."
+  <Link2 className="h-3 w-3" /> Link do arquivo na nuvem (opcional)
+</Label>
+<Input
+  type="url"
+  placeholder="Cole um link completo, por exemplo: https://drive.google.com/... Se for enviar só a imagem, deixe em branco."
                                     value={evidenceLink[sessao.id] || ''}
                                     onChange={(e) => setEvidenceLink(prev => ({ ...prev, [sessao.id]: e.target.value }))}
                                     className="text-sm"
@@ -2348,6 +2366,16 @@ export default function DashboardMeuPerfil() {
                                       toast.error('Selecione uma nota de 0 a 10 para a aplicabilidade prática');
                                       return;
                                     }
+                                    const rawLink = (evidenceLink[sessao.id] || '').trim();
+if (rawLink) {
+  try {
+    new URL(rawLink);
+  } catch {
+    toast.error("Cole um link válido, começando com https://, ou deixe esse campo em branco se for enviar só a imagem.");
+    return;
+  }
+}
+                                    
                                     if (relatoText[sessao.id]) {
                                       await submitRelato.mutateAsync({ sessionId: sessao.id, relatoAluno: relatoText[sessao.id] });
                                     }
@@ -2356,8 +2384,9 @@ export default function DashboardMeuPerfil() {
                                       textoAplicabilidade: aplicabilidadeText[sessao.id],
                                       notaAlunoAplicabilidade: aplicabilidadeNota[sessao.id],
                                     });
-                                    await handleEvidenceSubmit(sessao.id);
-                                    toast.success('Atividade enviada com sucesso!');
+                                    const evidenceSent = await handleEvidenceSubmit(sessao.id);
+if (!evidenceSent) return;
+toast.success('Atividade enviada com sucesso!');
                                     setTimeout(() => setTaskDetailOpen(null), 100);
                                   }}
                                   disabled={(!evidenceLink[sessao.id] && !evidenceFile[sessao.id]) || submitEvidence.isPending || !aplicabilidadeText[sessao.id]?.trim() || aplicabilidadeNota[sessao.id] === undefined}
@@ -2367,8 +2396,12 @@ export default function DashboardMeuPerfil() {
                                   {submitEvidence.isPending ? 'Enviando...' : 'Enviar Atividade'}
                                 </Button>
                                 {submitEvidence.isError && (
-                                  <p className="text-xs text-red-600">{submitEvidence.error?.message}</p>
-                                )}
+  <p className="text-xs text-red-600">
+    {submitEvidence.error?.message?.includes("Invalid URL")
+      ? "Cole um link válido, começando com https://, ou deixe o campo em branco se for enviar apenas a imagem."
+      : "Não foi possível enviar agora. Revise os campos e tente novamente."}
+  </p>
+)}
                               </div>
                             </DialogContent>
                           </Dialog>
@@ -2536,11 +2569,11 @@ export default function DashboardMeuPerfil() {
                                     </h4>
                                     <div className="space-y-2">
                                       <Label className="text-xs text-gray-700 flex items-center gap-1">
-                                        <Link2 className="h-3 w-3" /> Link do arquivo na nuvem
-                                      </Label>
-                                      <Input
-                                        type="url"
-                                        placeholder="https://drive.google.com/... ou https://onedrive.live.com/..."
+  <Link2 className="h-3 w-3" /> Link do arquivo na nuvem (opcional)
+</Label>
+<Input
+  type="url"
+  placeholder="Cole um link completo, por exemplo: https://drive.google.com/... Se for enviar só a imagem, deixe em branco."
                                         value={evidenceLink[task.sessionId] || ''}
                                         onChange={(e) => setEvidenceLink(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
                                         className="text-sm"
@@ -2636,6 +2669,17 @@ export default function DashboardMeuPerfil() {
                                           toast.error('Selecione uma nota de 0 a 10 para a aplicabilidade prática');
                                           return;
                                         }
+
+const rawLink = (evidenceLink[task.sessionId] || '').trim();
+if (rawLink) {
+  try {
+    new URL(rawLink);
+  } catch {
+    toast.error("Cole um link válido, começando com https://, ou deixe esse campo em branco se for enviar só a imagem.");
+    return;
+  }
+}
+                                        
                                         if (relatoText[task.sessionId]) {
                                           await submitRelato.mutateAsync({ sessionId: task.sessionId, relatoAluno: relatoText[task.sessionId] });
                                         }
@@ -2644,8 +2688,9 @@ export default function DashboardMeuPerfil() {
                                           textoAplicabilidade: aplicabilidadeText[task.sessionId],
                                           notaAlunoAplicabilidade: aplicabilidadeNota[task.sessionId],
                                         });
-                                        await handleEvidenceSubmit(task.sessionId);
-                                        toast.success('Evidência enviada com sucesso!');
+                                        const evidenceSent = await handleEvidenceSubmit(task.sessionId);
+if (!evidenceSent) return;
+toast.success('Evidência enviada com sucesso!');
                                       }}
                                       disabled={(!evidenceLink[task.sessionId] && !evidenceFile[task.sessionId]) || submitEvidence.isPending || !aplicabilidadeText[task.sessionId]?.trim() || aplicabilidadeNota[task.sessionId] === undefined}
                                       className="w-full bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
@@ -2653,9 +2698,13 @@ export default function DashboardMeuPerfil() {
                                       <Send className="h-4 w-4 mr-2" />
                                       {submitEvidence.isPending ? 'Enviando...' : 'Enviar Evidência'}
                                     </Button>
-                                    {submitEvidence.isError && (
-                                      <p className="text-xs text-red-600">{submitEvidence.error?.message}</p>
-                                    )}
+                                   {submitEvidence.isError && (
+  <p className="text-xs text-red-600">
+    {submitEvidence.error?.message?.includes("Invalid URL")
+      ? "Cole um link válido, começando com https://, ou deixe o campo em branco se for enviar apenas a imagem."
+      : "Não foi possível enviar agora. Revise os campos e tente novamente."}
+  </p>
+)}
                                   </div>
                                 )}
 
