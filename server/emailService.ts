@@ -32,6 +32,11 @@ export async function sendEmail(options: {
   text?: string;
   cc?: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  if (!ENV.emailEnabled) {
+    console.log(`[Email] Envio desativado temporariamente. Destinatário: ${options.to}`);
+    return { success: false, error: "Envio de e-mails temporariamente desativado." };
+  }
+
   try {
     const transport = getTransporter();
     const info = await transport.sendMail({
@@ -53,6 +58,11 @@ export async function sendEmail(options: {
 // ============ VERIFY SMTP CONNECTION ============
 
 export async function verifySmtpConnection(): Promise<boolean> {
+  if (!ENV.emailEnabled) {
+    console.log("[Email] Verificação SMTP ignorada: envio desativado.");
+    return false;
+  }
+
   try {
     const transport = getTransporter();
     await transport.verify();
