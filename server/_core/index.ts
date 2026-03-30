@@ -11,6 +11,7 @@ import { iniciarCronAlertasMentoria } from "../cronAlertasMentoria";
 import { iniciarCronOnboardingReminders } from "../cronOnboardingReminders";
 import { iniciarCronVencimentoCiclo } from "../cronVencimentoCiclo";
 import { iniciarCronLembreteAplicabilidade } from "../cronLembreteAplicabilidade";
+import { ENV } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -63,14 +64,19 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
-    // Iniciar cron job de alertas de mentoria (verifica diariamente alunos sem sessão há 30+ dias)
-    iniciarCronAlertasMentoria();
-    // Iniciar cron job de lembretes de onboarding (verifica a cada 1h alunos parados há 24h+)
-    iniciarCronOnboardingReminders();
-    // Iniciar cron job de alertas de vencimento de macrociclo (verifica diariamente PDIs próximos do vencimento)
-    iniciarCronVencimentoCiclo();
-    // Iniciar cron job de lembretes de aplicabilidade prática (verifica a cada 12h sessões agendadas nas próximas 48h)
-    iniciarCronLembreteAplicabilidade();
+
+    if (ENV.emailEnabled) {
+      // Iniciar cron job de alertas de mentoria (verifica diariamente alunos sem sessão há 30+ dias)
+      iniciarCronAlertasMentoria();
+      // Iniciar cron job de lembretes de onboarding (verifica a cada 1h alunos parados há 24h+)
+      iniciarCronOnboardingReminders();
+      // Iniciar cron job de alertas de vencimento de macrociclo (verifica diariamente PDIs próximos do vencimento)
+      iniciarCronVencimentoCiclo();
+      // Iniciar cron job de lembretes de aplicabilidade prática (verifica a cada 12h sessões agendadas nas próximas 48h)
+      iniciarCronLembreteAplicabilidade();
+    } else {
+      console.log("Cron jobs de e-mail desativados temporariamente.");
+    }
   });
 }
 
