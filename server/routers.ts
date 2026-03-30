@@ -6011,7 +6011,7 @@ export const appRouter = router({
   }),
 
   // ============ JORNADA DO ALUNO ============
-  jornada: router({
+ jornadaAntiga: router({
     // Jornada completa (Contrato + Macro Jornadas + Micro Jornadas)
     completa: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
