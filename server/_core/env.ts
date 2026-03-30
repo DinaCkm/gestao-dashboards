@@ -29,4 +29,5 @@ export const ENV = {
 
   smtpUser: process.env.SMTP_USER ?? "",
   smtpPass: process.env.SMTP_PASS ?? "",
+  emailEnabled: process.env.EMAIL_ENABLED !== "false",
 };
