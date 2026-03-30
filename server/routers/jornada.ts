@@ -22,7 +22,7 @@ import {
   jornadaLiderFases,
   jornadaLiderAtividades,
   jornadaLiderHistoricoIndicadores,
-} from "../../drizzle/0001_jornada_lider";
+from "../db/schema";)
 
 // Importar as tabelas existentes do seu banco
 // Você precisa ajustar os imports conforme sua estrutura real
