@@ -7016,7 +7016,8 @@ export async function getJornadasPorTurma(empresa?: string) {
   const db = await getDb();
   if (!db) return [];
   
-  // Buscar todos os assessment_pdi ativos com turma e trilha
+  // Buscar todos os assessment_pdi (ativo E congelado) com turma e trilha
+  // Ambos os status devem ser exibidos no gráfico de timeline
   const pdis = await db.select({
     id: assessmentPdi.id,
     alunoId: assessmentPdi.alunoId,
@@ -7026,7 +7027,7 @@ export async function getJornadasPorTurma(empresa?: string) {
     macroTermino: assessmentPdi.macroTermino,
     status: assessmentPdi.status,
   }).from(assessmentPdi)
-    .where(eq(assessmentPdi.status, 'ativo'));
+    .where(sql`${assessmentPdi.status} IN ('ativo', 'congelado')`);
   
   if (pdis.length === 0) return [];
   
