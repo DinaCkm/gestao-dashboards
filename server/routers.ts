@@ -4,6 +4,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { eq, and } from "drizzle-orm";
+import { competenciasModulos, competencias } from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
 import * as XLSX from 'xlsx';
@@ -513,11 +515,20 @@ export const appRouter = router({
         const batch = await db.getUploadBatchById(input.batchId);
         const files = await db.getFilesByBatchId(input.batchId);
         
-        // Notify admin
-        await notifyOwner({
-          title: "Novas planilhas carregadas",
-          content: `Um novo lote de planilhas foi carregado por ${ctx.user.name || 'Usuário'}.\n\nSemana: ${batch?.weekNumber}/${batch?.year}\nArquivos: ${files.length}\nTotal de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
-        });
+          // Notify admin (non-blocking)
+        try {
+          await notifyOwner({
+            title: "Novas planilhas carregadas",
+            content: `Um novo lote de planilhas foi carregado por ${ctx.user.name || 'Usuário'}.
+
+Semana: ${batch?.weekNumber}/${batch?.year}
+Arquivos: ${files.length}
+Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
+          });
+        } catch (error) {
+          console.warn("[Upload] Failed to notify owner:", error);
+          // Continue anyway - notification is not critical
+        }
         
         return { success: true };
       }),
@@ -3207,10 +3218,16 @@ export const appRouter = router({
         });
       }
 
-      const sent = await notifyOwner({
-        title: `Progresso Ciclo Macro: ${alunosFalta1.length} aluno(s) a 1 sessão de fechar`,
-        content
-      });
+      let sent = false;
+      try {
+        sent = await notifyOwner({
+          title: `Progresso Ciclo Macro: ${alunosFalta1.length} aluno(s) a 1 sessão de fechar`,
+          content
+        });
+      } catch (error) {
+        console.warn("[Ciclo Macro] Failed to notify owner:", error);
+        sent = false;
+      }
 
       return { sent, alunosFalta1: alunosFalta1.length, alunosCicloCompleto: alunosCicloCompleto.length };
     }),
@@ -5529,11 +5546,21 @@ export const appRouter = router({
           console.error(`[Reminder] Erros de email:`, errors.slice(0, 5).join('; '));
         }
         
-        // === 3. NOTIFY OWNER ABOUT THE REMINDER ===
-        await notifyOwner({
-          title: `Lembrete de Webinar Enviado`,
-          content: `Lembrete do webinar "${webinar.title}" (${eventDateStr} às ${eventTimeStr}):\nDestinatários: ${Object.entries(groupCounts).map(([k, v]) => `${v} ${k}`).join(', ')}\n- ${inAppNotifications.length} notificações in-app criadas (alunos)\n- ${emailsSent} emails enviados com sucesso\n- ${emailsFailed} emails falharam${errors.length > 0 ? `\nErros: ${errors.slice(0, 3).join('; ')}` : ''}`,
-        });
+          // === 3. NOTIFY OWNER ABOUT THE REMINDER ===
+        try {
+          await notifyOwner({
+            title: `Lembrete de Webinar Enviado`,
+            content: `Lembrete do webinar "${webinar.title}" (${eventDateStr} às ${eventTimeStr}):
+Destinatários: ${Object.entries(groupCounts).map(([k, v]) => `${v} ${k}`).join(', ')}
+- ${inAppNotifications.length} notificações in-app criadas (alunos)
+- ${emailsSent} emails enviados com sucesso
+- ${emailsFailed} emails falharam${errors.length > 0 ? `
+Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
+          });
+        } catch (error) {
+          console.warn("[Webinar Reminder] Failed to notify owner:", error);
+          // Continue anyway - notification is not critical
+        }
         
         // === 4. UPDATE REMINDER STATUS ===
         await db.updateWebinar(input.webinarId, {
@@ -6300,8 +6327,13 @@ export const appRouter = router({
             `**Resultado mensur\u00e1vel:** ${input.resultadoMensuravel.substring(0, 150)}${input.resultadoMensuravel.length > 150 ? '...' : ''}`,
           ].join('\n');
 
-          // 1. Notificar o owner (admin) via notifyOwner
-          await notifyOwner({ title: notifTitle, content: notifContent });
+          // 1. Notificar o owner (admin) via notifyOwner (non-blocking)
+          try {
+            await notifyOwner({ title: notifTitle, content: notifContent });
+          } catch (error) {
+            console.warn("[Ciclo] Failed to notify owner:", error);
+            // Continue anyway - notification is not critical
+          }
 
           // 2. Notificar mentor e gestor via notifica\u00e7\u00f5es in-app
           const allConsultors = await db.getConsultors();
@@ -6948,10 +6980,15 @@ Responda APENAS em JSON com o formato:
           const { notifyOwner } = await import('./_core/notification');
           const aluno = await db.getAlunoById(alunoId);
           const consultor = await db.getConsultorById(consultorId);
-          await notifyOwner({
-            title: 'Novo aluno escolheu mentora',
-            content: `O aluno ${aluno?.name || 'N/A'} escolheu a mentora ${consultor?.name || 'N/A'} durante o onboarding.`,
-          });
+          try {
+            await notifyOwner({
+              title: 'Novo aluno escolheu mentora',
+              content: `O aluno ${aluno?.name || 'N/A'} escolheu a mentora ${consultor?.name || 'N/A'} durante o onboarding.`,
+            });
+          } catch (notifErr) {
+            console.warn('[Onboarding] Erro ao notificar owner:', notifErr);
+            // Continue anyway - notification is not critical
+          }
         } catch (notifErr) {
           console.warn('[Onboarding] Erro ao notificar owner:', notifErr);
         }
@@ -8427,6 +8464,140 @@ Responda APENAS em JSON com o formato especificado.`
         } catch (error) {
           console.error("[getMentorPanel] Error:", error);
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao carregar painel' });
+        }
+      }),
+  }),
+
+  // Admin - Gerenciar Cursos (Competências) e Atividades (Módulos)
+  courseAdmin: router({
+    /**
+     * Listar todos os cursos (competências)
+     */
+    listCursos: adminProcedure
+      .query(async () => {
+        try {
+          const database = await getDb();
+          if (!database) throw new Error('Database not available');
+          const cursos = await database
+            .select()
+            .from(competencias);
+          return cursos;
+        } catch (error) {
+          console.error("[listCursos] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao listar cursos' });
+        }
+      }),
+
+    /**
+     * Listar atividades de um curso (módulos/competenciasModulos)
+     */
+    listAtividades: adminProcedure
+      .input(z.object({ competenciaId: z.number() }))
+      .query(async ({ input }) => {
+        try {
+          const database = await getDb();
+          if (!database) throw new Error('Database not available');
+          const atividades = await database
+            .select()
+            .from(competenciasModulos)
+            .where(eq(competenciasModulos.competenciaId, input.competenciaId));
+          return atividades;
+        } catch (error) {
+          console.error("[listAtividades] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao listar atividades' });
+        }
+      }),
+
+    /**
+     * Criar nova atividade (módulo)
+     */
+    createAtividade: adminProcedure
+      .input(z.object({
+        competenciaId: z.number(),
+        titulo: z.string().min(1),
+        descricao: z.string().optional(),
+        tipoModulo: z.enum(['intro', 'filme', 'video', 'tedtalk', 'podcast', 'livro']),
+        duracaoMinutos: z.number().min(1),
+        urlGenially: z.string().optional(),
+        ordem: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const database = await getDb();
+          if (!database) throw new Error('Database not available');
+          const result = await database
+            .insert(competenciasModulos)
+            .values({
+              competenciaId: input.competenciaId,
+              titulo: input.titulo,
+              descricao: input.descricao || '',
+              tipoModulo: input.tipoModulo as any,
+              duracaoMinutos: input.duracaoMinutos,
+              urlGenially: input.urlGenially || '',
+              ordem: input.ordem || 1,
+              ativo: 1,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+          return { success: true, id: (result as any).insertId };
+        } catch (error) {
+          console.error("[createAtividade] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao criar atividade' });
+        }
+      }),
+
+    /**
+     * Atualizar atividade
+     */
+    updateAtividade: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        titulo: z.string().min(1),
+        descricao: z.string().optional(),
+        tipoModulo: z.enum(['intro', 'filme', 'video', 'tedtalk', 'podcast', 'livro']),
+        duracaoMinutos: z.number().min(1),
+        urlGenially: z.string().optional(),
+        ordem: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const database = await getDb();
+          if (!database) throw new Error('Database not available');
+          await database
+            .update(competenciasModulos)
+            .set({
+              titulo: input.titulo,
+              descricao: input.descricao || '',
+              tipoModulo: input.tipoModulo as any,
+              duracaoMinutos: input.duracaoMinutos,
+              urlGenially: input.urlGenially || '',
+              ordem: input.ordem || 1,
+              updatedAt: new Date(),
+            })
+            .where(eq(competenciasModulos.id, input.id));
+          return { success: true };
+        } catch (error) {
+          console.error("[updateAtividade] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao atualizar atividade' });
+        }
+      }),
+
+    /**
+     * Deletar atividade
+     */
+    deleteAtividade: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        try {
+          const database = await getDb();
+          if (!database) throw new Error('Database not available');
+          await database
+            .delete(competenciasModulos)
+            .where(eq(competenciasModulos.id, input.id));
+          return { success: true };
+        } catch (error) {
+          console.error("[deleteAtividade] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao deletar atividade' });
         }
       }),
   }),
