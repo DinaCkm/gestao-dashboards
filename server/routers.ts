@@ -9299,7 +9299,7 @@ Responda APENAS em JSON com o formato especificado.`
             .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
             .limit(1);
 
-          const notaFinal = ultimaTentativaJoin?.tentativasAvaliacao?.nota ?? null;
+          const notaFinal = ultimaTentativaJoin?.tentativas_avaliacao?.nota ?? null;
           const aprovado = Number(notaFinal ?? 0) >= 8;
 
           await database
