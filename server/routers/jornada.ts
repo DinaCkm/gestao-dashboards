@@ -1,6 +1,14 @@
 import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
-import { getDb } from "../db";
+import { 
+  getDb, 
+  getAlunoByUserId,
+  getAssessmentPdiByAluno,
+  getAssessmentCompetenciasByPdi,
+  getTrilhaById,
+  getContratoMentoriaByAluno,
+  getSaldoMentoriasAluno
+} from "../db";
 
 const CalcularIndicadoresInput = z.object({
   alunoId: z.number().int().positive(),
@@ -30,6 +38,112 @@ function determinarStatus(media: number): string {
 }
 
 export const jornadaRouter = router({
+  // Rota para obter a jornada completa do aluno autenticado
+  minha: protectedProcedure
+    .query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) {
+        return {
+          macroJornadas: [],
+          contrato: null,
+          saldo: null,
+        };
+      }
+
+      try {
+        // 1. Obter o aluno a partir do usuário autenticado
+        const aluno = await getAlunoByUserId(Number(ctx.user.id));
+        if (!aluno) {
+          return {
+            macroJornadas: [],
+            contrato: null,
+            saldo: null,
+          };
+        }
+
+        // 2. Buscar PDIs do aluno (assessment_pdi)
+        const pdis = await getAssessmentPdiByAluno(aluno.id);
+        if (!pdis || pdis.length === 0) {
+          return {
+            macroJornadas: [],
+            contrato: null,
+            saldo: null,
+          };
+        }
+
+        // 3. Buscar competências vinculadas aos PDIs
+        const competenciasMap = new Map();
+        for (const pdi of pdis) {
+          const comps = await getAssessmentCompetenciasByPdi(pdi.id);
+          competenciasMap.set(pdi.id, comps || []);
+        }
+
+        // 4. Buscar trilhas para enriquecer dados
+        const trilhasMap = new Map();
+        for (const pdi of pdis) {
+          if (pdi.trilhaId) {
+            const trilha = await getTrilhaById(pdi.trilhaId);
+            if (trilha) trilhasMap.set(pdi.trilhaId, trilha);
+          }
+        }
+
+        // 5. Montar macroJornadas
+        const macroJornadas = pdis.map((pdi: any) => {
+          const trilha = trilhasMap.get(pdi.trilhaId);
+          const competencias = competenciasMap.get(pdi.id) || [];
+
+          return {
+            id: pdi.id,
+            trilhaNome: trilha?.name || 'Trilha não definida',
+            trilhaId: pdi.trilhaId,
+            status: pdi.status, // 'ativo' ou 'congelado'
+            macroInicio: pdi.macroInicio,
+            macroTermino: pdi.macroTermino,
+            microJornadas: competencias.map((comp: any) => ({
+              id: comp.id,
+              competenciaId: comp.competenciaId,
+              peso: 'obrigatoria', // TODO: adicionar campo peso ao schema se necessário
+              microInicio: comp.microInicio,
+              microTermino: comp.microTermino,
+            })),
+          };
+        });
+
+        // 6. Buscar contrato (primeira mentoria ativa do aluno)
+        const contrato = await getContratoMentoriaByAluno(aluno.id);
+
+        // 7. Calcular saldo de mentorias
+        const saldo = await getSaldoMentoriasAluno(aluno.id);
+
+        return {
+          macroJornadas,
+          contrato: contrato
+            ? {
+                periodoInicio: contrato.dataInicio,
+                periodoTermino: contrato.dataTermino,
+                tipoMentoria: contrato.tipoMentoria || 'individual',
+              }
+            : null,
+          saldo: saldo
+            ? {
+                sessoesRealizadas: saldo.sessoesRealizadas || 0,
+                saldoRestante: saldo.saldoRestante || 0,
+                totalContratadas: saldo.totalContratadas || 0,
+                percentualUsado: saldo.percentualUsado || 0,
+              }
+            : null,
+        };
+      } catch (error) {
+        console.error('Erro ao buscar jornada do aluno:', error);
+        return {
+          macroJornadas: [],
+          contrato: null,
+          saldo: null,
+        };
+      }
+    }),
+
+  // Rotas existentes
   calcularIndicadores: protectedProcedure
     .input(CalcularIndicadoresInput)
     .mutation(async ({ input }) => {

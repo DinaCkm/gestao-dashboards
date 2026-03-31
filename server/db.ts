@@ -9504,3 +9504,140 @@ export async function getCursosAtribuidosAluno(alunoId: number): Promise<any[]> 
   
   return result;
 }
+
+
+// ============ HELPERS PARA JORNADA DO ALUNO ============
+
+/**
+ * Buscar todos os PDIs (assessment_pdi) de um aluno
+ */
+export async function getAssessmentPdiByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    const pdis = await db
+      .select()
+      .from(assessmentPdi)
+      .where(eq(assessmentPdi.alunoId, alunoId));
+    
+    return pdis || [];
+  } catch (error) {
+    console.error('Erro ao buscar PDIs do aluno:', error);
+    return [];
+  }
+}
+
+/**
+ * Buscar competências (assessment_competencias) de um PDI específico
+ */
+export async function getAssessmentCompetenciasByPdi(pdiId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    const competencias = await db
+      .select()
+      .from(assessmentCompetencias)
+      .where(eq(assessmentCompetencias.assessmentPdiId, pdiId));
+    
+    return competencias || [];
+  } catch (error) {
+    console.error('Erro ao buscar competências do PDI:', error);
+    return [];
+  }
+}
+
+/**
+ * Buscar contrato de mentoria ativo do aluno
+ * Retorna o primeiro contrato ativo encontrado
+ */
+export async function getContratoMentoriaByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    // Buscar mentoring sessions ativas do aluno
+    const sessions = await db
+      .select()
+      .from(mentoringSessions)
+      .where(
+        and(
+          eq(mentoringSessions.alunoId, alunoId),
+          eq(mentoringSessions.status, 'ativo')
+        )
+      )
+      .limit(1);
+    
+    if (sessions && sessions.length > 0) {
+      const session = sessions[0];
+      return {
+        id: session.id,
+        dataInicio: session.dataInicio,
+        dataTermino: session.dataTermino,
+        tipoMentoria: session.tipoMentoria || 'individual',
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Erro ao buscar contrato de mentoria:', error);
+    return null;
+  }
+}
+
+/**
+ * Calcular saldo de mentorias do aluno
+ * Retorna: sessoesRealizadas, saldoRestante, totalContratadas, percentualUsado
+ */
+export async function getSaldoMentoriasAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    // Buscar contrato ativo
+    const contrato = await getContratoMentoriaByAluno(alunoId);
+    if (!contrato) return null;
+    
+    // Buscar total de sessões contratadas (do assessment_pdi ou do contrato)
+    const pdis = await getAssessmentPdiByAluno(alunoId);
+    let totalContratadas = 0;
+    
+    if (pdis && pdis.length > 0) {
+      // Somar totalSessoesPrevistas de todos os PDIs ativos
+      totalContratadas = pdis.reduce((sum, pdi) => {
+        return sum + (pdi.totalSessoesPrevistas || 0);
+      }, 0);
+    }
+    
+    // Se não houver dados no PDI, tentar estimar pela duração do contrato
+    if (totalContratadas === 0 && contrato.dataInicio && contrato.dataTermino) {
+      const inicio = new Date(contrato.dataInicio);
+      const termino = new Date(contrato.dataTermino);
+      const meses = Math.ceil((termino.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30));
+      totalContratadas = Math.max(1, meses); // Mínimo 1 sessão
+    }
+    
+    // Buscar sessões realizadas
+    const sessoesList = await db
+      .select()
+      .from(mentoringSessions)
+      .where(eq(mentoringSessions.alunoId, alunoId));
+    
+    const sessoesRealizadas = sessoesList?.filter(s => s.status === 'realizado').length || 0;
+    const saldoRestante = Math.max(0, totalContratadas - sessoesRealizadas);
+    const percentualUsado = totalContratadas > 0 
+      ? Math.round((sessoesRealizadas / totalContratadas) * 100)
+      : 0;
+    
+    return {
+      sessoesRealizadas,
+      saldoRestante,
+      totalContratadas,
+      percentualUsado,
+    };
+  } catch (error) {
+    console.error('Erro ao calcular saldo de mentorias:', error);
+    return null;
+  }
+}
