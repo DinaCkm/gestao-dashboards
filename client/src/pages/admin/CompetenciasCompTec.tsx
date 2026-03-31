@@ -172,15 +172,23 @@ export default function CompetenciasCompTec() {
             <form onSubmit={handleSalvarCurso} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="competencia">Competência</Label>
-                <Input
-                  id="competencia"
+                <Select
                   value={formCurso.competencia}
-                  onChange={(e) =>
-                    setFormCurso((prev) => ({ ...prev, competencia: e.target.value }))
+                  onValueChange={(value) =>
+                    setFormCurso((prev) => ({ ...prev, competencia: value }))
                   }
-                  placeholder="Ex.: Comunicação, Liderança, Planejamento"
-                  required
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma competência" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {competenciasUnicas.map((comp) => (
+                      <SelectItem key={comp} value={comp}>
+                        {comp}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
