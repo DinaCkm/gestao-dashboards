@@ -5,7 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { eq, and, asc, desc } from "drizzle-orm";
-import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao } from "../drizzle/schema";
+import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCursoAtribuido, tentativasAvaliacao } from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
 import * as XLSX from 'xlsx';
@@ -8994,75 +8994,158 @@ Responda APENAS em JSON com o formato especificado.`
       registrarReflexaoFinal: protectedProcedure
         .input(
           z.object({
-            moduloId: z.number(),
+            cursoAtribuidoId: z.number(),
             relato: z.string().min(1),
           })
         )
         .mutation(async ({ ctx, input }) => {
           const database = await db.getDb();
           if (!database) {
-            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Banco indisponível",
+            });
           }
 
           const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
           if (!aluno) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado" });
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Aluno não encontrado",
+            });
           }
 
-          const result = await database.insert(alunoModuloRelato).values({
-            alunoId: aluno.id,
-            moduloId: input.moduloId,
-            relato: input.relato,
-          });
-
-          await database
-            .update(alunoModuloProgresso)
-            .set({
-              status: "relato_enviado",
-              percentualConclusao: 90,
-              updatedAt: new Date(),
-            })
+          const [cursoAtribuido] = await database
+            .select()
+            .from(alunoCursoAtribuido)
             .where(
               and(
-                eq(alunoModuloProgresso.alunoId, aluno.id),
-                eq(alunoModuloProgresso.moduloId, input.moduloId)
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, aluno.id)
               )
-            );
+            )
+            .limit(1);
 
-          return { success: true, id: result[0]?.insertId ?? null };
-        }),
-
-      concluirCurso: protectedProcedure
-        .input(z.object({ moduloId: z.number() }))
-        .mutation(async ({ ctx, input }) => {
-          const database = await db.getDb();
-          if (!database) {
-            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          if (!cursoAtribuido) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Curso atribuído não encontrado",
+            });
           }
 
-          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
-          if (!aluno) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado" });
+          const [tentativaJoin] = await database
+            .select()
+            .from(tentativasAvaliacao)
+            .innerJoin(
+              alunoCursoAtribuido,
+              and(
+                eq(tentativasAvaliacao.alunoId, alunoCursoAtribuido.alunoId),
+                eq(alunoCursoAtribuido.cursoId, cursoAtribuido.cursoId)
+              )
+            )
+            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+            .limit(1);
+
+          if (tentativaJoin) {
+            const tentativa = tentativaJoin.tentativasAvaliacao;
+            const respostasAtuais =
+              tentativa.respostasAluno && typeof tentativa.respostasAluno === "object"
+                ? tentativa.respostasAluno
+                : {};
+
+            await database
+              .update(tentativasAvaliacao)
+              .set({
+                respostasAluno: {
+                  ...respostasAtuais,
+                  reflexaoFinal: input.relato,
+                },
+              })
+              .where(eq(tentativasAvaliacao.id, tentativa.id));
           }
 
           await database
-            .update(alunoModuloProgresso)
+            .update(alunoCursoAtribuido)
             .set({
-              status: "concluido",
-              percentualConclusao: 100,
-              concluidoEm: new Date(),
-              updatedAt: new Date(),
+              status: "em_progresso",
             })
-            .where(
-              and(
-                eq(alunoModuloProgresso.alunoId, aluno.id),
-                eq(alunoModuloProgresso.moduloId, input.moduloId)
-              )
-            );
+            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
 
           return { success: true };
         }),
+
+      concluirCurso: protectedProcedure
+        .input(
+          z.object({
+            cursoAtribuidoId: z.number(),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Banco indisponível",
+            });
+          }
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Aluno não encontrado",
+            });
+          }
+
+          const [cursoAtribuido] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, aluno.id)
+              )
+            )
+            .limit(1);
+
+          if (!cursoAtribuido) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Curso atribuído não encontrado",
+            });
+          }
+
+          const [ultimaTentativaJoin] = await database
+            .select()
+            .from(tentativasAvaliacao)
+            .innerJoin(
+              alunoCursoAtribuido,
+              and(
+                eq(tentativasAvaliacao.alunoId, alunoCursoAtribuido.alunoId),
+                eq(alunoCursoAtribuido.cursoId, cursoAtribuido.cursoId)
+              )
+            )
+            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+            .limit(1);
+
+          const notaFinal = ultimaTentativaJoin?.tentativasAvaliacao?.nota ?? null;
+          const aprovado = Number(notaFinal ?? 0) >= 8;
+
+          await database
+            .update(alunoCursoAtribuido)
+            .set({
+              status: aprovado ? "concluido" : "em_progresso",
+              notaFinal,
+              dataConclusao: aprovado ? new Date() : null,
+            })
+            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+
+          return {
+            success: true,
+            aprovado,
+            notaFinal,
+          };
+        }),
     }),
   }),
-
 });
