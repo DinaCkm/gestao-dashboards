@@ -42,6 +42,19 @@ function getPerformanceStage(score: number): { label: string; color: string; des
   return { label: 'Inicial', color: 'bg-red-500', description: 'Baixo engajamento' };
 }
 
+function safeNumber(value: unknown, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) {
+    return Number(value);
+  }
+  return fallback;
+}
+
+function safeFixed(value: unknown, digits = 0): string {
+  return safeNumber(value).toFixed(digits);
+}
+
+
 export default function IndividualDashboard() {
   const { user } = useAuth();
   const { data: dashboardData, isLoading } = trpc.indicadores.meuDashboard.useQuery();
@@ -153,7 +166,7 @@ export default function IndividualDashboard() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Nota Final</p>
-                  <p className="text-4xl font-bold text-gray-900">{indicadores.notaFinal.toFixed(1)}</p>
+                  <p className="text-4xl font-bold text-gray-900">{safeFixed(indicadores?.notaFinal, 1)}</p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -182,9 +195,9 @@ export default function IndividualDashboard() {
                         <item.icon className={`h-4 w-4 ${item.color}`} />
                         {item.label}
                       </span>
-                      <span className="font-medium text-gray-900">{item.value.toFixed(0)}%</span>
+                      <span className="font-medium text-gray-900">{safeFixed(item?.value, 0)}%</span>
                     </div>
-                    <Progress value={item.value} className="h-2" />
+                    <Progress value={safeNumber(item?.value)} className="h-2" />
                   </div>
                 ))}
               </div>
@@ -418,8 +431,8 @@ export default function IndividualDashboard() {
                       </Badge>
                       {item.notaAtual && (
                         <div className="text-right">
-                          <p className={`text-lg font-bold ${parseFloat(item.notaAtual) >= 7 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                            {parseFloat(item.notaAtual).toFixed(1)}
+                          <p className={`text-lg font-bold ${safeNumber(item?.notaAtual) >= 7 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {safeFixed(item?.notaAtual, 1)}
                           </p>
                         </div>
                       )}
