@@ -8754,11 +8754,6 @@ Responda APENAS em JSON com o formato especificado.`
         return await db.getAlunosByConsultor(consultorId);
       }),
 
-      listarProgramasMentor: protectedProcedure.query(async ({ ctx }) => {
-        const consultorId = Number(ctx.user.consultorId ?? ctx.user.id);
-        return await db.getProgramsByConsultor(consultorId);
-      }),
-
       atribuirCurso: protectedProcedure
         .input(
           z.object({
@@ -8811,7 +8806,7 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true, id: result[0]?.insertId ?? null, atualizado: false };
         }),
 
-      progressoAluno: protectedProcedure
+      acompanharProgresso: protectedProcedure
         .input(z.object({ alunoId: z.number() }))
         .query(async ({ input }) => {
           const database = await db.getDb();
