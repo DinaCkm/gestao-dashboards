@@ -8952,7 +8952,7 @@ Responda APENAS em JSON com o formato especificado.`
             .update(alunoModuloProgresso)
             .set({
               notaFinal: input.nota,
-              status: aprovado ? "avaliado" : "em_andamento",
+              status: aprovado ? "concluido" : "em_progresso",
               percentualConclusao: aprovado ? 80 : 60,
               updatedAt: new Date(),
             })
@@ -9047,7 +9047,7 @@ Responda APENAS em JSON com o formato especificado.`
             .limit(1);
 
           if (tentativaJoin) {
-            const tentativa = tentativaJoin.tentativasAvaliacao;
+            const tentativa = tentativaJoin.tentativas_avaliacao;
             const respostasAtuais =
               tentativa.respostasAluno && typeof tentativa.respostasAluno === "object"
                 ? tentativa.respostasAluno
