@@ -127,7 +127,7 @@ function CicloIndicadores({
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <div className="text-right">
-                  <p className="text-lg font-bold text-[#0A1E3E]">{ind.ind7_engajamentoFinal.toFixed(0)}%</p>
+                  <p className="text-lg font-bold text-[#0A1E3E]">{(ind?.ind7_engajamentoFinal ?? 0).toFixed(0)}%</p>
                   <p className="text-xs text-gray-400">Engajamento Final</p>
                 </div>
                 <Badge className={badgeClass}>{badgeLabel}</Badge>
@@ -149,7 +149,7 @@ function CicloIndicadores({
                     <p className="text-sm text-gray-500 flex items-center gap-1">
                       Engajamento Final <InfoTooltip text={INDICADORES_INFO.ind7.explicacao} />
                     </p>
-                    <p className="text-2xl font-bold text-[#0A1E3E]">{ind.ind7_engajamentoFinal.toFixed(1)}%</p>
+                    <p className="text-2xl font-bold text-[#0A1E3E]">{(ind?.ind7_engajamentoFinal ?? 0).toFixed(1)}%</p>
                   </div>
                 </div>
               </div>
@@ -586,7 +586,7 @@ export default function DashboardAluno() {
                         <span className="font-semibold">Consolidado</span>
                       </div>
                       <p className="text-2xl font-bold text-gray-900 mt-2">
-                        {v2.consolidado.ind7_engajamentoFinal.toFixed(0)}%
+                        {(v2?.consolidado?.ind7_engajamentoFinal ?? 0).toFixed(0)}%
                       </p>
                       <p className="text-sm text-gray-500">Engajamento Final</p>
                     </div>
@@ -837,7 +837,7 @@ export default function DashboardAluno() {
                       </Card>
                       <Card>
                         <CardContent className="pt-6 text-center">
-                          <p className="text-3xl font-bold text-amber-600">{detalheAluno.mediaNotas.toFixed(1)}</p>
+                          <p className="text-3xl font-bold text-amber-600">{(detalheAluno?.mediaNotas ?? 0).toFixed(1)}</p>
                           <p className="text-sm text-gray-500">Média das Notas</p>
                         </CardContent>
                       </Card>
@@ -876,12 +876,12 @@ export default function DashboardAluno() {
                                   <TableCell className="text-center">
                                     {comp.notaAtual ? (
                                       <span className={`font-bold ${parseFloat(comp.notaAtual) >= 7 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        {parseFloat(comp.notaAtual).toFixed(1)}
+                                        {(parseFloat(comp?.notaAtual ?? '0') ?? 0).toFixed(1)}
                                       </span>
                                     ) : '—'}
                                   </TableCell>
                                   <TableCell className="text-center text-gray-500">
-                                    {comp.metaNota ? parseFloat(comp.metaNota).toFixed(1) : '7.0'}
+                                    {comp?.metaNota ? (parseFloat(comp.metaNota) ?? 0).toFixed(1) : '7.0'}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     {comp.notaAtual ? (
@@ -941,7 +941,7 @@ export default function DashboardAluno() {
                         <CardContent className="pt-6 text-center">
                           <p className="text-3xl font-bold text-amber-600">
                             {detalheAluno.totalEventos > 0 
-                              ? ((detalheAluno.eventosPresente / detalheAluno.totalEventos) * 100).toFixed(0) 
+                              ? (((detalheAluno?.eventosPresente ?? 0) / (detalheAluno?.totalEventos ?? 1)) * 100).toFixed(0) 
                               : 0}%
                           </p>
                           <p className="text-sm text-gray-500">Taxa de Participação</p>

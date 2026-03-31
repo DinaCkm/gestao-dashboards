@@ -119,7 +119,7 @@ function IndicadorCardAluno({
             <Info className="h-3.5 w-3.5" />
           </button>
         </div>
-        <p className="text-lg font-bold text-gray-900">{percentual.toFixed(0)}%</p>
+        <p className="text-lg font-bold text-gray-900">{(percentual ?? 0).toFixed(0)}%</p>
         <Progress value={percentual} className="h-1.5 mb-1" />
         <p className="text-xs text-gray-500">{valor} de {total}</p>
         {expanded && (
@@ -1252,7 +1252,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                 <p className="text-sm font-medium text-gray-900 truncate">{a.competenciaNome}</p>
                                 <p className="text-xs text-gray-500">
                                   {a.trilhaNome} • Aulas: {a.aulasConcluidas || 0}/{a.aulasDisponiveis || '?'}
-                                  {a.notaPlataforma > 0 && ` • Nota: ${a.notaPlataforma.toFixed(0)}`}
+                                  {a.notaPlataforma > 0 && ` • Nota: ${(a.notaPlataforma ?? 0).toFixed(0)}`}
                                 </p>
                               </div>
                               <div className={`text-right ml-3 ${
@@ -1319,13 +1319,13 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                           {macroJornada.nivelGeralAtual !== null && (
                             <div className="text-right">
                               <p className="text-xs text-gray-500">Nível Geral</p>
-                              <p className="text-lg font-bold text-gray-900">{macroJornada.nivelGeralAtual.toFixed(0)}%</p>
+                              <p className="text-lg font-bold text-gray-900">{(macroJornada?.nivelGeralAtual ?? 0).toFixed(0)}%</p>
                             </div>
                           )}
                           {macroJornada.metaGeralFinal !== null && (
                             <div className="text-right">
                               <p className="text-xs text-gray-500">Meta Final</p>
-                              <p className="text-lg font-bold text-blue-700">{macroJornada.metaGeralFinal.toFixed(0)}%</p>
+                              <p className="text-lg font-bold text-blue-700">{(macroJornada?.metaGeralFinal ?? 0).toFixed(0)}%</p>
                             </div>
                           )}
                           <Badge variant="outline" className={macroJornada.status === "ativo" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
@@ -1448,15 +1448,15 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                   <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${progressoAulas}%` }} />
                                 </div>
                                 <span className={`text-xs font-bold min-w-[35px] text-right ${competenciaConcluida ? 'text-emerald-600' : progressoAulas > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
-                                  {progressoAulas > 0 ? `${progressoAulas.toFixed(0)}%` : '—'}
+                                  {progressoAulas > 0 ? `${(progressoAulas ?? 0).toFixed(0)}%` : '—'}
                                 </span>
                               </div>
                               <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-gray-500">
                                 {aulasDisp > 0 && <span>Aulas: <strong className="text-gray-700">{aulasConc}/{aulasDisp}</strong></span>}
                                 {aulasAnd > 0 && <span>Em andamento: <strong className="text-blue-600">{aulasAnd}</strong></span>}
-                                {notaPlataforma > 0 && <span>Nota: <strong className={notaPlataforma >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{notaPlataforma.toFixed(0)}</strong></span>}
-                                {nivel > 0 && <span>Nível Mentora: <strong className="text-gray-700">{nivel.toFixed(0)}%</strong></span>}
-                                <span>Meta: <strong className="text-gray-700">{meta > 0 ? `${meta.toFixed(0)}%` : '—'}</strong></span>
+                                {notaPlataforma > 0 && <span>Nota: <strong className={notaPlataforma >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{(notaPlataforma ?? 0).toFixed(0)}</strong></span>}
+                                {nivel > 0 && <span>Nível Mentora: <strong className="text-gray-700">{(nivel ?? 0).toFixed(0)}%</strong></span>}
+                                <span>Meta: <strong className="text-gray-700">{meta > 0 ? `${(meta ?? 0).toFixed(0)}%` : '—'}</strong></span>
                               </div>
                               {micro.justificativa && (
                                 <div className="mt-1.5 p-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] text-gray-700">
@@ -1550,7 +1550,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                           <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${progressoAulas}%` }} />
                                         </div>
                                         <span className={`text-xs font-bold min-w-[35px] text-right ${competenciaConcluida ? 'text-emerald-600' : progressoAulas > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
-                                          {progressoAulas > 0 ? `${progressoAulas.toFixed(0)}%` : '—'}
+                                          {progressoAulas > 0 ? `${(progressoAulas ?? 0).toFixed(0)}%` : '—'}
                                         </span>
                                       </div>
 
@@ -1561,9 +1561,9 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                         {det.webinars && <span className="flex items-center gap-0.5"><Video className="h-2.5 w-2.5 text-blue-500" />{det.webinars.presentes || 0}/{det.webinars.total || 0} webinars</span>}
                                         {det.tarefas && <span className="flex items-center gap-0.5"><ClipboardCheck className="h-2.5 w-2.5 text-emerald-500" />{det.tarefas.entregues || 0}/{det.tarefas.total || 0} tarefas</span>}
                                         {det.avaliacoes && det.avaliacoes.provasRealizadas > 0 && <span className="flex items-center gap-0.5"><GraduationCap className="h-2.5 w-2.5 text-red-500" />{det.avaliacoes.provasRealizadas} provas</span>}
-                                        {notaPlataforma > 0 && <span>Nota: <strong className={notaPlataforma >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{notaPlataforma.toFixed(0)}</strong></span>}
-                                        {nivel > 0 && <span>Nível Mentora: <strong className="text-gray-700">{nivel.toFixed(0)}%</strong></span>}
-                                        <span>Meta: <strong className="text-gray-700">{meta > 0 ? `${meta.toFixed(0)}%` : '—'}</strong></span>
+                                        {notaPlataforma > 0 && <span>Nota: <strong className={notaPlataforma >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{(notaPlataforma ?? 0).toFixed(0)}</strong></span>}
+                                        {nivel > 0 && <span>Nível Mentora: <strong className="text-gray-700">{(nivel ?? 0).toFixed(0)}%</strong></span>}
+                                        <span>Meta: <strong className="text-gray-700">{meta > 0 ? `${(meta ?? 0).toFixed(0)}%` : '—'}</strong></span>
                                       </div>
                                       {microUnico.justificativa && (
                                         <div className="mt-1.5 p-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] text-gray-700">

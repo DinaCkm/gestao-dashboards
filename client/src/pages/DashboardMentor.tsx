@@ -296,7 +296,7 @@ function DashboardMentorContent() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">
-                      {stats.totalAlunos > 0 ? (stats.totalMentorias / stats.totalAlunos).toFixed(1) : 0}
+                      {stats?.totalAlunos > 0 ? ((stats?.totalMentorias ?? 0) / (stats?.totalAlunos ?? 1)).toFixed(1) : 0}
                     </p>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       Média por Aluno
@@ -331,7 +331,7 @@ function DashboardMentorContent() {
                         cx="50%"
                         cy="50%"
                         outerRadius={80}
-                        label={({ empresa, percent }: any) => `${empresa}: ${(percent * 100).toFixed(0)}%`}
+                        label={({ empresa, percent }: any) => `${empresa}: ${((percent ?? 0) * 100).toFixed(0)}%`}
                         isAnimationActive={false}
                       >
                         {stats.porEmpresa.map((_: any, index: number) => (

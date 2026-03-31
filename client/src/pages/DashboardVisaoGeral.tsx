@@ -42,7 +42,7 @@ function IndicadorCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold" style={{ color: cor }}>{valor.toFixed(0)}%</div>
+        <div className="text-2xl font-bold" style={{ color: cor }}>{(valor ?? 0).toFixed(0)}%</div>
         <Progress value={valor} className="h-2 mt-2" />
         <p className="text-xs text-muted-foreground mt-1">{descricao}</p>
         
@@ -126,7 +126,7 @@ export default function DashboardVisaoGeral() {
   // Dados para o gráfico de barras por empresa
   const empresaData = porEmpresa.map(emp => ({
     nome: emp.identificador,
-    nota: parseFloat(((emp.mediaInd7 || emp.mediaPerformanceGeral || emp.mediaNotaFinal * 10) || 0).toFixed(1)),
+    nota: parseFloat((((emp?.mediaInd7 || emp?.mediaPerformanceGeral || (emp?.mediaNotaFinal ?? 0) * 10) || 0) ?? 0).toFixed(1)),
     alunos: emp.totalAlunos
   }));
 
@@ -226,7 +226,7 @@ export default function DashboardVisaoGeral() {
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoGeral.mediaInd7 || visaoGeral.mediaPerformanceGeral || visaoGeral.mediaNotaFinal * 10 || 0).toFixed(0)}%</div>
+              <div className="text-2xl font-bold">{((visaoGeral?.mediaInd7 || visaoGeral?.mediaPerformanceGeral || (visaoGeral?.mediaNotaFinal ?? 0) * 10 || 0) ?? 0).toFixed(0)}%</div>
               <p className="text-xs text-muted-foreground">Engajamento Final (Média dos 5 indicadores)</p>
             </CardContent>
           </Card>
@@ -240,7 +240,7 @@ export default function DashboardVisaoGeral() {
               <div className="text-2xl font-bold text-green-600">{visaoGeral.alunosExcelencia}</div>
               <p className="text-xs text-muted-foreground">
                 {visaoGeral.totalAlunos > 0 
-                  ? `${((visaoGeral.alunosExcelencia / visaoGeral.totalAlunos) * 100).toFixed(0)}% do total`
+                  ? `${(((visaoGeral?.alunosExcelencia ?? 0) / (visaoGeral?.totalAlunos ?? 1)) * 100).toFixed(0)}% do total`
                   : '0% do total'}
               </p>
             </CardContent>
@@ -449,7 +449,7 @@ export default function DashboardVisaoGeral() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-green-600">{(aluno.consolidado?.ind7_engajamentoFinal || aluno.performanceGeral || aluno.notaFinal * 10).toFixed(0)}%</p>
+                        <p className="font-bold text-green-600">{((aluno?.consolidado?.ind7_engajamentoFinal || aluno?.performanceGeral || (aluno?.notaFinal ?? 0) * 10) ?? 0).toFixed(0)}%</p>
                         <p className="text-xs text-muted-foreground">{aluno.classificacao}</p>
                       </div>
                     </div>
@@ -480,7 +480,7 @@ export default function DashboardVisaoGeral() {
                         {aluno.turma && <p className="text-xs text-muted-foreground">Turma: {aluno.turma} {aluno.trilha ? `| ${aluno.trilha}` : ''}</p>}
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-orange-500">{(aluno.consolidado?.ind7_engajamentoFinal || aluno.performanceGeral || aluno.notaFinal * 10).toFixed(0)}%</p>
+                        <p className="font-bold text-orange-500">{((aluno?.consolidado?.ind7_engajamentoFinal || aluno?.performanceGeral || (aluno?.notaFinal ?? 0) * 10) ?? 0).toFixed(0)}%</p>
                         <p className="text-xs text-muted-foreground">{aluno.classificacao}</p>
                       </div>
                     </div>
