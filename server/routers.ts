@@ -5,7 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { eq, and, asc, desc } from "drizzle-orm";
-import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCursoAtribuido, tentativasAvaliacao } from "../drizzle/schema";
+import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCursoAtribuido, tentativasAvaliacao, cursos, atividadesCurso, avaliacoesAtividade } from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
 import * as XLSX from 'xlsx';
@@ -8742,14 +8742,14 @@ Responda APENAS em JSON com o formato especificado.`
 
           return await database
             .select()
-            .from(atividadeCurso)
+            .from(atividadesCurso)
             .where(
               and(
-                eq(atividadeCurso.cursoId, input.cursoId),
-                eq(atividadeCurso.isActive, 1)
+                eq(atividadesCurso.cursoId, input.cursoId),
+                eq(atividadesCurso.isActive, 1)
               )
             )
-            .orderBy(asc(atividadeCurso.ordem));
+            .orderBy(asc(atividadesCurso.ordem));
         }),
 
       criarAtividade: adminProcedure
@@ -8769,7 +8769,7 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
           }
 
-          const result = await database.insert(atividadeCurso).values({
+          const result = await database.insert(atividadesCurso).values({
             cursoId: input.cursoId,
             titulo: input.titulo,
             tipoAtividade: input.tipoAtividade,
@@ -8807,9 +8807,9 @@ Responda APENAS em JSON com o formato especificado.`
           if (input.ordem !== undefined) updates.ordem = input.ordem;
 
           await database
-            .update(atividadeCurso)
+            .update(atividadesCurso)
             .set(updates)
-            .where(eq(atividadeCurso.id, input.id));
+            .where(eq(atividadesCurso.id, input.id));
 
           return { success: true };
         }),
@@ -8823,12 +8823,12 @@ Responda APENAS em JSON com o formato especificado.`
           }
 
           await database
-            .update(atividadeCurso)
+            .update(atividadesCurso)
             .set({
               isActive: 0,
               updatedAt: new Date(),
             })
-            .where(eq(atividadeCurso.id, input.id));
+            .where(eq(atividadesCurso.id, input.id));
 
           return { success: true };
         }),
@@ -8841,12 +8841,12 @@ Responda APENAS em JSON com o formato especificado.`
 
           const [atividade] = await database
             .select({
-              atividade: atividadeCurso,
-              avaliacoes: avaliacaoAtividade,
+              atividade: atividadesCurso,
+              avaliacoes: avaliacoesAtividade,
             })
-            .from(atividadeCurso)
-            .leftJoin(avaliacaoAtividade, eq(atividadeCurso.id, avaliacaoAtividade.atividadeId))
-            .where(eq(atividadeCurso.id, input.id))
+            .from(atividadesCurso)
+            .leftJoin(avaliacoesAtividade, eq(atividadesCurso.id, avaliacoesAtividade.atividadeId))
+            .where(eq(atividadesCurso.id, input.id))
             .limit(1);
 
           return atividade ?? null;

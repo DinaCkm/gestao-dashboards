@@ -84,7 +84,7 @@ function IndicadorCard({
               {label}
               {tooltip && <InfoTooltip text={tooltip} />}
             </p>
-            <p className="text-xl font-bold">{valor.toFixed(0)}%</p>
+            <p className="text-xl font-bold">{(valor ?? 0).toFixed(0)}%</p>
           </div>
         </div>
         <Progress value={valor} className="mt-2 h-2" />
