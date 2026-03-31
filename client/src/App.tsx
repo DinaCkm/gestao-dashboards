@@ -56,6 +56,7 @@ import PainelRevisoes from "./pages/admin/PainelRevisoes";
 import BoasVindasGestor from "./pages/BoasVindasGestor";
 import PrecificacaoSessoes from "./pages/PrecificacaoSessoes";
 
+
 function Router() {
   return (
     <Switch>
@@ -98,6 +99,7 @@ function Router() {
       <Route path={"/metas-gestor"} component={MetasGestor} />
       <Route path={"/biblioteca-tarefas"} component={BibliotecaTarefas} />
       <Route path={"/cursos"} component={CursosDisponiveis} />
+
       <Route path={"/meus-cursos"} component={CursosAluno} />
       <Route path={"/atividades-extras"} component={AtividadesExtrasAdmin} />
       <Route path={"/minhas-atividades"} component={AtividadesExtrasAluno} />

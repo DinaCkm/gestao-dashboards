@@ -1331,3 +1331,98 @@ export type AlunoCompetenciaProrrogacao =
   typeof alunoCompetenciaProrrogacao.$inferSelect;
 export type InsertAlunoCompetenciaProrrogacao =
   typeof alunoCompetenciaProrrogacao.$inferInsert;
+
+
+/**
+ * ITEM 1: Tabela de Cursos de Competências
+ * Armazena cursos criados para cada competência
+ */
+export const cursosCompetencias = mysqlTable("cursos_competencias", {
+  id: int("id").autoincrement().primaryKey(),
+  competenciaId: int("competenciaId").notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  capaUrl: varchar("capaUrl", { length: 500 }),
+  ordem: int("ordem").default(0).notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CursoCompetencia = typeof cursosCompetencias.$inferSelect;
+export type InsertCursoCompetencia = typeof cursosCompetencias.$inferInsert;
+
+/**
+ * ITEM 2: Tabela de Atividades do Curso
+ * Armazena atividades (Genially, Vídeo, Podcast, TedTalk, Livro, Intro)
+ */
+export const atividadesCurso = mysqlTable("atividades_curso", {
+  id: int("id").autoincrement().primaryKey(),
+  cursoId: int("cursoId").notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  tipoAtividade: mysqlEnum("tipoAtividade", ["genially", "video", "podcast", "tedtalk", "livro", "intro"]).notNull(),
+  urlGenially: varchar("urlGenially", { length: 500 }),
+  descricao: text("descricao"),
+  ordem: int("ordem").default(0).notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AtividadeCurso = typeof atividadesCurso.$inferSelect;
+export type InsertAtividadeCurso = typeof atividadesCurso.$inferInsert;
+
+/**
+ * ITEM 3: Tabela de Avaliações de Atividade
+ * Armazena 30 questões por atividade
+ */
+export const avaliacoesAtividade = mysqlTable("avaliacoes_atividade", {
+  id: int("id").autoincrement().primaryKey(),
+  atividadeId: int("atividadeId").notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  questoes: json("questoes").notNull(), // Array com 30 questões
+  notaMinima: decimal("notaMinima", { precision: 3, scale: 1 }).default("8.0").notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AvaliacaoAtividade = typeof avaliacoesAtividade.$inferSelect;
+export type InsertAvaliacaoAtividade = typeof avaliacoesAtividade.$inferInsert;
+
+/**
+ * ITEM 4: Tabela de Tentativas de Avaliação
+ * Registra cada tentativa do aluno (15 questões aleatórias de 30)
+ */
+export const tentativasAvaliacao = mysqlTable("tentativas_avaliacao", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  atividadeId: int("atividadeId").notNull(),
+  avaliacaoId: int("avaliacaoId").notNull(),
+  questoesSelecionadas: json("questoesSelecionadas").notNull(), // 15 questões aleatórias
+  respostasAluno: json("respostasAluno").notNull(),
+  nota: decimal("nota", { precision: 3, scale: 1 }),
+  aprovado: int("aprovado").default(0).notNull(),
+  dataTentativa: timestamp("dataTentativa").defaultNow().notNull(),
+  dataProximaTentativa: timestamp("dataProximaTentativa"),
+});
+export type TentativaAvaliacao = typeof tentativasAvaliacao.$inferSelect;
+export type InsertTentativaAvaliacao = typeof tentativasAvaliacao.$inferInsert;
+
+/**
+ * ITEM 5: Tabela de Cursos Atribuídos ao Aluno
+ * Rastreia qual aluno deve fazer qual curso
+ */
+export const alunoCursoAtribuido = mysqlTable("aluno_curso_atribuido", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  cursoId: int("cursoId").notNull(),
+  competenciaId: int("competenciaId").notNull(),
+  mentorId: int("mentorId").notNull(),
+  dataAtribuicao: timestamp("dataAtribuicao").defaultNow().notNull(),
+  dataPrazo: timestamp("dataPrazo").notNull(),
+  status: mysqlEnum("status", ["nao_iniciado", "em_progresso", "concluido", "prorrogado"]).default("nao_iniciado").notNull(),
+  notaFinal: decimal("notaFinal", { precision: 3, scale: 1 }),
+  dataConclusao: timestamp("dataConclusao"),
+  indicador2Updated: int("indicador2Updated").default(0).notNull(),
+  indicador3Updated: int("indicador3Updated").default(0).notNull(),
+});
+export type AlunoCursoAtribuido = typeof alunoCursoAtribuido.$inferSelect;
+export type InsertAlunoCursoAtribuido = typeof alunoCursoAtribuido.$inferInsert;

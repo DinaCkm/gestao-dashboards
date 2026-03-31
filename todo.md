@@ -3423,3 +3423,32 @@
 - [ ] Testes E2E (Cypress)
 - [ ] Documentação de API
 - [ ] Deploy em produção
+
+
+---
+
+## 📚 Módulo de Competências Comportamentais e Técnicas
+
+### Fase 1: Interface de Admin para Competências
+- [ ] Criar página AdminCompetencias.tsx
+- [ ] CRUD de competências (criar, listar, editar, deletar)
+- [ ] Integração com rotas tRPC
+
+### Fase 2: Interface de Admin para Atividades
+- [ ] Criar página AdminAtividades.tsx
+- [ ] CRUD de atividades (criar, listar, editar, deletar)
+- [ ] Upload de capa/thumbnail
+- [ ] Link do Genially
+- [ ] Criação de quiz/avaliação
+- [ ] Integração com rotas tRPC
+
+### Fase 3: Painel do Mentor
+- [ ] Criar página MentorAssignModules.tsx
+- [ ] Listar alunos
+- [ ] Atribuir módulos aos alunos
+- [ ] Integração com rotas tRPC
+
+### Fase 4: Integração e Testes
+- [ ] Adicionar link na navegação principal
+- [ ] Testar fluxo completo (admin → mentor → aluno)
+- [ ] Verificar se módulos aparecem corretamente na área do aluno
