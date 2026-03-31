@@ -8734,7 +8734,7 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true };
         }),
 
-      listarAvaliacoesCurso: protectedProcedure
+      listarAtividades: protectedProcedure
         .input(z.object({ cursoId: z.number() }))
         .query(async ({ input }) => {
           const database = await db.getDb();
@@ -8742,9 +8742,185 @@ Responda APENAS em JSON com o formato especificado.`
 
           return await database
             .select()
-            .from(alunoModuloAvaliacao)
-            .where(eq(alunoModuloAvaliacao.moduloId, input.cursoId))
-            .orderBy(desc(alunoModuloAvaliacao.createdAt));
+            .from(atividadeCurso)
+            .where(
+              and(
+                eq(atividadeCurso.cursoId, input.cursoId),
+                eq(atividadeCurso.isActive, 1)
+              )
+            )
+            .orderBy(asc(atividadeCurso.ordem));
+        }),
+
+      criarAtividade: adminProcedure
+        .input(
+          z.object({
+            cursoId: z.number(),
+            titulo: z.string().min(1),
+            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]),
+            urlGenially: z.string().optional(),
+            descricao: z.string().optional(),
+            ordem: z.number().optional(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const result = await database.insert(atividadeCurso).values({
+            cursoId: input.cursoId,
+            titulo: input.titulo,
+            tipoAtividade: input.tipoAtividade,
+            urlGenially: input.urlGenially ?? null,
+            descricao: input.descricao ?? null,
+            ordem: input.ordem ?? 0,
+            isActive: 1,
+          });
+
+          return { success: true, id: result[0]?.insertId ?? null };
+        }),
+
+      atualizarAtividade: adminProcedure
+        .input(
+          z.object({
+            id: z.number(),
+            titulo: z.string().min(1).optional(),
+            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]).optional(),
+            urlGenially: z.string().optional(),
+            descricao: z.string().optional(),
+            ordem: z.number().optional(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const updates: any = { updatedAt: new Date() };
+          if (input.titulo) updates.titulo = input.titulo;
+          if (input.tipoAtividade) updates.tipoAtividade = input.tipoAtividade;
+          if (input.urlGenially !== undefined) updates.urlGenially = input.urlGenially ?? null;
+          if (input.descricao !== undefined) updates.descricao = input.descricao ?? null;
+          if (input.ordem !== undefined) updates.ordem = input.ordem;
+
+          await database
+            .update(atividadeCurso)
+            .set(updates)
+            .where(eq(atividadeCurso.id, input.id));
+
+          return { success: true };
+        }),
+
+      deletarAtividade: adminProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          await database
+            .update(atividadeCurso)
+            .set({
+              isActive: 0,
+              updatedAt: new Date(),
+            })
+            .where(eq(atividadeCurso.id, input.id));
+
+          return { success: true };
+        }),
+
+      obterAtividadeDetalhes: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return null;
+
+          const [atividade] = await database
+            .select({
+              atividade: atividadeCurso,
+              avaliacoes: avaliacaoAtividade,
+            })
+            .from(atividadeCurso)
+            .leftJoin(avaliacaoAtividade, eq(atividadeCurso.id, avaliacaoAtividade.atividadeId))
+            .where(eq(atividadeCurso.id, input.id))
+            .limit(1);
+
+          return atividade ?? null;
+        }),
+
+      criarAvaliacao: adminProcedure
+        .input(
+          z.object({
+            atividadeId: z.number(),
+            titulo: z.string().min(1),
+            questoes: z.array(
+              z.object({
+                id: z.string(),
+                enunciado: z.string().min(1),
+                opcoes: z.array(z.string()).min(2),
+                respostaCorreta: z.string().min(1),
+              })
+            ),
+            notaMinima: z.number().min(0).max(10).optional(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          if (input.questoes.length !== 30) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Avaliação deve ter exatamente 30 questões. Recebido: ${input.questoes.length}`,
+            });
+          }
+
+          for (const q of input.questoes) {
+            if (!q.opcoes.includes(q.respostaCorreta)) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Questão "${q.id}": resposta correta não está nas opções`,
+              });
+            }
+          }
+
+          const result = await database.insert(avaliacaoAtividade).values({
+            atividadeId: input.atividadeId,
+            titulo: input.titulo,
+            questoes: JSON.stringify(input.questoes),
+            notaMinima: input.notaMinima ?? 8,
+            isActive: 1,
+          });
+
+          return { success: true, id: result[0]?.insertId ?? null };
+        }),
+
+      listarAvaliacoesCurso: protectedProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select({
+              avaliacao: avaliacaoAtividade,
+              atividade: atividadeCurso,
+            })
+            .from(avaliacaoAtividade)
+            .innerJoin(atividadeCurso, eq(avaliacaoAtividade.atividadeId, atividadeCurso.id))
+            .where(
+              and(
+                eq(atividadeCurso.cursoId, input.cursoId),
+                eq(avaliacaoAtividade.isActive, 1)
+              )
+            )
+            .orderBy(desc(avaliacaoAtividade.createdAt));
         }),
     }),
 
