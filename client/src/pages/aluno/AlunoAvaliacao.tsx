@@ -1,0 +1,141 @@
+import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+function getNumeroQuery(search: string, chave: string) {
+  const params = new URLSearchParams(search);
+  return Number(params.get(chave) ?? 0);
+}
+
+export default function AlunoAvaliacao() {
+  const [location, setLocation] = useLocation();
+  const [search] = useState(() => location.split("?")[1] ?? "");
+  const [respostas, setRespostas] = useState<Record<string, string>>({});
+
+  const cursoId = getNumeroQuery(search, "cursoId");
+  const cursoAtribuidoId = getNumeroQuery(search, "cursoAtribuidoId");
+  const avaliacaoId = getNumeroQuery(search, "avaliacaoId");
+
+  const iniciarAtividadeMutation = trpc.competenciasCompTec.aluno.iniciarAtividade.useMutation();
+  const submeterAvaliacaoMutation = trpc.competenciasCompTec.aluno.submeterAvaliacao.useMutation();
+
+  const questoes = useMemo(() => {
+    const data = iniciarAtividadeMutation.data;
+    if (Array.isArray(data?.questoes)) return data.questoes;
+    if (Array.isArray(data?.avaliacao?.questoes)) return data.avaliacao.questoes;
+    return [];
+  }, [iniciarAtividadeMutation.data]);
+
+  async function carregarQuestoes() {
+    await iniciarAtividadeMutation.mutateAsync({ moduloId: cursoId });
+  }
+
+  function atualizarResposta(questaoId: string, valor: string) {
+    setRespostas((prev) => ({ ...prev, [questaoId]: valor }));
+  }
+
+  async function handleSubmeter() {
+    const totalQuestoes = questoes.length;
+    const acertos = questoes.reduce((acc: number, questao: any, index: number) => {
+      const id = String(questao?.id ?? index);
+      const correta = questao?.respostaCorreta ?? questao?.correta ?? null;
+      return correta && respostas[id] === correta ? acc + 1 : acc;
+    }, 0);
+
+    const nota = Number(((acertos / totalQuestoes) * 10).toFixed(1));
+
+    const result = await submeterAvaliacaoMutation.mutateAsync({
+      moduloId: cursoId,
+      nota,
+      totalQuestoes,
+      acertos,
+      respostas,
+    });
+
+    setLocation(
+      `/aluno/resultado?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&avaliacaoId=${avaliacaoId}&nota=${result?.nota ?? nota}&aprovado=${result?.aprovado ? "1" : "0"}`
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Aluno — Avaliação</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Responda as 15 questões sorteadas para concluir a etapa avaliativa.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Questões da avaliação</CardTitle>
+          <CardDescription>
+            Caso ainda não estejam carregadas, clique para buscar as questões.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {questoes.length === 0 ? (
+            <div className="space-y-4">
+              <div className="rounded-md border p-6 text-sm text-muted-foreground">
+                Nenhuma questão carregada ainda.
+              </div>
+
+              <Button onClick={carregarQuestoes} disabled={iniciarAtividadeMutation.isPending}>
+                {iniciarAtividadeMutation.isPending ? "Carregando..." : "Carregar questões"}
+              </Button>
+
+              {iniciarAtividadeMutation.error && (
+                <p className="text-sm text-red-600">{iniciarAtividadeMutation.error.message}</p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {questoes.map((questao: any, index: number) => {
+                const questaoId = String(questao?.id ?? index);
+                const opcoes = questao?.opcoes ?? questao?.alternativas ?? [];
+
+                return (
+                  <div key={questaoId} className="rounded-lg border p-4">
+                    <h3 className="mb-3 font-medium">
+                      {index + 1}. {questao?.enunciado ?? questao?.pergunta ?? "Questão sem enunciado"}
+                    </h3>
+
+                    <RadioGroup
+                      value={respostas[questaoId] ?? ""}
+                      onValueChange={(value) => atualizarResposta(questaoId, value)}
+                      className="space-y-2"
+                    >
+                      {opcoes.map((opcao: string, opcaoIndex: number) => {
+                        const optionId = `${questaoId}-${opcaoIndex}`;
+                        return (
+                          <div key={optionId} className="flex items-center space-x-2">
+                            <RadioGroupItem value={opcao} id={optionId} />
+                            <Label htmlFor={optionId}>{opcao}</Label>
+                          </div>
+                        );
+                      })}
+                    </RadioGroup>
+                  </div>
+                );
+              })}
+
+              <Button onClick={handleSubmeter} disabled={submeterAvaliacaoMutation.isPending}>
+                {submeterAvaliacaoMutation.isPending ? "Enviando..." : "Submeter avaliação"}
+              </Button>
+
+              {submeterAvaliacaoMutation.error && (
+                <p className="text-sm text-red-600">
+                  {submeterAvaliacaoMutation.error.message}
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

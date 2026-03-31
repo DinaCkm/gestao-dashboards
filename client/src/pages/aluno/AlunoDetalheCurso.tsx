@@ -1,0 +1,106 @@
+import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+function getNumeroQuery(search: string, chave: string) {
+  const params = new URLSearchParams(search);
+  return Number(params.get(chave) ?? 0);
+}
+
+export default function AlunoDetalheCurso() {
+  const [location, setLocation] = useLocation();
+  const [search] = useState(() => location.split("?")[1] ?? "");
+
+  const cursoId = getNumeroQuery(search, "cursoId");
+  const cursoAtribuidoId = getNumeroQuery(search, "cursoAtribuidoId");
+
+  const detalheCursoQuery = trpc.competenciasCompTec.aluno.detalheCurso.useQuery(
+    { moduloId: cursoId },
+    { enabled: !!cursoId }
+  );
+
+  const dados = useMemo(() => {
+    const item = detalheCursoQuery.data ?? {};
+    const curso = item?.curso ?? item?.modulo ?? item?.programa ?? item ?? {};
+    const progresso = item?.atribuicao ?? item?.progresso ?? item ?? {};
+
+    return {
+      titulo: curso?.titulo ?? curso?.nome ?? "Curso sem título",
+      descricao: curso?.descricao ?? "Sem descrição cadastrada.",
+      status: progresso?.status ?? "nao_iniciado",
+      notaFinal: progresso?.notaFinal ?? null,
+      dataPrazo: progresso?.dataPrazo ?? null,
+    };
+  }, [detalheCursoQuery.data]);
+
+  return (
+    <div className="space-y-6 p-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Aluno — Detalhe do Curso</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Visualize o objetivo do curso e siga para a atividade e avaliação.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações do curso</CardTitle>
+          <CardDescription>Resumo do curso selecionado.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {detalheCursoQuery.isLoading ? (
+            <div className="rounded-md border p-8 text-center text-sm text-muted-foreground">
+              Carregando detalhes...
+            </div>
+          ) : detalheCursoQuery.error ? (
+            <p className="text-sm text-red-600">{detalheCursoQuery.error.message}</p>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold">{dados.titulo}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">{dados.descricao}</p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded-full bg-muted px-3 py-1 text-sm">
+                  Status: {dados.status}
+                </span>
+                {dados.notaFinal !== null && dados.notaFinal !== undefined && (
+                  <span className="rounded-full bg-muted px-3 py-1 text-sm">
+                    Nota final: {String(dados.notaFinal)}
+                  </span>
+                )}
+                {dados.dataPrazo && (
+                  <span className="rounded-full bg-muted px-3 py-1 text-sm">
+                    Prazo: {String(dados.dataPrazo).slice(0, 10)}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  onClick={() =>
+                    setLocation(
+                      `/aluno/atividade?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
+                    )
+                  }
+                >
+                  Ir para atividade
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setLocation("/aluno/catalogo")}
+                >
+                  Voltar ao catálogo
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
