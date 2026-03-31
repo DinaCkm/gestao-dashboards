@@ -4,8 +4,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { eq, and } from "drizzle-orm";
-import { competenciasModulos, competencias } from "../drizzle/schema";
+import { eq, and, asc, desc } from "drizzle-orm";
+import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao } from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
 import * as XLSX from 'xlsx';
@@ -8600,6 +8600,469 @@ Responda APENAS em JSON com o formato especificado.`
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao deletar atividade' });
         }
       }),
+  }),
+
+  competenciasCompTec: router({
+    admin: router({
+      listarCompetencias: protectedProcedure.query(async () => {
+        const database = await db.getDb();
+        if (!database) return [];
+
+        return await database
+          .select()
+          .from(competenciasModulos)
+          .where(eq(competenciasModulos.isActive, 1))
+          .orderBy(asc(competenciasModulos.competencia), asc(competenciasModulos.ordem));
+      }),
+
+      listarCursosPorCompetencia: protectedProcedure
+        .input(z.object({ competencia: z.string().min(1) }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select()
+            .from(competenciasModulos)
+            .where(
+              and(
+                eq(competenciasModulos.competencia, input.competencia),
+                eq(competenciasModulos.isActive, 1)
+              )
+            )
+            .orderBy(asc(competenciasModulos.ordem), asc(competenciasModulos.titulo));
+        }),
+
+      obterCurso: protectedProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return null;
+
+          const [curso] = await database
+            .select()
+            .from(competenciasModulos)
+            .where(eq(competenciasModulos.id, input.cursoId))
+            .limit(1);
+
+          return curso ?? null;
+        }),
+
+      criarCurso: adminProcedure
+        .input(
+          z.object({
+            competencia: z.string().min(1),
+            titulo: z.string().min(1),
+            descricao: z.string().optional(),
+            tipoConteudo: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "texto"]),
+            urlConteudo: z.string().optional(),
+            ordem: z.number().optional(),
+            ativo: z.number().optional(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const result = await database.insert(competenciasModulos).values({
+            competencia: input.competencia,
+            titulo: input.titulo,
+            descricao: input.descricao ?? null,
+            tipoConteudo: input.tipoConteudo,
+            urlConteudo: input.urlConteudo ?? null,
+            ordem: input.ordem ?? 0,
+            isActive: input.ativo ?? 1,
+          });
+
+          return { success: true, id: result[0]?.insertId ?? null };
+        }),
+
+      atualizarCurso: adminProcedure
+        .input(
+          z.object({
+            cursoId: z.number(),
+            competencia: z.string().min(1),
+            titulo: z.string().min(1),
+            descricao: z.string().optional(),
+            tipoConteudo: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "texto"]),
+            urlConteudo: z.string().optional(),
+            ordem: z.number().optional(),
+            ativo: z.number().optional(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          await database
+            .update(competenciasModulos)
+            .set({
+              competencia: input.competencia,
+              titulo: input.titulo,
+              descricao: input.descricao ?? null,
+              tipoConteudo: input.tipoConteudo,
+              urlConteudo: input.urlConteudo ?? null,
+              ordem: input.ordem ?? 0,
+              isActive: input.ativo ?? 1,
+              updatedAt: new Date(),
+            })
+            .where(eq(competenciasModulos.id, input.cursoId));
+
+          return { success: true };
+        }),
+
+      excluirCurso: adminProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          await database
+            .update(competenciasModulos)
+            .set({
+              isActive: 0,
+              updatedAt: new Date(),
+            })
+            .where(eq(competenciasModulos.id, input.cursoId));
+
+          return { success: true };
+        }),
+
+      listarAvaliacoesCurso: protectedProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select()
+            .from(alunoModuloAvaliacao)
+            .where(eq(alunoModuloAvaliacao.moduloId, input.cursoId))
+            .orderBy(desc(alunoModuloAvaliacao.createdAt));
+        }),
+    }),
+
+    mentor: router({
+      listarAlunos: protectedProcedure.query(async ({ ctx }) => {
+        const consultorId = Number(ctx.user.consultorId ?? ctx.user.id);
+        return await db.getAlunosByConsultor(consultorId);
+      }),
+
+      listarProgramasMentor: protectedProcedure.query(async ({ ctx }) => {
+        const consultorId = Number(ctx.user.consultorId ?? ctx.user.id);
+        return await db.getProgramsByConsultor(consultorId);
+      }),
+
+      atribuirCurso: protectedProcedure
+        .input(
+          z.object({
+            alunoId: z.number(),
+            moduloId: z.number(),
+            prazo: z.string().optional(),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const consultorId = Number(ctx.user.consultorId ?? ctx.user.id);
+
+          const [existente] = await database
+            .select()
+            .from(alunoModuloProgresso)
+            .where(
+              and(
+                eq(alunoModuloProgresso.alunoId, input.alunoId),
+                eq(alunoModuloProgresso.moduloId, input.moduloId)
+              )
+            )
+            .limit(1);
+
+          if (existente) {
+            await database
+              .update(alunoModuloProgresso)
+              .set({
+                mentorId: consultorId,
+                prazoConclusao: input.prazo ?? existente.prazoConclusao ?? null,
+                updatedAt: new Date(),
+              })
+              .where(eq(alunoModuloProgresso.id, existente.id));
+
+            return { success: true, id: existente.id, atualizado: true };
+          }
+
+          const result = await database.insert(alunoModuloProgresso).values({
+            alunoId: input.alunoId,
+            moduloId: input.moduloId,
+            mentorId: consultorId,
+            status: "atribuido",
+            percentualConclusao: 0,
+            prazoConclusao: input.prazo ?? null,
+          });
+
+          return { success: true, id: result[0]?.insertId ?? null, atualizado: false };
+        }),
+
+      progressoAluno: protectedProcedure
+        .input(z.object({ alunoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select({
+              progresso: alunoModuloProgresso,
+              modulo: competenciasModulos,
+            })
+            .from(alunoModuloProgresso)
+            .leftJoin(competenciasModulos, eq(alunoModuloProgresso.moduloId, competenciasModulos.id))
+            .where(eq(alunoModuloProgresso.alunoId, input.alunoId))
+            .orderBy(desc(alunoModuloProgresso.updatedAt));
+        }),
+    }),
+
+    aluno: router({
+      meusCursos: protectedProcedure.query(async ({ ctx }) => {
+        const database = await db.getDb();
+        if (!database) return [];
+
+        const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!aluno) return [];
+
+        return await database
+          .select({
+            progresso: alunoModuloProgresso,
+            modulo: competenciasModulos,
+          })
+          .from(alunoModuloProgresso)
+          .leftJoin(competenciasModulos, eq(alunoModuloProgresso.moduloId, competenciasModulos.id))
+          .where(eq(alunoModuloProgresso.alunoId, aluno.id))
+          .orderBy(desc(alunoModuloProgresso.updatedAt));
+      }),
+
+      detalheCurso: protectedProcedure
+        .input(z.object({ moduloId: z.number() }))
+        .query(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) return null;
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) return null;
+
+          const [curso] = await database
+            .select({
+              progresso: alunoModuloProgresso,
+              modulo: competenciasModulos,
+            })
+            .from(alunoModuloProgresso)
+            .leftJoin(competenciasModulos, eq(alunoModuloProgresso.moduloId, competenciasModulos.id))
+            .where(
+              and(
+                eq(alunoModuloProgresso.alunoId, aluno.id),
+                eq(alunoModuloProgresso.moduloId, input.moduloId)
+              )
+            )
+            .limit(1);
+
+          return curso ?? null;
+        }),
+
+      iniciarAtividade: protectedProcedure
+        .input(z.object({ moduloId: z.number() }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado" });
+          }
+
+          const [registro] = await database
+            .select()
+            .from(alunoModuloProgresso)
+            .where(
+              and(
+                eq(alunoModuloProgresso.alunoId, aluno.id),
+                eq(alunoModuloProgresso.moduloId, input.moduloId)
+              )
+            )
+            .limit(1);
+
+          if (!registro) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Curso não atribuído ao aluno" });
+          }
+
+          await database
+            .update(alunoModuloProgresso)
+            .set({
+              status: "em_andamento",
+              iniciadoEm: registro.iniciadoEm ?? new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(alunoModuloProgresso.id, registro.id));
+
+          return { success: true };
+        }),
+
+      submeterAvaliacao: protectedProcedure
+        .input(
+          z.object({
+            moduloId: z.number(),
+            nota: z.number().min(0).max(10),
+            totalQuestoes: z.number().default(15),
+            acertos: z.number().min(0).default(0),
+            respostas: z.any().optional(),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado" });
+          }
+
+          const aprovado = input.nota >= 8 ? 1 : 0;
+
+          const result = await database.insert(alunoModuloAvaliacao).values({
+            alunoId: aluno.id,
+            moduloId: input.moduloId,
+            nota: input.nota,
+            totalQuestoes: input.totalQuestoes,
+            acertos: input.acertos,
+            aprovado,
+            respostasJson: input.respostas ? JSON.stringify(input.respostas) : null,
+          });
+
+          await database
+            .update(alunoModuloProgresso)
+            .set({
+              notaFinal: input.nota,
+              status: aprovado ? "avaliado" : "em_andamento",
+              percentualConclusao: aprovado ? 80 : 60,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(alunoModuloProgresso.alunoId, aluno.id),
+                eq(alunoModuloProgresso.moduloId, input.moduloId)
+              )
+            );
+
+          return {
+            success: true,
+            id: result[0]?.insertId ?? null,
+            aprovado: Boolean(aprovado),
+          };
+        }),
+
+      minhasTentativas: protectedProcedure
+        .input(z.object({ moduloId: z.number() }))
+        .query(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) return [];
+
+          return await database
+            .select()
+            .from(alunoModuloAvaliacao)
+            .where(
+              and(
+                eq(alunoModuloAvaliacao.alunoId, aluno.id),
+                eq(alunoModuloAvaliacao.moduloId, input.moduloId)
+              )
+            )
+            .orderBy(desc(alunoModuloAvaliacao.createdAt));
+        }),
+
+      registrarReflexaoFinal: protectedProcedure
+        .input(
+          z.object({
+            moduloId: z.number(),
+            relato: z.string().min(1),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado" });
+          }
+
+          const result = await database.insert(alunoModuloRelato).values({
+            alunoId: aluno.id,
+            moduloId: input.moduloId,
+            relato: input.relato,
+          });
+
+          await database
+            .update(alunoModuloProgresso)
+            .set({
+              status: "relato_enviado",
+              percentualConclusao: 90,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(alunoModuloProgresso.alunoId, aluno.id),
+                eq(alunoModuloProgresso.moduloId, input.moduloId)
+              )
+            );
+
+          return { success: true, id: result[0]?.insertId ?? null };
+        }),
+
+      concluirCurso: protectedProcedure
+        .input(z.object({ moduloId: z.number() }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado" });
+          }
+
+          await database
+            .update(alunoModuloProgresso)
+            .set({
+              status: "concluido",
+              percentualConclusao: 100,
+              concluidoEm: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(alunoModuloProgresso.alunoId, aluno.id),
+                eq(alunoModuloProgresso.moduloId, input.moduloId)
+              )
+            );
+
+          return { success: true };
+        }),
+    }),
   }),
 
 });
