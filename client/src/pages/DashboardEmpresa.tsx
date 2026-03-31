@@ -425,7 +425,7 @@ export default function DashboardEmpresa() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd3 || visaoEmpresa.mediaEngajamento).toFixed(0)}%</div>
+              <div className="text-2xl font-bold">{((visaoEmpresa?.mediaInd3 || visaoEmpresa?.mediaEngajamento) ?? 0).toFixed(0)}%</div>
               <p className="text-xs text-muted-foreground">Concluídas</p>
             </CardContent>
           </Card>
@@ -437,7 +437,7 @@ export default function DashboardEmpresa() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd4 || visaoEmpresa.mediaPerformanceCompetencias).toFixed(0)}%</div>
+              <div className="text-2xl font-bold">{((visaoEmpresa?.mediaInd4 || visaoEmpresa?.mediaPerformanceCompetencias) ?? 0).toFixed(0)}%</div>
               <p className="text-xs text-muted-foreground">Entregues</p>
             </CardContent>
           </Card>
@@ -449,7 +449,7 @@ export default function DashboardEmpresa() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd5 || visaoEmpresa.mediaPerformanceAprendizado || 0).toFixed(0)}%</div>
+              <div className="text-2xl font-bold">{((visaoEmpresa?.mediaInd5 || visaoEmpresa?.mediaPerformanceAprendizado || 0) ?? 0).toFixed(0)}%</div>
               <p className="text-xs text-muted-foreground">Evolução</p>
             </CardContent>
           </Card>
@@ -461,7 +461,7 @@ export default function DashboardEmpresa() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd6 || visaoEmpresa.mediaParticipacaoEventos).toFixed(0)}%</div>
+              <div className="text-2xl font-bold">{((visaoEmpresa?.mediaInd6 || visaoEmpresa?.mediaParticipacaoEventos) ?? 0).toFixed(0)}%</div>
               <p className="text-xs text-muted-foreground">Relatório de Impacto</p>
             </CardContent>
           </Card>
@@ -473,7 +473,7 @@ export default function DashboardEmpresa() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{(visaoEmpresa.mediaInd7 || visaoEmpresa.mediaPerformanceGeral || 0).toFixed(0)}%</div>
+              <div className="text-2xl font-bold text-primary">{((visaoEmpresa?.mediaInd7 || visaoEmpresa?.mediaPerformanceGeral || 0) ?? 0).toFixed(0)}%</div>
               <Progress value={visaoEmpresa.mediaInd7 || visaoEmpresa.mediaPerformanceGeral || 0} className="h-2 mt-1" />
               <p className="text-xs text-muted-foreground mt-1">Média dos 5 indicadores</p>
             </CardContent>

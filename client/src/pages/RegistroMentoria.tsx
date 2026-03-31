@@ -1632,7 +1632,7 @@ export default function RegistroMentoria() {
                                             ? 'bg-amber-100 text-amber-800' 
                                             : 'bg-red-100 text-red-800'
                                       }`}>
-                                        \u00d8{(((session as any).notaAlunoAplicabilidade + (session as any).notaMentoraAplicabilidade) / 2).toFixed(1)}
+                                        Ø{(((((session as any)?.notaAlunoAplicabilidade ?? 0) + ((session as any)?.notaMentoraAplicabilidade ?? 0)) / 2) ?? 0).toFixed(1)}
                                       </Badge>
                                     )}
                                   </div>

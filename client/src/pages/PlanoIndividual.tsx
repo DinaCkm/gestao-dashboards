@@ -1096,7 +1096,7 @@ function PlanoContent() {
                           <div className="relative h-2.5 bg-gray-200 rounded-full overflow-hidden">
                             <div className={`h-full rounded-full ${dim.color}`} style={{ width: `${Math.min(Number(dim.score), 100)}%` }} />
                           </div>
-                          <div className="text-sm font-bold mt-1">{Number(dim.score).toFixed(0)}%</div>
+                          <div className="text-sm font-bold mt-1">{(Number(dim?.score ?? 0) ?? 0).toFixed(0)}%</div>
                         </div>
                       ))}
                     </div>
@@ -1268,10 +1268,10 @@ function PlanoContent() {
                       <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg text-center">
                         <p className="text-2xl font-bold text-green-700">{performanceFiltrada.planoIndividual.competenciasAprovadas}/{performanceFiltrada.planoIndividual.totalCompetencias}</p>
                         <p className="text-xs text-muted-foreground">Competências Aprovadas</p>
-                        <p className="text-xs text-green-600 mt-1">{performanceFiltrada.planoIndividual.percentualAprovacao.toFixed(0)}%</p>
+                        <p className="text-xs text-green-600 mt-1">{(performanceFiltrada?.planoIndividual?.percentualAprovacao ?? 0).toFixed(0)}%</p>
                       </div>
                       <div className="p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-purple-700">{performanceFiltrada.planoIndividual.mediaNotas.toFixed(1)}</p>
+                        <p className="text-2xl font-bold text-purple-700">{(performanceFiltrada?.planoIndividual?.mediaNotas ?? 0).toFixed(1)}</p>
                         <p className="text-xs text-muted-foreground">Média Notas</p>
                       </div>
                       <div className="p-3 bg-gradient-to-br from-secondary/5 to-secondary/10 rounded-lg text-center">
@@ -1292,7 +1292,7 @@ function PlanoContent() {
                         <div key={ind.label}>
                           <div className="flex justify-between mb-1">
                             <span className="text-xs text-muted-foreground">{ind.label}</span>
-                            <span className="text-xs font-medium">{ind.value.toFixed(0)}%</span>
+                            <span className="text-xs font-medium">{(ind?.value ?? 0).toFixed(0)}%</span>
                           </div>
                           <Progress value={ind.value} className="h-1.5" />
                         </div>

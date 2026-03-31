@@ -483,7 +483,7 @@ function MetasContent() {
                   <div className="relative h-2.5 bg-gray-200 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full ${dim.color}`} style={{ width: `${Math.min(Number(dim.score), 100)}%` }} />
                   </div>
-                  <div className="text-sm font-bold mt-1">{Number(dim.score).toFixed(0)}%</div>
+                  <div className="text-sm font-bold mt-1">{(Number(dim?.score ?? 0) ?? 0).toFixed(0)}%</div>
                 </div>
               ))}
             </div>
