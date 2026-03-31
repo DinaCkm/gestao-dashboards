@@ -157,6 +157,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Video, label: "Webinars", path: "/webinars" },
       { icon: Bell, label: "Avisos e Comunicados", path: "/avisos" },
       { icon: BookOpen, label: "Cursos", path: "/cursos" },
+      { icon: BookOpen, label: "Avaliações", path: "/admin/avaliacoes" },
       { icon: Zap, label: "Atividades Extras", path: "/atividades-extras" },
     ],
   },
@@ -195,6 +196,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: CalendarDays, label: "Perfil / Agenda", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: BookOpen, label: "Atribuir Cursos", path: "/mentor/atribuir-cursos", roles: ["manager"], requireConsultorRole: 'mentor' },
   
   // === GERENTE DE EMPRESA ===
   { icon: Home, label: "Boas-Vindas", path: "/boas-vindas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
@@ -206,6 +208,7 @@ const otherMenuItems: MenuItemExtended[] = [
   // === ALUNO ===
   { icon: Compass, label: "Portal do Aluno", path: "/meu-dashboard", roles: ["user"] },
   { icon: GraduationCap, label: "Cursos Disponíveis", path: "/meus-cursos", roles: ["user"] },
+  { icon: BookOpen, label: "Competências Comportamentais", path: "/aluno/competencias-comp-tec", roles: ["user"] },
   { icon: Zap, label: "Atividades Extras", path: "/minhas-atividades", roles: ["user"] },
   { icon: PlayCircle, label: "Tutoriais", path: "/tutoriais", roles: ["user"] },
 ];

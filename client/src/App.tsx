@@ -135,10 +135,12 @@ function Router() {
       <Route path={"/admin/competencias-comp-tec/dashboard"} component={AdminDashboardCompTec} />
       <Route path={"/admin/competencias-comp-tec/atividades"} component={AdminAtividades} />
       <Route path={"/admin/competencias-comp-tec/avaliacoes"} component={AdminAvaliacoes} />
+      <Route path={"/admin/avaliacoes"} component={AdminAvaliacoes} />
       <Route path={"/admin/competencias-comp-tec/questoes"} component={AdminQuestoes} />
 
       <Route path={"/mentor/competencias-comp-tec/alunos"} component={MentorListaAlunos} />
       <Route path={"/mentor/competencias-comp-tec/atribuir"} component={MentorAtribuirCurso} />
+      <Route path={"/mentor/atribuir-cursos"} component={MentorAtribuirCurso} />
       <Route path={"/mentor/competencias-comp-tec/progresso"} component={MentorProgressoAlunos} />
 
       <Route path={"/aluno/competencias-comp-tec/catalogo"} component={AlunoCatalogo} />
