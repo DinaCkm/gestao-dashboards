@@ -59,6 +59,22 @@ import CompetenciasCompTec from "./pages/admin/CompetenciasCompTec";
 import MentorCompetenciasCompTec from "./pages/mentor/MentorCompetenciasCompTec";
 import AlunoCompetenciasCompTec from "./pages/aluno/AlunoCompetenciasCompTec";
 
+import AdminAtividades from "./pages/admin/AdminAtividades";
+import AdminAvaliacoes from "./pages/admin/AdminAvaliacoes";
+import AdminDashboardCompTec from "./pages/admin/AdminDashboard";
+import AdminQuestoes from "./pages/admin/AdminQuestoes";
+
+import MentorListaAlunos from "./pages/mentor/MentorListaAlunos";
+import MentorAtribuirCurso from "./pages/mentor/MentorAtribuirCurso";
+import MentorProgressoAlunos from "./pages/mentor/MentorProgressoAlunos";
+
+import AlunoCatalogo from "./pages/aluno/AlunoCatalogo";
+import AlunoDetalheCurso from "./pages/aluno/AlunoDetalheCurso";
+import AlunoAtividade from "./pages/aluno/AlunoAtividade";
+import AlunoAvaliacao from "./pages/aluno/AlunoAvaliacao";
+import AlunoResultadoAvaliacao from "./pages/aluno/AlunoResultadoAvaliacao";
+import AlunoReflexaoFinal from "./pages/aluno/AlunoReflexaoFinal";
+
 
 function Router() {
   return (
@@ -115,6 +131,23 @@ function Router() {
       <Route path={"/competencias-comp-tec"} component={CompetenciasCompTec} />
       <Route path={"/mentor/competencias-comp-tec"} component={MentorCompetenciasCompTec} />
       <Route path={"/aluno/competencias-comp-tec"} component={AlunoCompetenciasCompTec} />
+
+      <Route path={"/admin/competencias-comp-tec/dashboard"} component={AdminDashboardCompTec} />
+      <Route path={"/admin/competencias-comp-tec/atividades"} component={AdminAtividades} />
+      <Route path={"/admin/competencias-comp-tec/avaliacoes"} component={AdminAvaliacoes} />
+      <Route path={"/admin/competencias-comp-tec/questoes"} component={AdminQuestoes} />
+
+      <Route path={"/mentor/competencias-comp-tec/alunos"} component={MentorListaAlunos} />
+      <Route path={"/mentor/competencias-comp-tec/atribuir"} component={MentorAtribuirCurso} />
+      <Route path={"/mentor/competencias-comp-tec/progresso"} component={MentorProgressoAlunos} />
+
+      <Route path={"/aluno/competencias-comp-tec/catalogo"} component={AlunoCatalogo} />
+      <Route path={"/aluno/competencias-comp-tec/detalhe"} component={AlunoDetalheCurso} />
+      <Route path={"/aluno/competencias-comp-tec/atividade"} component={AlunoAtividade} />
+      <Route path={"/aluno/competencias-comp-tec/avaliacao"} component={AlunoAvaliacao} />
+      <Route path={"/aluno/competencias-comp-tec/resultado"} component={AlunoResultadoAvaliacao} />
+      <Route path={"/aluno/competencias-comp-tec/reflexao"} component={AlunoReflexaoFinal} />
+
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
