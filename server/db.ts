@@ -9557,29 +9557,31 @@ export async function getContratoMentoriaByAluno(alunoId: number) {
   if (!db) return null;
   
   try {
-    // Buscar mentoring sessions ativas do aluno
-    const sessions = await db
+    const contratos = await db
       .select()
-      .from(mentoringSessions)
+      .from(contratosAluno)
       .where(
         and(
-          eq(mentoringSessions.alunoId, alunoId),
-          eq(mentoringSessions.status, 'ativo')
+          eq(contratosAluno.alunoId, alunoId),
+          eq(contratosAluno.isActive, 1)
         )
       )
+      .orderBy(desc(contratosAluno.createdAt))
       .limit(1);
     
-    if (sessions && sessions.length > 0) {
-      const session = sessions[0];
-      return {
-        id: session.id,
-        dataInicio: session.dataInicio,
-        dataTermino: session.dataTermino,
-        tipoMentoria: session.tipoMentoria || 'individual',
-      };
+    if (!contratos || contratos.length === 0) {
+      return null;
     }
     
-    return null;
+    const contrato = contratos[0];
+    
+    return {
+      id: contrato.id,
+      dataInicio: contrato.periodoInicio,
+      dataTermino: contrato.periodoTermino,
+      tipoMentoria: 'individual',
+      totalSessoesContratadas: contrato.totalSessoesContratadas || 0,
+    };
   } catch (error) {
     console.error('Erro ao buscar contrato de mentoria:', error);
     return null;
@@ -9595,38 +9597,41 @@ export async function getSaldoMentoriasAluno(alunoId: number) {
   if (!db) return null;
   
   try {
-    // Buscar contrato ativo
     const contrato = await getContratoMentoriaByAluno(alunoId);
     if (!contrato) return null;
     
-    // Buscar total de sessões contratadas (do assessment_pdi ou do contrato)
-    const pdis = await getAssessmentPdiByAluno(alunoId);
-    let totalContratadas = 0;
+    let totalContratadas = Number(contrato.totalSessoesContratadas || 0);
     
-    if (pdis && pdis.length > 0) {
-      // Somar totalSessoesPrevistas de todos os PDIs ativos
-      totalContratadas = pdis.reduce((sum, pdi) => {
-        return sum + (pdi.totalSessoesPrevistas || 0);
-      }, 0);
+    if (totalContratadas === 0) {
+      const pdis = await getAssessmentPdiByAluno(alunoId);
+      if (pdis && pdis.length > 0) {
+        totalContratadas = pdis.reduce((sum, pdi) => {
+          return sum + (pdi.totalSessoesPrevistas || 0);
+        }, 0);
+      }
     }
     
-    // Se não houver dados no PDI, tentar estimar pela duração do contrato
     if (totalContratadas === 0 && contrato.dataInicio && contrato.dataTermino) {
       const inicio = new Date(contrato.dataInicio);
       const termino = new Date(contrato.dataTermino);
       const meses = Math.ceil((termino.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30));
-      totalContratadas = Math.max(1, meses); // Mínimo 1 sessão
+      totalContratadas = Math.max(1, meses);
     }
     
-    // Buscar sessões realizadas
-    const sessoesList = await db
+    const sessoes = await db
       .select()
       .from(mentoringSessions)
-      .where(eq(mentoringSessions.alunoId, alunoId));
+      .where(
+        and(
+          eq(mentoringSessions.alunoId, alunoId),
+          eq(mentoringSessions.isAssessment, 0),
+          eq(mentoringSessions.presence, 'presente')
+        )
+      );
     
-    const sessoesRealizadas = sessoesList?.filter(s => s.status === 'realizado').length || 0;
+    const sessoesRealizadas = sessoes.length;
     const saldoRestante = Math.max(0, totalContratadas - sessoesRealizadas);
-    const percentualUsado = totalContratadas > 0 
+    const percentualUsado = totalContratadas > 0
       ? Math.round((sessoesRealizadas / totalContratadas) * 100)
       : 0;
     
