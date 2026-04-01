@@ -189,18 +189,16 @@ export default function CompetenciasCompTec() {
               <>
                 <div>
                   <label className="block text-sm font-medium mb-2">Selecione um Curso</label>
-                  <Select value={selectedCurso ? selectedCurso.toString() : ''} onValueChange={(val) => setSelectedCurso(parseInt(val))}>
+                  <Select value={selectedCurso?.toString() || ''} onValueChange={(val) => setSelectedCurso(parseInt(val) || null)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um curso" />
                     </SelectTrigger>
                     <SelectContent>
-                      {cursos && cursos.length > 0 ? (
-                        cursos.map((curso: any) => (
-                          <SelectItem key={curso.id} value={curso.id.toString()}>
-                            {curso.titulo}
-                          </SelectItem>
-                        ))
-                      ) : null}
+                      {cursos && cursos.length > 0 && cursos.map((curso: any) => (
+                        <SelectItem key={curso.id} value={curso.id.toString()}>
+                          {curso.titulo}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
