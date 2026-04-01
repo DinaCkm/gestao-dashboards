@@ -114,20 +114,32 @@ export default function OnboardingVideos() {
     }
 
     try {
+      // Preparar dados, convertendo strings vazias em undefined para campos opcionais
+      const dataToSave = {
+        chave: formData.chave,
+        titulo: formData.titulo,
+        videoUrl: formData.videoUrl,
+        ordem: formData.ordem,
+        descricao: formData.descricao || undefined,
+        textoExplicativo: formData.textoExplicativo || undefined,
+      };
+
       if (editingId) {
         await updateMutation.mutateAsync({
           id: editingId,
-          ...formData,
+          ...dataToSave,
         });
         toast.success("Vídeo atualizado com sucesso!");
       } else {
-        await createMutation.mutateAsync(formData);
+        await createMutation.mutateAsync(dataToSave);
         toast.success("Vídeo criado com sucesso!");
       }
       setIsDialogOpen(false);
       refetch();
-    } catch (error) {
-      toast.error("Erro ao salvar vídeo");
+    } catch (error: any) {
+      const errorMessage = error?.message || "Erro ao salvar vídeo";
+      console.error("Erro ao salvar:", error);
+      toast.error(errorMessage);
     }
   };
 
@@ -137,8 +149,10 @@ export default function OnboardingVideos() {
         await deleteMutation.mutateAsync({ id });
         toast.success("Vídeo deletado com sucesso!");
         refetch();
-      } catch (error) {
-        toast.error("Erro ao deletar vídeo");
+      } catch (error: any) {
+        const errorMessage = error?.message || "Erro ao deletar vídeo";
+        console.error("Erro ao deletar:", error);
+        toast.error(errorMessage);
       }
     }
   };
