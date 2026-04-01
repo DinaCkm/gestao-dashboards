@@ -12,36 +12,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 
-type TipoAtividade = "introducao" | "videos" | "podcast" | "tedtalks" | "filmes" | "livros" | "ead" | "outros";
+type TipoAtividade = "genially" | "video" | "podcast" | "tedtalk" | "livro" | "intro";
 
 const TIPOS_ATIVIDADE: TipoAtividade[] = [
-  "introducao",
-  "videos",
+  "genially",
+  "video",
   "podcast",
-  "tedtalks",
-  "filmes",
-  "livros",
-  "ead",
-  "outros",
+  "tedtalk",
+  "livro",
+  "intro",
 ];
 
-const TIPOS_ATIVIDADE_LABELS: Record<TipoAtividade, string> = {
-  introducao: "Introdução",
-  videos: "Vídeos",
-  podcast: "Podcast",
-  tedtalks: "TedTalks",
-  filmes: "Filmes",
-  livros: "Livros",
-  ead: "EAD",
-  outros: "Outros",
-};
+function normalizarCompetencia(item: any) {
+  return {
+    id: Number(item?.id ?? 0),
+    nome: item?.competencia ?? item?.nome ?? "",
+  };
+}
 
 function normalizarCurso(item: any) {
   return {
     id: Number(item?.id ?? 0),
     titulo: item?.titulo ?? item?.nome ?? "Curso sem título",
-    competencia: item?.competencia ?? "Sem competência",
+    competencia: item?.competencia ?? item?.nome ?? "Sem competência",
   };
 }
 
@@ -50,24 +45,24 @@ function normalizarAtividade(item: any) {
     id: Number(item?.id ?? 0),
     cursoId: Number(item?.cursoId ?? 0),
     titulo: item?.titulo ?? "Atividade sem título",
-    tipoAtividade: (item?.tipoAtividade ?? "videos") as TipoAtividade,
+    tipoAtividade: (item?.tipoAtividade ?? "video") as TipoAtividade,
     descricao: item?.descricao ?? "",
-    urlMidia: item?.urlMidia ?? "",
+    urlGenially: item?.urlGenially ?? item?.urlMidia ?? "",
     ordem: Number(item?.ordem ?? 0),
     isActive: Number(item?.isActive ?? 1),
   };
 }
 
 export default function AdminAtividades() {
-  const [competenciaSelecionadaId, setCompetenciaSelecionadaId] = useState<number | null>(null);
+  const [competenciaSelecionada, setCompetenciaSelecionada] = useState<string>("");
   const [cursoSelecionado, setCursoSelecionado] = useState<string>("");
   const [atividadeIdEdicao, setAtividadeIdEdicao] = useState<number | null>(null);
 
   const [formAtividade, setFormAtividade] = useState({
     titulo: "",
-    tipoAtividade: "videos" as TipoAtividade,
+    tipoAtividade: "video" as TipoAtividade,
     descricao: "",
-    urlMidia: "",
+    urlGenially: "",
     ordem: "0",
   });
 
@@ -76,34 +71,34 @@ export default function AdminAtividades() {
   const competenciasQuery = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
 
   const cursosQuery = trpc.competenciasCompTec.admin.listarCursosPorCompetencia.useQuery(
-    { competenciaId: competenciaSelecionadaId || 0 },
-    { enabled: !!competenciaSelecionadaId }
+    { competencia: competenciaSelecionada },
+    { enabled: !!competenciaSelecionada }
   );
 
   const atividadesQuery = trpc.competenciasCompTec.admin.listarAtividades.useQuery(
     { cursoId: Number(cursoSelecionado || 0) },
-    { 
-      enabled: false // Desabilitar por padrão - só buscar após criar primeira atividade
-    }
+    { enabled: !!cursoSelecionado }
   );
 
   const criarAtividadeMutation = trpc.competenciasCompTec.admin.criarAtividade.useMutation({
     onSuccess: async () => {
+      toast.success("Atividade criada com sucesso!");
       limparFormulario();
       if (cursoSelecionado) {
         await utils.competenciasCompTec.admin.listarAtividades.invalidate({
           cursoId: Number(cursoSelecionado),
         });
-        await utils.competenciasCompTec.admin.obterCurso.invalidate({
-          cursoId: Number(cursoSelecionado),
-        });
       }
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Erro ao criar atividade");
     },
   });
 
   const atualizarAtividadeMutation =
     trpc.competenciasCompTec.admin.atualizarAtividade.useMutation({
       onSuccess: async () => {
+        toast.success("Atividade atualizada com sucesso!");
         limparFormulario();
         if (cursoSelecionado) {
           await utils.competenciasCompTec.admin.listarAtividades.invalidate({
@@ -111,21 +106,33 @@ export default function AdminAtividades() {
           });
         }
       },
+      onError: (error: any) => {
+        toast.error(error?.message || "Erro ao atualizar atividade");
+      },
     });
 
   const deletarAtividadeMutation =
     trpc.competenciasCompTec.admin.deletarAtividade.useMutation({
       onSuccess: async () => {
+        toast.success("Atividade desativada com sucesso!");
         if (cursoSelecionado) {
           await utils.competenciasCompTec.admin.listarAtividades.invalidate({
             cursoId: Number(cursoSelecionado),
           });
         }
       },
+      onError: (error: any) => {
+        toast.error(error?.message || "Erro ao desativar atividade");
+      },
     });
 
-  const competencias = useMemo(() => {
-    return (competenciasQuery.data ?? []).filter((item: any) => item?.id && item?.nome);
+  const competenciasUnicas = useMemo(() => {
+    const lista = (competenciasQuery.data ?? [])
+      .map(normalizarCompetencia)
+      .map((item) => item.nome)
+      .filter(Boolean);
+
+    return Array.from(new Set(lista)).sort((a, b) => a.localeCompare(b, "pt-BR"));
   }, [competenciasQuery.data]);
 
   const cursos = useMemo(
@@ -142,9 +149,9 @@ export default function AdminAtividades() {
     setAtividadeIdEdicao(null);
     setFormAtividade({
       titulo: "",
-      tipoAtividade: "videos",
+      tipoAtividade: "video",
       descricao: "",
-      urlMidia: "",
+      urlGenially: "",
       ordem: "0",
     });
   }
@@ -155,7 +162,7 @@ export default function AdminAtividades() {
       titulo: atividade.titulo,
       tipoAtividade: atividade.tipoAtividade,
       descricao: atividade.descricao,
-      urlMidia: atividade.urlMidia,
+      urlGenially: atividade.urlGenially,
       ordem: String(atividade.ordem ?? 0),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -164,16 +171,24 @@ export default function AdminAtividades() {
   async function handleSalvarAtividade(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!cursoSelecionado) return;
+    if (!cursoSelecionado) {
+      toast.error("Selecione um curso");
+      return;
+    }
 
     const payload = {
       cursoId: Number(cursoSelecionado),
-      titulo: formAtividade.titulo,
+      titulo: formAtividade.titulo.trim(),
       tipoAtividade: formAtividade.tipoAtividade,
-      descricao: formAtividade.descricao,
-      urlMidia: formAtividade.urlMidia,
+      descricao: formAtividade.descricao.trim(),
+      urlGenially: formAtividade.urlGenially.trim(),
       ordem: Number(formAtividade.ordem || 0),
     };
+
+    if (!payload.titulo) {
+      toast.error("Informe o título da atividade");
+      return;
+    }
 
     if (atividadeIdEdicao) {
       await atualizarAtividadeMutation.mutateAsync({
@@ -181,7 +196,7 @@ export default function AdminAtividades() {
         titulo: payload.titulo,
         tipoAtividade: payload.tipoAtividade,
         descricao: payload.descricao,
-        urlMidia: payload.urlMidia,
+        urlGenially: payload.urlGenially,
         ordem: payload.ordem,
       });
       return;
@@ -214,27 +229,28 @@ export default function AdminAtividades() {
               Selecione primeiro a competência e o curso para cadastrar a atividade.
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleSalvarAtividade} className="space-y-4">
               <div className="space-y-2">
                 <Label>Competência</Label>
                 <Select
-                  value={competenciaSelecionadaId ? String(competenciaSelecionadaId) : "__none__"}
+                  value={competenciaSelecionada || "__none__"}
                   onValueChange={(value) => {
-                    const novaCompetenciaId = value === "__none__" ? null : Number(value);
-                    setCompetenciaSelecionadaId(novaCompetenciaId);
+                    const novaCompetencia = value === "__none__" ? "" : value;
+                    setCompetenciaSelecionada(novaCompetencia);
                     setCursoSelecionado("");
                     limparFormulario();
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione a competência" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">Selecione</SelectItem>
-                    {competencias.map((comp: any) => (
-                      <SelectItem key={comp.id} value={String(comp.id)}>
-                        {comp.nome}
+                    {competenciasUnicas.map((competencia) => (
+                      <SelectItem key={competencia} value={competencia}>
+                        {competencia}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -250,9 +266,9 @@ export default function AdminAtividades() {
                     setCursoSelecionado(novoCurso);
                     limparFormulario();
                   }}
-                  disabled={!competenciaSelecionadaId}
+                  disabled={!competenciaSelecionada}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione o curso" />
                   </SelectTrigger>
                   <SelectContent>
@@ -289,13 +305,13 @@ export default function AdminAtividades() {
                   }
                   disabled={!cursoSelecionado}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
                     {TIPOS_ATIVIDADE.map((tipo) => (
                       <SelectItem key={tipo} value={tipo}>
-                        {TIPOS_ATIVIDADE_LABELS[tipo]}
+                        {tipo}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -318,9 +334,9 @@ export default function AdminAtividades() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="urlMidia">URL da Mídia (Genially, YouTube, etc.)</Label>
+                  <Label htmlFor="urlGenially">URL do conteúdo</Label>
                   <Input
-                    id="urlMidia"
+                    id="urlGenially"
                     value={formAtividade.urlGenially}
                     onChange={(e) =>
                       setFormAtividade((prev) => ({ ...prev, urlGenially: e.target.value }))
@@ -379,15 +395,16 @@ export default function AdminAtividades() {
               Selecione competência e curso para gerenciar as atividades.
             </CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-4">
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
               {competenciasQuery.isLoading
                 ? "Carregando competências..."
-                : `${competencias.length} competência(s) encontrada(s).`}
+                : `${competenciasUnicas.length} competência(s) encontrada(s).`}
             </div>
 
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
-              {!competenciaSelecionadaId
+              {!competenciaSelecionada
                 ? "Escolha uma competência para listar os cursos."
                 : cursosQuery.isLoading
                 ? "Carregando cursos..."
@@ -397,8 +414,6 @@ export default function AdminAtividades() {
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
               {!cursoSelecionado
                 ? "Escolha um curso para visualizar as atividades."
-                : atividades.length === 0 && !atividadesQuery.isLoading
-                ? "Nenhuma atividade cadastrada. Crie a primeira acima!"
                 : atividadesQuery.isLoading
                 ? "Carregando atividades..."
                 : `${atividades.length} atividade(s) encontrada(s) para o curso selecionado.`}
@@ -426,19 +441,19 @@ export default function AdminAtividades() {
               : "Selecione um curso acima para listar as atividades."}
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           {!cursoSelecionado ? (
             <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
               Escolha um curso para visualizar as atividades.
             </div>
-          ) : atividades.length === 0 && !atividadesQuery.isLoading ? (
-            <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-              <p className="mb-2">Nenhuma atividade cadastrada para este curso.</p>
-              <p className="text-xs">Crie a primeira atividade no formulário acima!</p>
-            </div>
           ) : atividadesQuery.isLoading ? (
             <div className="rounded-md border p-8 text-center text-sm text-muted-foreground">
               Carregando atividades...
+            </div>
+          ) : atividades.length === 0 ? (
+            <div className="rounded-md border p-8 text-center text-sm text-muted-foreground">
+              Nenhuma atividade encontrada para este curso.
             </div>
           ) : (
             <div className="grid gap-4">

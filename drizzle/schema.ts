@@ -1359,8 +1359,9 @@ export const atividadesCurso = mysqlTable("atividades_curso", {
   id: int("id").autoincrement().primaryKey(),
   cursoId: int("cursoId").notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
-  tipoAtividade: mysqlEnum("tipoAtividade", ["introducao", "videos", "podcast", "tedtalks", "filmes", "livros", "ead", "outros"]).notNull(),
-  urlMidia: varchar("urlMidia", { length: 500 }),
+  tipoAtividade: mysqlEnum("tipoAtividade", ["genially", "video", "podcast", "tedtalk", "livro", "intro"]).notNull(),
+  urlGenially: text("urlGenially"),
+  urlMidia: text("urlMidia"),
   descricao: text("descricao"),
   ordem: int("ordem").default(0).notNull(),
   isActive: int("isActive").default(1).notNull(),
@@ -1371,7 +1372,7 @@ export type AtividadeCurso = typeof atividadesCurso.$inferSelect;
 export type InsertAtividadeCurso = typeof atividadesCurso.$inferInsert;
 
 // Tipos de atividade disponíveis
-export const TIPOS_ATIVIDADE = ["introducao", "videos", "podcast", "tedtalks", "filmes", "livros", "ead", "outros"] as const;
+export const TIPOS_ATIVIDADE = ["genially", "video", "podcast", "tedtalk", "livro", "intro"] as const;
 export type TipoAtividade = typeof TIPOS_ATIVIDADE[number];
 
 /**

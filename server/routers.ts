@@ -8799,15 +8799,14 @@ Responda APENAS em JSON com o formato especificado.`
             cursoId: z.number(),
             titulo: z.string().min(1),
             tipoAtividade: z.enum([
-              "introducao",
-              "videos",
+              "genially",
+              "video",
               "podcast",
-              "tedtalks",
-              "filmes",
-              "livros",
-              "ead",
-              "outros",
+              "tedtalk",
+              "livro",
+              "intro",
             ]),
+            urlGenially: z.string().optional(),
             urlMidia: z.string().optional(),
             descricao: z.string().optional(),
             ordem: z.number().optional(),
@@ -8823,43 +8822,22 @@ Responda APENAS em JSON com o formato especificado.`
               });
             }
 
-            // Validar que o curso existe
-            const [curso] = await database
-              .select({
-                id: cursosCompetencias.id,
-                isActive: cursosCompetencias.isActive,
-              })
-              .from(cursosCompetencias)
-              .where(eq(cursosCompetencias.id, Number(input.cursoId)))
-              .limit(1);
-
-            if (!curso) {
-              throw new TRPCError({
-                code: "BAD_REQUEST",
-                message: `Curso ${input.cursoId} não encontrado`,
-              });
-            }
-
-            if (Number(curso.isActive) !== 1) {
-              throw new TRPCError({
-                code: "BAD_REQUEST",
-                message: `Curso ${input.cursoId} está inativo`,
-              });
-            }
+            const urlFinal = input.urlGenially?.trim() || input.urlMidia?.trim() || null;
+            const now = new Date();
 
             // Usar SQL direto para INSERT
-            const now = new Date();
             const connection = await db.getDb();
-                        const result = await connection.execute(
+            const result = await connection.execute(
               `INSERT INTO atividades_curso 
-               (cursoId, titulo, tipoAtividade, urlMidia, descricao, ordem, isActive, createdAt, updatedAt)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+               (cursoId, titulo, tipoAtividade, urlGenially, urlMidia, descricao, ordem, isActive, createdAt, updatedAt)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 ,
               [
                 Number(input.cursoId),
                 input.titulo.trim(),
                 input.tipoAtividade,
-                input.urlMidia?.trim() || null,
+                urlFinal,
+                urlFinal,
                 input.descricao?.trim() || null,
                 Number(input.ordem ?? 0),
                 1,
