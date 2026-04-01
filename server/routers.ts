@@ -8754,6 +8754,52 @@ Responda APENAS em JSON com o formato especificado.`
             .orderBy(asc(atividadesCurso.ordem));
         }),
 
+      listarCursosPorCompetencia: protectedProcedure
+        .input(z.object({ competencia: z.string() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          // Buscar competência por nome
+          const [comp] = await database
+            .select({ id: competencias.id })
+            .from(competencias)
+            .where(eq(competencias.nome, input.competencia))
+            .limit(1);
+
+          if (!comp) return [];
+
+          // Buscar cursos da competência
+          return await database
+            .select()
+            .from(cursosCompetencias)
+            .where(
+              and(
+                eq(cursosCompetencias.competenciaId, comp.id),
+                eq(cursosCompetencias.isActive, 1)
+              )
+            )
+            .orderBy(asc(cursosCompetencias.ordem), asc(cursosCompetencias.titulo));
+        }),
+
+      listarAtividades: protectedProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select()
+            .from(atividadesCurso)
+            .where(
+              and(
+                eq(atividadesCurso.cursoId, input.cursoId),
+                eq(atividadesCurso.isActive, 1)
+              )
+            )
+            .orderBy(asc(atividadesCurso.ordem));
+        }),
+
             criarAtividade: adminProcedure
         .input(
           z.object({
