@@ -1,5 +1,6 @@
 import { eq, and, or, desc, asc, sql, not, gte, lt, lte, ne, inArray, isNotNull, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
 import { 
   InsertUser, users, 
   departments, InsertDepartment, Department,
@@ -61,6 +62,34 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _connection: mysql.Connection | null = null;
+
+export async function getRawConnection() {
+  if (!_connection && process.env.DATABASE_URL) {
+    try {
+      // Drizzle já cria uma conexão mysql2, vamos usar ela diretamente
+      const db = await getDb();
+      if (db && (db as any)._.client) {
+        _connection = (db as any)._.client;
+      } else {
+        // Fallback: criar conexão direta com SSL
+        const url = new URL(process.env.DATABASE_URL);
+        _connection = await mysql.createConnection({
+          host: url.hostname,
+          user: url.username,
+          password: url.password,
+          database: url.pathname.slice(1),
+          port: url.port ? parseInt(url.port) : 3306,
+          ssl: 'amazon',
+        });
+      }
+    } catch (error) {
+      console.warn("[Database] Failed to create raw connection:", error);
+      _connection = null;
+    }
+  }
+  return _connection;
+}
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {

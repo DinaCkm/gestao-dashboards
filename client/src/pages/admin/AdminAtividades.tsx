@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,49 +16,18 @@ import { toast } from "sonner";
 
 type TipoAtividade = "genially" | "video" | "podcast" | "tedtalk" | "livro" | "intro";
 
-const TIPOS_ATIVIDADE: TipoAtividade[] = [
-  "genially",
-  "video",
-  "podcast",
-  "tedtalk",
-  "livro",
-  "intro",
+const TIPOS_ATIVIDADE: { value: TipoAtividade; label: string }[] = [
+  { value: "intro", label: "Introdução" },
+  { value: "video", label: "Vídeo" },
+  { value: "podcast", label: "Podcast" },
+  { value: "tedtalk", label: "TedTalk" },
+  { value: "livro", label: "Livro" },
+  { value: "genially", label: "Genially" },
 ];
 
-function normalizarCompetencia(item: any) {
-  return {
-    id: Number(item?.id ?? 0),
-    nome: item?.competencia ?? item?.nome ?? "",
-  };
-}
-
-function normalizarCurso(item: any) {
-  return {
-    id: Number(item?.id ?? 0),
-    titulo: item?.titulo ?? item?.nome ?? "Curso sem título",
-    competencia: item?.competencia ?? item?.nome ?? "Sem competência",
-  };
-}
-
-function normalizarAtividade(item: any) {
-  return {
-    id: Number(item?.id ?? 0),
-    cursoId: Number(item?.cursoId ?? 0),
-    titulo: item?.titulo ?? "Atividade sem título",
-    tipoAtividade: (item?.tipoAtividade ?? "video") as TipoAtividade,
-    descricao: item?.descricao ?? "",
-    urlGenially: item?.urlGenially ?? item?.urlMidia ?? "",
-    ordem: Number(item?.ordem ?? 0),
-    isActive: Number(item?.isActive ?? 1),
-  };
-}
-
 export default function AdminAtividades() {
-  const [competenciaSelecionada, setCompetenciaSelecionada] = useState<string>("");
-  const [competenciaSelecionadaId, setCompetenciaSelecionadaId] = useState<number>(0);
-  const [cursoSelecionado, setCursoSelecionado] = useState<string>("");
-  const [atividadeIdEdicao, setAtividadeIdEdicao] = useState<number | null>(null);
-
+  const [competenciaId, setCompetenciaId] = useState<number>(0);
+  const [cursoId, setCursoId] = useState<number>(0);
   const [formAtividade, setFormAtividade] = useState({
     titulo: "",
     tipoAtividade: "video" as TipoAtividade,
@@ -69,26 +38,34 @@ export default function AdminAtividades() {
 
   const utils = trpc.useUtils();
 
+  // Buscar competências
   const competenciasQuery = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
 
+  // Buscar cursos da competência selecionada
   const cursosQuery = trpc.competenciasCompTec.admin.listarCursosPorCompetencia.useQuery(
-    { competenciaId: competenciaSelecionadaId },
-    { enabled: competenciaSelecionadaId > 0 }
+    { competenciaId },
+    { enabled: competenciaId > 0 }
   );
 
+  // Buscar atividades do curso selecionado
   const atividadesQuery = trpc.competenciasCompTec.admin.listarAtividades.useQuery(
-    { cursoId: Number(cursoSelecionado || 0) },
-    { enabled: !!cursoSelecionado }
+    { cursoId },
+    { enabled: cursoId > 0 }
   );
 
+  // Mutations
   const criarAtividadeMutation = trpc.competenciasCompTec.admin.criarAtividade.useMutation({
     onSuccess: async () => {
       toast.success("Atividade criada com sucesso!");
-      limparFormulario();
-      if (cursoSelecionado) {
-        await utils.competenciasCompTec.admin.listarAtividades.invalidate({
-          cursoId: Number(cursoSelecionado),
-        });
+      setFormAtividade({
+        titulo: "",
+        tipoAtividade: "video",
+        descricao: "",
+        urlGenially: "",
+        ordem: "0",
+      });
+      if (cursoId > 0) {
+        await utils.competenciasCompTec.admin.listarAtividades.invalidate({ cursoId });
       }
     },
     onError: (error: any) => {
@@ -96,121 +73,33 @@ export default function AdminAtividades() {
     },
   });
 
-  const atualizarAtividadeMutation =
-    trpc.competenciasCompTec.admin.atualizarAtividade.useMutation({
-      onSuccess: async () => {
-        toast.success("Atividade atualizada com sucesso!");
-        limparFormulario();
-        if (cursoSelecionado) {
-          await utils.competenciasCompTec.admin.listarAtividades.invalidate({
-            cursoId: Number(cursoSelecionado),
-          });
-        }
-      },
-      onError: (error: any) => {
-        toast.error(error?.message || "Erro ao atualizar atividade");
-      },
-    });
+  const competencias = competenciasQuery.data ?? [];
 
-  const deletarAtividadeMutation =
-    trpc.competenciasCompTec.admin.deletarAtividade.useMutation({
-      onSuccess: async () => {
-        toast.success("Atividade desativada com sucesso!");
-        if (cursoSelecionado) {
-          await utils.competenciasCompTec.admin.listarAtividades.invalidate({
-            cursoId: Number(cursoSelecionado),
-          });
-        }
-      },
-      onError: (error: any) => {
-        toast.error(error?.message || "Erro ao desativar atividade");
-      },
-    });
+  const cursos = cursosQuery.data ?? [];
 
-  const competenciasUnicas = useMemo(() => {
-    const lista = (competenciasQuery.data ?? [])
-      .map(normalizarCompetencia)
-      .map((item) => item.nome)
-      .filter(Boolean);
-
-    return Array.from(new Set(lista)).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [competenciasQuery.data]);
-
-  const cursos = useMemo(
-    () => (cursosQuery.data ?? []).map(normalizarCurso).filter((x) => x.id > 0),
-    [cursosQuery.data]
-  );
-
-  const atividades = useMemo(
-    () => (atividadesQuery.data ?? []).map(normalizarAtividade).filter((x) => x.id > 0),
-    [atividadesQuery.data]
-  );
-
-  function limparFormulario() {
-    setAtividadeIdEdicao(null);
-    setFormAtividade({
-      titulo: "",
-      tipoAtividade: "video",
-      descricao: "",
-      urlGenially: "",
-      ordem: "0",
-    });
-  }
-
-  function preencherEdicao(atividade: ReturnType<typeof normalizarAtividade>) {
-    setAtividadeIdEdicao(atividade.id);
-    setFormAtividade({
-      titulo: atividade.titulo,
-      tipoAtividade: atividade.tipoAtividade,
-      descricao: atividade.descricao,
-      urlGenially: atividade.urlGenially,
-      ordem: String(atividade.ordem ?? 0),
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  const atividades = atividadesQuery.data ?? [];
 
   async function handleSalvarAtividade(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!cursoSelecionado) {
+    if (cursoId <= 0) {
       toast.error("Selecione um curso");
       return;
     }
 
-    const payload = {
-      cursoId: Number(cursoSelecionado),
+    if (!formAtividade.titulo.trim()) {
+      toast.error("Informe o título da atividade");
+      return;
+    }
+
+    await criarAtividadeMutation.mutateAsync({
+      cursoId,
       titulo: formAtividade.titulo.trim(),
       tipoAtividade: formAtividade.tipoAtividade,
       descricao: formAtividade.descricao.trim(),
       urlGenially: formAtividade.urlGenially.trim(),
       ordem: Number(formAtividade.ordem || 0),
-    };
-
-    if (!payload.titulo) {
-      toast.error("Informe o título da atividade");
-      return;
-    }
-
-    if (atividadeIdEdicao) {
-      await atualizarAtividadeMutation.mutateAsync({
-        id: atividadeIdEdicao,
-        titulo: payload.titulo,
-        tipoAtividade: payload.tipoAtividade,
-        descricao: payload.descricao,
-        urlGenially: payload.urlGenially,
-        ordem: payload.ordem,
-      });
-      return;
-    }
-
-    await criarAtividadeMutation.mutateAsync(payload);
-  }
-
-  async function handleDeletarAtividade(id: number) {
-    const confirmar = window.confirm("Deseja realmente desativar esta atividade?");
-    if (!confirmar) return;
-
-    await deletarAtividadeMutation.mutateAsync({ id });
+    });
   }
 
   return (
@@ -218,314 +107,204 @@ export default function AdminAtividades() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Administração de Atividades</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Cadastre, edite e organize as atividades vinculadas aos cursos de competências.
+          Selecione a competência, depois o curso, e adicione atividades.
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Coluna 1: Seleção */}
         <Card>
           <CardHeader>
-            <CardTitle>{atividadeIdEdicao ? "Editar atividade" : "Nova atividade"}</CardTitle>
-            <CardDescription>
-              Selecione primeiro a competência e o curso para cadastrar a atividade.
-            </CardDescription>
+            <CardTitle>Seleção</CardTitle>
+            <CardDescription>Escolha competência e curso</CardDescription>
           </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Competência */}
+            <div className="space-y-2">
+              <Label>Competência</Label>
+              <Select
+                value={String(competenciaId)}
+                onValueChange={(value) => {
+                  setCompetenciaId(Number(value));
+                  setCursoId(0);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">-- Selecione --</SelectItem>
+                  {competencias.map((comp: any) => (
+                    <SelectItem key={comp.id} value={String(comp.id)}>
+                      {comp.competencia || comp.nome || `Competência ${comp.id}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
+            {/* Curso */}
+            <div className="space-y-2">
+              <Label>Curso</Label>
+              <Select
+                value={String(cursoId)}
+                onValueChange={(value) => setCursoId(Number(value))}
+                disabled={competenciaId <= 0}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">-- Selecione --</SelectItem>
+                  {cursos.map((curso: any) => (
+                    <SelectItem key={curso.id} value={String(curso.id)}>
+                      {curso.titulo || `Curso ${curso.id}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {competenciaId > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {cursos.length} curso(s) disponível(is)
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Coluna 2: Criar Atividade */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Nova Atividade</CardTitle>
+            <CardDescription>Preencha os dados</CardDescription>
+          </CardHeader>
           <CardContent>
-            <form onSubmit={handleSalvarAtividade} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Competência</Label>
-                <Select
-                  value={competenciaSelecionada || "__none__"}
-                  onValueChange={(value) => {
-                    const novaCompetencia = value === "__none__" ? "" : value;
-                    setCompetenciaSelecionada(novaCompetencia);
-                    // Extrair ID da competência selecionada
-                    const competenciaObj = competenciasQuery.data?.find((c: any) => (c.competencia || c.nome) === novaCompetencia);
-                    setCompetenciaSelecionadaId(competenciaObj?.id || 0);
-                    setCursoSelecionado("");
-                    limparFormulario();
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione a competência" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Selecione</SelectItem>
-                    {competenciasUnicas.map((competencia) => (
-                      <SelectItem key={competencia} value={competencia}>
-                        {competencia}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Curso</Label>
-                <Select
-                  value={cursoSelecionado || "__none__"}
-                  onValueChange={(value) => {
-                    const novoCurso = value === "__none__" ? "" : value;
-                    setCursoSelecionado(novoCurso);
-                    limparFormulario();
-                  }}
-                  disabled={!competenciaSelecionada}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o curso" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Selecione</SelectItem>
-                    {cursos.map((curso) => (
-                      <SelectItem key={curso.id} value={String(curso.id)}>
-                        {curso.titulo}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="titulo">Título da atividade</Label>
+            <form onSubmit={handleSalvarAtividade} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="titulo" className="text-xs">
+                  Título
+                </Label>
                 <Input
                   id="titulo"
                   value={formAtividade.titulo}
                   onChange={(e) =>
                     setFormAtividade((prev) => ({ ...prev, titulo: e.target.value }))
                   }
-                  placeholder="Digite o título da atividade"
-                  required
-                  disabled={!cursoSelecionado}
+                  placeholder="Ex: Introdução ao tema"
+                  disabled={cursoId <= 0}
+                  className="text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Tipo de atividade</Label>
+              <div className="space-y-1">
+                <Label htmlFor="tipo" className="text-xs">
+                  Tipo
+                </Label>
                 <Select
                   value={formAtividade.tipoAtividade}
-                  onValueChange={(value: TipoAtividade) =>
-                    setFormAtividade((prev) => ({ ...prev, tipoAtividade: value }))
+                  onValueChange={(value) =>
+                    setFormAtividade((prev) => ({
+                      ...prev,
+                      tipoAtividade: value as TipoAtividade,
+                    }))
                   }
-                  disabled={!cursoSelecionado}
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o tipo" />
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {TIPOS_ATIVIDADE.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>
-                        {tipo}
+                      <SelectItem key={tipo.value} value={tipo.value}>
+                        {tipo.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="descricao">Descrição</Label>
+              <div className="space-y-1">
+                <Label htmlFor="url" className="text-xs">
+                  URL
+                </Label>
+                <Input
+                  id="url"
+                  value={formAtividade.urlGenially}
+                  onChange={(e) =>
+                    setFormAtividade((prev) => ({ ...prev, urlGenially: e.target.value }))
+                  }
+                  placeholder="https://..."
+                  disabled={cursoId <= 0}
+                  className="text-sm"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="descricao" className="text-xs">
+                  Descrição
+                </Label>
                 <Textarea
                   id="descricao"
                   value={formAtividade.descricao}
                   onChange={(e) =>
                     setFormAtividade((prev) => ({ ...prev, descricao: e.target.value }))
                   }
-                  placeholder="Descreva a atividade"
-                  rows={4}
-                  disabled={!cursoSelecionado}
+                  placeholder="Descrição opcional"
+                  disabled={cursoId <= 0}
+                  className="text-sm min-h-20"
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="urlGenially">URL do conteúdo</Label>
-                  <Input
-                    id="urlGenially"
-                    value={formAtividade.urlGenially}
-                    onChange={(e) =>
-                      setFormAtividade((prev) => ({ ...prev, urlGenially: e.target.value }))
-                    }
-                    placeholder="https://..."
-                    disabled={!cursoSelecionado}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ordem">Ordem</Label>
-                  <Input
-                    id="ordem"
-                    type="number"
-                    value={formAtividade.ordem}
-                    onChange={(e) =>
-                      setFormAtividade((prev) => ({ ...prev, ordem: e.target.value }))
-                    }
-                    disabled={!cursoSelecionado}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  type="submit"
-                  disabled={
-                    !cursoSelecionado ||
-                    criarAtividadeMutation.isPending ||
-                    atualizarAtividadeMutation.isPending
+              <div className="space-y-1">
+                <Label htmlFor="ordem" className="text-xs">
+                  Ordem
+                </Label>
+                <Input
+                  id="ordem"
+                  type="number"
+                  value={formAtividade.ordem}
+                  onChange={(e) =>
+                    setFormAtividade((prev) => ({ ...prev, ordem: e.target.value }))
                   }
-                >
-                  {atividadeIdEdicao ? "Salvar alterações" : "Criar atividade"}
-                </Button>
-
-                <Button type="button" variant="outline" onClick={limparFormulario}>
-                  Limpar
-                </Button>
+                  disabled={cursoId <= 0}
+                  className="text-sm"
+                />
               </div>
 
-              {(criarAtividadeMutation.error || atualizarAtividadeMutation.error) && (
-                <p className="text-sm text-red-600">
-                  {criarAtividadeMutation.error?.message ||
-                    atualizarAtividadeMutation.error?.message ||
-                    "Não foi possível salvar a atividade."}
-                </p>
-              )}
+              <Button type="submit" disabled={cursoId <= 0} className="w-full text-sm">
+                Criar Atividade
+              </Button>
             </form>
           </CardContent>
         </Card>
 
+        {/* Coluna 3: Lista de Atividades */}
         <Card>
           <CardHeader>
-            <CardTitle>Resumo</CardTitle>
-            <CardDescription>
-              Selecione competência e curso para gerenciar as atividades.
-            </CardDescription>
+            <CardTitle>Atividades</CardTitle>
+            <CardDescription>Do curso selecionado</CardDescription>
           </CardHeader>
-
-          <CardContent className="space-y-4">
-            <div className="rounded-md border p-4 text-sm text-muted-foreground">
-              {competenciasQuery.isLoading
-                ? "Carregando competências..."
-                : `${competenciasUnicas.length} competência(s) encontrada(s).`}
-            </div>
-
-            <div className="rounded-md border p-4 text-sm text-muted-foreground">
-              {!competenciaSelecionada
-                ? "Escolha uma competência para listar os cursos."
-                : cursosQuery.isLoading
-                ? "Carregando cursos..."
-                : `${cursos.length} curso(s) encontrado(s) para a competência selecionada.`}
-            </div>
-
-            <div className="rounded-md border p-4 text-sm text-muted-foreground">
-              {!cursoSelecionado
-                ? "Escolha um curso para visualizar as atividades."
-                : atividadesQuery.isLoading
-                ? "Carregando atividades..."
-                : `${atividades.length} atividade(s) encontrada(s) para o curso selecionado.`}
-            </div>
-
-            {competenciasQuery.error && (
-              <p className="text-sm text-red-600">{competenciasQuery.error.message}</p>
-            )}
-            {cursosQuery.error && (
-              <p className="text-sm text-red-600">{cursosQuery.error.message}</p>
-            )}
-            {atividadesQuery.error && (
-              <p className="text-sm text-red-600">{atividadesQuery.error.message}</p>
+          <CardContent>
+            {cursoId <= 0 ? (
+              <p className="text-xs text-muted-foreground">Selecione um curso</p>
+            ) : atividades.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Nenhuma atividade cadastrada</p>
+            ) : (
+              <div className="space-y-2">
+                {atividades.map((atividade: any) => (
+                  <div key={atividade.id} className="border rounded p-2 text-xs">
+                    <p className="font-semibold">{atividade.titulo}</p>
+                    <p className="text-muted-foreground">
+                      {TIPOS_ATIVIDADE.find((t) => t.value === atividade.tipoAtividade)
+                        ?.label || atividade.tipoAtividade}
+                    </p>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Atividades cadastradas</CardTitle>
-          <CardDescription>
-            {cursoSelecionado
-              ? "Gerencie as atividades do curso selecionado."
-              : "Selecione um curso acima para listar as atividades."}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          {!cursoSelecionado ? (
-            <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-              Escolha um curso para visualizar as atividades.
-            </div>
-          ) : atividadesQuery.isLoading ? (
-            <div className="rounded-md border p-8 text-center text-sm text-muted-foreground">
-              Carregando atividades...
-            </div>
-          ) : atividades.length === 0 ? (
-            <div className="rounded-md border p-8 text-center text-sm text-muted-foreground">
-              Nenhuma atividade encontrada para este curso.
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {atividades.map((atividade) => (
-                <div
-                  key={atividade.id}
-                  className="rounded-lg border p-4 shadow-sm transition hover:shadow-md"
-                >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-semibold">{atividade.titulo}</h3>
-                        <span className="rounded-full bg-muted px-2 py-1 text-xs">
-                          {atividade.tipoAtividade}
-                        </span>
-                        <span className="rounded-full bg-muted px-2 py-1 text-xs">
-                          Ordem {atividade.ordem}
-                        </span>
-                        <span className="rounded-full bg-muted px-2 py-1 text-xs">
-                          {atividade.isActive === 1 ? "Ativa" : "Inativa"}
-                        </span>
-                      </div>
-
-                      <p className="text-sm text-muted-foreground">
-                        {atividade.descricao || "Sem descrição cadastrada."}
-                      </p>
-
-                      {atividade.urlGenially ? (
-                        <a
-                          href={atividade.urlGenially}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-block text-sm text-primary underline"
-                        >
-                          Abrir conteúdo
-                        </a>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          Sem URL cadastrada.
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" onClick={() => preencherEdicao(atividade)}>
-                        Editar
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleDeletarAtividade(atividade.id)}
-                        disabled={deletarAtividadeMutation.isPending}
-                      >
-                        Desativar
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {deletarAtividadeMutation.error && (
-            <p className="mt-4 text-sm text-red-600">
-              {deletarAtividadeMutation.error.message}
-            </p>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

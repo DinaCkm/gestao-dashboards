@@ -1341,8 +1341,6 @@ export const cursosCompetencias = mysqlTable("cursos_competencias", {
   id: int("id").autoincrement().primaryKey(),
   competenciaId: int("competenciaId").notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
-  descricao: text("descricao"),
-  capaUrl: varchar("capaUrl", { length: 500 }),
   ordem: int("ordem").default(0).notNull(),
   isActive: int("isActive").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -1372,7 +1370,7 @@ export type AtividadeCurso = typeof atividadesCurso.$inferSelect;
 export type InsertAtividadeCurso = typeof atividadesCurso.$inferInsert;
 
 // Tipos de atividade disponíveis
-export const TIPOS_ATIVIDADE = ["genially", "video", "podcast", "tedtalk", "livro", "intro"] as const;
+export const TIPOS_ATIVIDADE = ["introducao", "videos", "podcast", "tedtalks", "filmes", "livros", "ead", "outros"] as const;
 export type TipoAtividade = typeof TIPOS_ATIVIDADE[number];
 
 /**

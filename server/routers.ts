@@ -8822,40 +8822,42 @@ Responda APENAS em JSON com o formato especificado.`
               });
             }
 
-            const urlFinal = input.urlGenially?.trim() || input.urlMidia?.trim() || null;
-            const now = new Date();
+            const conn = await db.getRawConnection();
+            if (!conn) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Conexao com banco indisponivel",
+              });
+            }
 
-            // Usar SQL direto para INSERT
-            const connection = await db.getDb();
-            const result = await connection.execute(
-              `INSERT INTO atividades_curso 
-               (cursoId, titulo, tipoAtividade, urlGenially, urlMidia, descricao, ordem, isActive, createdAt, updatedAt)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-,
-              [
-                Number(input.cursoId),
-                input.titulo.trim(),
-                input.tipoAtividade,
-                urlFinal,
-                urlFinal,
-                input.descricao?.trim() || null,
-                Number(input.ordem ?? 0),
-                1,
-                now,
-                now,
-              ]
-            );
+            const urlFinal = input.urlGenially?.trim() || input.urlMidia?.trim() || null;
+            const descricao = input.descricao?.trim() || null;
+            const ordem = Number(input.ordem ?? 0);
+
+            const query = `INSERT INTO atividades_curso (cursoId, titulo, tipoAtividade, urlGenially, urlMidia, descricao, ordem) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?)`;
+            
+            const [result] = await conn.execute(query, [
+              Number(input.cursoId),
+              input.titulo.trim(),
+              input.tipoAtividade,
+              urlFinal,
+              urlFinal,
+              descricao,
+              ordem
+            ]);
 
             console.log("[criarAtividade] INSERT bem-sucedido", {
               cursoId: input.cursoId,
               titulo: input.titulo,
               tipoAtividade: input.tipoAtividade,
-              insertId: result[0]?.insertId,
+              result,
             });
 
             return {
               success: true,
-              id: result[0]?.insertId ?? null,
+              message: "Atividade criada com sucesso",
+              id: (result as any).insertId,
             };
           } catch (error: any) {
             console.error("[criarAtividade] Erro", {
