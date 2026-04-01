@@ -67,7 +67,7 @@ export default function AdminAtividades() {
     titulo: "",
     tipoAtividade: "videos" as TipoAtividade,
     descricao: "",
-    urlGenially: "",
+    urlMidia: "",
     ordem: "0",
   });
 
@@ -142,9 +142,9 @@ export default function AdminAtividades() {
     setAtividadeIdEdicao(null);
     setFormAtividade({
       titulo: "",
-      tipoAtividade: "video",
+      tipoAtividade: "videos",
       descricao: "",
-      urlGenially: "",
+      urlMidia: "",
       ordem: "0",
     });
   }
@@ -155,7 +155,7 @@ export default function AdminAtividades() {
       titulo: atividade.titulo,
       tipoAtividade: atividade.tipoAtividade,
       descricao: atividade.descricao,
-      urlGenially: atividade.urlGenially,
+      urlMidia: atividade.urlMidia,
       ordem: String(atividade.ordem ?? 0),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -171,7 +171,7 @@ export default function AdminAtividades() {
       titulo: formAtividade.titulo,
       tipoAtividade: formAtividade.tipoAtividade,
       descricao: formAtividade.descricao,
-      urlMidia: formAtividade.urlGenially,
+      urlMidia: formAtividade.urlMidia,
       ordem: Number(formAtividade.ordem || 0),
     };
 
