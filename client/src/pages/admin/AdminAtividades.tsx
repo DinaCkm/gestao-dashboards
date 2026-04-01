@@ -368,11 +368,11 @@ export default function AdminAtividades() {
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
               {competenciasQuery.isLoading
                 ? "Carregando competências..."
-                : `${competenciasUnicas.length} competência(s) encontrada(s).`}
+                : `${competencias.length} competência(s) encontrada(s).`}
             </div>
 
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
-              {!competenciaSelecionada
+              {!competenciaSelecionadaId
                 ? "Escolha uma competência para listar os cursos."
                 : cursosQuery.isLoading
                 ? "Carregando cursos..."
