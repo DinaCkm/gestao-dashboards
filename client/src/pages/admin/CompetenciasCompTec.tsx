@@ -135,7 +135,16 @@ export default function CompetenciasCompTec() {
               <label className="block text-sm font-medium mb-2">Competência *</label>
               <Select value={selectedCompetencia} onValueChange={(value) => {
                 console.log('onValueChange recebeu:', value, 'tipo:', typeof value);
-                setSelectedCompetencia(value);
+                // Se o valor é um nome (string com letras), encontrar o ID
+                if (isNaN(Number(value)) && competencias) {
+                  const found = competencias.find((c: any) => c.nome === value);
+                  if (found) {
+                    console.log('Encontrado competência:', found.id, found.nome);
+                    setSelectedCompetencia(found.id.toString());
+                  }
+                } else {
+                  setSelectedCompetencia(value);
+                }
               }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma competência" />
@@ -144,7 +153,7 @@ export default function CompetenciasCompTec() {
                   {competencias && competencias.length > 0 ? (
                     Array.from(new Map(competencias.map((comp: any) => [comp.id, comp])).values()).map((comp: any) => (
                       comp && comp.id ? (
-                        <SelectItem key={comp.id} value={comp.id.toString()}>
+                        <SelectItem key={comp.id} value={comp.id.toString()} className="cursor-pointer">
                           {comp.nome}
                         </SelectItem>
                       ) : null
