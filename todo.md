@@ -3484,3 +3484,17 @@
   - Adicionar card "Tarefas" mostrando número esperado (5 para 6 meses)
   - Adicionar card "Webinares" mostrando número esperado (12 para 6 meses)
   - Posicionar após os cards de Competências, Trilha, Meses de Contrato e Meses de Jornada
+
+
+## Interface Admin para Vídeos de Onboarding
+- [x] Criar página admin para gerenciar vídeos de onboarding
+  - [x] Formulário para adicionar/editar URLs dos 5 vídeos (Boas-vindas, Competências, Webinars, Tarefas, Metas)
+  - [x] Campos: videoUrl (YouTube), título, descrição, textoExplicativo
+  - [x] Tabela com lista dos vídeos cadastrados
+  - [x] Botões de editar e deletar
+  - [x] Preview do vídeo ao adicionar URL
+  - [x] Rotas tRPC criadas (listar, obter, obterPorChave, criar, atualizar, deletar)
+  - [x] Menu admin atualizado com link para página de vídeos
+  - [x] Testes unitários criados
+  - [ ] Integrar vídeos no OnboardingAluno para exibir ao clicar em cada atividade
+  - [ ] Adicionar modal/dialog para exibir vídeo quando aluno clica em atividade
