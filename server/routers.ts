@@ -5,7 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { eq, and, asc, desc } from "drizzle-orm";
-import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCursoAtribuido, tentativasAvaliacao, cursos, atividadesCurso, avaliacoesAtividade, cursosCompetencias } from "../drizzle/schema";
+import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCursoAtribuido, tentativasAvaliacao, cursos, atividadesCurso, avaliacoesAtividade, cursosCompetencias, onboardingVideos } from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
 import * as XLSX from 'xlsx';
@@ -9320,5 +9320,102 @@ Responda APENAS em JSON com o formato especificado.`
           };
         }),
     }),
+  }),
+
+  onboardingVideos: router({
+    listar: publicProcedure.query(async () => {
+      const database = await getDb();
+      if (!database) return [];
+      const videos = await database
+        .select()
+        .from(onboardingVideos)
+        .where(eq(onboardingVideos.isActive, 1))
+        .orderBy(asc(onboardingVideos.ordem));
+      return videos;
+    }),
+
+    obter: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const database = await getDb();
+        if (!database) return null;
+        const video = await database
+          .select()
+          .from(onboardingVideos)
+          .where(eq(onboardingVideos.id, input.id))
+          .limit(1);
+        return video[0] || null;
+      }),
+
+    obterPorChave: publicProcedure
+      .input(z.object({ chave: z.string() }))
+      .query(async ({ input }) => {
+        const database = await getDb();
+        if (!database) return null;
+        const video = await database
+          .select()
+          .from(onboardingVideos)
+          .where(and(eq(onboardingVideos.chave, input.chave), eq(onboardingVideos.isActive, 1)))
+          .limit(1);
+        return video[0] || null;
+      }),
+
+    criar: adminProcedure
+      .input(z.object({
+        chave: z.string(),
+        titulo: z.string(),
+        descricao: z.string().optional(),
+        videoUrl: z.string(),
+        textoExplicativo: z.string().optional(),
+        ordem: z.number().default(0),
+      }))
+      .mutation(async ({ input }) => {
+        const database = await getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
+        const result = await database
+          .insert(onboardingVideos)
+          .values({
+            chave: input.chave,
+            titulo: input.titulo,
+            descricao: input.descricao,
+            videoUrl: input.videoUrl,
+            textoExplicativo: input.textoExplicativo,
+            ordem: input.ordem,
+            isActive: 1,
+          });
+        return result;
+      }),
+
+    atualizar: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        chave: z.string().optional(),
+        titulo: z.string().optional(),
+        descricao: z.string().optional(),
+        videoUrl: z.string().optional(),
+        textoExplicativo: z.string().optional(),
+        ordem: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const database = await getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
+        const { id, ...updates } = input;
+        const result = await database
+          .update(onboardingVideos)
+          .set(updates)
+          .where(eq(onboardingVideos.id, id));
+        return result;
+      }),
+
+    deletar: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const database = await getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
+        const result = await database
+          .delete(onboardingVideos)
+          .where(eq(onboardingVideos.id, input.id));
+        return result;
+      }),
   }),
 });
