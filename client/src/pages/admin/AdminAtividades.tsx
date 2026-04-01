@@ -55,6 +55,7 @@ function normalizarAtividade(item: any) {
 
 export default function AdminAtividades() {
   const [competenciaSelecionada, setCompetenciaSelecionada] = useState<string>("");
+  const [competenciaSelecionadaId, setCompetenciaSelecionadaId] = useState<number>(0);
   const [cursoSelecionado, setCursoSelecionado] = useState<string>("");
   const [atividadeIdEdicao, setAtividadeIdEdicao] = useState<number | null>(null);
 
@@ -71,8 +72,8 @@ export default function AdminAtividades() {
   const competenciasQuery = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
 
   const cursosQuery = trpc.competenciasCompTec.admin.listarCursosPorCompetencia.useQuery(
-    { competencia: competenciaSelecionada },
-    { enabled: !!competenciaSelecionada }
+    { competenciaId: competenciaSelecionadaId },
+    { enabled: competenciaSelecionadaId > 0 }
   );
 
   const atividadesQuery = trpc.competenciasCompTec.admin.listarAtividades.useQuery(
@@ -239,6 +240,9 @@ export default function AdminAtividades() {
                   onValueChange={(value) => {
                     const novaCompetencia = value === "__none__" ? "" : value;
                     setCompetenciaSelecionada(novaCompetencia);
+                    // Extrair ID da competência selecionada
+                    const competenciaObj = competenciasQuery.data?.find((c: any) => (c.competencia || c.nome) === novaCompetencia);
+                    setCompetenciaSelecionadaId(competenciaObj?.id || 0);
                     setCursoSelecionado("");
                     limparFormulario();
                   }}
