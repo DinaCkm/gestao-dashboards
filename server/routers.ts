@@ -5,7 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { eq, and, asc, desc } from "drizzle-orm";
-import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCursoAtribuido, tentativasAvaliacao, cursos, atividadesCurso, avaliacoesAtividade } from "../drizzle/schema";
+import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCursoAtribuido, tentativasAvaliacao, cursos, atividadesCurso, avaliacoesAtividade, cursosCompetencias } from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
 import * as XLSX from 'xlsx';
@@ -8608,11 +8608,14 @@ Responda APENAS em JSON com o formato especificado.`
         const database = await db.getDb();
         if (!database) return [];
 
-        return await database
-          .select()
-          .from(competenciasModulos)
-          .where(eq(competenciasModulos.isActive, 1))
-          .orderBy(asc(competenciasModulos.competencia), asc(competenciasModulos.ordem));
+        // Busca TODAS as competências ativas
+        const resultado = await database
+          .select({ nome: competencias.nome })
+          .from(competencias)
+          .where(eq(competencias.isActive, 1))
+          .orderBy(asc(competencias.nome));
+
+        return resultado.map(r => ({ competencia: r.nome }));
       }),
 
       listarCursosPorCompetencia: protectedProcedure
