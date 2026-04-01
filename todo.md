@@ -3470,8 +3470,8 @@
   - Exibir logo abaixo do período (ex: "22 de mar. — 24 de abr. de 26")
 - [x] Corrigir fórmula de cálculo de expectativas
   - Problema: Está usando duração do microciclo (1 mês) em vez do contrato (6 meses)
-  - Solução: Usar período do contrato para calcular: 5 mentorias (1 assessment + 4 acompanhamento), 12 webinares (2 por quinzena), tarefas conforme política
-  - Fórmula: mentorias = (mesesTotais - 1) * 0.8 + 1; webinares = mesesTotais * 2; tarefas = mesesTotais * 2
+  - Solução: Usar período do contrato para calcular: 5 mentorias (1 assessment + 4 acompanhamento), 12 webinares (2 por quinzena), tarefas = mentorias
+  - Fórmula: mentorias = (mesesTotais - 1) * 0.8 + 1; webinares = mesesTotais * 2; tarefas = mentorias (1 tarefa por mentoria)
 
 - [x] Corrigir exibição de duração da jornada no dashboard do aluno
   - Problema: Dashboard mostra "1 Mês de Jornada" em vez de "6 Meses de Contrato"

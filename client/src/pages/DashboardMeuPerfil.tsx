@@ -1308,7 +1308,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                   // Cálculo de expectativas baseado na duração total do contrato
                   // Para 6 meses: 5 mentorias (1 assessment + 4 acompanhamento), 12 webinares (2 por quinzena)
                   const mentoriasEsperadas = Math.max(1, Math.ceil((mesesTotais - 1) * 0.8 + 1)); // 1 assessment + 1 mentoria a cada 1.25 meses
-                  const tarefasEsperadas = Math.ceil(mesesTotais * 2); // 2 tarefas por mês
+                  const tarefasEsperadas = mentoriasEsperadas; // 1 tarefa por mentoria
                   const webinaresEsperados = Math.ceil(mesesTotais * 2); // 2 webinares por mês (1 por quinzena)
                   
                   return (
