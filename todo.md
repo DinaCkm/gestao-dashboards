@@ -3472,3 +3472,9 @@
   - Problema: Está usando duração do microciclo (1 mês) em vez do contrato (6 meses)
   - Solução: Usar período do contrato para calcular: 5 mentorias (1 assessment + 4 acompanhamento), 12 webinares (2 por quinzena), tarefas conforme política
   - Fórmula: mentorias = (mesesTotais - 1) * 0.8 + 1; webinares = mesesTotais * 2; tarefas = mesesTotais * 2
+
+- [x] Corrigir exibição de duração da jornada no dashboard do aluno
+  - Problema: Dashboard mostra "1 Mês de Jornada" em vez de "6 Meses de Contrato"
+  - Problema: Card de "Expectativas da Sua Jornada" não aparece no dashboard
+  - Solução: Corrigir getContratoMentoriaByAluno para buscar em tabela alunos (contratoInicio/contratoFim) além de contratosAluno
+  - Resultado: Agora busca primeiro em alunos, depois em contratosAluno, garantindo que encontre o contrato do Elio

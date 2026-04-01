@@ -9569,6 +9569,36 @@ export async function getContratoMentoriaByAluno(alunoId: number) {
   if (!db) return null;
   
   try {
+    // 1. Primeiro, buscar na tabela alunos (contratoInicio/contratoFim)
+    const alunoData = await db
+      .select({
+        contratoInicio: alunos.contratoInicio,
+        contratoFim: alunos.contratoFim,
+        tipoMentoria: alunos.tipoMentoria,
+        totalSessoesContratadas: alunos.totalSessoesContratadas,
+      })
+      .from(alunos)
+      .where(
+        and(
+          eq(alunos.id, alunoId),
+          isNotNull(alunos.contratoInicio),
+          isNotNull(alunos.contratoFim)
+        )
+      )
+      .limit(1);
+    
+    if (alunoData && alunoData.length > 0) {
+      const data = alunoData[0];
+      return {
+        id: alunoId,
+        dataInicio: data.contratoInicio,
+        dataTermino: data.contratoFim,
+        tipoMentoria: data.tipoMentoria || 'individual',
+        totalSessoesContratadas: data.totalSessoesContratadas || 0,
+      };
+    }
+    
+    // 2. Se não encontrar em alunos, buscar em contratosAluno
     const contratos = await db
       .select()
       .from(contratosAluno)
