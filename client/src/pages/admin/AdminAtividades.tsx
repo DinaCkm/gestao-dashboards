@@ -169,7 +169,7 @@ export default function AdminAtividades() {
       titulo: formAtividade.titulo,
       tipoAtividade: formAtividade.tipoAtividade,
       descricao: formAtividade.descricao,
-      urlGenially: formAtividade.urlGenially,
+      urlMidia: formAtividade.urlGenially,
       ordem: Number(formAtividade.ordem || 0),
     };
 
@@ -179,7 +179,7 @@ export default function AdminAtividades() {
         titulo: payload.titulo,
         tipoAtividade: payload.tipoAtividade,
         descricao: payload.descricao,
-        urlGenially: payload.urlGenially,
+        urlMidia: payload.urlMidia,
         ordem: payload.ordem,
       });
       return;
@@ -316,9 +316,9 @@ export default function AdminAtividades() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="urlGenially">URL do conteúdo</Label>
+                  <Label htmlFor="urlMidia">URL da Mídia (Genially, YouTube, etc.)</Label>
                   <Input
-                    id="urlGenially"
+                    id="urlMidia"
                     value={formAtividade.urlGenially}
                     onChange={(e) =>
                       setFormAtividade((prev) => ({ ...prev, urlGenially: e.target.value }))
