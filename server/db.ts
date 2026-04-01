@@ -9536,12 +9536,24 @@ export async function getAssessmentCompetenciasByPdi(pdiId: number) {
   if (!db) return [];
   
   try {
-    const competencias = await db
-      .select()
+    const competenciasComNomes = await db
+      .select({
+        id: assessmentCompetencias.id,
+        assessmentPdiId: assessmentCompetencias.assessmentPdiId,
+        competenciaId: assessmentCompetencias.competenciaId,
+        nome: competencias.nome,
+        peso: assessmentCompetencias.peso,
+        nivelAtual: assessmentCompetencias.nivelAtual,
+        metaFinal: assessmentCompetencias.metaFinal,
+        microInicio: assessmentCompetencias.microInicio,
+        microTermino: assessmentCompetencias.microTermino,
+        createdAt: assessmentCompetencias.createdAt,
+      })
       .from(assessmentCompetencias)
+      .leftJoin(competencias, eq(assessmentCompetencias.competenciaId, competencias.id))
       .where(eq(assessmentCompetencias.assessmentPdiId, pdiId));
     
-    return competencias || [];
+    return competenciasComNomes || [];
   } catch (error) {
     console.error('Erro ao buscar competências do PDI:', error);
     return [];

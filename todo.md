@@ -3455,9 +3455,10 @@
 
 
 ## Bugs Corrigidos (01/04/2026)
-- [x] Corrigir exibição de nomes das competências na Jornada (estava mostrando apenas números 1, 2, 3, 4)
-  - Problema: Campo `competenciaNome` não estava sendo retornado na API de jornada
-  - Solução: Adicionar `competenciaNome: comp.nome` ao mapeamento de microJornadas no router
+- [x] Corrigir exibição de nomes das competências na Jornada (estava mostrando "Competência #30003" em vez do nome real)
+  - Problema: A função `getAssessmentCompetenciasByPdi` retornava apenas o `competenciaId`, sem fazer JOIN com a tabela `competencias`
+  - Solução: Adicionar LEFT JOIN entre `assessment_competencias` e `competencias` para trazer o nome da competência
+  - Resultado: Agora exibe "Comunicação Assertiva", "Liderança", etc.
 - [ ] Corrigir desbloqueio do PDI no onboarding (aluno não consegue visualizar PDI após mentora criar)
   - Problema: Etapa 7 requer que TODOS os vídeos sejam assistidos antes de mostrar o PDI
   - Solução: Remover `todosVideosAssistidos` da condição de desbloqueio da Etapa 7
