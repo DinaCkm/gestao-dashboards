@@ -15,12 +15,12 @@ import {
 
 function DashboardContent() {
   const [, setLocation] = useLocation();
-  const [competenciaSelecionada, setCompetenciaSelecionada] = useState<string>("");
+  const [competenciaSelecionada, setCompetenciaSelecionada] = useState<number | null>(null);
 
   const competenciasQuery = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
 
-  const cursosQuery = trpc.competenciasCompTec.admin.listarCursosPorCompetencia.useQuery(
-    { competencia: competenciaSelecionada },
+  const cursosQuery = trpc.competenciasCompTec.admin.listarCursos.useQuery(
+    { competenciaId: competenciaSelecionada ? parseInt(competenciaSelecionada) : undefined },
     { enabled: !!competenciaSelecionada }
   );
 
@@ -35,9 +35,9 @@ function DashboardContent() {
 
   const competencias = useMemo(() => {
     const lista = (competenciasQuery.data ?? [])
-      .map((item: any) => item?.competencia)
-      .filter(Boolean);
-    return Array.from(new Set(lista));
+      .map((item: any) => ({ id: item?.id, nome: item?.nome }))
+      .filter((item) => item.id && item.nome);
+    return lista;
   }, [competenciasQuery.data]);
 
   const totalCompetencias = competencias.length;
@@ -137,14 +137,14 @@ function DashboardContent() {
                 <Button
                   key={competencia}
                   type="button"
-                  variant={competenciaSelecionada === competencia ? "default" : "outline"}
+                  variant={competenciaSelecionada === competencia.id ? "default" : "outline"}
                   onClick={() =>
                     setCompetenciaSelecionada((prev) =>
-                      prev === competencia ? "" : competencia
+                      prev === competencia.id ? null : competencia.id
                     )
                   }
                 >
-                  {competencia}
+                  {competencia.nome}
                 </Button>
               ))}
             </div>
@@ -182,7 +182,7 @@ function DashboardContent() {
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
               Controle os conteúdos do tipo vídeo, genially, podcast, TEDTalk, livro e texto.
             </div>
-            <Button className="w-full" onClick={() => setLocation("/admin/atividades")}>
+            <Button className="w-full" onClick={() => setLocation("/admin/competencias-comp-tec/atividades")}>
               Acessar atividades
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -200,7 +200,7 @@ function DashboardContent() {
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
               O aluno responde 15 questões aleatórias e precisa de nota mínima 8.
             </div>
-            <Button className="w-full" onClick={() => setLocation("/admin/avaliacoes")}>
+            <Button className="w-full" onClick={() => setLocation("/admin/competencias-comp-tec/avaliacoes")}>
               Acessar avaliações
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

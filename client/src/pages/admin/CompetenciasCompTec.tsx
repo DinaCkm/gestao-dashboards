@@ -18,11 +18,16 @@ import { Loader2, Plus, Trash2, Edit2 } from 'lucide-react';
 
 export default function CompetenciasCompTec() {
   const [selectedCompetencia, setSelectedCompetencia] = useState<string>('');
+  const [competenciaMap, setCompetenciaMap] = useState<Map<string, number>>(new Map());
   
   // Debug
   useEffect(() => {
-    console.log('selectedCompetencia mudou para:', selectedCompetencia);
-  }, [selectedCompetencia]);
+    console.log('selectedCompetencia mudou para:', selectedCompetencia, 'tipo:', typeof selectedCompetencia);
+    if (selectedCompetencia) {
+      const id = competenciaMap.get(selectedCompetencia);
+      console.log('ID mapeado:', id);
+    }
+  }, [selectedCompetencia, competenciaMap]);
   const [cursoTitulo, setCursoTitulo] = useState('');
   const [cursoDescricao, setCursoDescricao] = useState('');
   const [selectedCurso, setSelectedCurso] = useState<number | null>(null);
@@ -34,8 +39,19 @@ export default function CompetenciasCompTec() {
 
   // Queries
   const { data: competencias = [] } = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
+  
+  // Criar mapa de competências quando dados chegam
+  useEffect(() => {
+    if (competencias && competencias.length > 0) {
+      const map = new Map();
+      competencias.forEach((comp: any) => {
+        map.set(comp.nome, comp.id);
+      });
+      setCompetenciaMap(map);
+    }
+  }, [competencias]);
   const { data: cursos = [] } = trpc.competenciasCompTec.admin.listarCursos.useQuery(
-    { competenciaId: selectedCompetencia ? parseInt(selectedCompetencia) : undefined },
+    { competenciaId: selectedCompetencia ? (isNaN(Number(selectedCompetencia)) ? competenciaMap.get(selectedCompetencia) : parseInt(selectedCompetencia)) : undefined },
     { enabled: !!selectedCompetencia }
   );
   const { data: atividades = [] } = trpc.competenciasCompTec.admin.listarAtividadesCurso.useQuery(
@@ -87,8 +103,19 @@ export default function CompetenciasCompTec() {
     console.log('selectedCompetencia:', selectedCompetencia, 'tipo:', typeof selectedCompetencia);
     console.log('parseInt(selectedCompetencia):', parseInt(selectedCompetencia));
 
+    // Converter selectedCompetencia para ID se necessário
+    let competenciaId = parseInt(selectedCompetencia);
+    if (isNaN(competenciaId)) {
+      competenciaId = competenciaMap.get(selectedCompetencia) || 0;
+    }
+    
+    if (competenciaId === 0) {
+      toast.error('Competência inválida');
+      return;
+    }
+    
     await criarCursoMutation.mutateAsync({
-      competenciaId: parseInt(selectedCompetencia),
+      competenciaId,
       titulo: cursoTitulo,
       descricao: cursoDescricao || undefined,
     });
