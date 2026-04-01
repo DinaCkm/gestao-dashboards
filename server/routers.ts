@@ -8755,19 +8755,12 @@ Responda APENAS em JSON com o formato especificado.`
         }),
 
       listarCursosPorCompetencia: protectedProcedure
-        .input(z.object({ competencia: z.string() }))
+        .input(z.object({ competenciaId: z.number() }))
         .query(async ({ input }) => {
           const database = await db.getDb();
           if (!database) return [];
 
-          // Buscar competência por nome
-          const [comp] = await database
-            .select({ id: competencias.id })
-            .from(competencias)
-            .where(eq(competencias.nome, input.competencia))
-            .limit(1);
-
-          if (!comp) return [];
+          if (input.competenciaId <= 0) return [];
 
           // Buscar cursos da competência
           return await database
@@ -8775,7 +8768,7 @@ Responda APENAS em JSON com o formato especificado.`
             .from(cursosCompetencias)
             .where(
               and(
-                eq(cursosCompetencias.competenciaId, comp.id),
+                eq(cursosCompetencias.competenciaId, input.competenciaId),
                 eq(cursosCompetencias.isActive, 1)
               )
             )

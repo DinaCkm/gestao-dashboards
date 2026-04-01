@@ -46,7 +46,7 @@ function normalizarAtividade(item: any) {
 }
 
 export default function AdminAtividades() {
-  const [competenciaSelecionada, setCompetenciaSelecionada] = useState<string>("");
+  const [competenciaSelecionadaId, setCompetenciaSelecionadaId] = useState<number | null>(null);
   const [cursoSelecionado, setCursoSelecionado] = useState<string>("");
   const [atividadeIdEdicao, setAtividadeIdEdicao] = useState<number | null>(null);
 
@@ -63,8 +63,8 @@ export default function AdminAtividades() {
   const competenciasQuery = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
 
   const cursosQuery = trpc.competenciasCompTec.admin.listarCursosPorCompetencia.useQuery(
-    { competencia: competenciaSelecionada },
-    { enabled: !!competenciaSelecionada }
+    { competenciaId: competenciaSelecionadaId || 0 },
+    { enabled: !!competenciaSelecionadaId }
   );
 
   const atividadesQuery = trpc.competenciasCompTec.admin.listarAtividades.useQuery(
@@ -109,12 +109,8 @@ export default function AdminAtividades() {
       },
     });
 
-  const competenciasUnicas = useMemo(() => {
-    const lista = (competenciasQuery.data ?? [])
-      .map((item: any) => item?.competencia)
-      .filter(Boolean);
-
-    return Array.from(new Set(lista));
+  const competencias = useMemo(() => {
+    return (competenciasQuery.data ?? []).filter((item: any) => item?.id && item?.nome);
   }, [competenciasQuery.data]);
 
   const cursos = useMemo(
@@ -208,10 +204,10 @@ export default function AdminAtividades() {
               <div className="space-y-2">
                 <Label>Competência</Label>
                 <Select
-                  value={competenciaSelecionada || "__none__"}
+                  value={competenciaSelecionadaId ? String(competenciaSelecionadaId) : "__none__"}
                   onValueChange={(value) => {
-                    const novaCompetencia = value === "__none__" ? "" : value;
-                    setCompetenciaSelecionada(novaCompetencia);
+                    const novaCompetenciaId = value === "__none__" ? null : Number(value);
+                    setCompetenciaSelecionadaId(novaCompetenciaId);
                     setCursoSelecionado("");
                     limparFormulario();
                   }}
@@ -221,9 +217,9 @@ export default function AdminAtividades() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">Selecione</SelectItem>
-                    {competenciasUnicas.map((competencia) => (
-                      <SelectItem key={competencia} value={competencia}>
-                        {competencia}
+                    {competencias.map((comp: any) => (
+                      <SelectItem key={comp.id} value={String(comp.id)}>
+                        {comp.nome}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -239,7 +235,7 @@ export default function AdminAtividades() {
                     setCursoSelecionado(novoCurso);
                     limparFormulario();
                   }}
-                  disabled={!competenciaSelecionada}
+                  disabled={!competenciaSelecionadaId}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o curso" />
