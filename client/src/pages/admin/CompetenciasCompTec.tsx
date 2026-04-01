@@ -41,12 +41,17 @@ export default function CompetenciasCompTec() {
   );
 
   // Mutations
+  const utils = trpc.useUtils();
+  
   const criarCursoMutation = trpc.competenciasCompTec.admin.criarCurso.useMutation({
     onSuccess: () => {
       toast.success('Curso criado com sucesso!');
       setCursoTitulo('');
       setCursoDescricao('');
-      setSelectedCompetenciaId(null);
+      // Invalidar a query de cursos para recarregar a lista
+      if (selectedCompetenciaId) {
+        utils.competenciasCompTec.admin.listarCursos.invalidate({ competenciaId: selectedCompetenciaId });
+      }
     },
     onError: (error: any) => {
       toast.error(`Erro ao criar curso: ${error.message}`);
