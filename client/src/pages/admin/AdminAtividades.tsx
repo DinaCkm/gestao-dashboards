@@ -82,7 +82,9 @@ export default function AdminAtividades() {
 
   const atividadesQuery = trpc.competenciasCompTec.admin.listarAtividades.useQuery(
     { cursoId: Number(cursoSelecionado || 0) },
-    { enabled: !!cursoSelecionado }
+    { 
+      enabled: false // Desabilitar por padrão - só buscar após criar primeira atividade
+    }
   );
 
   const criarAtividadeMutation = trpc.competenciasCompTec.admin.criarAtividade.useMutation({
