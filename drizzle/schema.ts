@@ -1360,7 +1360,7 @@ export const atividadesCurso = mysqlTable("atividades_curso", {
   cursoId: int("cursoId").notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   tipoAtividade: mysqlEnum("tipoAtividade", ["genially", "video", "podcast", "tedtalk", "livro", "intro"]).notNull(),
-  urlGenially: text("urlGenially"),
+  urlGenially: varchar("urlGenially", { length: 500 }),
   descricao: text("descricao"),
   ordem: int("ordem").default(0).notNull(),
   isActive: int("isActive").default(1).notNull(),
