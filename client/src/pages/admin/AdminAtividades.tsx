@@ -395,6 +395,8 @@ export default function AdminAtividades() {
             <div className="rounded-md border p-4 text-sm text-muted-foreground">
               {!cursoSelecionado
                 ? "Escolha um curso para visualizar as atividades."
+                : atividades.length === 0 && !atividadesQuery.isLoading
+                ? "Nenhuma atividade cadastrada. Crie a primeira acima!"
                 : atividadesQuery.isLoading
                 ? "Carregando atividades..."
                 : `${atividades.length} atividade(s) encontrada(s) para o curso selecionado.`}
@@ -427,13 +429,14 @@ export default function AdminAtividades() {
             <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
               Escolha um curso para visualizar as atividades.
             </div>
+          ) : atividades.length === 0 && !atividadesQuery.isLoading ? (
+            <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
+              <p className="mb-2">Nenhuma atividade cadastrada para este curso.</p>
+              <p className="text-xs">Crie a primeira atividade no formulário acima!</p>
+            </div>
           ) : atividadesQuery.isLoading ? (
             <div className="rounded-md border p-8 text-center text-sm text-muted-foreground">
               Carregando atividades...
-            </div>
-          ) : atividades.length === 0 ? (
-            <div className="rounded-md border p-8 text-center text-sm text-muted-foreground">
-              Nenhuma atividade encontrada para este curso.
             </div>
           ) : (
             <div className="grid gap-4">
