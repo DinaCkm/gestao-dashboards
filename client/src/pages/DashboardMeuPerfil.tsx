@@ -1298,6 +1298,51 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                   })}
                 </div>
 
+                {/* Card de Expectativas da Jornada */}
+                {jornadaData.contrato && (() => {
+                  const periodoInicio = new Date(jornadaData.contrato.periodoInicio);
+                  const periodoFim = new Date(jornadaData.contrato.periodoTermino);
+                  const diasTotais = Math.ceil((periodoFim.getTime() - periodoInicio.getTime()) / (1000 * 60 * 60 * 24));
+                  const mesesTotais = Math.max(1, Math.ceil(diasTotais / 30));
+                  
+                  // Cálculo de expectativas baseado na duração (valores sugeridos)
+                  const mentoriasEsperadas = Math.ceil(mesesTotais * 1); // 1 mentoria por mês
+                  const tarefasEsperadas = Math.ceil(mesesTotais * 2); // 2 tarefas por mês
+                  const webinaresEsperados = Math.ceil(mesesTotais * 1); // 1 webinar por mês
+                  
+                  return (
+                    <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between flex-wrap gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-amber-100">
+                              <Target className="h-5 w-5 text-amber-700" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">Expectativas da Sua Jornada</p>
+                              <p className="text-xs text-gray-600">Baseado na duração do seu contrato ({mesesTotais} mês{mesesTotais !== 1 ? 'es' : ''})</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-6">
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-amber-700">{mentoriasEsperadas}</p>
+                              <p className="text-xs text-gray-600">Mentorias</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-orange-700">{tarefasEsperadas}</p>
+                              <p className="text-xs text-gray-600">Tarefas</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-amber-700">{webinaresEsperados}</p>
+                              <p className="text-xs text-gray-600">Webinares</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+
                 {/* Macro Jornadas (por trilha) */}
                 {jornadaData.macroJornadas
                   .filter((mj: any) => pdiStatusFilter === "todos" || mj.status === pdiStatusFilter)

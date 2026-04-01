@@ -3462,3 +3462,9 @@
 - [ ] Corrigir desbloqueio do PDI no onboarding (aluno não consegue visualizar PDI após mentora criar)
   - Problema: Etapa 7 requer que TODOS os vídeos sejam assistidos antes de mostrar o PDI
   - Solução: Remover `todosVideosAssistidos` da condição de desbloqueio da Etapa 7
+
+- [ ] Adicionar resumo de expectativas na Linha do Tempo da Jornada
+  - Mostrar número esperado de mentorias baseado na duração do contrato
+  - Mostrar número esperado de tarefas baseado na duração do contrato
+  - Mostrar número esperado de webinares baseado na duração do contrato
+  - Exibir logo abaixo do período (ex: "22 de mar. — 24 de abr. de 26")
