@@ -44,14 +44,13 @@ export default function CompetenciasCompTec() {
   const utils = trpc.useUtils();
   
   const criarCursoMutation = trpc.competenciasCompTec.admin.criarCurso.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Curso criado com sucesso!');
+      await utils.competenciasCompTec.admin.listarCursos.invalidate({
+        competenciaId: selectedCompetenciaId!,
+      });
       setCursoTitulo('');
       setCursoDescricao('');
-      // Invalidar a query de cursos para recarregar a lista
-      if (selectedCompetenciaId) {
-        utils.competenciasCompTec.admin.listarCursos.invalidate({ competenciaId: selectedCompetenciaId });
-      }
     },
     onError: (error: any) => {
       toast.error(`Erro ao criar curso: ${error.message}`);
@@ -59,8 +58,11 @@ export default function CompetenciasCompTec() {
   });
 
   const criarAtividadeMutation = trpc.competenciasCompTec.admin.criarAtividade.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Atividade adicionada com sucesso!');
+      await utils.competenciasCompTec.admin.listarAtividadesCurso.invalidate({
+        cursoId: selectedCursoId!,
+      });
       setAtividadeTitulo('');
       setAtividadeUrl('');
       setAtividadeDescricao('');
@@ -183,6 +185,20 @@ export default function CompetenciasCompTec() {
                 'Criar Curso'
               )}
             </Button>
+
+            {selectedCompetenciaId && cursos && cursos.length > 0 && (
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-3">Cursos Cadastrados</h3>
+                <div className="space-y-2">
+                  {cursos.map((curso: any) => (
+                    <div key={curso.id} className="bg-gray-50 p-3 rounded">
+                      <p className="font-medium">{curso.titulo}</p>
+                      <p className="text-sm text-gray-600">{curso.descricao || 'Sem descrição'}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
