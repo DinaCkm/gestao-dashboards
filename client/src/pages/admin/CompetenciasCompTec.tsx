@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,11 @@ import { Loader2, Plus, Trash2, Edit2 } from 'lucide-react';
 
 export default function CompetenciasCompTec() {
   const [selectedCompetencia, setSelectedCompetencia] = useState<string>('');
+  
+  // Debug
+  useEffect(() => {
+    console.log('selectedCompetencia mudou para:', selectedCompetencia);
+  }, [selectedCompetencia]);
   const [cursoTitulo, setCursoTitulo] = useState('');
   const [cursoDescricao, setCursoDescricao] = useState('');
   const [selectedCurso, setSelectedCurso] = useState<number | null>(null);
@@ -79,6 +84,9 @@ export default function CompetenciasCompTec() {
       return;
     }
 
+    console.log('selectedCompetencia:', selectedCompetencia, 'tipo:', typeof selectedCompetencia);
+    console.log('parseInt(selectedCompetencia):', parseInt(selectedCompetencia));
+
     await criarCursoMutation.mutateAsync({
       competenciaId: parseInt(selectedCompetencia),
       titulo: cursoTitulo,
@@ -131,7 +139,7 @@ export default function CompetenciasCompTec() {
                 </SelectTrigger>
                 <SelectContent>
                   {competencias && competencias.length > 0 ? (
-                    competencias.map((comp: any) => (
+                    Array.from(new Map(competencias.map((comp: any) => [comp.id, comp])).values()).map((comp: any) => (
                       comp && comp.id ? (
                         <SelectItem key={comp.id} value={comp.id.toString()}>
                           {comp.nome}

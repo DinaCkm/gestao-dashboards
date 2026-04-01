@@ -8615,7 +8615,15 @@ Responda APENAS em JSON com o formato especificado.`
           .where(eq(competencias.isActive, 1))
           .orderBy(asc(competencias.nome));
 
-        return resultado.map(r => ({ id: r.id, nome: r.nome }));
+        // Remover duplicatas por ID
+        const seen = new Set();
+        return resultado
+          .filter(r => {
+            if (seen.has(r.id)) return false;
+            seen.add(r.id);
+            return true;
+          })
+          .map(r => ({ id: r.id, nome: r.nome }));
       }),
 
       listarCursos: protectedProcedure
