@@ -8768,20 +8768,28 @@ Responda APENAS em JSON com o formato especificado.`
         .mutation(async ({ input }) => {
           const database = await db.getDb();
           if (!database) {
-            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Banco indisponível",
+            });
           }
 
           const result = await database.insert(atividadesCurso).values({
-            cursoId: input.cursoId,
-            titulo: input.titulo,
+            cursoId: Number(input.cursoId),
+            titulo: input.titulo.trim(),
             tipoAtividade: input.tipoAtividade,
-            urlGenially: input.urlGenially ?? null,
-            descricao: input.descricao ?? null,
-            ordem: input.ordem ?? 0,
+            urlGenially: input.urlGenially?.trim() || null,
+            descricao: input.descricao?.trim() || null,
+            ordem: Number(input.ordem ?? 0),
             isActive: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
           });
 
-          return { success: true, id: result[0]?.insertId ?? null };
+          return {
+            success: true,
+            id: result[0]?.insertId ?? null,
+          };
         }),
 
       atualizarAtividade: adminProcedure
