@@ -156,6 +156,7 @@ const adminMenuGroups: MenuGroup[] = [
     label: "Conteúdo e Comunicação",
     items: [
       { icon: Video, label: "Webinars", path: "/webinars" },
+      { icon: Video, label: "Vídeos de Onboarding", path: "/admin/onboarding-videos" },
       { icon: Bell, label: "Avisos e Comunicados", path: "/avisos" },
       { icon: BookOpen, label: "Cursos", path: "/cursos" },
       { icon: BookOpen, label: "Avaliações", path: "/admin/avaliacoes" },
