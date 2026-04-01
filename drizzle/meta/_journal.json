@@ -442,6 +442,13 @@
       "when": 1774975928815,
       "tag": "0062_old_marvel_apes",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "5",
+      "when": 1775071752159,
+      "tag": "0063_glamorous_zombie",
+      "breakpoints": true
     }
   ]
 }
