@@ -1305,10 +1305,11 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                   const diasTotais = Math.ceil((periodoFim.getTime() - periodoInicio.getTime()) / (1000 * 60 * 60 * 24));
                   const mesesTotais = Math.max(1, Math.ceil(diasTotais / 30));
                   
-                  // Cálculo de expectativas baseado na duração (valores sugeridos)
-                  const mentoriasEsperadas = Math.ceil(mesesTotais * 1); // 1 mentoria por mês
+                  // Cálculo de expectativas baseado na duração total do contrato
+                  // Para 6 meses: 5 mentorias (1 assessment + 4 acompanhamento), 12 webinares (2 por quinzena)
+                  const mentoriasEsperadas = Math.max(1, Math.ceil((mesesTotais - 1) * 0.8 + 1)); // 1 assessment + 1 mentoria a cada 1.25 meses
                   const tarefasEsperadas = Math.ceil(mesesTotais * 2); // 2 tarefas por mês
-                  const webinaresEsperados = Math.ceil(mesesTotais * 1); // 1 webinar por mês
+                  const webinaresEsperados = Math.ceil(mesesTotais * 2); // 2 webinares por mês (1 por quinzena)
                   
                   return (
                     <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-sm">

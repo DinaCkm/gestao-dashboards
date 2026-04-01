@@ -3463,8 +3463,12 @@
   - Problema: Etapa 7 requer que TODOS os vídeos sejam assistidos antes de mostrar o PDI
   - Solução: Remover `todosVideosAssistidos` da condição de desbloqueio da Etapa 7
 
-- [ ] Adicionar resumo de expectativas na Linha do Tempo da Jornada
+- [x] Adicionar resumo de expectativas na Linha do Tempo da Jornada
   - Mostrar número esperado de mentorias baseado na duração do contrato
   - Mostrar número esperado de tarefas baseado na duração do contrato
   - Mostrar número esperado de webinares baseado na duração do contrato
   - Exibir logo abaixo do período (ex: "22 de mar. — 24 de abr. de 26")
+- [x] Corrigir fórmula de cálculo de expectativas
+  - Problema: Está usando duração do microciclo (1 mês) em vez do contrato (6 meses)
+  - Solução: Usar período do contrato para calcular: 5 mentorias (1 assessment + 4 acompanhamento), 12 webinares (2 por quinzena), tarefas conforme política
+  - Fórmula: mentorias = (mesesTotais - 1) * 0.8 + 1; webinares = mesesTotais * 2; tarefas = mesesTotais * 2
