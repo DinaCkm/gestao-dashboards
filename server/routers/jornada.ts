@@ -102,10 +102,11 @@ export const jornadaRouter = router({
             microJornadas: competencias.map((comp: any) => ({
               id: comp.id,
               competenciaId: comp.competenciaId,
+              competenciaNome: comp.nome || `Competência #${comp.competenciaId}`,
               peso: 'obrigatoria', // TODO: adicionar campo peso ao schema se necessário
               microInicio: comp.microInicio,
               microTermino: comp.microTermino,
-            })),
+            }))
           };
         });
 

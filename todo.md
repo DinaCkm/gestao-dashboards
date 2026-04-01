@@ -3452,3 +3452,12 @@
 - [ ] Adicionar link na navegação principal
 - [ ] Testar fluxo completo (admin → mentor → aluno)
 - [ ] Verificar se módulos aparecem corretamente na área do aluno
+
+
+## Bugs Corrigidos (01/04/2026)
+- [x] Corrigir exibição de nomes das competências na Jornada (estava mostrando apenas números 1, 2, 3, 4)
+  - Problema: Campo `competenciaNome` não estava sendo retornado na API de jornada
+  - Solução: Adicionar `competenciaNome: comp.nome` ao mapeamento de microJornadas no router
+- [ ] Corrigir desbloqueio do PDI no onboarding (aluno não consegue visualizar PDI após mentora criar)
+  - Problema: Etapa 7 requer que TODOS os vídeos sejam assistidos antes de mostrar o PDI
+  - Solução: Remover `todosVideosAssistidos` da condição de desbloqueio da Etapa 7
