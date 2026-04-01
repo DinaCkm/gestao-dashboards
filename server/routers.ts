@@ -8850,11 +8850,11 @@ Responda APENAS em JSON com o formato especificado.`
             // Usar SQL direto para INSERT
             const now = new Date();
             const connection = await db.getDb();
-            
-            const result = await connection.execute(
+                        const result = await connection.execute(
               `INSERT INTO atividades_curso 
                (cursoId, titulo, tipoAtividade, urlMidia, descricao, ordem, isActive, createdAt, updatedAt)
-               VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+,
               [
                 Number(input.cursoId),
                 input.titulo.trim(),
@@ -8862,6 +8862,7 @@ Responda APENAS em JSON com o formato especificado.`
                 input.urlMidia?.trim() || null,
                 input.descricao?.trim() || null,
                 Number(input.ordem ?? 0),
+                1,
                 now,
                 now,
               ]
