@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,23 +14,13 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 
 export default function CompetenciasCompTec() {
-  const [selectedCompetencia, setSelectedCompetencia] = useState<string>('');
-  const [competenciaMap, setCompetenciaMap] = useState<Map<string, number>>(new Map());
-  
-  // Debug
-  useEffect(() => {
-    console.log('selectedCompetencia mudou para:', selectedCompetencia, 'tipo:', typeof selectedCompetencia);
-    if (selectedCompetencia) {
-      const id = competenciaMap.get(selectedCompetencia);
-      console.log('ID mapeado:', id);
-    }
-  }, [selectedCompetencia, competenciaMap]);
+  const [selectedCompetenciaId, setSelectedCompetenciaId] = useState<number | null>(null);
   const [cursoTitulo, setCursoTitulo] = useState('');
   const [cursoDescricao, setCursoDescricao] = useState('');
-  const [selectedCurso, setSelectedCurso] = useState<number | null>(null);
+  const [selectedCursoId, setSelectedCursoId] = useState<number | null>(null);
   const [atividadeTitulo, setAtividadeTitulo] = useState('');
   const [atividadeTipo, setAtividadeTipo] = useState('genially');
   const [atividadeUrl, setAtividadeUrl] = useState('');
@@ -40,23 +30,14 @@ export default function CompetenciasCompTec() {
   // Queries
   const { data: competencias = [] } = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
   
-  // Criar mapa de competências quando dados chegam
-  useEffect(() => {
-    if (competencias && competencias.length > 0) {
-      const map = new Map();
-      competencias.forEach((comp: any) => {
-        map.set(comp.nome, comp.id);
-      });
-      setCompetenciaMap(map);
-    }
-  }, [competencias]);
   const { data: cursos = [] } = trpc.competenciasCompTec.admin.listarCursos.useQuery(
-    { competenciaId: selectedCompetencia ? (isNaN(Number(selectedCompetencia)) ? competenciaMap.get(selectedCompetencia) : parseInt(selectedCompetencia)) : undefined },
-    { enabled: !!selectedCompetencia }
+    { competenciaId: selectedCompetenciaId || 0 },
+    { enabled: !!selectedCompetenciaId }
   );
+
   const { data: atividades = [] } = trpc.competenciasCompTec.admin.listarAtividadesCurso.useQuery(
-    { cursoId: selectedCurso || 0 },
-    { enabled: !!selectedCurso }
+    { cursoId: selectedCursoId || 0 },
+    { enabled: !!selectedCursoId }
   );
 
   // Mutations
@@ -65,7 +46,7 @@ export default function CompetenciasCompTec() {
       toast.success('Curso criado com sucesso!');
       setCursoTitulo('');
       setCursoDescricao('');
-      setSelectedCompetencia('');
+      setSelectedCompetenciaId(null);
     },
     onError: (error: any) => {
       toast.error(`Erro ao criar curso: ${error.message}`);
@@ -95,40 +76,26 @@ export default function CompetenciasCompTec() {
   });
 
   const handleCriarCurso = async () => {
-    if (!selectedCompetencia || !cursoTitulo) {
+    if (!selectedCompetenciaId || !cursoTitulo) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
-    console.log('selectedCompetencia:', selectedCompetencia, 'tipo:', typeof selectedCompetencia);
-    console.log('parseInt(selectedCompetencia):', parseInt(selectedCompetencia));
-
-    // Converter selectedCompetencia para ID se necessário
-    let competenciaId = parseInt(selectedCompetencia);
-    if (isNaN(competenciaId)) {
-      competenciaId = competenciaMap.get(selectedCompetencia) || 0;
-    }
-    
-    if (competenciaId === 0) {
-      toast.error('Competência inválida');
-      return;
-    }
-    
     await criarCursoMutation.mutateAsync({
-      competenciaId,
+      competenciaId: selectedCompetenciaId,
       titulo: cursoTitulo,
       descricao: cursoDescricao || undefined,
     });
   };
 
   const handleAdicionarAtividade = async () => {
-    if (!selectedCurso || !atividadeTitulo || !atividadeTipo) {
+    if (!selectedCursoId || !atividadeTitulo || !atividadeTipo) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
     await criarAtividadeMutation.mutateAsync({
-      cursoId: selectedCurso,
+      cursoId: selectedCursoId,
       titulo: atividadeTitulo,
       tipoAtividade: atividadeTipo as any,
       urlGenially: atividadeUrl || undefined,
@@ -160,30 +127,19 @@ export default function CompetenciasCompTec() {
           <CardContent className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">Competência *</label>
-              <Select value={selectedCompetencia} onValueChange={(value) => {
-                console.log('onValueChange recebeu:', value, 'tipo:', typeof value);
-                // Se o valor é um nome (string com letras), encontrar o ID
-                if (isNaN(Number(value)) && competencias) {
-                  const found = competencias.find((c: any) => c.nome === value);
-                  if (found) {
-                    console.log('Encontrado competência:', found.id, found.nome);
-                    setSelectedCompetencia(found.id.toString());
-                  }
-                } else {
-                  setSelectedCompetencia(value);
-                }
-              }}>
+              <Select 
+                value={selectedCompetenciaId?.toString() || ''} 
+                onValueChange={(value) => setSelectedCompetenciaId(parseInt(value) || null)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma competência" />
                 </SelectTrigger>
                 <SelectContent>
                   {competencias && competencias.length > 0 ? (
                     Array.from(new Map(competencias.map((comp: any) => [comp.id, comp])).values()).map((comp: any) => (
-                      comp && comp.id ? (
-                        <SelectItem key={comp.id} value={comp.id.toString()} className="cursor-pointer">
-                          {comp.nome}
-                        </SelectItem>
-                      ) : null
+                      <SelectItem key={comp.id} value={comp.id.toString()}>
+                        {comp.nome}
+                      </SelectItem>
                     ))
                   ) : null}
                 </SelectContent>
@@ -232,11 +188,14 @@ export default function CompetenciasCompTec() {
             <CardDescription>Selecione um curso para adicionar atividades.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {selectedCompetencia ? (
+            {selectedCompetenciaId ? (
               <>
                 <div>
                   <label className="block text-sm font-medium mb-2">Selecione um Curso</label>
-                  <Select value={selectedCurso?.toString() || ''} onValueChange={(val) => setSelectedCurso(parseInt(val) || null)}>
+                  <Select 
+                    value={selectedCursoId?.toString() || ''} 
+                    onValueChange={(val) => setSelectedCursoId(parseInt(val) || null)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um curso" />
                     </SelectTrigger>
@@ -250,7 +209,7 @@ export default function CompetenciasCompTec() {
                   </Select>
                 </div>
 
-                {selectedCurso && (
+                {selectedCursoId && (
                   <>
                     <div className="border-t pt-4">
                       <h3 className="font-semibold mb-3">Adicionar Atividade</h3>
@@ -285,7 +244,7 @@ export default function CompetenciasCompTec() {
                         <div>
                           <label className="block text-sm font-medium mb-2">URL do Conteúdo</label>
                           <Input
-                            placeholder="https://view.genially.com/..."
+                            placeholder="https://"
                             value={atividadeUrl}
                             onChange={(e) => setAtividadeUrl(e.target.value)}
                           />
@@ -294,10 +253,9 @@ export default function CompetenciasCompTec() {
                         <div>
                           <label className="block text-sm font-medium mb-2">Descrição</label>
                           <Textarea
-                            placeholder="Descrição da atividade"
+                            placeholder="Descreva a atividade"
                             value={atividadeDescricao}
                             onChange={(e) => setAtividadeDescricao(e.target.value)}
-                            rows={2}
                           />
                         </div>
 
@@ -322,37 +280,28 @@ export default function CompetenciasCompTec() {
                               Adicionando...
                             </>
                           ) : (
-                            <>
-                              <Plus className="mr-2 h-4 w-4" />
-                              Adicionar Atividade
-                            </>
+                            'Adicionar Atividade'
                           )}
                         </Button>
                       </div>
                     </div>
 
-                    {/* LISTA DE ATIVIDADES */}
-                    {atividades.length > 0 && (
+                    {atividades && atividades.length > 0 && (
                       <div className="border-t pt-4">
-                        <h3 className="font-semibold mb-3">Atividades do Curso</h3>
+                        <h3 className="font-semibold mb-3">Atividades Cadastradas</h3>
                         <div className="space-y-2">
                           {atividades.map((atividade: any) => (
-                            <div
-                              key={atividade.id}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                            >
-                              <div className="flex-1">
+                            <div key={atividade.id} className="flex items-center justify-between bg-gray-50 p-3 rounded">
+                              <div>
                                 <p className="font-medium text-sm">{atividade.titulo}</p>
                                 <p className="text-xs text-gray-600">{atividade.tipoAtividade}</p>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
+                              <button
                                 onClick={() => handleRemoverAtividade(atividade.id)}
-                                disabled={excluirAtividadeMutation.isPending}
+                                className="text-red-600 hover:text-red-800"
                               >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -362,7 +311,7 @@ export default function CompetenciasCompTec() {
                 )}
               </>
             ) : (
-              <p className="text-sm text-gray-600">Selecione uma competência acima para gerenciar atividades.</p>
+              <p className="text-sm text-gray-600">Selecione uma competência para gerenciar atividades</p>
             )}
           </CardContent>
         </Card>

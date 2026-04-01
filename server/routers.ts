@@ -8677,8 +8677,11 @@ Responda APENAS em JSON com o formato especificado.`
             competenciaId: input.competenciaId,
             titulo: input.titulo,
             descricao: input.descricao ?? null,
+            capaUrl: null,
             ordem: 0,
             isActive: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
           });
 
           return { success: true, id: result[0]?.insertId ?? null };
