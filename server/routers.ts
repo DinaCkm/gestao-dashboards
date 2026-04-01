@@ -8799,14 +8799,16 @@ Responda APENAS em JSON com o formato especificado.`
             cursoId: z.number(),
             titulo: z.string().min(1),
             tipoAtividade: z.enum([
-              "genially",
-              "video",
+              "introducao",
+              "videos",
               "podcast",
-              "tedtalk",
-              "livro",
-              "intro",
+              "tedtalks",
+              "filmes",
+              "livros",
+              "ead",
+              "outros",
             ]),
-            urlGenially: z.string().optional(),
+            urlMidia: z.string().optional(),
             descricao: z.string().optional(),
             ordem: z.number().optional(),
           })
@@ -8851,13 +8853,13 @@ Responda APENAS em JSON com o formato especificado.`
             
             const result = await connection.execute(
               `INSERT INTO atividades_curso 
-               (cursoId, titulo, tipoAtividade, urlGenially, descricao, ordem, isActive, createdAt, updatedAt)
+               (cursoId, titulo, tipoAtividade, urlMidia, descricao, ordem, isActive, createdAt, updatedAt)
                VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
               [
                 Number(input.cursoId),
                 input.titulo.trim(),
                 input.tipoAtividade,
-                input.urlGenially?.trim() || null,
+                input.urlMidia?.trim() || null,
                 input.descricao?.trim() || null,
                 Number(input.ordem ?? 0),
                 now,

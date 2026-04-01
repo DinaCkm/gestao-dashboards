@@ -13,16 +13,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type TipoAtividade = "genially" | "video" | "podcast" | "tedtalk" | "livro" | "intro";
+type TipoAtividade = "introducao" | "videos" | "podcast" | "tedtalks" | "filmes" | "livros" | "ead" | "outros";
 
 const TIPOS_ATIVIDADE: TipoAtividade[] = [
-  "genially",
-  "video",
+  "introducao",
+  "videos",
   "podcast",
-  "tedtalk",
-  "livro",
-  "intro",
+  "tedtalks",
+  "filmes",
+  "livros",
+  "ead",
+  "outros",
 ];
+
+const TIPOS_ATIVIDADE_LABELS: Record<TipoAtividade, string> = {
+  introducao: "Introdução",
+  videos: "Vídeos",
+  podcast: "Podcast",
+  tedtalks: "TedTalks",
+  filmes: "Filmes",
+  livros: "Livros",
+  ead: "EAD",
+  outros: "Outros",
+};
 
 function normalizarCurso(item: any) {
   return {
@@ -37,7 +50,7 @@ function normalizarAtividade(item: any) {
     id: Number(item?.id ?? 0),
     cursoId: Number(item?.cursoId ?? 0),
     titulo: item?.titulo ?? "Atividade sem título",
-    tipoAtividade: (item?.tipoAtividade ?? "video") as TipoAtividade,
+    tipoAtividade: (item?.tipoAtividade ?? "videos") as TipoAtividade,
     descricao: item?.descricao ?? "",
     urlGenially: item?.urlGenially ?? "",
     ordem: Number(item?.ordem ?? 0),
@@ -52,7 +65,7 @@ export default function AdminAtividades() {
 
   const [formAtividade, setFormAtividade] = useState({
     titulo: "",
-    tipoAtividade: "video" as TipoAtividade,
+    tipoAtividade: "videos" as TipoAtividade,
     descricao: "",
     urlGenially: "",
     ordem: "0",
@@ -280,7 +293,7 @@ export default function AdminAtividades() {
                   <SelectContent>
                     {TIPOS_ATIVIDADE.map((tipo) => (
                       <SelectItem key={tipo} value={tipo}>
-                        {tipo}
+                        {TIPOS_ATIVIDADE_LABELS[tipo]}
                       </SelectItem>
                     ))}
                   </SelectContent>
