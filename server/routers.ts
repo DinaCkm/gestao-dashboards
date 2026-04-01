@@ -8610,30 +8610,30 @@ Responda APENAS em JSON com o formato especificado.`
 
         // Busca TODAS as competências ativas
         const resultado = await database
-          .select({ nome: competencias.nome })
+          .select({ id: competencias.id, nome: competencias.nome })
           .from(competencias)
           .where(eq(competencias.isActive, 1))
           .orderBy(asc(competencias.nome));
 
-        return resultado.map(r => ({ competencia: r.nome }));
+        return resultado.map(r => ({ id: r.id, nome: r.nome }));
       }),
 
-      listarCursosPorCompetencia: protectedProcedure
-        .input(z.object({ competencia: z.string().min(1) }))
+      listarCursos: protectedProcedure
+        .input(z.object({ competenciaId: z.number() }))
         .query(async ({ input }) => {
           const database = await db.getDb();
           if (!database) return [];
 
           return await database
             .select()
-            .from(competenciasModulos)
+            .from(cursosCompetencias)
             .where(
               and(
-                eq(competenciasModulos.competencia, input.competencia),
-                eq(competenciasModulos.isActive, 1)
+                eq(cursosCompetencias.competenciaId, input.competenciaId),
+                eq(cursosCompetencias.isActive, 1)
               )
             )
-            .orderBy(asc(competenciasModulos.ordem), asc(competenciasModulos.titulo));
+            .orderBy(asc(cursosCompetencias.ordem), asc(cursosCompetencias.titulo));
         }),
 
       obterCurso: protectedProcedure
@@ -8644,8 +8644,8 @@ Responda APENAS em JSON com o formato especificado.`
 
           const [curso] = await database
             .select()
-            .from(competenciasModulos)
-            .where(eq(competenciasModulos.id, input.cursoId))
+            .from(cursosCompetencias)
+            .where(eq(cursosCompetencias.id, input.cursoId))
             .limit(1);
 
           return curso ?? null;
@@ -8654,13 +8654,9 @@ Responda APENAS em JSON com o formato especificado.`
       criarCurso: adminProcedure
         .input(
           z.object({
-            competencia: z.string().min(1),
+            competenciaId: z.number(),
             titulo: z.string().min(1),
             descricao: z.string().optional(),
-            tipoConteudo: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "texto"]),
-            urlConteudo: z.string().optional(),
-            ordem: z.number().optional(),
-            ativo: z.number().optional(),
           })
         )
         .mutation(async ({ input }) => {
@@ -8669,14 +8665,12 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
           }
 
-          const result = await database.insert(competenciasModulos).values({
-            competencia: input.competencia,
+          const result = await database.insert(cursosCompetencias).values({
+            competenciaId: input.competenciaId,
             titulo: input.titulo,
             descricao: input.descricao ?? null,
-            tipoConteudo: input.tipoConteudo,
-            urlConteudo: input.urlConteudo ?? null,
-            ordem: input.ordem ?? 0,
-            isActive: input.ativo ?? 1,
+            ordem: 0,
+            isActive: 1,
           });
 
           return { success: true, id: result[0]?.insertId ?? null };
@@ -8686,13 +8680,10 @@ Responda APENAS em JSON com o formato especificado.`
         .input(
           z.object({
             cursoId: z.number(),
-            competencia: z.string().min(1),
+            competenciaId: z.number(),
             titulo: z.string().min(1),
             descricao: z.string().optional(),
-            tipoConteudo: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "texto"]),
-            urlConteudo: z.string().optional(),
             ordem: z.number().optional(),
-            ativo: z.number().optional(),
           })
         )
         .mutation(async ({ input }) => {
@@ -8702,18 +8693,15 @@ Responda APENAS em JSON com o formato especificado.`
           }
 
           await database
-            .update(competenciasModulos)
+            .update(cursosCompetencias)
             .set({
-              competencia: input.competencia,
+              competenciaId: input.competenciaId,
               titulo: input.titulo,
               descricao: input.descricao ?? null,
-              tipoConteudo: input.tipoConteudo,
-              urlConteudo: input.urlConteudo ?? null,
               ordem: input.ordem ?? 0,
-              isActive: input.ativo ?? 1,
               updatedAt: new Date(),
             })
-            .where(eq(competenciasModulos.id, input.cursoId));
+            .where(eq(cursosCompetencias.id, input.cursoId));
 
           return { success: true };
         }),
@@ -8727,17 +8715,17 @@ Responda APENAS em JSON com o formato especificado.`
           }
 
           await database
-            .update(competenciasModulos)
+            .update(cursosCompetencias)
             .set({
               isActive: 0,
               updatedAt: new Date(),
             })
-            .where(eq(competenciasModulos.id, input.cursoId));
+            .where(eq(cursosCompetencias.id, input.cursoId));
 
           return { success: true };
         }),
 
-      listarAtividades: protectedProcedure
+      listarAtividadesCurso: protectedProcedure
         .input(z.object({ cursoId: z.number() }))
         .query(async ({ input }) => {
           const database = await db.getDb();
@@ -8817,8 +8805,8 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true };
         }),
 
-      deletarAtividade: adminProcedure
-        .input(z.object({ id: z.number() }))
+          deletarAtividade: adminProcedure
+        .input(z.object({ atividadeId: z.number() }))
         .mutation(async ({ input }) => {
           const database = await db.getDb();
           if (!database) {
@@ -8831,13 +8819,13 @@ Responda APENAS em JSON com o formato especificado.`
               isActive: 0,
               updatedAt: new Date(),
             })
-            .where(eq(atividadesCurso.id, input.id));
+            .where(eq(atividadesCurso.id, input.atividadeId));
 
           return { success: true };
         }),
 
       obterAtividadeDetalhes: protectedProcedure
-        .input(z.object({ id: z.number() }))
+        .input(z.object({ atividadeId: z.number() }))
         .query(async ({ input }) => {
           const database = await db.getDb();
           if (!database) return null;
@@ -8849,7 +8837,7 @@ Responda APENAS em JSON com o formato especificado.`
             })
             .from(atividadesCurso)
             .leftJoin(avaliacoesAtividade, eq(atividadesCurso.id, avaliacoesAtividade.atividadeId))
-            .where(eq(atividadesCurso.id, input.id))
+            .where(eq(atividadesCurso.id, input.atividadeId))
             .limit(1);
 
           return atividade ?? null;
