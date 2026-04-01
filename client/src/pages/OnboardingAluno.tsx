@@ -1364,6 +1364,24 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                     {sessoesContratadas > 0 && <p className="text-[10px] text-white/40 mt-0.5">{tipoMentoriaContrato === 'grupo' ? 'Em Grupo' : 'Individual'}</p>}
                   </div>
                 </div>
+                {/* Cards de expectativas: Mentorias, Tarefas e Webinares */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                    <Users2 className="h-6 w-6 text-blue-400 mx-auto mb-1" />
+                    <p className="text-2xl font-bold">{Math.max(1, Math.ceil((totalMeses - 1) * 0.8 + 1))}</p>
+                    <p className="text-xs text-white/60">Mentorias</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                    <CheckCircle2 className="h-6 w-6 text-green-400 mx-auto mb-1" />
+                    <p className="text-2xl font-bold">{Math.max(1, Math.ceil((totalMeses - 1) * 0.8 + 1))}</p>
+                    <p className="text-xs text-white/60">Tarefas</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                    <Video className="h-6 w-6 text-pink-400 mx-auto mb-1" />
+                    <p className="text-2xl font-bold">{Math.ceil(totalMeses * 2)}</p>
+                    <p className="text-xs text-white/60">Webinares</p>
+                  </div>
+                </div>
                 {/* Lista de trilhas */}
                 <div className="flex flex-wrap gap-2">
                   {allMacroJornadas.map((mj: any, idx: number) => {

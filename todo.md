@@ -3478,3 +3478,9 @@
   - Problema: Card de "Expectativas da Sua Jornada" não aparece no dashboard
   - Solução: Corrigir getContratoMentoriaByAluno para buscar em tabela alunos (contratoInicio/contratoFim) além de contratosAluno
   - Resultado: Agora busca primeiro em alunos, depois em contratosAluno, garantindo que encontre o contrato do Elio
+
+- [x] Adicionar cards de mentorias, tarefas e webinares esperados no OnboardingAluno
+  - Adicionar card "Mentorias" mostrando número esperado (5 para 6 meses)
+  - Adicionar card "Tarefas" mostrando número esperado (5 para 6 meses)
+  - Adicionar card "Webinares" mostrando número esperado (12 para 6 meses)
+  - Posicionar após os cards de Competências, Trilha, Meses de Contrato e Meses de Jornada
