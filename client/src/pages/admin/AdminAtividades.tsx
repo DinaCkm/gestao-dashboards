@@ -52,7 +52,7 @@ function normalizarAtividade(item: any) {
     titulo: item?.titulo ?? "Atividade sem título",
     tipoAtividade: (item?.tipoAtividade ?? "videos") as TipoAtividade,
     descricao: item?.descricao ?? "",
-    urlGenially: item?.urlGenially ?? "",
+    urlMidia: item?.urlMidia ?? "",
     ordem: Number(item?.ordem ?? 0),
     isActive: Number(item?.isActive ?? 1),
   };
