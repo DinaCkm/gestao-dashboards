@@ -1,531 +1,324 @@
-"use client";
-import { useState, useMemo } from "react";
-import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+'use client';
+
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Plus, Trash2, Edit2, ChevronDown, ChevronUp } from "lucide-react";
-import { toast } from "sonner";
-
-type TipoAtividade = "genially" | "video" | "podcast" | "tedtalk" | "livro" | "intro";
-
-const TIPOS_ATIVIDADE: TipoAtividade[] = [
-  "genially",
-  "video",
-  "podcast",
-  "tedtalk",
-  "livro",
-  "intro",
-];
+} from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { Loader2, Plus, Trash2, Edit2 } from 'lucide-react';
 
 export default function CompetenciasCompTec() {
-  const [competenciaSelecionada, setCompetenciaSelecionada] = useState<string>("");
-  const [cursoEmEdicao, setCursoEmEdicao] = useState<any>(null);
-  const [cursoExpandido, setCursoExpandido] = useState<number | null>(null);
-  const [mostraFormAtividade, setMostraFormAtividade] = useState(false);
+  const [selectedCompetencia, setSelectedCompetencia] = useState<string>('');
+  const [cursoTitulo, setCursoTitulo] = useState('');
+  const [cursoDescricao, setCursoDescricao] = useState('');
+  const [selectedCurso, setSelectedCurso] = useState<number | null>(null);
+  const [atividadeTitulo, setAtividadeTitulo] = useState('');
+  const [atividadeTipo, setAtividadeTipo] = useState('genially');
+  const [atividadeUrl, setAtividadeUrl] = useState('');
+  const [atividadeDescricao, setAtividadeDescricao] = useState('');
+  const [atividadeOrdem, setAtividadeOrdem] = useState('0');
 
-  // FORMULÁRIO DE CURSO
-  const [formCurso, setFormCurso] = useState({
-    competencia: "",
-    titulo: "",
-    descricao: "",
-  });
-
-  // FORMULÁRIO DE ATIVIDADE
-  const [formAtividade, setFormAtividade] = useState({
-    titulo: "",
-    tipoAtividade: "genially" as TipoAtividade,
-    urlGenially: "",
-    descricao: "",
-    ordem: "0",
-  });
-
-  const utils = trpc.useUtils();
-
-  // QUERIES
-  const competenciasQuery = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
-
-  const cursosQuery = trpc.competenciasCompTec.admin.listarCursosPorCompetencia.useQuery(
-    { competencia: competenciaSelecionada },
-    { enabled: !!competenciaSelecionada }
+  // Queries
+  const { data: competencias = [] } = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
+  const { data: cursos = [] } = trpc.competenciasCompTec.admin.listarCursos.useQuery(
+    { competenciaId: selectedCompetencia ? parseInt(selectedCompetencia) : undefined },
+    { enabled: !!selectedCompetencia }
+  );
+  const { data: atividades = [] } = trpc.competenciasCompTec.admin.listarAtividadesCurso.useQuery(
+    { cursoId: selectedCurso || 0 },
+    { enabled: !!selectedCurso }
   );
 
-  // MUTATIONS - CURSOS
+  // Mutations
   const criarCursoMutation = trpc.competenciasCompTec.admin.criarCurso.useMutation({
-    onSuccess: async () => {
-      toast.success("Curso criado com sucesso!");
-      limparFormCurso();
-      await utils.competenciasCompTec.admin.listarCursosPorCompetencia.invalidate({
-        competencia: competenciaSelecionada,
-      });
+    onSuccess: () => {
+      toast.success('Curso criado com sucesso!');
+      setCursoTitulo('');
+      setCursoDescricao('');
+      setSelectedCompetencia('');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(`Erro ao criar curso: ${error.message}`);
     },
   });
 
-  const atualizarCursoMutation = trpc.competenciasCompTec.admin.atualizarCurso.useMutation({
-    onSuccess: async () => {
-      toast.success("Curso atualizado com sucesso!");
-      limparFormCurso();
-      setCursoEmEdicao(null);
-      await utils.competenciasCompTec.admin.listarCursosPorCompetencia.invalidate({
-        competencia: competenciaSelecionada,
-      });
-    },
-    onError: (error) => {
-      toast.error(`Erro ao atualizar curso: ${error.message}`);
-    },
-  });
-
-  const excluirCursoMutation = trpc.competenciasCompTec.admin.excluirCurso.useMutation({
-    onSuccess: async () => {
-      toast.success("Curso excluído com sucesso!");
-      await utils.competenciasCompTec.admin.listarCursosPorCompetencia.invalidate({
-        competencia: competenciaSelecionada,
-      });
-    },
-    onError: (error) => {
-      toast.error(`Erro ao excluir curso: ${error.message}`);
-    },
-  });
-
-  // MUTATIONS - ATIVIDADES
   const criarAtividadeMutation = trpc.competenciasCompTec.admin.criarAtividade.useMutation({
-    onSuccess: async () => {
-      toast.success("Atividade adicionada com sucesso!");
-      limparFormAtividade();
-      setMostraFormAtividade(false);
-      // Recarregar cursos para atualizar a lista de atividades
-      await utils.competenciasCompTec.admin.listarCursosPorCompetencia.invalidate({
-        competencia: competenciaSelecionada,
-      });
+    onSuccess: () => {
+      toast.success('Atividade adicionada com sucesso!');
+      setAtividadeTitulo('');
+      setAtividadeUrl('');
+      setAtividadeDescricao('');
+      setAtividadeOrdem('0');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(`Erro ao criar atividade: ${error.message}`);
     },
   });
 
-  // HELPERS
-  const competenciasUnicas = useMemo(() => {
-    const lista = (competenciasQuery.data ?? [])
-      .map((item: any) => item.competencia)
-      .filter(Boolean);
-    return Array.from(new Set(lista));
-  }, [competenciasQuery.data]);
+  const excluirAtividadeMutation = trpc.competenciasCompTec.admin.excluirAtividade.useMutation({
+    onSuccess: () => {
+      toast.success('Atividade removida com sucesso!');
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao remover atividade: ${error.message}`);
+    },
+  });
 
-  function limparFormCurso() {
-    setFormCurso({
-      competencia: "",
-      titulo: "",
-      descricao: "",
-    });
-    setCursoEmEdicao(null);
-  }
-
-  function limparFormAtividade() {
-    setFormAtividade({
-      titulo: "",
-      tipoAtividade: "genially",
-      urlGenially: "",
-      descricao: "",
-      ordem: "0",
-    });
-  }
-
-  function handleEditarCurso(curso: any) {
-    setCursoEmEdicao(curso);
-    setFormCurso({
-      competencia: curso.competencia,
-      titulo: curso.titulo,
-      descricao: curso.descricao,
-    });
-  }
-
-  function handleSalvarCurso() {
-    if (!formCurso.competencia || !formCurso.titulo) {
-      toast.error("Preencha os campos obrigatórios");
+  const handleCriarCurso = async () => {
+    if (!selectedCompetencia || !cursoTitulo) {
+      toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
-    if (cursoEmEdicao) {
-      atualizarCursoMutation.mutate({
-        id: cursoEmEdicao.id,
-        titulo: formCurso.titulo,
-        descricao: formCurso.descricao,
-      });
-    } else {
-      criarCursoMutation.mutate({
-        competencia: formCurso.competencia,
-        titulo: formCurso.titulo,
-        descricao: formCurso.descricao,
-      });
-    }
-  }
+    await criarCursoMutation.mutateAsync({
+      competenciaId: parseInt(selectedCompetencia),
+      titulo: cursoTitulo,
+      descricao: cursoDescricao || undefined,
+    });
+  };
 
-  function handleSalvarAtividade() {
-    if (!cursoEmEdicao || !formAtividade.titulo || !formAtividade.urlGenially) {
-      toast.error("Preencha os campos obrigatórios");
+  const handleAdicionarAtividade = async () => {
+    if (!selectedCurso || !atividadeTitulo || !atividadeTipo) {
+      toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
-    criarAtividadeMutation.mutate({
-      cursoId: cursoEmEdicao.id,
-      titulo: formAtividade.titulo,
-      tipoAtividade: formAtividade.tipoAtividade,
-      urlGenially: formAtividade.urlGenially,
-      descricao: formAtividade.descricao || undefined,
-      ordem: parseInt(formAtividade.ordem),
+    await criarAtividadeMutation.mutateAsync({
+      cursoId: selectedCurso,
+      titulo: atividadeTitulo,
+      tipoAtividade: atividadeTipo as any,
+      urlGenially: atividadeUrl || undefined,
+      descricao: atividadeDescricao || undefined,
+      ordem: parseInt(atividadeOrdem) || 0,
     });
-  }
+  };
+
+  const handleRemoverAtividade = async (atividadeId: number) => {
+    if (confirm('Tem certeza que deseja remover esta atividade?')) {
+      await excluirAtividadeMutation.mutateAsync({ atividadeId });
+    }
+  };
 
   return (
     <div className="space-y-6 p-6">
-      <div>
+      <div className="mb-8">
         <h1 className="text-3xl font-bold">Competências Comportamentais e Técnicas</h1>
-        <p className="text-gray-600">Administração de cursos, conteúdos e estrutura do módulo.</p>
+        <p className="text-gray-600 mt-2">Administração de cursos, conteúdos e estrutura do módulo.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* COLUNA 1: CRIAR/EDITAR CURSO */}
+        {/* SEÇÃO 1: CRIAR CURSO */}
         <Card>
           <CardHeader>
-            <CardTitle>{cursoEmEdicao ? "Editar Curso" : "Novo Curso"}</CardTitle>
-            <CardDescription>
-              {cursoEmEdicao
-                ? "Atualize os dados do curso"
-                : "Cadastre um novo curso vinculado a uma competência."}
-            </CardDescription>
+            <CardTitle>Novo Curso</CardTitle>
+            <CardDescription>Cadastre um novo curso vinculado a uma competência.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="competencia">Competência *</Label>
-              <Select
-                value={formCurso.competencia}
-                onValueChange={(value) =>
-                  setFormCurso({ ...formCurso, competencia: value })
-                }
-                disabled={!!cursoEmEdicao}
-              >
+              <label className="block text-sm font-medium mb-2">Competência *</label>
+              <Select value={selectedCompetencia} onValueChange={setSelectedCompetencia}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma competência" />
                 </SelectTrigger>
                 <SelectContent>
-                  {competenciasUnicas.map((comp) => (
-                    <SelectItem key={comp} value={comp}>
-                      {comp}
-                    </SelectItem>
-                  ))}
+                  {competencias && competencias.length > 0 ? (
+                    competencias.map((comp: any) => (
+                      comp && comp.id ? (
+                        <SelectItem key={comp.id} value={comp.id.toString()}>
+                          {comp.nome}
+                        </SelectItem>
+                      ) : null
+                    ))
+                  ) : null}
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="titulo">Título do Curso *</Label>
+              <label className="block text-sm font-medium mb-2">Título do Curso *</label>
               <Input
-                id="titulo"
                 placeholder="Digite o título do curso"
-                value={formCurso.titulo}
-                onChange={(e) =>
-                  setFormCurso({ ...formCurso, titulo: e.target.value })
-                }
+                value={cursoTitulo}
+                onChange={(e) => setCursoTitulo(e.target.value)}
               />
             </div>
 
             <div>
-              <Label htmlFor="descricao">Descrição</Label>
+              <label className="block text-sm font-medium mb-2">Descrição</label>
               <Textarea
-                id="descricao"
                 placeholder="Descreva o objetivo do curso"
-                value={formCurso.descricao}
-                onChange={(e) =>
-                  setFormCurso({ ...formCurso, descricao: e.target.value })
-                }
+                value={cursoDescricao}
+                onChange={(e) => setCursoDescricao(e.target.value)}
               />
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSalvarCurso}
-                disabled={criarCursoMutation.isPending || atualizarCursoMutation.isPending}
-              >
-                {cursoEmEdicao ? "Atualizar Curso" : "Criar Curso"}
-              </Button>
-              {cursoEmEdicao && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    limparFormCurso();
-                    setCursoExpandido(null);
-                  }}
-                >
-                  Cancelar
-                </Button>
+            <Button
+              onClick={handleCriarCurso}
+              disabled={criarCursoMutation.isPending}
+              className="w-full"
+            >
+              {criarCursoMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                'Criar Curso'
               )}
-            </div>
+            </Button>
           </CardContent>
         </Card>
 
-        {/* COLUNA 2: LISTAR CURSOS E ATIVIDADES */}
+        {/* SEÇÃO 2: GERENCIAR ATIVIDADES */}
         <Card>
           <CardHeader>
-            <CardTitle>Cursos Cadastrados</CardTitle>
-            <CardDescription>Selecione uma competência para listar os cursos.</CardDescription>
+            <CardTitle>Gerenciar Atividades</CardTitle>
+            <CardDescription>Selecione um curso para adicionar atividades.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="competencia-filtro">Competência</Label>
-              <Select
-                value={competenciaSelecionada}
-                onValueChange={(value) => {
-                  setCompetenciaSelecionada(value);
-                  setCursoEmEdicao(null);
-                  setMostraFormAtividade(false);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma competência" />
-                </SelectTrigger>
-                <SelectContent>
-                  {competenciasUnicas.map((comp) => (
-                    <SelectItem key={comp} value={comp}>
-                      {comp}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {cursosQuery.isLoading && <p className="text-gray-500">Carregando cursos...</p>}
-
-            {cursosQuery.data && cursosQuery.data.length === 0 && (
-              <p className="text-gray-500">Nenhum curso encontrado.</p>
-            )}
-
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {cursosQuery.data?.map((curso: any) => (
-                <div key={curso.id} className="border rounded-lg bg-gray-50">
-                  <div
-                    className="flex justify-between items-center p-3 cursor-pointer hover:bg-gray-100"
-                    onClick={() =>
-                      setCursoExpandido(
-                        cursoExpandido === curso.id ? null : curso.id
-                      )
-                    }
-                  >
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-sm">{curso.titulo}</h3>
-                      <p className="text-xs text-gray-600">{curso.descricao}</p>
-                    </div>
-                    <div className="flex gap-1 items-center">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditarCurso(curso);
-                        }}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          excluirCursoMutation.mutate({ id: curso.id });
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                      {cursoExpandido === curso.id ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* ATIVIDADES DO CURSO */}
-                  {cursoExpandido === curso.id && (
-                    <div className="border-t p-3 space-y-3 bg-white">
-                      {curso.atividades && curso.atividades.length > 0 ? (
-                        <div className="space-y-2">
-                          <p className="text-sm font-semibold text-gray-700">
-                            Atividades ({curso.atividades.length}):
-                          </p>
-                          {curso.atividades.map(
-                            (atividade: any, idx: number) => (
-                              <div
-                                key={atividade.id}
-                                className="text-xs bg-gray-50 p-2 rounded border"
-                              >
-                                <div className="font-semibold">
-                                  {idx + 1}. {atividade.titulo}
-                                </div>
-                                <div className="text-gray-600">
-                                  Tipo: {atividade.tipoAtividade}
-                                </div>
-                                <div className="text-gray-600 truncate">
-                                  URL: {atividade.urlGenially}
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-gray-500">
-                          Nenhuma atividade adicionada
-                        </p>
-                      )}
-
-                      {/* FORM PARA ADICIONAR ATIVIDADE */}
-                      {cursoEmEdicao?.id === curso.id &&
-                      mostraFormAtividade ? (
-                        <div className="space-y-3 border-t pt-3">
-                          <h4 className="font-semibold text-sm">
-                            Adicionar Atividade
-                          </h4>
-
-                          <div>
-                            <Label htmlFor="titulo-atividade">
-                              Título da Atividade *
-                            </Label>
-                            <Input
-                              id="titulo-atividade"
-                              placeholder="Ex: Filme - Visão Estratégica"
-                              value={formAtividade.titulo}
-                              onChange={(e) =>
-                                setFormAtividade({
-                                  ...formAtividade,
-                                  titulo: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="tipo">Tipo de Atividade *</Label>
-                            <Select
-                              value={formAtividade.tipoAtividade}
-                              onValueChange={(value) =>
-                                setFormAtividade({
-                                  ...formAtividade,
-                                  tipoAtividade: value as TipoAtividade,
-                                })
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {TIPOS_ATIVIDADE.map((tipo) => (
-                                  <SelectItem key={tipo} value={tipo}>
-                                    {tipo.charAt(0).toUpperCase() +
-                                      tipo.slice(1)}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="url-genially">
-                              URL do Genially/Conteúdo *
-                            </Label>
-                            <Input
-                              id="url-genially"
-                              placeholder="https://view.genially.com/..."
-                              value={formAtividade.urlGenially}
-                              onChange={(e) =>
-                                setFormAtividade({
-                                  ...formAtividade,
-                                  urlGenially: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="descricao-atividade">
-                              Descrição
-                            </Label>
-                            <Textarea
-                              id="descricao-atividade"
-                              placeholder="Descrição da atividade (opcional)"
-                              value={formAtividade.descricao}
-                              onChange={(e) =>
-                                setFormAtividade({
-                                  ...formAtividade,
-                                  descricao: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="ordem-atividade">Ordem</Label>
-                            <Input
-                              id="ordem-atividade"
-                              type="number"
-                              value={formAtividade.ordem}
-                              onChange={(e) =>
-                                setFormAtividade({
-                                  ...formAtividade,
-                                  ordem: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={handleSalvarAtividade}
-                              disabled={criarAtividadeMutation.isPending}
-                            >
-                              <Plus className="w-4 h-4 mr-1" />
-                              Adicionar Atividade
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                limparFormAtividade();
-                                setMostraFormAtividade(false);
-                              }}
-                            >
-                              Cancelar
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        cursoEmEdicao?.id === curso.id && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => setMostraFormAtividade(true)}
-                          >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Adicionar Atividade
-                          </Button>
-                        )
-                      )}
-                    </div>
-                  )}
+            {selectedCompetencia ? (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Selecione um Curso</label>
+                  <Select value={selectedCurso ? selectedCurso.toString() : ''} onValueChange={(val) => setSelectedCurso(parseInt(val))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um curso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cursos && cursos.length > 0 ? (
+                        cursos.map((curso: any) => (
+                          <SelectItem key={curso.id} value={curso.id.toString()}>
+                            {curso.titulo}
+                          </SelectItem>
+                        ))
+                      ) : null}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ))}
-            </div>
+
+                {selectedCurso && (
+                  <>
+                    <div className="border-t pt-4">
+                      <h3 className="font-semibold mb-3">Adicionar Atividade</h3>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Título da Atividade *</label>
+                          <Input
+                            placeholder="Ex: Filme - Introdução"
+                            value={atividadeTitulo}
+                            onChange={(e) => setAtividadeTitulo(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Tipo de Conteúdo *</label>
+                          <Select value={atividadeTipo} onValueChange={setAtividadeTipo}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="genially">Genially</SelectItem>
+                              <SelectItem value="video">Vídeo</SelectItem>
+                              <SelectItem value="podcast">Podcast</SelectItem>
+                              <SelectItem value="tedtalk">TED Talk</SelectItem>
+                              <SelectItem value="livro">Livro</SelectItem>
+                              <SelectItem value="texto">Texto</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2">URL do Conteúdo</label>
+                          <Input
+                            placeholder="https://view.genially.com/..."
+                            value={atividadeUrl}
+                            onChange={(e) => setAtividadeUrl(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Descrição</label>
+                          <Textarea
+                            placeholder="Descrição da atividade"
+                            value={atividadeDescricao}
+                            onChange={(e) => setAtividadeDescricao(e.target.value)}
+                            rows={2}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Ordem</label>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            value={atividadeOrdem}
+                            onChange={(e) => setAtividadeOrdem(e.target.value)}
+                          />
+                        </div>
+
+                        <Button
+                          onClick={handleAdicionarAtividade}
+                          disabled={criarAtividadeMutation.isPending}
+                          className="w-full"
+                        >
+                          {criarAtividadeMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Adicionando...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Adicionar Atividade
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* LISTA DE ATIVIDADES */}
+                    {atividades.length > 0 && (
+                      <div className="border-t pt-4">
+                        <h3 className="font-semibold mb-3">Atividades do Curso</h3>
+                        <div className="space-y-2">
+                          {atividades.map((atividade: any) => (
+                            <div
+                              key={atividade.id}
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{atividade.titulo}</p>
+                                <p className="text-xs text-gray-600">{atividade.tipoAtividade}</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoverAtividade(atividade.id)}
+                                disabled={excluirAtividadeMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-gray-600">Selecione uma competência acima para gerenciar atividades.</p>
+            )}
           </CardContent>
         </Card>
       </div>
