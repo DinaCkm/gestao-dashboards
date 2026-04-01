@@ -133,7 +133,10 @@ export default function CompetenciasCompTec() {
           <CardContent className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">Competência *</label>
-              <Select value={selectedCompetencia} onValueChange={setSelectedCompetencia}>
+              <Select value={selectedCompetencia} onValueChange={(value) => {
+                console.log('onValueChange recebeu:', value, 'tipo:', typeof value);
+                setSelectedCompetencia(value);
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma competência" />
                 </SelectTrigger>
