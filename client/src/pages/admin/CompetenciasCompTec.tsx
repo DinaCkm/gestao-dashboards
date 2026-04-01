@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
@@ -14,18 +12,12 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function CompetenciasCompTec() {
   const [selectedCompetenciaId, setSelectedCompetenciaId] = useState<number | null>(null);
   const [cursoTitulo, setCursoTitulo] = useState('');
   const [cursoDescricao, setCursoDescricao] = useState('');
-  const [selectedCursoId, setSelectedCursoId] = useState<number | null>(null);
-  const [atividadeTitulo, setAtividadeTitulo] = useState('');
-  const [atividadeTipo, setAtividadeTipo] = useState('genially');
-  const [atividadeUrl, setAtividadeUrl] = useState('');
-  const [atividadeDescricao, setAtividadeDescricao] = useState('');
-  const [atividadeOrdem, setAtividadeOrdem] = useState('0');
 
   // Queries
   const { data: competencias = [] } = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
@@ -33,11 +25,6 @@ export default function CompetenciasCompTec() {
   const { data: cursos = [] } = trpc.competenciasCompTec.admin.listarCursos.useQuery(
     { competenciaId: selectedCompetenciaId || 0 },
     { enabled: !!selectedCompetenciaId }
-  );
-
-  const { data: atividades = [] } = trpc.competenciasCompTec.admin.listarAtividadesCurso.useQuery(
-    { cursoId: selectedCursoId || 0 },
-    { enabled: !!selectedCursoId }
   );
 
   // Mutations
@@ -57,31 +44,6 @@ export default function CompetenciasCompTec() {
     },
   });
 
-  const criarAtividadeMutation = trpc.competenciasCompTec.admin.criarAtividade.useMutation({
-    onSuccess: async () => {
-      toast.success('Atividade adicionada com sucesso!');
-      await utils.competenciasCompTec.admin.listarAtividadesCurso.invalidate({
-        cursoId: selectedCursoId!,
-      });
-      setAtividadeTitulo('');
-      setAtividadeUrl('');
-      setAtividadeDescricao('');
-      setAtividadeOrdem('0');
-    },
-    onError: (error: any) => {
-      toast.error(`Erro ao criar atividade: ${error.message}`);
-    },
-  });
-
-  const excluirAtividadeMutation = trpc.competenciasCompTec.admin.excluirAtividade.useMutation({
-    onSuccess: () => {
-      toast.success('Atividade removida com sucesso!');
-    },
-    onError: (error: any) => {
-      toast.error(`Erro ao remover atividade: ${error.message}`);
-    },
-  });
-
   const handleCriarCurso = async () => {
     if (!selectedCompetenciaId || !cursoTitulo) {
       toast.error('Preencha todos os campos obrigatórios');
@@ -95,28 +57,6 @@ export default function CompetenciasCompTec() {
     });
   };
 
-  const handleAdicionarAtividade = async () => {
-    if (!selectedCursoId || !atividadeTitulo || !atividadeTipo) {
-      toast.error('Preencha todos os campos obrigatórios');
-      return;
-    }
-
-    await criarAtividadeMutation.mutateAsync({
-      cursoId: selectedCursoId,
-      titulo: atividadeTitulo,
-      tipoAtividade: atividadeTipo as any,
-      urlGenially: atividadeUrl || undefined,
-      descricao: atividadeDescricao || undefined,
-      ordem: parseInt(atividadeOrdem) || 0,
-    });
-  };
-
-  const handleRemoverAtividade = async (atividadeId: number) => {
-    if (confirm('Tem certeza que deseja remover esta atividade?')) {
-      await excluirAtividadeMutation.mutateAsync({ atividadeId });
-    }
-  };
-
   return (
     <div className="space-y-6 p-6">
       <div className="mb-8">
@@ -128,27 +68,25 @@ export default function CompetenciasCompTec() {
         {/* SEÇÃO 1: CRIAR CURSO */}
         <Card>
           <CardHeader>
-            <CardTitle>Novo Curso</CardTitle>
-            <CardDescription>Cadastre um novo curso vinculado a uma competência.</CardDescription>
+            <CardTitle>Criar Novo Curso</CardTitle>
+            <CardDescription>Adicione um novo curso a uma competência.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Competência *</label>
+              <label className="block text-sm font-medium mb-2">Selecione uma Competência *</label>
               <Select 
                 value={selectedCompetenciaId?.toString() || ''} 
-                onValueChange={(value) => setSelectedCompetenciaId(parseInt(value) || null)}
+                onValueChange={(val) => setSelectedCompetenciaId(parseInt(val) || null)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma competência" />
                 </SelectTrigger>
                 <SelectContent>
-                  {competencias && competencias.length > 0 ? (
-                    Array.from(new Map(competencias.map((comp: any) => [comp.id, comp])).values()).map((comp: any) => (
-                      <SelectItem key={comp.id} value={comp.id.toString()}>
-                        {comp.nome}
-                      </SelectItem>
-                    ))
-                  ) : null}
+                  {competencias && competencias.length > 0 && competencias.map((comp: any) => (
+                    <SelectItem key={comp.id} value={comp.id.toString()}>
+                      {comp.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -156,7 +94,7 @@ export default function CompetenciasCompTec() {
             <div>
               <label className="block text-sm font-medium mb-2">Título do Curso *</label>
               <Input
-                placeholder="Digite o título do curso"
+                placeholder="Ex: Introdução à Liderança"
                 value={cursoTitulo}
                 onChange={(e) => setCursoTitulo(e.target.value)}
               />
@@ -165,7 +103,7 @@ export default function CompetenciasCompTec() {
             <div>
               <label className="block text-sm font-medium mb-2">Descrição</label>
               <Textarea
-                placeholder="Descreva o objetivo do curso"
+                placeholder="Descreva o curso"
                 value={cursoDescricao}
                 onChange={(e) => setCursoDescricao(e.target.value)}
               />
@@ -185,155 +123,60 @@ export default function CompetenciasCompTec() {
                 'Criar Curso'
               )}
             </Button>
+          </CardContent>
+        </Card>
 
-            {selectedCompetenciaId && cursos && cursos.length > 0 && (
-              <div className="border-t pt-4">
-                <h3 className="font-semibold mb-3">Cursos Cadastrados</h3>
+        {/* SEÇÃO 2: LISTAR CURSOS */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Cursos Cadastrados</CardTitle>
+            <CardDescription>
+              {selectedCompetenciaId ? 'Cursos da competência selecionada' : 'Selecione uma competência'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {selectedCompetenciaId ? (
+              cursos && cursos.length > 0 ? (
                 <div className="space-y-2">
                   {cursos.map((curso: any) => (
-                    <div key={curso.id} className="bg-gray-50 p-3 rounded">
-                      <p className="font-medium">{curso.titulo}</p>
-                      <p className="text-sm text-gray-600">{curso.descricao || 'Sem descrição'}</p>
+                    <div key={curso.id} className="p-3 bg-gray-50 rounded">
+                      <p className="font-medium text-sm">{curso.titulo}</p>
+                      {curso.descricao && (
+                        <p className="text-xs text-gray-600 mt-1">{curso.descricao}</p>
+                      )}
                     </div>
                   ))}
                 </div>
-              </div>
+              ) : (
+                <p className="text-sm text-gray-600">Nenhum curso cadastrado para esta competência</p>
+              )
+            ) : (
+              <p className="text-sm text-gray-600">Selecione uma competência para ver seus cursos</p>
             )}
           </CardContent>
         </Card>
 
-        {/* SEÇÃO 2: GERENCIAR ATIVIDADES */}
+        {/* SEÇÃO 3: GERENCIAR ATIVIDADES */}
         <Card>
           <CardHeader>
             <CardTitle>Gerenciar Atividades</CardTitle>
-            <CardDescription>Selecione um curso para adicionar atividades.</CardDescription>
+            <CardDescription>
+              O cadastro de atividades agora é feito em uma tela dedicada.
+            </CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-4">
-            {selectedCompetenciaId ? (
-              <>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Selecione um Curso</label>
-                  <Select 
-                    value={selectedCursoId?.toString() || ''} 
-                    onValueChange={(val) => setSelectedCursoId(parseInt(val) || null)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um curso" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cursos && cursos.length > 0 && cursos.map((curso: any) => (
-                        <SelectItem key={curso.id} value={curso.id.toString()}>
-                          {curso.titulo}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+              Para evitar erros e manter o fluxo correto, use a tela exclusiva de atividades.
+            </div>
 
-                {selectedCursoId && (
-                  <>
-                    <div className="border-t pt-4">
-                      <h3 className="font-semibold mb-3">Adicionar Atividade</h3>
-
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Título da Atividade *</label>
-                          <Input
-                            placeholder="Ex: Filme - Introdução"
-                            value={atividadeTitulo}
-                            onChange={(e) => setAtividadeTitulo(e.target.value)}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Tipo de Conteúdo *</label>
-                          <Select value={atividadeTipo} onValueChange={setAtividadeTipo}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="genially">Genially</SelectItem>
-                              <SelectItem value="video">Vídeo</SelectItem>
-                              <SelectItem value="podcast">Podcast</SelectItem>
-                              <SelectItem value="tedtalk">TED Talk</SelectItem>
-                              <SelectItem value="livro">Livro</SelectItem>
-                              <SelectItem value="texto">Texto</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-2">URL do Conteúdo</label>
-                          <Input
-                            placeholder="https://"
-                            value={atividadeUrl}
-                            onChange={(e) => setAtividadeUrl(e.target.value)}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Descrição</label>
-                          <Textarea
-                            placeholder="Descreva a atividade"
-                            value={atividadeDescricao}
-                            onChange={(e) => setAtividadeDescricao(e.target.value)}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Ordem</label>
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            value={atividadeOrdem}
-                            onChange={(e) => setAtividadeOrdem(e.target.value)}
-                          />
-                        </div>
-
-                        <Button
-                          onClick={handleAdicionarAtividade}
-                          disabled={criarAtividadeMutation.isPending}
-                          className="w-full"
-                        >
-                          {criarAtividadeMutation.isPending ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Adicionando...
-                            </>
-                          ) : (
-                            'Adicionar Atividade'
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {atividades && atividades.length > 0 && (
-                      <div className="border-t pt-4">
-                        <h3 className="font-semibold mb-3">Atividades Cadastradas</h3>
-                        <div className="space-y-2">
-                          {atividades.map((atividade: any) => (
-                            <div key={atividade.id} className="flex items-center justify-between bg-gray-50 p-3 rounded">
-                              <div>
-                                <p className="font-medium text-sm">{atividade.titulo}</p>
-                                <p className="text-xs text-gray-600">{atividade.tipoAtividade}</p>
-                              </div>
-                              <button
-                                onClick={() => handleRemoverAtividade(atividade.id)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-gray-600">Selecione uma competência para gerenciar atividades</p>
-            )}
+            <Button
+              type="button"
+              className="w-full"
+              onClick={() => window.location.href = "/admin/competencias-comp-tec/atividades"}
+            >
+              Abrir Administração de Atividades
+            </Button>
           </CardContent>
         </Card>
       </div>

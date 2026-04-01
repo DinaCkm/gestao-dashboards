@@ -8755,42 +8755,95 @@ Responda APENAS em JSON com o formato especificado.`
         }),
 
       criarAtividade: adminProcedure
-        .input(
-          z.object({
-            cursoId: z.number(),
-            titulo: z.string().min(1),
-            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]),
-            urlGenially: z.string().optional(),
-            descricao: z.string().optional(),
-            ordem: z.number().optional(),
-          })
-        )
-        .mutation(async ({ input }) => {
-          const database = await db.getDb();
-          if (!database) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Banco indisponível",
-            });
-          }
+  .input(
+    z.object({
+      cursoId: z.number(),
+      titulo: z.string().min(1),
+      tipoAtividade: z.enum([
+        "genially",
+        "video",
+        "podcast",
+        "tedtalk",
+        "livro",
+        "intro",
+      ]),
+      urlGenially: z.string().optional(),
+      descricao: z.string().optional(),
+      ordem: z.number().optional(),
+    })
+  )
+  .mutation(async ({ input }) => {
+    const database = await db.getDb();
 
-          const result = await database.insert(atividadesCurso).values({
-            cursoId: Number(input.cursoId),
-            titulo: input.titulo.trim(),
-            tipoAtividade: input.tipoAtividade,
-            urlGenially: input.urlGenially?.trim() || null,
-            descricao: input.descricao?.trim() || null,
-            ordem: Number(input.ordem ?? 0),
-            isActive: 1,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
+    if (!database) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Banco indisponível",
+      });
+    }
 
-          return {
-            success: true,
-            id: result[0]?.insertId ?? null,
-          };
-        }),
+    const [curso] = await database
+      .select({
+        id: cursosCompetencias.id,
+        isActive: cursosCompetencias.isActive,
+      })
+      .from(cursosCompetencias)
+      .where(eq(cursosCompetencias.id, Number(input.cursoId)))
+      .limit(1);
+
+    if (!curso) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Curso ${input.cursoId} não encontrado na tabela cursos_competencias.`,
+      });
+    }
+
+    if (Number(curso.isActive) !== 1) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: `Curso ${input.cursoId} está inativo.`,
+      });
+    }
+
+    const now = new Date();
+
+    try {
+      const result = await database.insert(atividadesCurso).values({
+        cursoId: Number(input.cursoId),
+        titulo: input.titulo.trim(),
+        tipoAtividade: input.tipoAtividade,
+        urlGenially: input.urlGenially?.trim() || null,
+        descricao: input.descricao?.trim() || null,
+        ordem: Number(input.ordem ?? 0),
+        isActive: 1,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      return {
+        success: true,
+        id: result[0]?.insertId ?? null,
+      };
+    } catch (error: any) {
+      console.error("[competenciasCompTec.admin.criarAtividade] Erro real do MySQL", {
+        input,
+        message: error?.message,
+        code: error?.code,
+        errno: error?.errno,
+        sqlMessage: error?.sqlMessage,
+        sqlState: error?.sqlState,
+        cause: error?.cause,
+      });
+
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message:
+          error?.sqlMessage ||
+          error?.message ||
+          "Erro ao inserir atividade no banco de dados.",
+      });
+    }
+  }),
 
       atualizarAtividade: adminProcedure
         .input(
