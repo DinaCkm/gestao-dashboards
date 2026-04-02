@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { eq, and, asc, desc } from "drizzle-orm";
+import { eq, and, asc, desc, sql } from "drizzle-orm";
 import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCursoAtribuido, tentativasAvaliacao, cursos, atividadesCurso, avaliacoesAtividade, cursosCompetencias, onboardingVideos } from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
@@ -13,6 +13,7 @@ import { calcularIndicadoresAlunoFiltrado, calcularPerformanceFiltrada, Competen
 import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno as calcularIndicadoresAlunoV2, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicatorsV2, CicloDataV2, CaseSucessoData, MacrocicloData } from './indicatorsCalculatorV2';
 import { notifyOwner } from "./_core/notification";
 import { jornadaRouter } from "./routers/jornada";
+import { relatorioPerformanceRouter } from "./routers/relatorio-performance";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
@@ -37,6 +38,7 @@ const managerProcedure = protectedProcedure.use(({ ctx, next }) => {
 export const appRouter = router({
   system: systemRouter,
   jornada: jornadaRouter,
+  relatorioPerformance: relatorioPerformanceRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -8822,30 +8824,23 @@ Responda APENAS em JSON com o formato especificado.`
               });
             }
 
-            const conn = await db.getRawConnection();
-            if (!conn) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message: "Conexao com banco indisponivel",
-              });
-            }
-
             const urlFinal = input.urlGenially?.trim() || input.urlMidia?.trim() || null;
             const descricao = input.descricao?.trim() || null;
             const ordem = Number(input.ordem ?? 0);
 
-            const query = `INSERT INTO atividades_curso (cursoId, titulo, tipoAtividade, urlGenially, urlMidia, descricao, ordem) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?)`;
-            
-            const [result] = await conn.execute(query, [
-              Number(input.cursoId),
-              input.titulo.trim(),
-              input.tipoAtividade,
-              urlFinal,
-              urlFinal,
-              descricao,
-              ordem
-            ]);
+            // Solução 3: Preencher valores manualmente
+            const result = await database.insert(atividadesCurso).values({
+              cursoId: Number(input.cursoId),
+              titulo: input.titulo.trim(),
+              tipoAtividade: input.tipoAtividade as any,
+              urlGenially: urlFinal,
+              urlMidia: urlFinal,
+              descricao: descricao,
+              ordem: ordem,
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
 
             console.log("[criarAtividade] INSERT bem-sucedido", {
               cursoId: input.cursoId,
@@ -8857,7 +8852,7 @@ Responda APENAS em JSON com o formato especificado.`
             return {
               success: true,
               message: "Atividade criada com sucesso",
-              id: (result as any).insertId,
+              id: (result as any).lastInsertRowid,
             };
           } catch (error: any) {
             console.error("[criarAtividade] Erro", {
@@ -9510,4 +9505,5 @@ Responda APENAS em JSON com o formato especificado.`
         return result;
       }),
   }),
+
 });
