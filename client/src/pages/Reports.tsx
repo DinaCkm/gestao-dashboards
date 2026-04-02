@@ -33,6 +33,8 @@ export default function ReportsPage() {
   const [dateTo, setDateTo] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [historyExpanded, setHistoryExpanded] = useState(true);
+  const [performanceAlunoId, setPerformanceAlunoId] = useState<string>("");
+  const [isGeneratingPerformance, setIsGeneratingPerformance] = useState(false);
 
   const isAdmin = user?.role === "admin";
   const consultorRole = (user as any)?.consultorRole as string | null | undefined;
@@ -77,6 +79,19 @@ export default function ReportsPage() {
   // Fetch reports history - refetch every 5 seconds to catch status updates
   const { data: reports, refetch } = trpc.reports.list.useQuery({ limit: 20 }, {
     refetchInterval: 5000,
+  });
+
+  const generatePerformanceReportMutation = trpc.relatorioPerformance.gerarExcel.useMutation({
+    onSuccess: (data) => {
+      toast.success("Relatório de performance gerado com sucesso!");
+      if (data.url) {
+        window.open(data.url, '_blank');
+      }
+      setPerformanceAlunoId("");
+    },
+    onError: (error: any) => {
+      toast.error("Erro ao gerar relatório de performance: " + error.message);
+    }
   });
 
   const generateReportMutation = trpc.reports.generate.useMutation({
@@ -192,6 +207,84 @@ export default function ReportsPage() {
             </Card>
           </div>
         )}
+
+        {/* Performance Report Card */}
+        <Card className="gradient-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Relatório de Performance por Indicador
+            </CardTitle>
+            <CardDescription>
+              Gere relatório detalhado com os 6 indicadores de performance do aluno
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Selecione um Aluno</Label>
+                <Select 
+                  value={performanceAlunoId} 
+                  onValueChange={setPerformanceAlunoId}
+                >
+                  <SelectTrigger className="bg-input">
+                    <SelectValue placeholder="Selecione um aluno" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredAlunos.map((aluno: any) => (
+                      <SelectItem key={aluno.id} value={String(aluno.id)}>
+                        {aluno.name || aluno.email || `Aluno #${aluno.id}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-muted/30">
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" /> Indicadores Inclusos
+              </h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>✓ Ind. 1: Webinars</li>
+                <li>✓ Ind. 2: Avaliações</li>
+                <li>✓ Ind. 3: Competências</li>
+                <li>✓ Ind. 4: Tarefas</li>
+                <li>✓ Ind. 5: Engajamento</li>
+                <li>✓ Ind. 6: Aplicabilidade</li>
+                <li>✓ Performance Geral (Média dos 6 indicadores)</li>
+                <li>✓ Data e Hora de Emissão</li>
+              </ul>
+            </div>
+
+            <Button 
+              onClick={() => {
+                if (!performanceAlunoId) {
+                  toast.error("Selecione um aluno");
+                  return;
+                }
+                setIsGeneratingPerformance(true);
+                generatePerformanceReportMutation.mutateAsync({
+                  alunoId: parseInt(performanceAlunoId)
+                }).finally(() => setIsGeneratingPerformance(false));
+              }}
+              disabled={isGeneratingPerformance || !performanceAlunoId}
+              className="glow-orange"
+            >
+              {isGeneratingPerformance ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Baixar Relatório de Performance
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Generate Report Card */}
         <Card className="gradient-card">
