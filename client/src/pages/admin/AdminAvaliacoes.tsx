@@ -407,7 +407,6 @@ export default function AdminAvaliacoes() {
                     type="button"
                     variant="outline"
                     onClick={() => inputArquivoRef.current?.click()}
-                    disabled={!atividadeSelecionada}
                   >
                     Importar planilha
                   </Button>
