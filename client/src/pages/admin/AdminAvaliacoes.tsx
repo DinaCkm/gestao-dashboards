@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import * as XLSX from "xlsx";
 
 type QuestaoForm = {
   pergunta: string;
@@ -21,6 +22,60 @@ type QuestaoForm = {
   alternativaD: string;
   respostaCorreta: string;
 };
+
+type LinhaPlanilhaQuestao = {
+  pergunta?: string;
+  alternativaA?: string;
+  alternativaB?: string;
+  alternativaC?: string;
+  alternativaD?: string;
+  respostaCorreta?: string;
+};
+
+function normalizarRespostaCorreta(valor: string | undefined): "A" | "B" | "C" | "D" {
+  const resposta = String(valor ?? "")
+    .trim()
+    .toUpperCase();
+
+  if (resposta === "A" || resposta === "B" || resposta === "C" || resposta === "D") {
+    return resposta;
+  }
+
+  return "A";
+}
+
+function linhaParaQuestao(linha: LinhaPlanilhaQuestao): QuestaoForm {
+  return {
+    pergunta: String(linha?.pergunta ?? "").trim(),
+    alternativaA: String(linha?.alternativaA ?? "").trim(),
+    alternativaB: String(linha?.alternativaB ?? "").trim(),
+    alternativaC: String(linha?.alternativaC ?? "").trim(),
+    alternativaD: String(linha?.alternativaD ?? "").trim(),
+    respostaCorreta: normalizarRespostaCorreta(linha?.respostaCorreta),
+  };
+}
+
+function validarQuestoesImportadas(questoes: QuestaoForm[]) {
+  if (questoes.length !== 30) {
+    throw new Error(`A planilha deve conter exatamente 30 questões. Encontrado: ${questoes.length}.`);
+  }
+
+  questoes.forEach((questao, index) => {
+    const numero = index + 1;
+
+    if (!questao.pergunta) {
+      throw new Error(`A questão ${numero} está sem pergunta.`);
+    }
+
+    if (!questao.alternativaA || !questao.alternativaB || !questao.alternativaC || !questao.alternativaD) {
+      throw new Error(`A questão ${numero} está com alternativa em branco.`);
+    }
+
+    if (!["A", "B", "C", "D"].includes(questao.respostaCorreta)) {
+      throw new Error(`A questão ${numero} tem resposta correta inválida. Use apenas A, B, C ou D.`);
+    }
+  });
+}
 
 function novaQuestao(): QuestaoForm {
   return {
@@ -71,6 +126,9 @@ export default function AdminAvaliacoes() {
   const [questoes, setQuestoes] = useState<QuestaoForm[]>(
     Array.from({ length: 30 }, () => novaQuestao())
   );
+
+  const inputArquivoRef = useRef<HTMLInputElement | null>(null);
+  const [nomeArquivoImportado, setNomeArquivoImportado] = useState("");
 
   const utils = trpc.useUtils();
 
