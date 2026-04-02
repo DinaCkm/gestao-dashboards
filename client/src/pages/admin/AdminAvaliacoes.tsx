@@ -429,6 +429,14 @@ export default function AdminAvaliacoes() {
                     Importar planilha
                   </Button>
 
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleBaixarModeloPlanilha}
+                  >
+                    Baixar modelo
+                  </Button>
+
                   {nomeArquivoImportado ? (
                     <span className="text-sm text-muted-foreground">
                       Arquivo importado: {nomeArquivoImportado}
