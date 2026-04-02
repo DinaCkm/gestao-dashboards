@@ -62,7 +62,7 @@ function normalizarAvaliacao(item: any) {
 }
 
 export default function AdminAvaliacoes() {
-  const [competenciaSelecionada, setCompetenciaSelecionada] = useState<string>("");
+  const [competenciaId, setCompetenciaId] = useState<number>(0);
   const [cursoSelecionado, setCursoSelecionado] = useState<string>("");
   const [atividadeSelecionada, setAtividadeSelecionada] = useState<string>("");
 
@@ -77,8 +77,8 @@ export default function AdminAvaliacoes() {
   const competenciasQuery = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
 
   const cursosQuery = trpc.competenciasCompTec.admin.listarCursosPorCompetencia.useQuery(
-    { competencia: competenciaSelecionada },
-    { enabled: !!competenciaSelecionada }
+    { competenciaId },
+    { enabled: competenciaId > 0 }
   );
 
   const atividadesQuery = trpc.competenciasCompTec.admin.listarAtividades.useQuery(
