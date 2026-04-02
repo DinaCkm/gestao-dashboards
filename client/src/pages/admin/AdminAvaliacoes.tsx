@@ -391,6 +391,40 @@ export default function AdminAvaliacoes() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label>Importar questões por planilha</Label>
+
+                <input
+                  ref={inputArquivoRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleImportarPlanilha}
+                  className="hidden"
+                />
+
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => inputArquivoRef.current?.click()}
+                    disabled={!atividadeSelecionada}
+                  >
+                    Importar planilha
+                  </Button>
+
+                  {nomeArquivoImportado ? (
+                    <span className="text-sm text-muted-foreground">
+                      Arquivo importado: {nomeArquivoImportado}
+                    </span>
+                  ) : null}
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  A planilha deve conter as colunas: pergunta, alternativaA, alternativaB,
+                  alternativaC, alternativaD e respostaCorreta.
+                </p>
+              </div>
+
               <div className="rounded-md border p-4 text-sm text-muted-foreground">
                 A avaliação deve conter exatamente 30 questões.
               </div>
