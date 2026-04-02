@@ -189,22 +189,21 @@ export default function AdminAvaliacoes() {
               <div className="space-y-2">
                 <Label>Competência</Label>
                 <Select
-                  value={competenciaSelecionada || "__none__"}
+                  value={String(competenciaId)}
                   onValueChange={(value) => {
-                    const novaCompetencia = value === "__none__" ? "" : value;
-                    setCompetenciaSelecionada(novaCompetencia);
+                    setCompetenciaId(Number(value));
                     setCursoSelecionado("");
                     setAtividadeSelecionada("");
                   }}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a competência" />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">Selecione</SelectItem>
-                    {competenciasUnicas.map((competencia) => (
-                      <SelectItem key={competencia} value={competencia}>
-                        {competencia}
+                    <SelectItem value="0">Selecione</SelectItem>
+                    {(competenciasQuery.data ?? []).map((comp: any) => (
+                      <SelectItem key={comp.id} value={String(comp.id)}>
+                        {comp?.competencia ?? comp?.nome ?? `Competência ${comp.id}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -220,7 +219,7 @@ export default function AdminAvaliacoes() {
                     setCursoSelecionado(novoCurso);
                     setAtividadeSelecionada("");
                   }}
-                  disabled={!competenciaSelecionada}
+                  disabled={competenciaId === 0}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o curso" />
