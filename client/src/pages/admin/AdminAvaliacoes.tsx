@@ -200,6 +200,55 @@ export default function AdminAvaliacoes() {
     );
   }
 
+  async function handleImportarPlanilha(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const arquivo = e.target.files?.[0];
+
+    if (!arquivo) return;
+
+    try {
+      setNomeArquivoImportado(arquivo.name);
+
+      const buffer = await arquivo.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+
+      const nomePrimeiraAba = workbook.SheetNames[0];
+      if (!nomePrimeiraAba) {
+        throw new Error("A planilha não possui abas.");
+      }
+
+      const worksheet = workbook.Sheets[nomePrimeiraAba];
+
+      const linhas = XLSX.utils.sheet_to_json<LinhaPlanilhaQuestao>(worksheet, {
+        defval: "",
+      });
+
+      const questoesImportadas = linhas
+        .map(linhaParaQuestao)
+        .filter((questao) => {
+          return (
+            questao.pergunta ||
+            questao.alternativaA ||
+            questao.alternativaB ||
+            questao.alternativaC ||
+            questao.alternativaD
+          );
+        });
+
+      validarQuestoesImportadas(questoesImportadas);
+
+      setQuestoes(questoesImportadas);
+    } catch (error: any) {
+      setNomeArquivoImportado("");
+      window.alert(error?.message || "Não foi possível importar a planilha.");
+    } finally {
+      if (inputArquivoRef.current) {
+        inputArquivoRef.current.value = "";
+      }
+    }
+  }
+
   async function handleCriarAvaliacao(e: React.FormEvent) {
     e.preventDefault();
 
