@@ -104,7 +104,7 @@ export default function AdminAvaliacoes() {
 
   const competenciasUnicas = useMemo(() => {
     const lista = (competenciasQuery.data ?? [])
-      .map((item: any) => item?.competencia)
+      .map((item: any) => item?.competencia ?? item?.nome)
       .filter(Boolean);
 
     return Array.from(new Set(lista));
