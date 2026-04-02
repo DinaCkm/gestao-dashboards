@@ -9717,3 +9717,306 @@ export async function getSaldoMentoriasAluno(alunoId: number) {
     return null;
   }
 }
+
+// ============ AUTHENTICATION FUNCTIONS ============
+
+export async function authenticateAdmin(
+  username: string,
+  passwordHash: string
+): Promise<{ success: boolean; message?: string; user?: any }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Database not available" };
+
+  try {
+    const result = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.openId, username), eq(users.role, "admin")))
+      .limit(1);
+
+    if (result.length === 0) {
+      return {
+        success: false,
+        message: "Usuário não encontrado ou não é administrador",
+      };
+    }
+
+    const user = result[0];
+
+    if (user.isActive === 0) {
+      return {
+        success: false,
+        message: "Sua conta está inativa. Entre em contato com o administrador.",
+      };
+    }
+
+    if (!user.passwordHash) {
+      return {
+        success: false,
+        message:
+          "Este usuário não possui senha configurada. Use o login Manus.",
+      };
+    }
+
+    if (user.passwordHash !== passwordHash) {
+      return { success: false, message: "Senha incorreta" };
+    }
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        openId: user.openId,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    };
+  } catch (error) {
+    console.error("[Auth] authenticateAdmin error:", error);
+    return { success: false, message: "Erro ao autenticar" };
+  }
+}
+
+export async function authenticateByEmailCpf(
+  email: string,
+  credential: string
+): Promise<{ success: boolean; message?: string; user?: any }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Database not available" };
+
+  try {
+    const result = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.email, email), eq(users.cpf, credential)))
+      .limit(1);
+
+    if (result.length === 0) {
+      return { success: false, message: "Usuário não encontrado" };
+    }
+
+    const user = result[0];
+
+    if (user.isActive === 0) {
+      return {
+        success: false,
+        message: "Sua conta está inativa. Entre em contato com o administrador.",
+      };
+    }
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        openId: user.openId,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    };
+  } catch (error) {
+    console.error("[Auth] authenticateByEmailCpf error:", error);
+    return { success: false, message: "Erro ao autenticar" };
+  }
+}
+
+export async function authenticateAluno(
+  id: string,
+  email: string
+): Promise<{ success: boolean; message?: string; user?: any }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Database not available" };
+
+  try {
+    // Try to match by externalId first, then by numeric id
+    let idNum: number | null = null;
+    try {
+      idNum = parseInt(id, 10);
+    } catch {
+      idNum = null;
+    }
+
+    const result = await db
+      .select()
+      .from(alunos)
+      .where(
+        and(
+          eq(alunos.email, email),
+          or(eq(alunos.externalId, id), idNum ? eq(alunos.id, idNum) : undefined)
+        )
+      )
+      .limit(1);
+
+    if (result.length === 0) {
+      return { success: false, message: "Aluno não encontrado" };
+    }
+
+    const aluno = result[0];
+
+    if (aluno.isActive === 0) {
+      return {
+        success: false,
+        message: "Sua conta está inativa. Entre em contato com o administrador.",
+      };
+    }
+
+    if (aluno.canLogin === 0) {
+      return {
+        success: false,
+        message:
+          "Você não tem permissão para fazer login. Entre em contato com o administrador.",
+      };
+    }
+
+    return {
+      success: true,
+      user: {
+        id: aluno.id,
+        openId: `aluno_${aluno.id}`,
+        name: aluno.name,
+        email: aluno.email,
+        role: "user",
+      },
+    };
+  } catch (error) {
+    console.error("[Auth] authenticateAluno error:", error);
+    return { success: false, message: "Erro ao autenticar" };
+  }
+}
+
+export async function authenticateMentor(
+  id: string,
+  email: string
+): Promise<{ success: boolean; message?: string; user?: any }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Database not available" };
+
+  try {
+    // Try to match by loginId first, then by numeric id
+    let idNum: number | null = null;
+    try {
+      idNum = parseInt(id, 10);
+    } catch {
+      idNum = null;
+    }
+
+    const result = await db
+      .select()
+      .from(consultors)
+      .where(
+        and(
+          eq(consultors.email, email),
+          eq(consultors.role, "mentor"),
+          or(
+            eq(consultors.loginId, id),
+            idNum ? eq(consultors.id, idNum) : undefined
+          )
+        )
+      )
+      .limit(1);
+
+    if (result.length === 0) {
+      return { success: false, message: "Mentor não encontrado" };
+    }
+
+    const mentor = result[0];
+
+    if (mentor.isActive === 0) {
+      return {
+        success: false,
+        message: "Sua conta está inativa. Entre em contato com o administrador.",
+      };
+    }
+
+    if (mentor.canLogin === 0) {
+      return {
+        success: false,
+        message:
+          "Você não tem permissão para fazer login. Entre em contato com o administrador.",
+      };
+    }
+
+    return {
+      success: true,
+      user: {
+        id: mentor.id,
+        openId: `mentor_${mentor.id}`,
+        name: mentor.name,
+        email: mentor.email,
+        role: "manager",
+      },
+    };
+  } catch (error) {
+    console.error("[Auth] authenticateMentor error:", error);
+    return { success: false, message: "Erro ao autenticar" };
+  }
+}
+
+export async function authenticateGerente(
+  id: string,
+  email: string
+): Promise<{ success: boolean; message?: string; user?: any }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Database not available" };
+
+  try {
+    // Try to match by loginId first, then by numeric id
+    let idNum: number | null = null;
+    try {
+      idNum = parseInt(id, 10);
+    } catch {
+      idNum = null;
+    }
+
+    const result = await db
+      .select()
+      .from(consultors)
+      .where(
+        and(
+          eq(consultors.email, email),
+          eq(consultors.role, "gerente"),
+          or(
+            eq(consultors.loginId, id),
+            idNum ? eq(consultors.id, idNum) : undefined
+          )
+        )
+      )
+      .limit(1);
+
+    if (result.length === 0) {
+      return { success: false, message: "Gerente não encontrado" };
+    }
+
+    const gerente = result[0];
+
+    if (gerente.isActive === 0) {
+      return {
+        success: false,
+        message: "Sua conta está inativa. Entre em contato com o administrador.",
+      };
+    }
+
+    if (gerente.canLogin === 0) {
+      return {
+        success: false,
+        message:
+          "Você não tem permissão para fazer login. Entre em contato com o administrador.",
+      };
+    }
+
+    return {
+      success: true,
+      user: {
+        id: gerente.id,
+        openId: `gerente_${gerente.id}`,
+        name: gerente.name,
+        email: gerente.email,
+        role: "manager",
+      },
+    };
+  } catch (error) {
+    console.error("[Auth] authenticateGerente error:", error);
+    return { success: false, message: "Erro ao autenticar" };
+  }
+}
