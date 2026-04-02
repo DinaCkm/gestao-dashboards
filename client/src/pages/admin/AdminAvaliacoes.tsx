@@ -105,13 +105,23 @@ function normalizarAtividade(item: any) {
 
 function normalizarAvaliacao(item: any) {
   const avaliacao = item?.avaliacao ?? item ?? {};
-
+  let questoesNormalizadas: any[] = [];
+  if (Array.isArray(avaliacao?.questoes)) {
+    questoesNormalizadas = avaliacao.questoes;
+  } else if (typeof avaliacao?.questoes === "string") {
+    try {
+      const parsed = JSON.parse(avaliacao.questoes);
+      questoesNormalizadas = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      questoesNormalizadas = [];
+    }
+  }
   return {
     id: Number(avaliacao?.id ?? 0),
     atividadeId: Number(avaliacao?.atividadeId ?? 0),
     titulo: avaliacao?.titulo ?? "Avaliação sem título",
     notaMinima: Number(avaliacao?.notaMinima ?? 8),
-    questoes: Array.isArray(avaliacao?.questoes) ? avaliacao.questoes : [],
+    questoes: questoesNormalizadas,
     isActive: Number(avaliacao?.isActive ?? 1),
   };
 }
