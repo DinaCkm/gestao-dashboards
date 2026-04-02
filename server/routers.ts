@@ -8984,7 +8984,7 @@ Responda APENAS em JSON com o formato especificado.`
             }
           }
 
-          const result = await database.insert(avaliacaoAtividade).values({
+          const result = await database.insert(avaliacoesAtividade).values({
             atividadeId: input.atividadeId,
             titulo: input.titulo,
             questoes: JSON.stringify(input.questoes),
@@ -9003,18 +9003,18 @@ Responda APENAS em JSON com o formato especificado.`
 
           return await database
             .select({
-              avaliacao: avaliacaoAtividade,
-              atividade: atividadeCurso,
+              avaliacao: avaliacoesAtividade,
+              atividade: atividadesCurso,
             })
-            .from(avaliacaoAtividade)
-            .innerJoin(atividadeCurso, eq(avaliacaoAtividade.atividadeId, atividadeCurso.id))
+            .from(avaliacoesAtividade)
+            .innerJoin(atividadesCurso, eq(avaliacoesAtividade.atividadeId, atividadesCurso.id))
             .where(
               and(
-                eq(atividadeCurso.cursoId, input.cursoId),
-                eq(avaliacaoAtividade.isActive, 1)
+                eq(atividadesCurso.cursoId, input.cursoId),
+                eq(avaliacoesAtividade.isActive, 1)
               )
             )
-            .orderBy(desc(avaliacaoAtividade.createdAt));
+            .orderBy(desc(avaliacoesAtividade.createdAt));
         }),
     }),
 
