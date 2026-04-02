@@ -249,6 +249,24 @@ export default function AdminAvaliacoes() {
     }
   }
 
+  function handleBaixarModeloPlanilha() {
+    const linhasModelo = Array.from({ length: 30 }, (_, index) => ({
+      pergunta: `Pergunta ${index + 1}`,
+      alternativaA: "Alternativa A",
+      alternativaB: "Alternativa B",
+      alternativaC: "Alternativa C",
+      alternativaD: "Alternativa D",
+      respostaCorreta: "A",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(linhasModelo);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Questoes");
+
+    XLSX.writeFile(workbook, "modelo_avaliacao_30_questoes.xlsx");
+  }
+
   async function handleCriarAvaliacao(e: React.FormEvent) {
     e.preventDefault();
 
