@@ -272,17 +272,28 @@ export default function AdminAvaliacoes() {
 
     if (!atividadeSelecionada) return;
 
-    const payloadQuestoes = questoes.map((questao) => ({
-      id: `q${Math.random().toString(36).substr(2, 9)}`,
-      enunciado: questao.pergunta,
-      opcoes: [
+    const payloadQuestoes = questoes.map((questao) => {
+      const opcoes = [
         questao.alternativaA,
         questao.alternativaB,
         questao.alternativaC,
         questao.alternativaD,
-      ],
-      respostaCorreta: questao.respostaCorreta,
-    }));
+      ];
+
+      const mapaResposta: Record<string, string> = {
+        A: questao.alternativaA,
+        B: questao.alternativaB,
+        C: questao.alternativaC,
+        D: questao.alternativaD,
+      };
+
+      return {
+        id: `q${Math.random().toString(36).substr(2, 9)}`,
+        enunciado: questao.pergunta,
+        opcoes,
+        respostaCorreta: mapaResposta[String(questao.respostaCorreta).toUpperCase()] || questao.alternativaA,
+      };
+    });
 
     await criarAvaliacaoMutation.mutateAsync({
       atividadeId: Number(atividadeSelecionada),
