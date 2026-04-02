@@ -80,7 +80,6 @@ export async function getRawConnection() {
           password: url.password,
           database: url.pathname.slice(1),
           port: url.port ? parseInt(url.port) : 3306,
-          ssl: 'amazon',
         });
       }
     } catch (error) {
