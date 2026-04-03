@@ -9110,7 +9110,6 @@ Responda APENAS em JSON com o formato especificado.`
               dataPrazo: alunoCursoAtribuido.dataPrazo,
               status: alunoCursoAtribuido.status,
               dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
-              cursoNome: cursosCompetencias.nome,
               cursoTitulo: cursosCompetencias.titulo,
               competenciaNome: competencias.nome,
             })

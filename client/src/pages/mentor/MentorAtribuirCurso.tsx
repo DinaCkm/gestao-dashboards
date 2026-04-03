@@ -103,7 +103,7 @@ export default function MentorAtribuirCurso() {
       console.log('Mapeando item:', item);
       return {
         id: item?.id ?? 0,
-        cursoNome: item?.cursoNome ?? item?.cursoTitulo ?? "Curso desconhecido",
+        cursoNome: item?.cursoTitulo ?? "Curso desconhecido",
         competenciaNome: item?.competenciaNome ?? "Competência desconhecida",
         dataPrazo: item?.dataPrazo ?? "",
         status: item?.status ?? "nao_iniciado",
