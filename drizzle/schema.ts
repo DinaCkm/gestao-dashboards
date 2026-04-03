@@ -1100,6 +1100,8 @@ export const onboardingJornada = mysqlTable("onboarding_jornada", {
   // Etapa 6 - Meu PDI
   pdiVisualizado: int("pdiVisualizado").default(0).notNull(), // 1 = visualizou o PDI
   pdiVisualizadoEm: timestamp("pdiVisualizadoEm"),
+  pdiLiberadoPelaMentora: int("pdiLiberadoPelaMentora").default(0).notNull(), // 1 = mentora liberou para visualizar
+  pdiLiberadoEm: timestamp("pdiLiberadoEm"), // quando a mentora liberou
   // Etapa 7 - Sua Jornada (vídeos)
   videoBoasVindas: int("videoBoasVindas").default(0).notNull(), // 1 = assistiu
   videoCompetencias: int("videoCompetencias").default(0).notNull(),

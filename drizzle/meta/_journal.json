@@ -470,6 +470,13 @@
       "when": 1775083882467,
       "tag": "0066_lumpy_forge",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "5",
+      "when": 1775171479224,
+      "tag": "0067_lazy_dark_beast",
+      "breakpoints": true
     }
   ]
 }
