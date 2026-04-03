@@ -9105,9 +9105,13 @@ Responda APENAS em JSON com o formato especificado.`
             .select({
               atribuicao: alunoCursoAtribuido,
               curso: cursosCompetencias,
+              competencia: competencias,
+              aluno: alunos,
             })
             .from(alunoCursoAtribuido)
             .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+            .leftJoin(competencias, eq(alunoCursoAtribuido.competenciaId, competencias.id))
+            .leftJoin(alunos, eq(alunoCursoAtribuido.alunoId, alunos.id))
             .where(eq(alunoCursoAtribuido.alunoId, input.alunoId))
             .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
         }),

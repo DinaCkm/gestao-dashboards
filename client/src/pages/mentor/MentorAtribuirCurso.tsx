@@ -100,8 +100,9 @@ export default function MentorAtribuirCurso() {
   const cursosAtribuidos = useMemo(() => {
     return (cursosAtribuidosQuery.data ?? []).map((item: any) => ({
       id: item?.atribuicao?.id ?? 0,
-      competencia: item?.atribuicao?.competenciaId ?? 0,
-      curso: item?.curso?.nome ?? item?.atribuicao?.cursoId ?? "Curso desconhecido",
+      alunoNome: item?.aluno?.nome ?? item?.aluno?.name ?? "Aluno desconhecido",
+      competenciaNome: item?.competencia?.nome ?? "Competência desconhecida",
+      cursoNome: item?.curso?.nome ?? item?.curso?.titulo ?? "Curso desconhecido",
       dataPrazo: item?.atribuicao?.dataPrazo ?? "",
       status: item?.atribuicao?.status ?? "nao_iniciado",
       dataAtribuicao: item?.atribuicao?.dataAtribuicao ?? "",
@@ -252,7 +253,15 @@ export default function MentorAtribuirCurso() {
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        <p className="font-medium text-gray-900">{item.curso}</p>
+                        <div>
+                          <p className="font-medium text-gray-900">{item.cursoNome}</p>
+                          <p className="text-xs text-gray-500">
+                            Competência: <span className="font-medium">{item.competenciaNome}</span>
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Aluno: <span className="font-medium">{item.alunoNome}</span>
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
