@@ -9094,6 +9094,23 @@ Responda APENAS em JSON com o formato especificado.`
             .where(eq(alunoModuloProgresso.alunoId, input.alunoId))
             .orderBy(desc(alunoModuloProgresso.updatedAt));
         }),
+
+      listarCursosAtribuidosAoAluno: protectedProcedure
+        .input(z.object({ alunoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select({
+              atribuicao: alunoCursoAtribuido,
+              curso: cursosCompetencias,
+            })
+            .from(alunoCursoAtribuido)
+            .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+            .where(eq(alunoCursoAtribuido.alunoId, input.alunoId))
+            .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+        }),
     }),
 
     aluno: router({

@@ -11,8 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { BookOpen, Calendar, CheckCircle2 } from "lucide-react";
 
 function normalizarAluno(item: any) {
   return {
@@ -35,17 +35,22 @@ function normalizarCurso(item: any) {
   };
 }
 
+function getStatusBadge(status: string) {
+  const statusMap: Record<string, { label: string; color: string }> = {
+    nao_iniciado: { label: "Não iniciado", color: "bg-gray-100 text-gray-800" },
+    em_progresso: { label: "Em progresso", color: "bg-blue-100 text-blue-800" },
+    concluido: { label: "Concluído", color: "bg-green-100 text-green-800" },
+    prorrogado: { label: "Prorrogado", color: "bg-yellow-100 text-yellow-800" },
+  };
+  const info = statusMap[status] || { label: status, color: "bg-gray-100 text-gray-800" };
+  return <Badge className={info.color}>{info.label}</Badge>;
+}
+
 export default function MentorAtribuirCurso() {
   const [alunoSelecionado, setAlunoSelecionado] = useState("");
   const [competenciaSelecionada, setCompetenciaSelecionada] = useState("");
   const [cursoSelecionado, setCursoSelecionado] = useState("");
   const [prazo, setPrazo] = useState("");
-  const [atribuicaoSucesso, setAtribuicaoSucesso] = useState<{
-    aluno: string;
-    competencia: string;
-    curso: string;
-    dataPrazo: string;
-  } | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -57,31 +62,23 @@ export default function MentorAtribuirCurso() {
     { enabled: Number(competenciaSelecionada) > 0 }
   );
 
+  // Query para listar cursos atribuídos ao aluno selecionado
+  const cursosAtribuidosQuery = trpc.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.useQuery(
+    { alunoId: Number(alunoSelecionado) },
+    { enabled: Number(alunoSelecionado) > 0 }
+  );
+
   const atribuirMutation = trpc.competenciasCompTec.mentor.atribuirCurso.useMutation({
     onSuccess: async () => {
-      // Encontrar os nomes dos itens selecionados para exibir na confirmação
-      const alunoNome = alunos.find(a => String(a.id) === alunoSelecionado)?.nome || "";
-      const competenciaNome = competencias.find(c => String(c.id) === competenciaSelecionada)?.nome || "";
-      const cursoNome = cursos.find(c => String(c.id) === cursoSelecionado)?.nome || "";
-
-      // Mostrar confirmação de sucesso
-      setAtribuicaoSucesso({
-        aluno: alunoNome,
-        competencia: competenciaNome,
-        curso: cursoNome,
-        dataPrazo: prazo,
-      });
-
       // Limpar formulário
       setAlunoSelecionado("");
       setCompetenciaSelecionada("");
       setCursoSelecionado("");
       setPrazo("");
       
-      // Esconder mensagem de sucesso após 5 segundos
-      setTimeout(() => setAtribuicaoSucesso(null), 5000);
-      
+      // Invalidar queries para atualizar a lista
       await utils.competenciasCompTec.mentor.listarAlunos.invalidate();
+      await utils.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.invalidate();
     },
   });
 
@@ -100,6 +97,17 @@ export default function MentorAtribuirCurso() {
     [cursosQuery.data]
   );
 
+  const cursosAtribuidos = useMemo(() => {
+    return (cursosAtribuidosQuery.data ?? []).map((item: any) => ({
+      id: item?.atribuicao?.id ?? 0,
+      competencia: item?.atribuicao?.competenciaId ?? 0,
+      curso: item?.curso?.nome ?? item?.atribuicao?.cursoId ?? "Curso desconhecido",
+      dataPrazo: item?.atribuicao?.dataPrazo ?? "",
+      status: item?.atribuicao?.status ?? "nao_iniciado",
+      dataAtribuicao: item?.atribuicao?.dataAtribuicao ?? "",
+    }));
+  }, [cursosAtribuidosQuery.data]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!alunoSelecionado || !competenciaSelecionada || !cursoSelecionado || !prazo) return;
@@ -112,6 +120,8 @@ export default function MentorAtribuirCurso() {
     });
   }
 
+  const alunoNomeSelecionado = alunos.find(a => String(a.id) === alunoSelecionado)?.nome;
+
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -120,19 +130,6 @@ export default function MentorAtribuirCurso() {
           Selecione um aluno, a competência do PDI, o curso e a data limite para iniciar o desenvolvimento.
         </p>
       </div>
-
-      {atribuicaoSucesso && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertTitle className="text-green-800">✅ CURSO ATRIBUÍDO COM SUCESSO</AlertTitle>
-          <AlertDescription className="text-green-700 space-y-1 mt-2">
-            <p><strong>Aluno:</strong> {atribuicaoSucesso.aluno}</p>
-            <p><strong>Competência:</strong> {atribuicaoSucesso.competencia}</p>
-            <p><strong>Curso:</strong> {atribuicaoSucesso.curso}</p>
-            <p><strong>Data de Início:</strong> {new Date(atribuicaoSucesso.dataPrazo).toLocaleDateString('pt-BR')}</p>
-          </AlertDescription>
-        </Alert>
-      )}
 
       <Card>
         <CardHeader>
@@ -222,6 +219,60 @@ export default function MentorAtribuirCurso() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Seção de Cursos Atribuídos */}
+      {alunoSelecionado && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-blue-600" />
+                <div>
+                  <CardTitle>Cursos Atribuídos</CardTitle>
+                  <CardDescription>
+                    {alunoNomeSelecionado && `Cursos atribuídos a ${alunoNomeSelecionado}`}
+                  </CardDescription>
+                </div>
+              </div>
+              <Badge variant="outline">{cursosAtribuidos.length}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {cursosAtribuidosQuery.isLoading ? (
+              <p className="text-sm text-muted-foreground">Carregando cursos...</p>
+            ) : cursosAtribuidos.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum curso atribuído a este aluno ainda.</p>
+            ) : (
+              <div className="space-y-3">
+                {cursosAtribuidos.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-start justify-between rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50"
+                  >
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <p className="font-medium text-gray-900">{item.curso}</p>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            Prazo: {new Date(item.dataPrazo).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      {getStatusBadge(item.status)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
