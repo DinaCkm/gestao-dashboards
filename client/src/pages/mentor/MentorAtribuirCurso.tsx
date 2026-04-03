@@ -11,6 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CheckCircle2 } from "lucide-react";
 
 function normalizarAluno(item: any) {
   return {
@@ -38,6 +40,12 @@ export default function MentorAtribuirCurso() {
   const [competenciaSelecionada, setCompetenciaSelecionada] = useState("");
   const [cursoSelecionado, setCursoSelecionado] = useState("");
   const [prazo, setPrazo] = useState("");
+  const [atribuicaoSucesso, setAtribuicaoSucesso] = useState<{
+    aluno: string;
+    competencia: string;
+    curso: string;
+    dataPrazo: string;
+  } | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -51,10 +59,28 @@ export default function MentorAtribuirCurso() {
 
   const atribuirMutation = trpc.competenciasCompTec.mentor.atribuirCurso.useMutation({
     onSuccess: async () => {
+      // Encontrar os nomes dos itens selecionados para exibir na confirmação
+      const alunoNome = alunos.find(a => String(a.id) === alunoSelecionado)?.nome || "";
+      const competenciaNome = competencias.find(c => String(c.id) === competenciaSelecionada)?.nome || "";
+      const cursoNome = cursos.find(c => String(c.id) === cursoSelecionado)?.nome || "";
+
+      // Mostrar confirmação de sucesso
+      setAtribuicaoSucesso({
+        aluno: alunoNome,
+        competencia: competenciaNome,
+        curso: cursoNome,
+        dataPrazo: prazo,
+      });
+
+      // Limpar formulário
       setAlunoSelecionado("");
       setCompetenciaSelecionada("");
       setCursoSelecionado("");
       setPrazo("");
+      
+      // Esconder mensagem de sucesso após 5 segundos
+      setTimeout(() => setAtribuicaoSucesso(null), 5000);
+      
       await utils.competenciasCompTec.mentor.listarAlunos.invalidate();
     },
   });
@@ -94,6 +120,19 @@ export default function MentorAtribuirCurso() {
           Selecione um aluno, a competência do PDI, o curso e a data limite para iniciar o desenvolvimento.
         </p>
       </div>
+
+      {atribuicaoSucesso && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">✅ CURSO ATRIBUÍDO COM SUCESSO</AlertTitle>
+          <AlertDescription className="text-green-700 space-y-1 mt-2">
+            <p><strong>Aluno:</strong> {atribuicaoSucesso.aluno}</p>
+            <p><strong>Competência:</strong> {atribuicaoSucesso.competencia}</p>
+            <p><strong>Curso:</strong> {atribuicaoSucesso.curso}</p>
+            <p><strong>Data de Início:</strong> {new Date(atribuicaoSucesso.dataPrazo).toLocaleDateString('pt-BR')}</p>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
