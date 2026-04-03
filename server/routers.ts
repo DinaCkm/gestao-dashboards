@@ -9028,8 +9028,9 @@ Responda APENAS em JSON com o formato especificado.`
         .input(
           z.object({
             alunoId: z.number(),
-            moduloId: z.number(),
-            prazo: z.string().optional(),
+            cursoId: z.number(),
+            competenciaId: z.number(),
+            dataPrazo: z.string().optional(),
           })
         )
         .mutation(async ({ ctx, input }) => {
@@ -9038,39 +9039,40 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
           }
 
-          const consultorId = Number(ctx.user.consultorId ?? ctx.user.id);
+          const mentorId = Number(ctx.user.consultorId ?? ctx.user.id);
 
           const [existente] = await database
             .select()
-            .from(alunoModuloProgresso)
+            .from(alunoCursoAtribuido)
             .where(
               and(
-                eq(alunoModuloProgresso.alunoId, input.alunoId),
-                eq(alunoModuloProgresso.moduloId, input.moduloId)
+                eq(alunoCursoAtribuido.alunoId, input.alunoId),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId)
               )
             )
             .limit(1);
 
           if (existente) {
             await database
-              .update(alunoModuloProgresso)
+              .update(alunoCursoAtribuido)
               .set({
-                mentorId: consultorId,
-                prazoConclusao: input.prazo ?? existente.prazoConclusao ?? null,
+                mentorId: mentorId,
+                dataPrazo: input.dataPrazo ? new Date(input.dataPrazo) : existente.dataPrazo,
                 updatedAt: new Date(),
               })
-              .where(eq(alunoModuloProgresso.id, existente.id));
+              .where(eq(alunoCursoAtribuido.id, existente.id));
 
             return { success: true, id: existente.id, atualizado: true };
           }
 
-          const result = await database.insert(alunoModuloProgresso).values({
+          const result = await database.insert(alunoCursoAtribuido).values({
             alunoId: input.alunoId,
-            moduloId: input.moduloId,
-            mentorId: consultorId,
-            status: "atribuido",
-            percentualConclusao: 0,
-            prazoConclusao: input.prazo ?? null,
+            cursoId: input.cursoId,
+            competenciaId: input.competenciaId,
+            mentorId: mentorId,
+            dataAtribuicao: new Date(),
+            dataPrazo: input.dataPrazo ? new Date(input.dataPrazo) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            status: "nao_iniciado",
           });
 
           return { success: true, id: result[0]?.insertId ?? null, atualizado: false };
@@ -9111,6 +9113,26 @@ Responda APENAS em JSON com o formato especificado.`
           .leftJoin(competenciasModulos, eq(alunoModuloProgresso.moduloId, competenciasModulos.id))
           .where(eq(alunoModuloProgresso.alunoId, aluno.id))
           .orderBy(desc(alunoModuloProgresso.updatedAt));
+      }),
+
+      getCursosAtribuidos: protectedProcedure.query(async ({ ctx }) => {
+        const database = await db.getDb();
+        if (!database) return [];
+
+        const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!aluno) return [];
+
+        return await database
+          .select({
+            atribuicao: alunoCursoAtribuido,
+            curso: cursosCompetencias,
+            atividades: atividadesCurso,
+          })
+          .from(alunoCursoAtribuido)
+          .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+          .leftJoin(atividadesCurso, eq(cursosCompetencias.id, atividadesCurso.cursoId))
+          .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
+          .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
       }),
 
       detalheCurso: protectedProcedure
