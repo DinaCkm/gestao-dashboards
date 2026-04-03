@@ -12,7 +12,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Calendar, CheckCircle2 } from "lucide-react";
+import { BookOpen, Calendar, CheckCircle2, Edit2, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 function normalizarAluno(item: any) {
   return {
@@ -51,6 +59,10 @@ export default function MentorAtribuirCurso() {
   const [competenciaSelecionada, setCompetenciaSelecionada] = useState("");
   const [cursoSelecionado, setCursoSelecionado] = useState("");
   const [prazo, setPrazo] = useState("");
+  const [dialogEditarAberto, setDialogEditarAberto] = useState(false);
+  const [atribuicaoEditando, setAtribuicaoEditando] = useState<any>(null);
+  const [novoPrazo, setNovoPrazo] = useState("");
+  const [novoStatus, setNovoStatus] = useState("");
 
   const utils = trpc.useUtils();
 
@@ -81,6 +93,44 @@ export default function MentorAtribuirCurso() {
       await utils.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.invalidate();
     },
   });
+
+  const editarMutation = trpc.competenciasCompTec.mentor.editarAtribuicao.useMutation({
+    onSuccess: async () => {
+      setDialogEditarAberto(false);
+      setAtribuicaoEditando(null);
+      setNovoPrazo("");
+      setNovoStatus("");
+      await utils.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.invalidate();
+    },
+  });
+
+  const removerMutation = trpc.competenciasCompTec.mentor.removerAtribuicao.useMutation({
+    onSuccess: async () => {
+      await utils.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.invalidate();
+    },
+  });
+
+  function abrirDialogoEditar(item: any) {
+    setAtribuicaoEditando(item);
+    setNovoPrazo(item.dataPrazo ? new Date(item.dataPrazo).toISOString().split('T')[0] : "");
+    setNovoStatus(item.status || "");
+    setDialogEditarAberto(true);
+  }
+
+  async function salvarEdicao() {
+    if (!atribuicaoEditando) return;
+    await editarMutation.mutateAsync({
+      atribuicaoId: atribuicaoEditando.id,
+      dataPrazo: novoPrazo,
+      status: novoStatus as any,
+    });
+  }
+
+  async function removerAtribuicao(id: number) {
+    if (confirm("Tem certeza que deseja remover esta atribuição?")) {
+      await removerMutation.mutateAsync({ atribuicaoId: id });
+    }
+  }
 
   const alunos = useMemo(
     () => (alunosQuery.data ?? []).map(normalizarAluno).filter((x) => x.id > 0),
@@ -275,8 +325,24 @@ export default function MentorAtribuirCurso() {
                         </div>
                       </div>
                     </div>
-                    <div className="ml-4">
+                    <div className="ml-4 flex items-center gap-2">
                       {getStatusBadge(item.status)}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => abrirDialogoEditar(item)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => removerAtribuicao(item.id)}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -285,6 +351,50 @@ export default function MentorAtribuirCurso() {
           </CardContent>
         </Card>
       )}
+
+      {/* Diálogo de Edição */}
+      <Dialog open={dialogEditarAberto} onOpenChange={setDialogEditarAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Atribuição de Curso</DialogTitle>
+            <DialogDescription>
+              Modifique o prazo ou status da atribuição
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Novo Prazo</Label>
+              <Input
+                type="date"
+                value={novoPrazo}
+                onChange={(e) => setNovoPrazo(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={novoStatus} onValueChange={setNovoStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nao_iniciado">Não iniciado</SelectItem>
+                  <SelectItem value="em_progresso">Em progresso</SelectItem>
+                  <SelectItem value="concluido">Concluído</SelectItem>
+                  <SelectItem value="prorrogado">Prorrogado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogEditarAberto(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={salvarEdicao} disabled={editarMutation.isPending}>
+              {editarMutation.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

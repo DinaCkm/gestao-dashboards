@@ -9074,8 +9074,48 @@ Responda APENAS em JSON com o formato especificado.`
             dataPrazo: input.dataPrazo ? new Date(input.dataPrazo) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             status: "nao_iniciado",
           });
-
           return { success: true, id: result[0]?.insertId ?? null, atualizado: false };
+        }),
+
+      editarAtribuicao: protectedProcedure
+        .input(
+          z.object({
+            atribuicaoId: z.number(),
+            dataPrazo: z.string().optional(),
+            status: z.enum(["nao_iniciado", "em_progresso", "concluido", "prorrogado"]).optional(),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const updateData: any = { updatedAt: new Date() };
+          if (input.dataPrazo) updateData.dataPrazo = new Date(input.dataPrazo);
+          if (input.status) updateData.status = input.status;
+
+          await database
+            .update(alunoCursoAtribuido)
+            .set(updateData)
+            .where(eq(alunoCursoAtribuido.id, input.atribuicaoId));
+
+          return { success: true };
+        }),
+
+      removerAtribuicao: protectedProcedure
+        .input(z.object({ atribuicaoId: z.number() }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          await database
+            .delete(alunoCursoAtribuido)
+            .where(eq(alunoCursoAtribuido.id, input.atribuicaoId));
+
+          return { success: true };
         }),
 
       acompanharProgresso: protectedProcedure
