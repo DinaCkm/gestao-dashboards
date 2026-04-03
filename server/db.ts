@@ -9453,6 +9453,34 @@ export async function criarAtribuicaoCurso(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
+  // Verificar se já existe atribuição para este aluno + curso + competência
+  const [existente] = await db
+    .select({ id: alunoCursoAtribuido.id })
+    .from(alunoCursoAtribuido)
+    .where(
+      and(
+        eq(alunoCursoAtribuido.alunoId, alunoId),
+        eq(alunoCursoAtribuido.cursoId, cursoId),
+        eq(alunoCursoAtribuido.competenciaId, competenciaId)
+      )
+    )
+    .limit(1);
+  
+  // Se já existe, atualizar
+  if (existente) {
+    await db
+      .update(alunoCursoAtribuido)
+      .set({
+        mentorId,
+        dataPrazo,
+        updatedAt: new Date(),
+      })
+      .where(eq(alunoCursoAtribuido.id, existente.id));
+    
+    return existente.id;
+  }
+  
+  // Se não existe, inserir novo
   const result = await db
     .insert(alunoCursoAtribuido)
     .values({
@@ -9460,6 +9488,7 @@ export async function criarAtribuicaoCurso(
       cursoId,
       competenciaId,
       mentorId,
+      dataAtribuicao: new Date(),
       dataPrazo,
       status: "nao_iniciado",
     });
