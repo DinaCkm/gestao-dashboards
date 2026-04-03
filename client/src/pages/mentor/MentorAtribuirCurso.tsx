@@ -325,23 +325,25 @@ export default function MentorAtribuirCurso() {
                         </div>
                       </div>
                     </div>
-                    <div className="ml-4 flex items-center gap-2">
+                    <div className="ml-4 flex items-center gap-3">
                       {getStatusBadge(item.status)}
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => abrirDialogoEditar(item)}
-                        className="h-8 w-8 p-0"
+                        className="h-9 w-9 p-0 flex items-center justify-center hover:bg-blue-50"
+                        title="Editar atribuição"
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 className="h-5 w-5 text-blue-600" />
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => removerAtribuicao(item.id)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                        className="h-9 w-9 p-0 flex items-center justify-center hover:bg-red-50"
+                        title="Remover atribuição"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-5 w-5 text-red-600" />
                       </Button>
                     </div>
                   </div>
