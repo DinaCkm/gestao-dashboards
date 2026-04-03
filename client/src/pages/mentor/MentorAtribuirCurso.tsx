@@ -19,27 +19,41 @@ function normalizarAluno(item: any) {
   };
 }
 
-function normalizarPrograma(item: any) {
+function normalizarCompetencia(item: any) {
   return {
-    id: Number(item?.id ?? item?.programaId ?? item?.cursoId ?? 0),
-    nome: item?.nome ?? item?.titulo ?? item?.programa ?? item?.curso ?? "Programa sem nome",
+    id: Number(item?.id ?? item?.competenciaId ?? 0),
+    nome: item?.competencia ?? item?.nome ?? item?.titulo ?? "Competência sem nome",
+  };
+}
+
+function normalizarCurso(item: any) {
+  return {
+    id: Number(item?.id ?? item?.cursoId ?? 0),
+    nome: item?.nome ?? item?.titulo ?? item?.curso ?? "Curso sem nome",
   };
 }
 
 export default function MentorAtribuirCurso() {
   const [alunoSelecionado, setAlunoSelecionado] = useState("");
-  const [programaSelecionado, setProgramaSelecionado] = useState("");
+  const [competenciaSelecionada, setCompetenciaSelecionada] = useState("");
+  const [cursoSelecionado, setCursoSelecionado] = useState("");
   const [prazo, setPrazo] = useState("");
 
   const utils = trpc.useUtils();
 
   const alunosQuery = trpc.competenciasCompTec.mentor.listarAlunos.useQuery();
-
-  const programasQuery = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
+  const competenciasQuery = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
+  
+  const cursosQuery = trpc.competenciasCompTec.admin.listarCursosPorCompetencia.useQuery(
+    { competenciaId: Number(competenciaSelecionada) },
+    { enabled: Number(competenciaSelecionada) > 0 }
+  );
 
   const atribuirMutation = trpc.competenciasCompTec.mentor.atribuirCurso.useMutation({
     onSuccess: async () => {
-      setProgramaSelecionado("");
+      setAlunoSelecionado("");
+      setCompetenciaSelecionada("");
+      setCursoSelecionado("");
       setPrazo("");
       await utils.competenciasCompTec.mentor.listarAlunos.invalidate();
     },
@@ -50,18 +64,24 @@ export default function MentorAtribuirCurso() {
     [alunosQuery.data]
   );
 
-  const programas = useMemo(
-    () => (programasQuery.data ?? []).map(normalizarPrograma).filter((x) => x.id > 0),
-    [programasQuery.data]
+  const competencias = useMemo(
+    () => (competenciasQuery.data ?? []).map(normalizarCompetencia).filter((x) => x.id > 0),
+    [competenciasQuery.data]
+  );
+
+  const cursos = useMemo(
+    () => (cursosQuery.data ?? []).map(normalizarCurso).filter((x) => x.id > 0),
+    [cursosQuery.data]
   );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!alunoSelecionado || !programaSelecionado || !prazo) return;
+    if (!alunoSelecionado || !competenciaSelecionada || !cursoSelecionado || !prazo) return;
 
     await atribuirMutation.mutateAsync({
       alunoId: Number(alunoSelecionado),
-      cursoId: Number(programaSelecionado),
+      competenciaId: Number(competenciaSelecionada),
+      cursoId: Number(cursoSelecionado),
       dataPrazo: prazo,
     });
   }
@@ -71,7 +91,7 @@ export default function MentorAtribuirCurso() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Mentor — Atribuir Curso</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Selecione um aluno, o curso e a data limite para iniciar o desenvolvimento.
+          Selecione um aluno, a competência do PDI, o curso e a data limite para iniciar o desenvolvimento.
         </p>
       </div>
 
@@ -99,15 +119,35 @@ export default function MentorAtribuirCurso() {
             </div>
 
             <div className="space-y-2">
+              <Label>Competência do PDI</Label>
+              <Select value={competenciaSelecionada} onValueChange={setCompetenciaSelecionada}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma competência" />
+                </SelectTrigger>
+                <SelectContent>
+                  {competencias.map((competencia) => (
+                    <SelectItem key={competencia.id} value={String(competencia.id)}>
+                      {competencia.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label>Curso / Programa</Label>
-              <Select value={programaSelecionado} onValueChange={setProgramaSelecionado}>
+              <Select 
+                value={cursoSelecionado} 
+                onValueChange={setCursoSelecionado}
+                disabled={!competenciaSelecionada || Number(competenciaSelecionada) === 0}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um curso" />
                 </SelectTrigger>
                 <SelectContent>
-                  {programas.map((programa) => (
-                    <SelectItem key={programa.id} value={String(programa.id)}>
-                      {programa.nome}
+                  {cursos.map((curso) => (
+                    <SelectItem key={curso.id} value={String(curso.id)}>
+                      {curso.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -126,15 +166,16 @@ export default function MentorAtribuirCurso() {
 
             <Button
               type="submit"
-              disabled={!alunoSelecionado || !programaSelecionado || !prazo || atribuirMutation.isPending}
+              disabled={!alunoSelecionado || !competenciaSelecionada || !cursoSelecionado || !prazo || atribuirMutation.isPending}
             >
               {atribuirMutation.isPending ? "Atribuindo..." : "Atribuir curso"}
             </Button>
 
-            {(alunosQuery.error || programasQuery.error || atribuirMutation.error) && (
+            {(alunosQuery.error || competenciasQuery.error || cursosQuery.error || atribuirMutation.error) && (
               <p className="text-sm text-red-600">
                 {alunosQuery.error?.message ||
-                  programasQuery.error?.message ||
+                  competenciasQuery.error?.message ||
+                  cursosQuery.error?.message ||
                   atribuirMutation.error?.message ||
                   "Erro ao atribuir curso."}
               </p>
