@@ -9103,7 +9103,13 @@ Responda APENAS em JSON com o formato especificado.`
 
           return await database
             .select({
-              atribuicao: alunoCursoAtribuido,
+              id: alunoCursoAtribuido.id,
+              alunoId: alunoCursoAtribuido.alunoId,
+              competenciaId: alunoCursoAtribuido.competenciaId,
+              cursoId: alunoCursoAtribuido.cursoId,
+              dataPrazo: alunoCursoAtribuido.dataPrazo,
+              status: alunoCursoAtribuido.status,
+              dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
               cursoNome: cursosCompetencias.nome,
               cursoTitulo: cursosCompetencias.titulo,
               competenciaNome: competencias.nome,

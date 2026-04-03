@@ -98,14 +98,18 @@ export default function MentorAtribuirCurso() {
   );
 
   const cursosAtribuidos = useMemo(() => {
-    return (cursosAtribuidosQuery.data ?? []).map((item: any) => ({
-      id: item?.atribuicao?.id ?? 0,
-      cursoNome: item?.cursoNome ?? item?.cursoTitulo ?? "Curso desconhecido",
-      competenciaNome: item?.competenciaNome ?? "Competência desconhecida",
-      dataPrazo: item?.atribuicao?.dataPrazo ?? "",
-      status: item?.atribuicao?.status ?? "nao_iniciado",
-      dataAtribuicao: item?.atribuicao?.dataAtribuicao ?? "",
-    }));
+    console.log('Dados recebidos:', cursosAtribuidosQuery.data);
+    return (cursosAtribuidosQuery.data ?? []).map((item: any) => {
+      console.log('Mapeando item:', item);
+      return {
+        id: item?.id ?? 0,
+        cursoNome: item?.cursoNome ?? item?.cursoTitulo ?? "Curso desconhecido",
+        competenciaNome: item?.competenciaNome ?? "Competência desconhecida",
+        dataPrazo: item?.dataPrazo ?? "",
+        status: item?.status ?? "nao_iniciado",
+        dataAtribuicao: item?.dataAtribuicao ?? "",
+      };
+    });
   }, [cursosAtribuidosQuery.data]);
 
   async function handleSubmit(e: React.FormEvent) {
