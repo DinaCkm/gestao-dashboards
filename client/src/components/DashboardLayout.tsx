@@ -127,6 +127,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: BarChart3, label: "Dashboard de Mentores", path: "/dashboard/mentor" },
       { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias" },
       { icon: CalendarDays, label: "Painel de Agendamentos", path: "/agendamentos" },
+      { icon: BookOpen, label: "Atribuir Cursos", path: "/mentor/atribuir-cursos" },
     ],
   },
   {
