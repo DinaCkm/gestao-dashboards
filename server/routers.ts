@@ -9104,14 +9104,13 @@ Responda APENAS em JSON com o formato especificado.`
           return await database
             .select({
               atribuicao: alunoCursoAtribuido,
-              curso: cursosCompetencias,
-              competencia: competencias,
-              aluno: alunos,
+              cursoNome: cursosCompetencias.nome,
+              cursoTitulo: cursosCompetencias.titulo,
+              competenciaNome: competencias.nome,
             })
             .from(alunoCursoAtribuido)
             .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
             .leftJoin(competencias, eq(alunoCursoAtribuido.competenciaId, competencias.id))
-            .leftJoin(alunos, eq(alunoCursoAtribuido.alunoId, alunos.id))
             .where(eq(alunoCursoAtribuido.alunoId, input.alunoId))
             .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
         }),

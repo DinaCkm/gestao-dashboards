@@ -100,9 +100,8 @@ export default function MentorAtribuirCurso() {
   const cursosAtribuidos = useMemo(() => {
     return (cursosAtribuidosQuery.data ?? []).map((item: any) => ({
       id: item?.atribuicao?.id ?? 0,
-      alunoNome: item?.aluno?.nome ?? item?.aluno?.name ?? "Aluno desconhecido",
-      competenciaNome: item?.competencia?.nome ?? "Competência desconhecida",
-      cursoNome: item?.curso?.nome ?? item?.curso?.titulo ?? "Curso desconhecido",
+      cursoNome: item?.cursoNome ?? item?.cursoTitulo ?? "Curso desconhecido",
+      competenciaNome: item?.competenciaNome ?? "Competência desconhecida",
       dataPrazo: item?.atribuicao?.dataPrazo ?? "",
       status: item?.atribuicao?.status ?? "nao_iniciado",
       dataAtribuicao: item?.atribuicao?.dataAtribuicao ?? "",
@@ -259,7 +258,7 @@ export default function MentorAtribuirCurso() {
                             Competência: <span className="font-medium">{item.competenciaNome}</span>
                           </p>
                           <p className="text-xs text-gray-500">
-                            Aluno: <span className="font-medium">{item.alunoNome}</span>
+                            Aluno: <span className="font-medium">{alunoNomeSelecionado}</span>
                           </p>
                         </div>
                       </div>
