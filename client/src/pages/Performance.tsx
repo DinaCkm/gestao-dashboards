@@ -1102,7 +1102,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
           href="https://sebraeto.competenciasdobem.com.br"
           target="_blank"
           rel="noopener noreferrer"
-          className="block relative overflow-hidden rounded-2xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
+          className="hidden block relative overflow-hidden rounded-2xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-white via-blue-50/80 to-amber-50/60" />
           <div className="absolute top-0 right-0 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
@@ -1132,7 +1132,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
         </a>
 
         {/* Tabs com seções detalhadas */}
-        <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'jornada'} className="w-full">
+        <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'jornada'} className="hidden w-full">
           <TabsList className="bg-gray-100 border border-gray-200 w-full flex flex-wrap h-auto gap-1 p-1 rounded-xl">
             <TabsTrigger value="jornada" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
               <Route className="h-4 w-4 mr-1" /> Minha Jornada
