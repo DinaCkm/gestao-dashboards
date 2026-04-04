@@ -1444,11 +1444,24 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                     <Badge className="bg-red-100 text-red-700 border-red-300 text-[10px] px-1.5 py-0">Vencida</Badge>
                                   )}
                                   {competenciaConcluida && (
-                                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 text-[10px] px-1.5 py-0">Concluída</Badge>
+                                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 text-[10px] px-1.5 py-0">Concluida</Badge>
                                   )}
                                   <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${micro.peso === 'obrigatoria' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
-                                    {micro.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
+                                    {micro.peso === 'obrigatoria' ? 'Obrigatoria' : 'Opcional'}
                                   </Badge>
+                                  {cicloStatus !== 'futuro' && (
+                                    <Button
+                                      size="sm"
+                                      variant="default"
+                                      className="h-7 px-2 text-xs"
+                                      onClick={() => {
+                                        // Navegar para a pagina de competencias com o modulo selecionado
+                                        window.location.href = `/aluno/competencias-comp-tec?moduloId=${micro.moduloId || micro.id}`;
+                                      }}
+                                    >
+                                      Acessar
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                               {/* Barra + métricas em linha */}
