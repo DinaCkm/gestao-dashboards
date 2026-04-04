@@ -31,7 +31,7 @@ function normalizarAluno(item: any) {
 
 function normalizarCompetencia(item: any) {
   return {
-    id: Number(item?.id ?? item?.competenciaId ?? 0),
+    id: Number(item?.competenciaId ?? item?.id ?? 0),
     nome: item?.competencia ?? item?.nome ?? item?.titulo ?? "Competência sem nome",
   };
 }

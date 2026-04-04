@@ -3512,3 +3512,10 @@
 - [ ] Testar fluxo completo: PDI → Atribuição → Jornada → Acesso ao Curso
 - [ ] Adicionar validação para prevenir duplicidade de competências
 - [ ] Adicionar toasts de sucesso para editar/remover
+
+## Bug: Dropdown de Cursos Vazio na Atribuição (04/04/2026)
+- [ ] Problema: Dropdown "Curso / Programa" está vazio ao selecionar competência do PDI
+- [ ] Causa: Não existem cursos cadastrados para a competência "Mentalidade Sistêmica" (ID: 210007)
+- [ ] Solução: Criar cursos na página /competencias-comp-tec antes de atribuir
+- [ ] Verificar se há cursos em outras competências
+- [ ] Adicionar validação para mostrar mensagem quando não há cursos disponíveis

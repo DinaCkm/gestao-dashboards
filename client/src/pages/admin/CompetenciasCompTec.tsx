@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function CompetenciasCompTec() {
   const [selectedCompetenciaId, setSelectedCompetenciaId] = useState<number | null>(null);
@@ -41,6 +41,18 @@ export default function CompetenciasCompTec() {
     },
     onError: (error: any) => {
       toast.error(`Erro ao criar curso: ${error.message}`);
+    },
+  });
+
+  const inativarCursoMutation = trpc.competenciasCompTec.admin.inativarCurso.useMutation({
+    onSuccess: async () => {
+      toast.success('Curso inativado com sucesso!');
+      await utils.competenciasCompTec.admin.listarCursos.invalidate({
+        competenciaId: selectedCompetenciaId!,
+      });
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao inativar curso: ${error.message}`);
     },
   });
 
@@ -139,11 +151,33 @@ export default function CompetenciasCompTec() {
               cursos && cursos.length > 0 ? (
                 <div className="space-y-2">
                   {cursos.map((curso: any) => (
-                    <div key={curso.id} className="p-3 bg-gray-50 rounded">
-                      <p className="font-medium text-sm">{curso.titulo}</p>
-                      {curso.descricao && (
-                        <p className="text-xs text-gray-600 mt-1">{curso.descricao}</p>
-                      )}
+                    <div key={curso.id} className="p-3 bg-gray-50 rounded flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{curso.titulo}</p>
+                        {curso.descricao && (
+                          <p className="text-xs text-gray-600 mt-1">{curso.descricao}</p>
+                        )}
+                        {!curso.isActive && (
+                          <p className="text-xs text-red-600 mt-1 font-semibold">Inativo</p>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => inativarCursoMutation.mutateAsync({ cursoId: curso.id })}
+                        disabled={inativarCursoMutation.isPending}
+                        className="ml-2"
+                      >
+                        {curso.isActive ? (
+                          <>
+                            <Eye className="h-4 w-4" />
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="h-4 w-4" />
+                          </>
+                        )}
+                      </Button>
                     </div>
                   ))}
                 </div>
