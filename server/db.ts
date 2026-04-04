@@ -9858,3 +9858,42 @@ export async function updateAllAlunosPlataformaAulas() {
     };
   }
 }
+
+/**
+ * Atualizar plataformaAulas de múltiplos alunos
+ * @param updates Array com { alunoId, plataformaAulas }
+ */
+export async function updateMultipleAlunosPlataforma(updates: Array<{ alunoId: number; plataformaAulas: 'scaffold' | 'sistema_interno' }>) {
+  try {
+    let atualizados = 0;
+    let erros = 0;
+
+    for (const update of updates) {
+      try {
+        await db
+          .update(alunos)
+          .set({ plataformaAulas: update.plataformaAulas })
+          .where(eq(alunos.id, update.alunoId));
+        
+        atualizados++;
+      } catch (error) {
+        console.error(`Erro ao atualizar aluno ${update.alunoId}:`, error);
+        erros++;
+      }
+    }
+
+    return {
+      success: true,
+      total: updates.length,
+      atualizados,
+      erros,
+      message: `${atualizados} alunos atualizados com sucesso${erros > 0 ? `, ${erros} com erro` : ''}`
+    };
+  } catch (error) {
+    console.error('Erro ao atualizar múltiplos alunos:', error);
+    return {
+      success: false,
+      message: 'Erro ao atualizar alunos'
+    };
+  }
+}

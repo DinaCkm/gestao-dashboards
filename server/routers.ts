@@ -4973,6 +4973,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .mutation(async () => {
         return await db.updateAllAlunosPlataformaAulas();
       }),
+    
+    updateMultipleAlunosPlataforma: adminProcedure
+      .input(z.array(z.object({
+        alunoId: z.number(),
+        plataformaAulas: z.enum(['scaffold', 'sistema_interno'])
+      })))
+      .mutation(async ({ input }) => {
+        return await db.updateMultipleAlunosPlataforma(input);
+      }),
   }),
   // Status de onboarding do aluno logado
   aluno: router({
