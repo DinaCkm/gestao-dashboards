@@ -1,18 +1,16 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 import { Loader2, Save } from 'lucide-react';
 
 export default function AdminPlataformaAulas() {
-  const [searchTerm, setSearchTerm] = useState('');
   const [changes, setChanges] = useState<Map<number, 'scaffold' | 'sistema_interno'>>(new Map());
   const [isSaving, setIsSaving] = useState(false);
 
   // Buscar todos os alunos
-  const { data: alunosData, isLoading, refetch } = trpc.alunos.list.useQuery({});
+  const { data: alunosData, isLoading } = trpc.alunos.list.useQuery({});
   
   // Mutation para atualizar múltiplos alunos
   const updateMutation = trpc.admin.updateMultipleAlunosPlataforma.useMutation({
@@ -21,25 +19,21 @@ export default function AdminPlataformaAulas() {
       if (result.success) {
         toast.success(`${result.atualizados} alunos atualizados com sucesso`);
         setChanges(new Map());
-        refetch();
       } else {
         toast.error(result.message || 'Erro ao atualizar alunos');
       }
     },
-    onError: (error) => {
+    onError: () => {
       setIsSaving(false);
       toast.error('Erro ao atualizar alunos');
     },
   });
 
-  // Filtrar alunos por nome/email
-  const filteredAlunos = useMemo(() => {
+  // Ordenar alunos alfabeticamente
+  const alunosOrdenados = useMemo(() => {
     if (!alunosData) return [];
-    return alunosData.filter(aluno =>
-      aluno.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      aluno.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [alunosData, searchTerm]);
+    return [...alunosData].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [alunosData]);
 
   // Obter valor atual da plataforma (original ou alterado)
   const getPlataformaValue = (alunoId: number, originalValue: string | null) => {
@@ -49,7 +43,9 @@ export default function AdminPlataformaAulas() {
   // Atualizar plataforma de um aluno
   const handlePlataformaChange = (alunoId: number, value: string) => {
     const newChanges = new Map(changes);
-    if (value === (alunosData?.find(a => a.id === alunoId)?.plataformaAulas || 'sistema_interno')) {
+    const originalValue = alunosData?.find(a => a.id === alunoId)?.plataformaAulas || 'sistema_interno';
+    
+    if (value === originalValue) {
       newChanges.delete(alunoId);
     } else {
       newChanges.set(alunoId, value as 'scaffold' | 'sistema_interno');
@@ -60,7 +56,7 @@ export default function AdminPlataformaAulas() {
   // Salvar todas as alterações
   const handleSaveAll = async () => {
     if (changes.size === 0) {
-      toast.info('Nenhuma alteração - nenhum aluno foi modificado');
+      toast.info('Nenhuma alteração para salvar');
       return;
     }
 
@@ -86,21 +82,52 @@ export default function AdminPlataformaAulas() {
       <div>
         <h1 className="text-3xl font-bold">Gerenciar Plataforma de Aulas</h1>
         <p className="text-gray-600 mt-2">
-          Selecione a plataforma para cada aluno. Alterações pendentes: {changes.size}
+          Total de alunos: {alunosOrdenados.length} | Alterações pendentes: {changes.size}
         </p>
       </div>
 
-      {/* Barra de busca */}
-      <div className="flex gap-4">
-        <Input
-          placeholder="Buscar por nome ou email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1"
-        />
+      {/* Lista de alunos */}
+      <div className="space-y-3 max-h-[70vh] overflow-y-auto border rounded-lg p-4">
+        {alunosOrdenados.length === 0 ? (
+          <p className="text-center text-gray-500 py-8">Nenhum aluno encontrado</p>
+        ) : (
+          alunosOrdenados.map((aluno) => {
+            const currentValue = getPlataformaValue(aluno.id, aluno.plataformaAulas);
+            const isChanged = changes.has(aluno.id);
+
+            return (
+              <div
+                key={aluno.id}
+                className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                  isChanged ? 'bg-yellow-50 border-yellow-300' : 'bg-white hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium">{aluno.name}</p>
+                  <p className="text-sm text-gray-600">{aluno.email}</p>
+                </div>
+
+                <Select value={currentValue} onValueChange={(value) => handlePlataformaChange(aluno.id, value)}>
+                  <SelectTrigger className="w-56">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sistema_interno">Sistema Interno</SelectItem>
+                    <SelectItem value="scaffold">Plataforma Scaffold</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Botão Salvar */}
+      <div className="flex justify-end">
         <Button
           onClick={handleSaveAll}
           disabled={changes.size === 0 || isSaving}
+          size="lg"
           className="gap-2"
         >
           {isSaving ? (
@@ -115,49 +142,6 @@ export default function AdminPlataformaAulas() {
             </>
           )}
         </Button>
-      </div>
-
-      {/* Lista de alunos */}
-      <div className="space-y-2 max-h-[600px] overflow-y-auto border rounded-lg p-4">
-        {filteredAlunos.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">Nenhum aluno encontrado</p>
-        ) : (
-          filteredAlunos.map((aluno) => {
-            const currentValue = getPlataformaValue(aluno.id, aluno.plataformaAulas);
-            const isChanged = changes.has(aluno.id);
-
-            return (
-              <div
-                key={aluno.id}
-                className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
-                  isChanged ? 'bg-yellow-50 border-yellow-300' : 'bg-white'
-                }`}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{aluno.name}</p>
-                  <p className="text-sm text-gray-600 truncate">{aluno.email}</p>
-                </div>
-
-                <Select value={currentValue} onValueChange={(value) => handlePlataformaChange(aluno.id, value)}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="scaffold">Plataforma Scaffold</SelectItem>
-                    <SelectItem value="sistema_interno">Sistema Interno</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* Resumo */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-900">
-          Total de alunos: <strong>{filteredAlunos.length}</strong> | Alterações pendentes: <strong>{changes.size}</strong>
-        </p>
       </div>
     </div>
   );
