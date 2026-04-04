@@ -1167,9 +1167,55 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
           </TabsList>
 
           {/* === MINHA JORNADA (unificada: Trilha + PDI + Competências) === */}
-          <TabsContent value="jornada" className="mt-4">
+          <TabsContent value="jornada" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {jornadaData && jornadaData.macroJornadas && jornadaData.macroJornadas.length > 0 ? (
               <div className="space-y-6">
+                {/* Card de Expectativas da Jornada - TOPO */}
+                {jornadaData.contrato && (() => {
+                  const periodoInicio = new Date(jornadaData.contrato.periodoInicio);
+                  const periodoFim = new Date(jornadaData.contrato.periodoTermino);
+                  const diasTotais = Math.ceil((periodoFim.getTime() - periodoInicio.getTime()) / (1000 * 60 * 60 * 24));
+                  const mesesTotais = Math.max(1, Math.ceil(diasTotais / 30));
+                  
+                  // Cálculo de expectativas baseado na duração total do contrato
+                  // Para 6 meses: 5 mentorias (1 assessment + 4 acompanhamento), 12 webinares (2 por quinzena)
+                  const mentoriasEsperadas = Math.max(1, Math.ceil((mesesTotais - 1) * 0.8 + 1)); // 1 assessment + 1 mentoria a cada 1.25 meses
+                  const tarefasEsperadas = mentoriasEsperadas; // 1 tarefa por mentoria
+                  const webinaresEsperados = Math.ceil(mesesTotais * 2); // 2 webinares por mês (1 por quinzena)
+                  
+                  return (
+                    <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between flex-wrap gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-amber-100">
+                              <Target className="h-5 w-5 text-amber-700" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">Expectativas da Sua Jornada</p>
+                              <p className="text-xs text-gray-600">Baseado na duração do seu contrato ({mesesTotais} mês{mesesTotais !== 1 ? 'es' : ''})</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-6">
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-amber-700">{mentoriasEsperadas}</p>
+                              <p className="text-xs text-gray-600">Mentorias</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-orange-700">{tarefasEsperadas}</p>
+                              <p className="text-xs text-gray-600">Tarefas</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-amber-700">{webinaresEsperados}</p>
+                              <p className="text-xs text-gray-600">Webinares</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+
                 {/* Card de Contrato */}
                 {jornadaData.contrato && (
                   <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm">
@@ -1299,52 +1345,6 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                     );
                   })}
                 </div>
-
-                {/* Card de Expectativas da Jornada */}
-                {jornadaData.contrato && (() => {
-                  const periodoInicio = new Date(jornadaData.contrato.periodoInicio);
-                  const periodoFim = new Date(jornadaData.contrato.periodoTermino);
-                  const diasTotais = Math.ceil((periodoFim.getTime() - periodoInicio.getTime()) / (1000 * 60 * 60 * 24));
-                  const mesesTotais = Math.max(1, Math.ceil(diasTotais / 30));
-                  
-                  // Cálculo de expectativas baseado na duração total do contrato
-                  // Para 6 meses: 5 mentorias (1 assessment + 4 acompanhamento), 12 webinares (2 por quinzena)
-                  const mentoriasEsperadas = Math.max(1, Math.ceil((mesesTotais - 1) * 0.8 + 1)); // 1 assessment + 1 mentoria a cada 1.25 meses
-                  const tarefasEsperadas = mentoriasEsperadas; // 1 tarefa por mentoria
-                  const webinaresEsperados = Math.ceil(mesesTotais * 2); // 2 webinares por mês (1 por quinzena)
-                  
-                  return (
-                    <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between flex-wrap gap-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-amber-100">
-                              <Target className="h-5 w-5 text-amber-700" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-gray-900">Expectativas da Sua Jornada</p>
-                              <p className="text-xs text-gray-600">Baseado na duração do seu contrato ({mesesTotais} mês{mesesTotais !== 1 ? 'es' : ''})</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-6">
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-amber-700">{mentoriasEsperadas}</p>
-                              <p className="text-xs text-gray-600">Mentorias</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-orange-700">{tarefasEsperadas}</p>
-                              <p className="text-xs text-gray-600">Tarefas</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-amber-700">{webinaresEsperados}</p>
-                              <p className="text-xs text-gray-600">Webinares</p>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
 
                 {/* Macro Jornadas (por trilha) */}
                 {jornadaData.macroJornadas
@@ -1706,7 +1706,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
           </TabsContent>
 
           {/* === HISTÓRICO DE MENTORIAS === */}
-          <TabsContent value="mentorias" className="mt-4">
+          <TabsContent value="mentorias" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Alerta: Faltam X mentorias para finalizar */}
             {jornadaData?.saldo && jornadaData.saldo.saldoRestante > 0 && (
               <div className="mb-4 p-4 rounded-xl border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center gap-4">
@@ -1902,7 +1902,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
           </TabsContent>
 
           {/* === EVENTOS - LISTA UNIFICADA === */}
-          <TabsContent value="eventos" className="mt-4">
+          <TabsContent value="eventos" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="space-y-6">
               {/* Resumo com contadores visuais - usa apenas eventos dentro do macrociclo */}
               {(() => {
@@ -2156,7 +2156,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
 
 
           {/* === TAREFAS PRÁTICAS === */}
-          <TabsContent value="tarefas" className="mt-4">
+          <TabsContent value="tarefas" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Cards de Resumo de Tarefas */}
             {(() => {
               const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && s.sessionNumber !== 1);
@@ -2835,7 +2835,7 @@ toast.success('Evidência enviada com sucesso!');
           </TabsContent>
 
           {/* === CURSOS === */}
-          <TabsContent value="cursos" className="mt-4">
+          <TabsContent value="cursos" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
@@ -2855,7 +2855,7 @@ toast.success('Evidência enviada com sucesso!');
           </TabsContent>
 
           {/* === CASES DE SUCESSO === */}
-          <TabsContent value="cases" className="mt-4">
+          <TabsContent value="cases" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="space-y-4">
               {/* Explicação */}
               <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-sm">
@@ -2975,7 +2975,7 @@ toast.success('Evidência enviada com sucesso!');
           </TabsContent>
 
           {/* === MEU PERFIL DISC === */}
-          <TabsContent value="meu-perfil-disc" className="mt-4">
+          <TabsContent value="meu-perfil-disc" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <Suspense fallback={
               <div className="flex items-center justify-center py-20">
                 <div className="animate-spin h-8 w-8 border-4 border-[#0A1E3E] border-t-transparent rounded-full" />
