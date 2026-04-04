@@ -4539,6 +4539,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         areaAtuacao: z.string().nullable().optional(),
         minicurriculo: z.string().nullable().optional(),
         quemEVoce: z.string().nullable().optional(),
+        plataformaAulas: z.enum(['scaffold', 'sistema_interno']).optional(),
       }))
       .mutation(async ({ input }) => {
         const { alunoId, contratoInicio, contratoFim, ...data } = input;
