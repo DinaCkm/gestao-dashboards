@@ -9816,7 +9816,7 @@ export async function updateAllAlunosPlataformaAulas() {
     // Buscar todos os alunos com suas empresas
     const todosAlunos = await db
       .select({
-        id: alunos.id,
+        alunoId: alunos.id,
         programId: alunos.programId,
         programName: programs.name,
       })
@@ -9827,18 +9827,18 @@ export async function updateAllAlunosPlataformaAulas() {
     let erros = 0;
 
     // Atualizar cada aluno
-    for (const aluno of todosAlunos) {
+    for (const row of todosAlunos) {
       try {
-        const plataforma = determinePlataformaAulas(aluno.programName);
+        const plataforma = determinePlataformaAulas(row.programName);
         
         await db
           .update(alunos)
           .set({ plataformaAulas: plataforma })
-          .where(eq(alunos.id, aluno.id));
+          .where(eq(alunos.id, row.alunoId));
         
         atualizados++;
       } catch (error) {
-        console.error(`Erro ao atualizar aluno ${aluno.id}:`, error);
+        console.error(`Erro ao atualizar aluno ${row.alunoId}:`, error);
         erros++;
       }
     }
