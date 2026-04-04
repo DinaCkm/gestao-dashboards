@@ -755,7 +755,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-gray-200 shadow-sm w-full lg:w-80">
+          <Card className="hidden bg-white border border-gray-200 shadow-sm w-full lg:w-80">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-gray-600">Radar de Performance</CardTitle>
             </CardHeader>
@@ -773,6 +773,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
         </div>
 
         {/* === INDICADORES DE DESTAQUE: Engajamento e Desenvolvimento === */}
+        <div className="hidden">
         <DualIndicators
           engajamento={
             v2?.consolidado?.ind7_engajamentoFinal ??
@@ -803,6 +804,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
           }
           aplicabilidade={data.aplicabilidadePratica ?? null}
         />
+        </div>
 
         {/* Aviso de PDI Congelado */}
         {data.pdisCongelados && data.pdisCongelados.length > 0 && (
@@ -970,7 +972,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
 
         {/* 6 Indicadores com Tooltips */}
         {v2Filtrado && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <IndicadorCardAluno
               numero={1} icon={Video} label="Webinars"
               valor={`${(v2Filtrado.ind1_webinars ?? 0).toFixed(0)}%`} total="100%"
@@ -1017,7 +1019,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
         )}
 
         {/* Meta de Certificação LÍDER NÍVEL I */}
-        <div className="mt-4 rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50/80 to-white p-5">
+        <div className="hidden mt-4 rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50/80 to-white p-5">
           <div className="flex items-center gap-2 mb-4">
             <Award className="h-5 w-5 text-purple-600" />
             <h3 className="text-sm font-bold text-purple-800 uppercase tracking-wide">Meta de Certificação — LÍDER NÍVEL I</h3>
