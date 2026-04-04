@@ -3508,7 +3508,7 @@
 - [x] Corrigir query para mostrar apenas competências do PDI
 - [x] Adicionar procedure obterUrlCurso para buscar URL da primeira atividade
 - [x] Adicionar botão "Acessar Curso" na interface do aluno
-- [ ] Deletar Jornada Personalizada e suas 36 competências duplicadas (aguardando MySQL voltar)
+- [x] Deletar Jornada Personalizada e suas 36 competências duplicadas (CONCLUÍDO: 04/04/2026)
 - [ ] Testar fluxo completo: PDI → Atribuição → Jornada → Acesso ao Curso
 - [ ] Adicionar validação para prevenir duplicidade de competências
 - [ ] Adicionar toasts de sucesso para editar/remover
