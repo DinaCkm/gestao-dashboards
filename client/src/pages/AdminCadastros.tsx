@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, Users2, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square } from "lucide-react";
+import { Loader2, Plus, Building2, Users, Users2, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square, RefreshCw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -745,6 +745,27 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           </CardDescription>
         </div>
         <div className="flex gap-2">
+          {/* Atualizar Plataforma de Aulas */}
+          <Button 
+            variant="outline" 
+            onClick={async () => {
+              if (!confirm('Atualizar plataformaAulas de TODOS os alunos baseado em suas empresas?')) return;
+              try {
+                const result = await trpc.admin.updateAllAlunosPlataformaAulas.mutate();
+                if (result.success) {
+                  toast.success(`Sucesso: ${result.message}`);
+                  refetch();
+                } else {
+                  toast.error(`Erro: ${result.message}`);
+                }
+              } catch (error: any) {
+                toast.error(`Erro: ${error.message}`);
+              }
+            }}
+            className="border-green-300 text-green-700 hover:bg-green-50"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" /> Atualizar Plataformas
+          </Button>
           {/* Exportar Excel */}
           <Button variant="outline" onClick={handleExportExcel} disabled={isExporting || filteredAlunos.length === 0}>
             {isExporting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exportando...</> : <><Download className="h-4 w-4 mr-2" /> Exportar Excel</>}

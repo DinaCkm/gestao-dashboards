@@ -9747,3 +9747,114 @@ export async function getSaldoMentoriasAluno(alunoId: number) {
     return null;
   }
 }
+
+
+/**
+ * Determina a plataforma de aulas baseado no nome da empresa
+ */
+export function determinePlataformaAulas(programName: string | null | undefined): 'scaffold' | 'sistema_interno' {
+  if (!programName) return 'sistema_interno';
+  
+  const scaffoldPrograms = ['SEBRAE TO', 'SEBRAE ACRE', 'EMBRAPII'];
+  return scaffoldPrograms.includes(programName) ? 'scaffold' : 'sistema_interno';
+}
+
+/**
+ * Atualiza o campo plataformaAulas de um aluno baseado em sua empresa
+ */
+export async function updateAlunoPlataformaAulas(alunoId: number) {
+  try {
+    // Buscar o aluno com sua empresa
+    const aluno = await db
+      .select({
+        id: alunos.id,
+        programId: alunos.programId,
+      })
+      .from(alunos)
+      .where(eq(alunos.id, alunoId))
+      .limit(1);
+
+    if (!aluno || aluno.length === 0) {
+      return { success: false, message: 'Aluno não encontrado' };
+    }
+
+    // Buscar o nome da empresa
+    let programName = null;
+    if (aluno[0].programId) {
+      const program = await db
+        .select({ name: programs.name })
+        .from(programs)
+        .where(eq(programs.id, aluno[0].programId))
+        .limit(1);
+      
+      if (program && program.length > 0) {
+        programName = program[0].name;
+      }
+    }
+
+    // Determinar a plataforma
+    const plataforma = determinePlataformaAulas(programName);
+
+    // Atualizar o aluno
+    await db
+      .update(alunos)
+      .set({ plataformaAulas: plataforma })
+      .where(eq(alunos.id, alunoId));
+
+    return { success: true, plataforma };
+  } catch (error) {
+    console.error('Erro ao atualizar plataformaAulas do aluno:', error);
+    return { success: false, message: 'Erro ao atualizar aluno' };
+  }
+}
+
+/**
+ * Atualiza o campo plataformaAulas de TODOS os alunos baseado em suas empresas
+ */
+export async function updateAllAlunosPlataformaAulas() {
+  try {
+    // Buscar todos os alunos com suas empresas
+    const todosAlunos = await db
+      .select({
+        id: alunos.id,
+        programId: alunos.programId,
+        programName: programs.name,
+      })
+      .from(alunos)
+      .leftJoin(programs, eq(alunos.programId, programs.id));
+
+    let atualizados = 0;
+    let erros = 0;
+
+    // Atualizar cada aluno
+    for (const aluno of todosAlunos) {
+      try {
+        const plataforma = determinePlataformaAulas(aluno.programName);
+        
+        await db
+          .update(alunos)
+          .set({ plataformaAulas: plataforma })
+          .where(eq(alunos.id, aluno.id));
+        
+        atualizados++;
+      } catch (error) {
+        console.error(`Erro ao atualizar aluno ${aluno.id}:`, error);
+        erros++;
+      }
+    }
+
+    return {
+      success: true,
+      total: todosAlunos.length,
+      atualizados,
+      erros,
+      message: `${atualizados} alunos atualizados com sucesso${erros > 0 ? `, ${erros} com erro` : ''}`
+    };
+  } catch (error) {
+    console.error('Erro ao atualizar todos os alunos:', error);
+    return {
+      success: false,
+      message: 'Erro ao atualizar alunos em massa'
+    };
+  }
+}

@@ -4966,6 +4966,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
         return { success: true, sessionId };
       }),
+
+    // Atualizar plataformaAulas de todos os alunos
+    updateAllAlunosPlataformaAulas: adminProcedure
+      .mutation(async () => {
+        return await db.updateAllAlunosPlataformaAulas();
+      }),
   }),
   // Status de onboarding do aluno logado
   aluno: router({
