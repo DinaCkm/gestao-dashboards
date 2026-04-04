@@ -67,7 +67,7 @@ export default function MentorAtribuirCurso() {
   const utils = trpc.useUtils();
 
   const alunosQuery = trpc.competenciasCompTec.mentor.listarAlunos.useQuery();
-  const competenciasQuery = trpc.competenciasCompTec.mentor.competenciasObrigatorias.useQuery(
+  const competenciasQuery = trpc.planoIndividual.competenciasObrigatorias.useQuery(
     { alunoId: Number(alunoSelecionado) },
     { enabled: Number(alunoSelecionado) > 0 }
   );
