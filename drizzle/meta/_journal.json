@@ -477,6 +477,13 @@
       "when": 1775171479224,
       "tag": "0067_lazy_dark_beast",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "5",
+      "when": 1775331888196,
+      "tag": "0068_thin_blindfold",
+      "breakpoints": true
     }
   ]
 }

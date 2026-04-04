@@ -199,6 +199,7 @@ export const alunos = mysqlTable("alunos", {
   minicurriculo: text("minicurriculo"),
   quemEVoce: text("quemEVoce"),
   discVideoWatchedAt: timestamp("discVideoWatchedAt"), // Data/hora em que o aluno assistiu o video DISC pela 1a vez
+  plataformaAulas: mysqlEnum("plataformaAulas", ["scaffold", "sistema_interno"]).default("sistema_interno"), // Plataforma onde o aluno faz as aulas
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

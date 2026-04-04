@@ -1,0 +1,1 @@
+ALTER TABLE `alunos` ADD `plataformaAulas` enum('scaffold','sistema_interno') DEFAULT 'sistema_interno';
