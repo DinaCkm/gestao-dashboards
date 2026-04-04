@@ -754,7 +754,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                 const result = await trpc.admin.updateAllAlunosPlataformaAulas.mutate();
                 if (result.success) {
                   toast.success(`Sucesso: ${result.message}`);
-                  refetch();
+                  refetchAllAlunos();
                 } else {
                   toast.error(`Erro: ${result.message}`);
                 }
