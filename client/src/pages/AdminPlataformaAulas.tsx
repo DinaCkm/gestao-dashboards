@@ -11,14 +11,16 @@ export default function AdminPlataformaAulas() {
 
   // Buscar todos os alunos
   const { data: alunosData, isLoading } = trpc.alunos.list.useQuery({});
+  const utils = trpc.useUtils();
   
   // Mutation para atualizar múltiplos alunos
   const updateMutation = trpc.admin.updateMultipleAlunosPlataforma.useMutation({
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       setIsSaving(false);
       if (result.success) {
         toast.success(`${result.atualizados} alunos atualizados com sucesso`);
         setChanges(new Map());
+        await utils.alunos.list.invalidate();
       } else {
         toast.error(result.message || 'Erro ao atualizar alunos');
       }
