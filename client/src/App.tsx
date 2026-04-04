@@ -27,6 +27,7 @@ import PorEmpresa from "./pages/PorEmpresa";
 import TrilhasCompetencias from "./pages/TrilhasCompetencias";
 import PlanoIndividual from "./pages/PlanoIndividual";
 import DashboardAluno from "./pages/DashboardAluno";
+import Performance from "./pages/Performance";
 import RegistroMentoria from "./pages/RegistroMentoria";
 import DashboardGestor from "./pages/DashboardGestor";
 import DashboardMeuPerfil from "./pages/DashboardMeuPerfil";
@@ -110,6 +111,7 @@ function Router() {
       <Route path={"/performance-upload"} component={PerformanceUpload} />
       <Route path={"/webinars"} component={WebinarsAdmin} />
       <Route path={"/mural"} component={MuralAluno} />
+      <Route path={"/performance"} component={Performance} />
       <Route path={"/onboarding"} component={OnboardingAluno} />
       <Route path={"/avisos"} component={AvisosAdmin} />
       <Route path={"/atividades-praticas"} component={AtividadesPraticas} />

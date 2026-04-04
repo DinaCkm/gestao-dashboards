@@ -6,7 +6,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
-import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, GraduationCap, Zap, Lock, ExternalLink } from "lucide-react";
+import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, GraduationCap, Zap, Lock, ExternalLink, TrendingUp } from "lucide-react";
 import RoleSwitcher from "@/components/RoleSwitcher";
 
 /** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
@@ -19,6 +19,7 @@ const ALL_NAV_ITEMS = [
   { label: "Cursos", path: "/meus-cursos", icon: GraduationCap, requiresAceite: true },
   { label: "Atividades", path: "/minhas-atividades", icon: Zap, requiresAceite: true },
   { label: "Minhas Metas", path: "/minhas-metas", icon: Flag, requiresAceite: true },
+  { label: "Performance", path: "/performance", icon: TrendingUp, requiresAceite: true },
   { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle, requiresAceite: false },
 ];
 

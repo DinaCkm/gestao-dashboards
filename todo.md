@@ -3519,3 +3519,12 @@
 - [ ] Solução: Criar cursos na página /competencias-comp-tec antes de atribuir
 - [ ] Verificar se há cursos em outras competências
 - [ ] Adicionar validação para mostrar mensagem quando não há cursos disponíveis
+
+## Reorganização do Mural do Aluno (04/04/2026)
+- [x] Encontrar página do Mural (Portal do Aluno) - MuralAluno.tsx
+- [x] Criar nova aba PERFORMANCE na navegação - adicionado em AlunoLayout.tsx
+- [x] Criar página Performance.tsx com todos os dashboards - copiado de DashboardAluno.tsx
+- [x] Adicionar rota /performance no App.tsx
+- [ ] Remover cards de performance do Mural (se existirem) - verificar se estão em DashboardMeuPerfil.tsx
+- [ ] Manter apenas: Minha Jornada, Mentorias, Eventos, Tarefas, Mini_Cursos, Cases de Sucesso, Meu Perfil
+- [ ] Testar navegação e funcionalidades
