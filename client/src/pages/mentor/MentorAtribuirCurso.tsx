@@ -220,7 +220,7 @@ export default function MentorAtribuirCurso() {
                 <SelectContent>
                   {competencias.map((competencia) => (
                     <SelectItem key={competencia.id} value={String(competencia.id)}>
-                      {competencia.nome}
+                      {competencia.nome} (ID: {competencia.id})
                     </SelectItem>
                   ))}
                 </SelectContent>
