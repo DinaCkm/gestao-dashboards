@@ -2992,48 +2992,6 @@ toast.success('Evidência enviada com sucesso!');
           </TabsContent>
         </Tabs>
 
-        {/* Card Scaffold - Plataforma de Cursos */}
-        <a
-          href="https://scaffold.ecodobem.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block relative overflow-hidden rounded-2xl border border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 group bg-gradient-to-br from-purple-50 to-pink-50 mt-6"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-purple-50/80 to-pink-50/60" />
-          <div className="absolute top-0 right-0 w-48 h-48 bg-purple-400/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-pink-400/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
-          <div className="relative p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-4 mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <GraduationCap className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-[#0A1E3E]">
-                    Plataforma Scaffold
-                  </h3>
-                </div>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center group-hover:opacity-80 transition-opacity shadow-lg">
-                  <ExternalLink className="h-4 w-4 text-white" />
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs sm:text-sm text-gray-700 font-semibold">
-                LINK PARA A PLATAFORMA DA SCAFFOLD
-              </p>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Acesso somente para alunos com cursos hospedados na plataforma Scaffold
-              </p>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Dúvidas? Fale com sua mentora
-              </p>
-            </div>
-          </div>
-        </a>
-
         {/* Dialog de envio de Relatório de Impacto */}
         <Dialog open={caseDialogOpen} onOpenChange={setCaseDialogOpen}>
           <DialogContent className="sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
