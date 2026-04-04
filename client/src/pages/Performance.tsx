@@ -1102,7 +1102,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
           href="https://sebraeto.competenciasdobem.com.br"
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden block relative overflow-hidden rounded-2xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
+          className="block relative overflow-hidden rounded-2xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-white via-blue-50/80 to-amber-50/60" />
           <div className="absolute top-0 right-0 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
