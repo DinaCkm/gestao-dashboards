@@ -745,27 +745,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           </CardDescription>
         </div>
         <div className="flex gap-2">
-          {/* Atualizar Plataforma de Aulas */}
-          <Button 
-            variant="outline" 
-            onClick={async () => {
-              if (!confirm('Atualizar plataformaAulas de TODOS os alunos baseado em suas empresas?')) return;
-              try {
-                const result = await trpc.admin.updateAllAlunosPlataformaAulas.mutate();
-                if (result.success) {
-                  toast.success(`Sucesso: ${result.message}`);
-                  refetchAllAlunos();
-                } else {
-                  toast.error(`Erro: ${result.message}`);
-                }
-              } catch (error: any) {
-                toast.error(`Erro: ${error.message}`);
-              }
-            }}
-            className="border-green-300 text-green-700 hover:bg-green-50"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" /> Atualizar Plataformas
-          </Button>
+
           {/* Exportar Excel */}
           <Button variant="outline" onClick={handleExportExcel} disabled={isExporting || filteredAlunos.length === 0}>
             {isExporting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exportando...</> : <><Download className="h-4 w-4 mr-2" /> Exportar Excel</>}
