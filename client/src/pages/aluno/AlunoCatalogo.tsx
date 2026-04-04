@@ -120,7 +120,7 @@ export default function AlunoCatalogo() {
                     <Button
                       onClick={() =>
                         setLocation(
-                          `/aluno/detalhe-curso?cursoId=${curso.cursoId}&cursoAtribuidoId=${curso.cursoAtribuidoId}`
+                          `/aluno/competencias-comp-tec/detalhe?cursoId=${curso.cursoId}&cursoAtribuidoId=${curso.cursoAtribuidoId}`
                         )
                       }
                     >

@@ -83,7 +83,7 @@ export default function AlunoDetalheCurso() {
                 <Button
                   onClick={() =>
                     setLocation(
-                      `/aluno/atividade?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
+                      `/aluno/competencias-comp-tec/atividade?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
                     )
                   }
                 >
@@ -92,7 +92,7 @@ export default function AlunoDetalheCurso() {
 
                 <Button
                   variant="outline"
-                  onClick={() => setLocation("/aluno/catalogo")}
+                  onClick={() => setLocation("/aluno/competencias-comp-tec/catalogo")}
                 >
                   Voltar ao catálogo
                 </Button>

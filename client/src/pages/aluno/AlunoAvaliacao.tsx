@@ -48,17 +48,31 @@ export default function AlunoAvaliacao() {
 
     const nota = Number(((acertos / totalQuestoes) * 10).toFixed(1));
 
-    const result = await submeterAvaliacaoMutation.mutateAsync({
-      moduloId: cursoId,
-      nota,
-      totalQuestoes,
-      acertos,
-      respostas,
-    });
+    try {
+      const result = await submeterAvaliacaoMutation.mutateAsync({
+        moduloId: cursoId,
+        nota,
+        totalQuestoes,
+        acertos,
+        respostas,
+      });
 
-    setLocation(
-      `/aluno/resultado?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&avaliacaoId=${avaliacaoId}&nota=${result?.nota ?? nota}&aprovado=${result?.aprovado ? "1" : "0"}`
-    );
+      // Se reprovado, mostrar mensagem e manter na pagina
+      if (!result?.aprovado) {
+        alert("Veja o conteudo novamente e refaca a avaliacao. Voce nao conseguiu obter 80% de aproveitamento.");
+        // Limpar respostas para permitir refazer
+        setRespostas({});
+        return;
+      }
+
+      // Se aprovado, navegar para resultado
+      setLocation(
+        `/aluno/competencias-comp-tec/resultado?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&avaliacaoId=${avaliacaoId}&nota=${result?.nota ?? nota}&aprovado=${result?.aprovado ? "1" : "0"}`
+      );
+    } catch (error) {
+      // Erro ja eh tratado pela mutation
+      console.error("Erro ao submeter avaliacao:", error);
+    }
   }
 
   return (

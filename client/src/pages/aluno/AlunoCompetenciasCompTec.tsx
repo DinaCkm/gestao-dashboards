@@ -234,43 +234,56 @@ export default function AlunoCompetenciasCompTec() {
             ) : (
               <div className="space-y-3">
                 {cursos.map((curso) => (
-                  <button
+                  <div
                     key={`${curso.cursoAtribuidoId}-${curso.cursoId}`}
-                    type="button"
-                    onClick={() => selecionarCurso(curso)}
-                    className={`w-full rounded-lg border p-4 text-left transition ${
+                    className={`w-full rounded-lg border p-4 transition ${
                       cursoSelecionado?.cursoAtribuidoId === curso.cursoAtribuidoId
                         ? "border-primary ring-1 ring-primary"
                         : "hover:shadow-sm"
                     }`}
                   >
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold">{curso.titulo}</h3>
-                        <span className="rounded-full bg-muted px-2 py-1 text-xs">
-                          {curso.status}
-                        </span>
+                    <button
+                      type="button"
+                      onClick={() => selecionarCurso(curso)}
+                      className="w-full text-left"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold">{curso.titulo}</h3>
+                          <span className="rounded-full bg-muted px-2 py-1 text-xs">
+                            {curso.status}
+                          </span>
+                        </div>
+
+                        {curso.descricao ? (
+                          <p className="text-sm text-muted-foreground line-clamp-3">
+                            {curso.descricao}
+                          </p>
+                        ) : null}
+
+                        {curso.dataPrazo && (
+                          <p className="text-xs text-muted-foreground">
+                            Prazo: {String(curso.dataPrazo).slice(0, 10)}
+                          </p>
+                        )}
+
+                        {curso.notaFinal !== null && curso.notaFinal !== undefined && (
+                          <p className="text-xs text-muted-foreground">
+                            Nota final: {String(curso.notaFinal)}
+                          </p>
+                        )}
                       </div>
-
-                      {curso.descricao ? (
-                        <p className="text-sm text-muted-foreground line-clamp-3">
-                          {curso.descricao}
-                        </p>
-                      ) : null}
-
-                      {curso.dataPrazo && (
-                        <p className="text-xs text-muted-foreground">
-                          Prazo: {String(curso.dataPrazo).slice(0, 10)}
-                        </p>
-                      )}
-
-                      {curso.notaFinal !== null && curso.notaFinal !== undefined && (
-                        <p className="text-xs text-muted-foreground">
-                          Nota final: {String(curso.notaFinal)}
-                        </p>
-                      )}
+                    </button>
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => selecionarCurso(curso)}
+                        className="flex-1"
+                      >
+                        Acessar Curso
+                      </Button>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}

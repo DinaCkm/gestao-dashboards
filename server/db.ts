@@ -9905,3 +9905,86 @@ export async function updateMultipleAlunosPlataforma(updates: Array<{ alunoId: n
     };
   }
 }
+
+
+/**
+ * Verificar se atividade anterior foi concluída (bloqueio de sequência)
+ * @param alunoId ID do aluno
+ * @param moduloId ID do módulo/curso
+ * @returns true se pode fazer avaliação, false se está bloqueado
+ */
+export async function verificarBloqueioAtividade(alunoId: number, moduloId: number) {
+  try {
+    const db = await getDb();
+    if (!db) return false;
+
+    // Buscar progresso do aluno neste módulo
+    const progresso = await db
+      .select()
+      .from(alunoModuloProgresso)
+      .where(
+        and(
+          eq(alunoModuloProgresso.alunoId, alunoId),
+          eq(alunoModuloProgresso.moduloId, moduloId)
+        )
+      )
+      .limit(1);
+
+    // Se não tem progresso, está bloqueado
+    if (!progresso || progresso.length === 0) {
+      return false;
+    }
+
+    // Se status é "nao_iniciado", está bloqueado
+    if (progresso[0].status === "nao_iniciado") {
+      return false;
+    }
+
+    // Se chegou aqui, pode fazer avaliação
+    return true;
+  } catch (error) {
+    console.error("Erro ao verificar bloqueio de atividade:", error);
+    return false;
+  }
+}
+
+/**
+ * Atualizar status do curso atribuído após avaliação
+ * @param alunoId ID do aluno
+ * @param cursoId ID do curso
+ * @param aprovado Se foi aprovado (nota >= 8.0)
+ */
+export async function atualizarStatusCursoAtribuido(alunoId: number, cursoId: number, aprovado: boolean) {
+  try {
+    const db = await getDb();
+    if (!db) return false;
+
+    const novoStatus = aprovado ? "concluido" : "em_progresso";
+
+    await db
+      .update(alunoCursoAtribuido)
+      .set({
+        status: novoStatus,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(alunoCursoAtribuido.alunoId, alunoId),
+          eq(alunoCursoAtribuido.cursoId, cursoId)
+        )
+      );
+
+    return true;
+  } catch (error) {
+    console.error("Erro ao atualizar status do curso atribuído:", error);
+    return false;
+  }
+}
+
+
+/**
+ * Verificar se atividade anterior foi concluida (bloqueio de sequencia)
+ * @param alunoId ID do aluno
+ * @param moduloId ID do modulo/curso
+ * @returns true se pode fazer avaliacao, false se esta bloqueado
+ */

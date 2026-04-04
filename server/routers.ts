@@ -9302,7 +9302,13 @@ Responda APENAS em JSON com o formato especificado.`
 
           const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
           if (!aluno) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado" });
+            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno nao encontrado" });
+          }
+
+          // Verificar bloqueio de sequencia
+          const podeAvaliar = await db.verificarBloqueioAtividade(aluno.id, input.moduloId);
+          if (!podeAvaliar) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Voce precisa completar as atividades anteriores antes de fazer esta avaliacao." });
           }
 
           const aprovado = input.nota >= 8 ? 1 : 0;
@@ -9331,6 +9337,9 @@ Responda APENAS em JSON com o formato especificado.`
                 eq(alunoModuloProgresso.moduloId, input.moduloId)
               )
             );
+
+          // Atualizar status do curso atribuido
+          await db.atualizarStatusCursoAtribuido(aluno.id, input.moduloId, Boolean(aprovado));
 
           return {
             success: true,
