@@ -908,8 +908,8 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
 
 
 
-        {/* Glossário de Termos */}
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        {/* Glossário de Termos - OCULTO */}
+        <Card className="hidden bg-white border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <button
               onClick={() => setShowGlossario(!showGlossario)}
@@ -947,8 +947,8 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
           </CardContent>
         </Card>
 
-        {/* Filtro de Período para Indicadores */}
-        {filtroOpcoes.length > 0 && (
+        {/* Filtro de Período para Indicadores - OCULTO */}
+        {false && filtroOpcoes.length > 0 && (
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
@@ -1214,8 +1214,8 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                   </Card>
                 )}
 
-                {/* Card de Expectativas da Jornada - APÓS CONTRATO */}
-                {jornadaData.contrato && (() => {
+                {/* Card de Expectativas da Jornada - APÓS CONTRATO - OCULTO (visível apenas em Performance) */}
+                {false && jornadaData.contrato && (() => {
                   const periodoInicio = new Date(jornadaData.contrato.periodoInicio);
                   const periodoFim = new Date(jornadaData.contrato.periodoTermino);
                   const diasTotais = Math.ceil((periodoFim.getTime() - periodoInicio.getTime()) / (1000 * 60 * 60 * 24));
