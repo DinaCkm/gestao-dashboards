@@ -1099,7 +1099,8 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
         </a>
         )}
 
-        {/* Card B.E.M. - Área de Aulas */}
+        {/* Card B.E.M. - Área de Aulas - Apenas para alunos com plataforma Scaffold */}
+        {aluno?.plataformaAulas === 'scaffold' && (
         <a
           href="https://sebraeto.competenciasdobem.com.br"
           target="_blank"
@@ -1132,6 +1133,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
             </div>
           </div>
         </a>
+        )}
 
         {/* Tabs com seções detalhadas */}
         <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'webinars'} className="w-full">
