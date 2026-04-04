@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ExternalLink } from "lucide-react";
 import {
   RadioGroup,
   RadioGroupItem,
@@ -68,6 +69,7 @@ export default function AlunoCompetenciasCompTec() {
   const [respostas, setRespostas] = useState<Record<string, string>>({});
   const [reflexao, setReflexao] = useState("");
   const [resultadoAtual, setResultadoAtual] = useState<any>(null);
+  const [urlCursoAberta, setUrlCursoAberta] = useState<string | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -80,6 +82,11 @@ export default function AlunoCompetenciasCompTec() {
 
   const tentativasQuery = trpc.competenciasCompTec.aluno.minhasTentativas.useQuery(
     { moduloId: Number(cursoSelecionado?.cursoId ?? 0) },
+    { enabled: !!cursoSelecionado?.cursoId }
+  );
+
+  const urlCursoQuery = trpc.competenciasCompTec.aluno.obterUrlCurso.useQuery(
+    { cursoId: Number(cursoSelecionado?.cursoId ?? 0) },
     { enabled: !!cursoSelecionado?.cursoId }
   );
 
@@ -299,6 +306,16 @@ export default function AlunoCompetenciasCompTec() {
                   </div>
 
                   <div className="flex flex-wrap gap-3">
+                    {urlCursoQuery.data?.url && (
+                      <Button
+                        onClick={() => window.open(urlCursoQuery.data.url, '_blank')}
+                        variant="default"
+                        className="gap-2"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Acessar Curso
+                      </Button>
+                    )}
                     <Button
                       onClick={handleIniciarAtividade}
                       disabled={iniciarAtividadeMutation.isPending}

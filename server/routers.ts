@@ -9426,6 +9426,67 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true };
         }),
 
+      obterUrlCurso: protectedProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) return null;
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) return null;
+
+          // Verificar se o aluno tem acesso ao curso
+          const [cursoAtribuido] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.alunoId, aluno.id),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId)
+              )
+            )
+            .limit(1);
+
+          if (!cursoAtribuido) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Acesso negado a este curso",
+            });
+          }
+
+          // Obter a primeira atividade do curso
+          const [atividade] = await database
+            .select({
+              id: atividadesCurso.id,
+              titulo: atividadesCurso.titulo,
+              tipoAtividade: atividadesCurso.tipoAtividade,
+              urlGenially: atividadesCurso.urlGenially,
+              urlMidia: atividadesCurso.urlMidia,
+            })
+            .from(atividadesCurso)
+            .where(
+              and(
+                eq(atividadesCurso.cursoId, input.cursoId),
+                eq(atividadesCurso.isActive, 1)
+              )
+            )
+            .orderBy(asc(atividadesCurso.ordem))
+            .limit(1);
+
+          if (!atividade) {
+            return null;
+          }
+
+          // Retornar a URL apropriada baseado no tipo de atividade
+          const url = atividade.urlGenially || atividade.urlMidia;
+          return {
+            id: atividade.id,
+            titulo: atividade.titulo,
+            tipoAtividade: atividade.tipoAtividade,
+            url: url || null,
+          };
+        }),
+
       concluirCurso: protectedProcedure
         .input(
           z.object({

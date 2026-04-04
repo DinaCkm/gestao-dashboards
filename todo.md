@@ -3498,3 +3498,17 @@
   - [x] Testes unitários criados
   - [ ] Integrar vídeos no OnboardingAluno para exibir ao clicar em cada atividade
   - [ ] Adicionar modal/dialog para exibir vídeo quando aluno clica em atividade
+
+## Atribuição de Cursos por Competência (04/04/2026)
+- [x] Criar tabela aluno_curso_atribuido com 12 colunas
+- [x] Implementar página /mentor/atribuir-cursos
+- [x] Adicionar dropdown de aluno e competência do PDI
+- [x] Adicionar lista permanente de cursos atribuídos
+- [x] Adicionar botões de editar e remover
+- [x] Corrigir query para mostrar apenas competências do PDI
+- [x] Adicionar procedure obterUrlCurso para buscar URL da primeira atividade
+- [x] Adicionar botão "Acessar Curso" na interface do aluno
+- [ ] Deletar Jornada Personalizada e suas 36 competências duplicadas (aguardando MySQL voltar)
+- [ ] Testar fluxo completo: PDI → Atribuição → Jornada → Acesso ao Curso
+- [ ] Adicionar validação para prevenir duplicidade de competências
+- [ ] Adicionar toasts de sucesso para editar/remover
