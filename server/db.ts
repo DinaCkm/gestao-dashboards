@@ -2905,7 +2905,9 @@ export async function getCompetenciasObrigatoriasAluno(alunoId: number) {
   if (!db) return [];
   
   const result = await db.select({
+    id: planoIndividual.id,
     competenciaId: planoIndividual.competenciaId,
+    nome: competencias.nome,
     codigoIntegracao: competencias.codigoIntegracao,
     notaAtual: planoIndividual.notaAtual,
     metaNota: planoIndividual.metaNota,
