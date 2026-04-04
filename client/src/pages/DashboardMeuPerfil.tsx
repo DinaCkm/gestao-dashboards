@@ -1170,49 +1170,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
           <TabsContent value="jornada" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {jornadaData && jornadaData.macroJornadas && jornadaData.macroJornadas.length > 0 ? (
               <div className="space-y-6">
-                {/* Card de Contrato */}
-                {jornadaData.contrato && (
-                  <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-blue-100">
-                            <FileBarChart className="h-5 w-5 text-blue-700" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">Contrato Ativo</p>
-                            <p className="text-xs text-gray-600">
-                              {formatDateSafe(jornadaData.contrato.periodoInicio)} a {formatDateSafe(jornadaData.contrato.periodoTermino)}
-                            </p>
-                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-200 text-blue-800 font-medium mt-1">
-                              Mentoria: {jornadaData.contrato.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'}
-                            </span>
-                          </div>
-                        </div>
-                        {jornadaData.saldo && (
-                          <div className="flex items-center gap-4">
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-gray-900">{jornadaData.saldo.sessoesRealizadas}</p>
-                              <p className="text-xs text-gray-500">Realizadas</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-blue-700">{jornadaData.saldo.saldoRestante}</p>
-                              <p className="text-xs text-gray-500">Restantes</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-gray-600">{jornadaData.saldo.totalContratadas}</p>
-                              <p className="text-xs text-gray-500">Total</p>
-                            </div>
-                            <div className="w-24">
-                              <Progress value={jornadaData.saldo.percentualUsado} className="h-2" />
-                              <p className="text-xs text-gray-500 text-center mt-1">{jornadaData.saldo.percentualUsado}% usado</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                {/* Card de Contrato - MOVIDO PARA ABA MENTORIAS */}
 
                 {/* Card de Expectativas da Jornada - APÓS CONTRATO - OCULTO (visível apenas em Performance) */}
                 {false && jornadaData.contrato && (() => {
@@ -1707,6 +1665,50 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
 
           {/* === HISTÓRICO DE MENTORIAS === */}
           <TabsContent value="mentorias" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Card de Contrato Ativo */}
+            {jornadaData.contrato && (
+              <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-blue-100">
+                        <FileBarChart className="h-5 w-5 text-blue-700" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Contrato Ativo</p>
+                        <p className="text-xs text-gray-600">
+                          {formatDateSafe(jornadaData.contrato.periodoInicio)} a {formatDateSafe(jornadaData.contrato.periodoTermino)}
+                        </p>
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-200 text-blue-800 font-medium mt-1">
+                          Mentoria: {jornadaData.contrato.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'}
+                        </span>
+                      </div>
+                    </div>
+                    {jornadaData.saldo && (
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-gray-900">{jornadaData.saldo.sessoesRealizadas}</p>
+                          <p className="text-xs text-gray-500">Realizadas</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-blue-700">{jornadaData.saldo.saldoRestante}</p>
+                          <p className="text-xs text-gray-500">Restantes</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-gray-600">{jornadaData.saldo.totalContratadas}</p>
+                          <p className="text-xs text-gray-500">Total</p>
+                        </div>
+                        <div className="w-24">
+                          <Progress value={jornadaData.saldo.percentualUsado} className="h-2" />
+                          <p className="text-xs text-gray-500 text-center mt-1">{jornadaData.saldo.percentualUsado}% usado</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Alerta: Faltam X mentorias para finalizar */}
             {jornadaData?.saldo && jornadaData.saldo.saldoRestante > 0 && (
               <div className="mb-4 p-4 rounded-xl border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center gap-4">
