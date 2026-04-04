@@ -1120,7 +1120,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                 B.E.M. - Área de Aulas
               </h3>
               <p className="text-xs sm:text-sm text-gray-600">
-                Acesse a área de aulas e conteúdos do programa
+                Acesso exclusivo para os alunos que fazem as aulas na plataforma Scaffold.
               </p>
             </div>
             <div className="flex-shrink-0">
