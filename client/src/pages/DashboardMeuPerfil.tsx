@@ -1134,15 +1134,15 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
         </a>
 
         {/* Tabs com seções detalhadas */}
-        <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'jornada'} className="w-full">
+        <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'webinars'} className="w-full">
           <TabsList className="bg-gray-100 border border-gray-200 w-full flex flex-wrap h-auto gap-1 p-1 rounded-xl">
-            <TabsTrigger value="jornada" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <Route className="h-4 w-4 mr-1" /> Minha Jornada
+            <TabsTrigger value="jornada" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600" title="Acesse as aulas de suas competencias">
+              <BookOpen className="h-4 w-4 mr-1" /> Aulas
             </TabsTrigger>
-            <TabsTrigger value="mentorias" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
+            <TabsTrigger value="mentorias" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600" title="Clique aqui e veja os relatorios das suas mentorias">
               <MessageSquare className="h-4 w-4 mr-1" /> Mentorias
             </TabsTrigger>
-            <TabsTrigger value="eventos" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
+            <TabsTrigger value="eventos" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600" title="clique aqui e marque presença nos eventos online">
               <Video className="h-4 w-4 mr-1" /> Eventos
             </TabsTrigger>
 
@@ -1151,14 +1151,15 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
             </TabsTrigger>
 
             <a
-              href="https://sebraeto.competenciasdobem.com.br/auth/signin"
+              href="https://ecolider.ecodobem.com/meus-cursos"
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 min-w-[120px] inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-gray-600 hover:bg-[#0A1E3E] hover:text-white cursor-pointer"
+              title="Aproveite os minicursos para ampliar seu desenvolvimento"
             >
               <GraduationCap className="h-4 w-4 mr-1" /> Mini_Cursos <ExternalLink className="h-3 w-3 ml-1 opacity-60" />
             </a>
-            <TabsTrigger value="cases" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
+            <TabsTrigger value="cases" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600" title="Registre seus cases de sucesso">
               <Briefcase className="h-4 w-4 mr-1" /> Cases de Sucesso
             </TabsTrigger>
             <TabsTrigger value="meu-perfil-disc" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
