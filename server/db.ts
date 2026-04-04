@@ -614,9 +614,9 @@ export async function getAlunos(programId?: number): Promise<Aluno[]> {
   const db = await getDb();
   if (!db) return [];
   if (programId) {
-    return await db.select().from(alunos).where(eq(alunos.programId, programId));
+    return await db.select().from(alunos).where(and(eq(alunos.programId, programId), eq(alunos.isActive, 1)));
   }
-  return await db.select().from(alunos);
+  return await db.select().from(alunos).where(eq(alunos.isActive, 1));
 }
 
 export async function getAlunosByConsultor(consultorId: number, programId?: number): Promise<Aluno[]> {
