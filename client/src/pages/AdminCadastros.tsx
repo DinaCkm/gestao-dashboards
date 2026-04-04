@@ -623,6 +623,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [onboardContratoFim, setOnboardContratoFim] = useState("");
   const [onboardTotalSessoes, setOnboardTotalSessoes] = useState("");
   const [onboardTipoMentoria, setOnboardTipoMentoria] = useState<'individual' | 'grupo'>('individual');
+  const [onboardPlataformaAulas, setOnboardPlataformaAulas] = useState<'scaffold' | 'sistema_interno'>('sistema_interno');
 
   const handleOnboardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -644,6 +645,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       contratoFim: onboardContratoFim || undefined,
       totalSessoesContratadas: onboardTotalSessoes ? parseInt(onboardTotalSessoes) : undefined,
       tipoMentoria: onboardTipoMentoria,
+      plataformaAulas: onboardPlataformaAulas,
     });
     setOnboardNome("");
     setOnboardEmail("");
@@ -653,6 +655,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     setOnboardContratoFim("");
     setOnboardTotalSessoes("");
     setOnboardTipoMentoria('individual');
+    setOnboardPlataformaAulas('sistema_interno');
     setOnboardOpen(false);
   };
 
@@ -750,6 +753,10 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           <Button variant="outline" onClick={handleExportExcel} disabled={isExporting || filteredAlunos.length === 0}>
             {isExporting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exportando...</> : <><Download className="h-4 w-4 mr-2" /> Exportar Excel</>}
           </Button>
+          {/* Editar Plataformas */}
+          <Button variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50" onClick={() => window.location.href = '/admin/plataforma-aulas'}>
+            <ArrowLeftRight className="h-4 w-4 mr-2" /> Editar Plataformas
+          </Button>
           {/* Convite Onboarding Dialog */}
           <Dialog open={onboardOpen} onOpenChange={setOnboardOpen}>
             <DialogTrigger asChild>
@@ -788,6 +795,14 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                       <option value="">Selecione a empresa</option>
                       {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
                     </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Plataforma de Aulas</Label>
+                    <select value={onboardPlataformaAulas} onChange={(e) => setOnboardPlataformaAulas(e.target.value as 'scaffold' | 'sistema_interno')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <option value="sistema_interno">Sistema Interno</option>
+                      <option value="scaffold">Plataforma Scaffold</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground">Selecione a plataforma onde o aluno fara suas aulas</p>
                   </div>
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><CalendarDays className="h-3.5 w-3.5" /> Dados do Contrato</p>

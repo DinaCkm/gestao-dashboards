@@ -9865,6 +9865,14 @@ export async function updateAllAlunosPlataformaAulas() {
  */
 export async function updateMultipleAlunosPlataforma(updates: Array<{ alunoId: number; plataformaAulas: 'scaffold' | 'sistema_interno' }>) {
   try {
+    const db = await getDb();
+    if (!db) {
+      return {
+        success: false,
+        message: 'Erro ao conectar ao banco de dados'
+      };
+    }
+
     let atualizados = 0;
     let erros = 0;
 

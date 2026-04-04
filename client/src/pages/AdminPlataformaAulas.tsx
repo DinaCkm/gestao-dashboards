@@ -19,27 +19,16 @@ export default function AdminPlataformaAulas() {
     onSuccess: (result) => {
       setIsSaving(false);
       if (result.success) {
-        toast({
-          title: 'Sucesso!',
-          description: `${result.atualizados} alunos atualizados com sucesso`,
-        });
+        toast.success(`${result.atualizados} alunos atualizados com sucesso`);
         setChanges(new Map());
         refetch();
       } else {
-        toast({
-          title: 'Erro',
-          description: result.message,
-          variant: 'destructive',
-        });
+        toast.error(result.message || 'Erro ao atualizar alunos');
       }
     },
     onError: (error) => {
       setIsSaving(false);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao atualizar alunos',
-        variant: 'destructive',
-      });
+      toast.error('Erro ao atualizar alunos');
     },
   });
 
@@ -71,10 +60,7 @@ export default function AdminPlataformaAulas() {
   // Salvar todas as alterações
   const handleSaveAll = async () => {
     if (changes.size === 0) {
-      toast({
-        title: 'Nenhuma alteração',
-        description: 'Nenhum aluno foi modificado',
-      });
+      toast.info('Nenhuma alteração - nenhum aluno foi modificado');
       return;
     }
 

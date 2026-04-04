@@ -2993,6 +2993,7 @@ toast.success('Evidência enviada com sucesso!');
         </Tabs>
 
         {/* Card Scaffold - Plataforma de Cursos */}
+        {aluno.plataformaAulas === 'scaffold' && (
         <a
           href="https://scaffold.ecodobem.com"
           target="_blank"
@@ -3033,6 +3034,7 @@ toast.success('Evidência enviada com sucesso!');
             </div>
           </div>
         </a>
+        )}
 
         {/* Dialog de envio de Relatório de Impacto */}
         <Dialog open={caseDialogOpen} onOpenChange={setCaseDialogOpen}>
