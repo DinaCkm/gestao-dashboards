@@ -675,6 +675,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [editAreaAtuacao, setEditAreaAtuacao] = useState("");
   const [editMinicurriculo, setEditMinicurriculo] = useState("");
   const [editQuemEVoce, setEditQuemEVoce] = useState("");
+  const [editPlataformaAulas, setEditPlataformaAulas] = useState("sistema_interno");
 
   const handleEditOpen = (aluno: any) => {
     setEditAluno(aluno);
@@ -695,6 +696,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     setEditAreaAtuacao(aluno.areaAtuacao || "");
     setEditMinicurriculo(aluno.minicurriculo || "");
     setEditQuemEVoce(aluno.quemEVoce || "");
+    setEditPlataformaAulas(aluno.plataformaAulas || "sistema_interno");
     setEditOpen(true);
   };
 
@@ -724,6 +726,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       areaAtuacao: editAreaAtuacao || null,
       minicurriculo: editMinicurriculo || null,
       quemEVoce: editQuemEVoce || null,
+      plataformaAulas: editPlataformaAulas as 'scaffold' | 'sistema_interno',
     });
     setEditOpen(false);
     setEditAluno(null);
@@ -862,6 +865,14 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                     <option value="">Sem empresa</option>
                     {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
                   </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Plataforma de Aulas</Label>
+                  <select value={editPlataformaAulas} onChange={(e) => setEditPlataformaAulas(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    <option value="sistema_interno">Sistema Interno</option>
+                    <option value="scaffold">Plataforma Scaffold</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground">Selecione onde o aluno fará as aulas: no sistema interno ou na plataforma Scaffold.</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Mentor(a) Vinculado(a)</Label>
