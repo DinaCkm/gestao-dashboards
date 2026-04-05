@@ -188,12 +188,16 @@ export default function DashboardMeuPerfil() {
   
   // Funcao para acessar curso de uma competencia
   const acessarCursoCompetencia = useCallback((competenciaId: number) => {
+    console.log('DEBUG: cursosAtribuidosAoAluno =', cursosAtribuidosAoAluno);
     const cursosDaCompetencia = (cursosAtribuidosAoAluno || []).filter(
       (c: any) => c.competenciaId === competenciaId
     );
+    console.log('DEBUG: cursosDaCompetencia =', cursosDaCompetencia);
     
     if (cursosDaCompetencia.length > 0) {
       const primeiroCurso = cursosDaCompetencia[0];
+      console.log('DEBUG: primeiroCurso =', primeiroCurso);
+      console.log('DEBUG: cursoId =', primeiroCurso.cursoId, 'cursoAtribuidoId =', primeiroCurso.id);
       window.location.href = `/aluno/competencias-comp-tec/detalhe?cursoId=${primeiroCurso.cursoId}&cursoAtribuidoId=${primeiroCurso.id}`;
     } else {
       alert('Nenhum curso atribuido para esta competencia.');
