@@ -9273,6 +9273,19 @@ Responda APENAS em JSON com o formato especificado.`
           return resultado ?? null;
         }),
 
+      obterAtividadesCurso: protectedProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.cursoId, input.cursoId))
+            .orderBy(asc(atividadesCurso.ordem ?? 0));
+        }),
+
       iniciarAtividade: protectedProcedure
         .input(z.object({ moduloId: z.number() }))
         .mutation(async ({ ctx, input }) => {
