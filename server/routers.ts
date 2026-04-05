@@ -5,7 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { eq, and, asc, desc } from "drizzle-orm";
-import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCursoAtribuido, tentativasAvaliacao, cursos, atividadesCurso, avaliacoesAtividade, cursosCompetencias, onboardingVideos } from "../drizzle/schema";
+import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCursoAtribuido, tentativasAvaliacao, cursos, atividadesCurso, avaliacoesAtividade, cursosCompetencias, onboardingVideos, alunoAtividadeProgresso } from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
 import * as XLSX from 'xlsx';
@@ -33,6 +33,72 @@ const managerProcedure = protectedProcedure.use(({ ctx, next }) => {
   }
   return next({ ctx });
 });
+
+// Helper function to unlock next activity when current is approved
+async function desbloquearProximaAtividadeLogica(database: any, alunoId: number, cursoAtribuidoId: number, atividadeId: number) {
+  try {
+    // Buscar a atividade atual para pegar a ordem
+    const [atividadeAtual] = await database
+      .select()
+      .from(atividadesCurso)
+      .where(eq(atividadesCurso.id, atividadeId))
+      .limit(1);
+
+    if (!atividadeAtual) return;
+
+    // Buscar a próxima atividade (ordem + 1)
+    const [proximaAtividade] = await database
+      .select()
+      .from(atividadesCurso)
+      .where(
+        and(
+          eq(atividadesCurso.cursoId, atividadeAtual.cursoId),
+          eq(atividadesCurso.isActive, 1)
+        )
+      )
+      .orderBy(asc(atividadesCurso.ordem ?? 0))
+      .limit(1)
+      .offset((atividadeAtual.ordem ?? 0) + 1);
+
+    if (!proximaAtividade) return;
+
+    // Verificar se já existe progresso para a próxima atividade
+    const [progressoProxima] = await database
+      .select()
+      .from(alunoAtividadeProgresso)
+      .where(
+        and(
+          eq(alunoAtividadeProgresso.alunoId, alunoId),
+          eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtribuidoId),
+          eq(alunoAtividadeProgresso.atividadeId, proximaAtividade.id)
+        )
+      )
+      .limit(1);
+
+    if (progressoProxima) {
+      // Atualizar status para liberada
+      await database
+        .update(alunoAtividadeProgresso)
+        .set({
+          status: "liberada",
+          updatedAt: new Date(),
+        })
+        .where(eq(alunoAtividadeProgresso.id, progressoProxima.id));
+    } else {
+      // Criar novo registro com status liberada
+      await database
+        .insert(alunoAtividadeProgresso)
+        .values({
+          alunoId: alunoId,
+          cursoAtribuidoId: cursoAtribuidoId,
+          atividadeId: proximaAtividade.id,
+          status: "liberada",
+        });
+    }
+  } catch (error) {
+    console.error("[desbloquearProximaAtividadeLogica] Error:", error);
+  }
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -8619,6 +8685,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
   }),
 
+
   competenciasCompTec: router({
     admin: router({
       listarCompetencias: protectedProcedure.query(async () => {
@@ -9299,7 +9366,7 @@ Responda APENAS em JSON com o formato especificado.`
         }),
 
       iniciarAtividade: protectedProcedure
-        .input(z.object({ moduloId: z.number() }))
+        .input(z.object({ cursoId: z.number(), cursoAtribuidoId: z.number(), atividadeId: z.number().optional() }))
         .mutation(async ({ ctx, input }) => {
           const database = await db.getDb();
           if (!database) {
@@ -9311,31 +9378,151 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado" });
           }
 
-          const [registro] = await database
+          // Verificar se o curso foi atribuído ao aluno
+          const [cursoAtribuido] = await database
             .select()
-            .from(alunoModuloProgresso)
+            .from(alunoCursoAtribuido)
             .where(
               and(
-                eq(alunoModuloProgresso.alunoId, aluno.id),
-                eq(alunoModuloProgresso.moduloId, input.moduloId)
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, aluno.id),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId)
               )
             )
             .limit(1);
 
-          if (!registro) {
+          if (!cursoAtribuido) {
             throw new TRPCError({ code: "NOT_FOUND", message: "Curso não atribuído ao aluno" });
           }
 
-          await database
-            .update(alunoModuloProgresso)
-            .set({
-              status: "em_andamento",
-              iniciadoEm: registro.iniciadoEm ?? new Date(),
-              updatedAt: new Date(),
-            })
-            .where(eq(alunoModuloProgresso.id, registro.id));
+          // Se atividadeId foi fornecido, marcar como em_andamento
+          if (input.atividadeId) {
+            const [progresso] = await database
+              .select()
+              .from(alunoAtividadeProgresso)
+              .where(
+                and(
+                  eq(alunoAtividadeProgresso.alunoId, aluno.id),
+                  eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                  eq(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+                )
+              )
+              .limit(1);
+
+            if (progresso) {
+              await database
+                .update(alunoAtividadeProgresso)
+                .set({
+                  status: "em_andamento",
+                  iniciadoEm: progresso.iniciadoEm ?? new Date(),
+                  updatedAt: new Date(),
+                })
+                .where(eq(alunoAtividadeProgresso.id, progresso.id));
+            } else {
+              // Criar novo registro de progresso se não existir
+              await database
+                .insert(alunoAtividadeProgresso)
+                .values({
+                  alunoId: aluno.id,
+                  cursoAtribuidoId: input.cursoAtribuidoId,
+                  atividadeId: input.atividadeId,
+                  status: "em_andamento",
+                  iniciadoEm: new Date(),
+                });
+            }
+          }
 
           return { success: true };
+        }),
+
+      concluirAtividade: protectedProcedure
+        .input(z.object({ cursoAtribuidoId: z.number(), atividadeId: z.number() }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado" });
+          }
+
+          const [progresso] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, aluno.id),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+              )
+            )
+            .limit(1);
+
+          if (!progresso) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Progresso não encontrado" });
+          }
+
+          await database
+            .update(alunoAtividadeProgresso)
+            .set({
+              status: "concluida",
+              concluidoEm: new Date(),
+              avaliacaoLiberada: 1,
+              updatedAt: new Date(),
+            })
+            .where(eq(alunoAtividadeProgresso.id, progresso.id));
+
+          return { success: true };
+        }),
+
+      atualizarNotaAtividade: protectedProcedure
+        .input(z.object({ cursoAtribuidoId: z.number(), atividadeId: z.number(), nota: z.number().min(0).max(10) }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado" });
+          }
+
+          const [progresso] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, aluno.id),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+              )
+            )
+            .limit(1);
+
+          if (!progresso) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Progresso não encontrado" });
+          }
+
+          const aprovado = input.nota >= 8 ? 1 : 0;
+
+          await database
+            .update(alunoAtividadeProgresso)
+            .set({
+              notaFinal: input.nota,
+              aprovado: aprovado,
+              updatedAt: new Date(),
+            })
+            .where(eq(alunoAtividadeProgresso.id, progresso.id));
+
+          // Se aprovado, desbloquear próxima atividade
+          if (aprovado) {
+            await desbloquearProximaAtividadeLogica(database, aluno.id, input.cursoAtribuidoId, input.atividadeId);
+          }
+
+          return { success: true, aprovado };
         }),
 
       submeterAvaliacao: protectedProcedure

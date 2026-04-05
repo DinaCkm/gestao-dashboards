@@ -1364,6 +1364,7 @@ export const atividadesCurso = mysqlTable("atividades_curso", {
   urlGenially: text("urlGenially"),
   urlMidia: text("urlMidia"),
   descricao: text("descricao"),
+  imagemUrl: text("imagemUrl"), // URL da imagem do card da atividade (S3)
   ordem: int("ordem").default(0).notNull(),
   isActive: int("isActive").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -1432,3 +1433,26 @@ export const alunoCursoAtribuido = mysqlTable("aluno_curso_atribuido", {
 });
 export type AlunoCursoAtribuido = typeof alunoCursoAtribuido.$inferSelect;
 export type InsertAlunoCursoAtribuido = typeof alunoCursoAtribuido.$inferInsert;
+
+/**
+ * ITEM 6: Tabela de Progresso de Atividade do Aluno
+ * Rastreia o progresso de cada atividade por aluno
+ * Controla: status, datas, avaliação liberada, nota final, aprovação
+ */
+export const alunoAtividadeProgresso = mysqlTable("aluno_atividade_progresso", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  cursoAtribuidoId: int("cursoAtribuidoId").notNull(),
+  atividadeId: int("atividadeId").notNull(),
+  status: mysqlEnum("status", ["bloqueada", "liberada", "em_andamento", "concluida"]).default("liberada").notNull(),
+  iniciadoEm: timestamp("iniciadoEm"),
+  concluidoEm: timestamp("concluidoEm"),
+  avaliacaoLiberada: int("avaliacaoLiberada").default(0).notNull(), // 1 = avaliação liberada após conclusão
+  notaFinal: decimal("notaFinal", { precision: 3, scale: 1 }),
+  aprovado: int("aprovado").default(0).notNull(), // 1 = nota >= 8, 0 = nota < 8
+  tentativas: int("tentativas").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AlunoAtividadeProgresso = typeof alunoAtividadeProgresso.$inferSelect;
+export type InsertAlunoAtividadeProgresso = typeof alunoAtividadeProgresso.$inferInsert;
