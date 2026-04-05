@@ -9253,14 +9253,16 @@ Responda APENAS em JSON com o formato especificado.`
           const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
           if (!aluno) return null;
 
-          // Buscar dados do curso e da atribuição
+          // Buscar dados do curso, competência e da atribuição
           const [resultado] = await database
             .select({
               curso: cursosCompetencias,
               atribuicao: alunoCursoAtribuido,
+              competencia: competenciasCompTec,
             })
             .from(alunoCursoAtribuido)
             .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+            .leftJoin(competenciasCompTec, eq(cursosCompetencias.competenciaId, competenciasCompTec.id))
             .where(
               and(
                 eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),

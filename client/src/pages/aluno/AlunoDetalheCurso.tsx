@@ -25,15 +25,17 @@ export default function AlunoDetalheCurso() {
     const item = detalheCursoQuery.data ?? {};
     const curso = item?.curso ?? {};
     const atribuicao = item?.atribuicao ?? {};
+    const competencia = item?.competencia ?? {};
 
     return {
-      titulo: curso?.titulo ?? "Curso sem título",
+      competencia: competencia?.nome ?? "Competência não identificada",
+      titulo: curso?.titulo || `Curso #${cursoId}`,
       descricao: curso?.descricao ?? "Sem descrição cadastrada.",
       status: atribuicao?.status ?? "nao_iniciado",
       notaFinal: atribuicao?.notaFinal ?? null,
       dataPrazo: atribuicao?.dataPrazo ?? null,
     };
-  }, [detalheCursoQuery.data]);
+  }, [detalheCursoQuery.data, cursoId]);
 
   return (
     <div className="space-y-6 p-6">
@@ -59,7 +61,8 @@ export default function AlunoDetalheCurso() {
           ) : (
             <div className="space-y-4">
               <div>
-                <h2 className="text-xl font-semibold">{dados.titulo}</h2>
+                <p className="text-sm text-muted-foreground">Competência: <span className="font-medium">{dados.competencia}</span></p>
+                <h2 className="mt-2 text-xl font-semibold">{dados.titulo}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">{dados.descricao}</p>
               </div>
 
