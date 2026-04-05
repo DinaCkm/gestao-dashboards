@@ -30,7 +30,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DualIndicators from "@/components/DualIndicators";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useCallback } from "react";
 const RelatorioAutoconhecimentoTab = lazy(() => import("./TesteDiscOnboarding").then(m => ({ default: m.default })));
 
 function getClassificacaoColor(classificacao: string): string {
@@ -173,6 +173,32 @@ export default function DashboardMeuPerfil() {
   const { data: pastWebinars } = trpc.webinars.past.useQuery();
   const { data: myAttendance } = trpc.attendance.myAttendance.useQuery();
   const { data: pendingWebinars } = trpc.attendance.pending.useQuery();
+  
+  // Query para cursos atribuidos ao aluno
+  const { data: cursosAtribuidosAoAluno, error: cursosError } = trpc.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.useQuery(
+    { alunoId: data?.aluno?.id || 0 },
+    { enabled: !!data?.aluno?.id }
+  );
+  
+  useEffect(() => {
+    if (cursosError) {
+      console.error('Erro ao carregar cursos atribuidos:', cursosError);
+    }
+  }, [cursosError]);
+  
+  // Funcao para acessar curso de uma competencia
+  const acessarCursoCompetencia = useCallback((competenciaId: number) => {
+    const cursosDaCompetencia = (cursosAtribuidosAoAluno || []).filter(
+      (c: any) => c.competenciaId === competenciaId
+    );
+    
+    if (cursosDaCompetencia.length > 0) {
+      const primeiroCurso = cursosDaCompetencia[0];
+      window.location.href = `/aluno/competencias-comp-tec/detalhe?cursoId=${primeiroCurso.cursoId}&cursoAtribuidoId=${primeiroCurso.id}`;
+    } else {
+      alert('Nenhum curso atribuido para esta competencia.');
+    }
+  }, [cursosAtribuidosAoAluno]);
 
   // State para relato de tarefa
   const [relatoText, setRelatoText] = useState<Record<number, string>>({});
@@ -1449,32 +1475,28 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                   <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${micro.peso === 'obrigatoria' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
                                     {micro.peso === 'obrigatoria' ? 'Obrigatoria' : 'Opcional'}
                                   </Badge>
-                                  {cicloStatus !== 'futuro' && (
-                                    <Button
-                                      size="sm"
-                                      variant="default"
-                                      className="h-7 px-2 text-xs"
-                                      onClick={async () => {
-                                        // Buscar cursos atribuídos ao aluno para esta competência
-                                        try {
-                                          const cursosAtribuidos = await trpc.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.query({ alunoId: data?.aluno?.id || 0 });
-                                          const cursosDaCompetencia = cursosAtribuidos.filter((c: any) => c.competenciaId === micro.competenciaId);
-                                          
-                                          if (cursosDaCompetencia.length > 0) {
-                                            const primeiroCurso = cursosDaCompetencia[0];
-                                            window.location.href = `/aluno/competencias-comp-tec/detalhe?cursoId=${primeiroCurso.cursoId}&cursoAtribuidoId=${primeiroCurso.id}`;
-                                          } else {
-                                            alert('Nenhum curso atribuído para esta competência.');
-                                          }
-                                        } catch (error) {
-                                          console.error('Erro ao buscar cursos:', error);
-                                          alert('Erro ao acessar o curso.');
-                                        }
-                                      }}
-                                    >
-                                      Acessar
-                                    </Button>
-                                  )}
+                                  {cicloStatus !== 'futuro' && (() => {
+                                    const cursosDaCompetencia = (cursosAtribuidosAoAluno || []).filter(
+                                      (c: any) => c.competenciaId === micro.competenciaId
+                                    );
+                                    
+                                    if (cursosDaCompetencia.length > 0) {
+                                      return (
+                                        <Button
+                                          size="sm"
+                                          variant="default"
+                                          className="h-7 px-2 text-xs"
+                                          onClick={() => acessarCursoCompetencia(micro.competenciaId)}
+                                        >
+                                          Acessar
+                                        </Button>
+                                      );
+                                    } else {
+                                      return (
+                                        <span className="text-xs text-gray-500 italic">Desculpe, ainda nao foi disponibilizado o curso para o desenvolvimento desta competencia, aguarde!</span>
+                                      );
+                                    }
+                                  })()}
                                 </div>
                               </div>
                               {/* Barra + métricas em linha */}
