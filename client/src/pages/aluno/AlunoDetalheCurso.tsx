@@ -16,22 +16,22 @@ export default function AlunoDetalheCurso() {
   const cursoId = getNumeroQuery(search, "cursoId");
   const cursoAtribuidoId = getNumeroQuery(search, "cursoAtribuidoId");
 
-  const detalheCursoQuery = trpc.competenciasCompTec.aluno.detalheCurso.useQuery(
-    { moduloId: cursoId },
-    { enabled: !!cursoId }
+  const detalheCursoQuery = trpc.competenciasCompTec.aluno.detalheCursoAtribuido.useQuery(
+    { cursoId, cursoAtribuidoId },
+    { enabled: !!cursoId && !!cursoAtribuidoId }
   );
 
   const dados = useMemo(() => {
     const item = detalheCursoQuery.data ?? {};
-    const curso = item?.curso ?? item?.modulo ?? item?.programa ?? item ?? {};
-    const progresso = item?.atribuicao ?? item?.progresso ?? item ?? {};
+    const curso = item?.curso ?? {};
+    const atribuicao = item?.atribuicao ?? {};
 
     return {
-      titulo: curso?.titulo ?? curso?.nome ?? "Curso sem título",
+      titulo: curso?.titulo ?? "Curso sem título",
       descricao: curso?.descricao ?? "Sem descrição cadastrada.",
-      status: progresso?.status ?? "nao_iniciado",
-      notaFinal: progresso?.notaFinal ?? null,
-      dataPrazo: progresso?.dataPrazo ?? null,
+      status: atribuicao?.status ?? "nao_iniciado",
+      notaFinal: atribuicao?.notaFinal ?? null,
+      dataPrazo: atribuicao?.dataPrazo ?? null,
     };
   }, [detalheCursoQuery.data]);
 

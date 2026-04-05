@@ -9244,6 +9244,35 @@ Responda APENAS em JSON com o formato especificado.`
           return curso ?? null;
         }),
 
+      detalheCursoAtribuido: protectedProcedure
+        .input(z.object({ cursoId: z.number(), cursoAtribuidoId: z.number() }))
+        .query(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) return null;
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) return null;
+
+          // Buscar dados do curso e da atribuição
+          const [resultado] = await database
+            .select({
+              curso: cursosCompetencias,
+              atribuicao: alunoCursoAtribuido,
+            })
+            .from(alunoCursoAtribuido)
+            .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+            .where(
+              and(
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, aluno.id),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId)
+              )
+            )
+            .limit(1);
+
+          return resultado ?? null;
+        }),
+
       iniciarAtividade: protectedProcedure
         .input(z.object({ moduloId: z.number() }))
         .mutation(async ({ ctx, input }) => {
