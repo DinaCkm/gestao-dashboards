@@ -174,35 +174,72 @@ export default function DashboardMeuPerfil() {
   const { data: myAttendance } = trpc.attendance.myAttendance.useQuery();
   const { data: pendingWebinars } = trpc.attendance.pending.useQuery();
   
-  // Query para cursos atribuidos ao aluno
-  const { data: cursosAtribuidosAoAluno, error: cursosError } = trpc.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.useQuery(
-    { alunoId: data?.aluno?.id || 0 },
-    { enabled: !!data?.aluno?.id }
-  );
+  // Funcao para normalizar curso - mesma logica do AlunoCatalogo
+  const normalizarCurso = (item: any) => {
+    const curso = item?.curso ?? item?.modulo ?? item?.programa ?? item ?? {};
+    const atribuicao = item?.atribuicao ?? item?.progresso ?? item ?? {};
+
+    return {
+      cursoAtribuidoId: Number(atribuicao?.id ?? item?.cursoAtribuidoId ?? item?.id ?? 0),
+      cursoId: Number(atribuicao?.cursoId ?? curso?.id ?? item?.cursoId ?? 0),
+      competenciaId: atribuicao?.competenciaId ?? item?.competenciaId ?? 0,
+      titulo: curso?.titulo ?? curso?.nome ?? item?.titulo ?? "Curso sem titulo",
+      descricao: curso?.descricao ?? item?.descricao ?? "",
+      status: atribuicao?.status ?? item?.status ?? "nao_iniciado",
+      dataPrazo: atribuicao?.dataPrazo ?? item?.dataPrazo ?? null,
+      notaFinal: atribuicao?.notaFinal ?? item?.notaFinal ?? null,
+    };
+  };
+
+  // Query para cursos atribuidos ao aluno - usar versao do aluno igual ao catalogo
+  const { data: cursosAtribuidosAoAluno, error: cursosError } = trpc.competenciasCompTec.aluno.getCursosAtribuidos.useQuery();
+  
+  // Normalizar e filtrar cursos por competencia
+  const cursosPorCompetencia = useMemo(() => {
+    if (!cursosAtribuidosAoAluno) return {};
+    
+    const mapa: Record<number, any[]> = {};
+    cursosAtribuidosAoAluno.forEach((item: any) => {
+      const normalizado = normalizarCurso(item);
+      if (normalizado.cursoId > 0 && normalizado.competenciaId > 0) {
+        if (!mapa[normalizado.competenciaId]) {
+          mapa[normalizado.competenciaId] = [];
+        }
+        mapa[normalizado.competenciaId].push(normalizado);
+      }
+    });
+    return mapa;
+  }, [cursosAtribuidosAoAluno]);
   
   useEffect(() => {
     if (cursosError) {
       console.error('Erro ao carregar cursos atribuidos:', cursosError);
+      toast.error('Erro ao carregar cursos atribuidos');
     }
   }, [cursosError]);
   
   // Funcao para acessar curso de uma competencia
   const acessarCursoCompetencia = useCallback((competenciaId: number) => {
-    console.log('DEBUG: cursosAtribuidosAoAluno =', cursosAtribuidosAoAluno);
-    const cursosDaCompetencia = (cursosAtribuidosAoAluno || []).filter(
-      (c: any) => c.competenciaId === competenciaId
-    );
-    console.log('DEBUG: cursosDaCompetencia =', cursosDaCompetencia);
+    const cursosDaCompetencia = cursosPorCompetencia[competenciaId] ?? [];
     
     if (cursosDaCompetencia.length > 0) {
       const primeiroCurso = cursosDaCompetencia[0];
-      console.log('DEBUG: primeiroCurso =', primeiroCurso);
-      console.log('DEBUG: cursoId =', primeiroCurso.cursoId, 'cursoAtribuidoId =', primeiroCurso.id);
-      window.location.href = `/aluno/competencias-comp-tec/detalhe?cursoId=${primeiroCurso.cursoId}&cursoAtribuidoId=${primeiroCurso.id}`;
+      console.log('DEBUG: primeiroCurso normalizado =', primeiroCurso);
+      
+      if (primeiroCurso.cursoId <= 0) {
+        console.error('ERRO: cursoId invalido!', primeiroCurso);
+        toast.error('Erro: ID do curso invalido. Contate o suporte.');
+        return;
+      }
+      
+      window.location.href = `/aluno/competencias-comp-tec/detalhe?cursoId=${primeiroCurso.cursoId}&cursoAtribuidoId=${primeiroCurso.cursoAtribuidoId}`;
     } else {
-      alert('Nenhum curso atribuido para esta competencia.');
+      toast.error('Nenhum curso atribuido para esta competencia.');
     }
-  }, [cursosAtribuidosAoAluno]);
+  }, [cursosPorCompetencia]);
+  
+  // Remover dependencia de cursosAtribuidosAoAluno do useCallback anterior
+  // (ja foi substituida por cursosPorCompetencia)
 
   // State para relato de tarefa
   const [relatoText, setRelatoText] = useState<Record<number, string>>({});
