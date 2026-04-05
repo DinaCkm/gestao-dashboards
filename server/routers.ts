@@ -9204,17 +9204,27 @@ Responda APENAS em JSON com o formato especificado.`
         const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
         if (!aluno) return [];
 
-        return await database
+        const resultados = await database
           .select({
             atribuicao: alunoCursoAtribuido,
             curso: cursosCompetencias,
-            atividades: atividadesCurso,
+            competencia: competenciasCompTec,
           })
           .from(alunoCursoAtribuido)
           .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
-          .leftJoin(atividadesCurso, eq(cursosCompetencias.id, atividadesCurso.cursoId))
+          .leftJoin(competenciasCompTec, eq(cursosCompetencias.competenciaId, competenciasCompTec.id))
           .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
           .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+
+        // Remover duplicatas
+        const cursosUnicos = new Map();
+        for (const resultado of resultados) {
+          const chave = resultado.atribuicao.id;
+          if (!cursosUnicos.has(chave)) {
+            cursosUnicos.set(chave, resultado);
+          }
+        }
+        return Array.from(cursosUnicos.values());
       }),
 
       detalheCurso: protectedProcedure
