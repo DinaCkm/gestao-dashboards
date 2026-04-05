@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +11,8 @@ function getNumeroQuery(search: string, chave: string) {
 
 export default function AlunoAtividade() {
   const [location, setLocation] = useLocation();
-  const [search] = useState(() => location.split("?")[1] ?? "");
 
+  const search = typeof window !== "undefined" ? window.location.search : "";
   const cursoId = getNumeroQuery(search, "cursoId");
   const cursoAtribuidoId = getNumeroQuery(search, "cursoAtribuidoId");
 
@@ -25,7 +25,8 @@ export default function AlunoAtividade() {
 
   async function handleIniciar() {
     const result = await iniciarAtividadeMutation.mutateAsync({
-      moduloId: cursoId,
+      cursoId: cursoId,
+      cursoAtribuidoId: cursoAtribuidoId,
     });
 
     const avaliacaoId =
@@ -95,29 +96,7 @@ export default function AlunoAtividade() {
         </>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Iniciar atividade</CardTitle>
-          <CardDescription>
-            Ao iniciar, o sistema prepara a avaliação do curso selecionado.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-md border p-4 text-sm text-muted-foreground">
-            Regras do módulo: banco com 30 questões, 15 sorteadas e nota mínima 8.
-          </div>
 
-          <Button onClick={handleIniciar} disabled={iniciarAtividadeMutation.isPending}>
-            {iniciarAtividadeMutation.isPending ? "Iniciando..." : "Iniciar atividade / avaliação"}
-          </Button>
-
-          {iniciarAtividadeMutation.error && (
-            <p className="text-sm text-red-600">
-              {iniciarAtividadeMutation.error.message}
-            </p>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
