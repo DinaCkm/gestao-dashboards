@@ -145,7 +145,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Users, label: "Cadastros", path: "/cadastros" },
       { icon: GraduationCap, label: "Turmas", path: "/turmas" },
       { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias" },
-      { icon: BookOpen, label: "Competências Comportamentais", path: "/competencias-comp-tec" },
+      { icon: BookOpen, label: "CURSOS_CRIAÇÃO", path: "/competencias-comp-tec" },
       { icon: Calculator, label: "Fórmulas", path: "/formulas" },
       { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
       { icon: Edit3, label: "Editar Mentorias", path: "/editar-mentorias" },
