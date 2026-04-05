@@ -9268,11 +9268,11 @@ Responda APENAS em JSON com o formato especificado.`
             .select({
               curso: cursosCompetencias,
               atribuicao: alunoCursoAtribuido,
-              competencia: competenciasCompTec,
+              competencia: competencias,
             })
             .from(alunoCursoAtribuido)
             .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
-            .leftJoin(competenciasCompTec, eq(cursosCompetencias.competenciaId, competenciasCompTec.id))
+            .leftJoin(competencias, eq(cursosCompetencias.competenciaId, competencias.id))
             .where(
               and(
                 eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
