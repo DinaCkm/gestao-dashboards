@@ -24,7 +24,7 @@ export default function AlunoCatalogo() {
   const [, setLocation] = useLocation();
   const [busca, setBusca] = useState("");
 
-  const meusCursosQuery = trpc.competenciasCompTec.aluno.meusCursos.useQuery();
+  const meusCursosQuery = trpc.competenciasCompTec.aluno.getCursosAtribuidos.useQuery();
 
   const cursos = useMemo(() => {
     const base = (meusCursosQuery.data ?? [])
