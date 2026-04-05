@@ -128,6 +128,8 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias" },
       { icon: CalendarDays, label: "Painel de Agendamentos", path: "/agendamentos" },
       { icon: BookOpen, label: "Atribuir Cursos", path: "/mentor/atribuir-cursos" },
+      { icon: Edit3, label: "Editar Mentorias", path: "/editar-mentorias" },
+      { icon: DollarSign, label: "Precificação de Sessões", path: "/precificacao-sessoes" },
     ],
   },
   {
@@ -151,8 +153,6 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Zap, label: "Atividades Extras", path: "/atividades-extras" },
       { icon: Calculator, label: "Fórmulas", path: "/formulas" },
       { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
-      { icon: Edit3, label: "Editar Mentorias", path: "/editar-mentorias" },
-      { icon: DollarSign, label: "Precificação de Sessões", path: "/precificacao-sessoes" },
     ],
   },
   {
