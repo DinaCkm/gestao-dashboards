@@ -1454,9 +1454,22 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                       size="sm"
                                       variant="default"
                                       className="h-7 px-2 text-xs"
-                                      onClick={() => {
-                                        // Navegar para a pagina de competencias com o modulo selecionado
-                                        window.location.href = `/aluno/competencias-comp-tec?moduloId=${micro.moduloId || micro.id}`;
+                                      onClick={async () => {
+                                        // Buscar cursos atribuídos ao aluno para esta competência
+                                        try {
+                                          const cursosAtribuidos = await trpc.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.query({ alunoId: data?.aluno?.id || 0 });
+                                          const cursosDaCompetencia = cursosAtribuidos.filter((c: any) => c.competenciaId === micro.competenciaId);
+                                          
+                                          if (cursosDaCompetencia.length > 0) {
+                                            const primeiroCurso = cursosDaCompetencia[0];
+                                            window.location.href = `/aluno/competencias-comp-tec/detalhe?cursoId=${primeiroCurso.cursoId}&cursoAtribuidoId=${primeiroCurso.id}`;
+                                          } else {
+                                            alert('Nenhum curso atribuído para esta competência.');
+                                          }
+                                        } catch (error) {
+                                          console.error('Erro ao buscar cursos:', error);
+                                          alert('Erro ao acessar o curso.');
+                                        }
                                       }}
                                     >
                                       Acessar
