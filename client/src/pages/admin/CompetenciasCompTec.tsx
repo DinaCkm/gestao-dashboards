@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,9 +13,18 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ArrowLeft, Edit2, Trash2 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export default function CompetenciasCompTec() {
+  const [, setLocation] = useLocation();
   const [selectedCompetenciaId, setSelectedCompetenciaId] = useState<number | null>(null);
   const [cursoTitulo, setCursoTitulo] = useState('');
   const [cursoDescricao, setCursoDescricao] = useState('');
@@ -27,6 +37,9 @@ export default function CompetenciasCompTec() {
     { enabled: !!selectedCompetenciaId }
   );
 
+  // Query para listar TODOS os cursos
+  const { data: todosCursos = [] } = trpc.competenciasCompTec.admin.listarTodosCursos.useQuery();
+
   // Mutations
   const utils = trpc.useUtils();
   
@@ -36,6 +49,7 @@ export default function CompetenciasCompTec() {
       await utils.competenciasCompTec.admin.listarCursos.invalidate({
         competenciaId: selectedCompetenciaId!,
       });
+      await utils.competenciasCompTec.admin.listarTodosCursos.invalidate();
       setCursoTitulo('');
       setCursoDescricao('');
     },
@@ -50,6 +64,7 @@ export default function CompetenciasCompTec() {
       await utils.competenciasCompTec.admin.listarCursos.invalidate({
         competenciaId: selectedCompetenciaId!,
       });
+      await utils.competenciasCompTec.admin.listarTodosCursos.invalidate();
     },
     onError: (error: any) => {
       toast.error(`Erro ao inativar curso: ${error.message}`);
@@ -69,11 +84,36 @@ export default function CompetenciasCompTec() {
     });
   };
 
+  // Agrupar cursos por competência para a tabela
+  const cursosPorCompetencia = todosCursos.reduce((acc: any, curso: any) => {
+    const compId = curso.competenciaId;
+    if (!acc[compId]) {
+      acc[compId] = {
+        competencia: competencias.find((c: any) => c.id === compId)?.nome || `Competência ${compId}`,
+        cursos: [],
+      };
+    }
+    acc[compId].cursos.push(curso);
+    return acc;
+  }, {});
+
   return (
     <div className="space-y-6 p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Competências Comportamentais e Técnicas</h1>
-        <p className="text-gray-600 mt-2">Administração de cursos, conteúdos e estrutura do módulo.</p>
+      {/* Header com título e botão voltar */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Criação e Gerenciamento de Cursos</h1>
+          <p className="text-gray-600 mt-2">Administração de cursos, conteúdos e estrutura do módulo.</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setLocation("/dashboard/admin")}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -138,7 +178,7 @@ export default function CompetenciasCompTec() {
           </CardContent>
         </Card>
 
-        {/* SEÇÃO 2: LISTAR CURSOS */}
+        {/* SEÇÃO 2: LISTAR CURSOS DA COMPETÊNCIA SELECIONADA */}
         <Card>
           <CardHeader>
             <CardTitle>Cursos Cadastrados</CardTitle>
@@ -207,13 +247,95 @@ export default function CompetenciasCompTec() {
             <Button
               type="button"
               className="w-full"
-              onClick={() => window.location.href = "/admin/competencias-comp-tec/atividades"}
+              onClick={() => setLocation("/admin/competencias-comp-tec/atividades")}
             >
               Abrir Administração de Atividades
             </Button>
           </CardContent>
         </Card>
       </div>
+
+      {/* SEÇÃO 4: VISUALIZAÇÃO DE TODOS OS CURSOS */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Todos os Cursos Criados</CardTitle>
+          <CardDescription>
+            Visualize, edite ou inative todos os cursos do sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {todosCursos && todosCursos.length > 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Competência</TableHead>
+                    <TableHead>Título do Curso</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {todosCursos.map((curso: any) => {
+                    const competencia = competencias.find((c: any) => c.id === curso.competenciaId);
+                    return (
+                      <TableRow key={curso.id}>
+                        <TableCell className="font-medium">
+                          {competencia?.nome || `Competência ${curso.competenciaId}`}
+                        </TableCell>
+                        <TableCell>{curso.titulo}</TableCell>
+                        <TableCell className="text-sm text-gray-600 max-w-xs truncate">
+                          {curso.descricao || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {curso.isActive ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              Ativo
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              Inativo
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedCompetenciaId(curso.competenciaId);
+                              toast.info('Selecione o curso acima para editar');
+                            }}
+                            title="Editar"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => inativarCursoMutation.mutateAsync({ cursoId: curso.id })}
+                            disabled={inativarCursoMutation.isPending}
+                            title={curso.isActive ? 'Inativar' : 'Ativar'}
+                          >
+                            {curso.isActive ? (
+                              <Eye className="h-4 w-4" />
+                            ) : (
+                              <EyeOff className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600 text-center py-8">Nenhum curso criado ainda</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

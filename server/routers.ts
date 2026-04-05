@@ -8661,6 +8661,17 @@ Responda APENAS em JSON com o formato especificado.`
             .orderBy(asc(cursosCompetencias.ordem), asc(cursosCompetencias.titulo));
         }),
 
+      listarTodosCursos: protectedProcedure
+        .query(async () => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select()
+            .from(cursosCompetencias)
+            .orderBy(asc(cursosCompetencias.competenciaId), asc(cursosCompetencias.ordem), asc(cursosCompetencias.titulo));
+        }),
+
       obterCurso: protectedProcedure
         .input(z.object({ cursoId: z.number() }))
         .query(async ({ input }) => {
