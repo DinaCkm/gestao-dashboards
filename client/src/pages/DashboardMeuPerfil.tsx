@@ -174,72 +174,96 @@ export default function DashboardMeuPerfil() {
   const { data: myAttendance } = trpc.attendance.myAttendance.useQuery();
   const { data: pendingWebinars } = trpc.attendance.pending.useQuery();
   
-  // Funcao para normalizar curso - mesma logica do AlunoCatalogo
-  const normalizarCurso = (item: any) => {
-    const curso = item?.curso ?? item?.modulo ?? item?.programa ?? item ?? {};
-    const atribuicao = item?.atribuicao ?? item?.progresso ?? item ?? {};
+// ===============================
+// CURSOS ATRIBUÍDOS DO ALUNO
+// ===============================
 
-    return {
-      cursoAtribuidoId: Number(atribuicao?.id ?? item?.cursoAtribuidoId ?? item?.id ?? 0),
-      cursoId: Number(atribuicao?.cursoId ?? curso?.id ?? item?.cursoId ?? 0),
-      competenciaId: atribuicao?.competenciaId ?? item?.competenciaId ?? 0,
-      titulo: curso?.titulo ?? curso?.nome ?? item?.titulo ?? "Curso sem titulo",
-      descricao: curso?.descricao ?? item?.descricao ?? "",
-      status: atribuicao?.status ?? item?.status ?? "nao_iniciado",
-      dataPrazo: atribuicao?.dataPrazo ?? item?.dataPrazo ?? null,
-      notaFinal: atribuicao?.notaFinal ?? item?.notaFinal ?? null,
-    };
+function normalizarCursoAtribuido(item: any) {
+  const curso = item?.curso ?? item?.modulo ?? item?.programa ?? item ?? {};
+  const atribuicao = item?.atribuicao ?? item?.progresso ?? item ?? {};
+
+  return {
+    cursoAtribuidoId: Number(atribuicao?.id ?? item?.cursoAtribuidoId ?? item?.id ?? 0),
+    cursoId: Number(atribuicao?.cursoId ?? curso?.id ?? item?.cursoId ?? 0),
+    competenciaId: Number(
+      atribuicao?.competenciaId ??
+      item?.competenciaId ??
+      item?.competencia?.id ??
+      curso?.competenciaId ??
+      0
+    ),
+    titulo: curso?.titulo ?? curso?.nome ?? item?.titulo ?? "Curso sem título",
+    descricao: curso?.descricao ?? item?.descricao ?? "",
+    status: atribuicao?.status ?? item?.status ?? "nao_iniciado",
+    dataPrazo: atribuicao?.dataPrazo ?? item?.dataPrazo ?? null,
+    notaFinal: atribuicao?.notaFinal ?? item?.notaFinal ?? null,
+    raw: item,
   };
+}
 
-  // Query para cursos atribuidos ao aluno - usar versao do aluno igual ao catalogo
-  const { data: cursosAtribuidosAoAluno, error: cursosError } = trpc.competenciasCompTec.aluno.getCursosAtribuidos.useQuery();
-  
-  // Normalizar e filtrar cursos por competencia
-  const cursosPorCompetencia = useMemo(() => {
-    if (!cursosAtribuidosAoAluno) return {};
-    
-    const mapa: Record<number, any[]> = {};
-    cursosAtribuidosAoAluno.forEach((item: any) => {
-      const normalizado = normalizarCurso(item);
-      if (normalizado.cursoId > 0 && normalizado.competenciaId > 0) {
-        if (!mapa[normalizado.competenciaId]) {
-          mapa[normalizado.competenciaId] = [];
-        }
-        mapa[normalizado.competenciaId].push(normalizado);
-      }
+const {
+  data: cursosAtribuidosRaw,
+  error: cursosError,
+  isLoading: cursosLoading,
+} = trpc.competenciasCompTec.aluno.getCursosAtribuidos.useQuery(undefined, {
+  enabled: !!data?.aluno?.id,
+});
+
+useEffect(() => {
+  if (cursosError) {
+    console.error("Erro ao carregar cursos atribuídos do aluno:", cursosError);
+  }
+}, [cursosError]);
+
+const cursosAtribuidosAoAluno = useMemo(() => {
+  return (cursosAtribuidosRaw ?? [])
+    .map(normalizarCursoAtribuido)
+    .filter((item: any) => item.cursoAtribuidoId > 0);
+}, [cursosAtribuidosRaw]);
+
+const acessarCursoCompetencia = useCallback((competenciaId: number) => {
+  const cursosDaCompetencia = cursosAtribuidosAoAluno.filter(
+    (c: any) => Number(c.competenciaId) === Number(competenciaId)
+  );
+
+  console.log("DEBUG: cursosAtribuidosRaw =", cursosAtribuidosRaw);
+  console.log("DEBUG: cursosAtribuidosNormalizados =", cursosAtribuidosAoAluno);
+  console.log("DEBUG: competenciaId clicada =", competenciaId);
+  console.log("DEBUG: cursosDaCompetencia =", cursosDaCompetencia);
+
+  if (cursosDaCompetencia.length === 0) {
+    toast.error("Nenhum curso atribuído para esta competência.");
+    return;
+  }
+
+  const primeiroCursoValido =
+    cursosDaCompetencia.find((c: any) => c.cursoId > 0) ?? cursosDaCompetencia[0];
+
+  const cursoId = Number(primeiroCursoValido?.cursoId ?? 0);
+  const cursoAtribuidoId = Number(primeiroCursoValido?.cursoAtribuidoId ?? 0);
+
+  console.log("DEBUG: primeiroCursoValido =", primeiroCursoValido);
+  console.log("DEBUG: cursoId final =", cursoId);
+  console.log("DEBUG: cursoAtribuidoId final =", cursoAtribuidoId);
+
+  if (cursoId <= 0 || cursoAtribuidoId <= 0) {
+    console.error("ERRO: IDs inválidos para navegação", {
+      competenciaId,
+      cursoId,
+      cursoAtribuidoId,
+      primeiroCursoValido,
+      cursosDaCompetencia,
+      cursosAtribuidosRaw,
     });
-    return mapa;
-  }, [cursosAtribuidosAoAluno]);
-  
-  useEffect(() => {
-    if (cursosError) {
-      console.error('Erro ao carregar cursos atribuidos:', cursosError);
-      toast.error('Erro ao carregar cursos atribuidos');
-    }
-  }, [cursosError]);
-  
-  // Funcao para acessar curso de uma competencia
-  const acessarCursoCompetencia = useCallback((competenciaId: number) => {
-    const cursosDaCompetencia = cursosPorCompetencia[competenciaId] ?? [];
-    
-    if (cursosDaCompetencia.length > 0) {
-      const primeiroCurso = cursosDaCompetencia[0];
-      console.log('DEBUG: primeiroCurso normalizado =', primeiroCurso);
-      
-      if (primeiroCurso.cursoId <= 0) {
-        console.error('ERRO: cursoId invalido!', primeiroCurso);
-        toast.error('Erro: ID do curso invalido. Contate o suporte.');
-        return;
-      }
-      
-      window.location.href = `/aluno/competencias-comp-tec/detalhe?cursoId=${primeiroCurso.cursoId}&cursoAtribuidoId=${primeiroCurso.cursoAtribuidoId}`;
-    } else {
-      toast.error('Nenhum curso atribuido para esta competencia.');
-    }
-  }, [cursosPorCompetencia]);
-  
-  // Remover dependencia de cursosAtribuidosAoAluno do useCallback anterior
-  // (ja foi substituida por cursosPorCompetencia)
+
+    toast.error("Não foi possível abrir o curso. O ID do curso está inválido.");
+    return;
+  }
+
+  setLocation(
+    `/aluno/competencias-comp-tec/detalhe?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
+  );
+}, [cursosAtribuidosAoAluno, cursosAtribuidosRaw, setLocation]);
 
   // State para relato de tarefa
   const [relatoText, setRelatoText] = useState<Record<number, string>>({});
