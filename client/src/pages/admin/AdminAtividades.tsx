@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
+import { ArrowLeft } from "lucide-react";
 
 type TipoAtividade = "genially" | "video" | "podcast" | "tedtalk" | "livro" | "intro";
 
@@ -26,6 +28,7 @@ const TIPOS_ATIVIDADE: { value: TipoAtividade; label: string }[] = [
 ];
 
 export default function AdminAtividades() {
+  const [, setLocation] = useLocation();
   const [competenciaId, setCompetenciaId] = useState<number>(0);
   const [cursoId, setCursoId] = useState<number>(0);
   const [formAtividade, setFormAtividade] = useState({
@@ -104,11 +107,22 @@ export default function AdminAtividades() {
 
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Administração de Atividades</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Selecione a competência, depois o curso, e adicione atividades.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Administração de Atividades</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Selecione a competência, depois o curso, e adicione atividades.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setLocation("/competencias-comp-tec")}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
