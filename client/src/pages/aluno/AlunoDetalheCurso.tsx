@@ -1,24 +1,21 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-function getNumeroQuery(search: string, chave: string) {
-  const params = new URLSearchParams(search);
-  return Number(params.get(chave) ?? 0);
-}
-
 export default function AlunoDetalheCurso() {
-  const [location, setLocation] = useLocation();
-  const [search] = useState(() => location.split("?")[1] ?? "");
+  const [, setLocation] = useLocation();
 
-  const cursoId = getNumeroQuery(search, "cursoId");
-  const cursoAtribuidoId = getNumeroQuery(search, "cursoAtribuidoId");
+  const search = typeof window !== "undefined" ? window.location.search : "";
+  const params = new URLSearchParams(search);
+
+  const cursoId = Number(params.get("cursoId") ?? 0);
+  const cursoAtribuidoId = Number(params.get("cursoAtribuidoId") ?? 0);
 
   const detalheCursoQuery = trpc.competenciasCompTec.aluno.detalheCursoAtribuido.useQuery(
     { cursoId, cursoAtribuidoId },
-    { enabled: !!cursoId && !!cursoAtribuidoId }
+    { enabled: cursoId > 0 && cursoAtribuidoId > 0 }
   );
 
   const dados = useMemo(() => {
@@ -61,7 +58,9 @@ export default function AlunoDetalheCurso() {
           ) : (
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-muted-foreground">Competência: <span className="font-medium">{dados.competencia}</span></p>
+                <p className="text-sm text-muted-foreground">
+                  Competência: <span className="font-medium">{dados.competencia}</span>
+                </p>
                 <h2 className="mt-2 text-xl font-semibold">{dados.titulo}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">{dados.descricao}</p>
               </div>
