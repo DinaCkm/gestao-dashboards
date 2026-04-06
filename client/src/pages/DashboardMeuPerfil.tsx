@@ -1553,7 +1553,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                   <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${micro.peso === 'obrigatoria' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
                                     {micro.peso === 'obrigatoria' ? 'Obrigatoria' : 'Opcional'}
                                   </Badge>
-                                  {cicloStatus !== 'futuro' && primeiroCurso && (
+                                  {primeiroCurso && (
                                     <Button
                                       size="sm"
                                       variant="default"
