@@ -1433,3 +1433,26 @@ export const alunoCursoAtribuido = mysqlTable("aluno_curso_atribuido", {
 });
 export type AlunoCursoAtribuido = typeof alunoCursoAtribuido.$inferSelect;
 export type InsertAlunoCursoAtribuido = typeof alunoCursoAtribuido.$inferInsert;
+
+/**
+ * Aluno Atividade Progresso - Rastreamento de progresso do aluno em cada atividade de um curso
+ * Tabela reintroduzida para suportar o fluxo de atividades com bloqueio sequencial
+ */
+export const alunoAtividadeProgresso = mysqlTable("aluno_atividade_progresso", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  cursoAtribuidoId: int("cursoAtribuidoId").notNull(),
+  atividadeId: int("atividadeId").notNull(),
+  status: mysqlEnum("status", ["bloqueada", "disponivel", "em_andamento", "concluida", "aprovada", "reprovada"]).default("bloqueada").notNull(),
+  iniciadoEm: timestamp("iniciadoEm"),
+  concluidoEm: timestamp("concluidoEm"),
+  avaliacaoLiberada: int("avaliacaoLiberada").default(0).notNull(),
+  notaFinal: decimal("notaFinal", { precision: 3, scale: 1 }),
+  aprovado: int("aprovado").default(0).notNull(),
+  tentativas: int("tentativas").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AlunoAtividadeProgresso = typeof alunoAtividadeProgresso.$inferSelect;
+export type InsertAlunoAtividadeProgresso = typeof alunoAtividadeProgresso.$inferInsert;
