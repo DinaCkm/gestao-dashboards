@@ -12,6 +12,8 @@ import { iniciarCronOnboardingReminders } from "../cronOnboardingReminders";
 import { iniciarCronVencimentoCiclo } from "../cronVencimentoCiclo";
 import { iniciarCronLembreteAplicabilidade } from "../cronLembreteAplicabilidade";
 import { ENV } from "./env";
+import multer from "multer";
+import { storagePut } from "../storage";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -38,8 +40,48 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+
+  // Configure multer for file uploads
+  const upload = multer({ storage: multer.memoryStorage() });
+
+  // Upload endpoint for images
+  app.post("/api/upload", upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file provided" });
+      }
+
+      // Validate file type
+      const allowedMimes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      if (!allowedMimes.includes(req.file.mimetype)) {
+        return res.status(400).json({ error: "Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed" });
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if (req.file.size > maxSize) {
+        return res.status(400).json({ error: "File too large. Maximum size is 5MB" });
+      }
+
+      // Generate unique filename
+      const timestamp = Date.now();
+      const randomStr = Math.random().toString(36).substring(7);
+      const fileExt = req.file.mimetype.split("/")[1];
+      const fileName = `atividades/${timestamp}-${randomStr}.${fileExt}`;
+
+      // Upload to S3
+      const { url } = await storagePut(fileName, req.file.buffer, req.file.mimetype);
+
+      res.json({ url, success: true });
+    } catch (error: any) {
+      console.error("[Upload] Error:", error);
+      res.status(500).json({ error: "Upload failed", message: error?.message });
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",
@@ -48,6 +90,7 @@ async function startServer() {
       createContext,
     })
   );
+
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
