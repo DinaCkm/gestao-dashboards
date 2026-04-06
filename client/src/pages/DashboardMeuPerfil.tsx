@@ -1617,30 +1617,16 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                               const temApenas1Comp = microsDesteCiclo.length === 1;
                               const microUnico = temApenas1Comp ? microsDesteCiclo[0] : null;
 
-                              // Se tem apenas 1 competência, renderizar tudo em uma barra única
+                              // Se tem apenas 1 competência, usar renderMicro dentro de um container de ciclo
                               if (temApenas1Comp && microUnico) {
-                                const aulasDisp = microUnico.aulasDisponiveis ?? 0;
-                                const aulasConc = microUnico.aulasConcluidas ?? 0;
-                                const aulasAnd = microUnico.aulasEmAndamento ?? 0;
-                                const competenciaConcluida = aulasDisp > 0 && aulasConc >= aulasDisp;
-                                const notaPlataforma = microUnico.notaPlataforma ?? 0;
-                                const progressoAulas = aulasDisp > 0 ? (aulasConc / aulasDisp) * 100 : 0;
-                                const nivel = microUnico.nivelAtual ?? 0;
-                                const meta = microUnico.metaFinal ?? 100;
-                                const barColor = competenciaConcluida ? "bg-emerald-500" : 
-                                  progressoAulas >= 70 ? "bg-amber-500" : 
-                                  progressoAulas > 0 ? "bg-blue-500" : "bg-gray-300";
-
                                 return (
                                   <div key={ciclo.cicloId || idx} className={`rounded-xl border overflow-hidden ${
                                     isEmAndamento ? 'border-blue-300' : 'border-gray-200'
                                   }`}>
-                                    {/* Barra única: cabeçalho + competência fundidos */}
+                                    {/* Cabeçalho do ciclo */}
                                     <div className={`px-4 py-3 ${
-                                      isEmAndamento ? 'bg-gradient-to-r from-blue-50 to-indigo-50' : 
-                                      competenciaConcluida ? 'bg-emerald-50/50' : 'bg-gray-50'
+                                      isEmAndamento ? 'bg-gradient-to-r from-blue-50 to-indigo-50' : 'bg-gray-50'
                                     }`}>
-                                      {/* Linha 1: Nome + status + datas */}
                                       <div className="flex items-center justify-between flex-wrap gap-2">
                                         <div className="flex items-center gap-2">
                                           <div className={`w-2.5 h-2.5 rounded-full ${statusColors.bg}`} />
@@ -1659,46 +1645,16 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                               {diasRestantes} dias restantes
                                             </Badge>
                                           )}
-                                          {competenciaConcluida && (
-                                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 text-[10px] px-1.5 py-0">Concluída</Badge>
-                                          )}
-                                          {ciclo.status === 'finalizado' && !competenciaConcluida && microUnico.peso === 'obrigatoria' && (
-                                            <Badge className="bg-red-100 text-red-700 border-red-300 text-[10px] px-1.5 py-0">Vencida</Badge>
-                                          )}
-                                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${microUnico.peso === 'obrigatoria' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
-                                            {microUnico.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
-                                          </Badge>
                                         </div>
                                       </div>
-
-                                      {/* Linha 2: Barra de progresso única */}
-                                      <div className="flex items-center gap-2 mt-2">
-                                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                          <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${progressoAulas}%` }} />
-                                        </div>
-                                        <span className={`text-xs font-bold min-w-[35px] text-right ${competenciaConcluida ? 'text-emerald-600' : progressoAulas > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
-                                          {progressoAulas > 0 ? `${(progressoAulas ?? 0).toFixed(0)}%` : '—'}
-                                        </span>
-                                      </div>
-
-                                      {/* Linha 3: Métricas em linha */}
-                                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] text-gray-500">
-                                        {aulasDisp > 0 && <span>Aulas: <strong className="text-gray-700">{aulasConc}/{aulasDisp}</strong></span>}
-                                        {aulasAnd > 0 && <span>Em andamento: <strong className="text-blue-600">{aulasAnd}</strong></span>}
-                                        {det.webinars && <span className="flex items-center gap-0.5"><Video className="h-2.5 w-2.5 text-blue-500" />{det.webinars.presentes || 0}/{det.webinars.total || 0} webinars</span>}
-                                        {det.tarefas && <span className="flex items-center gap-0.5"><ClipboardCheck className="h-2.5 w-2.5 text-emerald-500" />{det.tarefas.entregues || 0}/{det.tarefas.total || 0} tarefas</span>}
-                                        {det.avaliacoes && det.avaliacoes.provasRealizadas > 0 && <span className="flex items-center gap-0.5"><GraduationCap className="h-2.5 w-2.5 text-red-500" />{det.avaliacoes.provasRealizadas} provas</span>}
-                                        {notaPlataforma > 0 && <span>Nota: <strong className={notaPlataforma >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{(notaPlataforma ?? 0).toFixed(0)}</strong></span>}
-                                        {nivel > 0 && <span>Nível Mentora: <strong className="text-gray-700">{(nivel ?? 0).toFixed(0)}%</strong></span>}
-                                        <span>Meta: <strong className="text-gray-700">{meta > 0 ? `${(meta ?? 0).toFixed(0)}%` : '—'}</strong></span>
-                                      </div>
-                                      {microUnico.justificativa && (
-                                        <div className="mt-1.5 p-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] text-gray-700">
-                                          <strong>Justificativa:</strong> {microUnico.justificativa}
-                                        </div>
-                                      )}
                                     </div>
 
+                                    {/* Corpo: renderizar a competência única com renderMicro */}
+                                    <div className="px-4 py-3 space-y-3">
+                                      <div className="space-y-2">
+                                        {renderMicro(microUnico)}
+                                      </div>
+                                    </div>
                                   </div>
                                 );
                                }
