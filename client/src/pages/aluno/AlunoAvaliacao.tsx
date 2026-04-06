@@ -31,7 +31,9 @@ export default function AlunoAvaliacao() {
   }, [iniciarAtividadeMutation.data]);
 
   async function carregarQuestoes() {
-    await iniciarAtividadeMutation.mutateAsync({ moduloId: cursoId });
+    // Nota: Esta função precisa do atividadeId, que não está disponível aqui
+    // Por enquanto, apenas mostra um aviso
+    alert("Carregamento de questões requer atividadeId");
   }
 
   function atualizarResposta(questaoId: string, valor: string) {
@@ -50,10 +52,10 @@ export default function AlunoAvaliacao() {
 
     try {
       const result = await submeterAvaliacaoMutation.mutateAsync({
-        moduloId: cursoId,
+        cursoId,
+        cursoAtribuidoId,
+        atividadeId: avaliacaoId, // Usar avaliacaoId como atividadeId
         nota,
-        totalQuestoes,
-        acertos,
         respostas,
       });
 

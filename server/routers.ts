@@ -9496,7 +9496,7 @@ Responda APENAS em JSON com o formato especificado.`
             .update(alunoAtividadeProgresso)
             .set({
               status: "concluida",
-              concluidaEm: new Date(),
+              concluidoEm: new Date(),
               avaliacaoLiberada: 1,
               updatedAt: new Date(),
             })

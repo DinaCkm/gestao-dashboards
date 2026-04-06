@@ -21,8 +21,8 @@ export default function AlunoAtividade() {
 
   // Buscar atividades do curso
   const atividadesQuery = trpc.competenciasCompTec.aluno.obterAtividadesCurso.useQuery(
-    { cursoId },
-    { enabled: !!cursoId }
+    { cursoId, cursoAtribuidoId },
+    { enabled: !!cursoId && !!cursoAtribuidoId }
   );
 
   // Mutation para iniciar atividade
