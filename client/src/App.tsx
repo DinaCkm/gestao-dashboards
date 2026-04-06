@@ -70,7 +70,7 @@ import MentorListaAlunos from "./pages/mentor/MentorListaAlunos";
 import MentorAtribuirCurso from "./pages/mentor/MentorAtribuirCurso";
 import MentorProgressoAlunos from "./pages/mentor/MentorProgressoAlunos";
 
-import AlunoCatalogo from "./pages/aluno/AlunoCatalogo";
+
 import AlunoDetalheCurso from "./pages/aluno/AlunoDetalheCurso";
 import AlunoAtividade from "./pages/aluno/AlunoAtividade";
 import AlunoAvaliacao from "./pages/aluno/AlunoAvaliacao";
@@ -148,7 +148,7 @@ function Router() {
       <Route path={"/mentor/atribuir-cursos"} component={MentorAtribuirCurso} />
       <Route path={"/mentor/competencias-comp-tec/progresso"} component={MentorProgressoAlunos} />
 
-      <Route path={"/aluno/competencias-comp-tec/catalogo"} component={AlunoCatalogo} />
+
       <Route path={"/aluno/competencias-comp-tec/detalhe"} component={AlunoDetalheCurso} />
       <Route path={"/aluno/competencias-comp-tec/atividade"} component={AlunoAtividade} />
       <Route path={"/aluno/competencias-comp-tec/avaliacao"} component={AlunoAvaliacao} />

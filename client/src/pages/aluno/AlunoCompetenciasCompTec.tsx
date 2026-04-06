@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -206,104 +206,97 @@ export default function AlunoCompetenciasCompTec() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Aluno - Competências Comportamentais e Técnicas</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Meus Cursos</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Visualize seus cursos atribuídos, faça a avaliação, acompanhe tentativas e registre sua reflexão final.
+          Selecione um curso para visualizar detalhes, fazer avaliação, acompanhar tentativas e registrar reflexão final.
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Meus cursos</CardTitle>
-            <CardDescription>
-              Cursos atribuídos ao seu plano de desenvolvimento.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {meusCursosQuery.isLoading ? (
-              <div className="rounded-md border p-6 text-center text-sm text-muted-foreground">
-                Carregando cursos...
-              </div>
-            ) : meusCursosQuery.error ? (
-              <p className="text-sm text-red-600">{meusCursosQuery.error.message}</p>
-            ) : cursos.length === 0 ? (
-              <div className="rounded-md border p-6 text-center text-sm text-muted-foreground">
-                Nenhum curso atribuído encontrado.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {cursos.map((curso) => (
-                  <div
-                    key={`${curso.cursoAtribuidoId}-${curso.cursoId}`}
-                    className={`w-full rounded-lg border p-4 transition ${
-                      cursoSelecionado?.cursoAtribuidoId === curso.cursoAtribuidoId
-                        ? "border-primary ring-1 ring-primary"
-                        : "hover:shadow-sm"
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => selecionarCurso(curso)}
-                      className="w-full text-left"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold">{curso.titulo}</h3>
-                          <span className="rounded-full bg-muted px-2 py-1 text-xs">
-                            {curso.status}
-                          </span>
-                        </div>
-
-                        {curso.descricao ? (
-                          <p className="text-sm text-muted-foreground line-clamp-3">
-                            {curso.descricao}
-                          </p>
-                        ) : null}
-
-                        {curso.dataPrazo && (
-                          <p className="text-xs text-muted-foreground">
-                            Prazo: {String(curso.dataPrazo).slice(0, 10)}
-                          </p>
-                        )}
-
+      {/* LISTA DE CURSOS - Seleção */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Cursos Atribuídos</CardTitle>
+          <CardDescription>
+            Cursos atribuídos ao seu plano de desenvolvimento.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {meusCursosQuery.isLoading ? (
+            <div className="rounded-md border p-6 text-center text-sm text-muted-foreground">
+              Carregando cursos...
+            </div>
+          ) : meusCursosQuery.error ? (
+            <p className="text-sm text-red-600">{meusCursosQuery.error.message}</p>
+          ) : cursos.length === 0 ? (
+            <div className="rounded-md border p-6 text-center text-sm text-muted-foreground">
+              Nenhum curso atribuído encontrado.
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {cursos.map((curso) => (
+                <div
+                  key={`${curso.cursoAtribuidoId}-${curso.cursoId}`}
+                  className={`rounded-lg border p-4 transition ${
+                    cursoSelecionado?.cursoAtribuidoId === curso.cursoAtribuidoId
+                      ? "border-primary ring-1 ring-primary bg-primary/5"
+                      : "hover:shadow-sm"
+                  }`}
+                >
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold">{curso.titulo}</h3>
+                        <span className="rounded-full bg-muted px-2 py-1 text-xs">
+                          {curso.status}
+                        </span>
                         {curso.notaFinal !== null && curso.notaFinal !== undefined && (
-                          <p className="text-xs text-muted-foreground">
-                            Nota final: {String(curso.notaFinal)}
-                          </p>
+                          <span className="rounded-full bg-muted px-2 py-1 text-xs">
+                            Nota: {String(curso.notaFinal)}
+                          </span>
                         )}
                       </div>
-                    </button>
-                    <div className="mt-3 flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => selecionarCurso(curso)}
-                        className="flex-1"
-                      >
-                        Acessar Curso
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        <div className="space-y-6 lg:col-span-2">
+                      {curso.descricao ? (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {curso.descricao}
+                        </p>
+                      ) : null}
+
+                      {curso.dataPrazo && (
+                        <p className="text-xs text-muted-foreground">
+                          Prazo: {String(curso.dataPrazo).slice(0, 10)}
+                        </p>
+                      )}
+                    </div>
+
+                    <Button
+                      onClick={() => selecionarCurso(curso)}
+                      variant={cursoSelecionado?.cursoAtribuidoId === curso.cursoAtribuidoId ? "default" : "outline"}
+                      className="whitespace-nowrap"
+                    >
+                      {cursoSelecionado?.cursoAtribuidoId === curso.cursoAtribuidoId ? "Selecionado" : "Selecionar"}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* DETALHES DO CURSO SELECIONADO */}
+      {cursoSelecionado && (
+        <div className="space-y-6">
+          {/* Detalhes e Acesso */}
           <Card>
             <CardHeader>
-              <CardTitle>Detalhes do curso</CardTitle>
+              <CardTitle>Detalhes do Curso</CardTitle>
               <CardDescription>
-                Descrição, atividade e andamento do curso selecionado.
+                Informações e acesso ao curso selecionado.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!cursoSelecionado ? (
-                <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-                  Selecione um curso para visualizar os detalhes.
-                </div>
-              ) : detalheCursoQuery.isLoading ? (
+              {detalheCursoQuery.isLoading ? (
                 <div className="rounded-md border p-8 text-center text-sm text-muted-foreground">
                   Carregando detalhes...
                 </div>
@@ -347,11 +340,12 @@ export default function AlunoCompetenciasCompTec() {
             </CardContent>
           </Card>
 
+          {/* Avaliação */}
           <Card>
             <CardHeader>
               <CardTitle>Avaliação</CardTitle>
               <CardDescription>
-                Responda as 15 questões sorteadas a partir do banco completo.
+                Responda as questões sorteadas a partir do banco completo.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -410,9 +404,10 @@ export default function AlunoCompetenciasCompTec() {
             </CardContent>
           </Card>
 
+          {/* Resultado da Avaliação */}
           <Card>
             <CardHeader>
-              <CardTitle>Resultado da avaliação</CardTitle>
+              <CardTitle>Resultado da Avaliação</CardTitle>
               <CardDescription>
                 Resultado atual com base na sua última submissão desta sessão.
               </CardDescription>
@@ -437,9 +432,10 @@ export default function AlunoCompetenciasCompTec() {
             </CardContent>
           </Card>
 
+          {/* Reflexão Final e Conclusão */}
           <Card>
             <CardHeader>
-              <CardTitle>Reflexão final e conclusão</CardTitle>
+              <CardTitle>Reflexão Final e Conclusão</CardTitle>
               <CardDescription>
                 Registre sua reflexão sobre a aplicação do conteúdo e conclua o curso quando estiver apto.
               </CardDescription>
@@ -487,19 +483,16 @@ export default function AlunoCompetenciasCompTec() {
             </CardContent>
           </Card>
 
+          {/* Histórico de Tentativas */}
           <Card>
             <CardHeader>
-              <CardTitle>Histórico de tentativas</CardTitle>
+              <CardTitle>Histórico de Tentativas</CardTitle>
               <CardDescription>
                 Visualize suas tentativas anteriores da avaliação do curso selecionado.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!cursoSelecionado ? (
-                <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  Selecione um curso para ver o histórico.
-                </div>
-              ) : tentativasQuery.isLoading ? (
+              {tentativasQuery.isLoading ? (
                 <div className="rounded-md border p-6 text-center text-sm text-muted-foreground">
                   Carregando tentativas...
                 </div>
@@ -536,7 +529,7 @@ export default function AlunoCompetenciasCompTec() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      )}
     </div>
   );
 }

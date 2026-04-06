@@ -94,7 +94,7 @@ export default function AlunoDetalheCurso() {
 
                 <Button
                   variant="outline"
-                  onClick={() => setLocation("/aluno/competencias-comp-tec/catalogo")}
+                  onClick={() => setLocation("/aluno/competencias-comp-tec")}
                 >
                   Voltar ao catálogo
                 </Button>

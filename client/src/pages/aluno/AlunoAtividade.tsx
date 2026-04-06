@@ -216,7 +216,7 @@ export default function AlunoAtividade() {
       <div className="flex justify-start">
         <Button
           variant="outline"
-          onClick={() => setLocation("/aluno/competencias-comp-tec/catalogo")}
+          onClick={() => setLocation("/aluno/competencias-comp-tec")}
         >
           Voltar ao catálogo
         </Button>
