@@ -9219,11 +9219,11 @@ Responda APENAS em JSON com o formato especificado.`
           .select({
             atribuicao: alunoCursoAtribuido,
             curso: cursosCompetencias,
-            competencia: competenciasCompTec,
+            competencia: competencias,
           })
           .from(alunoCursoAtribuido)
           .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
-          .leftJoin(competenciasCompTec, eq(cursosCompetencias.competenciaId, competenciasCompTec.id))
+          .leftJoin(competencias, eq(cursosCompetencias.competenciaId, competencias.id))
           .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
           .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
 
