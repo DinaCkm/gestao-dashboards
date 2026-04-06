@@ -8862,17 +8862,18 @@ Responda APENAS em JSON com o formato especificado.`
             const descricao = input.descricao?.trim() || null;
             const ordem = Number(input.ordem ?? 0);
 
-            const query = `INSERT INTO atividades_curso (cursoId, titulo, tipoAtividade, urlGenially, urlMidia, descricao, ordem) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?)`;
+            const query = `INSERT INTO atividades_curso (cursoId, titulo, tipoAtividade, urlGenially, urlMidia, descricao, ordem, isActive, createdAt, updatedAt) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
             
             const [result] = await conn.execute(query, [
               Number(input.cursoId),
               input.titulo.trim(),
               input.tipoAtividade,
-              urlFinal,
-              urlFinal,
+              input.urlGenially?.trim() || null,
+              input.urlMidia?.trim() || null,
               descricao,
-              ordem
+              ordem,
+              1
             ]);
 
             console.log("[criarAtividade] INSERT bem-sucedido", {

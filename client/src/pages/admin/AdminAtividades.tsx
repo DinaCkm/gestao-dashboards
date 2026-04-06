@@ -38,7 +38,7 @@ export default function AdminAtividades() {
     titulo: "",
     tipoAtividade: "video" as TipoAtividade,
     descricao: "",
-    urlGenially: "",
+    urlMidia: "",
     ordem: "0",
   });
 
@@ -67,7 +67,7 @@ export default function AdminAtividades() {
         titulo: "",
         tipoAtividade: "video",
         descricao: "",
-        urlGenially: "",
+        urlMidia: "",
         ordem: "0",
       });
       if (cursoId > 0) {
@@ -103,7 +103,7 @@ export default function AdminAtividades() {
       titulo: formAtividade.titulo.trim(),
       tipoAtividade: formAtividade.tipoAtividade,
       descricao: formAtividade.descricao.trim(),
-      urlGenially: formAtividade.urlGenially.trim(),
+      urlMidia: formAtividade.urlMidia.trim(),
       ordem: Number(formAtividade.ordem || 0),
     });
   }
@@ -246,9 +246,9 @@ export default function AdminAtividades() {
                 </Label>
                 <Input
                   id="url"
-                  value={formAtividade.urlGenially}
+                  value={formAtividade.urlMidia}
                   onChange={(e) =>
-                    setFormAtividade((prev) => ({ ...prev, urlGenially: e.target.value }))
+                    setFormAtividade((prev) => ({ ...prev, urlMidia: e.target.value }))
                   }
                   placeholder="https://..."
                   disabled={cursoId <= 0}
