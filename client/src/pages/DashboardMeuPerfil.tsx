@@ -1517,7 +1517,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                           
                           // Obter cursos atribuídos para esta competência
                           const cursosDaCompetencia = (cursosAtribuidosAoAluno || []).filter(
-                            (c: any) => c.competenciaId === micro.competenciaId
+                            (c: any) => Number(c.competenciaId) === Number(micro.competenciaId)
                           );
                           const primeiroCurso = cursosDaCompetencia[0];
 
