@@ -1514,6 +1514,12 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                             aulasConc > 0 ? <TrendingUp className="h-4 w-4 text-amber-500" /> :
                             cicloStatus === 'futuro' ? <Clock className="h-4 w-4 text-gray-300" /> :
                             <Target className="h-4 w-4 text-gray-400" />;
+                          
+                          // Obter cursos atribuídos para esta competência
+                          const cursosDaCompetencia = (cursosAtribuidosAoAluno || []).filter(
+                            (c: any) => c.competenciaId === micro.competenciaId
+                          );
+                          const primeiroCurso = cursosDaCompetencia[0];
 
                           return (
                             <div key={micro.id} className={`p-3 rounded-lg border ${
@@ -1522,10 +1528,17 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                               cicloStatus === 'finalizado' && aulasConc === 0 ? 'bg-red-50/50 border-red-200' :
                               'bg-white/50 border-gray-100'
                             }`}>
-                              <div className="flex items-center gap-2 mb-1.5">
+                              <div className="flex items-start gap-2 mb-1.5">
                                 {statusIcon}
-                                <span className="text-sm font-semibold text-gray-900 flex-1">{micro.competenciaNome}</span>
-                                <div className="flex items-center gap-1">
+                                <div className="flex-1">
+                                  <div className="text-sm font-semibold text-gray-900">{micro.competenciaNome}</div>
+                                  {primeiroCurso && (
+                                    <div className="text-xs text-gray-600 mt-1">
+                                      <span className="font-medium">Curso:</span> {primeiroCurso.titulo}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1 flex-wrap justify-end">
                                   {cicloStatus === 'em_andamento' && diasRestantes !== null && diasRestantes <= 14 && !competenciaConcluida && micro.peso === 'obrigatoria' && (
                                     <Badge className={`text-[10px] px-1.5 py-0 ${diasRestantes <= 7 ? 'bg-red-100 text-red-700 border-red-300' : 'bg-amber-100 text-amber-700 border-amber-300'}`}>
                                       <Clock className="h-2.5 w-2.5 mr-0.5" />{diasRestantes}d
@@ -1540,28 +1553,16 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                   <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${micro.peso === 'obrigatoria' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
                                     {micro.peso === 'obrigatoria' ? 'Obrigatoria' : 'Opcional'}
                                   </Badge>
-                                  {cicloStatus !== 'futuro' && (() => {
-                                    const cursosDaCompetencia = (cursosAtribuidosAoAluno || []).filter(
-                                      (c: any) => c.competenciaId === micro.competenciaId
-                                    );
-                                    
-                                    if (cursosDaCompetencia.length > 0) {
-                                      return (
-                                        <Button
-                                          size="sm"
-                                          variant="default"
-                                          className="h-7 px-2 text-xs"
-                                          onClick={() => acessarCursoCompetencia(micro.competenciaId)}
-                                        >
-                                          Acessar
-                                        </Button>
-                                      );
-                                    } else {
-                                      return (
-                                        <span className="text-xs text-gray-500 italic">Desculpe, ainda nao foi disponibilizado o curso para o desenvolvimento desta competencia, aguarde!</span>
-                                      );
-                                    }
-                                  })()}
+                                  {cicloStatus !== 'futuro' && primeiroCurso && (
+                                    <Button
+                                      size="sm"
+                                      variant="default"
+                                      className="h-7 px-2 text-xs"
+                                      onClick={() => acessarCursoCompetencia(micro.competenciaId)}
+                                    >
+                                      Cursar
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                               {/* Barra + métricas em linha */}
@@ -1751,8 +1752,8 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                               </div>
                             )}
 
-                            {/* Fallback: se não tem ciclos, mostrar todas as microJornadas */}
-                            {!temCiclos && microsOrfaos.length === 0 && macroJornada.microJornadas.length > 0 && (
+                            {/* Fallback: se não tem ciclos, mostrar todas as microJornadas como órfãs */}
+                            {!temCiclos && macroJornada.microJornadas.length > 0 && (
                               <div className="space-y-2">
                                 {macroJornada.microJornadas.map((micro: any) => renderMicro(micro))}
                               </div>
