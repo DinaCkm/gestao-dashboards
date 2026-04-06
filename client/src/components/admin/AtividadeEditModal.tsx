@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -46,23 +46,6 @@ export function AtividadeEditModal({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(atividade?.imagemUrl || "");
   const [isSaving, setIsSaving] = useState(false);
-
-  // Sincronizar estado quando atividade muda
-  useEffect(() => {
-    if (atividade && open) {
-      setFormData({
-        titulo: atividade.titulo || "",
-        tipoAtividade: atividade.tipoAtividade || "genially",
-        urlGenially: atividade.urlGenially || "",
-        urlMidia: atividade.urlMidia || "",
-        imagemUrl: atividade.imagemUrl || "",
-        descricao: atividade.descricao || "",
-        isActive: atividade.isActive ?? 1,
-      });
-      setImagePreview(atividade.imagemUrl || "");
-      setImageFile(null);
-    }
-  }, [atividade, open]);
 
   const updateAtividadeMutation = trpc.competenciasCompTec.updateAtividade.useMutation();
 
