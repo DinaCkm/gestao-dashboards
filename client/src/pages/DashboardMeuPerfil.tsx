@@ -1553,16 +1553,20 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                   <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${micro.peso === 'obrigatoria' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
                                     {micro.peso === 'obrigatoria' ? 'Obrigatoria' : 'Opcional'}
                                   </Badge>
-                                  {primeiroCurso && (
-                                    <Button
-                                      size="sm"
-                                      variant="default"
-                                      className="h-7 px-2 text-xs"
-                                      onClick={() => acessarCursoCompetencia(micro.competenciaId)}
-                                    >
-                                      Cursar
-                                    </Button>
-                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() => {
+                                      if (primeiroCurso) {
+                                        acessarCursoCompetencia(micro.competenciaId);
+                                      } else {
+                                        toast.info('Desculpe ainda não há curso liberado');
+                                      }
+                                    }}
+                                  >
+                                    Cursar
+                                  </Button>
                                 </div>
                               </div>
                               {/* Barra + métricas em linha */}
