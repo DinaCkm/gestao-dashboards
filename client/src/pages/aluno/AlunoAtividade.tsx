@@ -30,11 +30,17 @@ export default function AlunoAtividade() {
     onSuccess: (result, variables) => {
       if (variables.atividadeId) {
         setAtividadeEmAndamento(variables.atividadeId);
-        // Abrir Genially em nova aba após 500ms
+        // Abrir link da atividade em nova aba após 500ms
         setTimeout(() => {
           const atividade = atividades.find(a => a.id === variables.atividadeId);
-          if (atividade?.urlGenially) {
-            window.open(atividade.urlGenially, "_blank");
+          if (atividade) {
+            // Usar o campo correto baseado no tipo de atividade
+            const url = atividade.tipoAtividade === 'genially' 
+              ? atividade.urlGenially 
+              : atividade.urlMidia;
+            if (url) {
+              window.open(url, "_blank");
+            }
           }
         }, 500);
       }
