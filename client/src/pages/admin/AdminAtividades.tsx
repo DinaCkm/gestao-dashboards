@@ -128,7 +128,7 @@ export default function AdminAtividades() {
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 overflow-x-auto">
         {/* Coluna 1: Seleção */}
         <Card>
           <CardHeader>
@@ -309,29 +309,27 @@ export default function AdminAtividades() {
             ) : (
               <div className="space-y-2">
                 {atividades.map((atividade: any) => (
-                  <div key={atividade.id} className="border rounded p-2 text-xs">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <p className="font-semibold">{atividade.titulo}</p>
-                        <p className="text-muted-foreground">
+                  <div key={atividade.id} className="border rounded p-3 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{atividade.titulo}</p>
+                        <p className="text-muted-foreground text-xs">
                           {TIPOS_ATIVIDADE.find((t) => t.value === atividade.tipoAtividade)
                             ?.label || atividade.tipoAtividade}
                         </p>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0"
-                          onClick={() => {
-                            setSelectedAtividade(atividade);
-                            setModalOpen(true);
-                          }}
-                          title="Editar"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0 flex-shrink-0"
+                        onClick={() => {
+                          setSelectedAtividade(atividade);
+                          setModalOpen(true);
+                        }}
+                        title="Editar"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}

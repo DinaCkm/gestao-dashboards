@@ -3537,3 +3537,10 @@
 - [ ] Remover cards de performance do Mural (se existirem) - verificar se estão em DashboardMeuPerfil.tsx
 - [ ] Manter apenas: Minha Jornada, Mentorias, Eventos, Tarefas, Mini_Cursos, Cases de Sucesso, Meu Perfil
 - [ ] Testar navegação e funcionalidades
+
+## Modal de Edição de Atividades (06/04/2026)
+- [ ] Testar modal de edição de atividades no Raiwai com acesso de admin
+- [ ] Verificar se o botão de editar aparece nas atividades listadas
+- [ ] Validar funcionalidade de editar atividade (título, tipo, URL, descrição, imagem)
+- [ ] Testar soft-delete (desabilitar atividade)
+- [ ] Verificar se atividades desabilitadas não aparecem em novas atribuições
