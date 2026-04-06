@@ -33,8 +33,8 @@ export default function AlunoAtividade() {
         // Abrir Genially em nova aba após 500ms
         setTimeout(() => {
           const atividade = atividades.find(a => a.id === variables.atividadeId);
-          if (atividade?.linkGenially) {
-            window.open(atividade.linkGenially, "_blank");
+          if (atividade?.urlGenially) {
+            window.open(atividade.urlGenially, "_blank");
           }
         }, 500);
       }
