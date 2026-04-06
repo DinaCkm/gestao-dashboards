@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Edit, Eye, Trash2 } from "lucide-react";
+import { AtividadeEditModal } from "@/components/admin/AtividadeEditModal";
 
 type TipoAtividade = "genially" | "video" | "podcast" | "tedtalk" | "livro" | "intro";
 
@@ -31,6 +32,8 @@ export default function AdminAtividades() {
   const [, setLocation] = useLocation();
   const [competenciaId, setCompetenciaId] = useState<number>(0);
   const [cursoId, setCursoId] = useState<number>(0);
+  const [selectedAtividade, setSelectedAtividade] = useState<any>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [formAtividade, setFormAtividade] = useState({
     titulo: "",
     tipoAtividade: "video" as TipoAtividade,
@@ -307,11 +310,29 @@ export default function AdminAtividades() {
               <div className="space-y-2">
                 {atividades.map((atividade: any) => (
                   <div key={atividade.id} className="border rounded p-2 text-xs">
-                    <p className="font-semibold">{atividade.titulo}</p>
-                    <p className="text-muted-foreground">
-                      {TIPOS_ATIVIDADE.find((t) => t.value === atividade.tipoAtividade)
-                        ?.label || atividade.tipoAtividade}
-                    </p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="font-semibold">{atividade.titulo}</p>
+                        <p className="text-muted-foreground">
+                          {TIPOS_ATIVIDADE.find((t) => t.value === atividade.tipoAtividade)
+                            ?.label || atividade.tipoAtividade}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            setSelectedAtividade(atividade);
+                            setModalOpen(true);
+                          }}
+                          title="Editar"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -319,6 +340,18 @@ export default function AdminAtividades() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal para editar atividade */}
+      <AtividadeEditModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        atividade={selectedAtividade}
+        onSave={() => {
+          if (cursoId > 0) {
+            utils.competenciasCompTec.admin.listarAtividades.invalidate({ cursoId });
+          }
+        }}
+      />
     </div>
   );
 }

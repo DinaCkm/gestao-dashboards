@@ -9650,6 +9650,50 @@ Responda APENAS em JSON com o formato especificado.`
             notaFinal,
           };
         }),
+      updateAtividade: adminProcedure
+        .input(
+          z.object({
+            id: z.number(),
+            titulo: z.string(),
+            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]),
+            urlGenially: z.string().optional(),
+            urlMidia: z.string().optional(),
+            imagemUrl: z.string().optional(),
+            descricao: z.string().optional(),
+            isActive: z.number(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          }
+
+          const updateData: any = {
+            titulo: input.titulo,
+            tipoAtividade: input.tipoAtividade,
+            descricao: input.descricao || null,
+            isActive: input.isActive,
+            updatedAt: new Date(),
+          };
+
+          if (input.tipoAtividade === "genially") {
+            updateData.urlGenially = input.urlGenially || null;
+          } else {
+            updateData.urlMidia = input.urlMidia || null;
+          }
+
+          if (input.imagemUrl) {
+            updateData.imagemUrl = input.imagemUrl;
+          }
+
+          await database
+            .update(atividadesCurso)
+            .set(updateData)
+            .where(eq(atividadesCurso.id, input.id));
+
+          return { success: true };
+        }),
     }),
   }),
 

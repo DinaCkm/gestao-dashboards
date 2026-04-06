@@ -303,6 +303,15 @@
 - [x] BUG: Competências 0% corrigido - plano_individual agora alimenta todos os dashboards
 - [x] BUG: SEBRAE PARA corrigido - empresa agora vem da tabela programs (não do nomeTurma da planilha)
 
+## Admin - Gerenciamento de Atividades (06/04/2026)
+- [ ] Adicionar campo imagemUrl na tabela atividadesCurso
+- [ ] Criar modal de visualização de atividade
+- [ ] Criar funcionalidade de editar atividade
+- [ ] Implementar upload de imagem para atividade
+- [ ] Implementar desabilitar/habilitar atividade (soft-delete com isActive)
+- [ ] Adicionar botões de ação (Editar, Visualizar, Desabilitar) na lista de atividades
+- [ ] Testar fluxo completo de edição e visualização
+
 ## Bug Reportado (12/02/2026) - NotFoundError nas Visões por Empresa
 - [x] Corrigir erro NotFoundError: removeChild ao navegar para visões por empresa
 - [x] Melhorar ErrorBoundary para resetar automaticamente na mudança de rota
