@@ -3555,3 +3555,13 @@
 - [x] Corrigir AdminAtividades - enviar urlMidia em vez de urlGenially
 - [x] Testar fluxo completo: criar atividade → fazer upload de imagem → editar → visualizar
 - [ ] Testar em produção (Raiwai) com acesso de admin
+
+
+## Implementação de Procedures de Fluxo de Atividades (06/04/2026) - CONCLUÍDO
+- [x] Implementar obterAtividadesCurso com bloqueio sequencial e status correto
+- [x] Implementar iniciarAtividade com registro em alunoAtividadeProgresso
+- [x] Implementar concluirAtividade com liberação de avaliação
+- [x] Implementar submeterAvaliacao com lógica de aprovação (nota >= 8) e liberação de próxima atividade
+- [ ] Ligar frontend novo a essas procedures
+- [ ] Validar indicadores 2 e 3 considerando apenas cursos com microciclo já iniciado
+- [ ] Testar ponta a ponta: detalhe do curso → cards → iniciar → concluir → avaliar

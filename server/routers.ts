@@ -9298,119 +9298,321 @@ Responda APENAS em JSON com o formato especificado.`
         }),
 
       obterAtividadesCurso: protectedProcedure
-        .input(z.object({ cursoId: z.number() }))
+        .input(z.object({
+          cursoId: z.number().int().positive(),
+          cursoAtribuidoId: z.number().int().positive(),
+        }))
         .query(async ({ ctx, input }) => {
           const database = await db.getDb();
           if (!database) return [];
 
-          return await database
-            .select()
-            .from(atividadesCurso)
-            .where(eq(atividadesCurso.cursoId, input.cursoId))
-            .orderBy(asc(atividadesCurso.ordem ?? 0));
+          const userId = ctx.user?.id;
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
+          const user = await database.query.users.findFirst({
+            where: eq(users.id, userId),
+          });
+
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Aluno não identificado." });
+          }
+
+          const atribuicao = await database.query.alunoCursoAtribuido.findFirst({
+            where: and(
+              eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+              eq(alunoCursoAtribuido.alunoId, user.alunoId),
+              eq(alunoCursoAtribuido.cursoId, input.cursoId),
+            ),
+          });
+
+          if (!atribuicao) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Curso atribuído não encontrado." });
+          }
+
+          const atividades = await database.query.atividadesCurso.findMany({
+            where: eq(atividadesCurso.cursoId, input.cursoId),
+            orderBy: [asc(atividadesCurso.ordem), asc(atividadesCurso.id)],
+          });
+
+          const progressos = await database.query.alunoAtividadeProgresso.findMany({
+            where: and(
+              eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+              eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+            ),
+          });
+
+          const avaliacoes = await database.query.avaliacoesAtividade.findMany({
+            where: eq(avaliacoesAtividade.cursoId, input.cursoId),
+          });
+
+          const progressoMap = new Map(progressos.map((p) => [p.atividadeId, p]));
+          const avaliacaoMap = new Map(avaliacoes.map((a) => [a.atividadeId, a]));
+
+          return atividades.map((atividade, index) => {
+            const progresso = progressoMap.get(atividade.id);
+            const avaliacao = avaliacaoMap.get(atividade.id);
+
+            const atividadeAnterior = index > 0 ? atividades[index - 1] : null;
+            const progressoAnterior = atividadeAnterior
+              ? progressoMap.get(atividadeAnterior.id)
+              : null;
+
+            const primeiraAtividade = index === 0;
+            const anteriorAprovada =
+              !atividadeAnterior ||
+              progressoAnterior?.status === "aprovada" ||
+              (progressoAnterior?.notaFinal ?? 0) >= 8;
+
+            let status = (progresso?.status ?? "nao_iniciado") as string;
+
+            if (!primeiraAtividade && !anteriorAprovada) {
+              status = "bloqueada";
+            } else if (!progresso || status === "nao_iniciado") {
+              status = "disponivel";
+            }
+
+            return {
+              id: atividade.id,
+              titulo: atividade.titulo,
+              descricao: atividade.descricao,
+              ordem: atividade.ordem ?? index + 1,
+              imagemUrl: atividade.imagemUrl ?? null,
+              linkGenially: atividade.linkGenially ?? null,
+              status,
+              notaFinal: progresso?.notaFinal ?? null,
+              avaliacaoLiberada: !!progresso?.avaliacaoLiberada,
+              avaliacaoId: avaliacao?.id ?? null,
+              podeAbrir: status !== "bloqueada",
+            };
+          });
         }),
 
       iniciarAtividade: protectedProcedure
-        .input(z.object({ moduloId: z.number() }))
+        .input(z.object({
+          cursoId: z.number().int().positive(),
+          cursoAtribuidoId: z.number().int().positive(),
+          atividadeId: z.number().int().positive(),
+        }))
         .mutation(async ({ ctx, input }) => {
+          const userId = ctx.user?.id;
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
           const database = await db.getDb();
           if (!database) {
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
           }
 
-          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
-          if (!aluno) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado" });
+          const user = await database.query.users.findFirst({
+            where: eq(users.id, userId),
+          });
+
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN" });
           }
 
-          const [registro] = await database
-            .select()
-            .from(alunoModuloProgresso)
-            .where(
-              and(
-                eq(alunoModuloProgresso.alunoId, aluno.id),
-                eq(alunoModuloProgresso.moduloId, input.moduloId)
-              )
-            )
-            .limit(1);
+          const existente = await database.query.alunoAtividadeProgresso.findFirst({
+            where: and(
+              eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+              eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+              eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
+            ),
+          });
 
-          if (!registro) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "Curso não atribuído ao aluno" });
+          if (!existente) {
+            await database.insert(alunoAtividadeProgresso).values({
+              alunoId: user.alunoId,
+              cursoAtribuidoId: input.cursoAtribuidoId,
+              atividadeId: input.atividadeId,
+              status: "em_andamento",
+              iniciadoEm: new Date(),
+              avaliacaoLiberada: 0,
+              tentativas: 0,
+            });
+          } else if (existente.status === "nao_iniciado" || existente.status === "disponivel") {
+            await database
+              .update(alunoAtividadeProgresso)
+              .set({
+                status: "em_andamento",
+                iniciadoEm: existente.iniciadoEm ?? new Date(),
+                updatedAt: new Date(),
+              })
+              .where(eq(alunoAtividadeProgresso.id, existente.id));
           }
 
           await database
-            .update(alunoModuloProgresso)
+            .update(alunoCursoAtribuido)
             .set({
               status: "em_andamento",
-              iniciadoEm: registro.iniciadoEm ?? new Date(),
               updatedAt: new Date(),
             })
-            .where(eq(alunoModuloProgresso.id, registro.id));
+            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+
+          return { success: true };
+        }),
+
+      concluirAtividade: protectedProcedure
+        .input(z.object({
+          cursoId: z.number().int().positive(),
+          cursoAtribuidoId: z.number().int().positive(),
+          atividadeId: z.number().int().positive(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const userId = ctx.user?.id;
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const user = await database.query.users.findFirst({
+            where: eq(users.id, userId),
+          });
+
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN" });
+          }
+
+          const progresso = await database.query.alunoAtividadeProgresso.findFirst({
+            where: and(
+              eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+              eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+              eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
+            ),
+          });
+
+          if (!progresso) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Progresso da atividade não encontrado" });
+          }
+
+          await database
+            .update(alunoAtividadeProgresso)
+            .set({
+              status: "concluida",
+              concluidaEm: new Date(),
+              avaliacaoLiberada: 1,
+              updatedAt: new Date(),
+            })
+            .where(eq(alunoAtividadeProgresso.id, progresso.id));
 
           return { success: true };
         }),
 
       submeterAvaliacao: protectedProcedure
-        .input(
-          z.object({
-            moduloId: z.number(),
-            nota: z.number().min(0).max(10),
-            totalQuestoes: z.number().default(15),
-            acertos: z.number().min(0).default(0),
-            respostas: z.any().optional(),
-          })
-        )
+        .input(z.object({
+          cursoId: z.number().int().positive(),
+          cursoAtribuidoId: z.number().int().positive(),
+          atividadeId: z.number().int().positive(),
+          nota: z.number().min(0).max(10),
+          respostas: z.any().optional(),
+        }))
         .mutation(async ({ ctx, input }) => {
+          const userId = ctx.user?.id;
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
           const database = await db.getDb();
           if (!database) {
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
           }
 
-          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
-          if (!aluno) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "Aluno nao encontrado" });
-          }
-
-          // Verificar bloqueio de sequencia
-          const podeAvaliar = await db.verificarBloqueioAtividade(aluno.id, input.moduloId);
-          if (!podeAvaliar) {
-            throw new TRPCError({ code: "FORBIDDEN", message: "Voce precisa completar as atividades anteriores antes de fazer esta avaliacao." });
-          }
-
-          const aprovado = input.nota >= 8 ? 1 : 0;
-
-          const result = await database.insert(alunoModuloAvaliacao).values({
-            alunoId: aluno.id,
-            moduloId: input.moduloId,
-            nota: input.nota,
-            totalQuestoes: input.totalQuestoes,
-            acertos: input.acertos,
-            aprovado,
-            respostasJson: input.respostas ? JSON.stringify(input.respostas) : null,
+          const user = await database.query.users.findFirst({
+            where: eq(users.id, userId),
           });
 
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN" });
+          }
+
+          const progresso = await database.query.alunoAtividadeProgresso.findFirst({
+            where: and(
+              eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+              eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+              eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
+            ),
+          });
+
+          if (!progresso) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Progresso da atividade não encontrado" });
+          }
+
+          if (!progresso.avaliacaoLiberada) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Avaliação não foi liberada para esta atividade" });
+          }
+
+          const aprovado = input.nota >= 8;
+
           await database
-            .update(alunoModuloProgresso)
+            .update(alunoAtividadeProgresso)
             .set({
               notaFinal: input.nota,
-              status: aprovado ? "concluido" : "em_progresso",
-              percentualConclusao: aprovado ? 80 : 60,
+              status: aprovado ? "aprovada" : "reprovada",
+              tentativas: (progresso.tentativas ?? 0) + 1,
               updatedAt: new Date(),
             })
-            .where(
-              and(
-                eq(alunoModuloProgresso.alunoId, aluno.id),
-                eq(alunoModuloProgresso.moduloId, input.moduloId)
-              )
-            );
+            .where(eq(alunoAtividadeProgresso.id, progresso.id));
 
-          // Atualizar status do curso atribuido
-          await db.atualizarStatusCursoAtribuido(aluno.id, input.moduloId, Boolean(aprovado));
+          const atividades = await database.query.atividadesCurso.findMany({
+            where: eq(atividadesCurso.cursoId, input.cursoId),
+            orderBy: [asc(atividadesCurso.ordem), asc(atividadesCurso.id)],
+          });
+
+          const atividadeIndex = atividades.findIndex((a) => a.id === input.atividadeId);
+          const proximaAtividade = atividadeIndex >= 0 && atividadeIndex < atividades.length - 1
+            ? atividades[atividadeIndex + 1]
+            : null;
+
+          if (aprovado && proximaAtividade) {
+            const proximaJaExiste = await database.query.alunoAtividadeProgresso.findFirst({
+              where: and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, proximaAtividade.id),
+              ),
+            });
+
+            if (!proximaJaExiste) {
+              await database.insert(alunoAtividadeProgresso).values({
+                alunoId: user.alunoId,
+                cursoAtribuidoId: input.cursoAtribuidoId,
+                atividadeId: proximaAtividade.id,
+                status: "disponivel",
+                avaliacaoLiberada: 0,
+                tentativas: 0,
+              });
+            }
+          }
+
+          const todasAsAtividades = await database.query.alunoAtividadeProgresso.findMany({
+            where: and(
+              eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+              eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+            ),
+          });
+
+          const todasAprovadas = todasAsAtividades.every((a) => a.status === "aprovada");
+
+          if (todasAprovadas && todasAsAtividades.length === atividades.length) {
+            await database
+              .update(alunoCursoAtribuido)
+              .set({
+                status: "concluido",
+                updatedAt: new Date(),
+              })
+              .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+          }
 
           return {
             success: true,
-            id: result[0]?.insertId ?? null,
-            aprovado: Boolean(aprovado),
+            aprovado,
+            proximaAtividadeDisponivel: aprovado && !!proximaAtividade,
           };
         }),
 
