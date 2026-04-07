@@ -48,17 +48,19 @@ export default function AlunoAtividade() {
   const concluirAtividadeMutation = trpc.competenciasCompTec.aluno.concluirAtividade.useMutation({
     onSuccess: async (_result, variables) => {
       setAtividadeEmAndamento(null);
-      await atividadesQuery.refetch();
+      const refetchResult = await atividadesQuery.refetch();
+      const atividadesAtualizadas = refetchResult.data ?? [];
+      const atividadeAtualizada = atividadesAtualizadas.find(
+        (a) => a.id === variables.atividadeId
+      );
 
-      const atividade = atividades.find((a) => a.id === variables.atividadeId);
-
-      if (!atividade?.avaliacaoId) {
+      if (!atividadeAtualizada?.avaliacaoId) {
         alert("Esta atividade ainda não possui avaliação vinculada.");
         return;
       }
 
       setLocation(
-        `/aluno/competencias-comp-tec/avaliacao?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&atividadeId=${atividade.id}&avaliacaoId=${atividade.avaliacaoId}`
+        `/aluno/competencias-comp-tec/avaliacao?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&atividadeId=${atividadeAtualizada.id}&avaliacaoId=${atividadeAtualizada.avaliacaoId}`
       );
     },
   });
