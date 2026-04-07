@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,11 +20,43 @@ import {
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
+type TipoAtividade =
+  | "genially"
+  | "video"
+  | "podcast"
+  | "tedtalk"
+  | "livro"
+  | "intro";
+
 interface AtividadeEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   atividade: any;
   onSave?: () => void;
+}
+
+type FormDataType = {
+  titulo: string;
+  tipoAtividade: TipoAtividade;
+  urlGenially: string;
+  urlMidia: string;
+  imagemUrl: string;
+  descricao: string;
+  ordem: number;
+  isActive: number;
+};
+
+function getInitialFormData(atividade: any): FormDataType {
+  return {
+    titulo: atividade?.titulo || "",
+    tipoAtividade: (atividade?.tipoAtividade || "genially") as TipoAtividade,
+    urlGenially: atividade?.urlGenially || "",
+    urlMidia: atividade?.urlMidia || "",
+    imagemUrl: atividade?.imagemUrl || "",
+    descricao: atividade?.descricao || "",
+    ordem: Number(atividade?.ordem ?? 0),
+    isActive: Number(atividade?.isActive ?? 1),
+  };
 }
 
 export function AtividadeEditModal({
@@ -33,72 +65,45 @@ export function AtividadeEditModal({
   atividade,
   onSave,
 }: AtividadeEditModalProps) {
-  const [formData, setFormData] = useState({
-    titulo: atividade?.titulo || "",
-    tipoAtividade: atividade?.tipoAtividade || "genially",
-    urlGenially: atividade?.urlGenially || "",
-    urlMidia: atividade?.urlMidia || "",
-    imagemUrl: atividade?.imagemUrl || "",
-    descricao: atividade?.descricao || "",
-    isActive: atividade?.isActive ?? 1,
-  });
-
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [formData, setFormData] = useState<FormDataType>(getInitialFormData(atividade));
   const [imagePreview, setImagePreview] = useState(atividade?.imagemUrl || "");
   const [isSaving, setIsSaving] = useState(false);
 
-  const updateAtividadeMutation = trpc.competenciasCompTec.updateAtividade.useMutation();
+  const updateAtividadeMutation =
+    trpc.competenciasCompTec.admin.atualizarAtividade.useMutation();
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  useEffect(() => {
+    const initialData = getInitialFormData(atividade);
+    setFormData(initialData);
+    setImagePreview(atividade?.imagemUrl || "");
+  }, [atividade, open]);
 
   const handleSave = async () => {
+    if (!atividade?.id) {
+      toast.error("Atividade inválida");
+      return;
+    }
+
     if (!formData.titulo.trim()) {
       toast.error("Título é obrigatório");
       return;
     }
 
     setIsSaving(true);
+
     try {
-      // If there's a new image, upload it first
-      let imagemUrl = formData.imagemUrl;
-      if (imageFile) {
-        // Upload image to S3
-        const formDataUpload = new FormData();
-        formDataUpload.append("file", imageFile);
+      const urlParaSalvar =
+        formData.tipoAtividade === "genially"
+          ? formData.urlGenially.trim()
+          : formData.urlMidia.trim();
 
-        const uploadResponse = await fetch("/api/upload", {
-          method: "POST",
-          body: formDataUpload,
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error("Erro ao fazer upload da imagem");
-        }
-
-        const uploadData = await uploadResponse.json();
-        imagemUrl = uploadData.url;
-      }
-
-      // Update activity
       await updateAtividadeMutation.mutateAsync({
-        id: atividade.id,
-        titulo: formData.titulo,
+        id: Number(atividade.id),
+        titulo: formData.titulo.trim(),
         tipoAtividade: formData.tipoAtividade,
-        urlGenially: formData.urlGenially,
-        urlMidia: formData.urlMidia,
-        imagemUrl,
-        descricao: formData.descricao,
-        isActive: formData.isActive,
+        urlGenially: urlParaSalvar,
+        descricao: formData.descricao.trim(),
+        ordem: Number(formData.ordem ?? 0),
       });
 
       toast.success("Atividade atualizada com sucesso");
@@ -120,26 +125,27 @@ export function AtividadeEditModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Título */}
           <div>
             <Label htmlFor="titulo">Título</Label>
             <Input
               id="titulo"
               value={formData.titulo}
               onChange={(e) =>
-                setFormData({ ...formData, titulo: e.target.value })
+                setFormData((prev) => ({ ...prev, titulo: e.target.value }))
               }
               placeholder="Ex: Introdução ao tema"
             />
           </div>
 
-          {/* Tipo de Atividade */}
           <div>
             <Label htmlFor="tipoAtividade">Tipo de Atividade</Label>
             <Select
               value={formData.tipoAtividade}
               onValueChange={(value) =>
-                setFormData({ ...formData, tipoAtividade: value })
+                setFormData((prev) => ({
+                  ...prev,
+                  tipoAtividade: value as TipoAtividade,
+                }))
               }
             >
               <SelectTrigger>
@@ -156,41 +162,42 @@ export function AtividadeEditModal({
             </Select>
           </div>
 
-          {/* URL Genially */}
-          {formData.tipoAtividade === "genially" && (
+          {formData.tipoAtividade === "genially" ? (
             <div>
               <Label htmlFor="urlGenially">URL Genially</Label>
               <Input
                 id="urlGenially"
                 value={formData.urlGenially}
                 onChange={(e) =>
-                  setFormData({ ...formData, urlGenially: e.target.value })
+                  setFormData((prev) => ({
+                    ...prev,
+                    urlGenially: e.target.value,
+                  }))
                 }
                 placeholder="https://..."
               />
             </div>
-          )}
-
-          {/* URL Mídia */}
-          {formData.tipoAtividade !== "genially" && (
+          ) : (
             <div>
               <Label htmlFor="urlMidia">URL da Mídia</Label>
               <Input
                 id="urlMidia"
                 value={formData.urlMidia}
                 onChange={(e) =>
-                  setFormData({ ...formData, urlMidia: e.target.value })
+                  setFormData((prev) => ({
+                    ...prev,
+                    urlMidia: e.target.value,
+                  }))
                 }
                 placeholder="https://..."
               />
             </div>
           )}
 
-          {/* Imagem */}
           <div>
-            <Label htmlFor="imagem">Imagem do Card (16:9 ou 4:3)</Label>
+            <Label>Imagem atual</Label>
             <div className="mt-2 space-y-2">
-              {imagePreview && (
+              {imagePreview ? (
                 <div className="relative w-full h-40 bg-gray-200 rounded-lg overflow-hidden">
                   <img
                     src={imagePreview}
@@ -198,53 +205,36 @@ export function AtividadeEditModal({
                     className="w-full h-full object-cover"
                   />
                 </div>
+              ) : (
+                <div className="w-full h-40 bg-gray-100 rounded-lg flex items-center justify-center text-sm text-gray-500">
+                  Sem imagem cadastrada
+                </div>
               )}
-              <Input
-                id="imagem"
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-              />
+
               <p className="text-sm text-gray-500">
-                Tamanho recomendado: 480x270px (16:9)
+                Nesta etapa, a imagem está apenas em visualização.
               </p>
             </div>
           </div>
 
-          {/* Descrição */}
           <div>
             <Label htmlFor="descricao">Descrição</Label>
             <Textarea
               id="descricao"
               value={formData.descricao}
               onChange={(e) =>
-                setFormData({ ...formData, descricao: e.target.value })
+                setFormData((prev) => ({ ...prev, descricao: e.target.value }))
               }
               placeholder="Descrição opcional da atividade"
               rows={3}
             />
           </div>
 
-          {/* Status */}
           <div>
-            <Label htmlFor="isActive">Status</Label>
-            <Select
-              value={formData.isActive ? "1" : "0"}
-              onValueChange={(value) =>
-                setFormData({ ...formData, isActive: value === "1" ? 1 : 0 })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Habilitada</SelectItem>
-                <SelectItem value="0">Desabilitada</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-gray-500 mt-1">
-              Atividades desabilitadas não aparecerão em novas atribuições
-            </p>
+            <Label>Status atual</Label>
+            <div className="mt-2 text-sm text-gray-600">
+              {formData.isActive === 1 ? "Habilitada" : "Desabilitada"}
+            </div>
           </div>
         </div>
 
