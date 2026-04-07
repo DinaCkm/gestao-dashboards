@@ -178,7 +178,24 @@ export default function AlunoAtividade() {
 
                       {/* Botões de ação */}
                       <div className="mt-4 space-y-2">
-                        {podeIniciarAtividade ? (
+                        {atividade.status === "concluida" && atividade.avaliacaoLiberada ? (
+                          <Button
+                            onClick={() =>
+                              setLocation(
+                                `/aluno/competencias-comp-tec/avaliacao?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&atividadeId=${atividade.id}&avaliacaoId=${atividade.avaliacaoId}`
+                              )
+                            }
+                            className="w-full"
+                            size="sm"
+                          >
+                            Fazer avaliacao
+                          </Button>
+                        ) : atividade.status === "aprovada" ? (
+                          <Button disabled className="w-full" size="sm">
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Concluida
+                          </Button>
+                        ) : podeIniciarAtividade ? (
                           <>
                             <Button
                               onClick={() =>
