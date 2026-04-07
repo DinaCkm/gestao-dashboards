@@ -39,6 +39,7 @@ export default function AdminAtividades() {
     tipoAtividade: "video" as TipoAtividade,
     descricao: "",
     urlMidia: "",
+    imagemUrl: "",
     ordem: "0",
   });
 
@@ -68,6 +69,7 @@ export default function AdminAtividades() {
         tipoAtividade: "video",
         descricao: "",
         urlMidia: "",
+        imagemUrl: "",
         ordem: "0",
       });
       if (cursoId > 0) {
@@ -104,6 +106,7 @@ export default function AdminAtividades() {
       tipoAtividade: formAtividade.tipoAtividade,
       descricao: formAtividade.descricao.trim(),
       urlMidia: formAtividade.urlMidia.trim(),
+      imagemUrl: formAtividade.imagemUrl.trim(),
       ordem: Number(formAtividade.ordem || 0),
     });
   }
@@ -249,6 +252,22 @@ export default function AdminAtividades() {
                   value={formAtividade.urlMidia}
                   onChange={(e) =>
                     setFormAtividade((prev) => ({ ...prev, urlMidia: e.target.value }))
+                  }
+                  placeholder="https://..."
+                  disabled={cursoId <= 0}
+                  className="text-sm"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="imagemUrl" className="text-xs">
+                  URL da Imagem
+                </Label>
+                <Input
+                  id="imagemUrl"
+                  value={formAtividade.imagemUrl}
+                  onChange={(e) =>
+                    setFormAtividade((prev) => ({ ...prev, imagemUrl: e.target.value }))
                   }
                   placeholder="https://..."
                   disabled={cursoId <= 0}

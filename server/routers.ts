@@ -8897,6 +8897,7 @@ Responda APENAS em JSON com o formato especificado.`
             ]),
             urlGenially: z.string().optional(),
             urlMidia: z.string().optional(),
+            imagemUrl: z.string().optional(),
             descricao: z.string().optional(),
             ordem: z.number().optional(),
           })
@@ -8923,8 +8924,8 @@ Responda APENAS em JSON com o formato especificado.`
             const descricao = input.descricao?.trim() || null;
             const ordem = Number(input.ordem ?? 0);
 
-            const query = `INSERT INTO atividades_curso (cursoId, titulo, tipoAtividade, urlGenially, urlMidia, descricao, ordem, isActive, createdAt, updatedAt) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+            const query = `INSERT INTO atividades_curso (cursoId, titulo, tipoAtividade, urlGenially, urlMidia, imagemUrl, descricao, ordem, isActive, createdAt, updatedAt) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
             
             const [result] = await conn.execute(query, [
               Number(input.cursoId),
@@ -8932,6 +8933,7 @@ Responda APENAS em JSON com o formato especificado.`
               input.tipoAtividade,
               input.urlGenially?.trim() || null,
               input.urlMidia?.trim() || null,
+              input.imagemUrl?.trim() || null,
               descricao,
               ordem,
               1
@@ -9421,7 +9423,12 @@ Responda APENAS em JSON com o formato especificado.`
             : await database
                 .select()
                 .from(avaliacoesAtividade)
-                .where(eq(avaliacoesAtividade.isActive, 1));
+                .where(
+                  and(
+                    eq(avaliacoesAtividade.isActive, 1),
+                    inArray(avaliacoesAtividade.atividadeId, atividadeIds)
+                  )
+                );
 
           const progressoMap = new Map(progressos.map((p) => [p.atividadeId, p]));
 
@@ -9444,7 +9451,7 @@ Responda APENAS em JSON com o formato especificado.`
             const anteriorAprovada =
               !atividadeAnterior ||
               progressoAnterior?.status === "aprovada" ||
-              (progressoAnterior?.notaFinal ?? 0) >= 8;
+              Number(progressoAnterior?.notaFinal ?? 0) >= 8;
 
             let status = (progresso?.status ?? "nao_iniciado") as string;
 
