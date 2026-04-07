@@ -22,7 +22,7 @@ export default function AlunoAvaliacao() {
   const avaliacaoId = getNumeroQuery(search, "avaliacaoId");
 
   const atividadeDetalhesQuery = trpc.competenciasCompTec.admin.obterAtividadeDetalhes.useQuery(
-    { id: atividadeId },
+    { atividadeId },
     { enabled: !!atividadeId }
   );
 
