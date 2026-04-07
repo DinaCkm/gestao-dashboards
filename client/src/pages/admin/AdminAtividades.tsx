@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,10 +38,14 @@ export default function AdminAtividades() {
     titulo: "",
     tipoAtividade: "video" as TipoAtividade,
     descricao: "",
-    urlMidia: "",
+    urlGenially: "",
     imagemUrl: "",
     ordem: "0",
   });
+  const [imagemFile, setImagemFile] = useState<File | null>(null);
+  const [imagemPreview, setImagemPreview] = useState<string>("");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const utils = trpc.useUtils();
 
@@ -61,6 +65,8 @@ export default function AdminAtividades() {
   );
 
   // Mutations
+  const uploadImagemMutation = trpc.competenciasCompTec.admin.uploadImagemAtividade.useMutation();
+
   const criarAtividadeMutation = trpc.competenciasCompTec.admin.criarAtividade.useMutation({
     onSuccess: async () => {
       toast.success("Atividade criada com sucesso!");
@@ -68,10 +74,13 @@ export default function AdminAtividades() {
         titulo: "",
         tipoAtividade: "video",
         descricao: "",
-        urlMidia: "",
+        urlGenially: "",
         imagemUrl: "",
         ordem: "0",
       });
+      setImagemFile(null);
+      setImagemPreview("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
       if (cursoId > 0) {
         await utils.competenciasCompTec.admin.listarAtividades.invalidate({ cursoId });
       }
@@ -87,6 +96,18 @@ export default function AdminAtividades() {
 
   const atividades = atividadesQuery.data ?? [];
 
+  const handleImagemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImagemFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagemPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   async function handleSalvarAtividade(e: React.FormEvent) {
     e.preventDefault();
 
@@ -100,15 +121,28 @@ export default function AdminAtividades() {
       return;
     }
 
-    await criarAtividadeMutation.mutateAsync({
-      cursoId,
-      titulo: formAtividade.titulo.trim(),
-      tipoAtividade: formAtividade.tipoAtividade,
-      descricao: formAtividade.descricao.trim(),
-      urlMidia: formAtividade.urlMidia.trim(),
-      imagemUrl: formAtividade.imagemUrl.trim(),
-      ordem: Number(formAtividade.ordem || 0),
-    });
+    setIsUploadingImage(true);
+    try {
+      let imagemUrl = formAtividade.imagemUrl;
+      if (imagemFile) {
+        const uploadResult = await uploadImagemMutation.mutateAsync({
+          arquivo: imagemFile,
+        });
+        imagemUrl = uploadResult.url;
+      }
+
+      await criarAtividadeMutation.mutateAsync({
+        cursoId,
+        titulo: formAtividade.titulo.trim(),
+        tipoAtividade: formAtividade.tipoAtividade,
+        descricao: formAtividade.descricao.trim(),
+        urlGenially: formAtividade.urlGenially.trim(),
+        imagemUrl,
+        ordem: Number(formAtividade.ordem || 0),
+      });
+    } finally {
+      setIsUploadingImage(false);
+    }
   }
 
   return (
@@ -244,14 +278,14 @@ export default function AdminAtividades() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="url" className="text-xs">
-                  URL
+                <Label htmlFor="urlGenially" className="text-xs">
+                  URL da Genially
                 </Label>
                 <Input
-                  id="url"
-                  value={formAtividade.urlMidia}
+                  id="urlGenially"
+                  value={formAtividade.urlGenially}
                   onChange={(e) =>
-                    setFormAtividade((prev) => ({ ...prev, urlMidia: e.target.value }))
+                    setFormAtividade((prev) => ({ ...prev, urlGenially: e.target.value }))
                   }
                   placeholder="https://..."
                   disabled={cursoId <= 0}
@@ -260,19 +294,29 @@ export default function AdminAtividades() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="imagemUrl" className="text-xs">
-                  URL da Imagem
+                <Label htmlFor="imagem" className="text-xs">
+                  Imagem do Card
                 </Label>
-                <Input
-                  id="imagemUrl"
-                  value={formAtividade.imagemUrl}
-                  onChange={(e) =>
-                    setFormAtividade((prev) => ({ ...prev, imagemUrl: e.target.value }))
-                  }
-                  placeholder="https://..."
-                  disabled={cursoId <= 0}
-                  className="text-sm"
-                />
+                <div className="mt-2 space-y-2">
+                  {imagemPreview && (
+                    <div className="relative w-full h-24 bg-gray-200 rounded-lg overflow-hidden">
+                      <img
+                        src={imagemPreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <Input
+                    ref={fileInputRef}
+                    id="imagem"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImagemChange}
+                    disabled={cursoId <= 0}
+                    className="text-sm"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -307,8 +351,8 @@ export default function AdminAtividades() {
                 />
               </div>
 
-              <Button type="submit" disabled={cursoId <= 0} className="w-full text-sm">
-                Criar Atividade
+              <Button type="submit" disabled={cursoId <= 0 || isUploadingImage} className="w-full text-sm">
+                {isUploadingImage ? "Enviando imagem..." : "Criar Atividade"}
               </Button>
             </form>
           </CardContent>

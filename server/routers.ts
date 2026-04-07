@@ -8968,6 +8968,27 @@ Responda APENAS em JSON com o formato especificado.`
         }),
 
 
+      uploadImagemAtividade: adminProcedure
+        .input(
+          z.object({
+            arquivo: z.instanceof(File),
+          })
+        )
+        .mutation(async ({ input }) => {
+          try {
+            const buffer = Buffer.from(await input.arquivo.arrayBuffer());
+            const fileKey = `atividades/${Date.now()}-${input.arquivo.name}`;
+            const { url, key } = await storagePut(fileKey, buffer, input.arquivo.type);
+            return { url, key, success: true };
+          } catch (error) {
+            console.error("Erro ao fazer upload de imagem:", error);
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Erro ao fazer upload da imagem",
+            });
+          }
+        }),
+
       atualizarAtividade: adminProcedure
         .input(
           z.object({

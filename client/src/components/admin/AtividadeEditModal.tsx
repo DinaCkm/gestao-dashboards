@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,6 @@ type FormDataType = {
   titulo: string;
   tipoAtividade: TipoAtividade;
   urlGenially: string;
-  urlMidia: string;
   imagemUrl: string;
   descricao: string;
   ordem: number;
@@ -51,7 +50,6 @@ function getInitialFormData(atividade: any): FormDataType {
     titulo: atividade?.titulo || "",
     tipoAtividade: (atividade?.tipoAtividade || "genially") as TipoAtividade,
     urlGenially: atividade?.urlGenially || "",
-    urlMidia: atividade?.urlMidia || "",
     imagemUrl: atividade?.imagemUrl || "",
     descricao: atividade?.descricao || "",
     ordem: Number(atividade?.ordem ?? 0),
@@ -66,17 +64,33 @@ export function AtividadeEditModal({
   onSave,
 }: AtividadeEditModalProps) {
   const [formData, setFormData] = useState<FormDataType>(getInitialFormData(atividade));
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(atividade?.imagemUrl || "");
   const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const updateAtividadeMutation =
-    trpc.competenciasCompTec.admin.atualizarAtividade.useMutation();
+  const uploadImagemMutation = trpc.competenciasCompTec.admin.uploadImagemAtividade.useMutation();
+  const updateAtividadeMutation = trpc.competenciasCompTec.admin.atualizarAtividade.useMutation();
 
   useEffect(() => {
     const initialData = getInitialFormData(atividade);
     setFormData(initialData);
     setImagePreview(atividade?.imagemUrl || "");
+    setImageFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }, [atividade, open]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = async () => {
     if (!atividade?.id) {
@@ -92,18 +106,22 @@ export function AtividadeEditModal({
     setIsSaving(true);
 
     try {
-      const urlParaSalvar =
-        formData.tipoAtividade === "genially"
-          ? formData.urlGenially.trim()
-          : formData.urlMidia.trim();
+      let imagemUrl = formData.imagemUrl;
+      if (imageFile) {
+        const uploadResult = await uploadImagemMutation.mutateAsync({
+          arquivo: imageFile,
+        });
+        imagemUrl = uploadResult.url;
+      }
 
       await updateAtividadeMutation.mutateAsync({
         id: Number(atividade.id),
         titulo: formData.titulo.trim(),
         tipoAtividade: formData.tipoAtividade,
-        urlGenially: urlParaSalvar,
+        urlGenially: formData.urlGenially.trim(),
         descricao: formData.descricao.trim(),
         ordem: Number(formData.ordem ?? 0),
+        imagemUrl,
       });
 
       toast.success("Atividade atualizada com sucesso");
@@ -162,40 +180,23 @@ export function AtividadeEditModal({
             </Select>
           </div>
 
-          {formData.tipoAtividade === "genially" ? (
-            <div>
-              <Label htmlFor="urlGenially">URL Genially</Label>
-              <Input
-                id="urlGenially"
-                value={formData.urlGenially}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    urlGenially: e.target.value,
-                  }))
-                }
-                placeholder="https://..."
-              />
-            </div>
-          ) : (
-            <div>
-              <Label htmlFor="urlMidia">URL da Mídia</Label>
-              <Input
-                id="urlMidia"
-                value={formData.urlMidia}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    urlMidia: e.target.value,
-                  }))
-                }
-                placeholder="https://..."
-              />
-            </div>
-          )}
+          <div>
+            <Label htmlFor="urlGenially">URL Genially</Label>
+            <Input
+              id="urlGenially"
+              value={formData.urlGenially}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  urlGenially: e.target.value,
+                }))
+              }
+              placeholder="https://..."
+            />
+          </div>
 
           <div>
-            <Label>Imagem atual</Label>
+            <Label htmlFor="imagem">Imagem do Card</Label>
             <div className="mt-2 space-y-2">
               {imagePreview ? (
                 <div className="relative w-full h-40 bg-gray-200 rounded-lg overflow-hidden">
@@ -211,8 +212,15 @@ export function AtividadeEditModal({
                 </div>
               )}
 
+              <Input
+                ref={fileInputRef}
+                id="imagem"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
               <p className="text-sm text-gray-500">
-                Nesta etapa, a imagem está apenas em visualização.
+                Deixe em branco para manter a imagem atual
               </p>
             </div>
           </div>
@@ -227,6 +235,18 @@ export function AtividadeEditModal({
               }
               placeholder="Descrição opcional da atividade"
               rows={3}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="ordem">Ordem</Label>
+            <Input
+              id="ordem"
+              type="number"
+              value={formData.ordem}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, ordem: Number(e.target.value) }))
+              }
             />
           </div>
 
