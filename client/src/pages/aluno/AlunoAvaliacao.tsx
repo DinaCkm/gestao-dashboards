@@ -21,9 +21,9 @@ export default function AlunoAvaliacao() {
   const atividadeId = getNumeroQuery(search, "atividadeId");
   const avaliacaoId = getNumeroQuery(search, "avaliacaoId");
 
-  const atividadeDetalhesQuery = trpc.competenciasCompTec.admin.obterAtividadeDetalhes.useQuery(
-    { atividadeId },
-    { enabled: !!atividadeId }
+  const atividadeDetalhesQuery = trpc.competenciasCompTec.aluno.obterAvaliacaoDaAtividade.useQuery(
+    { cursoId, cursoAtribuidoId, atividadeId, avaliacaoId },
+    { enabled: !!atividadeId && !!avaliacaoId }
   );
 
   const submeterAvaliacaoMutation = trpc.competenciasCompTec.aluno.submeterAvaliacao.useMutation();

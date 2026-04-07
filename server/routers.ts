@@ -9646,6 +9646,91 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true };
         }),
 
+      obterAvaliacaoDaAtividade: protectedProcedure
+        .input(z.object({
+          cursoId: z.number().int().positive(),
+          cursoAtribuidoId: z.number().int().positive(),
+          atividadeId: z.number().int().positive(),
+          avaliacaoId: z.number().int().positive(),
+        }))
+        .query(async ({ ctx, input }) => {
+          const userId = ctx.user?.id;
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          // Validar que o usuário é um aluno
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Usuário não é um aluno" });
+          }
+
+          // Validar que o curso atribuído pertence ao aluno
+          const [atribuicao] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, user.alunoId),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId)
+              )
+            )
+            .limit(1);
+
+          if (!atribuicao) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Curso não atribuído a este aluno" });
+          }
+
+          // Validar que a atividade pertence ao curso
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(
+              and(
+                eq(atividadesCurso.id, input.atividadeId),
+                eq(atividadesCurso.cursoId, input.cursoId)
+              )
+            )
+            .limit(1);
+
+          if (!atividade) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Atividade não encontrada neste curso" });
+          }
+
+          // Buscar a avaliação vinculada à atividade
+          const [avaliacao] = await database
+            .select()
+            .from(avaliacoesAtividade)
+            .where(
+              and(
+                eq(avaliacoesAtividade.id, input.avaliacaoId),
+                eq(avaliacoesAtividade.atividadeId, input.atividadeId)
+              )
+            )
+            .limit(1);
+
+          if (!avaliacao) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada para esta atividade" });
+          }
+
+          // Retornar a estrutura esperada pelo frontend
+          return {
+            atividade,
+            avaliacoes: avaliacao,
+          };
+        }),
+
       submeterAvaliacao: protectedProcedure
         .input(z.object({
           cursoId: z.number().int().positive(),
