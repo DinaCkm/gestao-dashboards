@@ -13,13 +13,13 @@ function getNumeroQuery(search: string, chave: string) {
 
 export default function AlunoAvaliacao() {
   const [location, setLocation] = useLocation();
-  const [search] = useState(() => location.split("?")[1] ?? "");
   const [respostas, setRespostas] = useState<Record<string, string>>({});
 
-  const cursoId = getNumeroQuery(search, "cursoId");
-  const cursoAtribuidoId = getNumeroQuery(search, "cursoAtribuidoId");
-  const atividadeId = getNumeroQuery(search, "atividadeId");
-  const avaliacaoId = getNumeroQuery(search, "avaliacaoId");
+  // location já inclui a query string (ex: "/aluno/...?cursoId=14&...")
+  const cursoId = getNumeroQuery(location, "cursoId");
+  const cursoAtribuidoId = getNumeroQuery(location, "cursoAtribuidoId");
+  const atividadeId = getNumeroQuery(location, "atividadeId");
+  const avaliacaoId = getNumeroQuery(location, "avaliacaoId");
 
   const atividadeDetalhesQuery = trpc.competenciasCompTec.aluno.obterAvaliacaoDaAtividade.useQuery(
     { cursoId, cursoAtribuidoId, atividadeId, avaliacaoId },
