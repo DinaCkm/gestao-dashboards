@@ -6,25 +6,44 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-function getNumeroQuery(search: string, chave: string) {
-  const params = new URLSearchParams(search);
-  return Number(params.get(chave) ?? 0);
-}
-
 export default function AlunoAvaliacao() {
   const [location, setLocation] = useLocation();
   const [respostas, setRespostas] = useState<Record<string, string>>({});
 
-  // location já inclui a query string (ex: "/aluno/...?cursoId=14&...")
-  const cursoId = getNumeroQuery(location, "cursoId");
-  const cursoAtribuidoId = getNumeroQuery(location, "cursoAtribuidoId");
-  const atividadeId = getNumeroQuery(location, "atividadeId");
-  const avaliacaoId = getNumeroQuery(location, "avaliacaoId");
+  // Ler parâmetros direto da URL do navegador (mais confiável que wouter)
+  const searchParams = new URLSearchParams(window.location.search);
+  const cursoId = Number(searchParams.get("cursoId") ?? 0);
+  const cursoAtribuidoId = Number(searchParams.get("cursoAtribuidoId") ?? 0);
+  const atividadeId = Number(searchParams.get("atividadeId") ?? 0);
+  const avaliacaoId = Number(searchParams.get("avaliacaoId") ?? 0);
+
+  // Validar que todos os parâmetros são números válidos > 0
+  const parametrosValidos = [cursoId, cursoAtribuidoId, atividadeId, avaliacaoId].every(
+    (n) => Number.isInteger(n) && n > 0
+  );
 
   const atividadeDetalhesQuery = trpc.competenciasCompTec.aluno.obterAvaliacaoDaAtividade.useQuery(
     { cursoId, cursoAtribuidoId, atividadeId, avaliacaoId },
-    { enabled: atividadeId > 0 && avaliacaoId > 0 }
+    { enabled: parametrosValidos, retry: false }
   );
+
+  // Bloquear fluxo se parâmetros forem inválidos
+  if (!parametrosValidos) {
+    return (
+      <div className="container py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Link Inválido</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">
+              O link da avaliação é inválido. Volte e acesse novamente pelo curso.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const submeterAvaliacaoMutation = trpc.competenciasCompTec.aluno.submeterAvaliacao.useMutation();
 
