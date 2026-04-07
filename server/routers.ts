@@ -8971,14 +8971,16 @@ Responda APENAS em JSON com o formato especificado.`
       uploadImagemAtividade: adminProcedure
         .input(
           z.object({
-            arquivo: z.instanceof(File),
+            nomeArquivo: z.string(),
+            tipoMime: z.string(),
+            dados: z.string(), // base64 encoded
           })
         )
         .mutation(async ({ input }) => {
           try {
-            const buffer = Buffer.from(await input.arquivo.arrayBuffer());
-            const fileKey = `atividades/${Date.now()}-${input.arquivo.name}`;
-            const { url, key } = await storagePut(fileKey, buffer, input.arquivo.type);
+            const buffer = Buffer.from(input.dados, 'base64');
+            const fileKey = `atividades/${Date.now()}-${input.nomeArquivo}`;
+            const { url, key } = await storagePut(fileKey, buffer, input.tipoMime);
             return { url, key, success: true };
           } catch (error) {
             console.error("Erro ao fazer upload de imagem:", error);

@@ -108,6 +108,18 @@ export default function AdminAtividades() {
     }
   };
 
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   async function handleSalvarAtividade(e: React.FormEvent) {
     e.preventDefault();
 
@@ -125,8 +137,11 @@ export default function AdminAtividades() {
     try {
       let imagemUrl = formAtividade.imagemUrl;
       if (imagemFile) {
+        const base64 = await convertFileToBase64(imagemFile);
         const uploadResult = await uploadImagemMutation.mutateAsync({
-          arquivo: imagemFile,
+          nomeArquivo: imagemFile.name,
+          tipoMime: imagemFile.type,
+          dados: base64,
         });
         imagemUrl = uploadResult.url;
       }

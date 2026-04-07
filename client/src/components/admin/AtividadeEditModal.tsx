@@ -92,6 +92,18 @@ export function AtividadeEditModal({
     }
   };
 
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSave = async () => {
     if (!atividade?.id) {
       toast.error("Atividade inválida");
@@ -108,8 +120,11 @@ export function AtividadeEditModal({
     try {
       let imagemUrl = formData.imagemUrl;
       if (imageFile) {
+        const base64 = await convertFileToBase64(imageFile);
         const uploadResult = await uploadImagemMutation.mutateAsync({
-          arquivo: imageFile,
+          nomeArquivo: imageFile.name,
+          tipoMime: imageFile.type,
+          dados: base64,
         });
         imagemUrl = uploadResult.url;
       }
