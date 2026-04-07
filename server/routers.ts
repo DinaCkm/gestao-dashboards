@@ -9648,10 +9648,10 @@ Responda APENAS em JSON com o formato especificado.`
 
       obterAvaliacaoDaAtividade: protectedProcedure
         .input(z.object({
-          cursoId: z.number().int().positive(),
-          cursoAtribuidoId: z.number().int().positive(),
-          atividadeId: z.number().int().positive(),
-          avaliacaoId: z.number().int().positive(),
+          cursoId: z.number().int().min(1, "cursoId inválido"),
+          cursoAtribuidoId: z.number().int().min(1, "cursoAtribuidoId inválido"),
+          atividadeId: z.number().int().min(1, "atividadeId inválido"),
+          avaliacaoId: z.number().int().min(1, "avaliacaoId inválido"),
         }))
         .query(async ({ ctx, input }) => {
           const userId = ctx.user?.id;
