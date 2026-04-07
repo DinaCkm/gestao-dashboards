@@ -9048,26 +9048,18 @@ Responda APENAS em JSON com o formato especificado.`
           const database = await db.getDb();
           if (!database) return null;
 
-          // Buscar a atividade
-          const [atividade] = await database
-            .select()
+          const result = await database
+            .select({
+              atividade: atividadesCurso,
+              avaliacoes: avaliacoesAtividade,
+            })
             .from(atividadesCurso)
+            .leftJoin(avaliacoesAtividade, eq(atividadesCurso.id, avaliacoesAtividade.atividadeId))
             .where(eq(atividadesCurso.id, input.atividadeId))
             .limit(1);
 
-          if (!atividade) return null;
-
-          // Buscar todas as avaliações para essa atividade
-          const avaliacoes = await database
-            .select()
-            .from(avaliacoesAtividade)
-            .where(eq(avaliacoesAtividade.atividadeId, input.atividadeId));
-
-          // Retornar a estrutura esperada pelo frontend
-          return {
-            atividade,
-            avaliacoes: avaliacoes.length > 0 ? avaliacoes[0] : null,
-          };
+          if (result.length === 0) return null;
+          return result[0];
         }),
 
       criarAvaliacao: adminProcedure
