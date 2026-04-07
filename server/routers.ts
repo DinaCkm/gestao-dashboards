@@ -5,7 +5,21 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { eq, and, asc, desc } from "drizzle-orm";
-import { competenciasModulos, competencias, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCursoAtribuido, tentativasAvaliacao, cursos, atividadesCurso, avaliacoesAtividade, cursosCompetencias, onboardingVideos } from "../drizzle/schema";
+import {
+  competenciasModulos,
+  competencias,
+  alunoModuloProgresso,
+  alunoModuloRelato,
+  alunoModuloAvaliacao,
+  alunoCursoAtribuido,
+  tentativasAvaliacao,
+  atividadesCurso,
+  avaliacoesAtividade,
+  cursosCompetencias,
+  onboardingVideos,
+  alunoAtividadeProgresso,
+  users,
+} from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
 import * as XLSX from 'xlsx';
@@ -17,6 +31,53 @@ import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateTyp
 import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
+
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const next = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      result.push(current);
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  result.push(current);
+  return result.map((item) => item.trim());
+}
+
+function getVal(
+  values: string[],
+  colMap: Record<string, number>,
+  key: string
+): string | undefined {
+  const idx = colMap[key];
+  if (idx === undefined || idx < 0 || idx >= values.length) return undefined;
+
+  const raw = values[idx];
+  if (raw === undefined || raw === null) return undefined;
+
+  const value = String(raw).trim();
+  return value === "" ? undefined : value;
+}
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -9303,52 +9364,72 @@ Responda APENAS em JSON com o formato especificado.`
           cursoAtribuidoId: z.number().int().positive(),
         }))
         .query(async ({ ctx, input }) => {
-          const database = await db.getDb();
-          if (!database) return [];
-
-          const userId = ctx.user?.id;
+                  const userId = ctx.user?.id;
           if (!userId) {
             throw new TRPCError({ code: "UNAUTHORIZED" });
           }
 
-          const user = await database.query.users.findFirst({
-            where: eq(users.id, userId),
-          });
+          const database = await db.getDb();
+          if (!database) return [];
+
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
 
           if (!user?.alunoId) {
             throw new TRPCError({ code: "FORBIDDEN", message: "Aluno não identificado." });
           }
 
-          const atribuicao = await database.query.alunoCursoAtribuido.findFirst({
-            where: and(
-              eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
-              eq(alunoCursoAtribuido.alunoId, user.alunoId),
-              eq(alunoCursoAtribuido.cursoId, input.cursoId),
-            ),
-          });
+          const [atribuicao] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, user.alunoId),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId),
+              )
+            )
+            .limit(1);
 
           if (!atribuicao) {
             throw new TRPCError({ code: "NOT_FOUND", message: "Curso atribuído não encontrado." });
           }
 
-          const atividades = await database.query.atividadesCurso.findMany({
-            where: eq(atividadesCurso.cursoId, input.cursoId),
-            orderBy: [asc(atividadesCurso.ordem), asc(atividadesCurso.id)],
-          });
+          const atividades = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.cursoId, input.cursoId))
+            .orderBy(asc(atividadesCurso.ordem), asc(atividadesCurso.id));
 
-          const progressos = await database.query.alunoAtividadeProgresso.findMany({
-            where: and(
-              eq(alunoAtividadeProgresso.alunoId, user.alunoId),
-              eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-            ),
-          });
+          const progressos = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+              )
+            );
 
-          const avaliacoes = await database.query.avaliacoesAtividade.findMany({
-            where: eq(avaliacoesAtividade.cursoId, input.cursoId),
-          });
+          const atividadeIds = atividades.map((atividade) => atividade.id);
+
+          const avaliacoes = atividadeIds.length === 0
+            ? []
+            : await database
+                .select()
+                .from(avaliacoesAtividade)
+                .where(eq(avaliacoesAtividade.isActive, 1));
 
           const progressoMap = new Map(progressos.map((p) => [p.atividadeId, p]));
-          const avaliacaoMap = new Map(avaliacoes.map((a) => [a.atividadeId, a]));
+
+          const avaliacaoMap = new Map(
+            avaliacoes
+              .filter((a) => atividadeIds.includes(a.atividadeId))
+              .map((a) => [a.atividadeId, a])
+          );
 
           return atividades.map((atividade, index) => {
             const progresso = progressoMap.get(atividade.id);
@@ -9392,36 +9473,64 @@ Responda APENAS em JSON com o formato especificado.`
 
       iniciarAtividade: protectedProcedure
         .input(z.object({
-          cursoId: z.number().int().positive(),
-          cursoAtribuidoId: z.number().int().positive(),
-          atividadeId: z.number().int().positive(),
+          cursoId: z.number(),
+          cursoAtribuidoId: z.number(),
+          atividadeId: z.number(),
         }))
         .mutation(async ({ ctx, input }) => {
-          const userId = ctx.user?.id;
+          const database = await getDb();
+          if (!database) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Banco de dados indisponível",
+            });
+          }
+
+          const userId = Number(ctx.user?.id ?? 0);
           if (!userId) {
             throw new TRPCError({ code: "UNAUTHORIZED" });
           }
 
-          const database = await db.getDb();
-          if (!database) {
-            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
-          }
-
-          const user = await database.query.users.findFirst({
-            where: eq(users.id, userId),
-          });
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
 
           if (!user?.alunoId) {
             throw new TRPCError({ code: "FORBIDDEN" });
           }
 
-          const existente = await database.query.alunoAtividadeProgresso.findFirst({
-            where: and(
-              eq(alunoAtividadeProgresso.alunoId, user.alunoId),
-              eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-              eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
-            ),
-          });
+          const [atribuicao] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, user.alunoId),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId),
+              )
+            )
+            .limit(1);
+
+          if (!atribuicao) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Curso atribuído não encontrado.",
+            });
+          }
+
+          const [existente] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
+              )
+            )
+            .limit(1);
 
           if (!existente) {
             await database.insert(alunoAtividadeProgresso).values({
@@ -9433,7 +9542,10 @@ Responda APENAS em JSON com o formato especificado.`
               avaliacaoLiberada: 0,
               tentativas: 0,
             });
-          } else if (existente.status === "nao_iniciado" || existente.status === "disponivel") {
+          } else if (
+            existente.status === "disponivel" ||
+            existente.status === "bloqueada"
+          ) {
             await database
               .update(alunoAtividadeProgresso)
               .set({
@@ -9443,14 +9555,6 @@ Responda APENAS em JSON com o formato especificado.`
               })
               .where(eq(alunoAtividadeProgresso.id, existente.id));
           }
-
-          await database
-            .update(alunoCursoAtribuido)
-            .set({
-              status: "em_andamento",
-              updatedAt: new Date(),
-            })
-            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
 
           return { success: true };
         }),
@@ -9472,21 +9576,27 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
           }
 
-          const user = await database.query.users.findFirst({
-            where: eq(users.id, userId),
-          });
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
 
           if (!user?.alunoId) {
             throw new TRPCError({ code: "FORBIDDEN" });
           }
 
-          const progresso = await database.query.alunoAtividadeProgresso.findFirst({
-            where: and(
-              eq(alunoAtividadeProgresso.alunoId, user.alunoId),
-              eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-              eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
-            ),
-          });
+          const [progresso] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
+              )
+            )
+            .limit(1);
 
           if (!progresso) {
             throw new TRPCError({ code: "NOT_FOUND", message: "Progresso da atividade não encontrado" });
@@ -9524,21 +9634,27 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
           }
 
-          const user = await database.query.users.findFirst({
-            where: eq(users.id, userId),
-          });
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
 
           if (!user?.alunoId) {
             throw new TRPCError({ code: "FORBIDDEN" });
           }
 
-          const progresso = await database.query.alunoAtividadeProgresso.findFirst({
-            where: and(
-              eq(alunoAtividadeProgresso.alunoId, user.alunoId),
-              eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-              eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
-            ),
-          });
+          const [progresso] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
+              )
+            )
+            .limit(1);
 
           if (!progresso) {
             throw new TRPCError({ code: "NOT_FOUND", message: "Progresso da atividade não encontrado" });
@@ -9548,22 +9664,25 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "FORBIDDEN", message: "Avaliação não foi liberada para esta atividade" });
           }
 
-          const aprovado = input.nota >= 8;
+          const notaNumerica = Number(input.nota);
+          const aprovado = notaNumerica >= 8;
+          const notaPersistida = notaNumerica.toFixed(1);
 
           await database
             .update(alunoAtividadeProgresso)
             .set({
-              notaFinal: input.nota,
+              notaFinal: notaPersistida,
               status: aprovado ? "aprovada" : "reprovada",
               tentativas: (progresso.tentativas ?? 0) + 1,
               updatedAt: new Date(),
             })
             .where(eq(alunoAtividadeProgresso.id, progresso.id));
 
-          const atividades = await database.query.atividadesCurso.findMany({
-            where: eq(atividadesCurso.cursoId, input.cursoId),
-            orderBy: [asc(atividadesCurso.ordem), asc(atividadesCurso.id)],
-          });
+          const atividades = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.cursoId, input.cursoId))
+            .orderBy(asc(atividadesCurso.ordem), asc(atividadesCurso.id));
 
           const atividadeIndex = atividades.findIndex((a) => a.id === input.atividadeId);
           const proximaAtividade = atividadeIndex >= 0 && atividadeIndex < atividades.length - 1
@@ -9571,13 +9690,17 @@ Responda APENAS em JSON com o formato especificado.`
             : null;
 
           if (aprovado && proximaAtividade) {
-            const proximaJaExiste = await database.query.alunoAtividadeProgresso.findFirst({
-              where: and(
-                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
-                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-                eq(alunoAtividadeProgresso.atividadeId, proximaAtividade.id),
-              ),
-            });
+            const [proximaJaExiste] = await database
+              .select()
+              .from(alunoAtividadeProgresso)
+              .where(
+                and(
+                  eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                  eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                  eq(alunoAtividadeProgresso.atividadeId, proximaAtividade.id),
+                )
+              )
+              .limit(1);
 
             if (!proximaJaExiste) {
               await database.insert(alunoAtividadeProgresso).values({
@@ -9591,12 +9714,15 @@ Responda APENAS em JSON com o formato especificado.`
             }
           }
 
-          const todasAsAtividades = await database.query.alunoAtividadeProgresso.findMany({
-            where: and(
-              eq(alunoAtividadeProgresso.alunoId, user.alunoId),
-              eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-            ),
-          });
+          const todasAsAtividades = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+              )
+            );
 
           const todasAprovadas = todasAsAtividades.every((a) => a.status === "aprovada");
 
@@ -9605,7 +9731,6 @@ Responda APENAS em JSON com o formato especificado.`
               .update(alunoCursoAtribuido)
               .set({
                 status: "concluido",
-                updatedAt: new Date(),
               })
               .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
           }
@@ -9837,13 +9962,14 @@ Responda APENAS em JSON com o formato especificado.`
             .limit(1);
 
           const notaFinal = ultimaTentativaJoin?.tentativas_avaliacao?.nota ?? null;
-          const aprovado = Number(notaFinal ?? 0) >= 8;
+          const notaNumerica = Number(notaFinal ?? 0);
+          const aprovado = notaNumerica >= 8;
 
           await database
             .update(alunoCursoAtribuido)
             .set({
               status: aprovado ? "concluido" : "em_progresso",
-              notaFinal,
+              notaFinal: notaNumerica.toFixed(1),
               dataConclusao: aprovado ? new Date() : null,
             })
             .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));

@@ -60,8 +60,12 @@ import {
   tentativasAvaliacao, InsertTentativaAvaliacao, TentativaAvaliacao,
   alunoCursoAtribuido, InsertAlunoCursoAtribuido, AlunoCursoAtribuido,} from "../drizzle/schema";
 import { ENV } from './_core/env';
+import * as schema from "../drizzle/schema";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+const createDbClient = () => drizzle(process.env.DATABASE_URL!, { schema });
+type DbClient = ReturnType<typeof createDbClient>;
+
+let _db: DbClient | null = null;
 let _connection: mysql.Connection | null = null;
 
 export async function getRawConnection() {
@@ -93,7 +97,7 @@ export async function getRawConnection() {
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _db = drizzle(process.env.DATABASE_URL, { schema });
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;

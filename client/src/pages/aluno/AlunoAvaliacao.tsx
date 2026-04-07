@@ -18,22 +18,35 @@ export default function AlunoAvaliacao() {
 
   const cursoId = getNumeroQuery(search, "cursoId");
   const cursoAtribuidoId = getNumeroQuery(search, "cursoAtribuidoId");
+  const atividadeId = getNumeroQuery(search, "atividadeId");
   const avaliacaoId = getNumeroQuery(search, "avaliacaoId");
 
-  const iniciarAtividadeMutation = trpc.competenciasCompTec.aluno.iniciarAtividade.useMutation();
+  const atividadeDetalhesQuery = trpc.competenciasCompTec.admin.obterAtividadeDetalhes.useQuery(
+    { atividadeId },
+    { enabled: !!atividadeId }
+  );
+
   const submeterAvaliacaoMutation = trpc.competenciasCompTec.aluno.submeterAvaliacao.useMutation();
 
   const questoes = useMemo(() => {
-    const data = iniciarAtividadeMutation.data;
-    if (Array.isArray(data?.questoes)) return data.questoes;
-    if (Array.isArray(data?.avaliacao?.questoes)) return data.avaliacao.questoes;
+    const raw = atividadeDetalhesQuery.data?.avaliacoes?.questoes;
+
+    if (Array.isArray(raw)) return raw;
+
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
     return [];
-  }, [iniciarAtividadeMutation.data]);
+  }, [atividadeDetalhesQuery.data]);
 
   async function carregarQuestoes() {
-    // Nota: Esta função precisa do atividadeId, que não está disponível aqui
-    // Por enquanto, apenas mostra um aviso
-    alert("Carregamento de questões requer atividadeId");
+    await atividadeDetalhesQuery.refetch();
   }
 
   function atualizarResposta(questaoId: string, valor: string) {
@@ -42,6 +55,12 @@ export default function AlunoAvaliacao() {
 
   async function handleSubmeter() {
     const totalQuestoes = questoes.length;
+
+    if (totalQuestoes === 0) {
+      alert("Nenhuma questão foi carregada para esta avaliação.");
+      return;
+    }
+
     const acertos = questoes.reduce((acc: number, questao: any, index: number) => {
       const id = String(questao?.id ?? index);
       const correta = questao?.respostaCorreta ?? questao?.correta ?? null;
@@ -54,7 +73,7 @@ export default function AlunoAvaliacao() {
       const result = await submeterAvaliacaoMutation.mutateAsync({
         cursoId,
         cursoAtribuidoId,
-        atividadeId: avaliacaoId, // Usar avaliacaoId como atividadeId
+        atividadeId,
         nota,
         respostas,
       });
@@ -100,12 +119,12 @@ export default function AlunoAvaliacao() {
                 Nenhuma questão carregada ainda.
               </div>
 
-              <Button onClick={carregarQuestoes} disabled={iniciarAtividadeMutation.isPending}>
-                {iniciarAtividadeMutation.isPending ? "Carregando..." : "Carregar questões"}
+              <Button onClick={carregarQuestoes} disabled={atividadeDetalhesQuery.isFetching}>
+                {atividadeDetalhesQuery.isFetching ? "Carregando..." : "Carregar questões"}
               </Button>
 
-              {iniciarAtividadeMutation.error && (
-                <p className="text-sm text-red-600">{iniciarAtividadeMutation.error.message}</p>
+              {atividadeDetalhesQuery.error && (
+                <p className="text-sm text-red-600">{atividadeDetalhesQuery.error.message}</p>
               )}
             </div>
           ) : (

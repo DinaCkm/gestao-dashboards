@@ -34,10 +34,7 @@ export default function AlunoAtividade() {
         setTimeout(() => {
           const atividade = atividades.find(a => a.id === variables.atividadeId);
           if (atividade) {
-            // Usar o campo correto baseado no tipo de atividade
-            const url = atividade.tipoAtividade === 'genially' 
-              ? atividade.urlGenially 
-              : atividade.urlMidia;
+            const url = atividade.urlGenially || atividade.urlMidia;
             if (url) {
               window.open(url, "_blank");
             }
@@ -49,10 +46,20 @@ export default function AlunoAtividade() {
 
   // Mutation para concluir atividade
   const concluirAtividadeMutation = trpc.competenciasCompTec.aluno.concluirAtividade.useMutation({
-    onSuccess: () => {
+    onSuccess: async (_result, variables) => {
       setAtividadeEmAndamento(null);
-      // Recarregar atividades
-      atividadesQuery.refetch();
+      await atividadesQuery.refetch();
+
+      const atividade = atividades.find((a) => a.id === variables.atividadeId);
+
+      if (!atividade?.avaliacaoId) {
+        alert("Esta atividade ainda não possui avaliação vinculada.");
+        return;
+      }
+
+      setLocation(
+        `/aluno/competencias-comp-tec/avaliacao?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&atividadeId=${atividade.id}&avaliacaoId=${atividade.avaliacaoId}`
+      );
     },
   });
 
@@ -189,6 +196,7 @@ export default function AlunoAtividade() {
                               <Button
                                 onClick={() =>
                                   concluirAtividadeMutation.mutateAsync({
+                                    cursoId,
                                     cursoAtribuidoId,
                                     atividadeId: atividade.id,
                                   })
