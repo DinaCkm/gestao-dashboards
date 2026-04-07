@@ -62,7 +62,8 @@ import {
 import { ENV } from './_core/env';
 import * as schema from "../drizzle/schema";
 
-const createDbClient = () => drizzle(process.env.DATABASE_URL!, { schema });
+const createDbClient = () =>
+  drizzle(process.env.DATABASE_URL!, { schema, mode: "default" });
 type DbClient = ReturnType<typeof createDbClient>;
 
 let _db: DbClient | null = null;
