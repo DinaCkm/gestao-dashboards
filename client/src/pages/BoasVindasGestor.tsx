@@ -308,5 +308,3 @@ export function BoasVindasGestor() {
     </div>
   );
 }
-
-export default BoasVindasGestor;
