@@ -312,4 +312,5 @@ export function BoasVindasGestor() {
   );
 }
 
+// Force rebuild trigger - timestamp: 2026-04-08T21:45:00Z
 export default BoasVindasGestor;
