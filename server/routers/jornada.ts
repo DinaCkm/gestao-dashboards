@@ -1,15 +1,18 @@
 import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
+import { eq } from 'drizzle-orm';
 import { 
-  getAlunoByUserId,
   getAssessmentPdiByAluno,
   getAssessmentCompetenciasByPdi,
   getTrilhaById,
   getContratoMentoriaByAluno,
   getSaldoMentoriasAluno,
-  getDb,
-  getJornadasPorTurma
+  getJornadasPorTurma,
+  getAlunoByUserId,
+  getDb
 } from "../db";
+import * as schema from '../drizzle/schema';
+const { programs } = schema;
 
 const CalcularIndicadoresInput = z.object({
   alunoId: z.number().int().positive(),
@@ -327,9 +330,26 @@ export const jornadaRouter = router({
   // Obter jornadas agrupadas por turma e empresa (para Gantt chart)
   porTurmaGeral: protectedProcedure
     .input(z.object({ empresa: z.string().optional() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       try {
-        return await getJornadasPorTurma(input.empresa || undefined);
+        // Pegar o aluno do usuário logado para obter o programId
+        const aluno = await getAlunoByUserId(ctx.user.id);
+        if (!aluno || !aluno.programId) {
+          console.warn('[porTurmaGeral] Usuário sem programa associado');
+          return [];
+        }
+        
+        // Buscar o programa para pegar o nome
+        const db = await getDb();
+        if (!db) return [];
+        const program = await db.select().from(programs).where(eq(programs.id, aluno.programId)).limit(1);
+        if (!program[0]) {
+          console.warn('[porTurmaGeral] Programa não encontrado');
+          return [];
+        }
+        
+        // Passar o nome da empresa para filtrar apenas a empresa do gerente
+        return await getJornadasPorTurma(program[0].name);
       } catch (error) {
         console.error('[porTurmaGeral] Erro:', error);
         return [];
