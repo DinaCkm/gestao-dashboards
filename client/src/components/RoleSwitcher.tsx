@@ -17,14 +17,18 @@ export default function RoleSwitcher() {
 
   const handleSwitch = () => {
     const newRole = activeRole === "aluno" ? "gerente" : "aluno";
+    console.log("[RoleSwitcher] Current activeRole:", activeRole);
+    console.log("[RoleSwitcher] New role will be:", newRole);
     toggleRole();
 
     if (newRole === "gerente") {
+      console.log("[RoleSwitcher] Navigating to /dashboard/gestor");
       setLocation("/dashboard/gestor");
       toast.info("Alternando para visão Gerencial", {
         icon: <Building2 className="h-4 w-4" />,
       });
     } else {
+      console.log("[RoleSwitcher] Navigating to /meu-dashboard");
       setLocation("/meu-dashboard");
       toast.info("Alternando para visão de Aluno", {
         icon: <GraduationCap className="h-4 w-4" />,

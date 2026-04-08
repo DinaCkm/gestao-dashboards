@@ -344,8 +344,10 @@ function DashboardLayoutContent({
           return consultorRole === 'mentor';
         }
         if (item.requireConsultorRole === 'gerente') {
-          // Gestor puro (consultorRole=gerente) OU gestor sem consultorId (promovido de aluno)
-          return consultorRole === 'gerente' || (!hasConsultorId && userRole === 'manager' && !(user as any)?.alunoId);
+          // Gestor puro (consultorRole=gerente) OU gestor sem consultorId OU manager+aluno (gerente que também é aluno)
+          return consultorRole === 'gerente' || 
+                 (!hasConsultorId && userRole === 'manager' && !(user as any)?.alunoId) ||
+                 (userRole === 'manager' && (user as any)?.alunoId);
         }
       }
       // Legacy fallback
