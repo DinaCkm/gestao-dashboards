@@ -93,6 +93,18 @@ function BoasVindasContent() {
     { enabled: !!user && user.role === 'manager' }
   );
 
+  // Estado para filtro de turma
+  const [selectedTurma, setSelectedTurma] = useState<string | null>(null);
+
+  // Extrair lista única de turmas
+  const turmasList = useMemo(() => {
+    const turmas = new Set<string>();
+    (allJornadas || []).forEach((j: any) => {
+      if (j.turmaNome) turmas.add(j.turmaNome);
+    });
+    return Array.from(turmas).sort();
+  }, [allJornadas]);
+
   // Cores para as turmas
   const turmaColors = ['#1E3A5F', '#F5A623', '#2E7D32', '#D32F2F', '#7B1FA2', '#00838F', '#FF6F00', '#0097A7'];
 
@@ -102,9 +114,14 @@ function BoasVindasContent() {
     return date.toLocaleDateString('pt-BR');
   };
 
-  // Agrupar jornadas por empresa/cliente
+  // Agrupar jornadas por empresa/cliente (com filtro de turma)
   const jornadasPorEmpresa = useMemo(() => {
     return (allJornadas || []).reduce((acc: any, jornada: any) => {
+      // Aplicar filtro de turma se selecionado
+      if (selectedTurma && jornada.turmaNome !== selectedTurma) {
+        return acc;
+      }
+      
       const empresaNome = jornada.empresaNome || 'Sem Empresa';
       if (!acc[empresaNome]) {
         acc[empresaNome] = [];
@@ -112,7 +129,7 @@ function BoasVindasContent() {
       acc[empresaNome].push(jornada);
       return acc;
     }, {});
-  }, [allJornadas]);
+  }, [allJornadas, selectedTurma]);
 
   return (
     <div className="min-h-screen -m-6 p-6">
@@ -547,13 +564,34 @@ function BoasVindasContent() {
         {Object.keys(jornadasPorEmpresa).length > 0 && (
           <Card className="mb-12 border shadow-md">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Timeline de Macrociclos
-              </CardTitle>
-              <CardDescription>
-                Visualize o cronograma de execução dos macrociclos agrupados por cliente e turma
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Timeline dos Ciclos
+                  </CardTitle>
+                  <CardDescription>
+                    Visualize o cronograma de execução dos ciclos agrupados por cliente e turma
+                  </CardDescription>
+                </div>
+                {turmasList.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-foreground">Filtrar por Turma:</label>
+                    <select
+                      value={selectedTurma || ''}
+                      onChange={(e) => setSelectedTurma(e.target.value || null)}
+                      className="px-3 py-1 border border-border rounded-md text-sm bg-background text-foreground"
+                    >
+                      <option value="">Todas as turmas</option>
+                      {turmasList.map((turma) => (
+                        <option key={turma} value={turma}>
+                          {turma}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {Object.entries(jornadasPorEmpresa).map(([empresaNome, jornadas]: [string, any]) => {
