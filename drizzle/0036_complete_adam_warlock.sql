@@ -1,1 +1,0 @@
-ALTER TABLE `disc_resultados` ADD `ciclo` int DEFAULT 1 NOT NULL;

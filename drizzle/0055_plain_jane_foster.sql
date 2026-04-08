@@ -1,1 +1,0 @@
-ALTER TABLE `alunos` ADD `tipoMentoria` enum('individual','grupo') DEFAULT 'individual';

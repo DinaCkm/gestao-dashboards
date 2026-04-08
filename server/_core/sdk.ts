@@ -20,6 +20,7 @@ const isNonEmptyString = (value: unknown): value is string =>
 
 export type SessionPayload = {
   openId: string;
+  appId: string;
   name: string;
 };
 
@@ -155,11 +156,6 @@ class SDKServer {
 
   private getSessionSecret() {
     const secret = ENV.cookieSecret;
-    if (!secret || secret.length === 0) {
-      throw new Error(
-        "JWT_SECRET environment variable is required and must not be empty"
-      );
-    }
     return new TextEncoder().encode(secret);
   }
 
@@ -175,6 +171,7 @@ class SDKServer {
     return this.signSession(
       {
         openId,
+        appId: ENV.appId,
         name: options.name || "",
       },
       options
@@ -192,6 +189,7 @@ class SDKServer {
 
     return new SignJWT({
       openId: payload.openId,
+      appId: payload.appId,
       name: payload.name,
     })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
@@ -201,7 +199,7 @@ class SDKServer {
 
   async verifySession(
     cookieValue: string | undefined | null
-  ): Promise<{ openId: string; name: string } | null> {
+  ): Promise<{ openId: string; appId: string; name: string } | null> {
     if (!cookieValue) {
       console.warn("[Auth] Missing session cookie");
       return null;
@@ -212,16 +210,21 @@ class SDKServer {
       const { payload } = await jwtVerify(cookieValue, secretKey, {
         algorithms: ["HS256"],
       });
-      const { openId, name } = payload as Record<string, unknown>;
+      const { openId, appId, name } = payload as Record<string, unknown>;
 
-      if (!isNonEmptyString(openId)) {
+      if (
+        !isNonEmptyString(openId) ||
+        !isNonEmptyString(appId) ||
+        !isNonEmptyString(name)
+      ) {
         console.warn("[Auth] Session payload missing required fields");
         return null;
       }
 
       return {
         openId,
-        name: isNonEmptyString(name) ? name : "",
+        appId,
+        name,
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));

@@ -1,1 +1,0 @@
-ALTER TABLE `onboarding_videos` ADD `textoExplicativo` text;

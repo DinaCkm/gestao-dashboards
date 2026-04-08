@@ -1,2 +1,0 @@
--- Migration 0068: plataformaAulas column already exists in alunos table
--- No action needed

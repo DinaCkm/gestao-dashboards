@@ -1,3 +1,0 @@
-Status check: Server running, no errors. Homepage loads correctly.
-1195 sessões de mentoria, 126 alunos, 11 mentores, 4 empresas.
-All 109 tests passing.

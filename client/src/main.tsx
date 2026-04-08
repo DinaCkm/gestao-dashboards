@@ -8,21 +8,6 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import "./index.css";
 
-// Global error handler for DOM manipulation errors (Recharts/Radix UI)
-// These errors are non-critical and can be safely suppressed
-window.addEventListener('error', (event) => {
-  if (event.error?.name === 'NotFoundError' && (
-    event.error?.message?.includes('removeChild') ||
-    event.error?.message?.includes('insertBefore') ||
-    event.error?.message?.includes('appendChild')
-  )) {
-    console.warn('[DOM Error Suppressed]', event.error.message);
-    event.preventDefault();
-    event.stopPropagation();
-    return false;
-  }
-});
-
 const queryClient = new QueryClient();
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
@@ -33,9 +18,7 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  // Não redirecionar automaticamente - deixar o CustomLogin tratar
-  // window.location.href = getLoginUrl();
-  console.log("[Auth] User not authenticated, showing login screen");
+  window.location.href = getLoginUrl();
 };
 
 queryClient.getQueryCache().subscribe(event => {

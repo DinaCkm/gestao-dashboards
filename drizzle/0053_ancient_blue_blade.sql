@@ -1,1 +1,0 @@
-ALTER TABLE `reports` MODIFY COLUMN `type` enum('admin','manager','individual','financeiro_mentora','financeiro_empresa') NOT NULL;

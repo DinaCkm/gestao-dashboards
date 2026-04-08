@@ -1,1 +1,0 @@
-ALTER TABLE `mentoring_sessions` ADD `notaEvolucao` int;

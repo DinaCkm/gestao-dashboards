@@ -1,1 +1,0 @@
-SHOW COLUMNS FROM alunos;

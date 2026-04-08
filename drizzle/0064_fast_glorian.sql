@@ -1,1 +1,0 @@
-ALTER TABLE `atividades_curso` MODIFY COLUMN `urlGenially` varchar(500);

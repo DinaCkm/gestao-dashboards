@@ -1,1 +1,0 @@
-ALTER TABLE `assessment_competencias` MODIFY COLUMN `notaCorte` decimal(5,2) NOT NULL DEFAULT '8.00';
