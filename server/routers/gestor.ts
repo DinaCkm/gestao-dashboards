@@ -1,6 +1,7 @@
 import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 
+// Force Railway rebuild v3
 export const gestorRouter = router({
   teamStats: protectedProcedure
     .input(z.object({}))
