@@ -184,6 +184,7 @@ type MenuItemExtended = {
   path: string;
   roles: ("admin" | "manager" | "user")[];
   requireConsultorRole?: 'mentor' | 'gerente'; // Filtra por tipo de consultor
+  hideForConsultorRole?: 'mentor' | 'gerente'; // Oculta para tipos específicos de consultor
   requireConsultorId?: boolean; // Legacy: mantido para compatibilidade
   hideIfConsultorId?: boolean; // Legacy: mantido para compatibilidade
 };
@@ -203,7 +204,7 @@ const otherMenuItems: MenuItemExtended[] = [
   
   // === GERENTE DE EMPRESA ===
   { icon: Home, label: "Boas-Vindas", path: "/boas-vindas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
-  { icon: BarChart3, label: "Visão Geral", path: "/dashboard/visao-geral", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: BarChart3, label: "Visão Geral", path: "/dashboard/visao-geral", roles: ["manager"], requireConsultorRole: 'gerente', hideForConsultorRole: 'gerente' },
   { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
@@ -338,6 +339,12 @@ function DashboardLayoutContent({
     const userRole = user?.role || "user";
     return otherMenuItems.filter(item => {
       if (!item.roles.includes(userRole as "admin" | "manager" | "user")) return false;
+      
+      // Ocultar item se o consultorRole corresponder a hideForConsultorRole
+      if (item.hideForConsultorRole && consultorRole === item.hideForConsultorRole) {
+        return false;
+      }
+      
       // Nova lógica: usar consultorRole para distinguir mentor de gestor
       if (item.requireConsultorRole) {
         if (item.requireConsultorRole === 'mentor') {
