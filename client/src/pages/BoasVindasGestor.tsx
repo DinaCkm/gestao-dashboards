@@ -4,6 +4,7 @@ import { trpc } from '@/lib/trpc';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Users, BookOpen, Target, Briefcase } from 'lucide-react';
+import { useState, useMemo } from 'react';
 
 export function BoasVindasGestor() {
   const { user } = useAuth();
@@ -128,6 +129,38 @@ export function BoasVindasGestor() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+
+
+      {/* Seção de Acesso Rápido */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-foreground mb-6">Acesso rápido</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <a href="/dashboard/minha-empresa" className="block p-6 bg-card rounded-lg border border-border hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-cyan-600 mb-2">📊</div>
+            <h3 className="font-semibold text-foreground">Minha Empresa</h3>
+            <p className="text-sm text-muted-foreground mt-1">Visualize dados da sua empresa</p>
+          </a>
+
+          <a href="/dashboard/sessoes-mentoria" className="block p-6 bg-card rounded-lg border border-border hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-orange-600 mb-2">👥</div>
+            <h3 className="font-semibold text-foreground">Sessões de Mentoria</h3>
+            <p className="text-sm text-muted-foreground mt-1">Acompanhe as mentorias</p>
+          </a>
+
+          <a href="/dashboard/metas" className="block p-6 bg-card rounded-lg border border-border hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-green-600 mb-2">🎯</div>
+            <h3 className="font-semibold text-foreground">Metas</h3>
+            <p className="text-sm text-muted-foreground mt-1">Acompanhe as metas</p>
+          </a>
+
+          <a href="/dashboard/relatorios" className="block p-6 bg-card rounded-lg border border-border hover:shadow-md transition-shadow">
+            <div className="text-2xl font-bold text-purple-600 mb-2">📈</div>
+            <h3 className="font-semibold text-foreground">Relatórios</h3>
+            <p className="text-sm text-muted-foreground mt-1">Gere relatórios detalhados</p>
+          </a>
+        </div>
       </div>
 
       {/* Gantt Chart: Timeline dos Ciclos */}
@@ -257,36 +290,6 @@ export function BoasVindasGestor() {
           </CardContent>
         </Card>
       )}
-
-      {/* Seção de Acesso Rápido */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-foreground mb-6">Acesso rápido</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a href="/dashboard/minha-empresa" className="block p-6 bg-card rounded-lg border border-border hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-cyan-600 mb-2">📊</div>
-            <h3 className="font-semibold text-foreground">Minha Empresa</h3>
-            <p className="text-sm text-muted-foreground mt-1">Visualize dados da sua empresa</p>
-          </a>
-
-          <a href="/dashboard/sessoes-mentoria" className="block p-6 bg-card rounded-lg border border-border hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-orange-600 mb-2">👥</div>
-            <h3 className="font-semibold text-foreground">Sessões de Mentoria</h3>
-            <p className="text-sm text-muted-foreground mt-1">Acompanhe as mentorias</p>
-          </a>
-
-          <a href="/dashboard/metas" className="block p-6 bg-card rounded-lg border border-border hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-green-600 mb-2">🎯</div>
-            <h3 className="font-semibold text-foreground">Metas</h3>
-            <p className="text-sm text-muted-foreground mt-1">Acompanhe as metas</p>
-          </a>
-
-          <a href="/dashboard/relatorios" className="block p-6 bg-card rounded-lg border border-border hover:shadow-md transition-shadow">
-            <div className="text-2xl font-bold text-purple-600 mb-2">📈</div>
-            <h3 className="font-semibold text-foreground">Relatórios</h3>
-            <p className="text-sm text-muted-foreground mt-1">Gere relatórios detalhados</p>
-          </a>
-        </div>
-      </div>
 
       {/* Fale Conosco */}
       <Card className="bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-200">
