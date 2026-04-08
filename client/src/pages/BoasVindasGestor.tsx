@@ -6,6 +6,7 @@ import { Calendar, Users, BookOpen, Target, Briefcase } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
 export function BoasVindasGestor() {
+  // Página de boas-vindas do gestor com Gantt chart de ciclos
   const { user } = useAuth();
 
   // Buscar estatísticas do time
