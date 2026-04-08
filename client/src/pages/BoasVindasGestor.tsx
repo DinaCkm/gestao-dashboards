@@ -98,7 +98,8 @@ function BoasVindasContent() {
 
   const fmtDate = (d: string | Date | null) => {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('pt-BR');
+    const date = new Date(d);
+    return date.toLocaleDateString('pt-BR');
   };
 
   // Agrupar jornadas por empresa/cliente
