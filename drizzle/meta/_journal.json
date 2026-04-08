@@ -519,6 +519,20 @@
       "when": 1775497868163,
       "tag": "0073_violet_naoko",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "5",
+      "when": 1775672288865,
+      "tag": "0074_curious_firelord",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "5",
+      "when": 1775672442032,
+      "tag": "0075_opposite_naoko",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ import { trpc } from '@/lib/trpc';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Users, BookOpen, Target, Briefcase } from 'lucide-react';
+import { useState, useMemo } from 'react';
 
 export function BoasVindasGestor() {
   const { user } = useAuth();
@@ -305,6 +306,45 @@ export function BoasVindasGestor() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Tabela de Jornadas */}
+      {(allJornadas || []).length > 0 && (
+        <Card className="mb-12 border shadow-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Jornadas
+            </CardTitle>
+            <CardDescription>Lista de jornadas com datas de início e fim</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-4 font-semibold">Turma</th>
+                    <th className="text-left py-2 px-4 font-semibold">Jornada</th>
+                    <th className="text-left py-2 px-4 font-semibold">Data Início</th>
+                    <th className="text-left py-2 px-4 font-semibold">Data Fim</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(allJornadas || []).map((jornada: any, idx: number) => (
+                    <tr key={idx} className="border-b hover:bg-muted/50">
+                      <td className="py-2 px-4">{jornada.turmaNome || '-'}</td>
+                      <td className="py-2 px-4">{jornada.jornadaNome || '-'}</td>
+                      <td className="py-2 px-4">{fmtDate(jornada.macroInicio)}</td>
+                      <td className="py-2 px-4">{fmtDate(jornada.macroTermino)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
+
+export default BoasVindasGestor;
