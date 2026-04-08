@@ -1886,8 +1886,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
   // Indicadores BEM
   indicadores: router({
-    // Dashboard Visão Geral (consolidado de todas as empresas)
-    visaoGeral: adminProcedure.query(async () => {
+    // Dashboard Visão Geral (consolidado de todas as empresas, ou filtrado por empresa para gerentes)
+    visaoGeral: protectedProcedure.query(async ({ ctx }) => {
       // Buscar todos os dados de mentorias e eventos
       const mentoringSessions = await db.getAllMentoringSessions();
       const eventParticipations = await db.getAllEventParticipationWithDate();
@@ -2012,7 +2012,27 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // Buscar macrociclos
       const macrocicloPorAluno = await db.getMacrocicloPorAluno();
       
-      // Calcular indicadores (V2)
+      // Se for gerente, filtrar dados por empresa
+      const isGerente = ctx.user.role === 'manager' && (ctx.user as any).consultorRole === 'gerente';
+      if (isGerente && ctx.user.programId) {
+        const userProgram = programMap.get(ctx.user.programId);
+        if (userProgram) {
+          // Filtrar mentorias, eventos e performance apenas da empresa do gerente
+          const filteredMentorias = mentorias.filter(m => m.empresa === userProgram.name);
+          const filteredEventos = eventos.filter(e => e.empresa === userProgram.name);
+          const filteredPerformance = performance.filter(p => {
+            const aluno = alunosList.find(a => a.externalId === p.idUsuario || String(a.id) === p.idUsuario);
+            return aluno && aluno.programId === ctx.user.programId;
+          });
+          
+          // Calcular indicadores apenas com dados filtrados
+          const indicadores = calcularIndicadoresTodosAlunos(filteredMentorias, filteredEventos, filteredPerformance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno);
+          const dashboard = gerarDashboardGeral(indicadores);
+          return dashboard;
+        }
+      }
+      
+      // Calcular indicadores (V2) - admin vê todos
       const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno);
       const dashboard = gerarDashboardGeral(indicadores);
       
