@@ -11,8 +11,6 @@ import {
   getAlunoByUserId,
   getDb
 } from "../db";
-import * as schema from '../drizzle/schema';
-const { programs } = schema;
 
 const CalcularIndicadoresInput = z.object({
   alunoId: z.number().int().positive(),
@@ -339,17 +337,23 @@ export const jornadaRouter = router({
           return [];
         }
         
-        // Buscar o programa para pegar o nome
+        // Buscar o programa para pegar o nome usando raw SQL
         const db = await getDb();
         if (!db) return [];
-        const program = await db.select().from(programs).where(eq(programs.id, aluno.programId)).limit(1);
-        if (!program[0]) {
+        
+        const conn = await (db as any)._.client;
+        const [programs] = await conn.execute(
+          'SELECT name FROM programs WHERE id = ? LIMIT 1',
+          [aluno.programId]
+        );
+        
+        if (!programs || programs.length === 0) {
           console.warn('[porTurmaGeral] Programa não encontrado');
           return [];
         }
         
         // Passar o nome da empresa para filtrar apenas a empresa do gerente
-        return await getJornadasPorTurma(program[0].name);
+        return await getJornadasPorTurma(programs[0].name);
       } catch (error) {
         console.error('[porTurmaGeral] Erro:', error);
         return [];
