@@ -635,31 +635,38 @@ function BoasVindasContent() {
                       </div>
 
                       <div className="space-y-3">
-                        {(jornadas || []).map((jornada: any, jIdx: number) => {
-                          const bsM = jornada.turmaNome?.match(/\[(BS\d+)\]/);
-                          const label = bsM ? `${bsM[1]} — ${jornada.trilhaNome || 'Sem trilha'}` : jornada.trilhaNome || 'Sem trilha';
-                          const color = turmaColors[jIdx % turmaColors.length];
+                        {(jornadas || [])
+                          .filter((j: any) => {
+                            const bsM = j.turmaNome?.match(/\[(BS\d+)\]/);
+                            return !!bsM;
+                          })
+                          .map((jornada: any, jIdx: number) => {
+                            const bsM = jornada.turmaNome?.match(/\[(BS\d+)\]/);
+                            const label = `${bsM[1]} — ${jornada.trilhaNome || 'Sem trilha'}`;
+                            const color = turmaColors[jIdx % turmaColors.length];
 
-                          const macroStart = jornada.macroInicio ? ((new Date(jornada.macroInicio).getTime() - minDate.getTime()) / totalMs) * 100 : 0;
-                          const macroEnd = jornada.macroTermino ? ((new Date(jornada.macroTermino).getTime() - minDate.getTime()) / totalMs) * 100 : 100;
-                          const macroWidth = Math.max(1, macroEnd - macroStart);
+                            const macroStart = jornada.macroInicio ? ((new Date(jornada.macroInicio).getTime() - minDate.getTime()) / totalMs) * 100 : 0;
+                            const macroEnd = jornada.macroTermino ? ((new Date(jornada.macroTermino).getTime() - minDate.getTime()) / totalMs) * 100 : 100;
+                            const macroWidth = Math.max(1, macroEnd - macroStart);
 
-                          return (
-                            <div key={jornada.turmaId} className="flex items-center gap-3">
-                              <div className="w-40 shrink-0 text-xs font-medium truncate" title={label}>{label}</div>
-                              <div className="flex-1 relative h-6 bg-muted/30 rounded">
-                                <div
-                                  className="absolute h-full rounded opacity-80"
-                                  style={{ left: `${macroStart}%`, width: `${macroWidth}%`, backgroundColor: color }}
-                                  title={`${label}: ${fmtDate(jornada.macroInicio)} → ${fmtDate(jornada.macroTermino)}`}
-                                />
+                            return (
+                              <div key={jornada.turmaId} className="flex items-center gap-3">
+                                <div className="w-48 shrink-0">
+                                  <div className="text-xs font-medium truncate" title={label}>{label}</div>
+                                  <div className="text-[10px] text-muted-foreground">
+                                    {fmtDate(jornada.macroInicio)} - {fmtDate(jornada.macroTermino)}
+                                  </div>
+                                </div>
+                                <div className="flex-1 relative h-6 bg-muted/30 rounded">
+                                  <div
+                                    className="absolute h-full rounded opacity-80"
+                                    style={{ left: `${macroStart}%`, width: `${macroWidth}%`, backgroundColor: color }}
+                                    title={`${label}: ${fmtDate(jornada.macroInicio)} → ${fmtDate(jornada.macroTermino)}`}
+                                  />
+                                </div>
                               </div>
-                              <div className="w-24 shrink-0 text-[10px] text-muted-foreground text-right">
-                                {fmtDate(jornada.macroTermino)}
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
                       </div>
 
                       <div className="absolute top-0 bottom-0" style={{ left: `${todayPct}%`, width: '2px' }}>
