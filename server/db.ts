@@ -7105,12 +7105,19 @@ export async function getJornadasPorTurma(empresa?: string) {
   const compsList = await db.select({ id: competencias.id, nome: competencias.nome }).from(competencias);
   compsList.forEach(c => compMap.set(c.id, c.nome));
   
+  // Buscar programs map para pegar nomes de empresas
+  const programsList = await db.select().from(programs);
+  const alunosList = await db.select({ id: alunos.id, programId: alunos.programId }).from(alunos);
+  const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+  const programMap = new Map(programsList.map(p => [p.id, p]));
+  
   // Agrupar por turma
   const turmaGroups = new Map<number, {
     turmaId: number;
     turmaNome: string;
     turmaCode: string; // BS1, BS2, BS3
     trilhaNome: string;
+    empresaNome: string;
     macroInicio: string | null;
     macroTermino: string | null;
     qtdAlunos: number;
@@ -7139,11 +7146,17 @@ export async function getJornadasPorTurma(empresa?: string) {
         return new Date(a.microInicio).getTime() - new Date(b.microInicio).getTime();
       });
       
+      // Buscar nome da empresa
+      const aluno = alunoMap.get(pdi.alunoId);
+      const program = aluno && aluno.programId ? programMap.get(aluno.programId) : null;
+      const empresaNome = program?.name || 'Sem Empresa';
+      
       turmaGroups.set(key, {
         turmaId: key,
         turmaNome: turma.name,
         turmaCode,
         trilhaNome: trilha?.name || 'Não definida',
+        empresaNome,
         macroInicio: pdi.macroInicio,
         macroTermino: pdi.macroTermino,
         qtdAlunos: 1,
