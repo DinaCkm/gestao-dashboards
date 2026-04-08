@@ -1,13 +1,13 @@
 import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { 
-  getDb, 
   getAlunoByUserId,
   getAssessmentPdiByAluno,
   getAssessmentCompetenciasByPdi,
   getTrilhaById,
   getContratoMentoriaByAluno,
-  getSaldoMentoriasAluno
+  getSaldoMentoriasAluno,
+  getDb
 } from "../db";
 
 const CalcularIndicadoresInput = z.object({
@@ -331,28 +331,32 @@ export const jornadaRouter = router({
       if (!db) return [];
 
       try {
-        // Buscar todas as jornadas com informacoes de turma e empresa
-        const query = db.query.assessment_pdi.findMany({
-          with: {
-            turma: {
-              with: {
-                program: true,
-              },
-            },
-            trilha: true,
-          },
-        });
+        // Query raw SQL para buscar jornadas com turma e empresa
+        const jornadas = await db.execute(`
+          SELECT 
+            ap.id,
+            ap.turmaId,
+            t.name as turmaNome,
+            ap.trilhaId,
+            tr.name as trilhaNome,
+            p.name as empresaNome,
+            ap.macroInicio,
+            ap.macroTermino,
+            ap.status
+          FROM assessment_pdi ap
+          LEFT JOIN turmas t ON ap.turmaId = t.id
+          LEFT JOIN programs p ON t.programId = p.id
+          LEFT JOIN trilhas tr ON ap.trilhaId = tr.id
+          ORDER BY p.name, t.name, ap.macroInicio
+        `);
 
-        const jornadas = await query;
-
-        // Mapear para formato esperado pelo Gantt
-        return jornadas.map((j: any) => ({
+        return (jornadas as any[]).map((j: any) => ({
           id: j.id,
           turmaId: j.turmaId,
-          turmaNome: j.turma?.name || 'Sem turma',
+          turmaNome: j.turmaNome || 'Sem turma',
           trilhaId: j.trilhaId,
-          trilhaNome: j.trilha?.name || 'Sem trilha',
-          empresaNome: j.turma?.program?.name || 'Sem empresa',
+          trilhaNome: j.trilhaNome || 'Sem trilha',
+          empresaNome: j.empresaNome || 'Sem empresa',
           macroInicio: j.macroInicio,
           macroTermino: j.macroTermino,
           status: j.status,
