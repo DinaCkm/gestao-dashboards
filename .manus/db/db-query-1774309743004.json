@@ -1,0 +1,87 @@
+{
+  "query": "\nSELECT \n  ma.scheduledDate,\n  ma.title,\n  c.name AS mentor_nome,\n  COUNT(ap.alunoId) AS participantes_sem_sessao,\n  CASE WHEN ma.scheduledDate >= '2026-03-23' THEN 'FUTURO (normal)' ELSE 'PASSADO (gap real)' END AS classificacao\nFROM mentor_appointments ma\nJOIN appointment_participants ap ON ap.appointmentId = ma.id\nLEFT JOIN consultors c ON ma.consultorId = c.id\nWHERE ma.scheduledDate >= '2026-03-01' AND ma.scheduledDate <= '2026-03-31'\nAND ma.status != 'cancelado'\nAND NOT EXISTS (\n  SELECT 1 FROM mentoring_sessions ms\n  WHERE ms.consultorId = ma.consultorId\n  AND ms.sessionDate = ma.scheduledDate\n  AND ms.alunoId = ap.alunoId\n)\nGROUP BY ma.scheduledDate, ma.title, c.name\nORDER BY ma.scheduledDate;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ma.scheduledDate,\n  ma.title,\n  c.name AS mentor_nome,\n  COUNT(ap.alunoId) AS participantes_sem_sessao,\n  CASE WHEN ma.scheduledDate >= '2026-03-23' THEN 'FUTURO (normal)' ELSE 'PASSADO (gap real)' END AS classificacao\nFROM mentor_appointments ma\nJOIN appointment_participants ap ON ap.appointmentId = ma.id\nLEFT JOIN consultors c ON ma.consultorId = c.id\nWHERE ma.scheduledDate >= '2026-03-01' AND ma.scheduledDate <= '2026-03-31'\nAND ma.status != 'cancelado'\nAND NOT EXISTS (\n  SELECT 1 FROM mentoring_sessions ms\n  WHERE ms.consultorId = ma.consultorId\n  AND ms.sessionDate = ma.scheduledDate\n  AND ms.alunoId = ap.alunoId\n)\nGROUP BY ma.scheduledDate, ma.title, c.name\nORDER BY ma.scheduledDate;\n",
+  "rows": [
+    {
+      "scheduledDate": "2026-03-11",
+      "title": "Encontro Inicial - Onboarding",
+      "mentor_nome": "Luciana Pereira Figueiredo da Silva",
+      "participantes_sem_sessao": "1",
+      "classificacao": "PASSADO (gap real)"
+    },
+    {
+      "scheduledDate": "2026-03-20",
+      "title": "EMBRAPII - [Projetos] 6ª SESSÃO [Thiago Fideles e Luan Saldanha]",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "participantes_sem_sessao": "2",
+      "classificacao": "PASSADO (gap real)"
+    },
+    {
+      "scheduledDate": "2026-03-20",
+      "title": "SEBRAE AC - TURMA A - 17ª TUTORIA",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "participantes_sem_sessao": "8",
+      "classificacao": "PASSADO (gap real)"
+    },
+    {
+      "scheduledDate": "2026-03-24",
+      "title": "EMBRAPII - [Projetos] 6ª SESSÃO [Etienne, Allan e Fábio]",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "participantes_sem_sessao": "3",
+      "classificacao": "FUTURO (normal)"
+    },
+    {
+      "scheduledDate": "2026-03-24",
+      "title": "Tutoria SEBRAE - TO PFC Conselheiros (Projeto)",
+      "mentor_nome": "Andressa Santos",
+      "participantes_sem_sessao": "2",
+      "classificacao": "FUTURO (normal)"
+    },
+    {
+      "scheduledDate": "2026-03-24",
+      "title": "SEBRAETO - [Projetos] 6ª SESSÃO [Leonardo, Alorran e Eliwânia]",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "participantes_sem_sessao": "3",
+      "classificacao": "FUTURO (normal)"
+    },
+    {
+      "scheduledDate": "2026-03-25",
+      "title": "SEBRAETO - [Projetos] 6ª SESSÃO [Andreia, Denise e Thais]",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "participantes_sem_sessao": "3",
+      "classificacao": "FUTURO (normal)"
+    },
+    {
+      "scheduledDate": "2026-03-25",
+      "title": "Acompanhamento do Projeto Radar de Oportunidades",
+      "mentor_nome": "Andressa Santos",
+      "participantes_sem_sessao": "3",
+      "classificacao": "FUTURO (normal)"
+    },
+    {
+      "scheduledDate": "2026-03-25",
+      "title": "Projeto: Sistema Unificado de Despesas e Prestação de Contas – SUDPC / UniContas ",
+      "mentor_nome": "Andressa Santos",
+      "participantes_sem_sessao": "2",
+      "classificacao": "FUTURO (normal)"
+    },
+    {
+      "scheduledDate": "2026-03-25",
+      "title": "Projeto Passaporte do Bem- Mulheres em movimento",
+      "mentor_nome": "Andressa Santos",
+      "participantes_sem_sessao": "3",
+      "classificacao": "FUTURO (normal)"
+    },
+    {
+      "scheduledDate": "2026-03-30",
+      "title": "EMBRAPII - [Projetos] 6ª SESSÃO [Carolina, Diego e Paulo]",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "participantes_sem_sessao": "3",
+      "classificacao": "FUTURO (normal)"
+    }
+  ],
+  "messages": [],
+  "stdout": "scheduledDate\ttitle\tmentor_nome\tparticipantes_sem_sessao\tclassificacao\n2026-03-11\tEncontro Inicial - Onboarding\tLuciana Pereira Figueiredo da Silva\t1\tPASSADO (gap real)\n2026-03-20\tEMBRAPII - [Projetos] 6ª SESSÃO [Thiago Fideles e Luan Saldanha]\tAna Carolina Cardoso Viana Rocha\t2\tPASSADO (gap real)\n2026-03-20\tSEBRAE AC - TURMA A - 17ª TUTORIA\tAna Carolina Cardoso Viana Rocha\t8\tPASSADO (gap real)\n2026-03-24\tEMBRAPII - [Projetos] 6ª SESSÃO [Etienne, Allan e Fábio]\tAna Carolina Cardoso Viana Rocha\t3\tFUTURO (normal)\n2026-03-24\tTutoria SEBRAE - TO PFC Conselheiros (Projeto)\tAndressa Santos\t2\tFUTURO (normal)\n2026-03-24\tSEBRAETO - [Projetos] 6ª SESSÃO [Leonardo, Alorran e Eliwânia]\tAna Carolina Cardoso Viana Rocha\t3\tFUTURO (normal)\n2026-03-25\tSEBRAETO - [Projetos] 6ª SESSÃO [Andreia, Denise e Thais]\tAna Carolina Cardoso Viana Rocha\t3\tFUTURO (normal)\n2026-03-25\tAcompanhamento do Projeto Radar de Oportunidades\tAndressa Santos\t3\tFUTURO (normal)\n2026-03-25\tProjeto: Sistema Unificado de Despesas e Prestação de Contas – SUDPC / UniContas \tAndressa Santos\t2\tFUTURO (normal)\n2026-03-25\tProjeto Passaporte do Bem- Mulheres em movimento\tAndressa Santos\t3\tFUTURO (normal)\n2026-03-30\tEMBRAPII - [Projetos] 6ª SESSÃO [Carolina, Diego e Paulo]\tAna Carolina Cardoso Viana Rocha\t3\tFUTURO (normal)\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}

@@ -1,0 +1,54 @@
+{
+  "query": "SELECT c.id, c.name, c.email, c.role as consultor_role, c.managedProgramId, c.canLogin, IFNULL(u.role, 'sem_user') as user_role, u.consultorId as user_consultorId, u.name as user_name FROM consultors c LEFT JOIN users u ON u.consultorId = c.id WHERE c.role = 'gerente';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT c.id, c.name, c.email, c.role as consultor_role, c.managedProgramId, c.canLogin, IFNULL(u.role, 'sem_user') as user_role, u.consultorId as user_consultorId, u.name as user_name FROM consultors c LEFT JOIN users u ON u.consultorId = c.id WHERE c.role = 'gerente';",
+  "rows": [
+    {
+      "id": "30001",
+      "name": "Joseane",
+      "email": "joseane@to.sebrae.com.br",
+      "consultor_role": "gerente",
+      "managedProgramId": "17",
+      "canLogin": "1",
+      "user_role": "sem_user",
+      "user_consultorId": "NULL",
+      "user_name": "NULL"
+    },
+    {
+      "id": "60001",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "consultor_role": "gerente",
+      "managedProgramId": "18",
+      "canLogin": "1",
+      "user_role": "manager",
+      "user_consultorId": "60001",
+      "user_name": "Emanoel Loreto Querette"
+    },
+    {
+      "id": "60002",
+      "name": "Emanoel",
+      "email": "emanoel.querette@embrapii.org.br",
+      "consultor_role": "gerente",
+      "managedProgramId": "18",
+      "canLogin": "1",
+      "user_role": "manager",
+      "user_consultorId": "60002",
+      "user_name": "Emanoel"
+    },
+    {
+      "id": "90001",
+      "name": "gerente teste",
+      "email": "teste@embrapii.com",
+      "consultor_role": "gerente",
+      "managedProgramId": "18",
+      "canLogin": "1",
+      "user_role": "manager",
+      "user_consultorId": "90001",
+      "user_name": "gerente teste"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tconsultor_role\tmanagedProgramId\tcanLogin\tuser_role\tuser_consultorId\tuser_name\n30001\tJoseane\tjoseane@to.sebrae.com.br\tgerente\t17\t1\tsem_user\tNULL\tNULL\n60001\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\t18\t1\tmanager\t60001\tEmanoel Loreto Querette\n60002\tEmanoel\temanoel.querette@embrapii.org.br\tgerente\t18\t1\tmanager\t60002\tEmanoel\n90001\tgerente teste\tteste@embrapii.com\tgerente\t18\t1\tmanager\t90001\tgerente teste\n",
+  "stderr": "",
+  "execution_time_ms": 353
+}

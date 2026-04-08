@@ -1,0 +1,1081 @@
+{
+  "query": "SELECT id, name, email, externalId, programId, turmaId, isActive FROM alunos WHERE name LIKE '%test%' OR name LIKE '%teste%' OR name LIKE '%Test%' OR email LIKE '%test%' OR email LIKE '%example%' ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, externalId, programId, turmaId, isActive FROM alunos WHERE name LIKE '%test%' OR name LIKE '%teste%' OR name LIKE '%Test%' OR email LIKE '%test%' OR email LIKE '%example%' ORDER BY id;",
+  "rows": [
+    {
+      "id": "30096",
+      "name": "Usuário Teste",
+      "email": "leremeg735@nicext.com",
+      "externalId": "696504",
+      "programId": "16",
+      "turmaId": "30010",
+      "isActive": "1"
+    },
+    {
+      "id": "90013",
+      "name": "MARIA TESTE DA SILVA",
+      "email": "dina@ckmtalents.net",
+      "externalId": "667997",
+      "programId": "19",
+      "turmaId": "36",
+      "isActive": "1"
+    },
+    {
+      "id": "90014",
+      "name": "maria teste3",
+      "email": "teste3@teste3.com.br",
+      "externalId": "667996",
+      "programId": "19",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90015",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772738714479@test.com",
+      "externalId": "714479",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90016",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772738715037@test.com",
+      "externalId": "715037",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90017",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772738715242@test.com",
+      "externalId": "715242",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "90018",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772738715444@test.com",
+      "externalId": "715444",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90019",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772745327890@test.com",
+      "externalId": "327890",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90020",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772745328554@test.com",
+      "externalId": "328554",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90021",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772745328760@test.com",
+      "externalId": "328760",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "90022",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772745328966@test.com",
+      "externalId": "328966",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90023",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772745375111@test.com",
+      "externalId": "375111",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90024",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772745375683@test.com",
+      "externalId": "375683",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90025",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772745375897@test.com",
+      "externalId": "375897",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "90026",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772745376111@test.com",
+      "externalId": "376111",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90027",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772752716144@test.com",
+      "externalId": "716144",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90028",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772752716696@test.com",
+      "externalId": "716696",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90029",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772752716908@test.com",
+      "externalId": "716908",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "90030",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772752717118@test.com",
+      "externalId": "717118",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90031",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772752764932@test.com",
+      "externalId": "764932",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90032",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772752765507@test.com",
+      "externalId": "765507",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "90033",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772752765722@test.com",
+      "externalId": "765722",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "90034",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772752765933@test.com",
+      "externalId": "765933",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120001",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772754002226@test.com",
+      "externalId": "002226",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120002",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772754002799@test.com",
+      "externalId": "002799",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120003",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772754003011@test.com",
+      "externalId": "003011",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120004",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772754003221@test.com",
+      "externalId": "003221",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120005",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772754288346@test.com",
+      "externalId": "288346",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120006",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772754288898@test.com",
+      "externalId": "288898",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120007",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772754289104@test.com",
+      "externalId": "289104",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120008",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772754289303@test.com",
+      "externalId": "289303",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120009",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772758629842@test.com",
+      "externalId": "629842",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120010",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772758630410@test.com",
+      "externalId": "630410",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120011",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772758630615@test.com",
+      "externalId": "630615",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120012",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772758630820@test.com",
+      "externalId": "630820",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120013",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772759656582@test.com",
+      "externalId": "656582",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120014",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772759657142@test.com",
+      "externalId": "657142",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120015",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772759657352@test.com",
+      "externalId": "657352",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120016",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772759657563@test.com",
+      "externalId": "657563",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120017",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772760071915@test.com",
+      "externalId": "071915",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120018",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772760072490@test.com",
+      "externalId": "072490",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120019",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772760072706@test.com",
+      "externalId": "072706",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120020",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772760072915@test.com",
+      "externalId": "072915",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120021",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772760635713@test.com",
+      "externalId": "635713",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120022",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772760636297@test.com",
+      "externalId": "636297",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120023",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772760636517@test.com",
+      "externalId": "636517",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120024",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772760636733@test.com",
+      "externalId": "636733",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120025",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772761299441@test.com",
+      "externalId": "299441",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120026",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772761300017@test.com",
+      "externalId": "300017",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120027",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772761300229@test.com",
+      "externalId": "300229",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120028",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772761300442@test.com",
+      "externalId": "300442",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120029",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772761373287@test.com",
+      "externalId": "373287",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120030",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772761373854@test.com",
+      "externalId": "373854",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120031",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772761374068@test.com",
+      "externalId": "374068",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120032",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772761374273@test.com",
+      "externalId": "374273",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120033",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772762280041@test.com",
+      "externalId": "280041",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120034",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772762280591@test.com",
+      "externalId": "280592",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120035",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772762280797@test.com",
+      "externalId": "280797",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120036",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772762281002@test.com",
+      "externalId": "281002",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120037",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772762801799@test.com",
+      "externalId": "801799",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120038",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772762802364@test.com",
+      "externalId": "802364",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120039",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772762802571@test.com",
+      "externalId": "802571",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120040",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772762802783@test.com",
+      "externalId": "802783",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120041",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772763943367@test.com",
+      "externalId": "943367",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120042",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772763943924@test.com",
+      "externalId": "943924",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120043",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772763944133@test.com",
+      "externalId": "944133",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120044",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772763944343@test.com",
+      "externalId": "944343",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120045",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772766097001@test.com",
+      "externalId": "097001",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120046",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772766097543@test.com",
+      "externalId": "097543",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120047",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772766097748@test.com",
+      "externalId": "097748",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120048",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772766097951@test.com",
+      "externalId": "097951",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120049",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772766162684@test.com",
+      "externalId": "162684",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120050",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772766163248@test.com",
+      "externalId": "163248",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120051",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772766163457@test.com",
+      "externalId": "163457",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120052",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772766163664@test.com",
+      "externalId": "163664",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120053",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772767014381@test.com",
+      "externalId": "014381",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120054",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772767014921@test.com",
+      "externalId": "014921",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120055",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772767015124@test.com",
+      "externalId": "015124",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120056",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772767015326@test.com",
+      "externalId": "015326",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120057",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772769878755@test.com",
+      "externalId": "878755",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120058",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772769879301@test.com",
+      "externalId": "879301",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120059",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772769879503@test.com",
+      "externalId": "879503",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120060",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772769879704@test.com",
+      "externalId": "879704",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120061",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772770639513@test.com",
+      "externalId": "639513",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120062",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772770640064@test.com",
+      "externalId": "640064",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120063",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772770640269@test.com",
+      "externalId": "640269",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120064",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772770640477@test.com",
+      "externalId": "640477",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120065",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772771177247@test.com",
+      "externalId": "177247",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120066",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772771177828@test.com",
+      "externalId": "177828",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120067",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772771178052@test.com",
+      "externalId": "178052",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120068",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772771178269@test.com",
+      "externalId": "178269",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120069",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772772555945@test.com",
+      "externalId": "555945",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120070",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772772556507@test.com",
+      "externalId": "556507",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120071",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772772556719@test.com",
+      "externalId": "556719",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120072",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772772556933@test.com",
+      "externalId": "556933",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120073",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772772575391@test.com",
+      "externalId": "575391",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120074",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772772575947@test.com",
+      "externalId": "575947",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120075",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772772576152@test.com",
+      "externalId": "576152",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120076",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772772576355@test.com",
+      "externalId": "576355",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120077",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772773644047@test.com",
+      "externalId": "644047",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120078",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772773644628@test.com",
+      "externalId": "644628",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120079",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772773644836@test.com",
+      "externalId": "644836",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120080",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772773645042@test.com",
+      "externalId": "645042",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120081",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772774047841@test.com",
+      "externalId": "047841",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120082",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772774048396@test.com",
+      "externalId": "048396",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120083",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772774048601@test.com",
+      "externalId": "048601",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120084",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772774048804@test.com",
+      "externalId": "048804",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120085",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772774891433@test.com",
+      "externalId": "891433",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120086",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772774891987@test.com",
+      "externalId": "891987",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120087",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772774892190@test.com",
+      "externalId": "892190",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120088",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772774892392@test.com",
+      "externalId": "892392",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120089",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772775650160@test.com",
+      "externalId": "650160",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120090",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772775650728@test.com",
+      "externalId": "650728",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120091",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772775650933@test.com",
+      "externalId": "650933",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120092",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772775651140@test.com",
+      "externalId": "651140",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120093",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772775749324@test.com",
+      "externalId": "749324",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120094",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772775749905@test.com",
+      "externalId": "749905",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "120095",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772775750119@test.com",
+      "externalId": "750119",
+      "programId": "1",
+      "turmaId": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "120096",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772775750333@test.com",
+      "externalId": "750333",
+      "programId": "1",
+      "turmaId": "NULL",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\texternalId\tprogramId\tturmaId\tisActive\n30096\tUsuário Teste\tleremeg735@nicext.com\t696504\t16\t30010\t1\n90013\tMARIA TESTE DA SILVA\tdina@ckmtalents.net\t667997\t19\t36\t1\n90014\tmaria teste3\tteste3@teste3.com.br\t667996\t19\tNULL\t1\n90015\tAluno Direto Test\tdireto-test-1772738714479@test.com\t714479\t1\tNULL\t1\n90016\tTest Turma Null\tturma-null-1772738715037@test.com\t715037\t1\tNULL\t1\n90017\tTest Turma Number\tturma-num-1772738715242@test.com\t715242\t1\t1\t1\n90018\tTest Turma Undefined\tturma-undef-1772738715444@test.com\t715444\t1\tNULL\t1\n90019\tAluno Direto Test\tdireto-test-1772745327890@test.com\t327890\t1\tNULL\t1\n90020\tTest Turma Null\tturma-null-1772745328554@test.com\t328554\t1\tNULL\t1\n90021\tTest Turma Number\tturma-num-1772745328760@test.com\t328760\t1\t1\t1\n90022\tTest Turma Undefined\tturma-undef-1772745328966@test.com\t328966\t1\tNULL\t1\n90023\tAluno Direto Test\tdireto-test-1772745375111@test.com\t375111\t1\tNULL\t1\n90024\tTest Turma Null\tturma-null-1772745375683@test.com\t375683\t1\tNULL\t1\n90025\tTest Turma Number\tturma-num-1772745375897@test.com\t375897\t1\t1\t1\n90026\tTest Turma Undefined\tturma-undef-1772745376111@test.com\t376111\t1\tNULL\t1\n90027\tAluno Direto Test\tdireto-test-1772752716144@test.com\t716144\t1\tNULL\t1\n90028\tTest Turma Null\tturma-null-1772752716696@test.com\t716696\t1\tNULL\t1\n90029\tTest Turma Number\tturma-num-1772752716908@test.com\t716908\t1\t1\t1\n90030\tTest Turma Undefined\tturma-undef-1772752717118@test.com\t717118\t1\tNULL\t1\n90031\tAluno Direto Test\tdireto-test-1772752764932@test.com\t764932\t1\tNULL\t1\n90032\tTest Turma Null\tturma-null-1772752765507@test.com\t765507\t1\tNULL\t1\n90033\tTest Turma Number\tturma-num-1772752765722@test.com\t765722\t1\t1\t1\n90034\tTest Turma Undefined\tturma-undef-1772752765933@test.com\t765933\t1\tNULL\t1\n120001\tAluno Direto Test\tdireto-test-1772754002226@test.com\t002226\t1\tNULL\t1\n120002\tTest Turma Null\tturma-null-1772754002799@test.com\t002799\t1\tNULL\t1\n120003\tTest Turma Number\tturma-num-1772754003011@test.com\t003011\t1\t1\t1\n120004\tTest Turma Undefined\tturma-undef-1772754003221@test.com\t003221\t1\tNULL\t1\n120005\tAluno Direto Test\tdireto-test-1772754288346@test.com\t288346\t1\tNULL\t1\n120006\tTest Turma Null\tturma-null-1772754288898@test.com\t288898\t1\tNULL\t1\n120007\tTest Turma Number\tturma-num-1772754289104@test.com\t289104\t1\t1\t1\n120008\tTest Turma Undefined\tturma-undef-1772754289303@test.com\t289303\t1\tNULL\t1\n120009\tAluno Direto Test\tdireto-test-1772758629842@test.com\t629842\t1\tNULL\t1\n120010\tTest Turma Null\tturma-null-1772758630410@test.com\t630410\t1\tNULL\t1\n120011\tTest Turma Number\tturma-num-1772758630615@test.com\t630615\t1\t1\t1\n120012\tTest Turma Undefined\tturma-undef-1772758630820@test.com\t630820\t1\tNULL\t1\n120013\tAluno Direto Test\tdireto-test-1772759656582@test.com\t656582\t1\tNULL\t1\n120014\tTest Turma Null\tturma-null-1772759657142@test.com\t657142\t1\tNULL\t1\n120015\tTest Turma Number\tturma-num-1772759657352@test.com\t657352\t1\t1\t1\n120016\tTest Turma Undefined\tturma-undef-1772759657563@test.com\t657563\t1\tNULL\t1\n120017\tAluno Direto Test\tdireto-test-1772760071915@test.com\t071915\t1\tNULL\t1\n120018\tTest Turma Null\tturma-null-1772760072490@test.com\t072490\t1\tNULL\t1\n120019\tTest Turma Number\tturma-num-1772760072706@test.com\t072706\t1\t1\t1\n120020\tTest Turma Undefined\tturma-undef-1772760072915@test.com\t072915\t1\tNULL\t1\n120021\tAluno Direto Test\tdireto-test-1772760635713@test.com\t635713\t1\tNULL\t1\n120022\tTest Turma Null\tturma-null-1772760636297@test.com\t636297\t1\tNULL\t1\n120023\tTest Turma Number\tturma-num-1772760636517@test.com\t636517\t1\t1\t1\n120024\tTest Turma Undefined\tturma-undef-1772760636733@test.com\t636733\t1\tNULL\t1\n120025\tAluno Direto Test\tdireto-test-1772761299441@test.com\t299441\t1\tNULL\t1\n120026\tTest Turma Null\tturma-null-1772761300017@test.com\t300017\t1\tNULL\t1\n120027\tTest Turma Number\tturma-num-1772761300229@test.com\t300229\t1\t1\t1\n120028\tTest Turma Undefined\tturma-undef-1772761300442@test.com\t300442\t1\tNULL\t1\n120029\tAluno Direto Test\tdireto-test-1772761373287@test.com\t373287\t1\tNULL\t1\n120030\tTest Turma Null\tturma-null-1772761373854@test.com\t373854\t1\tNULL\t1\n120031\tTest Turma Number\tturma-num-1772761374068@test.com\t374068\t1\t1\t1\n120032\tTest Turma Undefined\tturma-undef-1772761374273@test.com\t374273\t1\tNULL\t1\n120033\tAluno Direto Test\tdireto-test-1772762280041@test.com\t280041\t1\tNULL\t1\n120034\tTest Turma Null\tturma-null-1772762280591@test.com\t280592\t1\tNULL\t1\n120035\tTest Turma Number\tturma-num-1772762280797@test.com\t280797\t1\t1\t1\n120036\tTest Turma Undefined\tturma-undef-1772762281002@test.com\t281002\t1\tNULL\t1\n120037\tAluno Direto Test\tdireto-test-1772762801799@test.com\t801799\t1\tNULL\t1\n120038\tTest Turma Null\tturma-null-1772762802364@test.com\t802364\t1\tNULL\t1\n120039\tTest Turma Number\tturma-num-1772762802571@test.com\t802571\t1\t1\t1\n120040\tTest Turma Undefined\tturma-undef-1772762802783@test.com\t802783\t1\tNULL\t1\n120041\tAluno Direto Test\tdireto-test-1772763943367@test.com\t943367\t1\tNULL\t1\n120042\tTest Turma Null\tturma-null-1772763943924@test.com\t943924\t1\tNULL\t1\n120043\tTest Turma Number\tturma-num-1772763944133@test.com\t944133\t1\t1\t1\n120044\tTest Turma Undefined\tturma-undef-1772763944343@test.com\t944343\t1\tNULL\t1\n120045\tAluno Direto Test\tdireto-test-1772766097001@test.com\t097001\t1\tNULL\t1\n120046\tTest Turma Null\tturma-null-1772766097543@test.com\t097543\t1\tNULL\t1\n120047\tTest Turma Number\tturma-num-1772766097748@test.com\t097748\t1\t1\t1\n120048\tTest Turma Undefined\tturma-undef-1772766097951@test.com\t097951\t1\tNULL\t1\n120049\tAluno Direto Test\tdireto-test-1772766162684@test.com\t162684\t1\tNULL\t1\n120050\tTest Turma Null\tturma-null-1772766163248@test.com\t163248\t1\tNULL\t1\n120051\tTest Turma Number\tturma-num-1772766163457@test.com\t163457\t1\t1\t1\n120052\tTest Turma Undefined\tturma-undef-1772766163664@test.com\t163664\t1\tNULL\t1\n120053\tAluno Direto Test\tdireto-test-1772767014381@test.com\t014381\t1\tNULL\t1\n120054\tTest Turma Null\tturma-null-1772767014921@test.com\t014921\t1\tNULL\t1\n120055\tTest Turma Number\tturma-num-1772767015124@test.com\t015124\t1\t1\t1\n120056\tTest Turma Undefined\tturma-undef-1772767015326@test.com\t015326\t1\tNULL\t1\n120057\tAluno Direto Test\tdireto-test-1772769878755@test.com\t878755\t1\tNULL\t1\n120058\tTest Turma Null\tturma-null-1772769879301@test.com\t879301\t1\tNULL\t1\n120059\tTest Turma Number\tturma-num-1772769879503@test.com\t879503\t1\t1\t1\n120060\tTest Turma Undefined\tturma-undef-1772769879704@test.com\t879704\t1\tNULL\t1\n120061\tAluno Direto Test\tdireto-test-1772770639513@test.com\t639513\t1\tNULL\t1\n120062\tTest Turma Null\tturma-null-1772770640064@test.com\t640064\t1\tNULL\t1\n120063\tTest Turma Number\tturma-num-1772770640269@test.com\t640269\t1\t1\t1\n120064\tTest Turma Undefined\tturma-undef-1772770640477@test.com\t640477\t1\tNULL\t1\n120065\tAluno Direto Test\tdireto-test-1772771177247@test.com\t177247\t1\tNULL\t1\n120066\tTest Turma Null\tturma-null-1772771177828@test.com\t177828\t1\tNULL\t1\n120067\tTest Turma Number\tturma-num-1772771178052@test.com\t178052\t1\t1\t1\n120068\tTest Turma Undefined\tturma-undef-1772771178269@test.com\t178269\t1\tNULL\t1\n120069\tAluno Direto Test\tdireto-test-1772772555945@test.com\t555945\t1\tNULL\t1\n120070\tTest Turma Null\tturma-null-1772772556507@test.com\t556507\t1\tNULL\t1\n120071\tTest Turma Number\tturma-num-1772772556719@test.com\t556719\t1\t1\t1\n120072\tTest Turma Undefined\tturma-undef-1772772556933@test.com\t556933\t1\tNULL\t1\n120073\tAluno Direto Test\tdireto-test-1772772575391@test.com\t575391\t1\tNULL\t1\n120074\tTest Turma Null\tturma-null-1772772575947@test.com\t575947\t1\tNULL\t1\n120075\tTest Turma Number\tturma-num-1772772576152@test.com\t576152\t1\t1\t1\n120076\tTest Turma Undefined\tturma-undef-1772772576355@test.com\t576355\t1\tNULL\t1\n120077\tAluno Direto Test\tdireto-test-1772773644047@test.com\t644047\t1\tNULL\t1\n120078\tTest Turma Null\tturma-null-1772773644628@test.com\t644628\t1\tNULL\t1\n120079\tTest Turma Number\tturma-num-1772773644836@test.com\t644836\t1\t1\t1\n120080\tTest Turma Undefined\tturma-undef-1772773645042@test.com\t645042\t1\tNULL\t1\n120081\tAluno Direto Test\tdireto-test-1772774047841@test.com\t047841\t1\tNULL\t1\n120082\tTest Turma Null\tturma-null-1772774048396@test.com\t048396\t1\tNULL\t1\n120083\tTest Turma Number\tturma-num-1772774048601@test.com\t048601\t1\t1\t1\n120084\tTest Turma Undefined\tturma-undef-1772774048804@test.com\t048804\t1\tNULL\t1\n120085\tAluno Direto Test\tdireto-test-1772774891433@test.com\t891433\t1\tNULL\t1\n120086\tTest Turma Null\tturma-null-1772774891987@test.com\t891987\t1\tNULL\t1\n120087\tTest Turma Number\tturma-num-1772774892190@test.com\t892190\t1\t1\t1\n120088\tTest Turma Undefined\tturma-undef-1772774892392@test.com\t892392\t1\tNULL\t1\n120089\tAluno Direto Test\tdireto-test-1772775650160@test.com\t650160\t1\tNULL\t1\n120090\tTest Turma Null\tturma-null-1772775650728@test.com\t650728\t1\tNULL\t1\n120091\tTest Turma Number\tturma-num-1772775650933@test.com\t650933\t1\t1\t1\n120092\tTest Turma Undefined\tturma-undef-1772775651140@test.com\t651140\t1\tNULL\t1\n120093\tAluno Direto Test\tdireto-test-1772775749324@test.com\t749324\t1\tNULL\t1\n120094\tTest Turma Null\tturma-null-1772775749905@test.com\t749905\t1\tNULL\t1\n120095\tTest Turma Number\tturma-num-1772775750119@test.com\t750119\t1\t1\t1\n120096\tTest Turma Undefined\tturma-undef-1772775750333@test.com\t750333\t1\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 387
+}

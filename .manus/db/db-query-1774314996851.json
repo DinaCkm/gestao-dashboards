@@ -1,0 +1,54 @@
+{
+  "query": "SELECT id, programId, consultorId, tipoSessao, valor, validoDesde, validoAte, isActive, descricao FROM mentor_session_type_pricing WHERE programId IS NULL OR consultorId IS NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, programId, consultorId, tipoSessao, valor, validoDesde, validoAte, isActive, descricao FROM mentor_session_type_pricing WHERE programId IS NULL OR consultorId IS NULL;",
+  "rows": [
+    {
+      "id": "1",
+      "programId": "NULL",
+      "consultorId": "NULL",
+      "tipoSessao": "individual_normal",
+      "valor": "999.99",
+      "validoDesde": "2026-01-01",
+      "validoAte": "2026-12-31",
+      "isActive": "0",
+      "descricao": "Regra de teste unitário"
+    },
+    {
+      "id": "2",
+      "programId": "NULL",
+      "consultorId": "NULL",
+      "tipoSessao": "individual_normal",
+      "valor": "150.00",
+      "validoDesde": "2026-03-01",
+      "validoAte": "2026-03-31",
+      "isActive": "0",
+      "descricao": "Regra atualizada pelo teste"
+    },
+    {
+      "id": "3",
+      "programId": "NULL",
+      "consultorId": "NULL",
+      "tipoSessao": "individual_normal",
+      "valor": "1500.00",
+      "validoDesde": "2026-01-01",
+      "validoAte": "2026-12-31",
+      "isActive": "0",
+      "descricao": "Regra atualizada pelo teste"
+    },
+    {
+      "id": "5",
+      "programId": "90002",
+      "consultorId": "NULL",
+      "tipoSessao": "individual_assessment",
+      "valor": "150.00",
+      "validoDesde": "2026-03-24",
+      "validoAte": "NULL",
+      "isActive": "0",
+      "descricao": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tprogramId\tconsultorId\ttipoSessao\tvalor\tvalidoDesde\tvalidoAte\tisActive\tdescricao\n1\tNULL\tNULL\tindividual_normal\t999.99\t2026-01-01\t2026-12-31\t0\tRegra de teste unitário\n2\tNULL\tNULL\tindividual_normal\t150.00\t2026-03-01\t2026-03-31\t0\tRegra atualizada pelo teste\n3\tNULL\tNULL\tindividual_normal\t1500.00\t2026-01-01\t2026-12-31\t0\tRegra atualizada pelo teste\n5\t90002\tNULL\tindividual_assessment\t150.00\t2026-03-24\tNULL\t0\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

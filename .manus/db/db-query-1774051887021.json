@@ -1,0 +1,18 @@
+{
+  "query": "SELECT \n  COUNT(*) as total,\n  SUM(CASE WHEN taskStatus != 'sem_tarefa' AND taskStatus IS NOT NULL THEN 1 ELSE 0 END) as com_tarefa,\n  SUM(CASE WHEN taskStatus = 'sem_tarefa' OR taskStatus IS NULL THEN 1 ELSE 0 END) as sem_tarefa,\n  SUM(CASE WHEN taskStatus = 'entregue' THEN 1 ELSE 0 END) as entregues,\n  SUM(CASE WHEN taskStatus = 'nao_entregue' THEN 1 ELSE 0 END) as nao_entregues,\n  SUM(CASE WHEN taskStatus = 'validada' THEN 1 ELSE 0 END) as validadas\nFROM mentoring_sessions;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT \n  COUNT(*) as total,\n  SUM(CASE WHEN taskStatus != 'sem_tarefa' AND taskStatus IS NOT NULL THEN 1 ELSE 0 END) as com_tarefa,\n  SUM(CASE WHEN taskStatus = 'sem_tarefa' OR taskStatus IS NULL THEN 1 ELSE 0 END) as sem_tarefa,\n  SUM(CASE WHEN taskStatus = 'entregue' THEN 1 ELSE 0 END) as entregues,\n  SUM(CASE WHEN taskStatus = 'nao_entregue' THEN 1 ELSE 0 END) as nao_entregues,\n  SUM(CASE WHEN taskStatus = 'validada' THEN 1 ELSE 0 END) as validadas\nFROM mentoring_sessions;",
+  "rows": [
+    {
+      "total": "1358",
+      "com_tarefa": "1222",
+      "sem_tarefa": "136",
+      "entregues": "813",
+      "nao_entregues": "409",
+      "validadas": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tcom_tarefa\tsem_tarefa\tentregues\tnao_entregues\tvalidadas\n1358\t1222\t136\t813\t409\t0\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

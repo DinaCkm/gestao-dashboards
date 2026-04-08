@@ -1,0 +1,8 @@
+{
+  "query": "SELECT COUNT(*) as total, COUNT(CASE WHEN email IS NOT NULL AND email != '' THEN 1 END) as com_email FROM alunos WHERE status = 'ativo';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total, COUNT(CASE WHEN email IS NOT NULL AND email != '' THEN 1 END) as com_email FROM alunos WHERE status = 'ativo';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'status' in 'where clause'"
+  ]
+}

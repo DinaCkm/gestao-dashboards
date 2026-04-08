@@ -1,0 +1,30 @@
+{
+  "query": "SELECT notaCorte, COUNT(*) as cnt FROM assessment_competencias GROUP BY notaCorte ORDER BY notaCorte;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT notaCorte, COUNT(*) as cnt FROM assessment_competencias GROUP BY notaCorte ORDER BY notaCorte;",
+  "rows": [
+    {
+      "notaCorte": "5.50",
+      "cnt": "99"
+    },
+    {
+      "notaCorte": "6.00",
+      "cnt": "33"
+    },
+    {
+      "notaCorte": "6.50",
+      "cnt": "66"
+    },
+    {
+      "notaCorte": "7.50",
+      "cnt": "66"
+    },
+    {
+      "notaCorte": "8.00",
+      "cnt": "247"
+    }
+  ],
+  "messages": [],
+  "stdout": "notaCorte\tcnt\n5.50\t99\n6.00\t33\n6.50\t66\n7.50\t66\n8.00\t247\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

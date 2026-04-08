@@ -1,0 +1,52 @@
+{
+  "query": "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'assessment_competencias' AND TABLE_SCHEMA = DATABASE() ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'assessment_competencias' AND TABLE_SCHEMA = DATABASE() ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "assessmentPdiId"
+    },
+    {
+      "COLUMN_NAME": "competenciaId"
+    },
+    {
+      "COLUMN_NAME": "peso"
+    },
+    {
+      "COLUMN_NAME": "notaCorte"
+    },
+    {
+      "COLUMN_NAME": "microInicio"
+    },
+    {
+      "COLUMN_NAME": "microTermino"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "nivelAtual"
+    },
+    {
+      "COLUMN_NAME": "metaFinal"
+    },
+    {
+      "COLUMN_NAME": "justificativa"
+    },
+    {
+      "COLUMN_NAME": "metaCiclo1"
+    },
+    {
+      "COLUMN_NAME": "metaCiclo2"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nassessmentPdiId\ncompetenciaId\npeso\nnotaCorte\nmicroInicio\nmicroTermino\ncreatedAt\nupdatedAt\nnivelAtual\nmetaFinal\njustificativa\nmetaCiclo1\nmetaCiclo2\n",
+  "stderr": "",
+  "execution_time_ms": 368
+}

@@ -1,0 +1,595 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.role, u.consultorId, u.programId, u.isActive FROM users u WHERE u.role = 'manager' ORDER BY u.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.role, u.consultorId, u.programId, u.isActive FROM users u WHERE u.role = 'manager' ORDER BY u.name;",
+  "rows": [
+    {
+      "id": "690412",
+      "name": "Adriana Deus",
+      "email": "adriana@ckmtalents.net",
+      "role": "manager",
+      "consultorId": "39",
+      "programId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "720421",
+      "name": "Ana Carolina Cardoso Viana Rocha",
+      "email": "anaccvrocha@gmail.com",
+      "role": "manager",
+      "consultorId": "28",
+      "programId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "2220114",
+      "name": "Andressa Santos",
+      "email": "andressateixeirasantos64@gmail.com",
+      "role": "manager",
+      "consultorId": "35",
+      "programId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "660197",
+      "name": "Carolina Borges Moreira",
+      "email": "carolina.moreira@embrapii.org.br",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "18",
+      "isActive": "1"
+    },
+    {
+      "id": "660117",
+      "name": "Claudia Maia Da Silva",
+      "email": "claudia@ac.sebrae.com.br",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "16",
+      "isActive": "1"
+    },
+    {
+      "id": "2550045",
+      "name": "Dina Makiyama",
+      "email": "dina@ckmtalents.net",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "19",
+      "isActive": "1"
+    },
+    {
+      "id": "3630136",
+      "name": "Emanoel",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "18",
+      "isActive": "1"
+    },
+    {
+      "id": "3630110",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "18",
+      "isActive": "1"
+    },
+    {
+      "id": "660120",
+      "name": "Fabio Silva De Oliveira",
+      "email": "fabio.oliveira@ac.sebrae.com.br",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "16",
+      "isActive": "1"
+    },
+    {
+      "id": "4290839",
+      "name": "gerente teste",
+      "email": "teste@embrapii.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "18",
+      "isActive": "1"
+    },
+    {
+      "id": "570344",
+      "name": "Gestor SEBRAE TO",
+      "email": "gestor@sebraeto.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "17",
+      "isActive": "1"
+    },
+    {
+      "id": "660170",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "17",
+      "isActive": "1"
+    },
+    {
+      "id": "3120133",
+      "name": "Luciana Pereira Figueiredo da Silva",
+      "email": "lucyematheus@gmail.com",
+      "role": "manager",
+      "consultorId": "32",
+      "programId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "3180275",
+      "name": "Marcia Rocha Fernandes",
+      "email": "marciarocha@terra.com.br",
+      "role": "manager",
+      "consultorId": "29",
+      "programId": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "2071221",
+      "name": "Test Gestor 1772776605557",
+      "email": "gestor.test.1772776605557@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2071235",
+      "name": "Test Gestor 1772776778370",
+      "email": "gestor.test.1772776778370@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2071297",
+      "name": "Test Gestor 1772777591024",
+      "email": "gestor.test.1772777591024@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2220392",
+      "name": "Test Gestor 1772830057873",
+      "email": "gestor.test.1772830057873@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2220424",
+      "name": "Test Gestor 1772830681305",
+      "email": "gestor.test.1772830681305@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2220454",
+      "name": "Test Gestor 1772831012880",
+      "email": "gestor.test.1772831012880@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2250020",
+      "name": "Test Gestor 1772834232879",
+      "email": "gestor.test.1772834232879@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2250049",
+      "name": "Test Gestor 1772835041967",
+      "email": "gestor.test.1772835041967@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2250114",
+      "name": "Test Gestor 1772835606891",
+      "email": "gestor.test.1772835606891@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2250320",
+      "name": "Test Gestor 1772838169014",
+      "email": "gestor.test.1772838169014@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2250376",
+      "name": "Test Gestor 1772838719650",
+      "email": "gestor.test.1772838719650@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2250449",
+      "name": "Test Gestor 1772839405051",
+      "email": "gestor.test.1772839405051@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2310071",
+      "name": "Test Gestor 1772852365130",
+      "email": "gestor.test.1772852365130@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2700031",
+      "name": "Test Gestor 1772940162948",
+      "email": "gestor.test.1772940162948@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2700121",
+      "name": "Test Gestor 1772942931067",
+      "email": "gestor.test.1772942931067@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2700127",
+      "name": "Test Gestor 1772942947079",
+      "email": "gestor.test.1772942947079@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2790119",
+      "name": "Test Gestor 1772986738095",
+      "email": "gestor.test.1772986738095@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2790127",
+      "name": "Test Gestor 1772986778294",
+      "email": "gestor.test.1772986778294@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2820095",
+      "name": "Test Gestor 1772990478669",
+      "email": "gestor.test.1772990478669@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2850935",
+      "name": "Test Gestor 1773013371468",
+      "email": "gestor.test.1773013371468@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2880131",
+      "name": "Test Gestor 1773017055750",
+      "email": "gestor.test.1773017055750@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2910032",
+      "name": "Test Gestor 1773019177805",
+      "email": "gestor.test.1773019177805@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "2910038",
+      "name": "Test Gestor 1773019237734",
+      "email": "gestor.test.1773019237734@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3000001",
+      "name": "Test Gestor 1773024630176",
+      "email": "gestor.test.1773024630176@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3000007",
+      "name": "Test Gestor 1773024668884",
+      "email": "gestor.test.1773024668884@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3120013",
+      "name": "Test Gestor 1773065205685",
+      "email": "gestor.test.1773065205685@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3120019",
+      "name": "Test Gestor 1773065222808",
+      "email": "gestor.test.1773065222808@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3120707",
+      "name": "Test Gestor 1773087479025",
+      "email": "gestor.test.1773087479025@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3120881",
+      "name": "Test Gestor 1773089159090",
+      "email": "gestor.test.1773089159090@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3121008",
+      "name": "Test Gestor 1773090601577",
+      "email": "gestor.test.1773090601577@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3361038",
+      "name": "Test Gestor 1773246742505",
+      "email": "gestor.test.1773246742505@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3361053",
+      "name": "Test Gestor 1773246801705",
+      "email": "gestor.test.1773246801705@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3361393",
+      "name": "Test Gestor 1773251016497",
+      "email": "gestor.test.1773251016497@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3361486",
+      "name": "Test Gestor 1773252109373",
+      "email": "gestor.test.1773252109373@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3362314",
+      "name": "Test Gestor 1773260907020",
+      "email": "gestor.test.1773260907020@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "3362373",
+      "name": "Test Gestor 1773261236490",
+      "email": "gestor.test.1773261236490@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4291650",
+      "name": "Test Gestor 1773676827438",
+      "email": "gestor.test.1773676827438@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4291772",
+      "name": "Test Gestor 1773677618012",
+      "email": "gestor.test.1773677618012@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4291942",
+      "name": "Test Gestor 1773678498425",
+      "email": "gestor.test.1773678498425@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4292007",
+      "name": "Test Gestor 1773678999924",
+      "email": "gestor.test.1773678999924@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4292856",
+      "name": "Test Gestor 1773683835551",
+      "email": "gestor.test.1773683835551@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4293433",
+      "name": "Test Gestor 1773687350118",
+      "email": "gestor.test.1773687350118@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4293533",
+      "name": "Test Gestor 1773688448373",
+      "email": "gestor.test.1773688448373@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4294067",
+      "name": "Test Gestor 1773697318454",
+      "email": "gestor.test.1773697318454@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4294116",
+      "name": "Test Gestor 1773697657261",
+      "email": "gestor.test.1773697657261@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4294192",
+      "name": "Test Gestor 1773698136463",
+      "email": "gestor.test.1773698136463@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4294525",
+      "name": "Test Gestor 1773699548355",
+      "email": "gestor.test.1773699548355@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4294557",
+      "name": "Test Gestor 1773699761760",
+      "email": "gestor.test.1773699761760@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4294598",
+      "name": "Test Gestor 1773700122389",
+      "email": "gestor.test.1773700122389@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "4294675",
+      "name": "Test Gestor 1773700800675",
+      "email": "gestor.test.1773700800675@example.com",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "660188",
+      "name": "Vera Lucia Teodoro Braga",
+      "email": "vera.braga@to.sebrae.com.br",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "17",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tconsultorId\tprogramId\tisActive\n690412\tAdriana Deus\tadriana@ckmtalents.net\tmanager\t39\tNULL\t1\n720421\tAna Carolina Cardoso Viana Rocha\tanaccvrocha@gmail.com\tmanager\t28\tNULL\t1\n2220114\tAndressa Santos\tandressateixeirasantos64@gmail.com\tmanager\t35\tNULL\t1\n660197\tCarolina Borges Moreira\tcarolina.moreira@embrapii.org.br\tmanager\tNULL\t18\t1\n660117\tClaudia Maia Da Silva\tclaudia@ac.sebrae.com.br\tmanager\tNULL\t16\t1\n2550045\tDina Makiyama\tdina@ckmtalents.net\tmanager\tNULL\t19\t1\n3630136\tEmanoel\temanoel.querette@embrapii.org.br\tmanager\tNULL\t18\t1\n3630110\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tmanager\tNULL\t18\t1\n660120\tFabio Silva De Oliveira\tfabio.oliveira@ac.sebrae.com.br\tmanager\tNULL\t16\t1\n4290839\tgerente teste\tteste@embrapii.com\tmanager\tNULL\t18\t1\n570344\tGestor SEBRAE TO\tgestor@sebraeto.com\tmanager\tNULL\t17\t1\n660170\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\tmanager\tNULL\t17\t1\n3120133\tLuciana Pereira Figueiredo da Silva\tlucyematheus@gmail.com\tmanager\t32\tNULL\t1\n3180275\tMarcia Rocha Fernandes\tmarciarocha@terra.com.br\tmanager\t29\tNULL\t1\n2071221\tTest Gestor 1772776605557\tgestor.test.1772776605557@example.com\tmanager\tNULL\t1\t0\n2071235\tTest Gestor 1772776778370\tgestor.test.1772776778370@example.com\tmanager\tNULL\t1\t0\n2071297\tTest Gestor 1772777591024\tgestor.test.1772777591024@example.com\tmanager\tNULL\t1\t0\n2220392\tTest Gestor 1772830057873\tgestor.test.1772830057873@example.com\tmanager\tNULL\t1\t0\n2220424\tTest Gestor 1772830681305\tgestor.test.1772830681305@example.com\tmanager\tNULL\t1\t0\n2220454\tTest Gestor 1772831012880\tgestor.test.1772831012880@example.com\tmanager\tNULL\t1\t0\n2250020\tTest Gestor 1772834232879\tgestor.test.1772834232879@example.com\tmanager\tNULL\t1\t0\n2250049\tTest Gestor 1772835041967\tgestor.test.1772835041967@example.com\tmanager\tNULL\t1\t0\n2250114\tTest Gestor 1772835606891\tgestor.test.1772835606891@example.com\tmanager\tNULL\t1\t0\n2250320\tTest Gestor 1772838169014\tgestor.test.1772838169014@example.com\tmanager\tNULL\t1\t0\n2250376\tTest Gestor 1772838719650\tgestor.test.1772838719650@example.com\tmanager\tNULL\t1\t0\n2250449\tTest Gestor 1772839405051\tgestor.test.1772839405051@example.com\tmanager\tNULL\t1\t0\n2310071\tTest Gestor 1772852365130\tgestor.test.1772852365130@example.com\tmanager\tNULL\t1\t0\n2700031\tTest Gestor 1772940162948\tgestor.test.1772940162948@example.com\tmanager\tNULL\t1\t0\n2700121\tTest Gestor 1772942931067\tgestor.test.1772942931067@example.com\tmanager\tNULL\t1\t0\n2700127\tTest Gestor 1772942947079\tgestor.test.1772942947079@example.com\tmanager\tNULL\t1\t0\n2790119\tTest Gestor 1772986738095\tgestor.test.1772986738095@example.com\tmanager\tNULL\t1\t0\n2790127\tTest Gestor 1772986778294\tgestor.test.1772986778294@example.com\tmanager\tNULL\t1\t0\n2820095\tTest Gestor 1772990478669\tgestor.test.1772990478669@example.com\tmanager\tNULL\t1\t0\n2850935\tTest Gestor 1773013371468\tgestor.test.1773013371468@example.com\tmanager\tNULL\t1\t0\n2880131\tTest Gestor 1773017055750\tgestor.test.1773017055750@example.com\tmanager\tNULL\t1\t0\n2910032\tTest Gestor 1773019177805\tgestor.test.1773019177805@example.com\tmanager\tNULL\t1\t0\n2910038\tTest Gestor 1773019237734\tgestor.test.1773019237734@example.com\tmanager\tNULL\t1\t0\n3000001\tTest Gestor 1773024630176\tgestor.test.1773024630176@example.com\tmanager\tNULL\t1\t0\n3000007\tTest Gestor 1773024668884\tgestor.test.1773024668884@example.com\tmanager\tNULL\t1\t0\n3120013\tTest Gestor 1773065205685\tgestor.test.1773065205685@example.com\tmanager\tNULL\t1\t0\n3120019\tTest Gestor 1773065222808\tgestor.test.1773065222808@example.com\tmanager\tNULL\t1\t0\n3120707\tTest Gestor 1773087479025\tgestor.test.1773087479025@example.com\tmanager\tNULL\t1\t0\n3120881\tTest Gestor 1773089159090\tgestor.test.1773089159090@example.com\tmanager\tNULL\t1\t0\n3121008\tTest Gestor 1773090601577\tgestor.test.1773090601577@example.com\tmanager\tNULL\t1\t0\n3361038\tTest Gestor 1773246742505\tgestor.test.1773246742505@example.com\tmanager\tNULL\t1\t0\n3361053\tTest Gestor 1773246801705\tgestor.test.1773246801705@example.com\tmanager\tNULL\t1\t0\n3361393\tTest Gestor 1773251016497\tgestor.test.1773251016497@example.com\tmanager\tNULL\t1\t0\n3361486\tTest Gestor 1773252109373\tgestor.test.1773252109373@example.com\tmanager\tNULL\t1\t0\n3362314\tTest Gestor 1773260907020\tgestor.test.1773260907020@example.com\tmanager\tNULL\t1\t0\n3362373\tTest Gestor 1773261236490\tgestor.test.1773261236490@example.com\tmanager\tNULL\t1\t0\n4291650\tTest Gestor 1773676827438\tgestor.test.1773676827438@example.com\tmanager\tNULL\t1\t0\n4291772\tTest Gestor 1773677618012\tgestor.test.1773677618012@example.com\tmanager\tNULL\t1\t0\n4291942\tTest Gestor 1773678498425\tgestor.test.1773678498425@example.com\tmanager\tNULL\t1\t0\n4292007\tTest Gestor 1773678999924\tgestor.test.1773678999924@example.com\tmanager\tNULL\t1\t0\n4292856\tTest Gestor 1773683835551\tgestor.test.1773683835551@example.com\tmanager\tNULL\t1\t0\n4293433\tTest Gestor 1773687350118\tgestor.test.1773687350118@example.com\tmanager\tNULL\t1\t0\n4293533\tTest Gestor 1773688448373\tgestor.test.1773688448373@example.com\tmanager\tNULL\t1\t0\n4294067\tTest Gestor 1773697318454\tgestor.test.1773697318454@example.com\tmanager\tNULL\t1\t0\n4294116\tTest Gestor 1773697657261\tgestor.test.1773697657261@example.com\tmanager\tNULL\t1\t0\n4294192\tTest Gestor 1773698136463\tgestor.test.1773698136463@example.com\tmanager\tNULL\t1\t0\n4294525\tTest Gestor 1773699548355\tgestor.test.1773699548355@example.com\tmanager\tNULL\t1\t0\n4294557\tTest Gestor 1773699761760\tgestor.test.1773699761760@example.com\tmanager\tNULL\t1\t0\n4294598\tTest Gestor 1773700122389\tgestor.test.1773700122389@example.com\tmanager\tNULL\t1\t0\n4294675\tTest Gestor 1773700800675\tgestor.test.1773700800675@example.com\tmanager\tNULL\t1\t0\n660188\tVera Lucia Teodoro Braga\tvera.braga@to.sebrae.com.br\tmanager\tNULL\t17\t1\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}

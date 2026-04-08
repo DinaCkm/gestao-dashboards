@@ -1,0 +1,30 @@
+{
+  "query": "SELECT competenciaName, progressoTotal \nFROM student_performance \nWHERE alunoId = 30056 \nAND (competenciaName LIKE '%Decisões%' OR competenciaName LIKE '%Mentalidade%' OR competenciaName LIKE '%Adaptabilidade%' OR competenciaName LIKE '%Gestão da Comunicação%' OR competenciaName LIKE '%Inteligência Emocional%');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT competenciaName, progressoTotal \nFROM student_performance \nWHERE alunoId = 30056 \nAND (competenciaName LIKE '%Decisões%' OR competenciaName LIKE '%Mentalidade%' OR competenciaName LIKE '%Adaptabilidade%' OR competenciaName LIKE '%Gestão da Comunicação%' OR competenciaName LIKE '%Inteligência Emocional%');",
+  "rows": [
+    {
+      "competenciaName": "Adaptabilidade Dinâmica - Visão de Futuro",
+      "progressoTotal": "0"
+    },
+    {
+      "competenciaName": "Decisões Ágeis - Visão de Futuro",
+      "progressoTotal": "0"
+    },
+    {
+      "competenciaName": "Gestão da Comunicação - Visão de Futuro",
+      "progressoTotal": "0"
+    },
+    {
+      "competenciaName": "Inteligência Emocional Tática - Visão de Futuro",
+      "progressoTotal": "0"
+    },
+    {
+      "competenciaName": "Mentalidade Sistêmica - Visão de Futuro",
+      "progressoTotal": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "competenciaName\tprogressoTotal\nAdaptabilidade Dinâmica - Visão de Futuro\t0\nDecisões Ágeis - Visão de Futuro\t0\nGestão da Comunicação - Visão de Futuro\t0\nInteligência Emocional Tática - Visão de Futuro\t0\nMentalidade Sistêmica - Visão de Futuro\t0\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}

@@ -1,0 +1,199 @@
+{
+  "query": "SELECT COUNT(*) as total FROM task_library; SELECT competencia, COUNT(*) as qtd FROM task_library GROUP BY competencia; SELECT id, competencia, nome, isActive FROM task_library LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total FROM task_library; SELECT competencia, COUNT(*) as qtd FROM task_library GROUP BY competencia; SELECT id, competencia, nome, isActive FROM task_library LIMIT 10",
+  "rows": [
+    {
+      "total": "50"
+    },
+    {
+      "total": "competencia\tqtd"
+    },
+    {
+      "total": "Equilíbrio\t1"
+    },
+    {
+      "total": "Financeiro\t1"
+    },
+    {
+      "total": "Mudança\t1"
+    },
+    {
+      "total": "Decisão\t1"
+    },
+    {
+      "total": "Negociação\t1"
+    },
+    {
+      "total": "Estratégia\t1"
+    },
+    {
+      "total": "Influência Estratégica\t1"
+    },
+    {
+      "total": "Networking\t1"
+    },
+    {
+      "total": "Ética\t1"
+    },
+    {
+      "total": "Conflitos\t1"
+    },
+    {
+      "total": "Resiliência\t1"
+    },
+    {
+      "total": "Autorresponsabilidade\t1"
+    },
+    {
+      "total": "Inovação\t1"
+    },
+    {
+      "total": "Valores\t1"
+    },
+    {
+      "total": "Processos\t1"
+    },
+    {
+      "total": "Colaboração\t1"
+    },
+    {
+      "total": "Propósito\t1"
+    },
+    {
+      "total": "Autogestão\t1"
+    },
+    {
+      "total": "Produtividade\t1"
+    },
+    {
+      "total": "Prioridades\t1"
+    },
+    {
+      "total": "Energia\t1"
+    },
+    {
+      "total": "Mindset\t1"
+    },
+    {
+      "total": "Autorregulação\t1"
+    },
+    {
+      "total": "Autocontrole\t1"
+    },
+    {
+      "total": "Propósito Profissional\t1"
+    },
+    {
+      "total": "Comunicação Escrita\t1"
+    },
+    {
+      "total": "Visão Estratégica\t1"
+    },
+    {
+      "total": "Criatividade\t1"
+    },
+    {
+      "total": "Delegação\t1"
+    },
+    {
+      "total": "Resultados\t1"
+    },
+    {
+      "total": "Futuro\t1"
+    },
+    {
+      "total": "Accountability\t1"
+    },
+    {
+      "total": "Liderança\t1"
+    },
+    {
+      "total": "Metas\t1"
+    },
+    {
+      "total": "Autoconfiança\t1"
+    },
+    {
+      "total": "Empatia\t1"
+    },
+    {
+      "total": "Gestão do Tempo\t1"
+    },
+    {
+      "total": "Melhoria Contínua\t1"
+    },
+    {
+      "total": "Riscos\t1"
+    },
+    {
+      "total": "Adaptabilidade\t1"
+    },
+    {
+      "total": "Planejamento\t1"
+    },
+    {
+      "total": "Disciplina\t1"
+    },
+    {
+      "total": "Inteligência Emocional\t1"
+    },
+    {
+      "total": "Autoconhecimento\t1"
+    },
+    {
+      "total": "Performance\t1"
+    },
+    {
+      "total": "Prioridade Estratégica\t1"
+    },
+    {
+      "total": "Influência\t1"
+    },
+    {
+      "total": "Confiança\t1"
+    },
+    {
+      "total": "Comunicação\t1"
+    },
+    {
+      "total": "Feedback\t1"
+    },
+    {
+      "total": "id\tcompetencia\tnome\tisActive"
+    },
+    {
+      "total": "1\tAutoconhecimento\tFeedback 360° Simplificado\t1"
+    },
+    {
+      "total": "2\tAutogestão\tPlano de Desenvolvimento Individual\t1"
+    },
+    {
+      "total": "3\tGestão do Tempo\tRevisão da Agenda Semanal\t1"
+    },
+    {
+      "total": "4\tPrioridades\tMatriz de Prioridades\t1"
+    },
+    {
+      "total": "5\tDelegação\tRevisão de Responsabilidades\t1"
+    },
+    {
+      "total": "6\tComunicação\tConversa Estruturada\t1"
+    },
+    {
+      "total": "7\tConflitos\tAnálise de Situação de Tensão\t1"
+    },
+    {
+      "total": "8\tEstratégia\tEstruturação no 5W2H\t1"
+    },
+    {
+      "total": "9\tVisão Estratégica\tSWOT Simplificada\t1"
+    },
+    {
+      "total": "10\tResultados\tMeta Mensurável\t1"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\n50\ncompetencia\tqtd\nEquilíbrio\t1\nFinanceiro\t1\nMudança\t1\nDecisão\t1\nNegociação\t1\nEstratégia\t1\nInfluência Estratégica\t1\nNetworking\t1\nÉtica\t1\nConflitos\t1\nResiliência\t1\nAutorresponsabilidade\t1\nInovação\t1\nValores\t1\nProcessos\t1\nColaboração\t1\nPropósito\t1\nAutogestão\t1\nProdutividade\t1\nPrioridades\t1\nEnergia\t1\nMindset\t1\nAutorregulação\t1\nAutocontrole\t1\nPropósito Profissional\t1\nComunicação Escrita\t1\nVisão Estratégica\t1\nCriatividade\t1\nDelegação\t1\nResultados\t1\nFuturo\t1\nAccountability\t1\nLiderança\t1\nMetas\t1\nAutoconfiança\t1\nEmpatia\t1\nGestão do Tempo\t1\nMelhoria Contínua\t1\nRiscos\t1\nAdaptabilidade\t1\nPlanejamento\t1\nDisciplina\t1\nInteligência Emocional\t1\nAutoconhecimento\t1\nPerformance\t1\nPrioridade Estratégica\t1\nInfluência\t1\nConfiança\t1\nComunicação\t1\nFeedback\t1\nid\tcompetencia\tnome\tisActive\n1\tAutoconhecimento\tFeedback 360° Simplificado\t1\n2\tAutogestão\tPlano de Desenvolvimento Individual\t1\n3\tGestão do Tempo\tRevisão da Agenda Semanal\t1\n4\tPrioridades\tMatriz de Prioridades\t1\n5\tDelegação\tRevisão de Responsabilidades\t1\n6\tComunicação\tConversa Estruturada\t1\n7\tConflitos\tAnálise de Situação de Tensão\t1\n8\tEstratégia\tEstruturação no 5W2H\t1\n9\tVisão Estratégica\tSWOT Simplificada\t1\n10\tResultados\tMeta Mensurável\t1\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

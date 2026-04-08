@@ -1,0 +1,15 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM alunos) as total_alunos,\n  (SELECT COUNT(*) FROM alunos WHERE name LIKE '%test%' OR name LIKE '%teste%' OR name LIKE '%Test%' OR email LIKE '%test%' OR email LIKE '%example%') as alunos_teste,\n  (SELECT COUNT(*) FROM alunos WHERE name NOT LIKE '%test%' AND name NOT LIKE '%teste%' AND name NOT LIKE '%Test%' AND (email IS NULL OR (email NOT LIKE '%test%' AND email NOT LIKE '%example%'))) as alunos_reais;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT \n  (SELECT COUNT(*) FROM alunos) as total_alunos,\n  (SELECT COUNT(*) FROM alunos WHERE name LIKE '%test%' OR name LIKE '%teste%' OR name LIKE '%Test%' OR email LIKE '%test%' OR email LIKE '%example%') as alunos_teste,\n  (SELECT COUNT(*) FROM alunos WHERE name NOT LIKE '%test%' AND name NOT LIKE '%teste%' AND name NOT LIKE '%Test%' AND (email IS NULL OR (email NOT LIKE '%test%' AND email NOT LIKE '%example%'))) as alunos_reais;",
+  "rows": [
+    {
+      "total_alunos": "249",
+      "alunos_teste": "119",
+      "alunos_reais": "130"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_alunos\talunos_teste\talunos_reais\n249\t119\t130\n",
+  "stderr": "",
+  "execution_time_ms": 368
+}

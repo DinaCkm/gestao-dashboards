@@ -1,0 +1,31 @@
+{
+  "query": "SELECT ap.id as pdiId, ap.trilhaId, t.name as trilhaNome\nFROM assessment_pdi ap\nLEFT JOIN trilhas t ON t.id = ap.trilhaId\nWHERE ap.alunoId = 30080;\n\nSELECT ac.competenciaId, c.nome as compNome\nFROM assessment_competencias ac\nLEFT JOIN competencias c ON c.id = ac.competenciaId\nWHERE ac.assessmentPdiId = 60395;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id as pdiId, ap.trilhaId, t.name as trilhaNome\nFROM assessment_pdi ap\nLEFT JOIN trilhas t ON t.id = ap.trilhaId\nWHERE ap.alunoId = 30080;\n\nSELECT ac.competenciaId, c.nome as compNome\nFROM assessment_competencias ac\nLEFT JOIN competencias c ON c.id = ac.competenciaId\nWHERE ac.assessmentPdiId = 60395;",
+  "rows": [
+    {
+      "pdiId": "60418",
+      "trilhaId": "1",
+      "trilhaNome": "Basic"
+    },
+    {
+      "pdiId": "60373",
+      "trilhaId": "2",
+      "trilhaNome": "Essential"
+    }
+  ],
+  "messages": [
+    "competenciaId\tcompNome",
+    "30013\tArquitetura de Mudanças",
+    "30015\tDecisões Ágeis",
+    "30016\tEstratégia de Longo Alcance",
+    "30021\tMentalidade Sistêmica",
+    "30022\tMindset Visionário",
+    "30028\tRadar de Cenários",
+    "30034\tAdaptabilidade Dinâmica",
+    "30035\tGestão da Comunicação",
+    "30036\tInteligência Emocional Tática"
+  ],
+  "stdout": "pdiId\ttrilhaId\ttrilhaNome\n60418\t1\tBasic\n60373\t2\tEssential\ncompetenciaId\tcompNome\n30013\tArquitetura de Mudanças\n30015\tDecisões Ágeis\n30016\tEstratégia de Longo Alcance\n30021\tMentalidade Sistêmica\n30022\tMindset Visionário\n30028\tRadar de Cenários\n30034\tAdaptabilidade Dinâmica\n30035\tGestão da Comunicação\n30036\tInteligência Emocional Tática\n",
+  "stderr": "",
+  "execution_time_ms": 404
+}

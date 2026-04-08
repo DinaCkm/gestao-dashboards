@@ -1,0 +1,162 @@
+{
+  "query": "SELECT ac.id, ac.assessmentPdiId, ac.competenciaId, c.nome as competencia_nome, ac.microInicio, ac.microTermino \nFROM assessment_competencias ac \nLEFT JOIN competencias c ON ac.competenciaId = c.id \nLEFT JOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id\nLEFT JOIN alunos a ON ap.alunoId = a.id\nWHERE a.externalId = '615731'\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ac.id, ac.assessmentPdiId, ac.competenciaId, c.nome as competencia_nome, ac.microInicio, ac.microTermino \nFROM assessment_competencias ac \nLEFT JOIN competencias c ON ac.competenciaId = c.id \nLEFT JOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id\nLEFT JOIN alunos a ON ap.alunoId = a.id\nWHERE a.externalId = '615731'\nLIMIT 20;",
+  "rows": [
+    {
+      "id": "61809",
+      "assessmentPdiId": "60276",
+      "competenciaId": "30004",
+      "competencia_nome": "Atenção",
+      "microInicio": "2025-04-10",
+      "microTermino": "2025-10-30"
+    },
+    {
+      "id": "61810",
+      "assessmentPdiId": "60276",
+      "competenciaId": "30005",
+      "competencia_nome": "Autopercepção",
+      "microInicio": "2025-04-10",
+      "microTermino": "2025-10-30"
+    },
+    {
+      "id": "61811",
+      "assessmentPdiId": "60276",
+      "competenciaId": "30006",
+      "competencia_nome": "Disciplina",
+      "microInicio": "2025-04-10",
+      "microTermino": "2025-10-30"
+    },
+    {
+      "id": "61812",
+      "assessmentPdiId": "60276",
+      "competenciaId": "30007",
+      "competencia_nome": "Empatia",
+      "microInicio": "2025-04-10",
+      "microTermino": "2025-10-30"
+    },
+    {
+      "id": "61813",
+      "assessmentPdiId": "60276",
+      "competenciaId": "30008",
+      "competencia_nome": "Escuta Ativa",
+      "microInicio": "2025-04-10",
+      "microTermino": "2025-10-30"
+    },
+    {
+      "id": "61814",
+      "assessmentPdiId": "60276",
+      "competenciaId": "30009",
+      "competencia_nome": "Memória",
+      "microInicio": "2025-04-10",
+      "microTermino": "2025-10-30"
+    },
+    {
+      "id": "61815",
+      "assessmentPdiId": "60276",
+      "competenciaId": "30010",
+      "competencia_nome": "Raciocínio Lógico e Espacial",
+      "microInicio": "2025-04-10",
+      "microTermino": "2025-10-30"
+    },
+    {
+      "id": "61578",
+      "assessmentPdiId": "60243",
+      "competenciaId": "30012",
+      "competencia_nome": "Adaptabilidade",
+      "microInicio": "2025-07-10",
+      "microTermino": "2025-12-31"
+    },
+    {
+      "id": "61579",
+      "assessmentPdiId": "60243",
+      "competenciaId": "30014",
+      "competencia_nome": "Comunicação Assertiva",
+      "microInicio": "2025-07-10",
+      "microTermino": "2025-12-31"
+    },
+    {
+      "id": "61996",
+      "assessmentPdiId": "60309",
+      "competenciaId": "30017",
+      "competencia_nome": "Foco em Resultados",
+      "microInicio": "2025-11-30",
+      "microTermino": "2026-05-10"
+    },
+    {
+      "id": "61580",
+      "assessmentPdiId": "60243",
+      "competenciaId": "30019",
+      "competencia_nome": "Inteligência Emocional",
+      "microInicio": "2025-07-10",
+      "microTermino": "2025-12-31"
+    },
+    {
+      "id": "61581",
+      "assessmentPdiId": "60243",
+      "competenciaId": "30020",
+      "competencia_nome": "Leitura de Cenário",
+      "microInicio": "2025-07-10",
+      "microTermino": "2025-12-31"
+    },
+    {
+      "id": "61582",
+      "assessmentPdiId": "60243",
+      "competenciaId": "30024",
+      "competencia_nome": "Planejamento e Organização",
+      "microInicio": "2025-07-10",
+      "microTermino": "2025-12-31"
+    },
+    {
+      "id": "61997",
+      "assessmentPdiId": "60309",
+      "competenciaId": "30025",
+      "competencia_nome": "Presença Executiva",
+      "microInicio": "2025-11-30",
+      "microTermino": "2026-05-10"
+    },
+    {
+      "id": "61583",
+      "assessmentPdiId": "60243",
+      "competenciaId": "30026",
+      "competencia_nome": "Proatividade",
+      "microInicio": "2025-07-10",
+      "microTermino": "2025-12-31"
+    },
+    {
+      "id": "61998",
+      "assessmentPdiId": "60309",
+      "competenciaId": "30027",
+      "competencia_nome": "Protagonismo",
+      "microInicio": "2025-11-30",
+      "microTermino": "2026-05-10"
+    },
+    {
+      "id": "61584",
+      "assessmentPdiId": "60243",
+      "competenciaId": "30030",
+      "competencia_nome": "Resiliência",
+      "microInicio": "2025-07-10",
+      "microTermino": "2025-12-31"
+    },
+    {
+      "id": "61999",
+      "assessmentPdiId": "60309",
+      "competenciaId": "30032",
+      "competencia_nome": "Tomada de Decisão",
+      "microInicio": "2025-11-30",
+      "microTermino": "2026-05-10"
+    },
+    {
+      "id": "62000",
+      "assessmentPdiId": "60309",
+      "competenciaId": "30033",
+      "competencia_nome": "Visão Estratégica",
+      "microInicio": "2025-11-30",
+      "microTermino": "2026-05-10"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tassessmentPdiId\tcompetenciaId\tcompetencia_nome\tmicroInicio\tmicroTermino\n61809\t60276\t30004\tAtenção\t2025-04-10\t2025-10-30\n61810\t60276\t30005\tAutopercepção\t2025-04-10\t2025-10-30\n61811\t60276\t30006\tDisciplina\t2025-04-10\t2025-10-30\n61812\t60276\t30007\tEmpatia\t2025-04-10\t2025-10-30\n61813\t60276\t30008\tEscuta Ativa\t2025-04-10\t2025-10-30\n61814\t60276\t30009\tMemória\t2025-04-10\t2025-10-30\n61815\t60276\t30010\tRaciocínio Lógico e Espacial\t2025-04-10\t2025-10-30\n61578\t60243\t30012\tAdaptabilidade\t2025-07-10\t2025-12-31\n61579\t60243\t30014\tComunicação Assertiva\t2025-07-10\t2025-12-31\n61996\t60309\t30017\tFoco em Resultados\t2025-11-30\t2026-05-10\n61580\t60243\t30019\tInteligência Emocional\t2025-07-10\t2025-12-31\n61581\t60243\t30020\tLeitura de Cenário\t2025-07-10\t2025-12-31\n61582\t60243\t30024\tPlanejamento e Organização\t2025-07-10\t2025-12-31\n61997\t60309\t30025\tPresença Executiva\t2025-11-30\t2026-05-10\n61583\t60243\t30026\tProatividade\t2025-07-10\t2025-12-31\n61998\t60309\t30027\tProtagonismo\t2025-11-30\t2026-05-10\n61584\t60243\t30030\tResiliência\t2025-07-10\t2025-12-31\n61999\t60309\t30032\tTomada de Decisão\t2025-11-30\t2026-05-10\n62000\t60309\t30033\tVisão Estratégica\t2025-11-30\t2026-05-10\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

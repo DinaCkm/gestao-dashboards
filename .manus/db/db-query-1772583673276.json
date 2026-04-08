@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, name, turmaId FROM alunos WHERE name LIKE '%abio%' LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, turmaId FROM alunos WHERE name LIKE '%abio%' LIMIT 5",
+  "rows": [
+    {
+      "id": "30001",
+      "name": "Fabio Silva De Oliveira",
+      "turmaId": "30001"
+    },
+    {
+      "id": "30039",
+      "name": "Fabio Maya Cavalcante",
+      "turmaId": "30002"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tturmaId\n30001\tFabio Silva De Oliveira\t30001\n30039\tFabio Maya Cavalcante\t30002\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}

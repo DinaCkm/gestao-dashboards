@@ -1,0 +1,24 @@
+{
+  "query": "SELECT a.id, a.name, a.trilhaId, t.name as trilhaNome, a.turmaId FROM alunos a LEFT JOIN trilhas t ON a.trilhaId = t.id WHERE a.name LIKE '%Julia%' OR a.name LIKE '%Júlia%' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.trilhaId, t.name as trilhaNome, a.turmaId FROM alunos a LEFT JOIN trilhas t ON a.trilhaId = t.id WHERE a.name LIKE '%Julia%' OR a.name LIKE '%Júlia%' LIMIT 10;",
+  "rows": [
+    {
+      "id": "30082",
+      "name": "Juliana Masson Prediger",
+      "trilhaId": "1",
+      "trilhaNome": "Basic",
+      "turmaId": "30005"
+    },
+    {
+      "id": "660014",
+      "name": "Julia Souza Makiyama",
+      "trilhaId": "NULL",
+      "trilhaNome": "NULL",
+      "turmaId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttrilhaId\ttrilhaNome\tturmaId\n30082\tJuliana Masson Prediger\t1\tBasic\t30005\n660014\tJulia Souza Makiyama\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

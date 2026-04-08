@@ -1,0 +1,41 @@
+{
+  "query": "SELECT ap.id as pdiId, ap.alunoId, ap.trilhaId, t.name as trilhaNome, a.name as alunoNome\nFROM assessment_pdi ap\nLEFT JOIN trilhas t ON t.id = ap.trilhaId\nLEFT JOIN alunos a ON a.id = ap.alunoId\nWHERE ap.alunoId = 30080;\n\nSELECT DISTINCT sp.competenciaName, sp.progressoTotal\nFROM student_performance sp\nWHERE sp.alunoId = 30080\nORDER BY sp.competenciaName;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id as pdiId, ap.alunoId, ap.trilhaId, t.name as trilhaNome, a.name as alunoNome\nFROM assessment_pdi ap\nLEFT JOIN trilhas t ON t.id = ap.trilhaId\nLEFT JOIN alunos a ON a.id = ap.alunoId\nWHERE ap.alunoId = 30080;\n\nSELECT DISTINCT sp.competenciaName, sp.progressoTotal\nFROM student_performance sp\nWHERE sp.alunoId = 30080\nORDER BY sp.competenciaName;",
+  "rows": [
+    {
+      "pdiId": "60418",
+      "alunoId": "30080",
+      "trilhaId": "1",
+      "trilhaNome": "Basic",
+      "alunoNome": "BRUNO DE JESUS RODRIGUES"
+    },
+    {
+      "pdiId": "60373",
+      "alunoId": "30080",
+      "trilhaId": "2",
+      "trilhaNome": "Essential",
+      "alunoNome": "BRUNO DE JESUS RODRIGUES"
+    }
+  ],
+  "messages": [
+    "competenciaName\tprogressoTotal",
+    "Adaptabilidade - Essencial\t0",
+    "Atenção - Básica\t100",
+    "Autopercepção - Básica\t100",
+    "Comunicação Assertiva - Essencial\t100",
+    "Disciplina - Básica\t100",
+    "Empatia - Básica\t100",
+    "Escuta Ativa - Básica\t100",
+    "Gestão do Tempo - Básica\t100",
+    "Inteligência Emocional - Essencial\t0",
+    "Leitura de Cenário - Essencial\t100",
+    "Memória - Básica\t100",
+    "Planejamento e Organização - Essencial\t100",
+    "Proatividade - Essencial\t100",
+    "Raciocínio Lógico e Espacial - Básica\t100",
+    "Resiliência - Essencial\t16"
+  ],
+  "stdout": "pdiId\talunoId\ttrilhaId\ttrilhaNome\talunoNome\n60418\t30080\t1\tBasic\tBRUNO DE JESUS RODRIGUES\n60373\t30080\t2\tEssential\tBRUNO DE JESUS RODRIGUES\ncompetenciaName\tprogressoTotal\nAdaptabilidade - Essencial\t0\nAtenção - Básica\t100\nAutopercepção - Básica\t100\nComunicação Assertiva - Essencial\t100\nDisciplina - Básica\t100\nEmpatia - Básica\t100\nEscuta Ativa - Básica\t100\nGestão do Tempo - Básica\t100\nInteligência Emocional - Essencial\t0\nLeitura de Cenário - Essencial\t100\nMemória - Básica\t100\nPlanejamento e Organização - Essencial\t100\nProatividade - Essencial\t100\nRaciocínio Lógico e Espacial - Básica\t100\nResiliência - Essencial\t16\n",
+  "stderr": "",
+  "execution_time_ms": 415
+}

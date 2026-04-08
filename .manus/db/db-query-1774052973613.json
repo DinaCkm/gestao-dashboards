@@ -1,0 +1,30 @@
+{
+  "query": "SELECT 'aluno' AS tabela, a.id, a.name, a.email, a.isActive, a.programId, a.consultorId, a.turmaId\nFROM alunos a WHERE a.name LIKE '%Alexandre%'\nUNION ALL\nSELECT 'consultor' AS tabela, c.id, c.name, c.email, c.isActive, c.programId, NULL, NULL\nFROM consultors c WHERE c.name LIKE '%Alexandre%'\nUNION ALL\nSELECT 'user' AS tabela, u.id, u.name, u.email, u.isActive, u.programId, u.consultorId, u.alunoId\nFROM users u WHERE u.name LIKE '%Alexandre%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT 'aluno' AS tabela, a.id, a.name, a.email, a.isActive, a.programId, a.consultorId, a.turmaId\nFROM alunos a WHERE a.name LIKE '%Alexandre%'\nUNION ALL\nSELECT 'consultor' AS tabela, c.id, c.name, c.email, c.isActive, c.programId, NULL, NULL\nFROM consultors c WHERE c.name LIKE '%Alexandre%'\nUNION ALL\nSELECT 'user' AS tabela, u.id, u.name, u.email, u.isActive, u.programId, u.consultorId, u.alunoId\nFROM users u WHERE u.name LIKE '%Alexandre%';",
+  "rows": [
+    {
+      "tabela": "aluno",
+      "id": "30100",
+      "name": "Alexandre Crepory Abbott de Oliveira",
+      "email": "alexandre.oliveira@embrapii.org.br",
+      "isActive": "1",
+      "programId": "18",
+      "consultorId": "32",
+      "turmaId": "30002"
+    },
+    {
+      "tabela": "user",
+      "id": "660194",
+      "name": "Alexandre Crepory Abbott de Oliveira",
+      "email": "alexandre.oliveira@embrapii.org.br",
+      "isActive": "1",
+      "programId": "18",
+      "consultorId": "NULL",
+      "turmaId": "30100"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\tid\tname\temail\tisActive\tprogramId\tconsultorId\tturmaId\naluno\t30100\tAlexandre Crepory Abbott de Oliveira\talexandre.oliveira@embrapii.org.br\t1\t18\t32\t30002\nuser\t660194\tAlexandre Crepory Abbott de Oliveira\talexandre.oliveira@embrapii.org.br\t1\t18\tNULL\t30100\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, consultorId, programId, tipoSessao, valor, validoDesde, validoAte, isActive FROM mentor_session_type_pricing WHERE isActive = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, consultorId, programId, tipoSessao, valor, validoDesde, validoAte, isActive FROM mentor_session_type_pricing WHERE isActive = 1;",
+  "rows": [
+    {
+      "id": "1",
+      "consultorId": "NULL",
+      "programId": "NULL",
+      "tipoSessao": "individual_normal",
+      "valor": "999.99",
+      "validoDesde": "2026-01-01",
+      "validoAte": "2026-12-31",
+      "isActive": "1"
+    },
+    {
+      "id": "4",
+      "consultorId": "39",
+      "programId": "90002",
+      "tipoSessao": "individual_normal",
+      "valor": "80.00",
+      "validoDesde": "2026-03-01",
+      "validoAte": "2027-03-01",
+      "isActive": "1"
+    },
+    {
+      "id": "5",
+      "consultorId": "NULL",
+      "programId": "90002",
+      "tipoSessao": "individual_assessment",
+      "valor": "150.00",
+      "validoDesde": "2026-03-24",
+      "validoAte": "NULL",
+      "isActive": "1"
+    },
+    {
+      "id": "6",
+      "consultorId": "39",
+      "programId": "90002",
+      "tipoSessao": "grupo_assessment",
+      "valor": "100.00",
+      "validoDesde": "2026-03-01",
+      "validoAte": "2027-03-01",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tconsultorId\tprogramId\ttipoSessao\tvalor\tvalidoDesde\tvalidoAte\tisActive\n1\tNULL\tNULL\tindividual_normal\t999.99\t2026-01-01\t2026-12-31\t1\n4\t39\t90002\tindividual_normal\t80.00\t2026-03-01\t2027-03-01\t1\n5\tNULL\t90002\tindividual_assessment\t150.00\t2026-03-24\tNULL\t1\n6\t39\t90002\tgrupo_assessment\t100.00\t2026-03-01\t2027-03-01\t1\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

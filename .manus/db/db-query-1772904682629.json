@@ -1,0 +1,60 @@
+{
+  "query": "SELECT * FROM task_library LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT * FROM task_library LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "competencia": "Autoconhecimento",
+      "nome": "Feedback 360° Simplificado",
+      "resumo": "Coleta estruturada de percepções profissionais.",
+      "o_que_fazer": "Selecionar 3-4 pessoas; aplicar perguntas; consolidar pontos fortes e melhorias; definir 1 ação.",
+      "o_que_ganha": "Desenvolve clareza sobre sua imagem profissional.",
+      "isActive": "1",
+      "createdAt": "2026-02-14 00:31:11"
+    },
+    {
+      "id": "2",
+      "competencia": "Autogestão",
+      "nome": "Plano de Desenvolvimento Individual",
+      "resumo": "Definição de metas de crescimento.",
+      "o_que_fazer": "Escolher até 3 competências; definir ação prática; revisar mensalmente.",
+      "o_que_ganha": "Aumenta foco no próprio desenvolvimento.",
+      "isActive": "1",
+      "createdAt": "2026-02-14 00:31:12"
+    },
+    {
+      "id": "3",
+      "competencia": "Gestão do Tempo",
+      "nome": "Revisão da Agenda Semanal",
+      "resumo": "Análise do uso do tempo.",
+      "o_que_fazer": "Revisar agenda; identificar desperdícios; eliminar ou delegar 1 atividade.",
+      "o_que_ganha": "Melhora organização e produtividade.",
+      "isActive": "1",
+      "createdAt": "2026-02-14 00:31:12"
+    },
+    {
+      "id": "4",
+      "competencia": "Prioridades",
+      "nome": "Matriz de Prioridades",
+      "resumo": "Classificação de tarefas por relevância.",
+      "o_que_fazer": "Listar tarefas; classificar; reorganizar foco semanal.",
+      "o_que_ganha": "Ganha clareza de prioridades.",
+      "isActive": "1",
+      "createdAt": "2026-02-14 00:31:12"
+    },
+    {
+      "id": "5",
+      "competencia": "Delegação",
+      "nome": "Revisão de Responsabilidades",
+      "resumo": "Ajuste de papéis na equipe.",
+      "o_que_fazer": "Identificar tarefas delegáveis; definir responsável; alinhar expectativas.",
+      "o_que_ganha": "Reduz sobrecarga e aumenta eficiência.",
+      "isActive": "1",
+      "createdAt": "2026-02-14 00:31:12"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcompetencia\tnome\tresumo\to_que_fazer\to_que_ganha\tisActive\tcreatedAt\n1\tAutoconhecimento\tFeedback 360° Simplificado\tColeta estruturada de percepções profissionais.\tSelecionar 3-4 pessoas; aplicar perguntas; consolidar pontos fortes e melhorias; definir 1 ação.\tDesenvolve clareza sobre sua imagem profissional.\t1\t2026-02-14 00:31:11\n2\tAutogestão\tPlano de Desenvolvimento Individual\tDefinição de metas de crescimento.\tEscolher até 3 competências; definir ação prática; revisar mensalmente.\tAumenta foco no próprio desenvolvimento.\t1\t2026-02-14 00:31:12\n3\tGestão do Tempo\tRevisão da Agenda Semanal\tAnálise do uso do tempo.\tRevisar agenda; identificar desperdícios; eliminar ou delegar 1 atividade.\tMelhora organização e produtividade.\t1\t2026-02-14 00:31:12\n4\tPrioridades\tMatriz de Prioridades\tClassificação de tarefas por relevância.\tListar tarefas; classificar; reorganizar foco semanal.\tGanha clareza de prioridades.\t1\t2026-02-14 00:31:12\n5\tDelegação\tRevisão de Responsabilidades\tAjuste de papéis na equipe.\tIdentificar tarefas delegáveis; definir responsável; alinhar expectativas.\tReduz sobrecarga e aumenta eficiência.\t1\t2026-02-14 00:31:12\n",
+  "stderr": "",
+  "execution_time_ms": 70
+}

@@ -1,0 +1,30 @@
+{
+  "query": "SELECT c.nome, COUNT(*) as total_alunos\nFROM assessment_competencias ac \nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id \nJOIN alunos a ON ap.alunoId = a.id \nJOIN competencias c ON ac.competenciaId = c.id\nWHERE a.programId = 18\nGROUP BY c.nome\nORDER BY total_alunos DESC\nLIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT c.nome, COUNT(*) as total_alunos\nFROM assessment_competencias ac \nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id \nJOIN alunos a ON ap.alunoId = a.id \nJOIN competencias c ON ac.competenciaId = c.id\nWHERE a.programId = 18\nGROUP BY c.nome\nORDER BY total_alunos DESC\nLIMIT 5;",
+  "rows": [
+    {
+      "nome": "Memória",
+      "total_alunos": "16"
+    },
+    {
+      "nome": "Raciocínio Lógico e Espacial",
+      "total_alunos": "16"
+    },
+    {
+      "nome": "Disciplina",
+      "total_alunos": "16"
+    },
+    {
+      "nome": "Empatia",
+      "total_alunos": "16"
+    },
+    {
+      "nome": "Gestão do Tempo",
+      "total_alunos": "16"
+    }
+  ],
+  "messages": [],
+  "stdout": "nome\ttotal_alunos\nMemória\t16\nRaciocínio Lógico e Espacial\t16\nDisciplina\t16\nEmpatia\t16\nGestão do Tempo\t16\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}

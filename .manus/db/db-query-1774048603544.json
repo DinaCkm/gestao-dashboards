@@ -1,0 +1,15 @@
+{
+  "query": "SELECT a.id, a.name, a.externalId FROM alunos a WHERE a.name LIKE '%Millena%' OR a.name LIKE '%millena%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.externalId FROM alunos a WHERE a.name LIKE '%Millena%' OR a.name LIKE '%millena%';",
+  "rows": [
+    {
+      "id": "30070",
+      "name": "Millena Pereira Lima Rodrigues",
+      "externalId": "667292"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\texternalId\n30070\tMillena Pereira Lima Rodrigues\t667292\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

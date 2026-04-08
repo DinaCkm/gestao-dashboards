@@ -1,0 +1,17 @@
+{
+  "query": "SELECT a.id, a.name, ap.id as pdi_id, ap.trilhaId, t.name as trilhaNome FROM alunos a JOIN assessment_pdi ap ON ap.alunoId = a.id LEFT JOIN trilhas t ON t.id = ap.trilhaId WHERE a.name LIKE '%Bruno Martins%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, ap.id as pdi_id, ap.trilhaId, t.name as trilhaNome FROM alunos a JOIN assessment_pdi ap ON ap.alunoId = a.id LEFT JOIN trilhas t ON t.id = ap.trilhaId WHERE a.name LIKE '%Bruno Martins%';",
+  "rows": [
+    {
+      "id": "30057",
+      "name": "Bruno Martins Vieira",
+      "pdi_id": "60394",
+      "trilhaId": "4",
+      "trilhaNome": "Visão de Futuro"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tpdi_id\ttrilhaId\ttrilhaNome\n30057\tBruno Martins Vieira\t60394\t4\tVisão de Futuro\n",
+  "stderr": "",
+  "execution_time_ms": 372
+}

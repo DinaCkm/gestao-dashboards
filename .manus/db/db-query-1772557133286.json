@@ -1,0 +1,18 @@
+{
+  "query": "SELECT MIN(engagementScore) as min_eng, MAX(engagementScore) as max_eng, AVG(engagementScore) as avg_eng, MIN(notaEvolucao) as min_nota, MAX(notaEvolucao) as max_nota, AVG(notaEvolucao) as avg_nota FROM mentoring_sessions WHERE engagementScore IS NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT MIN(engagementScore) as min_eng, MAX(engagementScore) as max_eng, AVG(engagementScore) as avg_eng, MIN(notaEvolucao) as min_nota, MAX(notaEvolucao) as max_nota, AVG(notaEvolucao) as avg_nota FROM mentoring_sessions WHERE engagementScore IS NOT NULL;",
+  "rows": [
+    {
+      "min_eng": "0",
+      "max_eng": "10",
+      "avg_eng": "5.1925",
+      "min_nota": "0",
+      "max_nota": "10",
+      "avg_nota": "5.1925"
+    }
+  ],
+  "messages": [],
+  "stdout": "min_eng\tmax_eng\tavg_eng\tmin_nota\tmax_nota\tavg_nota\n0\t10\t5.1925\t0\t10\t5.1925\n",
+  "stderr": "",
+  "execution_time_ms": 380
+}

@@ -1,0 +1,55 @@
+{
+  "query": "SELECT * FROM programs LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT * FROM programs LIMIT 10;",
+  "rows": [
+    {
+      "id": "16",
+      "name": "SEBRAE ACRE",
+      "code": "SEBRAE_ACRE",
+      "description": "Programa SEBRAE Acre",
+      "isActive": "1",
+      "createdAt": "2026-01-27 23:00:51",
+      "updatedAt": "2026-01-27 23:00:51"
+    },
+    {
+      "id": "17",
+      "name": "SEBRAE TO",
+      "code": "SEBRAE_TO",
+      "description": "Programa SEBRAE Tocantins",
+      "isActive": "1",
+      "createdAt": "2026-01-27 23:00:51",
+      "updatedAt": "2026-01-27 23:00:51"
+    },
+    {
+      "id": "18",
+      "name": "EMBRAPII",
+      "code": "EMBRAPII",
+      "description": "Programa EMBRAPII",
+      "isActive": "1",
+      "createdAt": "2026-01-27 23:00:51",
+      "updatedAt": "2026-01-27 23:00:51"
+    },
+    {
+      "id": "19",
+      "name": "BANRISUL",
+      "code": "BANRISUL",
+      "description": "Programa Banrisul",
+      "isActive": "1",
+      "createdAt": "2026-01-27 23:00:51",
+      "updatedAt": "2026-02-13 22:56:24"
+    },
+    {
+      "id": "30001",
+      "name": "teste",
+      "code": "teste",
+      "description": "NULL",
+      "isActive": "0",
+      "createdAt": "2026-02-13 16:43:01",
+      "updatedAt": "2026-02-13 18:33:50"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcode\tdescription\tisActive\tcreatedAt\tupdatedAt\n16\tSEBRAE ACRE\tSEBRAE_ACRE\tPrograma SEBRAE Acre\t1\t2026-01-27 23:00:51\t2026-01-27 23:00:51\n17\tSEBRAE TO\tSEBRAE_TO\tPrograma SEBRAE Tocantins\t1\t2026-01-27 23:00:51\t2026-01-27 23:00:51\n18\tEMBRAPII\tEMBRAPII\tPrograma EMBRAPII\t1\t2026-01-27 23:00:51\t2026-01-27 23:00:51\n19\tBANRISUL\tBANRISUL\tPrograma Banrisul\t1\t2026-01-27 23:00:51\t2026-02-13 22:56:24\n30001\tteste\tteste\tNULL\t0\t2026-02-13 16:43:01\t2026-02-13 18:33:50\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

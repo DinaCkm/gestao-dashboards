@@ -1,0 +1,130 @@
+{
+  "query": "SELECT tu.name as turmaNome, t.name as trilhaNome, ap.macroInicio, ap.macroTermino, ap.status, COUNT(*) as qtdAlunos FROM assessment_pdi ap LEFT JOIN trilhas t ON ap.trilhaId = t.id LEFT JOIN turmas tu ON ap.turmaId = tu.id GROUP BY tu.name, t.name, ap.macroInicio, ap.macroTermino, ap.status ORDER BY tu.name, ap.macroInicio;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT tu.name as turmaNome, t.name as trilhaNome, ap.macroInicio, ap.macroTermino, ap.status, COUNT(*) as qtdAlunos FROM assessment_pdi ap LEFT JOIN trilhas t ON ap.trilhaId = t.id LEFT JOIN turmas tu ON ap.turmaId = tu.id GROUP BY tu.name, t.name, ap.macroInicio, ap.macroTermino, ap.status ORDER BY tu.name, ap.macroInicio;",
+  "rows": [
+    {
+      "turmaNome": "[2024] SEBRAE Acre - Turma 1.0",
+      "trilhaNome": "Basic",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "congelado",
+      "qtdAlunos": "1"
+    },
+    {
+      "turmaNome": "[2024] SEBRAE Acre - Turma 1.0",
+      "trilhaNome": "Basic",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "qtdAlunos": "24"
+    },
+    {
+      "turmaNome": "[2025] Embrapii | Basic",
+      "trilhaNome": "Basic",
+      "macroInicio": "2025-03-24",
+      "macroTermino": "2026-03-30",
+      "status": "ativo",
+      "qtdAlunos": "13"
+    },
+    {
+      "turmaNome": "[2025] Embrapii | Basic",
+      "trilhaNome": "Basic",
+      "macroInicio": "2025-07-22",
+      "macroTermino": "2026-07-30",
+      "status": "ativo",
+      "qtdAlunos": "1"
+    },
+    {
+      "turmaNome": "[2025] Embrapii | Basic",
+      "trilhaNome": "Basic",
+      "macroInicio": "2025-10-15",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "qtdAlunos": "2"
+    },
+    {
+      "turmaNome": "[2025] Embrapii | Jornada Personalizada",
+      "trilhaNome": "Jornada Personalizada",
+      "macroInicio": "2025-03-24",
+      "macroTermino": "2026-03-30",
+      "status": "ativo",
+      "qtdAlunos": "5"
+    },
+    {
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Basic",
+      "trilhaNome": "Basic",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "qtdAlunos": "33"
+    },
+    {
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential",
+      "trilhaNome": "Essential",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "qtdAlunos": "33"
+    },
+    {
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Masters",
+      "trilhaNome": "Master",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "qtdAlunos": "32"
+    },
+    {
+      "turmaNome": "[2025] SEBRAE Tocantins - Basic [BS1]",
+      "trilhaNome": "Basic",
+      "macroInicio": "2025-05-01",
+      "macroTermino": "2025-10-30",
+      "status": "ativo",
+      "qtdAlunos": "11"
+    },
+    {
+      "turmaNome": "[2025] SEBRAE Tocantins - Basic [BS3]",
+      "trilhaNome": "Basic",
+      "macroInicio": "2025-09-01",
+      "macroTermino": "2026-03-01",
+      "status": "ativo",
+      "qtdAlunos": "7"
+    },
+    {
+      "turmaNome": "[2025] SEBRAE Tocantins - Essential [BS1]",
+      "trilhaNome": "Essential",
+      "macroInicio": "2025-11-05",
+      "macroTermino": "2026-04-30",
+      "status": "ativo",
+      "qtdAlunos": "11"
+    },
+    {
+      "turmaNome": "[2025] SEBRAE Tocantins - Visão de Futuro [BS2]",
+      "trilhaNome": "Visão de Futuro",
+      "macroInicio": "2025-04-20",
+      "macroTermino": "2026-03-31",
+      "status": "ativo",
+      "qtdAlunos": "32"
+    },
+    {
+      "turmaNome": "[2026] Embrapii | Visão do Futuro",
+      "trilhaNome": "Visão de Futuro",
+      "macroInicio": "2025-03-24",
+      "macroTermino": "2026-03-30",
+      "status": "ativo",
+      "qtdAlunos": "8"
+    },
+    {
+      "turmaNome": "[2026] SEBRAE Tocantins - Essential [BS3]",
+      "trilhaNome": "Essential",
+      "macroInicio": "2026-03-05",
+      "macroTermino": "2026-08-31",
+      "status": "ativo",
+      "qtdAlunos": "7"
+    }
+  ],
+  "messages": [],
+  "stdout": "turmaNome\ttrilhaNome\tmacroInicio\tmacroTermino\tstatus\tqtdAlunos\n[2024] SEBRAE Acre - Turma 1.0\tBasic\t2024-10-10\t2026-10-30\tcongelado\t1\n[2024] SEBRAE Acre - Turma 1.0\tBasic\t2024-10-10\t2026-10-30\tativo\t24\n[2025] Embrapii | Basic\tBasic\t2025-03-24\t2026-03-30\tativo\t13\n[2025] Embrapii | Basic\tBasic\t2025-07-22\t2026-07-30\tativo\t1\n[2025] Embrapii | Basic\tBasic\t2025-10-15\t2026-10-30\tativo\t2\n[2025] Embrapii | Jornada Personalizada\tJornada Personalizada\t2025-03-24\t2026-03-30\tativo\t5\n[2025] SEBRAE Acre - B.E.M. | Basic\tBasic\t2024-10-10\t2026-10-30\tativo\t33\n[2025] SEBRAE Acre - B.E.M. | Essential\tEssential\t2024-10-10\t2026-10-30\tativo\t33\n[2025] SEBRAE Acre - B.E.M. | Masters\tMaster\t2024-10-10\t2026-10-30\tativo\t32\n[2025] SEBRAE Tocantins - Basic [BS1]\tBasic\t2025-05-01\t2025-10-30\tativo\t11\n[2025] SEBRAE Tocantins - Basic [BS3]\tBasic\t2025-09-01\t2026-03-01\tativo\t7\n[2025] SEBRAE Tocantins - Essential [BS1]\tEssential\t2025-11-05\t2026-04-30\tativo\t11\n[2025] SEBRAE Tocantins - Visão de Futuro [BS2]\tVisão de Futuro\t2025-04-20\t2026-03-31\tativo\t32\n[2026] Embrapii | Visão do Futuro\tVisão de Futuro\t2025-03-24\t2026-03-30\tativo\t8\n[2026] SEBRAE Tocantins - Essential [BS3]\tEssential\t2026-03-05\t2026-08-31\tativo\t7\n",
+  "stderr": "",
+  "execution_time_ms": 359
+}

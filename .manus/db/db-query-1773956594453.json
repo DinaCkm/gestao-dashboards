@@ -1,0 +1,36 @@
+{
+  "query": "SELECT a.id, a.name, a.email, a.cadastradoPorAdmin, a.cpf, a.telefone, a.cargo, a.createdAt,\n       j.cadastroConfirmado, j.aceiteRealizado, j.pdiVisualizado\nFROM alunos a \nLEFT JOIN onboarding_jornada j ON j.alunoId = a.id \nWHERE a.name LIKE '%Elio%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.email, a.cadastradoPorAdmin, a.cpf, a.telefone, a.cargo, a.createdAt,\n       j.cadastroConfirmado, j.aceiteRealizado, j.pdiVisualizado\nFROM alunos a \nLEFT JOIN onboarding_jornada j ON j.alunoId = a.id \nWHERE a.name LIKE '%Elio%'",
+  "rows": [
+    {
+      "id": "201",
+      "name": "MARCO AURELIO MARCONATO",
+      "email": "Marco_Marconato@banrisul.com.br",
+      "cadastradoPorAdmin": "0",
+      "cpf": "NULL",
+      "telefone": "NULL",
+      "cargo": "NULL",
+      "createdAt": "2026-01-27 23:03:33",
+      "cadastroConfirmado": "NULL",
+      "aceiteRealizado": "NULL",
+      "pdiVisualizado": "NULL"
+    },
+    {
+      "id": "570089",
+      "name": "Elio ",
+      "email": "elio@dgsolucoesestrategicas.com.br",
+      "cadastradoPorAdmin": "0",
+      "cpf": "NULL",
+      "telefone": "NULL",
+      "cargo": "NULL",
+      "createdAt": "2026-03-16 23:25:05",
+      "cadastroConfirmado": "NULL",
+      "aceiteRealizado": "NULL",
+      "pdiVisualizado": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tcadastradoPorAdmin\tcpf\ttelefone\tcargo\tcreatedAt\tcadastroConfirmado\taceiteRealizado\tpdiVisualizado\n201\tMARCO AURELIO MARCONATO\tMarco_Marconato@banrisul.com.br\t0\tNULL\tNULL\tNULL\t2026-01-27 23:03:33\tNULL\tNULL\tNULL\n570089\tElio \telio@dgsolucoesestrategicas.com.br\t0\tNULL\tNULL\tNULL\t2026-03-16 23:25:05\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

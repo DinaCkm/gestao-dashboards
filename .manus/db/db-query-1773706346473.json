@@ -1,0 +1,40 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.role, u.consultorId, u.programId, u.isActive, u.loginMethod FROM users u WHERE u.name LIKE '%Joseane%' OR u.name LIKE '%joseane%' OR u.name LIKE '%Carolina%' OR u.name LIKE '%carolina%' ORDER BY u.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.role, u.consultorId, u.programId, u.isActive, u.loginMethod FROM users u WHERE u.name LIKE '%Joseane%' OR u.name LIKE '%joseane%' OR u.name LIKE '%Carolina%' OR u.name LIKE '%carolina%' ORDER BY u.name;",
+  "rows": [
+    {
+      "id": "720421",
+      "name": "Ana Carolina Cardoso Viana Rocha",
+      "email": "anaccvrocha@gmail.com",
+      "role": "manager",
+      "consultorId": "28",
+      "programId": "NULL",
+      "isActive": "1",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "660197",
+      "name": "Carolina Borges Moreira",
+      "email": "carolina.moreira@embrapii.org.br",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "18",
+      "isActive": "1",
+      "loginMethod": "email_cpf"
+    },
+    {
+      "id": "660170",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "17",
+      "isActive": "1",
+      "loginMethod": "email_cpf"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tconsultorId\tprogramId\tisActive\tloginMethod\n720421\tAna Carolina Cardoso Viana Rocha\tanaccvrocha@gmail.com\tmanager\t28\tNULL\t1\temail_cpf\n660197\tCarolina Borges Moreira\tcarolina.moreira@embrapii.org.br\tmanager\tNULL\t18\t1\temail_cpf\n660170\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\tmanager\tNULL\t17\t1\temail_cpf\n",
+  "stderr": "",
+  "execution_time_ms": 360
+}

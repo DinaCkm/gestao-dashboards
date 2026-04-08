@@ -1,0 +1,66 @@
+{
+  "query": "SELECT id, name FROM turmas WHERE name LIKE '%B%' OR name LIKE '%S%' ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name FROM turmas WHERE name LIKE '%B%' OR name LIKE '%S%' ORDER BY name;",
+  "rows": [
+    {
+      "id": "36",
+      "name": "[2024] Banrisul - B.E.M. | Basic"
+    },
+    {
+      "id": "37",
+      "name": "[2024] Banrisul - B.E.M. | Essential"
+    },
+    {
+      "id": "30001",
+      "name": "[2024] SEBRAE Acre - Turma 1.0"
+    },
+    {
+      "id": "30002",
+      "name": "[2025] Embrapii | Basic"
+    },
+    {
+      "id": "30009",
+      "name": "[2025] Embrapii | Jornada Personalizada"
+    },
+    {
+      "id": "30004",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Basic"
+    },
+    {
+      "id": "30006",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "30010",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Masters"
+    },
+    {
+      "id": "30005",
+      "name": "[2025] SEBRAE Tocantins - Basic [BS1]"
+    },
+    {
+      "id": "30008",
+      "name": "[2025] SEBRAE Tocantins - Basic [BS3]"
+    },
+    {
+      "id": "30007",
+      "name": "[2025] SEBRAE Tocantins - Essential [BS1]"
+    },
+    {
+      "id": "30003",
+      "name": "[2025] SEBRAE Tocantins - Visão de Futuro [BS2]"
+    },
+    {
+      "id": "30011",
+      "name": "[2026] Embrapii | Visão do Futuro"
+    },
+    {
+      "id": "60001",
+      "name": "[2026] SEBRAE Tocantins - Essential [BS3]"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n36\t[2024] Banrisul - B.E.M. | Basic\n37\t[2024] Banrisul - B.E.M. | Essential\n30001\t[2024] SEBRAE Acre - Turma 1.0\n30002\t[2025] Embrapii | Basic\n30009\t[2025] Embrapii | Jornada Personalizada\n30004\t[2025] SEBRAE Acre - B.E.M. | Basic\n30006\t[2025] SEBRAE Acre - B.E.M. | Essential\n30010\t[2025] SEBRAE Acre - B.E.M. | Masters\n30005\t[2025] SEBRAE Tocantins - Basic [BS1]\n30008\t[2025] SEBRAE Tocantins - Basic [BS3]\n30007\t[2025] SEBRAE Tocantins - Essential [BS1]\n30003\t[2025] SEBRAE Tocantins - Visão de Futuro [BS2]\n30011\t[2026] Embrapii | Visão do Futuro\n60001\t[2026] SEBRAE Tocantins - Essential [BS3]\n",
+  "stderr": "",
+  "execution_time_ms": 347
+}

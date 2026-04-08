@@ -1,0 +1,34 @@
+{
+  "query": "SELECT id, name, email, programId, turmaId, consultorId FROM alunos WHERE name LIKE '%Bruno%' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, programId, turmaId, consultorId FROM alunos WHERE name LIKE '%Bruno%' LIMIT 10;",
+  "rows": [
+    {
+      "id": "30056",
+      "name": "Bruno Henrique Vila Verde",
+      "email": "bruno.vilaverde@to.sebrae.com.br",
+      "programId": "17",
+      "turmaId": "30003",
+      "consultorId": "32"
+    },
+    {
+      "id": "30057",
+      "name": "Bruno Martins Vieira",
+      "email": "bruno.vieira@to.sebrae.com.br",
+      "programId": "17",
+      "turmaId": "30003",
+      "consultorId": "35"
+    },
+    {
+      "id": "30080",
+      "name": "BRUNO DE JESUS RODRIGUES",
+      "email": "bruno.rodrigues@to.sebrae.com.br",
+      "programId": "17",
+      "turmaId": "30005",
+      "consultorId": "32"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tprogramId\tturmaId\tconsultorId\n30056\tBruno Henrique Vila Verde\tbruno.vilaverde@to.sebrae.com.br\t17\t30003\t32\n30057\tBruno Martins Vieira\tbruno.vieira@to.sebrae.com.br\t17\t30003\t35\n30080\tBRUNO DE JESUS RODRIGUES\tbruno.rodrigues@to.sebrae.com.br\t17\t30005\t32\n",
+  "stderr": "",
+  "execution_time_ms": 363
+}

@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, name, externalId, email FROM alunos WHERE name LIKE '%Wandemberg%' OR name LIKE '%wandemberg%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, externalId, email FROM alunos WHERE name LIKE '%Wandemberg%' OR name LIKE '%wandemberg%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "30097",
+      "name": "Wandemberg Pereira Rodrigues",
+      "externalId": "702806",
+      "email": "wandemberg.rodrigues@to.sebrae.com.br"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\texternalId\temail\n30097\tWandemberg Pereira Rodrigues\t702806\twandemberg.rodrigues@to.sebrae.com.br\n",
+  "stderr": "",
+  "execution_time_ms": 100
+}

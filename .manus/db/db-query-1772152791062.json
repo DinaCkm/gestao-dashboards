@@ -1,0 +1,54 @@
+{
+  "query": "SELECT id, name FROM consultors ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name FROM consultors ORDER BY name;",
+  "rows": [
+    {
+      "id": "39",
+      "name": "Adriana Deus"
+    },
+    {
+      "id": "28",
+      "name": "Ana Carolina Cardoso Viana Rocha"
+    },
+    {
+      "id": "35",
+      "name": "Andressa Santos"
+    },
+    {
+      "id": "31",
+      "name": "Deborah Franco"
+    },
+    {
+      "id": "37",
+      "name": "Dina Makiyama"
+    },
+    {
+      "id": "14",
+      "name": "Equipe CKM Talents"
+    },
+    {
+      "id": "30",
+      "name": "Giovanna Braga Schmitz"
+    },
+    {
+      "id": "36",
+      "name": "Gislaine Fabiola Marques Righi Cassemiro"
+    },
+    {
+      "id": "30001",
+      "name": "Joseane"
+    },
+    {
+      "id": "32",
+      "name": "Luciana Pereira Figueiredo da Silva"
+    },
+    {
+      "id": "29",
+      "name": "Marcia Rocha Fernandes"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n39\tAdriana Deus\n28\tAna Carolina Cardoso Viana Rocha\n35\tAndressa Santos\n31\tDeborah Franco\n37\tDina Makiyama\n14\tEquipe CKM Talents\n30\tGiovanna Braga Schmitz\n36\tGislaine Fabiola Marques Righi Cassemiro\n30001\tJoseane\n32\tLuciana Pereira Figueiredo da Silva\n29\tMarcia Rocha Fernandes\n",
+  "stderr": "",
+  "execution_time_ms": 364
+}

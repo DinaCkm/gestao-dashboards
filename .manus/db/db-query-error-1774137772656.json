@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  COUNT(DISTINCT ms.aluno_id) as total_alunos,\n  COUNT(*) as total_sessoes,\n  ROUND(COUNT(*) / COUNT(DISTINCT ms.aluno_id), 1) as media_sessoes_por_aluno,\n  SUM(CASE WHEN ms.task_mode IS NOT NULL AND ms.task_mode != 'sem_tarefa' THEN 1 ELSE 0 END) as sessoes_com_tarefa,\n  SUM(CASE WHEN ms.task_status = 'nao_entregue' THEN 1 ELSE 0 END) as tarefas_pendentes,\n  SUM(CASE WHEN ms.task_status = 'entregue' THEN 1 ELSE 0 END) as tarefas_entregues,\n  SUM(CASE WHEN ms.task_status = 'sem_tarefa' THEN 1 ELSE 0 END) as sem_tarefa\nFROM mentoring_sessions ms\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  COUNT(DISTINCT ms.aluno_id) as total_alunos,\n  COUNT(*) as total_sessoes,\n  ROUND(COUNT(*) / COUNT(DISTINCT ms.aluno_id), 1) as media_sessoes_por_aluno,\n  SUM(CASE WHEN ms.task_mode IS NOT NULL AND ms.task_mode != 'sem_tarefa' THEN 1 ELSE 0 END) as sessoes_com_tarefa,\n  SUM(CASE WHEN ms.task_status = 'nao_entregue' THEN 1 ELSE 0 END) as tarefas_pendentes,\n  SUM(CASE WHEN ms.task_status = 'entregue' THEN 1 ELSE 0 END) as tarefas_entregues,\n  SUM(CASE WHEN ms.task_status = 'sem_tarefa' THEN 1 ELSE 0 END) as sem_tarefa\nFROM mentoring_sessions ms\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'ms.aluno_id' in ''"
+  ]
+}

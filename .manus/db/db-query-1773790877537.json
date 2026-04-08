@@ -1,0 +1,19 @@
+{
+  "query": "\nSELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND (table_name LIKE '%event%' OR table_name LIKE '%webinar%' OR table_name LIKE '%curso%');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND (table_name LIKE '%event%' OR table_name LIKE '%webinar%' OR table_name LIKE '%curso%');\n",
+  "rows": [
+    {
+      "table_name": "scheduled_webinars"
+    },
+    {
+      "table_name": "event_participation"
+    },
+    {
+      "table_name": "events"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\nscheduled_webinars\nevent_participation\nevents\n",
+  "stderr": "",
+  "execution_time_ms": 345
+}

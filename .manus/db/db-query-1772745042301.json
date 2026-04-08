@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE assessment_competencias \nSET microInicio = '2025-10-15', microTermino = '2026-03-30'\nWHERE assessmentPdiId IN (\n  SELECT ap.id FROM assessment_pdi ap\n  JOIN alunos a ON ap.alunoId = a.id\n  WHERE a.externalId IN ('651877', '651878', '651879', '651880')\n  AND ap.trilhaId = 60001\n)\nAND competenciaId IN (60015, 60023, 60032)\nAND microInicio IS NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nUPDATE assessment_competencias \nSET microInicio = '2025-10-15', microTermino = '2026-03-30'\nWHERE assessmentPdiId IN (\n  SELECT ap.id FROM assessment_pdi ap\n  JOIN alunos a ON ap.alunoId = a.id\n  WHERE a.externalId IN ('651877', '651878', '651879', '651880')\n  AND ap.trilhaId = 60001\n)\nAND competenciaId IN (60015, 60023, 60032)\nAND microInicio IS NULL;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 449
+}

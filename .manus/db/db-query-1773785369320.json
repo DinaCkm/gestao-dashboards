@@ -1,0 +1,73 @@
+{
+  "query": "SELECT ac.id, ac.competenciaId, ac.peso, ac.microInicio, ac.microTermino\nFROM assessment_competencias ac\nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id\nWHERE ap.alunoId = 30070\nORDER BY ac.microInicio;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ac.id, ac.competenciaId, ac.peso, ac.microInicio, ac.microTermino\nFROM assessment_competencias ac\nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id\nWHERE ap.alunoId = 30070\nORDER BY ac.microInicio;",
+  "rows": [
+    {
+      "id": "62580",
+      "competenciaId": "30022",
+      "peso": "obrigatoria",
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-05-25"
+    },
+    {
+      "id": "62574",
+      "competenciaId": "30013",
+      "peso": "opcional",
+      "microInicio": "2025-05-20",
+      "microTermino": "2025-06-24"
+    },
+    {
+      "id": "62581",
+      "competenciaId": "30028",
+      "peso": "opcional",
+      "microInicio": "2025-06-29",
+      "microTermino": "2025-08-03"
+    },
+    {
+      "id": "62579",
+      "competenciaId": "30021",
+      "peso": "opcional",
+      "microInicio": "2025-08-08",
+      "microTermino": "2025-09-12"
+    },
+    {
+      "id": "62576",
+      "competenciaId": "30016",
+      "peso": "opcional",
+      "microInicio": "2025-09-17",
+      "microTermino": "2025-10-22"
+    },
+    {
+      "id": "62575",
+      "competenciaId": "30015",
+      "peso": "opcional",
+      "microInicio": "2025-10-27",
+      "microTermino": "2025-12-01"
+    },
+    {
+      "id": "62573",
+      "competenciaId": "30034",
+      "peso": "opcional",
+      "microInicio": "2026-01-12",
+      "microTermino": "2026-02-16"
+    },
+    {
+      "id": "62577",
+      "competenciaId": "30035",
+      "peso": "opcional",
+      "microInicio": "2026-01-30",
+      "microTermino": "2026-03-06"
+    },
+    {
+      "id": "62578",
+      "competenciaId": "30036",
+      "peso": "opcional",
+      "microInicio": "2026-02-24",
+      "microTermino": "2026-03-31"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcompetenciaId\tpeso\tmicroInicio\tmicroTermino\n62580\t30022\tobrigatoria\t2025-04-20\t2025-05-25\n62574\t30013\topcional\t2025-05-20\t2025-06-24\n62581\t30028\topcional\t2025-06-29\t2025-08-03\n62579\t30021\topcional\t2025-08-08\t2025-09-12\n62576\t30016\topcional\t2025-09-17\t2025-10-22\n62575\t30015\topcional\t2025-10-27\t2025-12-01\n62573\t30034\topcional\t2026-01-12\t2026-02-16\n62577\t30035\topcional\t2026-01-30\t2026-03-06\n62578\t30036\topcional\t2026-02-24\t2026-03-31\n",
+  "stderr": "",
+  "execution_time_ms": 396
+}

@@ -1,0 +1,214 @@
+{
+  "query": "SELECT competencia, COUNT(*) as total FROM task_library GROUP BY competencia ORDER BY competencia;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT competencia, COUNT(*) as total FROM task_library GROUP BY competencia ORDER BY competencia;",
+  "rows": [
+    {
+      "competencia": "Accountability",
+      "total": "1"
+    },
+    {
+      "competencia": "Adaptabilidade",
+      "total": "1"
+    },
+    {
+      "competencia": "Atenção",
+      "total": "1"
+    },
+    {
+      "competencia": "Autoconfiança",
+      "total": "1"
+    },
+    {
+      "competencia": "Autoconhecimento",
+      "total": "1"
+    },
+    {
+      "competencia": "Autocontrole",
+      "total": "1"
+    },
+    {
+      "competencia": "Autogestão",
+      "total": "1"
+    },
+    {
+      "competencia": "Autorregulação",
+      "total": "1"
+    },
+    {
+      "competencia": "Autorresponsabilidade",
+      "total": "1"
+    },
+    {
+      "competencia": "Colaboração",
+      "total": "1"
+    },
+    {
+      "competencia": "Comunicação",
+      "total": "1"
+    },
+    {
+      "competencia": "Comunicação Escrita",
+      "total": "1"
+    },
+    {
+      "competencia": "Confiança",
+      "total": "1"
+    },
+    {
+      "competencia": "Conflitos",
+      "total": "1"
+    },
+    {
+      "competencia": "Criatividade",
+      "total": "1"
+    },
+    {
+      "competencia": "Decisão",
+      "total": "1"
+    },
+    {
+      "competencia": "Delegação",
+      "total": "1"
+    },
+    {
+      "competencia": "Disciplina",
+      "total": "1"
+    },
+    {
+      "competencia": "Empatia",
+      "total": "1"
+    },
+    {
+      "competencia": "Energia",
+      "total": "1"
+    },
+    {
+      "competencia": "Equilíbrio",
+      "total": "1"
+    },
+    {
+      "competencia": "Estratégia",
+      "total": "1"
+    },
+    {
+      "competencia": "Ética",
+      "total": "1"
+    },
+    {
+      "competencia": "Feedback",
+      "total": "1"
+    },
+    {
+      "competencia": "Financeiro",
+      "total": "1"
+    },
+    {
+      "competencia": "Futuro",
+      "total": "1"
+    },
+    {
+      "competencia": "Gestão do Tempo",
+      "total": "1"
+    },
+    {
+      "competencia": "Influência",
+      "total": "1"
+    },
+    {
+      "competencia": "Influência Estratégica",
+      "total": "1"
+    },
+    {
+      "competencia": "Inovação",
+      "total": "1"
+    },
+    {
+      "competencia": "Inteligência Emocional",
+      "total": "1"
+    },
+    {
+      "competencia": "Liderança",
+      "total": "1"
+    },
+    {
+      "competencia": "Melhoria Contínua",
+      "total": "1"
+    },
+    {
+      "competencia": "Metas",
+      "total": "1"
+    },
+    {
+      "competencia": "Mindset",
+      "total": "1"
+    },
+    {
+      "competencia": "Mudança",
+      "total": "1"
+    },
+    {
+      "competencia": "Negociação",
+      "total": "1"
+    },
+    {
+      "competencia": "Networking",
+      "total": "1"
+    },
+    {
+      "competencia": "Performance",
+      "total": "1"
+    },
+    {
+      "competencia": "Planejamento",
+      "total": "1"
+    },
+    {
+      "competencia": "Prioridade Estratégica",
+      "total": "1"
+    },
+    {
+      "competencia": "Prioridades",
+      "total": "1"
+    },
+    {
+      "competencia": "Processos",
+      "total": "1"
+    },
+    {
+      "competencia": "Produtividade",
+      "total": "1"
+    },
+    {
+      "competencia": "Propósito",
+      "total": "1"
+    },
+    {
+      "competencia": "Propósito Profissional",
+      "total": "1"
+    },
+    {
+      "competencia": "Resiliência",
+      "total": "1"
+    },
+    {
+      "competencia": "Resultados",
+      "total": "1"
+    },
+    {
+      "competencia": "Riscos",
+      "total": "1"
+    },
+    {
+      "competencia": "Valores",
+      "total": "1"
+    },
+    {
+      "competencia": "Visão Estratégica",
+      "total": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "competencia\ttotal\nAccountability\t1\nAdaptabilidade\t1\nAtenção\t1\nAutoconfiança\t1\nAutoconhecimento\t1\nAutocontrole\t1\nAutogestão\t1\nAutorregulação\t1\nAutorresponsabilidade\t1\nColaboração\t1\nComunicação\t1\nComunicação Escrita\t1\nConfiança\t1\nConflitos\t1\nCriatividade\t1\nDecisão\t1\nDelegação\t1\nDisciplina\t1\nEmpatia\t1\nEnergia\t1\nEquilíbrio\t1\nEstratégia\t1\nÉtica\t1\nFeedback\t1\nFinanceiro\t1\nFuturo\t1\nGestão do Tempo\t1\nInfluência\t1\nInfluência Estratégica\t1\nInovação\t1\nInteligência Emocional\t1\nLiderança\t1\nMelhoria Contínua\t1\nMetas\t1\nMindset\t1\nMudança\t1\nNegociação\t1\nNetworking\t1\nPerformance\t1\nPlanejamento\t1\nPrioridade Estratégica\t1\nPrioridades\t1\nProcessos\t1\nProdutividade\t1\nPropósito\t1\nPropósito Profissional\t1\nResiliência\t1\nResultados\t1\nRiscos\t1\nValores\t1\nVisão Estratégica\t1\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, name, role, programId FROM users WHERE name LIKE '%Leandro%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, role, programId FROM users WHERE name LIKE '%Leandro%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "4381885",
+      "name": "Leandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br",
+      "role": "manager",
+      "programId": "18"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\trole\tprogramId\n4381885\tLeandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br\tmanager\t18\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}

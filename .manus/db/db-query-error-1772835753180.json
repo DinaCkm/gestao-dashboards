@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT ms.id, ms.sessionDate, ms.status, ms.mentorName, ms.duration, ms.notes,\n       a.name AS alunoName, a.email AS alunoEmail\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nWHERE a.name LIKE '%Vanessa%Bertholdo%' OR a.name LIKE '%Vanessa%Vargas%'\nORDER BY ms.sessionDate DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT ms.id, ms.sessionDate, ms.status, ms.mentorName, ms.duration, ms.notes,\n       a.name AS alunoName, a.email AS alunoEmail\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nWHERE a.name LIKE '%Vanessa%Bertholdo%' OR a.name LIKE '%Vanessa%Vargas%'\nORDER BY ms.sessionDate DESC;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'ms.status' in 'field list'"
+  ]
+}

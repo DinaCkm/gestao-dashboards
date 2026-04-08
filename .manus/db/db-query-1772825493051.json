@@ -1,0 +1,49 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.role, u.consultorId, u.alunoId, u.loginMethod, u.isActive, c.name as consultorName, c.canLogin, c.loginId\nFROM users u \nLEFT JOIN consultors c ON u.consultorId = c.id\nWHERE u.role = 'manager' AND u.consultorId IS NOT NULL\nORDER BY u.name\nLIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.role, u.consultorId, u.alunoId, u.loginMethod, u.isActive, c.name as consultorName, c.canLogin, c.loginId\nFROM users u \nLEFT JOIN consultors c ON u.consultorId = c.id\nWHERE u.role = 'manager' AND u.consultorId IS NOT NULL\nORDER BY u.name\nLIMIT 30;",
+  "rows": [
+    {
+      "id": "690412",
+      "name": "Adriana Deus",
+      "email": "adriana@ckmtalents.net",
+      "role": "manager",
+      "consultorId": "39",
+      "alunoId": "NULL",
+      "loginMethod": "email_cpf",
+      "isActive": "1",
+      "consultorName": "Adriana Deus",
+      "canLogin": "1",
+      "loginId": "M0039"
+    },
+    {
+      "id": "720421",
+      "name": "Ana Carolina Cardoso Viana Rocha",
+      "email": "anaccvrocha@gmail.com",
+      "role": "manager",
+      "consultorId": "28",
+      "alunoId": "NULL",
+      "loginMethod": "email_cpf",
+      "isActive": "1",
+      "consultorName": "Ana Carolina Cardoso Viana Rocha",
+      "canLogin": "1",
+      "loginId": "M0028"
+    },
+    {
+      "id": "2220114",
+      "name": "Andressa Santos",
+      "email": "andressateixeirasantos64@gmail.com",
+      "role": "manager",
+      "consultorId": "35",
+      "alunoId": "NULL",
+      "loginMethod": "email_cpf",
+      "isActive": "1",
+      "consultorName": "Andressa Santos",
+      "canLogin": "1",
+      "loginId": "M0035"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tconsultorId\talunoId\tloginMethod\tisActive\tconsultorName\tcanLogin\tloginId\n690412\tAdriana Deus\tadriana@ckmtalents.net\tmanager\t39\tNULL\temail_cpf\t1\tAdriana Deus\t1\tM0039\n720421\tAna Carolina Cardoso Viana Rocha\tanaccvrocha@gmail.com\tmanager\t28\tNULL\temail_cpf\t1\tAna Carolina Cardoso Viana Rocha\t1\tM0028\n2220114\tAndressa Santos\tandressateixeirasantos64@gmail.com\tmanager\t35\tNULL\temail_cpf\t1\tAndressa Santos\t1\tM0035\n",
+  "stderr": "",
+  "execution_time_ms": 439
+}

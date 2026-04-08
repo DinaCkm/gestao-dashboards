@@ -1,0 +1,8 @@
+{
+  "query": "SELECT ms.id, ms.session_number, ms.session_date, ms.presence, ms.activity_delivered, ms.engagement_score FROM mentoring_sessions ms WHERE ms.aluno_id = 30070 ORDER BY ms.session_number;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ms.id, ms.session_number, ms.session_date, ms.presence, ms.activity_delivered, ms.engagement_score FROM mentoring_sessions ms WHERE ms.aluno_id = 30070 ORDER BY ms.session_number;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'ms.session_number' in 'order clause'"
+  ]
+}

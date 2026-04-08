@@ -1,0 +1,17 @@
+{
+  "query": "SELECT a.id, a.name, a.email, a.consultorId, IFNULL(c.name, 'NULL') as mentor_direto FROM alunos a LEFT JOIN consultors c ON a.consultorId = c.id WHERE a.name LIKE '%Joseane%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.email, a.consultorId, IFNULL(c.name, 'NULL') as mentor_direto FROM alunos a LEFT JOIN consultors c ON a.consultorId = c.id WHERE a.name LIKE '%Joseane%';",
+  "rows": [
+    {
+      "id": "30066",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "consultorId": "NULL",
+      "mentor_direto": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tconsultorId\tmentor_direto\n30066\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 430
+}

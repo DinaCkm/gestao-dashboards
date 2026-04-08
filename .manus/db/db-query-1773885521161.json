@@ -1,0 +1,50 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.role, u.alunoId, u.openId FROM users u WHERE u.alunoId IS NOT NULL AND u.role = 'user' LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.role, u.alunoId, u.openId FROM users u WHERE u.alunoId IS NOT NULL AND u.role = 'user' LIMIT 5",
+  "rows": [
+    {
+      "id": "570386",
+      "name": "BRUNO DE JESUS RODRIGUES",
+      "email": "bruno.rodrigues@to.sebrae.com.br",
+      "role": "user",
+      "alunoId": "30080",
+      "openId": "aluno_1770945253081"
+    },
+    {
+      "id": "660111",
+      "name": "Adonay Fares Custódio Dos Santos",
+      "email": "adonay@ac.sebrae.com.br",
+      "role": "user",
+      "alunoId": "30033",
+      "openId": "aluno_30033"
+    },
+    {
+      "id": "660112",
+      "name": "Adriana Elizabete De Souza Dantas",
+      "email": "adriana@ac.sebrae.com.br",
+      "role": "user",
+      "alunoId": "30012",
+      "openId": "aluno_30012"
+    },
+    {
+      "id": "660113",
+      "name": "Adrielle De Araújo Santos Bessa",
+      "email": "adrielle.santos@ac.sebrae.com.br",
+      "role": "user",
+      "alunoId": "30020",
+      "openId": "aluno_30020"
+    },
+    {
+      "id": "660114",
+      "name": "Aldemar Dos Santos Maciel",
+      "email": "aldemar@ac.sebrae.com.br",
+      "role": "user",
+      "alunoId": "30021",
+      "openId": "aluno_30021"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\talunoId\topenId\n570386\tBRUNO DE JESUS RODRIGUES\tbruno.rodrigues@to.sebrae.com.br\tuser\t30080\taluno_1770945253081\n660111\tAdonay Fares Custódio Dos Santos\tadonay@ac.sebrae.com.br\tuser\t30033\taluno_30033\n660112\tAdriana Elizabete De Souza Dantas\tadriana@ac.sebrae.com.br\tuser\t30012\taluno_30012\n660113\tAdrielle De Araújo Santos Bessa\tadrielle.santos@ac.sebrae.com.br\tuser\t30020\taluno_30020\n660114\tAldemar Dos Santos Maciel\taldemar@ac.sebrae.com.br\tuser\t30021\taluno_30021\n",
+  "stderr": "",
+  "execution_time_ms": 109
+}

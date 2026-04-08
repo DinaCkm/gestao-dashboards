@@ -1,0 +1,46 @@
+{
+  "query": "SELECT ap.id, ap.alunoId, ap.trilhaId, t.name as trilhaNome, ap.macroInicio, ap.macroTermino, ap.status FROM assessment_pdi ap LEFT JOIN trilhas t ON ap.trilhaId = t.id WHERE ap.alunoId IN (30082, 660014);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id, ap.alunoId, ap.trilhaId, t.name as trilhaNome, ap.macroInicio, ap.macroTermino, ap.status FROM assessment_pdi ap LEFT JOIN trilhas t ON ap.trilhaId = t.id WHERE ap.alunoId IN (30082, 660014);",
+  "rows": [
+    {
+      "id": "210001",
+      "alunoId": "660014",
+      "trilhaId": "1",
+      "trilhaNome": "Basic",
+      "macroInicio": "2026-04-01",
+      "macroTermino": "2026-04-30",
+      "status": "ativo"
+    },
+    {
+      "id": "60423",
+      "alunoId": "30082",
+      "trilhaId": "1",
+      "trilhaNome": "Basic",
+      "macroInicio": "2025-05-01",
+      "macroTermino": "2025-10-30",
+      "status": "ativo"
+    },
+    {
+      "id": "210002",
+      "alunoId": "660014",
+      "trilhaId": "2",
+      "trilhaNome": "Essential",
+      "macroInicio": "2026-05-01",
+      "macroTermino": "2026-05-30",
+      "status": "ativo"
+    },
+    {
+      "id": "60378",
+      "alunoId": "30082",
+      "trilhaId": "2",
+      "trilhaNome": "Essential",
+      "macroInicio": "2025-11-05",
+      "macroTermino": "2026-04-30",
+      "status": "ativo"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\ttrilhaId\ttrilhaNome\tmacroInicio\tmacroTermino\tstatus\n210001\t660014\t1\tBasic\t2026-04-01\t2026-04-30\tativo\n60423\t30082\t1\tBasic\t2025-05-01\t2025-10-30\tativo\n210002\t660014\t2\tEssential\t2026-05-01\t2026-05-30\tativo\n60378\t30082\t2\tEssential\t2025-11-05\t2026-04-30\tativo\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

@@ -1,0 +1,190 @@
+{
+  "query": "\nSELECT DISTINCT ac.microInicio, ac.microTermino, t.name as trilha_nome, ap.alunoId\nFROM assessment_competencias ac\nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id\nJOIN trilhas t ON ap.trilhaId = t.id\nWHERE t.name LIKE '%Vis%'\nORDER BY ac.microInicio, ac.microTermino\nLIMIT 30;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT DISTINCT ac.microInicio, ac.microTermino, t.name as trilha_nome, ap.alunoId\nFROM assessment_competencias ac\nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id\nJOIN trilhas t ON ap.trilhaId = t.id\nWHERE t.name LIKE '%Vis%'\nORDER BY ac.microInicio, ac.microTermino\nLIMIT 30;\n",
+  "rows": [
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30062"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30066"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30054"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30052"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30070"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30068"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30049"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30050"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30067"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30053"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30076"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30061"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30071"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30078"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30056"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30047"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30069"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30048"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30072"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30058"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30065"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30060"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30055"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30057"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30073"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30051"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30077"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30059"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30064"
+    },
+    {
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "trilha_nome": "Visão de Futuro",
+      "alunoId": "30063"
+    }
+  ],
+  "messages": [],
+  "stdout": "microInicio\tmicroTermino\ttrilha_nome\talunoId\n2025-04-20\t2025-10-31\tVisão de Futuro\t30062\n2025-04-20\t2025-10-31\tVisão de Futuro\t30066\n2025-04-20\t2025-10-31\tVisão de Futuro\t30054\n2025-04-20\t2025-10-31\tVisão de Futuro\t30052\n2025-04-20\t2025-10-31\tVisão de Futuro\t30070\n2025-04-20\t2025-10-31\tVisão de Futuro\t30068\n2025-04-20\t2025-10-31\tVisão de Futuro\t30049\n2025-04-20\t2025-10-31\tVisão de Futuro\t30050\n2025-04-20\t2025-10-31\tVisão de Futuro\t30067\n2025-04-20\t2025-10-31\tVisão de Futuro\t30053\n2025-04-20\t2025-10-31\tVisão de Futuro\t30076\n2025-04-20\t2025-10-31\tVisão de Futuro\t30061\n2025-04-20\t2025-10-31\tVisão de Futuro\t30071\n2025-04-20\t2025-10-31\tVisão de Futuro\t30078\n2025-04-20\t2025-10-31\tVisão de Futuro\t30056\n2025-04-20\t2025-10-31\tVisão de Futuro\t30047\n2025-04-20\t2025-10-31\tVisão de Futuro\t30069\n2025-04-20\t2025-10-31\tVisão de Futuro\t30048\n2025-04-20\t2025-10-31\tVisão de Futuro\t30072\n2025-04-20\t2025-10-31\tVisão de Futuro\t30058\n2025-04-20\t2025-10-31\tVisão de Futuro\t30065\n2025-04-20\t2025-10-31\tVisão de Futuro\t30060\n2025-04-20\t2025-10-31\tVisão de Futuro\t30055\n2025-04-20\t2025-10-31\tVisão de Futuro\t30057\n2025-04-20\t2025-10-31\tVisão de Futuro\t30073\n2025-04-20\t2025-10-31\tVisão de Futuro\t30051\n2025-04-20\t2025-10-31\tVisão de Futuro\t30077\n2025-04-20\t2025-10-31\tVisão de Futuro\t30059\n2025-04-20\t2025-10-31\tVisão de Futuro\t30064\n2025-04-20\t2025-10-31\tVisão de Futuro\t30063\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}

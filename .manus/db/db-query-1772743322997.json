@@ -1,0 +1,108 @@
+{
+  "query": "\nSELECT 'TURMAS' as tipo, id, externalId, name, programId FROM turmas ORDER BY id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT 'TURMAS' as tipo, id, externalId, name, programId FROM turmas ORDER BY id;\n",
+  "rows": [
+    {
+      "tipo": "TURMAS",
+      "id": "36",
+      "externalId": "95590",
+      "name": "[2024] Banrisul - B.E.M. | Basic",
+      "programId": "19"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "37",
+      "externalId": "97097",
+      "name": "[2024] Banrisul - B.E.M. | Essential",
+      "programId": "19"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "30001",
+      "externalId": "95599",
+      "name": "[2024] SEBRAE Acre - Turma 1.0",
+      "programId": "16"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "30002",
+      "externalId": "97600",
+      "name": "[2025] Embrapii | Basic",
+      "programId": "18"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "30003",
+      "externalId": "103111",
+      "name": "[2025] SEBRAE Tocantins - Visão de Futuro [BS2]",
+      "programId": "17"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "30004",
+      "externalId": "103567",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Basic",
+      "programId": "16"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "30005",
+      "externalId": "104073",
+      "name": "[2025] SEBRAE Tocantins - Basic [BS1]",
+      "programId": "17"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "30006",
+      "externalId": "105320",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Essential",
+      "programId": "16"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "30007",
+      "externalId": "105373",
+      "name": "[2025] SEBRAE Tocantins - Essential [BS1]",
+      "programId": "17"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "30008",
+      "externalId": "105645",
+      "name": "[2025] SEBRAE Tocantins - Basic [BS3]",
+      "programId": "17"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "30009",
+      "externalId": "106854",
+      "name": "[2025] Embrapii | Jornada Personalizada",
+      "programId": "18"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "30010",
+      "externalId": "107468",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Masters",
+      "programId": "16"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "30011",
+      "externalId": "108153",
+      "name": "[2026] Embrapii | Visão do Futuro",
+      "programId": "18"
+    },
+    {
+      "tipo": "TURMAS",
+      "id": "60001",
+      "externalId": "BS3_2026_TO",
+      "name": "[2026] SEBRAE Tocantins - Essential [BS3]",
+      "programId": "17"
+    }
+  ],
+  "messages": [],
+  "stdout": "tipo\tid\texternalId\tname\tprogramId\nTURMAS\t36\t95590\t[2024] Banrisul - B.E.M. | Basic\t19\nTURMAS\t37\t97097\t[2024] Banrisul - B.E.M. | Essential\t19\nTURMAS\t30001\t95599\t[2024] SEBRAE Acre - Turma 1.0\t16\nTURMAS\t30002\t97600\t[2025] Embrapii | Basic\t18\nTURMAS\t30003\t103111\t[2025] SEBRAE Tocantins - Visão de Futuro [BS2]\t17\nTURMAS\t30004\t103567\t[2025] SEBRAE Acre - B.E.M. | Basic\t16\nTURMAS\t30005\t104073\t[2025] SEBRAE Tocantins - Basic [BS1]\t17\nTURMAS\t30006\t105320\t[2025] SEBRAE Acre - B.E.M. | Essential\t16\nTURMAS\t30007\t105373\t[2025] SEBRAE Tocantins - Essential [BS1]\t17\nTURMAS\t30008\t105645\t[2025] SEBRAE Tocantins - Basic [BS3]\t17\nTURMAS\t30009\t106854\t[2025] Embrapii | Jornada Personalizada\t18\nTURMAS\t30010\t107468\t[2025] SEBRAE Acre - B.E.M. | Masters\t16\nTURMAS\t30011\t108153\t[2026] Embrapii | Visão do Futuro\t18\nTURMAS\t60001\tBS3_2026_TO\t[2026] SEBRAE Tocantins - Essential [BS3]\t17\n",
+  "stderr": "",
+  "execution_time_ms": 480
+}

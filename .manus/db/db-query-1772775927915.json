@@ -1,0 +1,220 @@
+{
+  "query": "SELECT id, name, email, externalId, programId FROM alunos WHERE name LIKE '%test%' OR name LIKE '%teste%' OR name LIKE '%Test%' OR email LIKE '%test%' OR email LIKE '%example%' ORDER BY id LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, externalId, programId FROM alunos WHERE name LIKE '%test%' OR name LIKE '%teste%' OR name LIKE '%Test%' OR email LIKE '%test%' OR email LIKE '%example%' ORDER BY id LIMIT 30;",
+  "rows": [
+    {
+      "id": "30096",
+      "name": "Usuário Teste",
+      "email": "leremeg735@nicext.com",
+      "externalId": "696504",
+      "programId": "16"
+    },
+    {
+      "id": "90013",
+      "name": "MARIA TESTE DA SILVA",
+      "email": "dina@ckmtalents.net",
+      "externalId": "667997",
+      "programId": "19"
+    },
+    {
+      "id": "90014",
+      "name": "maria teste3",
+      "email": "teste3@teste3.com.br",
+      "externalId": "667996",
+      "programId": "19"
+    },
+    {
+      "id": "90015",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772738714479@test.com",
+      "externalId": "714479",
+      "programId": "1"
+    },
+    {
+      "id": "90016",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772738715037@test.com",
+      "externalId": "715037",
+      "programId": "1"
+    },
+    {
+      "id": "90017",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772738715242@test.com",
+      "externalId": "715242",
+      "programId": "1"
+    },
+    {
+      "id": "90018",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772738715444@test.com",
+      "externalId": "715444",
+      "programId": "1"
+    },
+    {
+      "id": "90019",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772745327890@test.com",
+      "externalId": "327890",
+      "programId": "1"
+    },
+    {
+      "id": "90020",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772745328554@test.com",
+      "externalId": "328554",
+      "programId": "1"
+    },
+    {
+      "id": "90021",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772745328760@test.com",
+      "externalId": "328760",
+      "programId": "1"
+    },
+    {
+      "id": "90022",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772745328966@test.com",
+      "externalId": "328966",
+      "programId": "1"
+    },
+    {
+      "id": "90023",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772745375111@test.com",
+      "externalId": "375111",
+      "programId": "1"
+    },
+    {
+      "id": "90024",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772745375683@test.com",
+      "externalId": "375683",
+      "programId": "1"
+    },
+    {
+      "id": "90025",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772745375897@test.com",
+      "externalId": "375897",
+      "programId": "1"
+    },
+    {
+      "id": "90026",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772745376111@test.com",
+      "externalId": "376111",
+      "programId": "1"
+    },
+    {
+      "id": "90027",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772752716144@test.com",
+      "externalId": "716144",
+      "programId": "1"
+    },
+    {
+      "id": "90028",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772752716696@test.com",
+      "externalId": "716696",
+      "programId": "1"
+    },
+    {
+      "id": "90029",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772752716908@test.com",
+      "externalId": "716908",
+      "programId": "1"
+    },
+    {
+      "id": "90030",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772752717118@test.com",
+      "externalId": "717118",
+      "programId": "1"
+    },
+    {
+      "id": "90031",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772752764932@test.com",
+      "externalId": "764932",
+      "programId": "1"
+    },
+    {
+      "id": "90032",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772752765507@test.com",
+      "externalId": "765507",
+      "programId": "1"
+    },
+    {
+      "id": "90033",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772752765722@test.com",
+      "externalId": "765722",
+      "programId": "1"
+    },
+    {
+      "id": "90034",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772752765933@test.com",
+      "externalId": "765933",
+      "programId": "1"
+    },
+    {
+      "id": "120001",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772754002226@test.com",
+      "externalId": "002226",
+      "programId": "1"
+    },
+    {
+      "id": "120002",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772754002799@test.com",
+      "externalId": "002799",
+      "programId": "1"
+    },
+    {
+      "id": "120003",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772754003011@test.com",
+      "externalId": "003011",
+      "programId": "1"
+    },
+    {
+      "id": "120004",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772754003221@test.com",
+      "externalId": "003221",
+      "programId": "1"
+    },
+    {
+      "id": "120005",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772754288346@test.com",
+      "externalId": "288346",
+      "programId": "1"
+    },
+    {
+      "id": "120006",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772754288898@test.com",
+      "externalId": "288898",
+      "programId": "1"
+    },
+    {
+      "id": "120007",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772754289104@test.com",
+      "externalId": "289104",
+      "programId": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\texternalId\tprogramId\n30096\tUsuário Teste\tleremeg735@nicext.com\t696504\t16\n90013\tMARIA TESTE DA SILVA\tdina@ckmtalents.net\t667997\t19\n90014\tmaria teste3\tteste3@teste3.com.br\t667996\t19\n90015\tAluno Direto Test\tdireto-test-1772738714479@test.com\t714479\t1\n90016\tTest Turma Null\tturma-null-1772738715037@test.com\t715037\t1\n90017\tTest Turma Number\tturma-num-1772738715242@test.com\t715242\t1\n90018\tTest Turma Undefined\tturma-undef-1772738715444@test.com\t715444\t1\n90019\tAluno Direto Test\tdireto-test-1772745327890@test.com\t327890\t1\n90020\tTest Turma Null\tturma-null-1772745328554@test.com\t328554\t1\n90021\tTest Turma Number\tturma-num-1772745328760@test.com\t328760\t1\n90022\tTest Turma Undefined\tturma-undef-1772745328966@test.com\t328966\t1\n90023\tAluno Direto Test\tdireto-test-1772745375111@test.com\t375111\t1\n90024\tTest Turma Null\tturma-null-1772745375683@test.com\t375683\t1\n90025\tTest Turma Number\tturma-num-1772745375897@test.com\t375897\t1\n90026\tTest Turma Undefined\tturma-undef-1772745376111@test.com\t376111\t1\n90027\tAluno Direto Test\tdireto-test-1772752716144@test.com\t716144\t1\n90028\tTest Turma Null\tturma-null-1772752716696@test.com\t716696\t1\n90029\tTest Turma Number\tturma-num-1772752716908@test.com\t716908\t1\n90030\tTest Turma Undefined\tturma-undef-1772752717118@test.com\t717118\t1\n90031\tAluno Direto Test\tdireto-test-1772752764932@test.com\t764932\t1\n90032\tTest Turma Null\tturma-null-1772752765507@test.com\t765507\t1\n90033\tTest Turma Number\tturma-num-1772752765722@test.com\t765722\t1\n90034\tTest Turma Undefined\tturma-undef-1772752765933@test.com\t765933\t1\n120001\tAluno Direto Test\tdireto-test-1772754002226@test.com\t002226\t1\n120002\tTest Turma Null\tturma-null-1772754002799@test.com\t002799\t1\n120003\tTest Turma Number\tturma-num-1772754003011@test.com\t003011\t1\n120004\tTest Turma Undefined\tturma-undef-1772754003221@test.com\t003221\t1\n120005\tAluno Direto Test\tdireto-test-1772754288346@test.com\t288346\t1\n120006\tTest Turma Null\tturma-null-1772754288898@test.com\t288898\t1\n120007\tTest Turma Number\tturma-num-1772754289104@test.com\t289104\t1\n",
+  "stderr": "",
+  "execution_time_ms": 373
+}

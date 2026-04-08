@@ -1,0 +1,9 @@
+{
+  "query": "\nSELECT \n  ma.id AS agendamento_id,\n  ma.scheduledDate,\n  ma.title,\n  ma.status AS status_agendamento,\n  c.name AS mentor_nome,\n  ms.id AS sessao_id,\n  ms.alunoId,\n  a.name AS aluno_nome,\n  ms.presence\nFROM mentor_appointments ma\nJOIN appointment_participants ap ON ap.appointmentId = ma.id\nJOIN mentoring_sessions ms ON ms.consultorId = ma.consultorId \n  AND ms.sessionDate = ma.scheduledDate \n  AND ms.alunoId = ap.alunoId\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN consultors c ON ma.consultorId = c.id\nWHERE ma.scheduledDate >= '2026-03-01' AND ma.scheduledDate <= '2026-03-31'\nAND ma.status = 'cancelado'\nORDER BY ma.scheduledDate;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ma.id AS agendamento_id,\n  ma.scheduledDate,\n  ma.title,\n  ma.status AS status_agendamento,\n  c.name AS mentor_nome,\n  ms.id AS sessao_id,\n  ms.alunoId,\n  a.name AS aluno_nome,\n  ms.presence\nFROM mentor_appointments ma\nJOIN appointment_participants ap ON ap.appointmentId = ma.id\nJOIN mentoring_sessions ms ON ms.consultorId = ma.consultorId \n  AND ms.sessionDate = ma.scheduledDate \n  AND ms.alunoId = ap.alunoId\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN consultors c ON ma.consultorId = c.id\nWHERE ma.scheduledDate >= '2026-03-01' AND ma.scheduledDate <= '2026-03-31'\nAND ma.status = 'cancelado'\nORDER BY ma.scheduledDate;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 70
+}

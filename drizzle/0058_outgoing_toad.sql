@@ -1,0 +1,1 @@
+ALTER TABLE `alunos` ADD `totalSessoesContratadas` int DEFAULT 0;

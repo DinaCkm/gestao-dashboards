@@ -1,0 +1,20 @@
+{
+  "query": "SELECT m.id, m.alunoId, m.competenciaId, m.titulo, m.descricao, m.isActive, a.name as aluno_name, a.email as aluno_email\nFROM metas m\nJOIN alunos a ON a.id = m.alunoId\nWHERE a.name LIKE '%Joseane%' OR a.email LIKE '%joseane%'\nORDER BY m.id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT m.id, m.alunoId, m.competenciaId, m.titulo, m.descricao, m.isActive, a.name as aluno_name, a.email as aluno_email\nFROM metas m\nJOIN alunos a ON a.id = m.alunoId\nWHERE a.name LIKE '%Joseane%' OR a.email LIKE '%joseane%'\nORDER BY m.id;",
+  "rows": [
+    {
+      "id": "1",
+      "alunoId": "30066",
+      "competenciaId": "30034",
+      "titulo": "Realizar apresentação para equipe sobre liderança adaptativa",
+      "descricao": "NULL",
+      "isActive": "1",
+      "aluno_name": "Joseane Rodrigues Leite",
+      "aluno_email": "joseane@to.sebrae.com.br"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tcompetenciaId\ttitulo\tdescricao\tisActive\taluno_name\taluno_email\n1\t30066\t30034\tRealizar apresentação para equipe sobre liderança adaptativa\tNULL\t1\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\n",
+  "stderr": "",
+  "execution_time_ms": 79
+}

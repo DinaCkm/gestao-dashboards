@@ -1,0 +1,66 @@
+{
+  "query": "\nSELECT \n  ma.consultorId,\n  c.name AS mentor_nome,\n  ma.type AS modalidade,\n  ma.status,\n  COUNT(*) AS total\nFROM mentor_appointments ma\nLEFT JOIN consultors c ON ma.consultorId = c.id\nWHERE ma.scheduledDate >= '2026-03-01' AND ma.scheduledDate <= '2026-03-31'\nGROUP BY ma.consultorId, c.name, ma.type, ma.status\nORDER BY c.name, ma.type, ma.status;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ma.consultorId,\n  c.name AS mentor_nome,\n  ma.type AS modalidade,\n  ma.status,\n  COUNT(*) AS total\nFROM mentor_appointments ma\nLEFT JOIN consultors c ON ma.consultorId = c.id\nWHERE ma.scheduledDate >= '2026-03-01' AND ma.scheduledDate <= '2026-03-31'\nGROUP BY ma.consultorId, c.name, ma.type, ma.status\nORDER BY c.name, ma.type, ma.status;\n",
+  "rows": [
+    {
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus",
+      "modalidade": "grupo",
+      "status": "agendado",
+      "total": "1"
+    },
+    {
+      "consultorId": "39",
+      "mentor_nome": "Adriana Deus",
+      "modalidade": "grupo",
+      "status": "cancelado",
+      "total": "4"
+    },
+    {
+      "consultorId": "28",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "modalidade": "individual",
+      "status": "cancelado",
+      "total": "1"
+    },
+    {
+      "consultorId": "28",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "modalidade": "grupo",
+      "status": "agendado",
+      "total": "10"
+    },
+    {
+      "consultorId": "28",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha",
+      "modalidade": "grupo",
+      "status": "confirmado",
+      "total": "1"
+    },
+    {
+      "consultorId": "35",
+      "mentor_nome": "Andressa Santos",
+      "modalidade": "grupo",
+      "status": "agendado",
+      "total": "5"
+    },
+    {
+      "consultorId": "35",
+      "mentor_nome": "Andressa Santos",
+      "modalidade": "grupo",
+      "status": "cancelado",
+      "total": "1"
+    },
+    {
+      "consultorId": "32",
+      "mentor_nome": "Luciana Pereira Figueiredo da Silva",
+      "modalidade": "grupo",
+      "status": "agendado",
+      "total": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "consultorId\tmentor_nome\tmodalidade\tstatus\ttotal\n39\tAdriana Deus\tgrupo\tagendado\t1\n39\tAdriana Deus\tgrupo\tcancelado\t4\n28\tAna Carolina Cardoso Viana Rocha\tindividual\tcancelado\t1\n28\tAna Carolina Cardoso Viana Rocha\tgrupo\tagendado\t10\n28\tAna Carolina Cardoso Viana Rocha\tgrupo\tconfirmado\t1\n35\tAndressa Santos\tgrupo\tagendado\t5\n35\tAndressa Santos\tgrupo\tcancelado\t1\n32\tLuciana Pereira Figueiredo da Silva\tgrupo\tagendado\t1\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}

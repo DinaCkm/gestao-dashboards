@@ -1,0 +1,37 @@
+{
+  "query": "SELECT id, openId, name, email, role, cpf, programId FROM users WHERE role = 'admin' LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, openId, name, email, role, cpf, programId FROM users WHERE role = 'admin' LIMIT 3;",
+  "rows": [
+    {
+      "id": "1",
+      "openId": "AYid4X75EDqao6Y4erjFNB",
+      "name": "relacionamento",
+      "email": "relacionamento@ckmtalents.net",
+      "role": "admin",
+      "cpf": "NULL",
+      "programId": "NULL"
+    },
+    {
+      "id": "30895",
+      "openId": "adm1",
+      "name": "Administrador 1",
+      "email": "adm1@sistema.com",
+      "role": "admin",
+      "cpf": "NULL",
+      "programId": "NULL"
+    },
+    {
+      "id": "30896",
+      "openId": "adm2",
+      "name": "Administrador 2",
+      "email": "adm2@sistema.com",
+      "role": "admin",
+      "cpf": "NULL",
+      "programId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tname\temail\trole\tcpf\tprogramId\n1\tAYid4X75EDqao6Y4erjFNB\trelacionamento\trelacionamento@ckmtalents.net\tadmin\tNULL\tNULL\n30895\tadm1\tAdministrador 1\tadm1@sistema.com\tadmin\tNULL\tNULL\n30896\tadm2\tAdministrador 2\tadm2@sistema.com\tadmin\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

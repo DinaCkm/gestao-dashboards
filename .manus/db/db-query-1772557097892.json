@@ -1,0 +1,76 @@
+{
+  "query": "SHOW TABLES LIKE '%mentor%'; SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME LIKE '%mentor%' ORDER BY TABLE_NAME, ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SHOW TABLES LIKE '%mentor%'; SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME LIKE '%mentor%' ORDER BY TABLE_NAME, ORDINAL_POSITION;",
+  "rows": [
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "mentoring_sessions"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "COLUMN_NAME\tDATA_TYPE"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "id\tint"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "alunoId\tint"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "consultorId\tint"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "turmaId\tint"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "trilhaId\tint"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "ciclo\tenum"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "sessionNumber\tint"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "sessionDate\tdate"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "presence\tenum"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "taskStatus\tenum"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "engagementScore\tint"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "feedback\ttext"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "batchId\tint"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "createdAt\ttimestamp"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "notaEvolucao\tint"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "mensagemAluno\ttext"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "taskId\tint"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "taskDeadline\tdate"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "relatoAluno\ttext"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)": "isAssessment\tint"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%mentor%)\nmentoring_sessions\nCOLUMN_NAME\tDATA_TYPE\nid\tint\nalunoId\tint\nconsultorId\tint\nturmaId\tint\ntrilhaId\tint\nciclo\tenum\nsessionNumber\tint\nsessionDate\tdate\npresence\tenum\ntaskStatus\tenum\nengagementScore\tint\nfeedback\ttext\nbatchId\tint\ncreatedAt\ttimestamp\nnotaEvolucao\tint\nmensagemAluno\ttext\ntaskId\tint\ntaskDeadline\tdate\nrelatoAluno\ttext\nisAssessment\tint\n",
+  "stderr": "",
+  "execution_time_ms": 520
+}

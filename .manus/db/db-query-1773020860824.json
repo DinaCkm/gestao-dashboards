@@ -1,0 +1,22 @@
+{
+  "query": "SELECT dr.id, dr.alunoId, dr.ciclo, dr.scoreD, dr.scoreI, dr.scoreS, dr.scoreC, dr.perfilPredominante, dr.perfilSecundario, dr.completedAt FROM disc_resultados dr WHERE dr.scoreD >= 99 AND dr.scoreI >= 99 AND dr.scoreS >= 99 AND dr.scoreC >= 99",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT dr.id, dr.alunoId, dr.ciclo, dr.scoreD, dr.scoreI, dr.scoreS, dr.scoreC, dr.perfilPredominante, dr.perfilSecundario, dr.completedAt FROM disc_resultados dr WHERE dr.scoreD >= 99 AND dr.scoreI >= 99 AND dr.scoreS >= 99 AND dr.scoreC >= 99",
+  "rows": [
+    {
+      "id": "60001",
+      "alunoId": "90013",
+      "ciclo": "1",
+      "scoreD": "100.00",
+      "scoreI": "100.00",
+      "scoreS": "100.00",
+      "scoreC": "100.00",
+      "perfilPredominante": "D",
+      "perfilSecundario": "I",
+      "completedAt": "2026-03-08 19:44:26"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tciclo\tscoreD\tscoreI\tscoreS\tscoreC\tperfilPredominante\tperfilSecundario\tcompletedAt\n60001\t90013\t1\t100.00\t100.00\t100.00\t100.00\tD\tI\t2026-03-08 19:44:26\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

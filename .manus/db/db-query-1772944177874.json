@@ -1,0 +1,76 @@
+{
+  "query": "SELECT ap.*, ma.scheduledDate, ma.status as apptStatus FROM appointment_participants ap JOIN mentor_appointments ma ON ap.appointmentId = ma.id",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.*, ma.scheduledDate, ma.status as apptStatus FROM appointment_participants ap JOIN mentor_appointments ma ON ap.appointmentId = ma.id",
+  "rows": [
+    {
+      "id": "1",
+      "appointmentId": "1",
+      "alunoId": "30090",
+      "status": "convidado",
+      "confirmedAt": "NULL",
+      "notes": "NULL",
+      "createdAt": "2026-03-06 02:27:54",
+      "scheduledDate": "2026-03-10",
+      "apptStatus": "cancelado"
+    },
+    {
+      "id": "2",
+      "appointmentId": "1",
+      "alunoId": "30099",
+      "status": "convidado",
+      "confirmedAt": "NULL",
+      "notes": "NULL",
+      "createdAt": "2026-03-06 02:27:54",
+      "scheduledDate": "2026-03-10",
+      "apptStatus": "cancelado"
+    },
+    {
+      "id": "3",
+      "appointmentId": "1",
+      "alunoId": "30100",
+      "status": "convidado",
+      "confirmedAt": "NULL",
+      "notes": "NULL",
+      "createdAt": "2026-03-06 02:27:54",
+      "scheduledDate": "2026-03-10",
+      "apptStatus": "cancelado"
+    },
+    {
+      "id": "4",
+      "appointmentId": "1",
+      "alunoId": "30035",
+      "status": "convidado",
+      "confirmedAt": "NULL",
+      "notes": "NULL",
+      "createdAt": "2026-03-06 02:27:54",
+      "scheduledDate": "2026-03-10",
+      "apptStatus": "cancelado"
+    },
+    {
+      "id": "5",
+      "appointmentId": "1",
+      "alunoId": "30040",
+      "status": "convidado",
+      "confirmedAt": "NULL",
+      "notes": "NULL",
+      "createdAt": "2026-03-06 02:27:54",
+      "scheduledDate": "2026-03-10",
+      "apptStatus": "cancelado"
+    },
+    {
+      "id": "30001",
+      "appointmentId": "30001",
+      "alunoId": "30040",
+      "status": "convidado",
+      "confirmedAt": "NULL",
+      "notes": "NULL",
+      "createdAt": "2026-03-06 19:29:48",
+      "scheduledDate": "2026-03-06",
+      "apptStatus": "cancelado"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tappointmentId\talunoId\tstatus\tconfirmedAt\tnotes\tcreatedAt\tscheduledDate\tapptStatus\n1\t1\t30090\tconvidado\tNULL\tNULL\t2026-03-06 02:27:54\t2026-03-10\tcancelado\n2\t1\t30099\tconvidado\tNULL\tNULL\t2026-03-06 02:27:54\t2026-03-10\tcancelado\n3\t1\t30100\tconvidado\tNULL\tNULL\t2026-03-06 02:27:54\t2026-03-10\tcancelado\n4\t1\t30035\tconvidado\tNULL\tNULL\t2026-03-06 02:27:54\t2026-03-10\tcancelado\n5\t1\t30040\tconvidado\tNULL\tNULL\t2026-03-06 02:27:54\t2026-03-10\tcancelado\n30001\t30001\t30040\tconvidado\tNULL\tNULL\t2026-03-06 19:29:48\t2026-03-06\tcancelado\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT DISTINCT ac.micro_inicio, ac.micro_termino, t.name as trilha_nome, ap.aluno_id\nFROM assessment_competencias ac\nJOIN assessment_pdi ap ON ac.assessment_pdi_id = ap.id\nJOIN trilhas t ON ap.trilha_id = t.id\nWHERE t.name LIKE '%Vis%'\nORDER BY ac.micro_inicio, ac.micro_termino\nLIMIT 30;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT DISTINCT ac.micro_inicio, ac.micro_termino, t.name as trilha_nome, ap.aluno_id\nFROM assessment_competencias ac\nJOIN assessment_pdi ap ON ac.assessment_pdi_id = ap.id\nJOIN trilhas t ON ap.trilha_id = t.id\nWHERE t.name LIKE '%Vis%'\nORDER BY ac.micro_inicio, ac.micro_termino\nLIMIT 30;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'ac.assessment_pdi_id' in 'on clause'"
+  ]
+}

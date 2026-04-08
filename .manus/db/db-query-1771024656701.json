@@ -1,0 +1,16 @@
+{
+  "query": "SELECT a.id, a.name, a.programId, COUNT(ms.id) as sessionCount \nFROM alunos a \nLEFT JOIN mentoring_sessions ms ON ms.alunoId = a.id \nWHERE a.name LIKE '%Amaggeldo%' \nGROUP BY a.id, a.name, a.programId",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.programId, COUNT(ms.id) as sessionCount \nFROM alunos a \nLEFT JOIN mentoring_sessions ms ON ms.alunoId = a.id \nWHERE a.name LIKE '%Amaggeldo%' \nGROUP BY a.id, a.name, a.programId",
+  "rows": [
+    {
+      "id": "30051",
+      "name": "Amaggeldo Barbosa",
+      "programId": "17",
+      "sessionCount": "7"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tprogramId\tsessionCount\n30051\tAmaggeldo Barbosa\t17\t7\n",
+  "stderr": "",
+  "execution_time_ms": 68
+}

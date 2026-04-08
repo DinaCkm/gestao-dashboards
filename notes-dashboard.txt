@@ -1,0 +1,14 @@
+Dashboard Visão Geral após correção base 10:
+- Ind.1 Mentorias: 89%
+- Ind.2 Atividades: 75%
+- Ind.3 Engajamento: 71% (antes era ~83% com base 5, agora correto com base 10)
+- Ind.4 Competências: 52%
+- Ind.5 Aprendizado: 76%
+- Ind.6 Eventos: 54%
+- Ind.7 Performance Geral: 70%
+- 126 alunos, 5 empresas
+- 4 alunos Excelência (3% do total)
+- 16 precisam atenção (Básico ou Inicial)
+
+O Indicador 3 baixou de ~83% para 71% - isso é esperado porque antes nota 5 era 100%, agora nota 5 é 50%.
+A Performance Geral também baixou proporcionalmente.

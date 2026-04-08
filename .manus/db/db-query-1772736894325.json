@@ -1,0 +1,130 @@
+{
+  "query": "SELECT id, name, email, externalId, programId, consultorId, bypassOnboarding, cadastradoPorAdmin FROM alunos WHERE email LIKE '%@test.com' OR name LIKE 'Test %' OR name LIKE 'Aluno Direto Test%' ORDER BY id DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, externalId, programId, consultorId, bypassOnboarding, cadastradoPorAdmin FROM alunos WHERE email LIKE '%@test.com' OR name LIKE 'Test %' OR name LIKE 'Aluno Direto Test%' ORDER BY id DESC;",
+  "rows": [
+    {
+      "id": "90012",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772736440295@test.com",
+      "externalId": "440295",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    },
+    {
+      "id": "90011",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772736440083@test.com",
+      "externalId": "440083",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    },
+    {
+      "id": "90010",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772736439873@test.com",
+      "externalId": "439873",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    },
+    {
+      "id": "90009",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772736439287@test.com",
+      "externalId": "439287",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    },
+    {
+      "id": "90008",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772735762564@test.com",
+      "externalId": "762564",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    },
+    {
+      "id": "90007",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772735762350@test.com",
+      "externalId": "762350",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    },
+    {
+      "id": "90006",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772735762142@test.com",
+      "externalId": "762142",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    },
+    {
+      "id": "90005",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772735761574@test.com",
+      "externalId": "761574",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    },
+    {
+      "id": "90004",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772735732921@test.com",
+      "externalId": "732921",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    },
+    {
+      "id": "90003",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772735732702@test.com",
+      "externalId": "732702",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    },
+    {
+      "id": "90002",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772735732483@test.com",
+      "externalId": "732483",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    },
+    {
+      "id": "90001",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772735731881@test.com",
+      "externalId": "731881",
+      "programId": "1",
+      "consultorId": "1",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\texternalId\tprogramId\tconsultorId\tbypassOnboarding\tcadastradoPorAdmin\n90012\tTest Turma Undefined\tturma-undef-1772736440295@test.com\t440295\t1\t1\t1\t1\n90011\tTest Turma Number\tturma-num-1772736440083@test.com\t440083\t1\t1\t1\t1\n90010\tTest Turma Null\tturma-null-1772736439873@test.com\t439873\t1\t1\t1\t1\n90009\tAluno Direto Test\tdireto-test-1772736439287@test.com\t439287\t1\t1\t1\t1\n90008\tTest Turma Undefined\tturma-undef-1772735762564@test.com\t762564\t1\t1\t1\t1\n90007\tTest Turma Number\tturma-num-1772735762350@test.com\t762350\t1\t1\t1\t1\n90006\tTest Turma Null\tturma-null-1772735762142@test.com\t762142\t1\t1\t1\t1\n90005\tAluno Direto Test\tdireto-test-1772735761574@test.com\t761574\t1\t1\t1\t1\n90004\tTest Turma Undefined\tturma-undef-1772735732921@test.com\t732921\t1\t1\t1\t1\n90003\tTest Turma Number\tturma-num-1772735732702@test.com\t732702\t1\t1\t1\t1\n90002\tTest Turma Null\tturma-null-1772735732483@test.com\t732483\t1\t1\t1\t1\n90001\tAluno Direto Test\tdireto-test-1772735731881@test.com\t731881\t1\t1\t1\t1\n",
+  "stderr": "",
+  "execution_time_ms": 422
+}

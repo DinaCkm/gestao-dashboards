@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, name, codigo, isActive FROM trilhas ORDER BY id",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, codigo, isActive FROM trilhas ORDER BY id",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Basic",
+      "codigo": "BASICA",
+      "isActive": "1"
+    },
+    {
+      "id": "2",
+      "name": "Essential",
+      "codigo": "ESSENCIAL",
+      "isActive": "1"
+    },
+    {
+      "id": "3",
+      "name": "Master",
+      "codigo": "MASTER",
+      "isActive": "1"
+    },
+    {
+      "id": "4",
+      "name": "Visão de Futuro",
+      "codigo": "VISAO_FUTURO",
+      "isActive": "1"
+    },
+    {
+      "id": "30001",
+      "name": "Jornada do Futuro I.A",
+      "codigo": "JORNADA_FUTURO_IA",
+      "isActive": "1"
+    },
+    {
+      "id": "60001",
+      "name": "Jornada Personalizada",
+      "codigo": "JORNADA_PERSONALIZADA",
+      "isActive": "1"
+    },
+    {
+      "id": "90001",
+      "name": "Alinhamento Inicial",
+      "codigo": "NULL",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcodigo\tisActive\n1\tBasic\tBASICA\t1\n2\tEssential\tESSENCIAL\t1\n3\tMaster\tMASTER\t1\n4\tVisão de Futuro\tVISAO_FUTURO\t1\n30001\tJornada do Futuro I.A\tJORNADA_FUTURO_IA\t1\n60001\tJornada Personalizada\tJORNADA_PERSONALIZADA\t1\n90001\tAlinhamento Inicial\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 61
+}

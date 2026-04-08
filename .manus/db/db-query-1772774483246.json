@@ -1,0 +1,230 @@
+{
+  "query": "SELECT ap.id, ap.alunoId, ap.trilhaId, ap.turmaId, ap.macroInicio, ap.macroTermino, ap.status, t.name as trilhaNome, tu.name as turmaNome FROM assessment_pdi ap LEFT JOIN trilhas t ON ap.trilhaId = t.id LEFT JOIN turmas tu ON ap.turmaId = tu.id LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id, ap.alunoId, ap.trilhaId, ap.turmaId, ap.macroInicio, ap.macroTermino, ap.status, t.name as trilhaNome, tu.name as turmaNome FROM assessment_pdi ap LEFT JOIN trilhas t ON ap.trilhaId = t.id LEFT JOIN turmas tu ON ap.turmaId = tu.id LIMIT 20;",
+  "rows": [
+    {
+      "id": "60221",
+      "alunoId": "30033",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60222",
+      "alunoId": "30012",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60223",
+      "alunoId": "30020",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60224",
+      "alunoId": "30021",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60225",
+      "alunoId": "30022",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60226",
+      "alunoId": "30023",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60227",
+      "alunoId": "30011",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60228",
+      "alunoId": "30013",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60229",
+      "alunoId": "30019",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60230",
+      "alunoId": "30001",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60231",
+      "alunoId": "30017",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60232",
+      "alunoId": "30006",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60233",
+      "alunoId": "30024",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60234",
+      "alunoId": "30025",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60235",
+      "alunoId": "30003",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60236",
+      "alunoId": "30008",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60237",
+      "alunoId": "30018",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60238",
+      "alunoId": "30014",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60239",
+      "alunoId": "30026",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    },
+    {
+      "id": "60240",
+      "alunoId": "30004",
+      "trilhaId": "2",
+      "turmaId": "30006",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "status": "ativo",
+      "trilhaNome": "Essential",
+      "turmaNome": "[2025] SEBRAE Acre - B.E.M. | Essential"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\ttrilhaId\tturmaId\tmacroInicio\tmacroTermino\tstatus\ttrilhaNome\tturmaNome\n60221\t30033\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60222\t30012\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60223\t30020\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60224\t30021\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60225\t30022\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60226\t30023\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60227\t30011\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60228\t30013\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60229\t30019\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60230\t30001\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60231\t30017\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60232\t30006\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60233\t30024\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60234\t30025\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60235\t30003\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60236\t30008\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60237\t30018\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60238\t30014\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60239\t30026\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n60240\t30004\t2\t30006\t2024-10-10\t2026-10-30\tativo\tEssential\t[2025] SEBRAE Acre - B.E.M. | Essential\n",
+  "stderr": "",
+  "execution_time_ms": 421
+}

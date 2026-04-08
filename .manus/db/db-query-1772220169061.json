@@ -1,0 +1,85 @@
+{
+  "query": "SELECT id, title, eventType FROM events ORDER BY id LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, title, eventType FROM events ORDER BY id LIMIT 15;",
+  "rows": [
+    {
+      "id": "30001",
+      "title": "2025/06 - Liderança Tóxica com Emerson Dias",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30002",
+      "title": "2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30003",
+      "title": "2025/08 - LinkedIn e Carreira com Gislaine",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30004",
+      "title": "2025/09 - Foco x Procrastinação com Emerson Dias",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30005",
+      "title": "2025/10 - Do Talento ao Resultado com Fabio Barbosa",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30006",
+      "title": "2025/11 - A Conexão das Gerações com Cíntia Gandarely",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30007",
+      "title": "2025/12 - Feedback - com Sandra Pitman",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30008",
+      "title": "2025/13 - Saúde Mental, Estresse e Burnout com Otácia Azevedo",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30009",
+      "title": "2025/14 - Liderança colaborativa com Sergio David",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30010",
+      "title": "2025/15 - Mindfulness para o Gestor Com Otácia",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30011",
+      "title": "2025/16 - IA para Equipes Comerciais com Giovanna Vieira",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30012",
+      "title": "2025/17 - Neurocomunicação com Iza Nascimento",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30013",
+      "title": "2025/18 - Mindfulness na Comunicação e no Tempo com Otácia",
+      "eventType": "webinar"
+    },
+    {
+      "id": "30014",
+      "title": "2025/19 - Aula 01 – Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "eventType": "curso_online"
+    },
+    {
+      "id": "30015",
+      "title": "2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias",
+      "eventType": "curso_online"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\teventType\n30001\t2025/06 - Liderança Tóxica com Emerson Dias\twebinar\n30002\t2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio\twebinar\n30003\t2025/08 - LinkedIn e Carreira com Gislaine\twebinar\n30004\t2025/09 - Foco x Procrastinação com Emerson Dias\twebinar\n30005\t2025/10 - Do Talento ao Resultado com Fabio Barbosa\twebinar\n30006\t2025/11 - A Conexão das Gerações com Cíntia Gandarely\twebinar\n30007\t2025/12 - Feedback - com Sandra Pitman\twebinar\n30008\t2025/13 - Saúde Mental, Estresse e Burnout com Otácia Azevedo\twebinar\n30009\t2025/14 - Liderança colaborativa com Sergio David\twebinar\n30010\t2025/15 - Mindfulness para o Gestor Com Otácia\twebinar\n30011\t2025/16 - IA para Equipes Comerciais com Giovanna Vieira\twebinar\n30012\t2025/17 - Neurocomunicação com Iza Nascimento\twebinar\n30013\t2025/18 - Mindfulness na Comunicação e no Tempo com Otácia\twebinar\n30014\t2025/19 - Aula 01 – Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\tcurso_online\n30015\t2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias\tcurso_online\n",
+  "stderr": "",
+  "execution_time_ms": 384
+}

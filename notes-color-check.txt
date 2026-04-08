@@ -1,0 +1,3 @@
+Screenshot check 1: Admin view - sidebar still has dark teal/navy theme (expected - admin should NOT have gestor colors).
+The gestor colors (roxo + turquesa) should only appear when logged in as gestor (consultorRole === 'gerente').
+Need to test with gestor profile to verify. The admin view looks correct - no changes to admin sidebar.

@@ -1,0 +1,110 @@
+{
+  "query": "\nSELECT u.id, u.name, u.openId, u.role, u.consultorId, u.alunoId, \n       c.role as consultorRole, c.managedProgramId\nFROM users u\nLEFT JOIN consultors c ON u.consultorId = c.id\nWHERE u.role = 'manager' AND u.isActive = 1 AND u.consultorId IS NOT NULL\nORDER BY u.id DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT u.id, u.name, u.openId, u.role, u.consultorId, u.alunoId, \n       c.role as consultorRole, c.managedProgramId\nFROM users u\nLEFT JOIN consultors c ON u.consultorId = c.id\nWHERE u.role = 'manager' AND u.isActive = 1 AND u.consultorId IS NOT NULL\nORDER BY u.id DESC;\n",
+  "rows": [
+    {
+      "id": "4590725",
+      "name": "Emanoel Loreto Querette",
+      "openId": "gerente_puro_180003",
+      "role": "manager",
+      "consultorId": "180003",
+      "alunoId": "NULL",
+      "consultorRole": "gerente",
+      "managedProgramId": "18"
+    },
+    {
+      "id": "4560474",
+      "name": "Emanoel Loreto Querette",
+      "openId": "gerente_puro_150004",
+      "role": "manager",
+      "consultorId": "150004",
+      "alunoId": "NULL",
+      "consultorRole": "gerente",
+      "managedProgramId": "18"
+    },
+    {
+      "id": "4560420",
+      "name": "Emanoel Loreto Querette",
+      "openId": "gerente_puro_150001",
+      "role": "manager",
+      "consultorId": "150001",
+      "alunoId": "NULL",
+      "consultorRole": "gerente",
+      "managedProgramId": "18"
+    },
+    {
+      "id": "4381896",
+      "name": "Brenno Passoni",
+      "openId": "gerente_puro_120002",
+      "role": "manager",
+      "consultorId": "120002",
+      "alunoId": "NULL",
+      "consultorRole": "gerente",
+      "managedProgramId": "18"
+    },
+    {
+      "id": "4381885",
+      "name": "Leandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br",
+      "openId": "gerente_puro_120001",
+      "role": "manager",
+      "consultorId": "120001",
+      "alunoId": "NULL",
+      "consultorRole": "gerente",
+      "managedProgramId": "18"
+    },
+    {
+      "id": "3180275",
+      "name": "Marcia Rocha Fernandes",
+      "openId": "consultor_29",
+      "role": "manager",
+      "consultorId": "29",
+      "alunoId": "NULL",
+      "consultorRole": "mentor",
+      "managedProgramId": "NULL"
+    },
+    {
+      "id": "3120133",
+      "name": "Luciana Pereira Figueiredo da Silva",
+      "openId": "consultor_32",
+      "role": "manager",
+      "consultorId": "32",
+      "alunoId": "NULL",
+      "consultorRole": "mentor",
+      "managedProgramId": "NULL"
+    },
+    {
+      "id": "2220114",
+      "name": "Andressa Santos",
+      "openId": "consultor_35",
+      "role": "manager",
+      "consultorId": "35",
+      "alunoId": "NULL",
+      "consultorRole": "mentor",
+      "managedProgramId": "NULL"
+    },
+    {
+      "id": "720421",
+      "name": "Ana Carolina Cardoso Viana Rocha",
+      "openId": "consultor_28",
+      "role": "manager",
+      "consultorId": "28",
+      "alunoId": "NULL",
+      "consultorRole": "mentor",
+      "managedProgramId": "NULL"
+    },
+    {
+      "id": "690412",
+      "name": "Adriana Deus",
+      "openId": "consultor_39",
+      "role": "manager",
+      "consultorId": "39",
+      "alunoId": "NULL",
+      "consultorRole": "mentor",
+      "managedProgramId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\topenId\trole\tconsultorId\talunoId\tconsultorRole\tmanagedProgramId\n4590725\tEmanoel Loreto Querette\tgerente_puro_180003\tmanager\t180003\tNULL\tgerente\t18\n4560474\tEmanoel Loreto Querette\tgerente_puro_150004\tmanager\t150004\tNULL\tgerente\t18\n4560420\tEmanoel Loreto Querette\tgerente_puro_150001\tmanager\t150001\tNULL\tgerente\t18\n4381896\tBrenno Passoni\tgerente_puro_120002\tmanager\t120002\tNULL\tgerente\t18\n4381885\tLeandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br\tgerente_puro_120001\tmanager\t120001\tNULL\tgerente\t18\n3180275\tMarcia Rocha Fernandes\tconsultor_29\tmanager\t29\tNULL\tmentor\tNULL\n3120133\tLuciana Pereira Figueiredo da Silva\tconsultor_32\tmanager\t32\tNULL\tmentor\tNULL\n2220114\tAndressa Santos\tconsultor_35\tmanager\t35\tNULL\tmentor\tNULL\n720421\tAna Carolina Cardoso Viana Rocha\tconsultor_28\tmanager\t28\tNULL\tmentor\tNULL\n690412\tAdriana Deus\tconsultor_39\tmanager\t39\tNULL\tmentor\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}

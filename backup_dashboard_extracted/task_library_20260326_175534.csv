@@ -1,0 +1,80 @@
+id,competencia,nome,resumo,o_que_fazer,o_que_ganha,isActive,createdAt
+1,Autoconhecimento,Feedback 360° Simplificado,Coleta estruturada de percepções profissionais.,Selecionar 3-4 pessoas; aplicar perguntas; consolidar pontos fortes e melhorias; definir 1 ação.,Desenvolve clareza sobre sua imagem profissional.,1,2026-02-14 00:31:11
+2,Autogestão,Plano de Desenvolvimento Individual,Definição de metas de crescimento.,Escolher até 3 competências; definir ação prática; revisar mensalmente.,Aumenta foco no próprio desenvolvimento.,1,2026-02-14 00:31:12
+3,Gestão do Tempo,Revisão da Agenda Semanal,Análise do uso do tempo.,Revisar agenda; identificar desperdícios; eliminar ou delegar 1 atividade.,Melhora organização e produtividade.,1,2026-02-14 00:31:12
+4,Prioridades,Matriz de Prioridades,Classificação de tarefas por relevância.,Listar tarefas; classificar; reorganizar foco semanal.,Ganha clareza de prioridades.,1,2026-02-14 00:31:12
+5,Delegação,Revisão de Responsabilidades,Ajuste de papéis na equipe.,Identificar tarefas delegáveis; definir responsável; alinhar expectativas.,Reduz sobrecarga e aumenta eficiência.,1,2026-02-14 00:31:12
+6,Comunicação,Conversa Estruturada,Diálogo intencional de alinhamento.,Definir tema; estruturar mensagem; conduzir conversa; registrar acordos.,Fortalece clareza na comunicação.,1,2026-02-14 00:31:12
+7,Conflitos,Análise de Situação de Tensão,Reflexão sobre conflito recente.,Descrever situação; identificar causa; definir postura estratégica.,Desenvolve maturidade na gestão de conflitos.,1,2026-02-14 00:31:12
+8,Estratégia,Estruturação no 5W2H,Organização de proposta estruturada.,Definir problema; estruturar solução; apresentar plano.,Amplia capacidade de estruturar projetos.,1,2026-02-14 00:31:12
+9,Visão Estratégica,SWOT Simplificada,Reflexão estratégica de desafio.,"Listar forças, fraquezas, oportunidades e riscos.",Consolida visão estratégica.,1,2026-02-14 00:31:12
+10,Resultados,Meta Mensurável,Transformar intenção em meta clara.,Definir objetivo; criar indicador e prazo; acompanhar semanalmente.,Aumenta foco em resultados concretos.,1,2026-02-14 00:31:12
+11,Liderança,Reunião 1:1,Acompanhamento individual estruturado.,Agendar reunião; discutir metas; definir próximo passo.,Fortalece liderança próxima.,1,2026-02-14 00:31:12
+12,Feedback,Feedback Direto,Aplicação objetiva de retorno.,Descrever comportamento; explicar impacto; sugerir melhoria.,Desenvolve assertividade.,1,2026-02-14 00:31:12
+13,Decisão,Análise de Alternativas,Avaliação consciente de escolhas.,Listar prós e contras; avaliar impacto; decidir.,Melhora segurança decisória.,1,2026-02-14 00:31:12
+14,Planejamento,Plano 30 Dias,Organização de metas mensais.,Definir 3 entregas; revisar semanalmente.,Aumenta disciplina de execução.,1,2026-02-14 00:31:12
+15,Produtividade,Eliminação de Distrações,Redução de perdas de foco.,Identificar distrações; eliminar 1 hábito improdutivo.,Eleva produtividade diária.,1,2026-02-14 00:31:12
+16,Inovação,Brainstorming Estruturado,Geração organizada de ideias.,Definir desafio; gerar ideias; priorizar uma solução.,Estimula pensamento criativo aplicado.,1,2026-02-14 00:31:12
+17,Processos,Mapeamento de Processo,Visualização de etapas de trabalho.,Desenhar fluxo; identificar gargalos; propor melhoria.,Desenvolve visão sistêmica.,1,2026-02-14 00:31:12
+18,Influência,Apresentação Executiva,Defesa estruturada de proposta.,Organizar problema; solução; impacto; apresentar.,Aumenta poder de persuasão.,1,2026-02-14 00:31:12
+19,Riscos,Mapa de Riscos,Identificação preventiva de riscos.,Listar riscos; classificar impacto; definir mitigação.,Reduz vulnerabilidade decisória.,1,2026-02-14 00:31:12
+20,Inteligência Emocional,Diário das Emoções,Registro de reações emocionais.,Registrar situações; emoção; reação; alternativa madura.,Amplia autoconsciência emocional.,1,2026-02-14 00:31:12
+21,Equilíbrio,Roda da Vida,Diagnóstico das áreas da vida.,Avaliar áreas; identificar desequilíbrios; definir ação.,Desenvolve visão equilibrada.,1,2026-02-14 00:31:12
+22,Autocontrole,Mapeamento de Gatilhos,Identificação de reações automáticas.,Listar gatilhos; definir estratégia de controle.,Aumenta autocontrole sob pressão.,1,2026-02-14 00:31:12
+23,Valores,Definição de Valores,Clareza de princípios pessoais.,Listar valores; priorizar 5; aplicar no trabalho.,Fortalece coerência nas decisões.,1,2026-02-14 00:31:12
+24,Energia,Avaliação de Energia,Monitoramento de disposição.,Registrar nível de energia; identificar padrões.,Melhora gestão de desempenho.,1,2026-02-14 00:31:12
+25,Autorresponsabilidade,Reflexão Pós-Erro,Análise estruturada após erro.,Descrever erro; identificar causa; definir prevenção.,Desenvolve aprendizado contínuo.,1,2026-02-14 00:31:12
+26,Confiança,Inventário de Pontos Fortes,Mapeamento de talentos.,Listar competências; validar com gestor.,Aumenta autoconfiança profissional.,1,2026-02-14 00:31:12
+27,Autorregulação,Pausa Consciente,Controle da impulsividade.,Aplicar técnica de respiração; postergar reação.,Reduz reatividade emocional.,1,2026-02-14 00:31:12
+28,Metas,Revisão Anual de Objetivos,Reorganização estratégica pessoal.,Revisar metas; eliminar desalinhadas; redefinir prioridades.,Aumenta foco estratégico.,1,2026-02-14 00:31:12
+29,Negociação,Roteiro de Negociação,Preparação estruturada.,Definir objetivo; interesses; proposta final.,Eleva preparo em negociações.,1,2026-02-14 00:31:12
+30,Accountability,Compromisso Público,Formalização de metas.,Definir meta; comunicar; atualizar progresso.,Fortalece responsabilidade pessoal.,1,2026-02-14 00:31:12
+31,Empatia,Escuta Ativa,Prática consciente de escuta.,Ouvir sem interromper; validar entendimento.,Desenvolve empatia interpessoal.,1,2026-02-14 00:31:12
+32,Adaptabilidade,Plano de Aprendizado,Atualização profissional contínua.,Escolher curso; aplicar aprendizado; revisar.,Aumenta capacidade de adaptação.,1,2026-02-14 00:31:12
+33,Mudança,Plano de Comunicação,Estruturação de comunicação de mudança.,Definir público; mensagem; cronograma.,Reduz resistência organizacional.,1,2026-02-14 00:31:12
+34,Performance,Definição de KPIs,Criação de indicadores claros.,Definir métrica; meta; acompanhar mensalmente.,Aumenta controle sobre resultados.,1,2026-02-14 00:31:12
+35,Propósito,Definição de Propósito da Equipe,Clareza do porquê coletivo.,Definir propósito; comunicar; revisar.,Amplia engajamento da equipe.,1,2026-02-14 00:31:12
+36,Resiliência,Plano de Superação,Estruturação de resposta a desafios.,Mapear desafio; listar recursos; definir plano.,Fortalece resistência emocional.,1,2026-02-14 00:31:12
+37,Ética,Análise de Dilemas,Reflexão sobre decisões críticas.,Descrever dilema; avaliar impacto; decidir.,Desenvolve julgamento ético.,1,2026-02-14 00:31:12
+38,Comunicação Escrita,Padronização de Relatórios,Organização da comunicação formal.,Criar modelo padrão; revisar clareza.,Melhora profissionalismo.,1,2026-02-14 00:31:12
+39,Influência Estratégica,Mapeamento de Stakeholders,Identificação de partes interessadas.,Listar stakeholders; definir estratégia de abordagem.,Aumenta capacidade de articulação.,1,2026-02-14 00:31:12
+40,Futuro,Análise de Tendências,Estudo de movimentos do mercado.,Pesquisar tendências; avaliar impacto.,Desenvolve visão de longo prazo.,1,2026-02-14 00:31:12
+41,Disciplina,Rotina Matinal,Criação de ritual produtivo.,Definir 3 hábitos matinais; aplicar diariamente.,Aumenta consistência comportamental.,1,2026-02-14 00:31:12
+42,Networking,Plano de Relacionamento,Ampliação de conexões profissionais.,Listar contatos-chave; agendar conversas.,Expande capital relacional.,1,2026-02-14 00:31:12
+43,Autoconfiança,Registro de Conquistas,Mapeamento de resultados pessoais.,Registrar conquistas mensais; revisar.,Reforça autoconfiança.,1,2026-02-14 00:31:12
+44,Criatividade,Técnica SCAMPER,Exploração estruturada de ideias.,Aplicar perguntas SCAMPER a desafio real.,Amplia capacidade criativa.,1,2026-02-14 00:31:12
+45,Financeiro,Estimativa de Custos,Cálculo preliminar de investimento.,Mapear recursos; estimar custos.,Desenvolve visão financeira.,1,2026-02-14 00:31:12
+46,Prioridade Estratégica,Eliminação de Baixo Impacto,Revisão crítica de tarefas.,Eliminar 20% das tarefas menos estratégicas.,Aumenta foco estratégico.,1,2026-02-14 00:31:12
+47,Mindset,Revisão de Crenças,Identificação de crenças limitantes.,Listar crenças; questionar evidências; redefinir.,Fortalece mentalidade de crescimento.,1,2026-02-14 00:31:12
+48,Colaboração,Projeto Interáreas,Execução conjunta entre setores.,Definir objetivo comum; dividir responsabilidades.,Amplia cooperação organizacional.,1,2026-02-14 00:31:12
+49,Melhoria Contínua,Aplicação do PDCA,Ciclo estruturado de melhoria.,Planejar; executar; revisar; ajustar.,Desenvolve disciplina de melhoria.,1,2026-02-14 00:31:12
+50,Propósito Profissional,Missão Pessoal,Formalização de propósito de carreira.,Escrever missão; alinhar com metas.,Aumenta clareza profissional.,1,2026-02-14 00:31:12
+30001,Atenção,Jogos de Tabuleiro,"Jogo de Tabuleiro - Aprender a jogar War que é um jogo de tabuleiro clássico da Grow (lançado em 1972, baseado no Risk) de estratégia e sorte para 3 a 6 jogadores, onde o objetivo é conquistar territórios ou cumprir missões secretas. Com regras que envolvem posicionar exércitos e atacar com dados, o jogo simula conflitos globais",Aprender a jogar War,"Aprender a jogar War contribui para desenvolver:
+
+atenção concentrada
+atenção sustentada
+atenção seletiva
+leitura estratégica do cenário
+controle da impulsividade
+flexibilidade de foco
+
+Essas habilidades são transferíveis para atividades que exigem planejamento, análise de riscos e tomada de decisão estratégica.",1,2026-03-08 23:20:42
+30002,Atenção,Aprender a Jogar Tangran,"Nesta atividade, o participante deverá utilizar as sete peças do Tangram para formar uma figura proposta. Inicialmente, deve observar atentamente o modelo apresentado, analisando suas formas e proporções. Em seguida, deverá organizar as peças, experimentando diferentes posições e rotações até conseguir reproduzir a figura utilizando todas as peças, sem sobreposição.
+
+Durante a realização, é importante manter a atenção aos detalhes das formas, testar possibilidades com calma e ajustar as peças sempre que necessário até chegar à solução correta. 🧩",Aprender e praticar Tangram contribui para desenvolver:,"Contribui para desenvolver:
+
+atenção concentrada
+atenção sustentada
+atenção seletiva
+percepção visual e espacial
+controle da impulsividade
+foco na resolução de problemas
+
+Essas capacidades são úteis em atividades que exigem precisão, organização mental e análise visual, sendo frequentemente utilizadas em processos educativos e treinamentos cognitivos.",1,2026-03-08 23:26:38
+30003,Gestão do Tempo,Desafio 30 Dias de Gestão do Tempo Focada,"Esta tarefa visa aprimorar sua gestão do tempo através da priorização e foco em atividades de alto impacto, reduzindo distrações e otimizando sua produtividade diária.","1. Durante 30 dias, no início de cada semana, identifique as 3 tarefas mais importantes (prioridades 'A') que trarão maior impacto para seus objetivos e os da equipe. 
+
+2. Bloqueie blocos de tempo ininterruptos em sua agenda para trabalhar exclusivamente nessas prioridades 'A' diariamente, evitando verificações constantes de e-mail ou mensagens. 
+
+3. Ao final de cada dia, reserve 15 minutos para revisar o que foi realizado, planejar o dia seguinte e identificar possíveis gargalos ou distrações. 
+
+4. Registre semanalmente como a priorização e o foco impactaram sua produtividade e o cumprimento de prazos.","Você desenvolverá a capacidade de identificar e focar nas tarefas mais críticas, melhorando sua eficiência e a entrega de resultados. Aprenderá a proteger seu tempo de distrações e a planejar de forma mais estratégica, aumentando sua sensação de controle e reduzindo o estresse.",1,2026-03-08 23:28:49

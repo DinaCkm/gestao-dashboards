@@ -1,0 +1,35 @@
+{
+  "query": "SELECT e.id, e.title, e.videoLink FROM events e WHERE e.videoLink IS NULL AND NOT EXISTS (SELECT 1 FROM scheduled_webinars sw WHERE LOWER(TRIM(sw.title)) = LOWER(TRIM(e.title)) AND sw.youtubeLink IS NOT NULL AND sw.youtubeLink != '') ORDER BY e.eventDate DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT e.id, e.title, e.videoLink FROM events e WHERE e.videoLink IS NULL AND NOT EXISTS (SELECT 1 FROM scheduled_webinars sw WHERE LOWER(TRIM(sw.title)) = LOWER(TRIM(e.title)) AND sw.youtubeLink IS NOT NULL AND sw.youtubeLink != '') ORDER BY e.eventDate DESC;",
+  "rows": [
+    {
+      "id": "30027",
+      "title": "2026/02 - O Código de Aprendizagem - 02 - A Execução",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30026",
+      "title": "2026/01 - O Código de Aprendizagem - 01 - O Preparo",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30014",
+      "title": "2025/19 - Aula 01 – Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30025",
+      "title": "2025/19 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "videoLink": "NULL"
+    },
+    {
+      "id": "30032",
+      "title": "2025/19 - Aula 01 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "videoLink": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tvideoLink\n30027\t2026/02 - O Código de Aprendizagem - 02 - A Execução\tNULL\n30026\t2026/01 - O Código de Aprendizagem - 01 - O Preparo\tNULL\n30014\t2025/19 - Aula 01 – Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\tNULL\n30025\t2025/19 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\tNULL\n30032\t2025/19 - Aula 01 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 347
+}

@@ -1,0 +1,25 @@
+{
+  "query": "SELECT a.id, a.name, a.externalId FROM alunos a WHERE a.name LIKE '%Bruno%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.externalId FROM alunos a WHERE a.name LIKE '%Bruno%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "30056",
+      "name": "Bruno Henrique Vila Verde",
+      "externalId": "667271"
+    },
+    {
+      "id": "30057",
+      "name": "Bruno Martins Vieira",
+      "externalId": "667272"
+    },
+    {
+      "id": "30080",
+      "name": "BRUNO DE JESUS RODRIGUES",
+      "externalId": "676283"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\texternalId\n30056\tBruno Henrique Vila Verde\t667271\n30057\tBruno Martins Vieira\t667272\n30080\tBRUNO DE JESUS RODRIGUES\t676283\n",
+  "stderr": "",
+  "execution_time_ms": 421
+}

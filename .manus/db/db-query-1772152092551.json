@@ -1,0 +1,16 @@
+{
+  "query": "SELECT a.id, a.name, a.consultorId, c.name as mentor_name FROM alunos a LEFT JOIN consultors c ON a.consultorId = c.id WHERE a.name LIKE '%Valci%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.consultorId, c.name as mentor_name FROM alunos a LEFT JOIN consultors c ON a.consultorId = c.id WHERE a.name LIKE '%Valci%';",
+  "rows": [
+    {
+      "id": "30077",
+      "name": "Valci Pereira Da Silva Junior",
+      "consultorId": "NULL",
+      "mentor_name": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tconsultorId\tmentor_name\n30077\tValci Pereira Da Silva Junior\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 354
+}

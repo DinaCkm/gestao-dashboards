@@ -1,0 +1,15 @@
+{
+  "query": "SELECT t.id, t.name, t.programId FROM turmas t WHERE t.name LIKE '%Embrapii%Personalizada%' OR t.name LIKE '%Embrapii%Jornada%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT t.id, t.name, t.programId FROM turmas t WHERE t.name LIKE '%Embrapii%Personalizada%' OR t.name LIKE '%Embrapii%Jornada%';",
+  "rows": [
+    {
+      "id": "30009",
+      "name": "[2025] Embrapii | Jornada Personalizada",
+      "programId": "18"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tprogramId\n30009\t[2025] Embrapii | Jornada Personalizada\t18\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

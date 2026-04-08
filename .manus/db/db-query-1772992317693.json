@@ -1,0 +1,82 @@
+{
+  "query": "SELECT a.id, a.name, a.email, a.consultorId, a.programId, a.bypassOnboarding, a.isActive FROM alunos a WHERE a.name LIKE '%jo%o%' OR a.name LIKE '%Jos%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.email, a.consultorId, a.programId, a.bypassOnboarding, a.isActive FROM alunos a WHERE a.name LIKE '%jo%o%' OR a.name LIKE '%Jos%';",
+  "rows": [
+    {
+      "id": "208",
+      "name": "JOSIANE CLAIRE SCHNEIDER LEMOS",
+      "email": "Josiane_Schneider@banrisul.com.br",
+      "consultorId": "NULL",
+      "programId": "19",
+      "bypassOnboarding": "0",
+      "isActive": "1"
+    },
+    {
+      "id": "30004",
+      "name": "Joelma Da Silva Mourão",
+      "email": "joelma.mourao@ac.sebrae.com.br",
+      "consultorId": "28",
+      "programId": "16",
+      "bypassOnboarding": "0",
+      "isActive": "1"
+    },
+    {
+      "id": "30009",
+      "name": "Ruama Araujo Dos Santos Demir",
+      "email": "ruama.santos@yahoo.com.br",
+      "consultorId": "28",
+      "programId": "16",
+      "bypassOnboarding": "0",
+      "isActive": "1"
+    },
+    {
+      "id": "30020",
+      "name": "Adrielle De Araújo Santos Bessa",
+      "email": "adrielle.santos@ac.sebrae.com.br",
+      "consultorId": "28",
+      "programId": "16",
+      "bypassOnboarding": "0",
+      "isActive": "1"
+    },
+    {
+      "id": "30030",
+      "name": "Marinete Lourdes Araujo De Queiroz",
+      "email": "marinete.queiroz@ac.sebrae.com.br",
+      "consultorId": "28",
+      "programId": "16",
+      "bypassOnboarding": "0",
+      "isActive": "1"
+    },
+    {
+      "id": "30066",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "consultorId": "35",
+      "programId": "17",
+      "bypassOnboarding": "0",
+      "isActive": "1"
+    },
+    {
+      "id": "30092",
+      "name": "Antonio Luis Ferreira dos Anjos Filho",
+      "email": "antonio.filho@to.sebrae.com.br",
+      "consultorId": "32",
+      "programId": "17",
+      "bypassOnboarding": "0",
+      "isActive": "1"
+    },
+    {
+      "id": "330001",
+      "name": "Jose da Silva",
+      "email": "jose@teste.com",
+      "consultorId": "NULL",
+      "programId": "19",
+      "bypassOnboarding": "0",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tconsultorId\tprogramId\tbypassOnboarding\tisActive\n208\tJOSIANE CLAIRE SCHNEIDER LEMOS\tJosiane_Schneider@banrisul.com.br\tNULL\t19\t0\t1\n30004\tJoelma Da Silva Mourão\tjoelma.mourao@ac.sebrae.com.br\t28\t16\t0\t1\n30009\tRuama Araujo Dos Santos Demir\truama.santos@yahoo.com.br\t28\t16\t0\t1\n30020\tAdrielle De Araújo Santos Bessa\tadrielle.santos@ac.sebrae.com.br\t28\t16\t0\t1\n30030\tMarinete Lourdes Araujo De Queiroz\tmarinete.queiroz@ac.sebrae.com.br\t28\t16\t0\t1\n30066\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\t35\t17\t0\t1\n30092\tAntonio Luis Ferreira dos Anjos Filho\tantonio.filho@to.sebrae.com.br\t32\t17\t0\t1\n330001\tJose da Silva\tjose@teste.com\tNULL\t19\t0\t1\n",
+  "stderr": "",
+  "execution_time_ms": 106
+}

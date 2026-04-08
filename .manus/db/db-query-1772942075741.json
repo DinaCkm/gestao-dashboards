@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, name, especialidade, miniCurriculo, photoUrl FROM consultors WHERE name LIKE '%Adriana%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, especialidade, miniCurriculo, photoUrl FROM consultors WHERE name LIKE '%Adriana%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "39",
+      "name": "Adriana Deus",
+      "especialidade": "Gestão e Liderança",
+      "miniCurriculo": "Adriana Deus é Coach e Mentora, está há mais de 5 anos realizando mentorias, coaching e treinamentos com foco em desenvolvimento humano. Uma profissional altamente eficiente e experiente na área da educação e do ensino EAD. Atualmente, ela exerce o cargo de Coordenadora de Ensino EAD desde agosto de 2021, demonstrando habilidades excepcionais na gestão e coordenação de programas educacionais online. Além disso, Adriana possui uma sólida experiência como Analista de Licitações, o que lhe confere uma perspectiva abrangente e estratégica na área. Sua formação em Direito pela Faculdade Zumbi dos Palmares complementa suas habilidades.",
+      "photoUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/mentors/39/photo-1772763938394.png"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tespecialidade\tminiCurriculo\tphotoUrl\n39\tAdriana Deus\tGestão e Liderança\tAdriana Deus é Coach e Mentora, está há mais de 5 anos realizando mentorias, coaching e treinamentos com foco em desenvolvimento humano. Uma profissional altamente eficiente e experiente na área da educação e do ensino EAD. Atualmente, ela exerce o cargo de Coordenadora de Ensino EAD desde agosto de 2021, demonstrando habilidades excepcionais na gestão e coordenação de programas educacionais online. Além disso, Adriana possui uma sólida experiência como Analista de Licitações, o que lhe confere uma perspectiva abrangente e estratégica na área. Sua formação em Direito pela Faculdade Zumbi dos Palmares complementa suas habilidades.\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/mentors/39/photo-1772763938394.png\n",
+  "stderr": "",
+  "execution_time_ms": 103
+}

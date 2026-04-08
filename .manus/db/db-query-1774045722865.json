@@ -1,0 +1,13 @@
+{
+  "query": "SELECT \n  COUNT(DISTINCT ac.competenciaId) as total_competencias\nFROM assessment_competencias ac \nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id \nJOIN alunos a ON ap.alunoId = a.id \nWHERE a.programId = 18;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT \n  COUNT(DISTINCT ac.competenciaId) as total_competencias\nFROM assessment_competencias ac \nJOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id \nJOIN alunos a ON ap.alunoId = a.id \nWHERE a.programId = 18;",
+  "rows": [
+    {
+      "total_competencias": "21"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_competencias\n21\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

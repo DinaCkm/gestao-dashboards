@@ -1,0 +1,90 @@
+{
+  "query": "SELECT DISTINCT a.id, a.name, a.email, a.programId, p.name AS programName, \n  c.id AS consultorId_match, c.name AS consultor_name, c.role AS consultor_role\nFROM alunos a \nLEFT JOIN programs p ON a.programId = p.id\nLEFT JOIN consultors c ON (c.email = a.email OR c.name = a.name)\nWHERE a.isActive = 1 \nAND (\n  a.consultorId = 39 \n  OR a.id IN (SELECT DISTINCT alunoId FROM mentoring_sessions WHERE consultorId = 39)\n)\nORDER BY a.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT DISTINCT a.id, a.name, a.email, a.programId, p.name AS programName, \n  c.id AS consultorId_match, c.name AS consultor_name, c.role AS consultor_role\nFROM alunos a \nLEFT JOIN programs p ON a.programId = p.id\nLEFT JOIN consultors c ON (c.email = a.email OR c.name = a.name)\nWHERE a.isActive = 1 \nAND (\n  a.consultorId = 39 \n  OR a.id IN (SELECT DISTINCT alunoId FROM mentoring_sessions WHERE consultorId = 39)\n)\nORDER BY a.name;",
+  "rows": [
+    {
+      "id": "30100",
+      "name": "Alexandre Crepory Abbott de Oliveira",
+      "email": "alexandre.oliveira@embrapii.org.br",
+      "programId": "18",
+      "programName": "EMBRAPII",
+      "consultorId_match": "NULL",
+      "consultor_name": "NULL",
+      "consultor_role": "NULL"
+    },
+    {
+      "id": "30080",
+      "name": "Bruno de Jesus Rodrigues",
+      "email": "bruno.rodrigues@to.sebrae.com.br",
+      "programId": "17",
+      "programName": "SEBRAE TO",
+      "consultorId_match": "NULL",
+      "consultor_name": "NULL",
+      "consultor_role": "NULL"
+    },
+    {
+      "id": "30086",
+      "name": "Denise da Silva Nunes",
+      "email": "denise.nunes@to.sebrae.com.br",
+      "programId": "17",
+      "programName": "SEBRAE TO",
+      "consultorId_match": "NULL",
+      "consultor_name": "NULL",
+      "consultor_role": "NULL"
+    },
+    {
+      "id": "30088",
+      "name": "Emerson Montenegro Lima",
+      "email": "emerson.lima@to.sebrae.com.br",
+      "programId": "17",
+      "programName": "SEBRAE TO",
+      "consultorId_match": "NULL",
+      "consultor_name": "NULL",
+      "consultor_role": "NULL"
+    },
+    {
+      "id": "30085",
+      "name": "Francisco de Assis Dias Ramos",
+      "email": "francisco.ramos@to.sebrae.com.br",
+      "programId": "17",
+      "programName": "SEBRAE TO",
+      "consultorId_match": "NULL",
+      "consultor_name": "NULL",
+      "consultor_role": "NULL"
+    },
+    {
+      "id": "660014",
+      "name": "Julia Souza Makiyama",
+      "email": "jumakiyama@gmail.com",
+      "programId": "90002",
+      "programName": "Ckm Talents",
+      "consultorId_match": "NULL",
+      "consultor_name": "NULL",
+      "consultor_role": "NULL"
+    },
+    {
+      "id": "30090",
+      "name": "Mayara Rodrigues de Freitas",
+      "email": "mayara.freitas@embrapii.org.br",
+      "programId": "18",
+      "programName": "EMBRAPII",
+      "consultorId_match": "NULL",
+      "consultor_name": "NULL",
+      "consultor_role": "NULL"
+    },
+    {
+      "id": "30099",
+      "name": "Vanessa Bertholdo Vargas",
+      "email": "vanessa.vargas@embrapii.org.br",
+      "programId": "18",
+      "programName": "EMBRAPII",
+      "consultorId_match": "NULL",
+      "consultor_name": "NULL",
+      "consultor_role": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tprogramId\tprogramName\tconsultorId_match\tconsultor_name\tconsultor_role\n30100\tAlexandre Crepory Abbott de Oliveira\talexandre.oliveira@embrapii.org.br\t18\tEMBRAPII\tNULL\tNULL\tNULL\n30080\tBruno de Jesus Rodrigues\tbruno.rodrigues@to.sebrae.com.br\t17\tSEBRAE TO\tNULL\tNULL\tNULL\n30086\tDenise da Silva Nunes\tdenise.nunes@to.sebrae.com.br\t17\tSEBRAE TO\tNULL\tNULL\tNULL\n30088\tEmerson Montenegro Lima\temerson.lima@to.sebrae.com.br\t17\tSEBRAE TO\tNULL\tNULL\tNULL\n30085\tFrancisco de Assis Dias Ramos\tfrancisco.ramos@to.sebrae.com.br\t17\tSEBRAE TO\tNULL\tNULL\tNULL\n660014\tJulia Souza Makiyama\tjumakiyama@gmail.com\t90002\tCkm Talents\tNULL\tNULL\tNULL\n30090\tMayara Rodrigues de Freitas\tmayara.freitas@embrapii.org.br\t18\tEMBRAPII\tNULL\tNULL\tNULL\n30099\tVanessa Bertholdo Vargas\tvanessa.vargas@embrapii.org.br\t18\tEMBRAPII\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

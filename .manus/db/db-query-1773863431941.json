@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, name, externalId, email, turmaId FROM alunos WHERE name LIKE '%Flavia%Balieiro%' OR name LIKE '%Flávia%Balieiro%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, externalId, email, turmaId FROM alunos WHERE name LIKE '%Flavia%Balieiro%' OR name LIKE '%Flávia%Balieiro%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "30040",
+      "name": "Flavia Pereira Balieiro Salgado",
+      "externalId": "651882",
+      "email": "flavia.balieiro@embrapii.org.br",
+      "turmaId": "30002"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\texternalId\temail\tturmaId\n30040\tFlavia Pereira Balieiro Salgado\t651882\tflavia.balieiro@embrapii.org.br\t30002\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

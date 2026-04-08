@@ -1,0 +1,16 @@
+{
+  "query": "SELECT pi.competenciaId, pi.notaAtual, pi.metaNota, c.nome \nFROM plano_individual pi\nJOIN competencias c ON c.id = pi.competenciaId\nWHERE pi.alunoId = 30097 AND c.nome LIKE '%Racioc%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT pi.competenciaId, pi.notaAtual, pi.metaNota, c.nome \nFROM plano_individual pi\nJOIN competencias c ON c.id = pi.competenciaId\nWHERE pi.alunoId = 30097 AND c.nome LIKE '%Racioc%';",
+  "rows": [
+    {
+      "competenciaId": "30010",
+      "notaAtual": "NULL",
+      "metaNota": "7.00",
+      "nome": "Raciocínio Lógico e Espacial"
+    }
+  ],
+  "messages": [],
+  "stdout": "competenciaId\tnotaAtual\tmetaNota\tnome\n30010\tNULL\t7.00\tRaciocínio Lógico e Espacial\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}

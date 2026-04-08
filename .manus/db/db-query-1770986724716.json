@@ -1,0 +1,101 @@
+{
+  "query": "SELECT id, name, externalId, programId, year FROM turmas ORDER BY programId, name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, externalId, programId, year FROM turmas ORDER BY programId, name;",
+  "rows": [
+    {
+      "id": "38",
+      "name": "[2024] SEBRAE Acre - Turma 1.0",
+      "externalId": "95599",
+      "programId": "16",
+      "year": "2024"
+    },
+    {
+      "id": "41",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Básicas",
+      "externalId": "103567",
+      "programId": "16",
+      "year": "2025"
+    },
+    {
+      "id": "42",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Essenciais",
+      "externalId": "105320",
+      "programId": "16",
+      "year": "2025"
+    },
+    {
+      "id": "43",
+      "name": "[2025] SEBRAE Acre - B.E.M. | Masters",
+      "externalId": "107468",
+      "programId": "16",
+      "year": "2025"
+    },
+    {
+      "id": "44",
+      "name": "[2025] SEBRAE Tocantins - Básicas [BS1]",
+      "externalId": "104073",
+      "programId": "17",
+      "year": "2025"
+    },
+    {
+      "id": "45",
+      "name": "[2025] SEBRAE Tocantins - Básicas [BS3]",
+      "externalId": "105645",
+      "programId": "17",
+      "year": "2025"
+    },
+    {
+      "id": "46",
+      "name": "[2025] SEBRAE Tocantins - Essenciais [BS1]",
+      "externalId": "105373",
+      "programId": "17",
+      "year": "2025"
+    },
+    {
+      "id": "47",
+      "name": "[2025] SEBRAE Tocantins - Visão de Futuro [BS2]",
+      "externalId": "103111",
+      "programId": "17",
+      "year": "2025"
+    },
+    {
+      "id": "39",
+      "name": "[2025] Embrapii | Básicas",
+      "externalId": "97600",
+      "programId": "18",
+      "year": "2025"
+    },
+    {
+      "id": "40",
+      "name": "[2025] Embrapii | Jornada Personalizada",
+      "externalId": "106854",
+      "programId": "18",
+      "year": "2025"
+    },
+    {
+      "id": "48",
+      "name": "[2026] Embrapii | Visão do Futuro",
+      "externalId": "108153",
+      "programId": "18",
+      "year": "2026"
+    },
+    {
+      "id": "36",
+      "name": "[2024] Banrisul - B.E.M. | Básicas",
+      "externalId": "95590",
+      "programId": "19",
+      "year": "2024"
+    },
+    {
+      "id": "37",
+      "name": "[2024] Banrisul - B.E.M. | Essenciais",
+      "externalId": "97097",
+      "programId": "19",
+      "year": "2024"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\texternalId\tprogramId\tyear\n38\t[2024] SEBRAE Acre - Turma 1.0\t95599\t16\t2024\n41\t[2025] SEBRAE Acre - B.E.M. | Básicas\t103567\t16\t2025\n42\t[2025] SEBRAE Acre - B.E.M. | Essenciais\t105320\t16\t2025\n43\t[2025] SEBRAE Acre - B.E.M. | Masters\t107468\t16\t2025\n44\t[2025] SEBRAE Tocantins - Básicas [BS1]\t104073\t17\t2025\n45\t[2025] SEBRAE Tocantins - Básicas [BS3]\t105645\t17\t2025\n46\t[2025] SEBRAE Tocantins - Essenciais [BS1]\t105373\t17\t2025\n47\t[2025] SEBRAE Tocantins - Visão de Futuro [BS2]\t103111\t17\t2025\n39\t[2025] Embrapii | Básicas\t97600\t18\t2025\n40\t[2025] Embrapii | Jornada Personalizada\t106854\t18\t2025\n48\t[2026] Embrapii | Visão do Futuro\t108153\t18\t2026\n36\t[2024] Banrisul - B.E.M. | Básicas\t95590\t19\t2024\n37\t[2024] Banrisul - B.E.M. | Essenciais\t97097\t19\t2024\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

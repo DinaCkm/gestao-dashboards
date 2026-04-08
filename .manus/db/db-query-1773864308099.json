@@ -1,0 +1,28 @@
+{
+  "query": "SELECT ap.id, ap.alunoId, ap.turmaId, ap.trilhaId, ap.status, \n       t.name as turmaNome, tr.name as trilhaNome\nFROM assessment_pdi ap\nLEFT JOIN turmas t ON ap.turmaId = t.id\nLEFT JOIN trilhas tr ON ap.trilhaId = tr.id\nWHERE ap.alunoId = 30040\nORDER BY ap.id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id, ap.alunoId, ap.turmaId, ap.trilhaId, ap.status, \n       t.name as turmaNome, tr.name as trilhaNome\nFROM assessment_pdi ap\nLEFT JOIN turmas t ON ap.turmaId = t.id\nLEFT JOIN trilhas tr ON ap.trilhaId = tr.id\nWHERE ap.alunoId = 30040\nORDER BY ap.id;",
+  "rows": [
+    {
+      "id": "60344",
+      "alunoId": "30040",
+      "turmaId": "30009",
+      "trilhaId": "60001",
+      "status": "ativo",
+      "turmaNome": "[2025] Embrapii | Jornada Personalizada",
+      "trilhaNome": "Jornada Personalizada"
+    },
+    {
+      "id": "60361",
+      "alunoId": "30040",
+      "turmaId": "30002",
+      "trilhaId": "1",
+      "status": "ativo",
+      "turmaNome": "[2025] Embrapii | Basic",
+      "trilhaNome": "Basic"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tturmaId\ttrilhaId\tstatus\tturmaNome\ttrilhaNome\n60344\t30040\t30009\t60001\tativo\t[2025] Embrapii | Jornada Personalizada\tJornada Personalizada\n60361\t30040\t30002\t1\tativo\t[2025] Embrapii | Basic\tBasic\n",
+  "stderr": "",
+  "execution_time_ms": 102
+}

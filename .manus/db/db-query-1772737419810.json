@@ -1,0 +1,37 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.alunoId, u.consultorId as userConsultorId, u.role, u.isActive FROM users u WHERE u.alunoId IN (SELECT a.id FROM alunos a WHERE a.consultorId IN (SELECT id FROM consultors WHERE name LIKE '%Adriana%'));",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.alunoId, u.consultorId as userConsultorId, u.role, u.isActive FROM users u WHERE u.alunoId IN (SELECT a.id FROM alunos a WHERE a.consultorId IN (SELECT id FROM consultors WHERE name LIKE '%Adriana%'));",
+  "rows": [
+    {
+      "id": "660206",
+      "name": "Mayara Rodrigues de Freitas",
+      "email": "mayara.freitas@embrapii.org.br",
+      "alunoId": "30090",
+      "userConsultorId": "NULL",
+      "role": "user",
+      "isActive": "1"
+    },
+    {
+      "id": "660209",
+      "name": "Vanessa Bertholdo Vargas",
+      "email": "vanessa.vargas@embrapii.org.br",
+      "alunoId": "30099",
+      "userConsultorId": "NULL",
+      "role": "user",
+      "isActive": "1"
+    },
+    {
+      "id": "2040152",
+      "name": "MARIA TESTE DA SILVA",
+      "email": "dina@ckmtalents.net",
+      "alunoId": "90013",
+      "userConsultorId": "NULL",
+      "role": "user",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\talunoId\tuserConsultorId\trole\tisActive\n660206\tMayara Rodrigues de Freitas\tmayara.freitas@embrapii.org.br\t30090\tNULL\tuser\t1\n660209\tVanessa Bertholdo Vargas\tvanessa.vargas@embrapii.org.br\t30099\tNULL\tuser\t1\n2040152\tMARIA TESTE DA SILVA\tdina@ckmtalents.net\t90013\tNULL\tuser\t1\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}

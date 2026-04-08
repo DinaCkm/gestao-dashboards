@@ -1,0 +1,66 @@
+{
+  "query": "SELECT ac.id, ac.assessmentPdiId, ac.competenciaId, c.nome AS competenciaNome, ac.peso, ac.notaCorte, ac.nivelAtual, ac.metaFinal, ac.metaCiclo1, ac.metaCiclo2, ac.microInicio, ac.microTermino\nFROM assessment_competencias ac\nLEFT JOIN competencias c ON ac.competenciaId = c.id\nWHERE ac.assessmentPdiId IN (210001, 210002)\nORDER BY ac.assessmentPdiId, ac.id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ac.id, ac.assessmentPdiId, ac.competenciaId, c.nome AS competenciaNome, ac.peso, ac.notaCorte, ac.nivelAtual, ac.metaFinal, ac.metaCiclo1, ac.metaCiclo2, ac.microInicio, ac.microTermino\nFROM assessment_competencias ac\nLEFT JOIN competencias c ON ac.competenciaId = c.id\nWHERE ac.assessmentPdiId IN (210001, 210002)\nORDER BY ac.assessmentPdiId, ac.id;",
+  "rows": [
+    {
+      "id": "210001",
+      "assessmentPdiId": "210001",
+      "competenciaId": "30007",
+      "competenciaNome": "Empatia",
+      "peso": "obrigatoria",
+      "notaCorte": "80.00",
+      "nivelAtual": "20.00",
+      "metaFinal": "100.00",
+      "metaCiclo1": "60.00",
+      "metaCiclo2": "80.00",
+      "microInicio": "2026-04-01",
+      "microTermino": "2026-04-30"
+    },
+    {
+      "id": "210002",
+      "assessmentPdiId": "210001",
+      "competenciaId": "30008",
+      "competenciaNome": "Escuta Ativa",
+      "peso": "obrigatoria",
+      "notaCorte": "80.00",
+      "nivelAtual": "30.00",
+      "metaFinal": "100.00",
+      "metaCiclo1": "60.00",
+      "metaCiclo2": "80.00",
+      "microInicio": "2026-04-01",
+      "microTermino": "2026-04-30"
+    },
+    {
+      "id": "210003",
+      "assessmentPdiId": "210001",
+      "competenciaId": "30009",
+      "competenciaNome": "Memória",
+      "peso": "obrigatoria",
+      "notaCorte": "80.00",
+      "nivelAtual": "30.00",
+      "metaFinal": "100.00",
+      "metaCiclo1": "60.00",
+      "metaCiclo2": "80.00",
+      "microInicio": "2026-04-01",
+      "microTermino": "2026-04-30"
+    },
+    {
+      "id": "210004",
+      "assessmentPdiId": "210002",
+      "competenciaId": "30014",
+      "competenciaNome": "Comunicação Assertiva",
+      "peso": "obrigatoria",
+      "notaCorte": "80.00",
+      "nivelAtual": "30.00",
+      "metaFinal": "100.00",
+      "metaCiclo1": "60.00",
+      "metaCiclo2": "80.00",
+      "microInicio": "2026-05-01",
+      "microTermino": "2026-05-30"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tassessmentPdiId\tcompetenciaId\tcompetenciaNome\tpeso\tnotaCorte\tnivelAtual\tmetaFinal\tmetaCiclo1\tmetaCiclo2\tmicroInicio\tmicroTermino\n210001\t210001\t30007\tEmpatia\tobrigatoria\t80.00\t20.00\t100.00\t60.00\t80.00\t2026-04-01\t2026-04-30\n210002\t210001\t30008\tEscuta Ativa\tobrigatoria\t80.00\t30.00\t100.00\t60.00\t80.00\t2026-04-01\t2026-04-30\n210003\t210001\t30009\tMemória\tobrigatoria\t80.00\t30.00\t100.00\t60.00\t80.00\t2026-04-01\t2026-04-30\n210004\t210002\t30014\tComunicação Assertiva\tobrigatoria\t80.00\t30.00\t100.00\t60.00\t80.00\t2026-05-01\t2026-05-30\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

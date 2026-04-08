@@ -1,0 +1,82 @@
+{
+  "query": "SELECT ac.id, ac.assessmentPdiId, ac.competenciaId, ac.nivelAtual, ac.metaFinal, c.nome as compNome FROM assessment_competencias ac LEFT JOIN competencias c ON ac.competenciaId = c.id WHERE ac.assessmentPdiId IN (SELECT id FROM assessment_pdi WHERE alunoId = 30066);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ac.id, ac.assessmentPdiId, ac.competenciaId, ac.nivelAtual, ac.metaFinal, c.nome as compNome FROM assessment_competencias ac LEFT JOIN competencias c ON ac.competenciaId = c.id WHERE ac.assessmentPdiId IN (SELECT id FROM assessment_pdi WHERE alunoId = 30066);",
+  "rows": [
+    {
+      "id": "62538",
+      "assessmentPdiId": "60403",
+      "competenciaId": "30013",
+      "nivelAtual": "NULL",
+      "metaFinal": "NULL",
+      "compNome": "Arquitetura de Mudanças"
+    },
+    {
+      "id": "62539",
+      "assessmentPdiId": "60403",
+      "competenciaId": "30015",
+      "nivelAtual": "NULL",
+      "metaFinal": "NULL",
+      "compNome": "Decisões Ágeis"
+    },
+    {
+      "id": "62540",
+      "assessmentPdiId": "60403",
+      "competenciaId": "30016",
+      "nivelAtual": "NULL",
+      "metaFinal": "NULL",
+      "compNome": "Estratégia de Longo Alcance"
+    },
+    {
+      "id": "62543",
+      "assessmentPdiId": "60403",
+      "competenciaId": "30021",
+      "nivelAtual": "NULL",
+      "metaFinal": "NULL",
+      "compNome": "Mentalidade Sistêmica"
+    },
+    {
+      "id": "62544",
+      "assessmentPdiId": "60403",
+      "competenciaId": "30022",
+      "nivelAtual": "NULL",
+      "metaFinal": "NULL",
+      "compNome": "Mindset Visionário"
+    },
+    {
+      "id": "62545",
+      "assessmentPdiId": "60403",
+      "competenciaId": "30028",
+      "nivelAtual": "NULL",
+      "metaFinal": "NULL",
+      "compNome": "Radar de Cenários"
+    },
+    {
+      "id": "62537",
+      "assessmentPdiId": "60403",
+      "competenciaId": "30034",
+      "nivelAtual": "NULL",
+      "metaFinal": "NULL",
+      "compNome": "Adaptabilidade Dinâmica"
+    },
+    {
+      "id": "62541",
+      "assessmentPdiId": "60403",
+      "competenciaId": "30035",
+      "nivelAtual": "NULL",
+      "metaFinal": "NULL",
+      "compNome": "Gestão da Comunicação"
+    },
+    {
+      "id": "62542",
+      "assessmentPdiId": "60403",
+      "competenciaId": "30036",
+      "nivelAtual": "NULL",
+      "metaFinal": "NULL",
+      "compNome": "Inteligência Emocional Tática"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tassessmentPdiId\tcompetenciaId\tnivelAtual\tmetaFinal\tcompNome\n62538\t60403\t30013\tNULL\tNULL\tArquitetura de Mudanças\n62539\t60403\t30015\tNULL\tNULL\tDecisões Ágeis\n62540\t60403\t30016\tNULL\tNULL\tEstratégia de Longo Alcance\n62543\t60403\t30021\tNULL\tNULL\tMentalidade Sistêmica\n62544\t60403\t30022\tNULL\tNULL\tMindset Visionário\n62545\t60403\t30028\tNULL\tNULL\tRadar de Cenários\n62537\t60403\t30034\tNULL\tNULL\tAdaptabilidade Dinâmica\n62541\t60403\t30035\tNULL\tNULL\tGestão da Comunicação\n62542\t60403\t30036\tNULL\tNULL\tInteligência Emocional Tática\n",
+  "stderr": "",
+  "execution_time_ms": 384
+}

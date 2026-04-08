@@ -1,0 +1,14 @@
+{
+  "query": "\nSELECT ap.alunoId, a.name AS aluno_nome\nFROM appointment_participants ap\nLEFT JOIN alunos a ON ap.alunoId = a.id\nWHERE ap.appointmentId = 240001;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT ap.alunoId, a.name AS aluno_nome\nFROM appointment_participants ap\nLEFT JOIN alunos a ON ap.alunoId = a.id\nWHERE ap.appointmentId = 240001;\n",
+  "rows": [
+    {
+      "alunoId": "570089",
+      "aluno_nome": "Elio Puperi Alves da Silveira"
+    }
+  ],
+  "messages": [],
+  "stdout": "alunoId\taluno_nome\n570089\tElio Puperi Alves da Silveira\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

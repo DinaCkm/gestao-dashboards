@@ -1,0 +1,76 @@
+{
+  "query": "SELECT a.id as aluno_id, a.name, ap.id as pdi_id, ap.trilhaId, t.name as trilha_nome, ap.status, ap.macroInicio, ap.macroTermino, \n(SELECT COUNT(*) FROM assessment_competencias ac WHERE ac.assessmentPdiId = ap.id) as num_competencias\nFROM alunos a \nJOIN assessment_pdi ap ON ap.alunoId = a.id \nLEFT JOIN trilhas t ON t.id = ap.trilhaId\nWHERE a.name LIKE '%Fabio%' OR a.name LIKE '%Fábio%'\nORDER BY a.name, ap.trilhaId, ap.createdAt;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id as aluno_id, a.name, ap.id as pdi_id, ap.trilhaId, t.name as trilha_nome, ap.status, ap.macroInicio, ap.macroTermino, \n(SELECT COUNT(*) FROM assessment_competencias ac WHERE ac.assessmentPdiId = ap.id) as num_competencias\nFROM alunos a \nJOIN assessment_pdi ap ON ap.alunoId = a.id \nLEFT JOIN trilhas t ON t.id = ap.trilhaId\nWHERE a.name LIKE '%Fabio%' OR a.name LIKE '%Fábio%'\nORDER BY a.name, ap.trilhaId, ap.createdAt;",
+  "rows": [
+    {
+      "aluno_id": "30039",
+      "name": "Fabio Maya Cavalcante",
+      "pdi_id": "30069",
+      "trilhaId": "1",
+      "trilha_nome": "Básica",
+      "status": "ativo",
+      "macroInicio": "2025-03-24",
+      "macroTermino": "2026-03-30",
+      "num_competencias": "8"
+    },
+    {
+      "aluno_id": "30039",
+      "name": "Fabio Maya Cavalcante",
+      "pdi_id": "30070",
+      "trilhaId": "4",
+      "trilha_nome": "Visão de Futuro",
+      "status": "ativo",
+      "macroInicio": "2025-03-24",
+      "macroTermino": "2026-03-30",
+      "num_competencias": "3"
+    },
+    {
+      "aluno_id": "30001",
+      "name": "Fabio Silva De Oliveira",
+      "pdi_id": "30071",
+      "trilhaId": "1",
+      "trilha_nome": "Básica",
+      "status": "ativo",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "num_competencias": "3"
+    },
+    {
+      "aluno_id": "30001",
+      "name": "Fabio Silva De Oliveira",
+      "pdi_id": "30072",
+      "trilhaId": "1",
+      "trilha_nome": "Básica",
+      "status": "ativo",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "num_competencias": "7"
+    },
+    {
+      "aluno_id": "30001",
+      "name": "Fabio Silva De Oliveira",
+      "pdi_id": "30073",
+      "trilhaId": "2",
+      "trilha_nome": "Essencial",
+      "status": "ativo",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "num_competencias": "7"
+    },
+    {
+      "aluno_id": "30001",
+      "name": "Fabio Silva De Oliveira",
+      "pdi_id": "30074",
+      "trilhaId": "3",
+      "trilha_nome": "Master",
+      "status": "congelado",
+      "macroInicio": "2024-10-10",
+      "macroTermino": "2026-10-30",
+      "num_competencias": "5"
+    }
+  ],
+  "messages": [],
+  "stdout": "aluno_id\tname\tpdi_id\ttrilhaId\ttrilha_nome\tstatus\tmacroInicio\tmacroTermino\tnum_competencias\n30039\tFabio Maya Cavalcante\t30069\t1\tBásica\tativo\t2025-03-24\t2026-03-30\t8\n30039\tFabio Maya Cavalcante\t30070\t4\tVisão de Futuro\tativo\t2025-03-24\t2026-03-30\t3\n30001\tFabio Silva De Oliveira\t30071\t1\tBásica\tativo\t2024-10-10\t2026-10-30\t3\n30001\tFabio Silva De Oliveira\t30072\t1\tBásica\tativo\t2024-10-10\t2026-10-30\t7\n30001\tFabio Silva De Oliveira\t30073\t2\tEssencial\tativo\t2024-10-10\t2026-10-30\t7\n30001\tFabio Silva De Oliveira\t30074\t3\tMaster\tcongelado\t2024-10-10\t2026-10-30\t5\n",
+  "stderr": "",
+  "execution_time_ms": 357
+}

@@ -1,0 +1,10 @@
+{
+  "query": "SELECT COUNT(*) as total FROM student_performance; SELECT upload_id, COUNT(*) as records FROM student_performance GROUP BY upload_id ORDER BY upload_id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total FROM student_performance; SELECT upload_id, COUNT(*) as records FROM student_performance GROUP BY upload_id ORDER BY upload_id DESC LIMIT 5;",
+  "returncode": 1,
+  "logs": [
+    "total",
+    "1513",
+    "ERROR 1054 (42S22) at line 1: Unknown column 'upload_id' in 'group statement'"
+  ]
+}

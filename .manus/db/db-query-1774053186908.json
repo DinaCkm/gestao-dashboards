@@ -1,0 +1,38 @@
+{
+  "query": "SELECT m.* FROM metas m WHERE m.alunoId = 660014;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT m.* FROM metas m WHERE m.alunoId = 660014;",
+  "rows": [
+    {
+      "id": "150001",
+      "alunoId": "660014",
+      "assessmentCompetenciaId": "210004",
+      "competenciaId": "30014",
+      "assessmentPdiId": "210002",
+      "taskLibraryId": "NULL",
+      "titulo": "Realizar Palestra na Comunidade que participa",
+      "descricao": "NULL",
+      "definidaPor": "39",
+      "isActive": "1",
+      "createdAt": "2026-03-20 17:43:59",
+      "updatedAt": "2026-03-20 17:43:59"
+    },
+    {
+      "id": "150002",
+      "alunoId": "660014",
+      "assessmentCompetenciaId": "210004",
+      "competenciaId": "30014",
+      "assessmentPdiId": "210002",
+      "taskLibraryId": "NULL",
+      "titulo": "Participar ativamente nas reuniões da empresa",
+      "descricao": "NULL",
+      "definidaPor": "39",
+      "isActive": "1",
+      "createdAt": "2026-03-20 17:45:29",
+      "updatedAt": "2026-03-20 17:45:29"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tassessmentCompetenciaId\tcompetenciaId\tassessmentPdiId\ttaskLibraryId\ttitulo\tdescricao\tdefinidaPor\tisActive\tcreatedAt\tupdatedAt\n150001\t660014\t210004\t30014\t210002\tNULL\tRealizar Palestra na Comunidade que participa\tNULL\t39\t1\t2026-03-20 17:43:59\t2026-03-20 17:43:59\n150002\t660014\t210004\t30014\t210002\tNULL\tParticipar ativamente nas reuniões da empresa\tNULL\t39\t1\t2026-03-20 17:45:29\t2026-03-20 17:45:29\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

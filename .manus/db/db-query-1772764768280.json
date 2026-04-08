@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, name, email, cpf, turmaId, trilhaId, programId, consultorId FROM alunos WHERE name LIKE '%Vera%' OR name LIKE '%Braga%' ORDER BY name",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, cpf, turmaId, trilhaId, programId, consultorId FROM alunos WHERE name LIKE '%Vera%' OR name LIKE '%Braga%' ORDER BY name",
+  "rows": [
+    {
+      "id": "30013",
+      "name": "Claudia Veras Baima",
+      "email": "claudia.baima@ac.sebrae.com.br",
+      "cpf": "NULL",
+      "turmaId": "30001",
+      "trilhaId": "1",
+      "programId": "16",
+      "consultorId": "28"
+    },
+    {
+      "id": "30078",
+      "name": "Vera Lucia Teodoro Braga",
+      "email": "vera.braga@to.sebrae.com.br",
+      "cpf": "48483389134",
+      "turmaId": "30003",
+      "trilhaId": "4",
+      "programId": "17",
+      "consultorId": "35"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tcpf\tturmaId\ttrilhaId\tprogramId\tconsultorId\n30013\tClaudia Veras Baima\tclaudia.baima@ac.sebrae.com.br\tNULL\t30001\t1\t16\t28\n30078\tVera Lucia Teodoro Braga\tvera.braga@to.sebrae.com.br\t48483389134\t30003\t4\t17\t35\n",
+  "stderr": "",
+  "execution_time_ms": 348
+}

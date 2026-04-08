@@ -1,0 +1,24 @@
+{
+  "query": "SELECT eal.id, eal.alunoId, a.name, eal.tipoAlerta, eal.createdAt \nFROM email_alertas_log eal \nJOIN alunos a ON a.id = eal.alunoId \nWHERE eal.alunoId IN (30055, 30064) \nAND eal.tipoAlerta = 'onboarding_lembrete_24h'\nORDER BY eal.createdAt DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT eal.id, eal.alunoId, a.name, eal.tipoAlerta, eal.createdAt \nFROM email_alertas_log eal \nJOIN alunos a ON a.id = eal.alunoId \nWHERE eal.alunoId IN (30055, 30064) \nAND eal.tipoAlerta = 'onboarding_lembrete_24h'\nORDER BY eal.createdAt DESC;",
+  "rows": [
+    {
+      "id": "120135",
+      "alunoId": "30064",
+      "name": "Hide Senna De Sousa Soares",
+      "tipoAlerta": "onboarding_lembrete_24h",
+      "createdAt": "2026-03-21 01:05:34"
+    },
+    {
+      "id": "120127",
+      "alunoId": "30055",
+      "name": "Antonio Louça Curcino",
+      "tipoAlerta": "onboarding_lembrete_24h",
+      "createdAt": "2026-03-21 01:05:28"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tname\ttipoAlerta\tcreatedAt\n120135\t30064\tHide Senna De Sousa Soares\tonboarding_lembrete_24h\t2026-03-21 01:05:34\n120127\t30055\tAntonio Louça Curcino\tonboarding_lembrete_24h\t2026-03-21 01:05:28\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT a.id, a.name, a.email, a.programa_id, a.turma_id, a.consultor_id, a.trilha_id, a.status, a.classificacao, a.macrociclo_atual, a.microciclo_atual FROM alunos a WHERE a.name LIKE '%Brenno%' OR a.name LIKE '%Ilda%' OR a.name LIKE '%Storferi%' OR a.name LIKE '%Bisoni%' OR a.name LIKE '%Passoni%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.email, a.programa_id, a.turma_id, a.consultor_id, a.trilha_id, a.status, a.classificacao, a.macrociclo_atual, a.microciclo_atual FROM alunos a WHERE a.name LIKE '%Brenno%' OR a.name LIKE '%Ilda%' OR a.name LIKE '%Storferi%' OR a.name LIKE '%Bisoni%' OR a.name LIKE '%Passoni%';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'a.programa_id' in 'field list'"
+  ]
+}

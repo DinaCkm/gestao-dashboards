@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, name, email FROM alunos WHERE name LIKE '%Adelice%' OR name LIKE '%Ana Fl%' OR name LIKE '%Novak%' OR name LIKE '%Borges%' ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email FROM alunos WHERE name LIKE '%Adelice%' OR name LIKE '%Ana Fl%' OR name LIKE '%Novak%' OR name LIKE '%Borges%' ORDER BY name;",
+  "rows": [
+    {
+      "id": "30036",
+      "name": "Carolina Borges Moreira",
+      "email": "carolina.moreira@embrapii.org.br"
+    },
+    {
+      "id": "30046",
+      "name": "Paulo Borges",
+      "email": "paulo.borges@embrapii.org.br"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\n30036\tCarolina Borges Moreira\tcarolina.moreira@embrapii.org.br\n30046\tPaulo Borges\tpaulo.borges@embrapii.org.br\n",
+  "stderr": "",
+  "execution_time_ms": 353
+}

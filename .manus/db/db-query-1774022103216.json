@@ -1,0 +1,100 @@
+{
+  "query": "SELECT c.id, c.name, c.email, c.role, c.managedProgramId, c.isActive, c.canLogin \nFROM consultors c \nWHERE c.role = 'gerente' \nORDER BY c.id DESC \nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT c.id, c.name, c.email, c.role, c.managedProgramId, c.isActive, c.canLogin \nFROM consultors c \nWHERE c.role = 'gerente' \nORDER BY c.id DESC \nLIMIT 10;",
+  "rows": [
+    {
+      "id": "180003",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "isActive": "1",
+      "canLogin": "1"
+    },
+    {
+      "id": "180002",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "isActive": "1",
+      "canLogin": "1"
+    },
+    {
+      "id": "180001",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "isActive": "1",
+      "canLogin": "1"
+    },
+    {
+      "id": "150004",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "isActive": "1",
+      "canLogin": "1"
+    },
+    {
+      "id": "150003",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "isActive": "1",
+      "canLogin": "1"
+    },
+    {
+      "id": "150002",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "isActive": "1",
+      "canLogin": "1"
+    },
+    {
+      "id": "150001",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "isActive": "1",
+      "canLogin": "1"
+    },
+    {
+      "id": "120002",
+      "name": "Brenno Passoni",
+      "email": "brenno.passoni@embrapii.org.br",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "isActive": "1",
+      "canLogin": "1"
+    },
+    {
+      "id": "120001",
+      "name": "Leandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br",
+      "email": "leandro.rodrigues@embrapii.org.br",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "isActive": "1",
+      "canLogin": "1"
+    },
+    {
+      "id": "90001",
+      "name": "gerente teste",
+      "email": "teste@embrapii.com",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "isActive": "1",
+      "canLogin": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tmanagedProgramId\tisActive\tcanLogin\n180003\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\t18\t1\t1\n180002\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\t18\t1\t1\n180001\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\t18\t1\t1\n150004\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\t18\t1\t1\n150003\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\t18\t1\t1\n150002\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\t18\t1\t1\n150001\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\t18\t1\t1\n120002\tBrenno Passoni\tbrenno.passoni@embrapii.org.br\tgerente\t18\t1\t1\n120001\tLeandro Rodrigues da Silva - leandro.rodrigues@embrapii.org.br\tleandro.rodrigues@embrapii.org.br\tgerente\t18\t1\t1\n90001\tgerente teste\tteste@embrapii.com\tgerente\t18\t1\t1\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

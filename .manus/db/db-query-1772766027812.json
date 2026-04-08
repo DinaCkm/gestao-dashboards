@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Promover Vera Braga (SEBRAE TO) - user 660188 → manager com alunoId=30078\nUPDATE users SET role = 'manager', alunoId = 30078, programId = 17 WHERE id = 660188;\n\n-- Promover Joseane (SEBRAE TO) - user 660170 → manager com alunoId=30066\nUPDATE users SET role = 'manager', alunoId = 30066, programId = 17 WHERE id = 660170;\n\n-- Promover Fabio (SEBRAE ACRE) - user 660120 → manager com alunoId=30001\nUPDATE users SET role = 'manager', alunoId = 30001, programId = 16 WHERE id = 660120;\n\n-- Promover Carolina (EMBRAPII) - user 660197 → manager com alunoId=30036\nUPDATE users SET role = 'manager', alunoId = 30036, programId = 18 WHERE id = 660197;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \n-- Promover Vera Braga (SEBRAE TO) - user 660188 → manager com alunoId=30078\nUPDATE users SET role = 'manager', alunoId = 30078, programId = 17 WHERE id = 660188;\n\n-- Promover Joseane (SEBRAE TO) - user 660170 → manager com alunoId=30066\nUPDATE users SET role = 'manager', alunoId = 30066, programId = 17 WHERE id = 660170;\n\n-- Promover Fabio (SEBRAE ACRE) - user 660120 → manager com alunoId=30001\nUPDATE users SET role = 'manager', alunoId = 30001, programId = 16 WHERE id = 660120;\n\n-- Promover Carolina (EMBRAPII) - user 660197 → manager com alunoId=30036\nUPDATE users SET role = 'manager', alunoId = 30036, programId = 18 WHERE id = 660197;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 574
+}

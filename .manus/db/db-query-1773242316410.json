@@ -1,0 +1,202 @@
+{
+  "query": "SELECT id, titulo, isActive, tipo, categoria, programId FROM courses ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, titulo, isActive, tipo, categoria, programId FROM courses ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "titulo": "Liderança Situacional",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Liderança",
+      "programId": "NULL"
+    },
+    {
+      "id": "30001",
+      "titulo": "Emoções_Inteligência Emocional",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Inteligência Emocional",
+      "programId": "NULL"
+    },
+    {
+      "id": "30002",
+      "titulo": "Liderança e Mediação de Conflitos: Por Que Todo Líder Precisa Desta Habilidade?",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Gestão de Pessoas",
+      "programId": "NULL"
+    },
+    {
+      "id": "30003",
+      "titulo": "Como lidar com pessoas difíceis",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Gestão de Pessoas",
+      "programId": "NULL"
+    },
+    {
+      "id": "150001",
+      "titulo": "Lider 4.0",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Gestão de Pessoas",
+      "programId": "NULL"
+    },
+    {
+      "id": "150002",
+      "titulo": "Gestão de Pessoas",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Gestão de Pessoas",
+      "programId": "NULL"
+    },
+    {
+      "id": "150003",
+      "titulo": "Competências Básicas",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Desenvolvimento Pessoal",
+      "programId": "NULL"
+    },
+    {
+      "id": "150004",
+      "titulo": "Competências Essenciais",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Gestão de Pessoas",
+      "programId": "NULL"
+    },
+    {
+      "id": "150005",
+      "titulo": "Competências Master",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Gestão de Pessoas",
+      "programId": "NULL"
+    },
+    {
+      "id": "150006",
+      "titulo": "Inteligência Emocional",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Inteligência Emocional",
+      "programId": "NULL"
+    },
+    {
+      "id": "150007",
+      "titulo": "Baixa Tolerância à Mudanças",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Desenvolvimento Pessoal",
+      "programId": "NULL"
+    },
+    {
+      "id": "150008",
+      "titulo": "Plano de Desenvolvimento",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Desenvolvimento Pessoal",
+      "programId": "NULL"
+    },
+    {
+      "id": "150009",
+      "titulo": "Plano de Carreira",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Desenvolvimento Pessoal",
+      "programId": "NULL"
+    },
+    {
+      "id": "150010",
+      "titulo": "Análise Crítica",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Estratégia",
+      "programId": "NULL"
+    },
+    {
+      "id": "150011",
+      "titulo": "A Liderança na Gestão de Equipes",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Liderança",
+      "programId": "NULL"
+    },
+    {
+      "id": "150012",
+      "titulo": "Linguagem verbal e corporal na gestão de equipes.",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Gestão de Pessoas",
+      "programId": "NULL"
+    },
+    {
+      "id": "150013",
+      "titulo": "Aprendendo com as Crianças",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Gestão de Pessoas",
+      "programId": "NULL"
+    },
+    {
+      "id": "150014",
+      "titulo": "Um grande diferencial na entrevista",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Desenvolvimento Pessoal",
+      "programId": "NULL"
+    },
+    {
+      "id": "150015",
+      "titulo": "Isto vem junto com a Estabilidade. Cuidado.",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Desenvolvimento Pessoal",
+      "programId": "NULL"
+    },
+    {
+      "id": "150016",
+      "titulo": "Planejamento de Carreira",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Desenvolvimento Pessoal",
+      "programId": "NULL"
+    },
+    {
+      "id": "150017",
+      "titulo": "Procrastinação",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Gestão de Pessoas",
+      "programId": "NULL"
+    },
+    {
+      "id": "180001",
+      "titulo": "Live Potencialidades com Sergio David",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Gestão de Pessoas",
+      "programId": "NULL"
+    },
+    {
+      "id": "180002",
+      "titulo": "A Inteligência Emocional na Liderança",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Liderança",
+      "programId": "NULL"
+    },
+    {
+      "id": "180003",
+      "titulo": "Porque escolhi esta carreira",
+      "isActive": "1",
+      "tipo": "gratuito",
+      "categoria": "Empreendedorismo",
+      "programId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitulo\tisActive\ttipo\tcategoria\tprogramId\n1\tLiderança Situacional\t1\tgratuito\tLiderança\tNULL\n30001\tEmoções_Inteligência Emocional\t1\tgratuito\tInteligência Emocional\tNULL\n30002\tLiderança e Mediação de Conflitos: Por Que Todo Líder Precisa Desta Habilidade?\t1\tgratuito\tGestão de Pessoas\tNULL\n30003\tComo lidar com pessoas difíceis\t1\tgratuito\tGestão de Pessoas\tNULL\n150001\tLider 4.0\t1\tgratuito\tGestão de Pessoas\tNULL\n150002\tGestão de Pessoas\t1\tgratuito\tGestão de Pessoas\tNULL\n150003\tCompetências Básicas\t1\tgratuito\tDesenvolvimento Pessoal\tNULL\n150004\tCompetências Essenciais\t1\tgratuito\tGestão de Pessoas\tNULL\n150005\tCompetências Master\t1\tgratuito\tGestão de Pessoas\tNULL\n150006\tInteligência Emocional\t1\tgratuito\tInteligência Emocional\tNULL\n150007\tBaixa Tolerância à Mudanças\t1\tgratuito\tDesenvolvimento Pessoal\tNULL\n150008\tPlano de Desenvolvimento\t1\tgratuito\tDesenvolvimento Pessoal\tNULL\n150009\tPlano de Carreira\t1\tgratuito\tDesenvolvimento Pessoal\tNULL\n150010\tAnálise Crítica\t1\tgratuito\tEstratégia\tNULL\n150011\tA Liderança na Gestão de Equipes\t1\tgratuito\tLiderança\tNULL\n150012\tLinguagem verbal e corporal na gestão de equipes.\t1\tgratuito\tGestão de Pessoas\tNULL\n150013\tAprendendo com as Crianças\t1\tgratuito\tGestão de Pessoas\tNULL\n150014\tUm grande diferencial na entrevista\t1\tgratuito\tDesenvolvimento Pessoal\tNULL\n150015\tIsto vem junto com a Estabilidade. Cuidado.\t1\tgratuito\tDesenvolvimento Pessoal\tNULL\n150016\tPlanejamento de Carreira\t1\tgratuito\tDesenvolvimento Pessoal\tNULL\n150017\tProcrastinação\t1\tgratuito\tGestão de Pessoas\tNULL\n180001\tLive Potencialidades com Sergio David\t1\tgratuito\tGestão de Pessoas\tNULL\n180002\tA Inteligência Emocional na Liderança\t1\tgratuito\tLiderança\tNULL\n180003\tPorque escolhi esta carreira\t1\tgratuito\tEmpreendedorismo\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 344
+}

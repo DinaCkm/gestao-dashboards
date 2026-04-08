@@ -1,0 +1,18 @@
+{
+  "query": "SELECT u.id, u.name, ep.eventId, ep.status, ep.reflexao, sw.title as webinar_title FROM users u LEFT JOIN event_participation ep ON u.id = ep.alunoId LEFT JOIN scheduled_webinars sw ON ep.eventId = sw.id WHERE u.name LIKE '%Valci%' LIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, ep.eventId, ep.status, ep.reflexao, sw.title as webinar_title FROM users u LEFT JOIN event_participation ep ON u.id = ep.alunoId LEFT JOIN scheduled_webinars sw ON ep.eventId = sw.id WHERE u.name LIKE '%Valci%' LIMIT 20",
+  "rows": [
+    {
+      "id": "660187",
+      "name": "Valci Pereira Da Silva Junior",
+      "eventId": "NULL",
+      "status": "NULL",
+      "reflexao": "NULL",
+      "webinar_title": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\teventId\tstatus\treflexao\twebinar_title\n660187\tValci Pereira Da Silva Junior\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 375
+}

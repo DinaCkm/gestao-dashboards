@@ -1,0 +1,91 @@
+{
+  "query": "SELECT ac.id, ac.assessmentPdiId, ac.competenciaId, ac.peso, ac.microInicio, ac.microTermino, c.nome as compNome FROM assessment_competencias ac JOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId JOIN alunos a ON a.id = ap.alunoId LEFT JOIN competencias c ON c.id = ac.competenciaId WHERE a.name LIKE '%Bruno Martins%' ORDER BY ac.microInicio;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ac.id, ac.assessmentPdiId, ac.competenciaId, ac.peso, ac.microInicio, ac.microTermino, c.nome as compNome FROM assessment_competencias ac JOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId JOIN alunos a ON a.id = ap.alunoId LEFT JOIN competencias c ON c.id = ac.competenciaId WHERE a.name LIKE '%Bruno Martins%' ORDER BY ac.microInicio;",
+  "rows": [
+    {
+      "id": "62463",
+      "assessmentPdiId": "60394",
+      "competenciaId": "30022",
+      "peso": "opcional",
+      "microInicio": "2025-04-20",
+      "microTermino": "2025-10-31",
+      "compNome": "Mindset Visionário"
+    },
+    {
+      "id": "62457",
+      "assessmentPdiId": "60394",
+      "competenciaId": "30013",
+      "peso": "opcional",
+      "microInicio": "2025-05-20",
+      "microTermino": "2025-11-30",
+      "compNome": "Arquitetura de Mudanças"
+    },
+    {
+      "id": "62464",
+      "assessmentPdiId": "60394",
+      "competenciaId": "30028",
+      "peso": "obrigatoria",
+      "microInicio": "2025-06-29",
+      "microTermino": "2025-12-31",
+      "compNome": "Radar de Cenários"
+    },
+    {
+      "id": "62462",
+      "assessmentPdiId": "60394",
+      "competenciaId": "30021",
+      "peso": "obrigatoria",
+      "microInicio": "2025-08-08",
+      "microTermino": "2026-03-31",
+      "compNome": "Mentalidade Sistêmica"
+    },
+    {
+      "id": "62459",
+      "assessmentPdiId": "60394",
+      "competenciaId": "30016",
+      "peso": "obrigatoria",
+      "microInicio": "2025-09-17",
+      "microTermino": "2026-03-31",
+      "compNome": "Estratégia de Longo Alcance"
+    },
+    {
+      "id": "62458",
+      "assessmentPdiId": "60394",
+      "competenciaId": "30015",
+      "peso": "obrigatoria",
+      "microInicio": "2025-10-27",
+      "microTermino": "2026-03-31",
+      "compNome": "Decisões Ágeis"
+    },
+    {
+      "id": "62456",
+      "assessmentPdiId": "60394",
+      "competenciaId": "30034",
+      "peso": "obrigatoria",
+      "microInicio": "2026-01-12",
+      "microTermino": "2026-03-31",
+      "compNome": "Adaptabilidade Dinâmica"
+    },
+    {
+      "id": "62460",
+      "assessmentPdiId": "60394",
+      "competenciaId": "30035",
+      "peso": "obrigatoria",
+      "microInicio": "2026-01-30",
+      "microTermino": "2026-03-31",
+      "compNome": "Gestão da Comunicação"
+    },
+    {
+      "id": "62461",
+      "assessmentPdiId": "60394",
+      "competenciaId": "30036",
+      "peso": "obrigatoria",
+      "microInicio": "2026-02-24",
+      "microTermino": "2026-03-31",
+      "compNome": "Inteligência Emocional Tática"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tassessmentPdiId\tcompetenciaId\tpeso\tmicroInicio\tmicroTermino\tcompNome\n62463\t60394\t30022\topcional\t2025-04-20\t2025-10-31\tMindset Visionário\n62457\t60394\t30013\topcional\t2025-05-20\t2025-11-30\tArquitetura de Mudanças\n62464\t60394\t30028\tobrigatoria\t2025-06-29\t2025-12-31\tRadar de Cenários\n62462\t60394\t30021\tobrigatoria\t2025-08-08\t2026-03-31\tMentalidade Sistêmica\n62459\t60394\t30016\tobrigatoria\t2025-09-17\t2026-03-31\tEstratégia de Longo Alcance\n62458\t60394\t30015\tobrigatoria\t2025-10-27\t2026-03-31\tDecisões Ágeis\n62456\t60394\t30034\tobrigatoria\t2026-01-12\t2026-03-31\tAdaptabilidade Dinâmica\n62460\t60394\t30035\tobrigatoria\t2026-01-30\t2026-03-31\tGestão da Comunicação\n62461\t60394\t30036\tobrigatoria\t2026-02-24\t2026-03-31\tInteligência Emocional Tática\n",
+  "stderr": "",
+  "execution_time_ms": 366
+}

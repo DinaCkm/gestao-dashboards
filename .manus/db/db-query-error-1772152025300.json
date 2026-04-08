@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, name, email, consultor_id FROM alunos WHERE name LIKE '%Valci%'; SELECT id, name, email FROM consultores LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, consultor_id FROM alunos WHERE name LIKE '%Valci%'; SELECT id, name, email FROM consultores LIMIT 20;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'consultor_id' in 'field list'"
+  ]
+}

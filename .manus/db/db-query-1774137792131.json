@@ -1,0 +1,21 @@
+{
+  "query": "\nSELECT \n  COUNT(DISTINCT alunoId) as total_alunos,\n  COUNT(*) as total_sessoes,\n  ROUND(COUNT(*) / COUNT(DISTINCT alunoId), 1) as media_sessoes_por_aluno,\n  SUM(CASE WHEN taskMode IS NOT NULL AND taskMode != 'sem_tarefa' THEN 1 ELSE 0 END) as sessoes_com_tarefa,\n  SUM(CASE WHEN taskStatus = 'nao_entregue' THEN 1 ELSE 0 END) as tarefas_pendentes,\n  SUM(CASE WHEN taskStatus = 'entregue' OR taskStatus = 'validada' THEN 1 ELSE 0 END) as tarefas_entregues,\n  SUM(CASE WHEN taskStatus = 'sem_tarefa' OR taskStatus IS NULL THEN 1 ELSE 0 END) as sem_tarefa,\n  SUM(CASE WHEN notaAlunoAplicabilidade IS NOT NULL THEN 1 ELSE 0 END) as com_aplicabilidade_aluno,\n  SUM(CASE WHEN notaMentoraAplicabilidade IS NOT NULL THEN 1 ELSE 0 END) as com_aplicabilidade_mentora\nFROM mentoring_sessions\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  COUNT(DISTINCT alunoId) as total_alunos,\n  COUNT(*) as total_sessoes,\n  ROUND(COUNT(*) / COUNT(DISTINCT alunoId), 1) as media_sessoes_por_aluno,\n  SUM(CASE WHEN taskMode IS NOT NULL AND taskMode != 'sem_tarefa' THEN 1 ELSE 0 END) as sessoes_com_tarefa,\n  SUM(CASE WHEN taskStatus = 'nao_entregue' THEN 1 ELSE 0 END) as tarefas_pendentes,\n  SUM(CASE WHEN taskStatus = 'entregue' OR taskStatus = 'validada' THEN 1 ELSE 0 END) as tarefas_entregues,\n  SUM(CASE WHEN taskStatus = 'sem_tarefa' OR taskStatus IS NULL THEN 1 ELSE 0 END) as sem_tarefa,\n  SUM(CASE WHEN notaAlunoAplicabilidade IS NOT NULL THEN 1 ELSE 0 END) as com_aplicabilidade_aluno,\n  SUM(CASE WHEN notaMentoraAplicabilidade IS NOT NULL THEN 1 ELSE 0 END) as com_aplicabilidade_mentora\nFROM mentoring_sessions\n",
+  "rows": [
+    {
+      "total_alunos": "126",
+      "total_sessoes": "1360",
+      "media_sessoes_por_aluno": "10.8",
+      "sessoes_com_tarefa": "6",
+      "tarefas_pendentes": "411",
+      "tarefas_entregues": "813",
+      "sem_tarefa": "136",
+      "com_aplicabilidade_aluno": "0",
+      "com_aplicabilidade_mentora": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_alunos\ttotal_sessoes\tmedia_sessoes_por_aluno\tsessoes_com_tarefa\ttarefas_pendentes\ttarefas_entregues\tsem_tarefa\tcom_aplicabilidade_aluno\tcom_aplicabilidade_mentora\n126\t1360\t10.8\t6\t411\t813\t136\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

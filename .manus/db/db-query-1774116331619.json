@@ -1,0 +1,26 @@
+{
+  "query": "SELECT ap.id, ap.alunoId, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas, ap.status FROM assessment_pdi ap WHERE ap.alunoId = 660014;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ap.id, ap.alunoId, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas, ap.status FROM assessment_pdi ap WHERE ap.alunoId = 660014;",
+  "rows": [
+    {
+      "id": "210001",
+      "alunoId": "660014",
+      "macroInicio": "2026-04-01",
+      "macroTermino": "2026-04-30",
+      "totalSessoesPrevistas": "NULL",
+      "status": "ativo"
+    },
+    {
+      "id": "210002",
+      "alunoId": "660014",
+      "macroInicio": "2026-05-01",
+      "macroTermino": "2026-05-30",
+      "totalSessoesPrevistas": "NULL",
+      "status": "ativo"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tmacroInicio\tmacroTermino\ttotalSessoesPrevistas\tstatus\n210001\t660014\t2026-04-01\t2026-04-30\tNULL\tativo\n210002\t660014\t2026-05-01\t2026-05-30\tNULL\tativo\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

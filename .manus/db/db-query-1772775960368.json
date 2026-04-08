@@ -1,0 +1,100 @@
+{
+  "query": "SELECT id, name, email, externalId FROM alunos WHERE name LIKE '%test%' OR name LIKE '%teste%' OR name LIKE '%Test%' OR email LIKE '%test%' OR email LIKE '%example%' LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, externalId FROM alunos WHERE name LIKE '%test%' OR name LIKE '%teste%' OR name LIKE '%Test%' OR email LIKE '%test%' OR email LIKE '%example%' LIMIT 15;",
+  "rows": [
+    {
+      "id": "30096",
+      "name": "Usuário Teste",
+      "email": "leremeg735@nicext.com",
+      "externalId": "696504"
+    },
+    {
+      "id": "90013",
+      "name": "MARIA TESTE DA SILVA",
+      "email": "dina@ckmtalents.net",
+      "externalId": "667997"
+    },
+    {
+      "id": "90014",
+      "name": "maria teste3",
+      "email": "teste3@teste3.com.br",
+      "externalId": "667996"
+    },
+    {
+      "id": "90015",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772738714479@test.com",
+      "externalId": "714479"
+    },
+    {
+      "id": "90016",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772738715037@test.com",
+      "externalId": "715037"
+    },
+    {
+      "id": "90017",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772738715242@test.com",
+      "externalId": "715242"
+    },
+    {
+      "id": "90018",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772738715444@test.com",
+      "externalId": "715444"
+    },
+    {
+      "id": "90019",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772745327890@test.com",
+      "externalId": "327890"
+    },
+    {
+      "id": "90020",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772745328554@test.com",
+      "externalId": "328554"
+    },
+    {
+      "id": "90021",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772745328760@test.com",
+      "externalId": "328760"
+    },
+    {
+      "id": "90022",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772745328966@test.com",
+      "externalId": "328966"
+    },
+    {
+      "id": "90023",
+      "name": "Aluno Direto Test",
+      "email": "direto-test-1772745375111@test.com",
+      "externalId": "375111"
+    },
+    {
+      "id": "90024",
+      "name": "Test Turma Null",
+      "email": "turma-null-1772745375683@test.com",
+      "externalId": "375683"
+    },
+    {
+      "id": "90025",
+      "name": "Test Turma Number",
+      "email": "turma-num-1772745375897@test.com",
+      "externalId": "375897"
+    },
+    {
+      "id": "90026",
+      "name": "Test Turma Undefined",
+      "email": "turma-undef-1772745376111@test.com",
+      "externalId": "376111"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\texternalId\n30096\tUsuário Teste\tleremeg735@nicext.com\t696504\n90013\tMARIA TESTE DA SILVA\tdina@ckmtalents.net\t667997\n90014\tmaria teste3\tteste3@teste3.com.br\t667996\n90015\tAluno Direto Test\tdireto-test-1772738714479@test.com\t714479\n90016\tTest Turma Null\tturma-null-1772738715037@test.com\t715037\n90017\tTest Turma Number\tturma-num-1772738715242@test.com\t715242\n90018\tTest Turma Undefined\tturma-undef-1772738715444@test.com\t715444\n90019\tAluno Direto Test\tdireto-test-1772745327890@test.com\t327890\n90020\tTest Turma Null\tturma-null-1772745328554@test.com\t328554\n90021\tTest Turma Number\tturma-num-1772745328760@test.com\t328760\n90022\tTest Turma Undefined\tturma-undef-1772745328966@test.com\t328966\n90023\tAluno Direto Test\tdireto-test-1772745375111@test.com\t375111\n90024\tTest Turma Null\tturma-null-1772745375683@test.com\t375683\n90025\tTest Turma Number\tturma-num-1772745375897@test.com\t375897\n90026\tTest Turma Undefined\tturma-undef-1772745376111@test.com\t376111\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}

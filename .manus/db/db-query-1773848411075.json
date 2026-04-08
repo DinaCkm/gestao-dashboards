@@ -1,0 +1,28 @@
+{
+  "query": "SELECT a.id, a.name, a.turmaId, a.trilhaId, \n       ap.id as pdiId, ap.trilhaId as pdiTrilhaId, ap.turmaId as pdiTurmaId\nFROM alunos a \nLEFT JOIN assessment_pdi ap ON ap.alunoId = a.id\nWHERE a.name LIKE '%Wandemberg%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.turmaId, a.trilhaId, \n       ap.id as pdiId, ap.trilhaId as pdiTrilhaId, ap.turmaId as pdiTurmaId\nFROM alunos a \nLEFT JOIN assessment_pdi ap ON ap.alunoId = a.id\nWHERE a.name LIKE '%Wandemberg%'",
+  "rows": [
+    {
+      "id": "30097",
+      "name": "Wandemberg Pereira Rodrigues",
+      "turmaId": "30008",
+      "trilhaId": "1",
+      "pdiId": "60431",
+      "pdiTrilhaId": "1",
+      "pdiTurmaId": "30008"
+    },
+    {
+      "id": "30097",
+      "name": "Wandemberg Pereira Rodrigues",
+      "turmaId": "30008",
+      "trilhaId": "1",
+      "pdiId": "60440",
+      "pdiTrilhaId": "2",
+      "pdiTurmaId": "60001"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tturmaId\ttrilhaId\tpdiId\tpdiTrilhaId\tpdiTurmaId\n30097\tWandemberg Pereira Rodrigues\t30008\t1\t60431\t1\t30008\n30097\tWandemberg Pereira Rodrigues\t30008\t1\t60440\t2\t60001\n",
+  "stderr": "",
+  "execution_time_ms": 146
+}

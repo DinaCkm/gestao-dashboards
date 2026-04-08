@@ -1,0 +1,28 @@
+{
+  "query": "SHOW TABLES LIKE 'disc%'; SHOW TABLES LIKE 'autopercepcoes%'; SHOW TABLES LIKE 'mentora%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SHOW TABLES LIKE 'disc%'; SHOW TABLES LIKE 'autopercepcoes%'; SHOW TABLES LIKE 'mentora%';",
+  "rows": [
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (disc%)": "disc_respostas"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (disc%)": "disc_resultados"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (disc%)": "Tables_in_5n7arrGNHjNdoFCMzyGXcY (autopercepcoes%)"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (disc%)": "autopercepcoes_competencias"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (disc%)": "Tables_in_5n7arrGNHjNdoFCMzyGXcY (mentora%)"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (disc%)": "mentora_contribuicoes"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_5n7arrGNHjNdoFCMzyGXcY (disc%)\ndisc_respostas\ndisc_resultados\nTables_in_5n7arrGNHjNdoFCMzyGXcY (autopercepcoes%)\nautopercepcoes_competencias\nTables_in_5n7arrGNHjNdoFCMzyGXcY (mentora%)\nmentora_contribuicoes\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

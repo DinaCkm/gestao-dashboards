@@ -1,0 +1,16 @@
+{
+  "query": "SELECT c.id AS consultorId, c.name, c.role, c.email FROM consultors c WHERE c.name LIKE '%Adriana%' AND c.isActive = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT c.id AS consultorId, c.name, c.role, c.email FROM consultors c WHERE c.name LIKE '%Adriana%' AND c.isActive = 1;",
+  "rows": [
+    {
+      "consultorId": "39",
+      "name": "Adriana Deus",
+      "role": "mentor",
+      "email": "drikadeus@gmail.com"
+    }
+  ],
+  "messages": [],
+  "stdout": "consultorId\tname\trole\temail\n39\tAdriana Deus\tmentor\tdrikadeus@gmail.com\n",
+  "stderr": "",
+  "execution_time_ms": 123
+}

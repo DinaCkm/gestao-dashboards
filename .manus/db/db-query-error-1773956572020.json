@@ -1,0 +1,8 @@
+{
+  "query": "SELECT a.id, a.nome, a.email, a.cadastradoPorAdmin, a.createdAt, \n       j.cadastroConfirmado, j.assessmentCompleto, j.mentoraEscolhida, j.agendamentoFeito, j.primeiroEncontroFeito, j.pdiPublicado, j.jornadaConhecida, j.aceiteConfirmado,\n       j.conviteEnviadoEm\nFROM alunos a \nLEFT JOIN onboarding_jornada j ON j.alunoId = a.id \nWHERE a.nome LIKE '%Elio%' OR a.nome LIKE '%elio%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.nome, a.email, a.cadastradoPorAdmin, a.createdAt, \n       j.cadastroConfirmado, j.assessmentCompleto, j.mentoraEscolhida, j.agendamentoFeito, j.primeiroEncontroFeito, j.pdiPublicado, j.jornadaConhecida, j.aceiteConfirmado,\n       j.conviteEnviadoEm\nFROM alunos a \nLEFT JOIN onboarding_jornada j ON j.alunoId = a.id \nWHERE a.nome LIKE '%Elio%' OR a.nome LIKE '%elio%'",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'a.nome' in 'where clause'"
+  ]
+}

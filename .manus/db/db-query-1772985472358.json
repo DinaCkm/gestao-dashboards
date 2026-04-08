@@ -1,0 +1,19 @@
+{
+  "query": "SELECT a.id, a.name, a.email, a.consultorId, a.turmaId, a.programId, c.name as mentorName FROM alunos a LEFT JOIN consultors c ON a.consultorId = c.id WHERE a.name LIKE '%Jos%Silva%' OR a.name LIKE '%jose%silva%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.email, a.consultorId, a.turmaId, a.programId, c.name as mentorName FROM alunos a LEFT JOIN consultors c ON a.consultorId = c.id WHERE a.name LIKE '%Jos%Silva%' OR a.name LIKE '%jose%silva%'",
+  "rows": [
+    {
+      "id": "330001",
+      "name": "Jose da Silva",
+      "email": "jose@teste.com",
+      "consultorId": "NULL",
+      "turmaId": "NULL",
+      "programId": "19",
+      "mentorName": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tconsultorId\tturmaId\tprogramId\tmentorName\n330001\tJose da Silva\tjose@teste.com\tNULL\tNULL\t19\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 124
+}

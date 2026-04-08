@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  COUNT(*) as total_cases,\n  SUM(CASE WHEN status = 'aprovado' THEN 1 ELSE 0 END) as aprovados,\n  SUM(CASE WHEN status = 'pendente' OR status IS NULL THEN 1 ELSE 0 END) as pendentes,\n  SUM(CASE WHEN status = 'rejeitado' THEN 1 ELSE 0 END) as rejeitados\nFROM cases_sucesso\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  COUNT(*) as total_cases,\n  SUM(CASE WHEN status = 'aprovado' THEN 1 ELSE 0 END) as aprovados,\n  SUM(CASE WHEN status = 'pendente' OR status IS NULL THEN 1 ELSE 0 END) as pendentes,\n  SUM(CASE WHEN status = 'rejeitado' THEN 1 ELSE 0 END) as rejeitados\nFROM cases_sucesso\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'status' in ''"
+  ]
+}

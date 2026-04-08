@@ -1,0 +1,22 @@
+{
+  "query": "\nSELECT 'events' as tabela, COUNT(*) as total FROM events\nUNION ALL\nSELECT 'event_participation' as tabela, COUNT(*) as total FROM event_participation\nUNION ALL\nSELECT 'scheduled_webinars' as tabela, COUNT(*) as total FROM scheduled_webinars;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT 'events' as tabela, COUNT(*) as total FROM events\nUNION ALL\nSELECT 'event_participation' as tabela, COUNT(*) as total FROM event_participation\nUNION ALL\nSELECT 'scheduled_webinars' as tabela, COUNT(*) as total FROM scheduled_webinars;\n",
+  "rows": [
+    {
+      "tabela": "scheduled_webinars",
+      "total": "29"
+    },
+    {
+      "tabela": "events",
+      "total": "28"
+    },
+    {
+      "tabela": "event_participation",
+      "total": "2250"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\ttotal\nscheduled_webinars\t29\nevents\t28\nevent_participation\t2250\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}

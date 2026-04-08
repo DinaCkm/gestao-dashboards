@@ -1,0 +1,31 @@
+{
+  "query": "\nSELECT \n  ms.id AS sessao_id, ms.sessionDate, ms.alunoId, a.name AS aluno_nome,\n  EXISTS(\n    SELECT 1 FROM mentor_appointments ma\n    JOIN appointment_participants ap ON ap.appointmentId = ma.id\n    WHERE ma.consultorId = ms.consultorId\n    AND ma.scheduledDate = ms.sessionDate\n    AND ap.alunoId = ms.alunoId\n    AND ma.status != 'cancelado'\n  ) AS tem_agendamento\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nWHERE ms.consultorId = 35\nAND ms.sessionDate >= '2026-03-01' AND ms.sessionDate <= '2026-03-31';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ms.id AS sessao_id, ms.sessionDate, ms.alunoId, a.name AS aluno_nome,\n  EXISTS(\n    SELECT 1 FROM mentor_appointments ma\n    JOIN appointment_participants ap ON ap.appointmentId = ma.id\n    WHERE ma.consultorId = ms.consultorId\n    AND ma.scheduledDate = ms.sessionDate\n    AND ap.alunoId = ms.alunoId\n    AND ma.status != 'cancelado'\n  ) AS tem_agendamento\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nWHERE ms.consultorId = 35\nAND ms.sessionDate >= '2026-03-01' AND ms.sessionDate <= '2026-03-31';\n",
+  "rows": [
+    {
+      "sessao_id": "390001",
+      "sessionDate": "2026-03-20",
+      "alunoId": "30057",
+      "aluno_nome": "Bruno Martins Vieira",
+      "tem_agendamento": "1"
+    },
+    {
+      "sessao_id": "390002",
+      "sessionDate": "2026-03-20",
+      "alunoId": "30071",
+      "aluno_nome": "Nemias Gomes",
+      "tem_agendamento": "1"
+    },
+    {
+      "sessao_id": "390003",
+      "sessionDate": "2026-03-20",
+      "alunoId": "30085",
+      "aluno_nome": "Francisco de Assis Dias Ramos",
+      "tem_agendamento": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "sessao_id\tsessionDate\talunoId\taluno_nome\ttem_agendamento\n390001\t2026-03-20\t30057\tBruno Martins Vieira\t1\n390002\t2026-03-20\t30071\tNemias Gomes\t1\n390003\t2026-03-20\t30085\tFrancisco de Assis Dias Ramos\t1\n",
+  "stderr": "",
+  "execution_time_ms": 73
+}

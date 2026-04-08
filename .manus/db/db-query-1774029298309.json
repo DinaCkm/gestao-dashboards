@@ -1,0 +1,28 @@
+{
+  "query": "SELECT * FROM users WHERE alunoId = 660014;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT * FROM users WHERE alunoId = 660014;",
+  "rows": [
+    {
+      "id": "4443460",
+      "openId": "access_user_33333",
+      "name": "Julia Souza Makiyama",
+      "email": "jumakiyama@gmail.com",
+      "loginMethod": "email_cpf",
+      "role": "user",
+      "createdAt": "2026-03-19 00:57:52",
+      "updatedAt": "2026-03-20 17:54:56",
+      "lastSignedIn": "2026-03-20 17:54:56",
+      "departmentId": "NULL",
+      "passwordHash": "NULL",
+      "cpf": "33333",
+      "programId": "90002",
+      "alunoId": "660014",
+      "consultorId": "NULL",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tname\temail\tloginMethod\trole\tcreatedAt\tupdatedAt\tlastSignedIn\tdepartmentId\tpasswordHash\tcpf\tprogramId\talunoId\tconsultorId\tisActive\n4443460\taccess_user_33333\tJulia Souza Makiyama\tjumakiyama@gmail.com\temail_cpf\tuser\t2026-03-19 00:57:52\t2026-03-20 17:54:56\t2026-03-20 17:54:56\tNULL\tNULL\t33333\t90002\t660014\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 66
+}

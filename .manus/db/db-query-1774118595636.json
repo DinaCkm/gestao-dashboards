@@ -1,0 +1,26 @@
+{
+  "query": "SELECT id, name, tipoMentoria, totalSessoesContratadas, contratoInicio, contratoFim FROM alunos WHERE name LIKE '%Julia%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, tipoMentoria, totalSessoesContratadas, contratoInicio, contratoFim FROM alunos WHERE name LIKE '%Julia%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "30082",
+      "name": "Juliana Masson Prediger",
+      "tipoMentoria": "individual",
+      "totalSessoesContratadas": "0",
+      "contratoInicio": "NULL",
+      "contratoFim": "NULL"
+    },
+    {
+      "id": "660014",
+      "name": "Julia Souza Makiyama",
+      "tipoMentoria": "individual",
+      "totalSessoesContratadas": "0",
+      "contratoInicio": "2026-04-01 00:00:00",
+      "contratoFim": "2026-09-09 00:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttipoMentoria\ttotalSessoesContratadas\tcontratoInicio\tcontratoFim\n30082\tJuliana Masson Prediger\tindividual\t0\tNULL\tNULL\n660014\tJulia Souza Makiyama\tindividual\t0\t2026-04-01 00:00:00\t2026-09-09 00:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 117
+}

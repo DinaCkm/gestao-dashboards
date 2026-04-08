@@ -1,0 +1,34 @@
+{
+  "query": "SELECT id, openId, name, email, role, passwordHash FROM users WHERE role = 'admin'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, openId, name, email, role, passwordHash FROM users WHERE role = 'admin'",
+  "rows": [
+    {
+      "id": "1",
+      "openId": "AYid4X75EDqao6Y4erjFNB",
+      "name": "relacionamento",
+      "email": "relacionamento@ckmtalents.net",
+      "role": "admin",
+      "passwordHash": "NULL"
+    },
+    {
+      "id": "30895",
+      "openId": "adm1",
+      "name": "Administrador 1",
+      "email": "adm1@sistema.com",
+      "role": "admin",
+      "passwordHash": "888b19a43b151683c87895f6211d9f8640f97bdc8ef32f03dbe057c8f5e56d32"
+    },
+    {
+      "id": "30896",
+      "openId": "adm2",
+      "name": "Administrador 2",
+      "email": "adm2@sistema.com",
+      "role": "admin",
+      "passwordHash": "4fac6dbe26e823ed6edf999c63fab3507119cf3cbfb56036511aa62e258c35b4"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tname\temail\trole\tpasswordHash\n1\tAYid4X75EDqao6Y4erjFNB\trelacionamento\trelacionamento@ckmtalents.net\tadmin\tNULL\n30895\tadm1\tAdministrador 1\tadm1@sistema.com\tadmin\t888b19a43b151683c87895f6211d9f8640f97bdc8ef32f03dbe057c8f5e56d32\n30896\tadm2\tAdministrador 2\tadm2@sistema.com\tadmin\t4fac6dbe26e823ed6edf999c63fab3507119cf3cbfb56036511aa62e258c35b4\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

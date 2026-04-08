@@ -1,0 +1,9 @@
+{
+  "query": "SELECT a.id, a.name, a.consultorId, \n  (SELECT COUNT(*) FROM appointment_participants ap \n   JOIN mentor_appointments ma ON ap.appointmentId = ma.id \n   WHERE ap.alunoId = a.id AND ma.status != 'cancelado') as agendamentos,\n  (SELECT COUNT(*) FROM mentoring_sessions ms WHERE ms.alunoId = a.id AND ms.presence = 'presente') as sessoes_presente,\n  (SELECT COUNT(*) FROM assessment_pdi apdi WHERE apdi.alunoId = a.id) as assessments\nFROM alunos a \nWHERE a.consultorId IS NOT NULL \nHAVING agendamentos > 0\nLIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.consultorId, \n  (SELECT COUNT(*) FROM appointment_participants ap \n   JOIN mentor_appointments ma ON ap.appointmentId = ma.id \n   WHERE ap.alunoId = a.id AND ma.status != 'cancelado') as agendamentos,\n  (SELECT COUNT(*) FROM mentoring_sessions ms WHERE ms.alunoId = a.id AND ms.presence = 'presente') as sessoes_presente,\n  (SELECT COUNT(*) FROM assessment_pdi apdi WHERE apdi.alunoId = a.id) as assessments\nFROM alunos a \nWHERE a.consultorId IS NOT NULL \nHAVING agendamentos > 0\nLIMIT 10",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 147
+}

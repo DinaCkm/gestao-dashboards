@@ -1,0 +1,46 @@
+{
+  "query": "SELECT id, name, email, role, managedProgramId, canLogin, isActive FROM consultors WHERE role = 'gerente' ORDER BY id DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, role, managedProgramId, canLogin, isActive FROM consultors WHERE role = 'gerente' ORDER BY id DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "90001",
+      "name": "gerente teste",
+      "email": "teste@embrapii.com",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "canLogin": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "60002",
+      "name": "Emanoel",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "canLogin": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "60001",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "role": "gerente",
+      "managedProgramId": "18",
+      "canLogin": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "30001",
+      "name": "Joseane",
+      "email": "joseane@to.sebrae.com.br",
+      "role": "gerente",
+      "managedProgramId": "17",
+      "canLogin": "1",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tmanagedProgramId\tcanLogin\tisActive\n90001\tgerente teste\tteste@embrapii.com\tgerente\t18\t1\t1\n60002\tEmanoel\temanoel.querette@embrapii.org.br\tgerente\t18\t1\t1\n60001\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tgerente\t18\t1\t1\n30001\tJoseane\tjoseane@to.sebrae.com.br\tgerente\t17\t1\t1\n",
+  "stderr": "",
+  "execution_time_ms": 470
+}

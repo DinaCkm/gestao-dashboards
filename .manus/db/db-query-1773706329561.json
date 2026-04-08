@@ -1,0 +1,19 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.role, u.consultorId, u.programId, u.isActive FROM users u WHERE u.name LIKE '%Joseane%' OR u.name LIKE '%joseane%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.role, u.consultorId, u.programId, u.isActive FROM users u WHERE u.name LIKE '%Joseane%' OR u.name LIKE '%joseane%';",
+  "rows": [
+    {
+      "id": "660170",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "role": "manager",
+      "consultorId": "NULL",
+      "programId": "17",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tconsultorId\tprogramId\tisActive\n660170\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\tmanager\tNULL\t17\t1\n",
+  "stderr": "",
+  "execution_time_ms": 359
+}

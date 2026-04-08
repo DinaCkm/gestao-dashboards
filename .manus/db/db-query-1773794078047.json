@@ -1,0 +1,18 @@
+{
+  "query": "\nSELECT \n  CASE \n    WHEN a.email LIKE '%@test.com' OR a.name LIKE '%Test%' OR a.name LIKE '%Teste%' THEN 'TESTE'\n    ELSE 'REAL'\n  END as tipo,\n  COUNT(*) as qtd\nFROM alunos a\nLEFT JOIN (SELECT alunoId, COUNT(*) as ap_count FROM assessment_pdi GROUP BY alunoId) ap ON ap.alunoId = a.id\nWHERE a.isActive = 1 AND (ap.ap_count IS NULL OR ap.ap_count = 0) AND a.consultorId IS NOT NULL\nGROUP BY tipo;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  CASE \n    WHEN a.email LIKE '%@test.com' OR a.name LIKE '%Test%' OR a.name LIKE '%Teste%' THEN 'TESTE'\n    ELSE 'REAL'\n  END as tipo,\n  COUNT(*) as qtd\nFROM alunos a\nLEFT JOIN (SELECT alunoId, COUNT(*) as ap_count FROM assessment_pdi GROUP BY alunoId) ap ON ap.alunoId = a.id\nWHERE a.isActive = 1 AND (ap.ap_count IS NULL OR ap.ap_count = 0) AND a.consultorId IS NOT NULL\nGROUP BY tipo;\n",
+  "rows": [
+    {
+      "tipo": "REAL",
+      "qtd": "2"
+    },
+    {
+      "tipo": "TESTE",
+      "qtd": "40"
+    }
+  ],
+  "messages": [],
+  "stdout": "tipo\tqtd\nREAL\t2\nTESTE\t40\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

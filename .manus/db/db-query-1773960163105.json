@@ -1,0 +1,26 @@
+{
+  "query": "SELECT id, name, email, cpf, isActive, canLogin, programId, consultorId, turmaId, bypassOnboarding, onboardingLiberado, cadastradoPorAdmin, createdAt, updatedAt FROM alunos WHERE name LIKE '%Adriana%Pereira%' OR name LIKE '%Adriana%Deus%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, cpf, isActive, canLogin, programId, consultorId, turmaId, bypassOnboarding, onboardingLiberado, cadastradoPorAdmin, createdAt, updatedAt FROM alunos WHERE name LIKE '%Adriana%Pereira%' OR name LIKE '%Adriana%Deus%';",
+  "rows": [
+    {
+      "id": "570088",
+      "name": "Adriana Deus",
+      "email": "drikadeus@gmail.com",
+      "cpf": "NULL",
+      "isActive": "0",
+      "canLogin": "1",
+      "programId": "19",
+      "consultorId": "NULL",
+      "turmaId": "NULL",
+      "bypassOnboarding": "0",
+      "onboardingLiberado": "0",
+      "cadastradoPorAdmin": "0",
+      "createdAt": "2026-03-16 23:12:13",
+      "updatedAt": "2026-03-19 22:41:11"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tcpf\tisActive\tcanLogin\tprogramId\tconsultorId\tturmaId\tbypassOnboarding\tonboardingLiberado\tcadastradoPorAdmin\tcreatedAt\tupdatedAt\n570088\tAdriana Deus\tdrikadeus@gmail.com\tNULL\t0\t1\t19\tNULL\tNULL\t0\t0\t0\t2026-03-16 23:12:13\t2026-03-19 22:41:11\n",
+  "stderr": "",
+  "execution_time_ms": 132
+}

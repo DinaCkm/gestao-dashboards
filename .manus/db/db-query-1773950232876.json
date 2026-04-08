@@ -1,0 +1,26 @@
+{
+  "query": "SELECT sw.id, sw.title, sw.reminderSent, sw.reminderSentAt, sw.createdBy, u.name as createdByName FROM scheduled_webinars sw LEFT JOIN users u ON sw.createdBy = u.id WHERE sw.reminderSent = 1 ORDER BY sw.reminderSentAt DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT sw.id, sw.title, sw.reminderSent, sw.reminderSentAt, sw.createdBy, u.name as createdByName FROM scheduled_webinars sw LEFT JOIN users u ON sw.createdBy = u.id WHERE sw.reminderSent = 1 ORDER BY sw.reminderSentAt DESC;",
+  "rows": [
+    {
+      "id": "120001",
+      "title": "2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional",
+      "reminderSent": "1",
+      "reminderSentAt": "2026-03-19 19:06:57",
+      "createdBy": "1",
+      "createdByName": "relacionamento"
+    },
+    {
+      "id": "60001",
+      "title": "2026/05 - Aula 03 - Resiliência e Proatividade na Prática Organizacional",
+      "reminderSent": "1",
+      "reminderSentAt": "2026-03-04 01:19:33",
+      "createdBy": "1",
+      "createdByName": "relacionamento"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\treminderSent\treminderSentAt\tcreatedBy\tcreatedByName\n120001\t2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional\t1\t2026-03-19 19:06:57\t1\trelacionamento\n60001\t2026/05 - Aula 03 - Resiliência e Proatividade na Prática Organizacional\t1\t2026-03-04 01:19:33\t1\trelacionamento\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

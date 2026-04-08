@@ -1,0 +1,9 @@
+{
+  "query": "\nINSERT IGNORE INTO `__drizzle_migrations` (`hash`, `created_at`) \nSELECT '0052_cloudy_santa_claus', UNIX_TIMESTAMP() * 1000\nWHERE NOT EXISTS (SELECT 1 FROM `__drizzle_migrations` WHERE `hash` = '0052_cloudy_santa_claus');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nINSERT IGNORE INTO `__drizzle_migrations` (`hash`, `created_at`) \nSELECT '0052_cloudy_santa_claus', UNIX_TIMESTAMP() * 1000\nWHERE NOT EXISTS (SELECT 1 FROM `__drizzle_migrations` WHERE `hash` = '0052_cloudy_santa_claus');\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 67
+}

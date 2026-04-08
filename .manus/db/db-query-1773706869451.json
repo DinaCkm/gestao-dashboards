@@ -1,0 +1,23 @@
+{
+  "query": "SELECT a.id, a.name, a.email, a.programId, a.turmaId, u.id as uid, u.name as u_name, u.role, u.consultorId, u.programId as u_programId, u.alunoId FROM users u LEFT JOIN alunos a ON u.alunoId = a.id WHERE u.name LIKE '%Joseane%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.email, a.programId, a.turmaId, u.id as uid, u.name as u_name, u.role, u.consultorId, u.programId as u_programId, u.alunoId FROM users u LEFT JOIN alunos a ON u.alunoId = a.id WHERE u.name LIKE '%Joseane%';",
+  "rows": [
+    {
+      "id": "30066",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "programId": "17",
+      "turmaId": "30003",
+      "uid": "660170",
+      "u_name": "Joseane Rodrigues Leite",
+      "role": "manager",
+      "consultorId": "NULL",
+      "u_programId": "17",
+      "alunoId": "30066"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tprogramId\tturmaId\tuid\tu_name\trole\tconsultorId\tu_programId\talunoId\n30066\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\t17\t30003\t660170\tJoseane Rodrigues Leite\tmanager\tNULL\t17\t30066\n",
+  "stderr": "",
+  "execution_time_ms": 388
+}

@@ -1,0 +1,454 @@
+{
+  "query": "SELECT t.id as trilha_id, t.name as trilha_name, c.id as comp_id, c.nome as comp_nome FROM trilhas t LEFT JOIN competencias c ON c.trilhaId = t.id WHERE t.isActive = 1 ORDER BY t.ordem, c.ordem;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT t.id as trilha_id, t.name as trilha_name, c.id as comp_id, c.nome as comp_nome FROM trilhas t LEFT JOIN competencias c ON c.trilhaId = t.id WHERE t.isActive = 1 ORDER BY t.ordem, c.ordem;",
+  "rows": [
+    {
+      "trilha_id": "90001",
+      "trilha_name": "Alinhamento Inicial",
+      "comp_id": "NULL",
+      "comp_nome": "NULL"
+    },
+    {
+      "trilha_id": "1",
+      "trilha_name": "Basic",
+      "comp_id": "30003",
+      "comp_nome": "Gestão do Tempo"
+    },
+    {
+      "trilha_id": "1",
+      "trilha_name": "Basic",
+      "comp_id": "30004",
+      "comp_nome": "Atenção"
+    },
+    {
+      "trilha_id": "1",
+      "trilha_name": "Basic",
+      "comp_id": "30005",
+      "comp_nome": "Autopercepção"
+    },
+    {
+      "trilha_id": "1",
+      "trilha_name": "Basic",
+      "comp_id": "30006",
+      "comp_nome": "Disciplina"
+    },
+    {
+      "trilha_id": "1",
+      "trilha_name": "Basic",
+      "comp_id": "30007",
+      "comp_nome": "Empatia"
+    },
+    {
+      "trilha_id": "1",
+      "trilha_name": "Basic",
+      "comp_id": "30008",
+      "comp_nome": "Escuta Ativa"
+    },
+    {
+      "trilha_id": "1",
+      "trilha_name": "Basic",
+      "comp_id": "30009",
+      "comp_nome": "Memória"
+    },
+    {
+      "trilha_id": "1",
+      "trilha_name": "Basic",
+      "comp_id": "30010",
+      "comp_nome": "Raciocínio Lógico e Espacial"
+    },
+    {
+      "trilha_id": "2",
+      "trilha_name": "Essential",
+      "comp_id": "30012",
+      "comp_nome": "Adaptabilidade"
+    },
+    {
+      "trilha_id": "2",
+      "trilha_name": "Essential",
+      "comp_id": "30014",
+      "comp_nome": "Comunicação Assertiva"
+    },
+    {
+      "trilha_id": "2",
+      "trilha_name": "Essential",
+      "comp_id": "30019",
+      "comp_nome": "Inteligência Emocional"
+    },
+    {
+      "trilha_id": "2",
+      "trilha_name": "Essential",
+      "comp_id": "30020",
+      "comp_nome": "Leitura de Cenário"
+    },
+    {
+      "trilha_id": "2",
+      "trilha_name": "Essential",
+      "comp_id": "30024",
+      "comp_nome": "Planejamento e Organização"
+    },
+    {
+      "trilha_id": "2",
+      "trilha_name": "Essential",
+      "comp_id": "30026",
+      "comp_nome": "Proatividade"
+    },
+    {
+      "trilha_id": "2",
+      "trilha_name": "Essential",
+      "comp_id": "30030",
+      "comp_nome": "Resiliência"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30001",
+      "comp_nome": "Gestão de Conflitos"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30002",
+      "comp_nome": "Gestão de Equipes"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30011",
+      "comp_nome": "Accountability"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30017",
+      "comp_nome": "Foco em Resultados"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30018",
+      "comp_nome": "Influência"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30023",
+      "comp_nome": "Negociação"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30025",
+      "comp_nome": "Presença Executiva"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30027",
+      "comp_nome": "Protagonismo"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30029",
+      "comp_nome": "Relacionamentos Conectivos"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30031",
+      "comp_nome": "Responsabilidade Social"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30032",
+      "comp_nome": "Tomada de Decisão"
+    },
+    {
+      "trilha_id": "3",
+      "trilha_name": "Master",
+      "comp_id": "30033",
+      "comp_nome": "Visão Estratégica"
+    },
+    {
+      "trilha_id": "4",
+      "trilha_name": "Visão de Futuro",
+      "comp_id": "30013",
+      "comp_nome": "Arquitetura de Mudanças"
+    },
+    {
+      "trilha_id": "4",
+      "trilha_name": "Visão de Futuro",
+      "comp_id": "30015",
+      "comp_nome": "Decisões Ágeis"
+    },
+    {
+      "trilha_id": "4",
+      "trilha_name": "Visão de Futuro",
+      "comp_id": "30016",
+      "comp_nome": "Estratégia de Longo Alcance"
+    },
+    {
+      "trilha_id": "4",
+      "trilha_name": "Visão de Futuro",
+      "comp_id": "30021",
+      "comp_nome": "Mentalidade Sistêmica"
+    },
+    {
+      "trilha_id": "4",
+      "trilha_name": "Visão de Futuro",
+      "comp_id": "30022",
+      "comp_nome": "Mindset Visionário"
+    },
+    {
+      "trilha_id": "4",
+      "trilha_name": "Visão de Futuro",
+      "comp_id": "30028",
+      "comp_nome": "Radar de Cenários"
+    },
+    {
+      "trilha_id": "4",
+      "trilha_name": "Visão de Futuro",
+      "comp_id": "30034",
+      "comp_nome": "Adaptabilidade Dinâmica"
+    },
+    {
+      "trilha_id": "4",
+      "trilha_name": "Visão de Futuro",
+      "comp_id": "30035",
+      "comp_nome": "Gestão da Comunicação"
+    },
+    {
+      "trilha_id": "4",
+      "trilha_name": "Visão de Futuro",
+      "comp_id": "30036",
+      "comp_nome": "Inteligência Emocional Tática"
+    },
+    {
+      "trilha_id": "30001",
+      "trilha_name": "Jornada do Futuro I.A",
+      "comp_id": "NULL",
+      "comp_nome": "NULL"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60001",
+      "comp_nome": "Accountability"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60002",
+      "comp_nome": "Adaptabilidade"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60003",
+      "comp_nome": "Adaptabilidade Dinâmica"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60004",
+      "comp_nome": "Arquitetura de Mudanças"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60005",
+      "comp_nome": "Atenção"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60006",
+      "comp_nome": "Autopercepção"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60007",
+      "comp_nome": "Comunicação Assertiva"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60008",
+      "comp_nome": "Decisões Ágeis"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60009",
+      "comp_nome": "Disciplina"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60010",
+      "comp_nome": "Empatia"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60011",
+      "comp_nome": "Escuta Ativa"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60012",
+      "comp_nome": "Estratégia de Longo Alcance"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60013",
+      "comp_nome": "Foco em Resultados"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60014",
+      "comp_nome": "Gestão da Comunicação"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60015",
+      "comp_nome": "Gestão de Conflitos"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60016",
+      "comp_nome": "Gestão de Equipes"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60017",
+      "comp_nome": "Gestão do Tempo"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60018",
+      "comp_nome": "Influência"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60019",
+      "comp_nome": "Inteligência Emocional"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60020",
+      "comp_nome": "Inteligência Emocional Tática"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60021",
+      "comp_nome": "Leitura de Cenário"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60022",
+      "comp_nome": "Memória"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60023",
+      "comp_nome": "Mentalidade Sistêmica"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60024",
+      "comp_nome": "Mindset Visionário"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60025",
+      "comp_nome": "Negociação"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60026",
+      "comp_nome": "Planejamento e Organização"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60027",
+      "comp_nome": "Presença Executiva"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60028",
+      "comp_nome": "Proatividade"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60029",
+      "comp_nome": "Protagonismo"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60030",
+      "comp_nome": "Raciocínio Lógico e Espacial"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60031",
+      "comp_nome": "Radar de Cenários"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60032",
+      "comp_nome": "Relacionamentos Conectivos"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60033",
+      "comp_nome": "Resiliência"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60034",
+      "comp_nome": "Responsabilidade Social"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60035",
+      "comp_nome": "Tomada de Decisão"
+    },
+    {
+      "trilha_id": "60001",
+      "trilha_name": "Jornada Personalizada",
+      "comp_id": "60036",
+      "comp_nome": "Visão Estratégica"
+    }
+  ],
+  "messages": [],
+  "stdout": "trilha_id\ttrilha_name\tcomp_id\tcomp_nome\n90001\tAlinhamento Inicial\tNULL\tNULL\n1\tBasic\t30003\tGestão do Tempo\n1\tBasic\t30004\tAtenção\n1\tBasic\t30005\tAutopercepção\n1\tBasic\t30006\tDisciplina\n1\tBasic\t30007\tEmpatia\n1\tBasic\t30008\tEscuta Ativa\n1\tBasic\t30009\tMemória\n1\tBasic\t30010\tRaciocínio Lógico e Espacial\n2\tEssential\t30012\tAdaptabilidade\n2\tEssential\t30014\tComunicação Assertiva\n2\tEssential\t30019\tInteligência Emocional\n2\tEssential\t30020\tLeitura de Cenário\n2\tEssential\t30024\tPlanejamento e Organização\n2\tEssential\t30026\tProatividade\n2\tEssential\t30030\tResiliência\n3\tMaster\t30001\tGestão de Conflitos\n3\tMaster\t30002\tGestão de Equipes\n3\tMaster\t30011\tAccountability\n3\tMaster\t30017\tFoco em Resultados\n3\tMaster\t30018\tInfluência\n3\tMaster\t30023\tNegociação\n3\tMaster\t30025\tPresença Executiva\n3\tMaster\t30027\tProtagonismo\n3\tMaster\t30029\tRelacionamentos Conectivos\n3\tMaster\t30031\tResponsabilidade Social\n3\tMaster\t30032\tTomada de Decisão\n3\tMaster\t30033\tVisão Estratégica\n4\tVisão de Futuro\t30013\tArquitetura de Mudanças\n4\tVisão de Futuro\t30015\tDecisões Ágeis\n4\tVisão de Futuro\t30016\tEstratégia de Longo Alcance\n4\tVisão de Futuro\t30021\tMentalidade Sistêmica\n4\tVisão de Futuro\t30022\tMindset Visionário\n4\tVisão de Futuro\t30028\tRadar de Cenários\n4\tVisão de Futuro\t30034\tAdaptabilidade Dinâmica\n4\tVisão de Futuro\t30035\tGestão da Comunicação\n4\tVisão de Futuro\t30036\tInteligência Emocional Tática\n30001\tJornada do Futuro I.A\tNULL\tNULL\n60001\tJornada Personalizada\t60001\tAccountability\n60001\tJornada Personalizada\t60002\tAdaptabilidade\n60001\tJornada Personalizada\t60003\tAdaptabilidade Dinâmica\n60001\tJornada Personalizada\t60004\tArquitetura de Mudanças\n60001\tJornada Personalizada\t60005\tAtenção\n60001\tJornada Personalizada\t60006\tAutopercepção\n60001\tJornada Personalizada\t60007\tComunicação Assertiva\n60001\tJornada Personalizada\t60008\tDecisões Ágeis\n60001\tJornada Personalizada\t60009\tDisciplina\n60001\tJornada Personalizada\t60010\tEmpatia\n60001\tJornada Personalizada\t60011\tEscuta Ativa\n60001\tJornada Personalizada\t60012\tEstratégia de Longo Alcance\n60001\tJornada Personalizada\t60013\tFoco em Resultados\n60001\tJornada Personalizada\t60014\tGestão da Comunicação\n60001\tJornada Personalizada\t60015\tGestão de Conflitos\n60001\tJornada Personalizada\t60016\tGestão de Equipes\n60001\tJornada Personalizada\t60017\tGestão do Tempo\n60001\tJornada Personalizada\t60018\tInfluência\n60001\tJornada Personalizada\t60019\tInteligência Emocional\n60001\tJornada Personalizada\t60020\tInteligência Emocional Tática\n60001\tJornada Personalizada\t60021\tLeitura de Cenário\n60001\tJornada Personalizada\t60022\tMemória\n60001\tJornada Personalizada\t60023\tMentalidade Sistêmica\n60001\tJornada Personalizada\t60024\tMindset Visionário\n60001\tJornada Personalizada\t60025\tNegociação\n60001\tJornada Personalizada\t60026\tPlanejamento e Organização\n60001\tJornada Personalizada\t60027\tPresença Executiva\n60001\tJornada Personalizada\t60028\tProatividade\n60001\tJornada Personalizada\t60029\tProtagonismo\n60001\tJornada Personalizada\t60030\tRaciocínio Lógico e Espacial\n60001\tJornada Personalizada\t60031\tRadar de Cenários\n60001\tJornada Personalizada\t60032\tRelacionamentos Conectivos\n60001\tJornada Personalizada\t60033\tResiliência\n60001\tJornada Personalizada\t60034\tResponsabilidade Social\n60001\tJornada Personalizada\t60035\tTomada de Decisão\n60001\tJornada Personalizada\t60036\tVisão Estratégica\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}

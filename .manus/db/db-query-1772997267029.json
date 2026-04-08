@@ -1,0 +1,22 @@
+{
+  "query": "SELECT COUNT(*) as total FROM disc_resultados; SELECT * FROM disc_resultados LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total FROM disc_resultados; SELECT * FROM disc_resultados LIMIT 5;",
+  "rows": [
+    {
+      "total": "2"
+    },
+    {
+      "total": "id\talunoId\tscoreD\tscoreI\tscoreS\tscoreC\tperfilPredominante\tperfilSecundario\tcompletedAt\tcreatedAt\tupdatedAt\tciclo"
+    },
+    {
+      "total": "1\t270001\t75.00\t79.00\t50.00\t64.00\tI\tD\t2026-03-08 03:15:30\t2026-03-08 03:15:30\t2026-03-08 03:15:30\t1"
+    },
+    {
+      "total": "30001\t330001\t54.00\t25.00\t86.00\t43.00\tS\tD\t2026-03-08 15:35:02\t2026-03-08 15:35:02\t2026-03-08 15:35:02\t1"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\n2\nid\talunoId\tscoreD\tscoreI\tscoreS\tscoreC\tperfilPredominante\tperfilSecundario\tcompletedAt\tcreatedAt\tupdatedAt\tciclo\n1\t270001\t75.00\t79.00\t50.00\t64.00\tI\tD\t2026-03-08 03:15:30\t2026-03-08 03:15:30\t2026-03-08 03:15:30\t1\n30001\t330001\t54.00\t25.00\t86.00\t43.00\tS\tD\t2026-03-08 15:35:02\t2026-03-08 15:35:02\t2026-03-08 15:35:02\t1\n",
+  "stderr": "",
+  "execution_time_ms": 66
+}

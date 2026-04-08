@@ -1,0 +1,42 @@
+{
+  "query": "SELECT id, title, eventType, eventDate, videoLink, programId FROM events WHERE title LIKE '%Estrutura e Conceitos%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, title, eventType, eventDate, videoLink, programId FROM events WHERE title LIKE '%Estrutura e Conceitos%';",
+  "rows": [
+    {
+      "id": "30014",
+      "title": "2025/19 - Aula 01 – Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "eventType": "curso_online",
+      "eventDate": "2025-10-15",
+      "videoLink": "NULL",
+      "programId": "NULL"
+    },
+    {
+      "id": "30024",
+      "title": "2025/19 - Aula 01 –Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "eventType": "webinar",
+      "eventDate": "2025-10-15",
+      "videoLink": "NULL",
+      "programId": "NULL"
+    },
+    {
+      "id": "30025",
+      "title": "2025/19 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "eventType": "webinar",
+      "eventDate": "2025-10-15",
+      "videoLink": "NULL",
+      "programId": "NULL"
+    },
+    {
+      "id": "30032",
+      "title": "2025/19 - Aula 01 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias",
+      "eventType": "curso_online",
+      "eventDate": "2025-10-15",
+      "videoLink": "NULL",
+      "programId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\teventType\teventDate\tvideoLink\tprogramId\n30014\t2025/19 - Aula 01 – Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\tcurso_online\t2025-10-15\tNULL\tNULL\n30024\t2025/19 - Aula 01 –Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\twebinar\t2025-10-15\tNULL\tNULL\n30025\t2025/19 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\twebinar\t2025-10-15\tNULL\tNULL\n30032\t2025/19 - Aula 01 - Estrutura e Conceitos de Projetos de Inovação com Emerson Dias\tcurso_online\t2025-10-15\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 363
+}

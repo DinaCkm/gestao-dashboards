@@ -1,0 +1,22 @@
+{
+  "query": "SHOW TABLES LIKE '%sess%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SHOW TABLES LIKE '%sess%';",
+  "rows": [
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%sess%)": "assessment_competencias"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%sess%)": "assessment_pdi"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%sess%)": "mentor_session_pricing"
+    },
+    {
+      "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%sess%)": "mentoring_sessions"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_5n7arrGNHjNdoFCMzyGXcY (%sess%)\nassessment_competencias\nassessment_pdi\nmentor_session_pricing\nmentoring_sessions\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

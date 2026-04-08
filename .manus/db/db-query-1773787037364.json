@@ -1,0 +1,31 @@
+{
+  "query": "SELECT COUNT(*) as total FROM task_library; SELECT id, competencia, nome, resumo FROM task_library LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total FROM task_library; SELECT id, competencia, nome, resumo FROM task_library LIMIT 5;",
+  "rows": [
+    {
+      "total": "53"
+    },
+    {
+      "total": "id\tcompetencia\tnome\tresumo"
+    },
+    {
+      "total": "1\tAutoconhecimento\tFeedback 360° Simplificado\tColeta estruturada de percepções profissionais."
+    },
+    {
+      "total": "2\tAutogestão\tPlano de Desenvolvimento Individual\tDefinição de metas de crescimento."
+    },
+    {
+      "total": "3\tGestão do Tempo\tRevisão da Agenda Semanal\tAnálise do uso do tempo."
+    },
+    {
+      "total": "4\tPrioridades\tMatriz de Prioridades\tClassificação de tarefas por relevância."
+    },
+    {
+      "total": "5\tDelegação\tRevisão de Responsabilidades\tAjuste de papéis na equipe."
+    }
+  ],
+  "messages": [],
+  "stdout": "total\n53\nid\tcompetencia\tnome\tresumo\n1\tAutoconhecimento\tFeedback 360° Simplificado\tColeta estruturada de percepções profissionais.\n2\tAutogestão\tPlano de Desenvolvimento Individual\tDefinição de metas de crescimento.\n3\tGestão do Tempo\tRevisão da Agenda Semanal\tAnálise do uso do tempo.\n4\tPrioridades\tMatriz de Prioridades\tClassificação de tarefas por relevância.\n5\tDelegação\tRevisão de Responsabilidades\tAjuste de papéis na equipe.\n",
+  "stderr": "",
+  "execution_time_ms": 398
+}

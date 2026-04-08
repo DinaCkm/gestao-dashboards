@@ -1,0 +1,46 @@
+Pages to update titles with roxo/turquesa:
+
+ALREADY USING text-gradient (will auto-update from CSS change):
+1. Home.tsx - "ECOSSISTEMA DO BEM" - text-gradient ✅
+2. AdminDashboard.tsx - "Dashboard Administrativo" - text-gradient ✅
+3. Upload.tsx - "Gestão de Planilhas" - text-gradient ✅
+4. Reports.tsx - "Relatórios" - text-gradient ✅
+5. History.tsx - "Histórico de Uploads" - text-gradient ✅
+6. Formulas.tsx - "Fórmulas de Cálculo" - text-gradient ✅
+7. ManagerDashboard.tsx - "Dashboard Gerencial" - text-gradient ✅
+8. Departments.tsx - "Departamentos" - text-gradient ✅
+9. CustomLogin.tsx - login title - text-gradient ✅
+
+NEED MANUAL UPDATE (no text-gradient, using plain colors):
+10. AdminCadastros.tsx - title
+11. AdminAgendamentos.tsx - title
+12. Assessment.tsx - title
+13. AtividadesPraticas.tsx - title
+14. AvisosAdmin.tsx - title
+15. BibliotecaTarefas.tsx - title
+16. DashboardAluno.tsx - title
+17. DashboardEmpresa.tsx - title
+18. DashboardGestor.tsx - title
+19. DashboardMentor.tsx - title
+20. DashboardMeuPerfil.tsx - title
+21. DashboardVisaoGeral.tsx - title
+22. DemonstrativoMentorias.tsx - title
+23. EditarMentorias.tsx - title
+24. MetasDesenvolvimento.tsx - title
+25. MetasGestor.tsx - title
+26. MinhasMetasAluno.tsx - title
+27. MuralAluno.tsx - title
+28. NovoAssessment.tsx - title
+29. OnboardingAluno.tsx - titles
+30. PerformanceUpload.tsx - title
+31. PlanoIndividual.tsx - title
+32. PorEmpresa.tsx - title
+33. RegistroMentoria.tsx - title
+34. TrilhasCompetencias.tsx - title
+35. Turmas.tsx - title
+36. Tutoriais.tsx - title
+37. Users.tsx - title
+38. WebinarsAdmin.tsx - title
+39. MentorConfiguracoes.tsx - title
+40. PainelRevisoes.tsx - title (if exists)
+41. TesteDiscOnboarding.tsx - titles

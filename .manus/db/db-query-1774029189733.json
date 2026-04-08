@@ -1,0 +1,50 @@
+{
+  "query": "SELECT * FROM assessment_pdi WHERE alunoId = 660014;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT * FROM assessment_pdi WHERE alunoId = 660014;",
+  "rows": [
+    {
+      "id": "210001",
+      "alunoId": "660014",
+      "trilhaId": "1",
+      "turmaId": "NULL",
+      "consultorId": "39",
+      "programId": "90002",
+      "macroInicio": "2026-04-01",
+      "macroTermino": "2026-04-30",
+      "status": "ativo",
+      "observacoes": "NULL",
+      "congeladoEm": "NULL",
+      "congeladoPor": "NULL",
+      "createdAt": "2026-03-20 17:26:52",
+      "updatedAt": "2026-03-20 17:35:07",
+      "motivoCongelamento": "NULL",
+      "descongeladoEm": "NULL",
+      "descongeladoPor": "NULL",
+      "totalSessoesPrevistas": "NULL"
+    },
+    {
+      "id": "210002",
+      "alunoId": "660014",
+      "trilhaId": "2",
+      "turmaId": "NULL",
+      "consultorId": "39",
+      "programId": "90002",
+      "macroInicio": "2026-05-01",
+      "macroTermino": "2026-05-30",
+      "status": "ativo",
+      "observacoes": "NULL",
+      "congeladoEm": "NULL",
+      "congeladoPor": "NULL",
+      "createdAt": "2026-03-20 17:29:10",
+      "updatedAt": "2026-03-20 17:33:33",
+      "motivoCongelamento": "NULL",
+      "descongeladoEm": "NULL",
+      "descongeladoPor": "NULL",
+      "totalSessoesPrevistas": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\ttrilhaId\tturmaId\tconsultorId\tprogramId\tmacroInicio\tmacroTermino\tstatus\tobservacoes\tcongeladoEm\tcongeladoPor\tcreatedAt\tupdatedAt\tmotivoCongelamento\tdescongeladoEm\tdescongeladoPor\ttotalSessoesPrevistas\n210001\t660014\t1\tNULL\t39\t90002\t2026-04-01\t2026-04-30\tativo\tNULL\tNULL\tNULL\t2026-03-20 17:26:52\t2026-03-20 17:35:07\tNULL\tNULL\tNULL\tNULL\n210002\t660014\t2\tNULL\t39\t90002\t2026-05-01\t2026-05-30\tativo\tNULL\tNULL\tNULL\t2026-03-20 17:29:10\t2026-03-20 17:33:33\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

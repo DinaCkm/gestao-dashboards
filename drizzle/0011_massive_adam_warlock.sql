@@ -1,0 +1,1 @@
+ALTER TABLE `consultors` ADD `cpf` varchar(11);

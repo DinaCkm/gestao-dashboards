@@ -1,0 +1,50 @@
+{
+  "query": "\nSELECT ap.id, ap.alunoId, ap.macroInicio, ap.macroTermino, ap.status, t.name as trilha\nFROM assessment_pdi ap\nJOIN trilhas t ON ap.trilhaId = t.id\nWHERE t.name LIKE '%Vis%'\nLIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT ap.id, ap.alunoId, ap.macroInicio, ap.macroTermino, ap.status, t.name as trilha\nFROM assessment_pdi ap\nJOIN trilhas t ON ap.trilhaId = t.id\nWHERE t.name LIKE '%Vis%'\nLIMIT 5;\n",
+  "rows": [
+    {
+      "id": "60346",
+      "alunoId": "30034",
+      "macroInicio": "2025-03-24",
+      "macroTermino": "2026-03-30",
+      "status": "ativo",
+      "trilha": "Visão de Futuro"
+    },
+    {
+      "id": "60347",
+      "alunoId": "30039",
+      "macroInicio": "2025-03-24",
+      "macroTermino": "2026-03-30",
+      "status": "ativo",
+      "trilha": "Visão de Futuro"
+    },
+    {
+      "id": "60348",
+      "alunoId": "30041",
+      "macroInicio": "2025-03-24",
+      "macroTermino": "2026-03-30",
+      "status": "ativo",
+      "trilha": "Visão de Futuro"
+    },
+    {
+      "id": "60349",
+      "alunoId": "30042",
+      "macroInicio": "2025-03-24",
+      "macroTermino": "2026-03-30",
+      "status": "ativo",
+      "trilha": "Visão de Futuro"
+    },
+    {
+      "id": "60350",
+      "alunoId": "30043",
+      "macroInicio": "2025-03-24",
+      "macroTermino": "2026-03-30",
+      "status": "ativo",
+      "trilha": "Visão de Futuro"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tmacroInicio\tmacroTermino\tstatus\ttrilha\n60346\t30034\t2025-03-24\t2026-03-30\tativo\tVisão de Futuro\n60347\t30039\t2025-03-24\t2026-03-30\tativo\tVisão de Futuro\n60348\t30041\t2025-03-24\t2026-03-30\tativo\tVisão de Futuro\n60349\t30042\t2025-03-24\t2026-03-30\tativo\tVisão de Futuro\n60350\t30043\t2025-03-24\t2026-03-30\tativo\tVisão de Futuro\n",
+  "stderr": "",
+  "execution_time_ms": 369
+}

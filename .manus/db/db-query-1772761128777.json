@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, title, videoLink, eventDate FROM events ORDER BY eventDate DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, title, videoLink, eventDate FROM events ORDER BY eventDate DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "30022",
+      "title": "2026/04 - Aula 02 -  Resiliência e Proatividade na Prática Organizacional",
+      "videoLink": "NULL",
+      "eventDate": "2026-02-26"
+    },
+    {
+      "id": "30021",
+      "title": "2026/03 - Aula 01 - Resiliência e Proatividade na Prática Organizacional",
+      "videoLink": "NULL",
+      "eventDate": "2026-02-19"
+    },
+    {
+      "id": "30027",
+      "title": "2026/02 - O Código de Aprendizagem - 02 - A Execução",
+      "videoLink": "NULL",
+      "eventDate": "2026-01-28"
+    },
+    {
+      "id": "30020",
+      "title": "2026/02 - Aula 02 – O Código de Aprendizagem - A Execução",
+      "videoLink": "NULL",
+      "eventDate": "2026-01-28"
+    },
+    {
+      "id": "30026",
+      "title": "2026/01 - O Código de Aprendizagem - 01 - O Preparo",
+      "videoLink": "NULL",
+      "eventDate": "2026-01-21"
+    },
+    {
+      "id": "30019",
+      "title": "2026/01 - Aula 01 – O Código de Aprendizagem - O Preparo",
+      "videoLink": "NULL",
+      "eventDate": "2026-01-21"
+    },
+    {
+      "id": "30018",
+      "title": "2025/23 - Felicidade e Promessas de Final de Ano, com Emerson Dias",
+      "videoLink": "NULL",
+      "eventDate": "2025-12-10"
+    },
+    {
+      "id": "30017",
+      "title": "2025/22 - Aula 04 – Monitoramento, Avaliação e Encerramento com Emerson Dias",
+      "videoLink": "NULL",
+      "eventDate": "2025-12-03"
+    },
+    {
+      "id": "30016",
+      "title": "2025/21 - Aula 03 – Planejamento e Implementação com Emerson Dias",
+      "videoLink": "NULL",
+      "eventDate": "2025-11-19"
+    },
+    {
+      "id": "30015",
+      "title": "2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias",
+      "videoLink": "NULL",
+      "eventDate": "2025-11-05"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tvideoLink\teventDate\n30022\t2026/04 - Aula 02 -  Resiliência e Proatividade na Prática Organizacional\tNULL\t2026-02-26\n30021\t2026/03 - Aula 01 - Resiliência e Proatividade na Prática Organizacional\tNULL\t2026-02-19\n30027\t2026/02 - O Código de Aprendizagem - 02 - A Execução\tNULL\t2026-01-28\n30020\t2026/02 - Aula 02 – O Código de Aprendizagem - A Execução\tNULL\t2026-01-28\n30026\t2026/01 - O Código de Aprendizagem - 01 - O Preparo\tNULL\t2026-01-21\n30019\t2026/01 - Aula 01 – O Código de Aprendizagem - O Preparo\tNULL\t2026-01-21\n30018\t2025/23 - Felicidade e Promessas de Final de Ano, com Emerson Dias\tNULL\t2025-12-10\n30017\t2025/22 - Aula 04 – Monitoramento, Avaliação e Encerramento com Emerson Dias\tNULL\t2025-12-03\n30016\t2025/21 - Aula 03 – Planejamento e Implementação com Emerson Dias\tNULL\t2025-11-19\n30015\t2025/20 - Aula 02 – Diagnóstico e Estruturação com Emerson Dias\tNULL\t2025-11-05\n",
+  "stderr": "",
+  "execution_time_ms": 381
+}

@@ -1,0 +1,90 @@
+{
+  "query": "SELECT externalUserId, externalCompetenciaId, mediaAvaliacoesFinais, avaliacoesRespondidas, mediaAvaliacoesRespondidas, mediaAvaliacoesDisponiveis FROM student_performance WHERE mediaAvaliacoesFinais > 0 OR avaliacoesRespondidas > 0 LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT externalUserId, externalCompetenciaId, mediaAvaliacoesFinais, avaliacoesRespondidas, mediaAvaliacoesRespondidas, mediaAvaliacoesDisponiveis FROM student_performance WHERE mediaAvaliacoesFinais > 0 OR avaliacoesRespondidas > 0 LIMIT 10;",
+  "rows": [
+    {
+      "externalUserId": "605365",
+      "externalCompetenciaId": "01J9PT80CC3DGJPX7QBJT042F8",
+      "mediaAvaliacoesFinais": "0.00",
+      "avaliacoesRespondidas": "1",
+      "mediaAvaliacoesRespondidas": "86.00",
+      "mediaAvaliacoesDisponiveis": "86.00"
+    },
+    {
+      "externalUserId": "615723",
+      "externalCompetenciaId": "01J9PT80CC3DGJPX7QBJT042F8",
+      "mediaAvaliacoesFinais": "0.00",
+      "avaliacoesRespondidas": "1",
+      "mediaAvaliacoesRespondidas": "93.00",
+      "mediaAvaliacoesDisponiveis": "93.00"
+    },
+    {
+      "externalUserId": "615725",
+      "externalCompetenciaId": "01J9PT80CC3DGJPX7QBJT042F8",
+      "mediaAvaliacoesFinais": "0.00",
+      "avaliacoesRespondidas": "1",
+      "mediaAvaliacoesRespondidas": "90.00",
+      "mediaAvaliacoesDisponiveis": "90.00"
+    },
+    {
+      "externalUserId": "615726",
+      "externalCompetenciaId": "01J9PT80CC3DGJPX7QBJT042F8",
+      "mediaAvaliacoesFinais": "0.00",
+      "avaliacoesRespondidas": "1",
+      "mediaAvaliacoesRespondidas": "86.00",
+      "mediaAvaliacoesDisponiveis": "86.00"
+    },
+    {
+      "externalUserId": "605363",
+      "externalCompetenciaId": "01J9PT80CC3DGJPX7QBJT042F8",
+      "mediaAvaliacoesFinais": "0.00",
+      "avaliacoesRespondidas": "1",
+      "mediaAvaliacoesRespondidas": "80.00",
+      "mediaAvaliacoesDisponiveis": "80.00"
+    },
+    {
+      "externalUserId": "606311",
+      "externalCompetenciaId": "01J9PT80CC3DGJPX7QBJT042F8",
+      "mediaAvaliacoesFinais": "0.00",
+      "avaliacoesRespondidas": "1",
+      "mediaAvaliacoesRespondidas": "96.00",
+      "mediaAvaliacoesDisponiveis": "96.00"
+    },
+    {
+      "externalUserId": "612269",
+      "externalCompetenciaId": "01J9PT80CC3DGJPX7QBJT042F8",
+      "mediaAvaliacoesFinais": "0.00",
+      "avaliacoesRespondidas": "1",
+      "mediaAvaliacoesRespondidas": "93.00",
+      "mediaAvaliacoesDisponiveis": "93.00"
+    },
+    {
+      "externalUserId": "605349",
+      "externalCompetenciaId": "01J9PT80CC3DGJPX7QBJT042F8",
+      "mediaAvaliacoesFinais": "0.00",
+      "avaliacoesRespondidas": "1",
+      "mediaAvaliacoesRespondidas": "83.00",
+      "mediaAvaliacoesDisponiveis": "83.00"
+    },
+    {
+      "externalUserId": "607908",
+      "externalCompetenciaId": "01J9PT80CC3DGJPX7QBJT042F8",
+      "mediaAvaliacoesFinais": "0.00",
+      "avaliacoesRespondidas": "1",
+      "mediaAvaliacoesRespondidas": "80.00",
+      "mediaAvaliacoesDisponiveis": "80.00"
+    },
+    {
+      "externalUserId": "605355",
+      "externalCompetenciaId": "01J9PT80CC3DGJPX7QBJT042F8",
+      "mediaAvaliacoesFinais": "0.00",
+      "avaliacoesRespondidas": "1",
+      "mediaAvaliacoesRespondidas": "96.00",
+      "mediaAvaliacoesDisponiveis": "96.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "externalUserId\texternalCompetenciaId\tmediaAvaliacoesFinais\tavaliacoesRespondidas\tmediaAvaliacoesRespondidas\tmediaAvaliacoesDisponiveis\n605365\t01J9PT80CC3DGJPX7QBJT042F8\t0.00\t1\t86.00\t86.00\n615723\t01J9PT80CC3DGJPX7QBJT042F8\t0.00\t1\t93.00\t93.00\n615725\t01J9PT80CC3DGJPX7QBJT042F8\t0.00\t1\t90.00\t90.00\n615726\t01J9PT80CC3DGJPX7QBJT042F8\t0.00\t1\t86.00\t86.00\n605363\t01J9PT80CC3DGJPX7QBJT042F8\t0.00\t1\t80.00\t80.00\n606311\t01J9PT80CC3DGJPX7QBJT042F8\t0.00\t1\t96.00\t96.00\n612269\t01J9PT80CC3DGJPX7QBJT042F8\t0.00\t1\t93.00\t93.00\n605349\t01J9PT80CC3DGJPX7QBJT042F8\t0.00\t1\t83.00\t83.00\n607908\t01J9PT80CC3DGJPX7QBJT042F8\t0.00\t1\t80.00\t80.00\n605355\t01J9PT80CC3DGJPX7QBJT042F8\t0.00\t1\t96.00\t96.00\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

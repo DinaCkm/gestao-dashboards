@@ -1,0 +1,46 @@
+{
+  "query": "SELECT CONCAT(COLUMN_NAME) as col FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'alunos' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT CONCAT(COLUMN_NAME) as col FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'alunos' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "col": "id"
+    },
+    {
+      "col": "externalId"
+    },
+    {
+      "col": "name"
+    },
+    {
+      "col": "email"
+    },
+    {
+      "col": "turmaId"
+    },
+    {
+      "col": "trilhaId"
+    },
+    {
+      "col": "consultorId"
+    },
+    {
+      "col": "programId"
+    },
+    {
+      "col": "isActive"
+    },
+    {
+      "col": "createdAt"
+    },
+    {
+      "col": "updatedAt"
+    },
+    {
+      "col": "canLogin"
+    }
+  ],
+  "messages": [],
+  "stdout": "col\nid\nexternalId\nname\nemail\nturmaId\ntrilhaId\nconsultorId\nprogramId\nisActive\ncreatedAt\nupdatedAt\ncanLogin\n",
+  "stderr": "",
+  "execution_time_ms": 362
+}

@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'alunos' AND COLUMN_NAME LIKE '%onsult%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'alunos' AND COLUMN_NAME LIKE '%onsult%';",
+  "rows": [
+    {
+      "COLUMN_NAME": "consultorId"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nconsultorId\n",
+  "stderr": "",
+  "execution_time_ms": 473
+}

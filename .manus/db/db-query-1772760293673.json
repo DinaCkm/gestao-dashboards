@@ -1,0 +1,31 @@
+{
+  "query": "SELECT DISTINCT programId FROM alunos ORDER BY programId LIMIT 10; SELECT DISTINCT programId FROM events ORDER BY programId LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT DISTINCT programId FROM alunos ORDER BY programId LIMIT 10; SELECT DISTINCT programId FROM events ORDER BY programId LIMIT 10;",
+  "rows": [
+    {
+      "programId": "1"
+    },
+    {
+      "programId": "16"
+    },
+    {
+      "programId": "17"
+    },
+    {
+      "programId": "18"
+    },
+    {
+      "programId": "19"
+    },
+    {
+      "programId": "programId"
+    },
+    {
+      "programId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "programId\n1\n16\n17\n18\n19\nprogramId\nNULL\n",
+  "stderr": "",
+  "execution_time_ms": 422
+}

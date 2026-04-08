@@ -1,0 +1,35 @@
+{
+  "query": "SELECT 'consultorId direto' as fonte, a.consultorId, IFNULL(c.name, 'SEM CONSULTOR VINCULADO') as mentor_nome FROM alunos a LEFT JOIN consultors c ON a.consultorId = c.id WHERE a.name LIKE '%Joseane%' UNION ALL SELECT 'sessao mais recente' as fonte, ms.consultorId, c.name as mentor_nome FROM mentoring_sessions ms JOIN consultors c ON ms.consultorId = c.id WHERE ms.alunoId = (SELECT id FROM alunos WHERE name LIKE '%Joseane%') ORDER BY fonte DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT 'consultorId direto' as fonte, a.consultorId, IFNULL(c.name, 'SEM CONSULTOR VINCULADO') as mentor_nome FROM alunos a LEFT JOIN consultors c ON a.consultorId = c.id WHERE a.name LIKE '%Joseane%' UNION ALL SELECT 'sessao mais recente' as fonte, ms.consultorId, c.name as mentor_nome FROM mentoring_sessions ms JOIN consultors c ON ms.consultorId = c.id WHERE ms.alunoId = (SELECT id FROM alunos WHERE name LIKE '%Joseane%') ORDER BY fonte DESC LIMIT 5;",
+  "rows": [
+    {
+      "fonte": "sessao mais recente",
+      "consultorId": "28",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha"
+    },
+    {
+      "fonte": "sessao mais recente",
+      "consultorId": "28",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha"
+    },
+    {
+      "fonte": "sessao mais recente",
+      "consultorId": "28",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha"
+    },
+    {
+      "fonte": "sessao mais recente",
+      "consultorId": "28",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha"
+    },
+    {
+      "fonte": "sessao mais recente",
+      "consultorId": "28",
+      "mentor_nome": "Ana Carolina Cardoso Viana Rocha"
+    }
+  ],
+  "messages": [],
+  "stdout": "fonte\tconsultorId\tmentor_nome\nsessao mais recente\t28\tAna Carolina Cardoso Viana Rocha\nsessao mais recente\t28\tAna Carolina Cardoso Viana Rocha\nsessao mais recente\t28\tAna Carolina Cardoso Viana Rocha\nsessao mais recente\t28\tAna Carolina Cardoso Viana Rocha\nsessao mais recente\t28\tAna Carolina Cardoso Viana Rocha\n",
+  "stderr": "",
+  "execution_time_ms": 360
+}

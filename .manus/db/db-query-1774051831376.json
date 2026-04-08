@@ -1,0 +1,42 @@
+{
+  "query": "SELECT ms.id, ms.alunoId, ms.taskMode, ms.taskId, ms.customTaskTitle, tl.nome as task_library_name\nFROM mentoring_sessions ms\nLEFT JOIN task_library tl ON ms.taskId = tl.id\nWHERE ms.taskMode IS NOT NULL AND ms.taskMode != 'sem_tarefa'\nORDER BY ms.id DESC\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ms.id, ms.alunoId, ms.taskMode, ms.taskId, ms.customTaskTitle, tl.nome as task_library_name\nFROM mentoring_sessions ms\nLEFT JOIN task_library tl ON ms.taskId = tl.id\nWHERE ms.taskMode IS NOT NULL AND ms.taskMode != 'sem_tarefa'\nORDER BY ms.id DESC\nLIMIT 20;",
+  "rows": [
+    {
+      "id": "180003",
+      "alunoId": "30098",
+      "taskMode": "livre",
+      "taskId": "NULL",
+      "customTaskTitle": "Definição do problema a ser abordado ",
+      "task_library_name": "NULL"
+    },
+    {
+      "id": "180002",
+      "alunoId": "30094",
+      "taskMode": "livre",
+      "taskId": "NULL",
+      "customTaskTitle": "Definição do problema a ser abordado",
+      "task_library_name": "NULL"
+    },
+    {
+      "id": "180001",
+      "alunoId": "30097",
+      "taskMode": "livre",
+      "taskId": "NULL",
+      "customTaskTitle": "Definição do problema a ser abordado",
+      "task_library_name": "NULL"
+    },
+    {
+      "id": "60528",
+      "alunoId": "30048",
+      "taskMode": "personalizada",
+      "taskId": "NULL",
+      "customTaskTitle": "NULL",
+      "task_library_name": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\ttaskMode\ttaskId\tcustomTaskTitle\ttask_library_name\n180003\t30098\tlivre\tNULL\tDefinição do problema a ser abordado \tNULL\n180002\t30094\tlivre\tNULL\tDefinição do problema a ser abordado\tNULL\n180001\t30097\tlivre\tNULL\tDefinição do problema a ser abordado\tNULL\n60528\t30048\tpersonalizada\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 67
+}

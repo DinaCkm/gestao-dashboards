@@ -1,0 +1,8 @@
+{
+  "query": "SELECT t.id, t.nome FROM trilhas t WHERE t.id IN (1, 2);\nSELECT p.id, p.nome FROM programas p WHERE p.id = 90002;\nSELECT a.turmaId, a.trilhaId, a.consultorId, a.programId FROM alunos a WHERE a.id = 660014;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT t.id, t.nome FROM trilhas t WHERE t.id IN (1, 2);\nSELECT p.id, p.nome FROM programas p WHERE p.id = 90002;\nSELECT a.turmaId, a.trilhaId, a.consultorId, a.programId FROM alunos a WHERE a.id = 660014;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 't.nome' in 'field list'"
+  ]
+}

@@ -1,0 +1,274 @@
+{
+  "query": "SELECT DISTINCT ac.competenciaId, c.nome, ac.peso, DATE_FORMAT(ac.microInicio, '%Y-%m-%d') as inicio, DATE_FORMAT(ac.microTermino, '%Y-%m-%d') as termino, t.name as trilha FROM assessment_competencias ac JOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id JOIN alunos a ON ap.alunoId = a.id JOIN competencias c ON ac.competenciaId = c.id JOIN trilhas t ON ap.trilhaId = t.id WHERE a.name LIKE '%abio%' ORDER BY t.name, ac.peso, c.nome",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT DISTINCT ac.competenciaId, c.nome, ac.peso, DATE_FORMAT(ac.microInicio, '%Y-%m-%d') as inicio, DATE_FORMAT(ac.microTermino, '%Y-%m-%d') as termino, t.name as trilha FROM assessment_competencias ac JOIN assessment_pdi ap ON ac.assessmentPdiId = ap.id JOIN alunos a ON ap.alunoId = a.id JOIN competencias c ON ac.competenciaId = c.id JOIN trilhas t ON ap.trilhaId = t.id WHERE a.name LIKE '%abio%' ORDER BY t.name, ac.peso, c.nome",
+  "rows": [
+    {
+      "competenciaId": "30004",
+      "nome": "Atenção",
+      "peso": "obrigatoria",
+      "inicio": "2025-04-10",
+      "termino": "2025-10-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30004",
+      "nome": "Atenção",
+      "peso": "obrigatoria",
+      "inicio": "2025-03-24",
+      "termino": "2025-09-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30007",
+      "nome": "Empatia",
+      "peso": "obrigatoria",
+      "inicio": "2025-04-10",
+      "termino": "2025-10-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30007",
+      "nome": "Empatia",
+      "peso": "obrigatoria",
+      "inicio": "2025-03-24",
+      "termino": "2025-09-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30008",
+      "nome": "Escuta Ativa",
+      "peso": "obrigatoria",
+      "inicio": "2025-04-10",
+      "termino": "2025-10-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30003",
+      "nome": "Gestão do Tempo",
+      "peso": "obrigatoria",
+      "inicio": "2025-03-24",
+      "termino": "2025-09-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30009",
+      "nome": "Memória",
+      "peso": "obrigatoria",
+      "inicio": "2025-04-10",
+      "termino": "2025-10-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30009",
+      "nome": "Memória",
+      "peso": "obrigatoria",
+      "inicio": "2025-03-24",
+      "termino": "2025-09-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30010",
+      "nome": "Raciocínio Lógico e Espacial",
+      "peso": "obrigatoria",
+      "inicio": "2025-04-10",
+      "termino": "2025-10-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30010",
+      "nome": "Raciocínio Lógico e Espacial",
+      "peso": "obrigatoria",
+      "inicio": "2025-03-24",
+      "termino": "2025-09-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30005",
+      "nome": "Autopercepção",
+      "peso": "opcional",
+      "inicio": "2025-04-10",
+      "termino": "2025-10-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30005",
+      "nome": "Autopercepção",
+      "peso": "opcional",
+      "inicio": "2025-03-24",
+      "termino": "2025-09-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30006",
+      "nome": "Disciplina",
+      "peso": "opcional",
+      "inicio": "2025-04-10",
+      "termino": "2025-10-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30006",
+      "nome": "Disciplina",
+      "peso": "opcional",
+      "inicio": "2025-03-24",
+      "termino": "2025-09-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30008",
+      "nome": "Escuta Ativa",
+      "peso": "opcional",
+      "inicio": "2025-03-24",
+      "termino": "2025-09-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30001",
+      "nome": "Gestão de Conflitos",
+      "peso": "opcional",
+      "inicio": "2024-10-10",
+      "termino": "2025-04-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30002",
+      "nome": "Gestão de Equipes",
+      "peso": "opcional",
+      "inicio": "2024-10-10",
+      "termino": "2025-04-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30003",
+      "nome": "Gestão do Tempo",
+      "peso": "opcional",
+      "inicio": "2024-10-10",
+      "termino": "2025-04-30",
+      "trilha": "Basic"
+    },
+    {
+      "competenciaId": "30014",
+      "nome": "Comunicação Assertiva",
+      "peso": "obrigatoria",
+      "inicio": "2025-07-10",
+      "termino": "2025-12-31",
+      "trilha": "Essential"
+    },
+    {
+      "competenciaId": "30019",
+      "nome": "Inteligência Emocional",
+      "peso": "obrigatoria",
+      "inicio": "2025-07-10",
+      "termino": "2025-12-31",
+      "trilha": "Essential"
+    },
+    {
+      "competenciaId": "30020",
+      "nome": "Leitura de Cenário",
+      "peso": "obrigatoria",
+      "inicio": "2025-07-10",
+      "termino": "2025-12-31",
+      "trilha": "Essential"
+    },
+    {
+      "competenciaId": "30024",
+      "nome": "Planejamento e Organização",
+      "peso": "obrigatoria",
+      "inicio": "2025-07-10",
+      "termino": "2025-12-31",
+      "trilha": "Essential"
+    },
+    {
+      "competenciaId": "30012",
+      "nome": "Adaptabilidade",
+      "peso": "opcional",
+      "inicio": "2025-07-10",
+      "termino": "2025-12-31",
+      "trilha": "Essential"
+    },
+    {
+      "competenciaId": "30026",
+      "nome": "Proatividade",
+      "peso": "opcional",
+      "inicio": "2025-07-10",
+      "termino": "2025-12-31",
+      "trilha": "Essential"
+    },
+    {
+      "competenciaId": "30030",
+      "nome": "Resiliência",
+      "peso": "opcional",
+      "inicio": "2025-07-10",
+      "termino": "2025-12-31",
+      "trilha": "Essential"
+    },
+    {
+      "competenciaId": "30017",
+      "nome": "Foco em Resultados",
+      "peso": "opcional",
+      "inicio": "2025-11-30",
+      "termino": "2026-05-10",
+      "trilha": "Master"
+    },
+    {
+      "competenciaId": "30025",
+      "nome": "Presença Executiva",
+      "peso": "opcional",
+      "inicio": "2025-11-30",
+      "termino": "2026-05-10",
+      "trilha": "Master"
+    },
+    {
+      "competenciaId": "30027",
+      "nome": "Protagonismo",
+      "peso": "opcional",
+      "inicio": "2025-11-30",
+      "termino": "2026-05-10",
+      "trilha": "Master"
+    },
+    {
+      "competenciaId": "30032",
+      "nome": "Tomada de Decisão",
+      "peso": "opcional",
+      "inicio": "2025-11-30",
+      "termino": "2026-05-10",
+      "trilha": "Master"
+    },
+    {
+      "competenciaId": "30033",
+      "nome": "Visão Estratégica",
+      "peso": "opcional",
+      "inicio": "2025-11-30",
+      "termino": "2026-05-10",
+      "trilha": "Master"
+    },
+    {
+      "competenciaId": "30013",
+      "nome": "Arquitetura de Mudanças",
+      "peso": "opcional",
+      "inicio": "2025-10-05",
+      "termino": "2026-03-30",
+      "trilha": "Visão de Futuro"
+    },
+    {
+      "competenciaId": "30022",
+      "nome": "Mindset Visionário",
+      "peso": "opcional",
+      "inicio": "2025-10-05",
+      "termino": "2026-03-30",
+      "trilha": "Visão de Futuro"
+    },
+    {
+      "competenciaId": "30028",
+      "nome": "Radar de Cenários",
+      "peso": "opcional",
+      "inicio": "2025-10-05",
+      "termino": "2026-03-30",
+      "trilha": "Visão de Futuro"
+    }
+  ],
+  "messages": [],
+  "stdout": "competenciaId\tnome\tpeso\tinicio\ttermino\ttrilha\n30004\tAtenção\tobrigatoria\t2025-04-10\t2025-10-30\tBasic\n30004\tAtenção\tobrigatoria\t2025-03-24\t2025-09-30\tBasic\n30007\tEmpatia\tobrigatoria\t2025-04-10\t2025-10-30\tBasic\n30007\tEmpatia\tobrigatoria\t2025-03-24\t2025-09-30\tBasic\n30008\tEscuta Ativa\tobrigatoria\t2025-04-10\t2025-10-30\tBasic\n30003\tGestão do Tempo\tobrigatoria\t2025-03-24\t2025-09-30\tBasic\n30009\tMemória\tobrigatoria\t2025-04-10\t2025-10-30\tBasic\n30009\tMemória\tobrigatoria\t2025-03-24\t2025-09-30\tBasic\n30010\tRaciocínio Lógico e Espacial\tobrigatoria\t2025-04-10\t2025-10-30\tBasic\n30010\tRaciocínio Lógico e Espacial\tobrigatoria\t2025-03-24\t2025-09-30\tBasic\n30005\tAutopercepção\topcional\t2025-04-10\t2025-10-30\tBasic\n30005\tAutopercepção\topcional\t2025-03-24\t2025-09-30\tBasic\n30006\tDisciplina\topcional\t2025-04-10\t2025-10-30\tBasic\n30006\tDisciplina\topcional\t2025-03-24\t2025-09-30\tBasic\n30008\tEscuta Ativa\topcional\t2025-03-24\t2025-09-30\tBasic\n30001\tGestão de Conflitos\topcional\t2024-10-10\t2025-04-30\tBasic\n30002\tGestão de Equipes\topcional\t2024-10-10\t2025-04-30\tBasic\n30003\tGestão do Tempo\topcional\t2024-10-10\t2025-04-30\tBasic\n30014\tComunicação Assertiva\tobrigatoria\t2025-07-10\t2025-12-31\tEssential\n30019\tInteligência Emocional\tobrigatoria\t2025-07-10\t2025-12-31\tEssential\n30020\tLeitura de Cenário\tobrigatoria\t2025-07-10\t2025-12-31\tEssential\n30024\tPlanejamento e Organização\tobrigatoria\t2025-07-10\t2025-12-31\tEssential\n30012\tAdaptabilidade\topcional\t2025-07-10\t2025-12-31\tEssential\n30026\tProatividade\topcional\t2025-07-10\t2025-12-31\tEssential\n30030\tResiliência\topcional\t2025-07-10\t2025-12-31\tEssential\n30017\tFoco em Resultados\topcional\t2025-11-30\t2026-05-10\tMaster\n30025\tPresença Executiva\topcional\t2025-11-30\t2026-05-10\tMaster\n30027\tProtagonismo\topcional\t2025-11-30\t2026-05-10\tMaster\n30032\tTomada de Decisão\topcional\t2025-11-30\t2026-05-10\tMaster\n30033\tVisão Estratégica\topcional\t2025-11-30\t2026-05-10\tMaster\n30013\tArquitetura de Mudanças\topcional\t2025-10-05\t2026-03-30\tVisão de Futuro\n30022\tMindset Visionário\topcional\t2025-10-05\t2026-03-30\tVisão de Futuro\n30028\tRadar de Cenários\topcional\t2025-10-05\t2026-03-30\tVisão de Futuro\n",
+  "stderr": "",
+  "execution_time_ms": 359
+}

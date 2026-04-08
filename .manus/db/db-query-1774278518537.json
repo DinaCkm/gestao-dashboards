@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, name, email, cpf FROM consultors WHERE name LIKE '%Adriana%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, email, cpf FROM consultors WHERE name LIKE '%Adriana%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "39",
+      "name": "Adriana Deus",
+      "email": "drikadeus@gmail.com",
+      "cpf": "00000000021"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tcpf\n39\tAdriana Deus\tdrikadeus@gmail.com\t00000000021\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

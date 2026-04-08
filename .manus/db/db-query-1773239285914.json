@@ -1,0 +1,58 @@
+{
+  "query": "SELECT dr.alunoId, a.name as alunoNome, dr.scoreD, dr.scoreI, dr.scoreS, dr.scoreC, dr.perfilPredominante, dr.perfilSecundario, dr.metodoCalculo, dr.completedAt FROM disc_resultados dr LEFT JOIN alunos a ON dr.alunoId = a.id LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT dr.alunoId, a.name as alunoNome, dr.scoreD, dr.scoreI, dr.scoreS, dr.scoreC, dr.perfilPredominante, dr.perfilSecundario, dr.metodoCalculo, dr.completedAt FROM disc_resultados dr LEFT JOIN alunos a ON dr.alunoId = a.id LIMIT 10;",
+  "rows": [
+    {
+      "alunoId": "270001",
+      "alunoNome": "Carlos Makiyama",
+      "scoreD": "75.00",
+      "scoreI": "79.00",
+      "scoreS": "50.00",
+      "scoreC": "64.00",
+      "perfilPredominante": "I",
+      "perfilSecundario": "D",
+      "metodoCalculo": "ipsativo",
+      "completedAt": "2026-03-08 03:15:30"
+    },
+    {
+      "alunoId": "330001",
+      "alunoNome": "Jose da Silva",
+      "scoreD": "54.00",
+      "scoreI": "25.00",
+      "scoreS": "86.00",
+      "scoreC": "43.00",
+      "perfilPredominante": "S",
+      "perfilSecundario": "D",
+      "metodoCalculo": "ipsativo",
+      "completedAt": "2026-03-08 15:35:02"
+    },
+    {
+      "alunoId": "90013",
+      "alunoNome": "Dina Makiyama",
+      "scoreD": "100.00",
+      "scoreI": "100.00",
+      "scoreS": "100.00",
+      "scoreC": "100.00",
+      "perfilPredominante": "D",
+      "perfilSecundario": "I",
+      "metodoCalculo": "ipsativo",
+      "completedAt": "2026-03-08 19:44:26"
+    },
+    {
+      "alunoId": "510010",
+      "alunoNome": "Graça da Silva",
+      "scoreD": "84.00",
+      "scoreI": "46.00",
+      "scoreS": "34.00",
+      "scoreC": "36.00",
+      "perfilPredominante": "D",
+      "perfilSecundario": "I",
+      "metodoCalculo": "ipsativo",
+      "completedAt": "2026-03-09 15:39:50"
+    }
+  ],
+  "messages": [],
+  "stdout": "alunoId\talunoNome\tscoreD\tscoreI\tscoreS\tscoreC\tperfilPredominante\tperfilSecundario\tmetodoCalculo\tcompletedAt\n270001\tCarlos Makiyama\t75.00\t79.00\t50.00\t64.00\tI\tD\tipsativo\t2026-03-08 03:15:30\n330001\tJose da Silva\t54.00\t25.00\t86.00\t43.00\tS\tD\tipsativo\t2026-03-08 15:35:02\n90013\tDina Makiyama\t100.00\t100.00\t100.00\t100.00\tD\tI\tipsativo\t2026-03-08 19:44:26\n510010\tGraça da Silva\t84.00\t46.00\t34.00\t36.00\tD\tI\tipsativo\t2026-03-09 15:39:50\n",
+  "stderr": "",
+  "execution_time_ms": 355
+}

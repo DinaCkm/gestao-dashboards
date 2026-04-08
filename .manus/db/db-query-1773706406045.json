@@ -1,0 +1,150 @@
+{
+  "query": "SELECT u.id, u.name, u.email, u.consultorId, u.programId FROM users u WHERE u.role = 'manager' AND u.consultorId IS NULL ORDER BY u.name LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT u.id, u.name, u.email, u.consultorId, u.programId FROM users u WHERE u.role = 'manager' AND u.consultorId IS NULL ORDER BY u.name LIMIT 20;",
+  "rows": [
+    {
+      "id": "660197",
+      "name": "Carolina Borges Moreira",
+      "email": "carolina.moreira@embrapii.org.br",
+      "consultorId": "NULL",
+      "programId": "18"
+    },
+    {
+      "id": "660117",
+      "name": "Claudia Maia Da Silva",
+      "email": "claudia@ac.sebrae.com.br",
+      "consultorId": "NULL",
+      "programId": "16"
+    },
+    {
+      "id": "2550045",
+      "name": "Dina Makiyama",
+      "email": "dina@ckmtalents.net",
+      "consultorId": "NULL",
+      "programId": "19"
+    },
+    {
+      "id": "3630136",
+      "name": "Emanoel",
+      "email": "emanoel.querette@embrapii.org.br",
+      "consultorId": "NULL",
+      "programId": "18"
+    },
+    {
+      "id": "3630110",
+      "name": "Emanoel Loreto Querette",
+      "email": "emanoel.querette@embrapii.org.br",
+      "consultorId": "NULL",
+      "programId": "18"
+    },
+    {
+      "id": "660120",
+      "name": "Fabio Silva De Oliveira",
+      "email": "fabio.oliveira@ac.sebrae.com.br",
+      "consultorId": "NULL",
+      "programId": "16"
+    },
+    {
+      "id": "4290839",
+      "name": "gerente teste",
+      "email": "teste@embrapii.com",
+      "consultorId": "NULL",
+      "programId": "18"
+    },
+    {
+      "id": "570344",
+      "name": "Gestor SEBRAE TO",
+      "email": "gestor@sebraeto.com",
+      "consultorId": "NULL",
+      "programId": "17"
+    },
+    {
+      "id": "660170",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "consultorId": "NULL",
+      "programId": "17"
+    },
+    {
+      "id": "2071221",
+      "name": "Test Gestor 1772776605557",
+      "email": "gestor.test.1772776605557@example.com",
+      "consultorId": "NULL",
+      "programId": "1"
+    },
+    {
+      "id": "2071235",
+      "name": "Test Gestor 1772776778370",
+      "email": "gestor.test.1772776778370@example.com",
+      "consultorId": "NULL",
+      "programId": "1"
+    },
+    {
+      "id": "2071297",
+      "name": "Test Gestor 1772777591024",
+      "email": "gestor.test.1772777591024@example.com",
+      "consultorId": "NULL",
+      "programId": "1"
+    },
+    {
+      "id": "2220392",
+      "name": "Test Gestor 1772830057873",
+      "email": "gestor.test.1772830057873@example.com",
+      "consultorId": "NULL",
+      "programId": "1"
+    },
+    {
+      "id": "2220424",
+      "name": "Test Gestor 1772830681305",
+      "email": "gestor.test.1772830681305@example.com",
+      "consultorId": "NULL",
+      "programId": "1"
+    },
+    {
+      "id": "2220454",
+      "name": "Test Gestor 1772831012880",
+      "email": "gestor.test.1772831012880@example.com",
+      "consultorId": "NULL",
+      "programId": "1"
+    },
+    {
+      "id": "2250020",
+      "name": "Test Gestor 1772834232879",
+      "email": "gestor.test.1772834232879@example.com",
+      "consultorId": "NULL",
+      "programId": "1"
+    },
+    {
+      "id": "2250049",
+      "name": "Test Gestor 1772835041967",
+      "email": "gestor.test.1772835041967@example.com",
+      "consultorId": "NULL",
+      "programId": "1"
+    },
+    {
+      "id": "2250114",
+      "name": "Test Gestor 1772835606891",
+      "email": "gestor.test.1772835606891@example.com",
+      "consultorId": "NULL",
+      "programId": "1"
+    },
+    {
+      "id": "2250320",
+      "name": "Test Gestor 1772838169014",
+      "email": "gestor.test.1772838169014@example.com",
+      "consultorId": "NULL",
+      "programId": "1"
+    },
+    {
+      "id": "2250376",
+      "name": "Test Gestor 1772838719650",
+      "email": "gestor.test.1772838719650@example.com",
+      "consultorId": "NULL",
+      "programId": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tconsultorId\tprogramId\n660197\tCarolina Borges Moreira\tcarolina.moreira@embrapii.org.br\tNULL\t18\n660117\tClaudia Maia Da Silva\tclaudia@ac.sebrae.com.br\tNULL\t16\n2550045\tDina Makiyama\tdina@ckmtalents.net\tNULL\t19\n3630136\tEmanoel\temanoel.querette@embrapii.org.br\tNULL\t18\n3630110\tEmanoel Loreto Querette\temanoel.querette@embrapii.org.br\tNULL\t18\n660120\tFabio Silva De Oliveira\tfabio.oliveira@ac.sebrae.com.br\tNULL\t16\n4290839\tgerente teste\tteste@embrapii.com\tNULL\t18\n570344\tGestor SEBRAE TO\tgestor@sebraeto.com\tNULL\t17\n660170\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\tNULL\t17\n2071221\tTest Gestor 1772776605557\tgestor.test.1772776605557@example.com\tNULL\t1\n2071235\tTest Gestor 1772776778370\tgestor.test.1772776778370@example.com\tNULL\t1\n2071297\tTest Gestor 1772777591024\tgestor.test.1772777591024@example.com\tNULL\t1\n2220392\tTest Gestor 1772830057873\tgestor.test.1772830057873@example.com\tNULL\t1\n2220424\tTest Gestor 1772830681305\tgestor.test.1772830681305@example.com\tNULL\t1\n2220454\tTest Gestor 1772831012880\tgestor.test.1772831012880@example.com\tNULL\t1\n2250020\tTest Gestor 1772834232879\tgestor.test.1772834232879@example.com\tNULL\t1\n2250049\tTest Gestor 1772835041967\tgestor.test.1772835041967@example.com\tNULL\t1\n2250114\tTest Gestor 1772835606891\tgestor.test.1772835606891@example.com\tNULL\t1\n2250320\tTest Gestor 1772838169014\tgestor.test.1772838169014@example.com\tNULL\t1\n2250376\tTest Gestor 1772838719650\tgestor.test.1772838719650@example.com\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 370
+}

@@ -1,0 +1,17 @@
+{
+  "query": "SELECT a.id, a.externalId, a.name, a.turmaId, a.programId\nFROM alunos a\nWHERE a.name LIKE '%illena%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.externalId, a.name, a.turmaId, a.programId\nFROM alunos a\nWHERE a.name LIKE '%illena%';",
+  "rows": [
+    {
+      "id": "30070",
+      "externalId": "667292",
+      "name": "Millena Pereira Lima Rodrigues",
+      "turmaId": "30003",
+      "programId": "17"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\texternalId\tname\tturmaId\tprogramId\n30070\t667292\tMillena Pereira Lima Rodrigues\t30003\t17\n",
+  "stderr": "",
+  "execution_time_ms": 380
+}

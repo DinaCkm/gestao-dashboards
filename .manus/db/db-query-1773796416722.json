@@ -1,0 +1,22 @@
+{
+  "query": "\nSELECT a.id, a.name, a.email, a.consultorId, a.bypassOnboarding, a.onboardingLiberado,\n  (SELECT COUNT(*) FROM assessment_pdi WHERE alunoId = a.id) as pdiCount,\n  (SELECT COUNT(*) FROM onboarding_jornada WHERE alunoId = a.id) as jornadaCount,\n  u.role, u.id as userId\nFROM alunos a\nLEFT JOIN users u ON u.alunoId = a.id\nWHERE a.name LIKE '%Joseane%' OR a.name LIKE '%joseane%'\nLIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT a.id, a.name, a.email, a.consultorId, a.bypassOnboarding, a.onboardingLiberado,\n  (SELECT COUNT(*) FROM assessment_pdi WHERE alunoId = a.id) as pdiCount,\n  (SELECT COUNT(*) FROM onboarding_jornada WHERE alunoId = a.id) as jornadaCount,\n  u.role, u.id as userId\nFROM alunos a\nLEFT JOIN users u ON u.alunoId = a.id\nWHERE a.name LIKE '%Joseane%' OR a.name LIKE '%joseane%'\nLIMIT 5;\n",
+  "rows": [
+    {
+      "id": "30066",
+      "name": "Joseane Rodrigues Leite",
+      "email": "joseane@to.sebrae.com.br",
+      "consultorId": "35",
+      "bypassOnboarding": "0",
+      "onboardingLiberado": "0",
+      "pdiCount": "1",
+      "jornadaCount": "1",
+      "role": "manager",
+      "userId": "660170"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tconsultorId\tbypassOnboarding\tonboardingLiberado\tpdiCount\tjornadaCount\trole\tuserId\n30066\tJoseane Rodrigues Leite\tjoseane@to.sebrae.com.br\t35\t0\t0\t1\t1\tmanager\t660170\n",
+  "stderr": "",
+  "execution_time_ms": 126
+}

@@ -1,0 +1,41 @@
+{
+  "query": "SELECT c.id, c.name, c.email, c.cpf, c.role, c.managedProgramId, c.programId, c.canLogin FROM consultors c WHERE c.role = 'gerente'; SELECT u.id, u.name, u.email, u.role, u.alunoId, u.consultorId, u.programId FROM users u WHERE u.role = 'manager'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT c.id, c.name, c.email, c.cpf, c.role, c.managedProgramId, c.programId, c.canLogin FROM consultors c WHERE c.role = 'gerente'; SELECT u.id, u.name, u.email, u.role, u.alunoId, u.consultorId, u.programId FROM users u WHERE u.role = 'manager'",
+  "rows": [
+    {
+      "id": "30001",
+      "name": "Joseane",
+      "email": "joseane@to.sebrae.com.br",
+      "cpf": "NULL",
+      "role": "gerente",
+      "managedProgramId": "17",
+      "programId": "NULL",
+      "canLogin": "1"
+    }
+  ],
+  "messages": [
+    "id\tname\temail\trole\talunoId\tconsultorId\tprogramId",
+    "570344\tGestor SEBRAE TO\tgestor@sebraeto.com\tmanager\tNULL\tNULL\t17",
+    "690412\tAdriana Deus\tadriana@ckmtalents.net\tmanager\tNULL\t39\tNULL",
+    "720421\tAna Carolina Cardoso Viana Rocha\tanaccvrocha@gmail.com\tmanager\tNULL\t28\tNULL",
+    "2040243\tTest Gestor 1772738714522\tgestor.test.1772738714522@example.com\tmanager\tNULL\tNULL\t1",
+    "2040342\tTest Gestor 1772745328605\tgestor.test.1772745328605@example.com\tmanager\tNULL\tNULL\t1",
+    "2040350\tTest Gestor 1772745375564\tgestor.test.1772745375564@example.com\tmanager\tNULL\tNULL\t1",
+    "2040446\tTest Gestor 1772752717023\tgestor.test.1772752717023@example.com\tmanager\tNULL\tNULL\t1",
+    "2040453\tTest Gestor 1772752765715\tgestor.test.1772752765715@example.com\tmanager\tNULL\tNULL\t1",
+    "2070023\tTest Gestor 1772754003065\tgestor.test.1772754003065@example.com\tmanager\tNULL\tNULL\t1",
+    "2070037\tTest Gestor 1772754289268\tgestor.test.1772754289268@example.com\tmanager\tNULL\tNULL\t1",
+    "2070195\tTest Gestor 1772758630639\tgestor.test.1772758630639@example.com\tmanager\tNULL\tNULL\t1",
+    "2070258\tTest Gestor 1772759657466\tgestor.test.1772759657466@example.com\tmanager\tNULL\tNULL\t1",
+    "2070299\tTest Gestor 1772760072811\tgestor.test.1772760072811@example.com\tmanager\tNULL\tNULL\t1",
+    "2070336\tTest Gestor 1772760636485\tgestor.test.1772760636485@example.com\tmanager\tNULL\tNULL\t1",
+    "2070365\tTest Gestor 1772761300397\tgestor.test.1772761300397@example.com\tmanager\tNULL\tNULL\t1",
+    "2070378\tTest Gestor 1772761374061\tgestor.test.1772761374061@example.com\tmanager\tNULL\tNULL\t1",
+    "2070418\tTest Gestor 1772762281000\tgestor.test.1772762281000@example.com\tmanager\tNULL\tNULL\t1",
+    "2070463\tTest Gestor 1772762802753\tgestor.test.1772762802753@example.com\tmanager\tNULL\tNULL\t1",
+    "2070543\tTest Gestor 1772763944270\tgestor.test.1772763944270@example.com\tmanager\tNULL\tNULL\t1"
+  ],
+  "stdout": "id\tname\temail\tcpf\trole\tmanagedProgramId\tprogramId\tcanLogin\n30001\tJoseane\tjoseane@to.sebrae.com.br\tNULL\tgerente\t17\tNULL\t1\nid\tname\temail\trole\talunoId\tconsultorId\tprogramId\n570344\tGestor SEBRAE TO\tgestor@sebraeto.com\tmanager\tNULL\tNULL\t17\n690412\tAdriana Deus\tadriana@ckmtalents.net\tmanager\tNULL\t39\tNULL\n720421\tAna Carolina Cardoso Viana Rocha\tanaccvrocha@gmail.com\tmanager\tNULL\t28\tNULL\n2040243\tTest Gestor 1772738714522\tgestor.test.1772738714522@example.com\tmanager\tNULL\tNULL\t1\n2040342\tTest Gestor 1772745328605\tgestor.test.1772745328605@example.com\tmanager\tNULL\tNULL\t1\n2040350\tTest Gestor 1772745375564\tgestor.test.1772745375564@example.com\tmanager\tNULL\tNULL\t1\n2040446\tTest Gestor 1772752717023\tgestor.test.1772752717023@example.com\tmanager\tNULL\tNULL\t1\n2040453\tTest Gestor 1772752765715\tgestor.test.1772752765715@example.com\tmanager\tNULL\tNULL\t1\n2070023\tTest Gestor 1772754003065\tgestor.test.1772754003065@example.com\tmanager\tNULL\tNULL\t1\n2070037\tTest Gestor 1772754289268\tgestor.test.1772754289268@example.com\tmanager\tNULL\tNULL\t1\n2070195\tTest Gestor 1772758630639\tgestor.test.1772758630639@example.com\tmanager\tNULL\tNULL\t1\n2070258\tTest Gestor 1772759657466\tgestor.test.1772759657466@example.com\tmanager\tNULL\tNULL\t1\n2070299\tTest Gestor 1772760072811\tgestor.test.1772760072811@example.com\tmanager\tNULL\tNULL\t1\n2070336\tTest Gestor 1772760636485\tgestor.test.1772760636485@example.com\tmanager\tNULL\tNULL\t1\n2070365\tTest Gestor 1772761300397\tgestor.test.1772761300397@example.com\tmanager\tNULL\tNULL\t1\n2070378\tTest Gestor 1772761374061\tgestor.test.1772761374061@example.com\tmanager\tNULL\tNULL\t1\n2070418\tTest Gestor 1772762281000\tgestor.test.1772762281000@example.com\tmanager\tNULL\tNULL\t1\n2070463\tTest Gestor 1772762802753\tgestor.test.1772762802753@example.com\tmanager\tNULL\tNULL\t1\n2070543\tTest Gestor 1772763944270\tgestor.test.1772763944270@example.com\tmanager\tNULL\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 416
+}

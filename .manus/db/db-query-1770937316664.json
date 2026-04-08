@@ -1,0 +1,22 @@
+{
+  "query": "SELECT 'Total alunos cadastrados' as metrica, COUNT(*) as valor FROM alunos\nUNION ALL\nSELECT 'Alunos com mentoria', COUNT(DISTINCT alunoId) FROM mentoring_sessions\nUNION ALL\nSELECT 'Alunos sem mentoria', COUNT(*) FROM alunos WHERE id NOT IN (SELECT DISTINCT alunoId FROM mentoring_sessions)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT 'Total alunos cadastrados' as metrica, COUNT(*) as valor FROM alunos\nUNION ALL\nSELECT 'Alunos com mentoria', COUNT(DISTINCT alunoId) FROM mentoring_sessions\nUNION ALL\nSELECT 'Alunos sem mentoria', COUNT(*) FROM alunos WHERE id NOT IN (SELECT DISTINCT alunoId FROM mentoring_sessions)",
+  "rows": [
+    {
+      "metrica": "Total alunos cadastrados",
+      "valor": "125"
+    },
+    {
+      "metrica": "Alunos sem mentoria",
+      "valor": "26"
+    },
+    {
+      "metrica": "Alunos com mentoria",
+      "valor": "99"
+    }
+  ],
+  "messages": [],
+  "stdout": "metrica\tvalor\nTotal alunos cadastrados\t125\nAlunos sem mentoria\t26\nAlunos com mentoria\t99\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}

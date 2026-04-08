@@ -1,0 +1,18 @@
+{
+  "query": "\nSELECT a.id, a.name, a.consultorId, c.name AS consultorName, a.programId, a.turmaId\nFROM alunos a\nLEFT JOIN consultors c ON a.consultorId = c.id\nWHERE a.name LIKE '%Vanessa%Bertholdo%' OR a.name LIKE '%Vanessa%Vargas%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT a.id, a.name, a.consultorId, c.name AS consultorName, a.programId, a.turmaId\nFROM alunos a\nLEFT JOIN consultors c ON a.consultorId = c.id\nWHERE a.name LIKE '%Vanessa%Bertholdo%' OR a.name LIKE '%Vanessa%Vargas%';\n",
+  "rows": [
+    {
+      "id": "30099",
+      "name": "Vanessa Bertholdo Vargas",
+      "consultorId": "39",
+      "consultorName": "Adriana Deus",
+      "programId": "18",
+      "turmaId": "30002"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tconsultorId\tconsultorName\tprogramId\tturmaId\n30099\tVanessa Bertholdo Vargas\t39\tAdriana Deus\t18\t30002\n",
+  "stderr": "",
+  "execution_time_ms": 368
+}

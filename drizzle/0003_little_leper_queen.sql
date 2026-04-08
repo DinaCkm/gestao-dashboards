@@ -1,0 +1,1 @@
+ALTER TABLE `uploaded_files` MODIFY COLUMN `fileType` enum('sebraeacre_mentorias','sebraeacre_eventos','sebraeto_mentorias','sebraeto_eventos','embrapii_mentorias','embrapii_eventos','performance') NOT NULL DEFAULT 'sebraeacre_mentorias';

@@ -1,0 +1,76 @@
+{
+  "query": "SELECT c.id as cid, c.name, c.role as c_role, c.managedProgramId, u.id as uid, u.name as u_name, u.consultorId, u.programId, u.role as u_role FROM consultors c LEFT JOIN users u ON LOWER(u.email) = LOWER(c.email) WHERE c.role = 'gerente' ORDER BY c.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT c.id as cid, c.name, c.role as c_role, c.managedProgramId, u.id as uid, u.name as u_name, u.consultorId, u.programId, u.role as u_role FROM consultors c LEFT JOIN users u ON LOWER(u.email) = LOWER(c.email) WHERE c.role = 'gerente' ORDER BY c.name;",
+  "rows": [
+    {
+      "cid": "60002",
+      "name": "Emanoel",
+      "c_role": "gerente",
+      "managedProgramId": "18",
+      "uid": "3630110",
+      "u_name": "Emanoel Loreto Querette",
+      "consultorId": "NULL",
+      "programId": "18",
+      "u_role": "manager"
+    },
+    {
+      "cid": "60002",
+      "name": "Emanoel",
+      "c_role": "gerente",
+      "managedProgramId": "18",
+      "uid": "3630136",
+      "u_name": "Emanoel",
+      "consultorId": "NULL",
+      "programId": "18",
+      "u_role": "manager"
+    },
+    {
+      "cid": "60001",
+      "name": "Emanoel Loreto Querette",
+      "c_role": "gerente",
+      "managedProgramId": "18",
+      "uid": "3630110",
+      "u_name": "Emanoel Loreto Querette",
+      "consultorId": "NULL",
+      "programId": "18",
+      "u_role": "manager"
+    },
+    {
+      "cid": "60001",
+      "name": "Emanoel Loreto Querette",
+      "c_role": "gerente",
+      "managedProgramId": "18",
+      "uid": "3630136",
+      "u_name": "Emanoel",
+      "consultorId": "NULL",
+      "programId": "18",
+      "u_role": "manager"
+    },
+    {
+      "cid": "90001",
+      "name": "gerente teste",
+      "c_role": "gerente",
+      "managedProgramId": "18",
+      "uid": "4290839",
+      "u_name": "gerente teste",
+      "consultorId": "NULL",
+      "programId": "18",
+      "u_role": "manager"
+    },
+    {
+      "cid": "30001",
+      "name": "Joseane",
+      "c_role": "gerente",
+      "managedProgramId": "17",
+      "uid": "660170",
+      "u_name": "Joseane Rodrigues Leite",
+      "consultorId": "NULL",
+      "programId": "17",
+      "u_role": "manager"
+    }
+  ],
+  "messages": [],
+  "stdout": "cid\tname\tc_role\tmanagedProgramId\tuid\tu_name\tconsultorId\tprogramId\tu_role\n60002\tEmanoel\tgerente\t18\t3630110\tEmanoel Loreto Querette\tNULL\t18\tmanager\n60002\tEmanoel\tgerente\t18\t3630136\tEmanoel\tNULL\t18\tmanager\n60001\tEmanoel Loreto Querette\tgerente\t18\t3630110\tEmanoel Loreto Querette\tNULL\t18\tmanager\n60001\tEmanoel Loreto Querette\tgerente\t18\t3630136\tEmanoel\tNULL\t18\tmanager\n90001\tgerente teste\tgerente\t18\t4290839\tgerente teste\tNULL\t18\tmanager\n30001\tJoseane\tgerente\t17\t660170\tJoseane Rodrigues Leite\tNULL\t17\tmanager\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}

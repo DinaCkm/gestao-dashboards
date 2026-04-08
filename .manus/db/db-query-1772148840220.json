@@ -1,0 +1,110 @@
+{
+  "query": "SELECT a.id, a.externalId, a.name, a.email, a.programId, a.turmaId, a.consultorId, a.canLogin FROM alunos a LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.externalId, a.name, a.email, a.programId, a.turmaId, a.consultorId, a.canLogin FROM alunos a LIMIT 10;",
+  "rows": [
+    {
+      "id": "199",
+      "externalId": "605198",
+      "name": "DANIELA RIVA KELLER",
+      "email": "daniela_keller@banrisul.com.br",
+      "programId": "19",
+      "turmaId": "36",
+      "consultorId": "NULL",
+      "canLogin": "1"
+    },
+    {
+      "id": "200",
+      "externalId": "605199",
+      "name": "MARIA DE FATIMA MACIEL PEREIRA",
+      "email": "Maria_Fatima_Pereira@banrisul.com.br",
+      "programId": "19",
+      "turmaId": "36",
+      "consultorId": "NULL",
+      "canLogin": "1"
+    },
+    {
+      "id": "201",
+      "externalId": "605200",
+      "name": "MARCO AURELIO MARCONATO",
+      "email": "Marco_Marconato@banrisul.com.br",
+      "programId": "19",
+      "turmaId": "36",
+      "consultorId": "NULL",
+      "canLogin": "1"
+    },
+    {
+      "id": "202",
+      "externalId": "605201",
+      "name": "FABIANA DE BRITO GOMES",
+      "email": "Fabiana_Gomes@banrisul.com.br",
+      "programId": "19",
+      "turmaId": "36",
+      "consultorId": "NULL",
+      "canLogin": "1"
+    },
+    {
+      "id": "203",
+      "externalId": "605202",
+      "name": "MARVIN DE ALMEIDA FONTANA",
+      "email": "Marvin_Fontana@banrisul.com.br",
+      "programId": "19",
+      "turmaId": "36",
+      "consultorId": "NULL",
+      "canLogin": "1"
+    },
+    {
+      "id": "204",
+      "externalId": "605203",
+      "name": "DANIELE FERNANDES OLIVEIRA",
+      "email": "danielefoliveira76@gmail.com",
+      "programId": "19",
+      "turmaId": "36",
+      "consultorId": "NULL",
+      "canLogin": "1"
+    },
+    {
+      "id": "205",
+      "externalId": "605204",
+      "name": "MARCIO PETTINE SANTOS",
+      "email": "Marcio_Pettine_Santos@banrisul.com.br",
+      "programId": "19",
+      "turmaId": "36",
+      "consultorId": "NULL",
+      "canLogin": "1"
+    },
+    {
+      "id": "206",
+      "externalId": "605205",
+      "name": "GABRIEL BASSO DAMO",
+      "email": "Gabriel_Damo@banrisul.com.br",
+      "programId": "19",
+      "turmaId": "36",
+      "consultorId": "NULL",
+      "canLogin": "1"
+    },
+    {
+      "id": "207",
+      "externalId": "605206",
+      "name": "CATIA CARGNIN",
+      "email": "Catia_Cargnin@banrisul.com.br",
+      "programId": "19",
+      "turmaId": "36",
+      "consultorId": "NULL",
+      "canLogin": "1"
+    },
+    {
+      "id": "208",
+      "externalId": "605207",
+      "name": "JOSIANE CLAIRE SCHNEIDER LEMOS",
+      "email": "Josiane_Schneider@banrisul.com.br",
+      "programId": "19",
+      "turmaId": "36",
+      "consultorId": "NULL",
+      "canLogin": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\texternalId\tname\temail\tprogramId\tturmaId\tconsultorId\tcanLogin\n199\t605198\tDANIELA RIVA KELLER\tdaniela_keller@banrisul.com.br\t19\t36\tNULL\t1\n200\t605199\tMARIA DE FATIMA MACIEL PEREIRA\tMaria_Fatima_Pereira@banrisul.com.br\t19\t36\tNULL\t1\n201\t605200\tMARCO AURELIO MARCONATO\tMarco_Marconato@banrisul.com.br\t19\t36\tNULL\t1\n202\t605201\tFABIANA DE BRITO GOMES\tFabiana_Gomes@banrisul.com.br\t19\t36\tNULL\t1\n203\t605202\tMARVIN DE ALMEIDA FONTANA\tMarvin_Fontana@banrisul.com.br\t19\t36\tNULL\t1\n204\t605203\tDANIELE FERNANDES OLIVEIRA\tdanielefoliveira76@gmail.com\t19\t36\tNULL\t1\n205\t605204\tMARCIO PETTINE SANTOS\tMarcio_Pettine_Santos@banrisul.com.br\t19\t36\tNULL\t1\n206\t605205\tGABRIEL BASSO DAMO\tGabriel_Damo@banrisul.com.br\t19\t36\tNULL\t1\n207\t605206\tCATIA CARGNIN\tCatia_Cargnin@banrisul.com.br\t19\t36\tNULL\t1\n208\t605207\tJOSIANE CLAIRE SCHNEIDER LEMOS\tJosiane_Schneider@banrisul.com.br\t19\t36\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 421
+}

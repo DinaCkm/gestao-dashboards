@@ -1,0 +1,13 @@
+{
+  "query": "SELECT CONCAT('ID=', id, ' NAME=', name) as info FROM consultors WHERE name LIKE '%Ana Carolina%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT CONCAT('ID=', id, ' NAME=', name) as info FROM consultors WHERE name LIKE '%Ana Carolina%';",
+  "rows": [
+    {
+      "info": "ID=28 NAME=Ana Carolina Cardoso Viana Rocha"
+    }
+  ],
+  "messages": [],
+  "stdout": "info\nID=28 NAME=Ana Carolina Cardoso Viana Rocha\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}

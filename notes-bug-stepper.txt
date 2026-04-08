@@ -1,0 +1,38 @@
+BUG ANALYSIS: Stepper do Onboarding - Etapas já concluídas reabrem como vazias
+
+CENÁRIO DO USUÁRIO:
+- Julia está na fase de Aceite (step 8)
+- Quando clica em "Cadastro" no stepper, a tela de cadastro se abre como se não tivesse preenchido
+- Ela teria que refazer toda a jornada novamente
+
+ANÁLISE DA CAUSA RAIZ:
+
+1. O stepper permite clicar em etapas anteriores (isCompleted || isCurrent → onStepClick)
+   - Linha 179: if (readOnly || isCompleted || isCurrent) onStepClick(step.id);
+
+2. O onStepClick simplesmente faz setCurrentStep(step) (linha 2751)
+   - Não há bloqueio para voltar a etapas anteriores quando NÃO está em readOnly
+
+3. A questão chave é: o readOnly está FALSE para a Julia?
+   - readOnly = !!(progressoData?.onboardingCompleto) || !!(onboardingStatus?.hasPdi && !onboardingStatus?.needsOnboarding)
+   - Se Julia está na fase de Aceite mas AINDA NÃO completou o onboarding, readOnly = false
+   - Isso significa que ela pode clicar em "Cadastro" e o stepper vai para step 1
+
+4. Quando EtapaCadastro renderiza, ela carrega dados do aluno via trpc.indicadores.meuDashboard
+   - Os campos SÃO preenchidos com dados existentes (linhas 237-251)
+   - MAS o formulário aparece como editável (não readOnly) com botão "Salvar e Continuar"
+   - Isso dá a IMPRESSÃO de que precisa refazer tudo
+
+5. O PROBLEMA REAL é que ao clicar em Cadastro e depois "Salvar e Continuar", o handleStepComplete
+   avança para step 2 (currentStep + 1), não volta para onde ela estava (step 8)
+
+SOLUÇÃO PROPOSTA:
+- Quando o aluno clica em uma etapa anterior já concluída (step < progressoData.step):
+  a) Mostrar a etapa em modo readOnly (visualização) com um resumo dos dados
+  b) OU mostrar um botão "Voltar para etapa atual" em vez de "Salvar e Continuar"
+  c) OU bloquear a navegação para trás e mostrar apenas um resumo
+  
+MELHOR ABORDAGEM:
+- Quando o aluno navega para uma etapa anterior (step < progressoData.step), forçar readOnly naquela etapa
+- Adicionar um botão "Voltar para etapa atual" que restaura o step do progresso
+- Isso evita que o aluno "refaça" etapas já concluídas

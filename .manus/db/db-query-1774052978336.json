@@ -1,0 +1,58 @@
+{
+  "query": "SELECT ms.id, ms.alunoId, ms.consultorId, ms.sessionDate, ms.sessionNumber, c.name AS mentorName\nFROM mentoring_sessions ms \nLEFT JOIN consultors c ON ms.consultorId = c.id\nWHERE ms.alunoId = 30100\nORDER BY ms.sessionDate DESC\nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT ms.id, ms.alunoId, ms.consultorId, ms.sessionDate, ms.sessionNumber, c.name AS mentorName\nFROM mentoring_sessions ms \nLEFT JOIN consultors c ON ms.consultorId = c.id\nWHERE ms.alunoId = 30100\nORDER BY ms.sessionDate DESC\nLIMIT 10;",
+  "rows": [
+    {
+      "id": "150080",
+      "alunoId": "30100",
+      "consultorId": "39",
+      "sessionDate": "2026-12-15",
+      "sessionNumber": "4",
+      "mentorName": "Adriana Deus"
+    },
+    {
+      "id": "150003",
+      "alunoId": "30100",
+      "consultorId": "32",
+      "sessionDate": "2026-02-24",
+      "sessionNumber": "6",
+      "mentorName": "Luciana Pereira Figueiredo da Silva"
+    },
+    {
+      "id": "61061",
+      "alunoId": "30100",
+      "consultorId": "39",
+      "sessionDate": "2026-01-28",
+      "sessionNumber": "5",
+      "mentorName": "Adriana Deus"
+    },
+    {
+      "id": "61049",
+      "alunoId": "30100",
+      "consultorId": "39",
+      "sessionDate": "2025-11-28",
+      "sessionNumber": "3",
+      "mentorName": "Adriana Deus"
+    },
+    {
+      "id": "61039",
+      "alunoId": "30100",
+      "consultorId": "39",
+      "sessionDate": "2025-10-31",
+      "sessionNumber": "2",
+      "mentorName": "Adriana Deus"
+    },
+    {
+      "id": "61023",
+      "alunoId": "30100",
+      "consultorId": "37",
+      "sessionDate": "2025-09-26",
+      "sessionNumber": "1",
+      "mentorName": "Dina Makiyama"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\talunoId\tconsultorId\tsessionDate\tsessionNumber\tmentorName\n150080\t30100\t39\t2026-12-15\t4\tAdriana Deus\n150003\t30100\t32\t2026-02-24\t6\tLuciana Pereira Figueiredo da Silva\n61061\t30100\t39\t2026-01-28\t5\tAdriana Deus\n61049\t30100\t39\t2025-11-28\t3\tAdriana Deus\n61039\t30100\t39\t2025-10-31\t2\tAdriana Deus\n61023\t30100\t37\t2025-09-26\t1\tDina Makiyama\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

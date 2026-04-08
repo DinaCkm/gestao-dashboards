@@ -1,0 +1,46 @@
+{
+  "query": "\nSELECT a.id, a.name, a.email, a.consultorId, a.bypassOnboarding,\n       (SELECT name FROM consultors WHERE id = a.consultorId) as mentor,\n       (SELECT id FROM users WHERE alunoId = a.id LIMIT 1) as userId\nFROM alunos a\nWHERE a.consultorId IN (SELECT id FROM consultors WHERE name LIKE '%Adriana%');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT a.id, a.name, a.email, a.consultorId, a.bypassOnboarding,\n       (SELECT name FROM consultors WHERE id = a.consultorId) as mentor,\n       (SELECT id FROM users WHERE alunoId = a.id LIMIT 1) as userId\nFROM alunos a\nWHERE a.consultorId IN (SELECT id FROM consultors WHERE name LIKE '%Adriana%');\n",
+  "rows": [
+    {
+      "id": "30090",
+      "name": "Mayara Rodrigues de Freitas",
+      "email": "mayara.freitas@embrapii.org.br",
+      "consultorId": "39",
+      "bypassOnboarding": "0",
+      "mentor": "Adriana Deus",
+      "userId": "660206"
+    },
+    {
+      "id": "30099",
+      "name": "Vanessa Bertholdo Vargas",
+      "email": "vanessa.vargas@embrapii.org.br",
+      "consultorId": "39",
+      "bypassOnboarding": "0",
+      "mentor": "Adriana Deus",
+      "userId": "660209"
+    },
+    {
+      "id": "90013",
+      "name": "MARIA TESTE DA SILVA",
+      "email": "dina@ckmtalents.net",
+      "consultorId": "39",
+      "bypassOnboarding": "1",
+      "mentor": "Adriana Deus",
+      "userId": "2040152"
+    },
+    {
+      "id": "90014",
+      "name": "maria teste3",
+      "email": "teste3@teste3.com.br",
+      "consultorId": "39",
+      "bypassOnboarding": "1",
+      "mentor": "Adriana Deus",
+      "userId": "2040209"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tconsultorId\tbypassOnboarding\tmentor\tuserId\n30090\tMayara Rodrigues de Freitas\tmayara.freitas@embrapii.org.br\t39\t0\tAdriana Deus\t660206\n30099\tVanessa Bertholdo Vargas\tvanessa.vargas@embrapii.org.br\t39\t0\tAdriana Deus\t660209\n90013\tMARIA TESTE DA SILVA\tdina@ckmtalents.net\t39\t1\tAdriana Deus\t2040152\n90014\tmaria teste3\tteste3@teste3.com.br\t39\t1\tAdriana Deus\t2040209\n",
+  "stderr": "",
+  "execution_time_ms": 375
+}

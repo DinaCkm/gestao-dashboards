@@ -1,0 +1,24 @@
+{
+  "query": "SELECT id, name, programId FROM alunos WHERE name LIKE '%Bruno Martins%'; SELECT id, title, programId, eventDate FROM events LIMIT 5; SELECT COUNT(*) as total FROM events;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT id, name, programId FROM alunos WHERE name LIKE '%Bruno Martins%'; SELECT id, title, programId, eventDate FROM events LIMIT 5; SELECT COUNT(*) as total FROM events;",
+  "rows": [
+    {
+      "id": "30057",
+      "name": "Bruno Martins Vieira",
+      "programId": "17"
+    }
+  ],
+  "messages": [
+    "id\ttitle\tprogramId\teventDate",
+    "30001\t2025/06 - Liderança Tóxica com Emerson Dias\tNULL\t2025-04-02",
+    "30002\t2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio\tNULL\t2025-04-23",
+    "30003\t2025/08 - LinkedIn e Carreira com Gislaine\tNULL\t2025-05-15",
+    "30004\t2025/09 - Foco x Procrastinação com Emerson Dias\tNULL\t2025-05-30",
+    "30005\t2025/10 - Do Talento ao Resultado com Fabio Barbosa\tNULL\t2025-06-11",
+    "total",
+    "32"
+  ],
+  "stdout": "id\tname\tprogramId\n30057\tBruno Martins Vieira\t17\nid\ttitle\tprogramId\teventDate\n30001\t2025/06 - Liderança Tóxica com Emerson Dias\tNULL\t2025-04-02\n30002\t2025/07 - Habilidades da Liderança e Assédio Moral com Sérgio\tNULL\t2025-04-23\n30003\t2025/08 - LinkedIn e Carreira com Gislaine\tNULL\t2025-05-15\n30004\t2025/09 - Foco x Procrastinação com Emerson Dias\tNULL\t2025-05-30\n30005\t2025/10 - Do Talento ao Resultado com Fabio Barbosa\tNULL\t2025-06-11\ntotal\n32\n",
+  "stderr": "",
+  "execution_time_ms": 455
+}

@@ -1,0 +1,22 @@
+{
+  "query": "SELECT taskStatus, COUNT(*) as total FROM mentoring_sessions GROUP BY taskStatus ORDER BY total DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT taskStatus, COUNT(*) as total FROM mentoring_sessions GROUP BY taskStatus ORDER BY total DESC;",
+  "rows": [
+    {
+      "taskStatus": "entregue",
+      "total": "716"
+    },
+    {
+      "taskStatus": "nao_entregue",
+      "total": "442"
+    },
+    {
+      "taskStatus": "sem_tarefa",
+      "total": "37"
+    }
+  ],
+  "messages": [],
+  "stdout": "taskStatus\ttotal\nentregue\t716\nnao_entregue\t442\nsem_tarefa\t37\n",
+  "stderr": "",
+  "execution_time_ms": 367
+}

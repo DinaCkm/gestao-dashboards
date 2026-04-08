@@ -1,0 +1,1 @@
+ALTER TABLE `events` MODIFY COLUMN `eventType` enum('webinar','aula','workshop','curso_online','outro') DEFAULT 'webinar';

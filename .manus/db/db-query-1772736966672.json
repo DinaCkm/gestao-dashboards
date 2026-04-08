@@ -1,0 +1,31 @@
+{
+  "query": "SELECT COUNT(*) as total_teste_alunos FROM alunos WHERE email LIKE '%@test.com' OR name LIKE 'Test %' OR name LIKE 'Aluno Direto Test%'; SELECT COUNT(*) as total_teste_users FROM users WHERE email LIKE '%@test.com' OR name LIKE 'Test %' OR name LIKE 'Aluno Direto Test%'; SELECT COUNT(*) as total_alunos FROM alunos; SELECT COUNT(*) as total_users FROM users;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total_teste_alunos FROM alunos WHERE email LIKE '%@test.com' OR name LIKE 'Test %' OR name LIKE 'Aluno Direto Test%'; SELECT COUNT(*) as total_teste_users FROM users WHERE email LIKE '%@test.com' OR name LIKE 'Test %' OR name LIKE 'Aluno Direto Test%'; SELECT COUNT(*) as total_alunos FROM alunos; SELECT COUNT(*) as total_users FROM users;",
+  "rows": [
+    {
+      "total_teste_alunos": "0"
+    },
+    {
+      "total_teste_alunos": "total_teste_users"
+    },
+    {
+      "total_teste_alunos": "0"
+    },
+    {
+      "total_teste_alunos": "total_alunos"
+    },
+    {
+      "total_teste_alunos": "132"
+    },
+    {
+      "total_teste_alunos": "total_users"
+    },
+    {
+      "total_teste_alunos": "170"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_teste_alunos\n0\ntotal_teste_users\n0\ntotal_alunos\n132\ntotal_users\n170\n",
+  "stderr": "",
+  "execution_time_ms": 503
+}

@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE assessment_competencias ADD COLUMN nivelAtual decimal(5,2) DEFAULT NULL; ALTER TABLE assessment_competencias ADD COLUMN metaFinal decimal(5,2) DEFAULT NULL; ALTER TABLE assessment_competencias ADD COLUMN justificativa text DEFAULT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute ALTER TABLE assessment_competencias ADD COLUMN nivelAtual decimal(5,2) DEFAULT NULL; ALTER TABLE assessment_competencias ADD COLUMN metaFinal decimal(5,2) DEFAULT NULL; ALTER TABLE assessment_competencias ADD COLUMN justificativa text DEFAULT NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2082
+}

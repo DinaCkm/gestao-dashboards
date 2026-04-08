@@ -1,0 +1,30 @@
+{
+  "query": "SELECT p.name, p.code, COUNT(a.id) as cnt FROM alunos a LEFT JOIN programs p ON a.programId = p.id GROUP BY p.name, p.code;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT p.name, p.code, COUNT(a.id) as cnt FROM alunos a LEFT JOIN programs p ON a.programId = p.id GROUP BY p.name, p.code;",
+  "rows": [
+    {
+      "name": "BANRISUL",
+      "code": "BANRISUL",
+      "cnt": "26"
+    },
+    {
+      "name": "SEBRAE TO",
+      "code": "SEBRAE_TO",
+      "cnt": "50"
+    },
+    {
+      "name": "SEBRAE ACRE",
+      "code": "SEBRAE_ACRE",
+      "cnt": "33"
+    },
+    {
+      "name": "EMBRAPII",
+      "code": "EMBRAPII",
+      "cnt": "16"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\tcode\tcnt\nBANRISUL\tBANRISUL\t26\nSEBRAE TO\tSEBRAE_TO\t50\nSEBRAE ACRE\tSEBRAE_ACRE\t33\nEMBRAPII\tEMBRAPII\t16\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

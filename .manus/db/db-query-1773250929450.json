@@ -1,0 +1,52 @@
+{
+  "query": "\n-- Verificar detalhes das 3 duplicatas\nSELECT ep.id, ep.eventId, ep.alunoId, ep.status, e.title \nFROM event_participation ep \nJOIN events e ON ep.eventId = e.id\nWHERE (ep.eventId = 30010 AND ep.alunoId = 30073)\n   OR (ep.eventId = 30013 AND ep.alunoId = 30071)\n   OR (ep.eventId = 30005 AND ep.alunoId = 30031)\nORDER BY ep.eventId, ep.alunoId, ep.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \n-- Verificar detalhes das 3 duplicatas\nSELECT ep.id, ep.eventId, ep.alunoId, ep.status, e.title \nFROM event_participation ep \nJOIN events e ON ep.eventId = e.id\nWHERE (ep.eventId = 30010 AND ep.alunoId = 30073)\n   OR (ep.eventId = 30013 AND ep.alunoId = 30071)\n   OR (ep.eventId = 30005 AND ep.alunoId = 30031)\nORDER BY ep.eventId, ep.alunoId, ep.id;\n",
+  "rows": [
+    {
+      "id": "91668",
+      "eventId": "30005",
+      "alunoId": "30031",
+      "status": "ausente",
+      "title": "2025/10 - Do Talento ao Resultado com Fabio Barbosa"
+    },
+    {
+      "id": "91669",
+      "eventId": "30005",
+      "alunoId": "30031",
+      "status": "ausente",
+      "title": "2025/10 - Do Talento ao Resultado com Fabio Barbosa"
+    },
+    {
+      "id": "90400",
+      "eventId": "30010",
+      "alunoId": "30073",
+      "status": "presente",
+      "title": "2025/15 - Mindfulness para o Gestor Com Otácia"
+    },
+    {
+      "id": "90401",
+      "eventId": "30010",
+      "alunoId": "30073",
+      "status": "presente",
+      "title": "2025/15 - Mindfulness para o Gestor Com Otácia"
+    },
+    {
+      "id": "90543",
+      "eventId": "30013",
+      "alunoId": "30071",
+      "status": "presente",
+      "title": "2025/18 - Mindfulness na Comunicação e no Tempo com Otácia"
+    },
+    {
+      "id": "90544",
+      "eventId": "30013",
+      "alunoId": "30071",
+      "status": "presente",
+      "title": "2025/18 - Mindfulness na Comunicação e no Tempo com Otácia"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\teventId\talunoId\tstatus\ttitle\n91668\t30005\t30031\tausente\t2025/10 - Do Talento ao Resultado com Fabio Barbosa\n91669\t30005\t30031\tausente\t2025/10 - Do Talento ao Resultado com Fabio Barbosa\n90400\t30010\t30073\tpresente\t2025/15 - Mindfulness para o Gestor Com Otácia\n90401\t30010\t30073\tpresente\t2025/15 - Mindfulness para o Gestor Com Otácia\n90543\t30013\t30071\tpresente\t2025/18 - Mindfulness na Comunicação e no Tempo com Otácia\n90544\t30013\t30071\tpresente\t2025/18 - Mindfulness na Comunicação e no Tempo com Otácia\n",
+  "stderr": "",
+  "execution_time_ms": 454
+}

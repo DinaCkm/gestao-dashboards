@@ -1,0 +1,32 @@
+{
+  "query": "SELECT * FROM trilhas WHERE id IN (1, 2);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT * FROM trilhas WHERE id IN (1, 2);",
+  "rows": [
+    {
+      "id": "1",
+      "externalId": "NULL",
+      "name": "Basic",
+      "programId": "NULL",
+      "createdAt": "2026-01-30 16:43:56",
+      "codigo": "BASICA",
+      "ordem": "1",
+      "isActive": "1",
+      "updatedAt": "2026-03-03 22:38:37"
+    },
+    {
+      "id": "2",
+      "externalId": "NULL",
+      "name": "Essential",
+      "programId": "NULL",
+      "createdAt": "2026-01-30 16:43:56",
+      "codigo": "ESSENCIAL",
+      "ordem": "2",
+      "isActive": "1",
+      "updatedAt": "2026-03-03 22:38:37"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\texternalId\tname\tprogramId\tcreatedAt\tcodigo\tordem\tisActive\tupdatedAt\n1\tNULL\tBasic\tNULL\t2026-01-30 16:43:56\tBASICA\t1\t1\t2026-03-03 22:38:37\n2\tNULL\tEssential\tNULL\t2026-01-30 16:43:56\tESSENCIAL\t2\t1\t2026-03-03 22:38:37\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

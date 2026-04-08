@@ -1,0 +1,34 @@
+{
+  "query": "\nSELECT \n  ms.id AS sessao_id, ms.sessionDate, ms.alunoId, a.name AS aluno_nome,\n  p.name AS empresa,\n  EXISTS(\n    SELECT 1 FROM mentor_appointments ma\n    JOIN appointment_participants ap ON ap.appointmentId = ma.id\n    WHERE ma.consultorId = ms.consultorId\n    AND ma.scheduledDate = ms.sessionDate\n    AND ap.alunoId = ms.alunoId\n    AND ma.status != 'cancelado'\n  ) AS tem_agendamento\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN programs p ON a.programId = p.id\nWHERE ms.consultorId = 28\nAND ms.sessionDate >= '2026-03-01' AND ms.sessionDate <= '2026-03-31'\nAND p.name = 'SEBRAE TO';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute \nSELECT \n  ms.id AS sessao_id, ms.sessionDate, ms.alunoId, a.name AS aluno_nome,\n  p.name AS empresa,\n  EXISTS(\n    SELECT 1 FROM mentor_appointments ma\n    JOIN appointment_participants ap ON ap.appointmentId = ma.id\n    WHERE ma.consultorId = ms.consultorId\n    AND ma.scheduledDate = ms.sessionDate\n    AND ap.alunoId = ms.alunoId\n    AND ma.status != 'cancelado'\n  ) AS tem_agendamento\nFROM mentoring_sessions ms\nLEFT JOIN alunos a ON ms.alunoId = a.id\nLEFT JOIN programs p ON a.programId = p.id\nWHERE ms.consultorId = 28\nAND ms.sessionDate >= '2026-03-01' AND ms.sessionDate <= '2026-03-31'\nAND p.name = 'SEBRAE TO';\n",
+  "rows": [
+    {
+      "sessao_id": "180001",
+      "sessionDate": "2026-03-18",
+      "alunoId": "30097",
+      "aluno_nome": "Wandemberg Pereira Rodrigues",
+      "empresa": "SEBRAE TO",
+      "tem_agendamento": "1"
+    },
+    {
+      "sessao_id": "180002",
+      "sessionDate": "2026-03-18",
+      "alunoId": "30094",
+      "aluno_nome": "Mirelle Soares Milhomens",
+      "empresa": "SEBRAE TO",
+      "tem_agendamento": "1"
+    },
+    {
+      "sessao_id": "180003",
+      "sessionDate": "2026-03-18",
+      "alunoId": "30098",
+      "aluno_nome": "Luciana Carvalho de Aguiar",
+      "empresa": "SEBRAE TO",
+      "tem_agendamento": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "sessao_id\tsessionDate\talunoId\taluno_nome\tempresa\ttem_agendamento\n180001\t2026-03-18\t30097\tWandemberg Pereira Rodrigues\tSEBRAE TO\t1\n180002\t2026-03-18\t30094\tMirelle Soares Milhomens\tSEBRAE TO\t1\n180003\t2026-03-18\t30098\tLuciana Carvalho de Aguiar\tSEBRAE TO\t1\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

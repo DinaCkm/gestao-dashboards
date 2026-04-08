@@ -1,0 +1,43 @@
+{
+  "query": "SELECT a.id as alunoId, a.name as alunoNome, a.email as alunoEmail, a.externalId, a.consultorId, a.bypassOnboarding, a.cadastradoPorAdmin, c.id as consultorTableId, c.name as mentorNome FROM alunos a LEFT JOIN consultors c ON a.consultorId = c.id WHERE c.name LIKE '%Adriana%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id as alunoId, a.name as alunoNome, a.email as alunoEmail, a.externalId, a.consultorId, a.bypassOnboarding, a.cadastradoPorAdmin, c.id as consultorTableId, c.name as mentorNome FROM alunos a LEFT JOIN consultors c ON a.consultorId = c.id WHERE c.name LIKE '%Adriana%';",
+  "rows": [
+    {
+      "alunoId": "30090",
+      "alunoNome": "Mayara Rodrigues de Freitas",
+      "alunoEmail": "mayara.freitas@embrapii.org.br",
+      "externalId": "694318",
+      "consultorId": "39",
+      "bypassOnboarding": "0",
+      "cadastradoPorAdmin": "0",
+      "consultorTableId": "39",
+      "mentorNome": "Adriana Deus"
+    },
+    {
+      "alunoId": "30099",
+      "alunoNome": "Vanessa Bertholdo Vargas",
+      "alunoEmail": "vanessa.vargas@embrapii.org.br",
+      "externalId": "709682",
+      "consultorId": "39",
+      "bypassOnboarding": "0",
+      "cadastradoPorAdmin": "0",
+      "consultorTableId": "39",
+      "mentorNome": "Adriana Deus"
+    },
+    {
+      "alunoId": "90013",
+      "alunoNome": "MARIA TESTE DA SILVA",
+      "alunoEmail": "dina@ckmtalents.net",
+      "externalId": "667997",
+      "consultorId": "39",
+      "bypassOnboarding": "1",
+      "cadastradoPorAdmin": "1",
+      "consultorTableId": "39",
+      "mentorNome": "Adriana Deus"
+    }
+  ],
+  "messages": [],
+  "stdout": "alunoId\talunoNome\talunoEmail\texternalId\tconsultorId\tbypassOnboarding\tcadastradoPorAdmin\tconsultorTableId\tmentorNome\n30090\tMayara Rodrigues de Freitas\tmayara.freitas@embrapii.org.br\t694318\t39\t0\t0\t39\tAdriana Deus\n30099\tVanessa Bertholdo Vargas\tvanessa.vargas@embrapii.org.br\t709682\t39\t0\t0\t39\tAdriana Deus\n90013\tMARIA TESTE DA SILVA\tdina@ckmtalents.net\t667997\t39\t1\t1\t39\tAdriana Deus\n",
+  "stderr": "",
+  "execution_time_ms": 359
+}

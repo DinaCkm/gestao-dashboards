@@ -1,0 +1,45 @@
+{
+  "query": "SELECT a.id, a.name, a.email, a.programId, p.name as programa FROM alunos a JOIN programs p ON a.programId = p.id WHERE p.name LIKE '%SEBRAE TO%' LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT a.id, a.name, a.email, a.programId, p.name as programa FROM alunos a JOIN programs p ON a.programId = p.id WHERE p.name LIKE '%SEBRAE TO%' LIMIT 5",
+  "rows": [
+    {
+      "id": "274",
+      "name": "BRUNO DE JESUS RODRIGUES",
+      "email": "bruno.rodrigues@to.sebrae.com.br",
+      "programId": "17",
+      "programa": "SEBRAE TO"
+    },
+    {
+      "id": "275",
+      "name": "DENISE DA SILVA NUNES",
+      "email": "denise.nunes@to.sebrae.com.br",
+      "programId": "17",
+      "programa": "SEBRAE TO"
+    },
+    {
+      "id": "276",
+      "name": "EMERSON MONTENEGRO LIMA",
+      "email": "emerson.lima@to.sebrae.com.br",
+      "programId": "17",
+      "programa": "SEBRAE TO"
+    },
+    {
+      "id": "277",
+      "name": "FRANCISCO DE ASSIS DIAS RAMOS",
+      "email": "francisco.ramos@to.sebrae.com.br",
+      "programId": "17",
+      "programa": "SEBRAE TO"
+    },
+    {
+      "id": "278",
+      "name": "JACKELINE DE SOUZA LIMA",
+      "email": "jackeline.lima@to.sebrae.com.br",
+      "programId": "17",
+      "programa": "SEBRAE TO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\tprogramId\tprograma\n274\tBRUNO DE JESUS RODRIGUES\tbruno.rodrigues@to.sebrae.com.br\t17\tSEBRAE TO\n275\tDENISE DA SILVA NUNES\tdenise.nunes@to.sebrae.com.br\t17\tSEBRAE TO\n276\tEMERSON MONTENEGRO LIMA\temerson.lima@to.sebrae.com.br\t17\tSEBRAE TO\n277\tFRANCISCO DE ASSIS DIAS RAMOS\tfrancisco.ramos@to.sebrae.com.br\t17\tSEBRAE TO\n278\tJACKELINE DE SOUZA LIMA\tjackeline.lima@to.sebrae.com.br\t17\tSEBRAE TO\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

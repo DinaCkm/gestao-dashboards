@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(CASE WHEN taskId IS NOT NULL THEN 1 ELSE 0 END) as comTaskId, SUM(CASE WHEN customTaskTitle IS NOT NULL AND customTaskTitle != '' THEN 1 ELSE 0 END) as comCustomTitle, SUM(CASE WHEN taskMode = 'biblioteca' THEN 1 ELSE 0 END) as modoBiblioteca, SUM(CASE WHEN taskMode = 'personalizada' THEN 1 ELSE 0 END) as modoPersonalizada, SUM(CASE WHEN taskMode = 'livre' THEN 1 ELSE 0 END) as modoLivre, SUM(CASE WHEN taskMode = 'sem_tarefa' THEN 1 ELSE 0 END) as modoSemTarefa FROM mentoring_sessions WHERE taskStatus IN ('entregue', 'nao_entregue');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2kPX7CjhqdMFT8y.9c22f9f54902 --database 5n7arrGNHjNdoFCMzyGXcY --execute SELECT COUNT(*) as total, SUM(CASE WHEN taskId IS NOT NULL THEN 1 ELSE 0 END) as comTaskId, SUM(CASE WHEN customTaskTitle IS NOT NULL AND customTaskTitle != '' THEN 1 ELSE 0 END) as comCustomTitle, SUM(CASE WHEN taskMode = 'biblioteca' THEN 1 ELSE 0 END) as modoBiblioteca, SUM(CASE WHEN taskMode = 'personalizada' THEN 1 ELSE 0 END) as modoPersonalizada, SUM(CASE WHEN taskMode = 'livre' THEN 1 ELSE 0 END) as modoLivre, SUM(CASE WHEN taskMode = 'sem_tarefa' THEN 1 ELSE 0 END) as modoSemTarefa FROM mentoring_sessions WHERE taskStatus IN ('entregue', 'nao_entregue');",
+  "rows": [
+    {
+      "total": "1263",
+      "comTaskId": "0",
+      "comCustomTitle": "0",
+      "modoBiblioteca": "0",
+      "modoPersonalizada": "1",
+      "modoLivre": "0",
+      "modoSemTarefa": "1262"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tcomTaskId\tcomCustomTitle\tmodoBiblioteca\tmodoPersonalizada\tmodoLivre\tmodoSemTarefa\n1263\t0\t0\t0\t1\t0\t1262\n",
+  "stderr": "",
+  "execution_time_ms": 374
+}
