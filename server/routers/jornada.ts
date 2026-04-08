@@ -331,10 +331,9 @@ export const jornadaRouter = router({
       if (!db) return [];
 
       try {
-        // Query raw SQL para buscar jornadas com turma e empresa
+        // Query raw SQL para buscar macrociclos DISTINTOS agrupados por turma/trilha
         const jornadas = await db.execute(`
-          SELECT 
-            ap.id,
+          SELECT DISTINCT
             ap.turmaId,
             t.name as turmaNome,
             ap.trilhaId,
@@ -347,11 +346,11 @@ export const jornadaRouter = router({
           LEFT JOIN turmas t ON ap.turmaId = t.id
           LEFT JOIN programs p ON t.programId = p.id
           LEFT JOIN trilhas tr ON ap.trilhaId = tr.id
+          WHERE ap.status = 'ativo'
           ORDER BY p.name, t.name, ap.macroInicio
         `);
 
         return (jornadas as any[]).map((j: any) => ({
-          id: j.id,
           turmaId: j.turmaId,
           turmaNome: j.turmaNome || 'Sem turma',
           trilhaId: j.trilhaId,
@@ -362,7 +361,7 @@ export const jornadaRouter = router({
           status: j.status,
         }));
       } catch (error) {
-        console.error('Erro ao buscar jornadas por turma:', error);
+        console.error('[porTurmaGeral] Erro:', error);
         return [];
       }
     }),
