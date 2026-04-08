@@ -322,4 +322,44 @@ export const jornadaRouter = router({
         atividades: [],
       };
     }),
+
+  // Obter jornadas agrupadas por turma e empresa (para Gantt chart)
+  porTurmaGeral: protectedProcedure
+    .input(z.object({ empresa: z.string().optional() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      try {
+        // Buscar todas as jornadas com informacoes de turma e empresa
+        const query = db.query.assessment_pdi.findMany({
+          with: {
+            turma: {
+              with: {
+                program: true,
+              },
+            },
+            trilha: true,
+          },
+        });
+
+        const jornadas = await query;
+
+        // Mapear para formato esperado pelo Gantt
+        return jornadas.map((j: any) => ({
+          id: j.id,
+          turmaId: j.turmaId,
+          turmaNome: j.turma?.name || 'Sem turma',
+          trilhaId: j.trilhaId,
+          trilhaNome: j.trilha?.name || 'Sem trilha',
+          empresaNome: j.turma?.program?.name || 'Sem empresa',
+          macroInicio: j.macroInicio,
+          macroTermino: j.macroTermino,
+          status: j.status,
+        }));
+      } catch (error) {
+        console.error('Erro ao buscar jornadas por turma:', error);
+        return [];
+      }
+    }),
 });
