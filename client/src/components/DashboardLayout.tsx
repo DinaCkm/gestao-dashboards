@@ -464,7 +464,8 @@ function DashboardLayoutContent({
         >
           {/* ===== HEADER ===== */}
           <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
-            <div className="flex items-center gap-3 px-2 transition-all w-full">
+            <div className="flex items-center gap-3 px-2 transition-all w-full justify-between">
+              <div className="flex items-center gap-3">
               <button
                 onClick={toggleSidebar}
                 className="h-8 w-8 flex items-center justify-center hover:bg-sidebar-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
@@ -490,6 +491,8 @@ function DashboardLayoutContent({
                   className="h-7 object-contain"
                 />
               )}
+              </div>
+              {!isCollapsed && <NotificationBell />}
             </div>
           </SidebarHeader>
 
