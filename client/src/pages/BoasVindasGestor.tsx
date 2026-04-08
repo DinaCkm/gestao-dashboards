@@ -225,7 +225,18 @@ export function BoasVindasGestor() {
               }
               
               const empresas = Object.entries(jornadasPorEmpresa);
-              if (empresas.length === 0) return <p className="text-muted-foreground">Nenhum ciclo encontrado</p>;
+              if (empresas.length === 0) {
+                return (
+                  <div className="py-12 text-center">
+                    <p className="text-lg font-semibold text-foreground mb-2">
+                      Ainda não foi possível carregar a timeline dos macrociclos.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Assim que houver dados disponíveis, os períodos aparecerão aqui.
+                    </p>
+                  </div>
+                );
+              }
               
               const [empresaNome, jornadas] = empresas[0];
               
