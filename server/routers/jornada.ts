@@ -39,6 +39,7 @@ function determinarStatus(media: number): string {
   return "Iniciante";
 }
 
+// Force rebuild on Railway - v2
 export const jornadaRouter = router({
   // Rota para obter a jornada completa do aluno autenticado
   minha: protectedProcedure
