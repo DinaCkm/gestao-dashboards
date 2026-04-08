@@ -7,7 +7,8 @@ import {
   getTrilhaById,
   getContratoMentoriaByAluno,
   getSaldoMentoriasAluno,
-  getDb
+  getDb,
+  getJornadasPorTurma
 } from "../db";
 
 const CalcularIndicadoresInput = z.object({
@@ -326,40 +327,9 @@ export const jornadaRouter = router({
   // Obter jornadas agrupadas por turma e empresa (para Gantt chart)
   porTurmaGeral: protectedProcedure
     .input(z.object({ empresa: z.string().optional() }))
-    .query(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) return [];
-
+    .query(async ({ input }) => {
       try {
-        // Query raw SQL para buscar macrociclos DISTINTOS agrupados por turma/trilha
-        const jornadas = await db.execute(`
-          SELECT DISTINCT
-            ap.turmaId,
-            t.name as turmaNome,
-            ap.trilhaId,
-            tr.name as trilhaNome,
-            p.name as empresaNome,
-            ap.macroInicio,
-            ap.macroTermino,
-            ap.status
-          FROM assessment_pdi ap
-          LEFT JOIN turmas t ON ap.turmaId = t.id
-          LEFT JOIN programs p ON t.programId = p.id
-          LEFT JOIN trilhas tr ON ap.trilhaId = tr.id
-          WHERE ap.status = 'ativo'
-          ORDER BY p.name, t.name, ap.macroInicio
-        `);
-
-        return (jornadas as any[]).map((j: any) => ({
-          turmaId: j.turmaId,
-          turmaNome: j.turmaNome || 'Sem turma',
-          trilhaId: j.trilhaId,
-          trilhaNome: j.trilhaNome || 'Sem trilha',
-          empresaNome: j.empresaNome || 'Sem empresa',
-          macroInicio: j.macroInicio,
-          macroTermino: j.macroTermino,
-          status: j.status,
-        }));
+        return await getJornadasPorTurma(input.empresa || undefined);
       } catch (error) {
         console.error('[porTurmaGeral] Erro:', error);
         return [];
