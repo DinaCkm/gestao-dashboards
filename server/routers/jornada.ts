@@ -1,6 +1,6 @@
 import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
-
+import { eq } from 'drizzle-orm';
 import { 
   getAssessmentPdiByAluno,
   getAssessmentCompetenciasByPdi,
@@ -11,6 +11,8 @@ import {
   getAlunoByUserId,
   getDb
 } from "../db";
+import * as schema from '../drizzle/schema';
+const { programs } = schema;
 
 const CalcularIndicadoresInput = z.object({
   alunoId: z.number().int().positive(),
@@ -39,7 +41,6 @@ function determinarStatus(media: number): string {
   return "Iniciante";
 }
 
-// Force rebuild on Railway - v2
 export const jornadaRouter = router({
   // Rota para obter a jornada completa do aluno autenticado
   minha: protectedProcedure
@@ -329,76 +330,26 @@ export const jornadaRouter = router({
   // Obter jornadas agrupadas por turma e empresa (para Gantt chart)
   porTurmaGeral: protectedProcedure
     .input(z.object({ empresa: z.string().optional() }))
-    .query(async ({ ctx }) => {
+    .query(async ({ ctx, input }) => {
       try {
+        // Pegar o aluno do usuário logado para obter o programId
+        const aluno = await getAlunoByUserId(ctx.user.id);
+        if (!aluno || !aluno.programId) {
+          console.warn('[porTurmaGeral] Usuário sem programa associado');
+          return [];
+        }
+        
+        // Buscar o programa para pegar o nome
         const db = await getDb();
         if (!db) return [];
-
-        const conn = await (db as any)._.client;
-
-        // 1) Buscar dados do user logado
-        const [userRows]: any = await conn.execute(
-          'SELECT id, programId, consultorId FROM users WHERE id = ? LIMIT 1',
-          [Number(ctx.user.id)]
-        );
-
-        const userRow = Array.isArray(userRows) && userRows.length > 0 ? userRows[0] : null;
-
-        let programId = userRow?.programId || null;
-
-        // 2) Se não houver programId no user, tentar pelo consultor gerente
-        if (!programId && userRow?.consultorId) {
-          const [consultorRows]: any = await conn.execute(
-            'SELECT managedProgramId FROM consultors WHERE id = ? LIMIT 1',
-            [Number(userRow.consultorId)]
-          );
-
-          const consultorRow =
-            Array.isArray(consultorRows) && consultorRows.length > 0
-              ? consultorRows[0]
-              : null;
-
-          programId = consultorRow?.managedProgramId || null;
-        }
-
-        // 3) Fallback legado: se o gestor também estiver vinculado como aluno
-        if (!programId) {
-          const aluno = await getAlunoByUserId(Number(ctx.user.id));
-          programId = aluno?.programId || null;
-        }
-
-        if (!programId) {
-          console.warn('[porTurmaGeral] ProgramId não resolvido para o usuário', {
-            userId: ctx.user.id,
-          });
+        const program = await db.select().from(programs).where(eq(programs.id, aluno.programId)).limit(1);
+        if (!program[0]) {
+          console.warn('[porTurmaGeral] Programa não encontrado');
           return [];
         }
-
-        // 4) Buscar nome da empresa
-        const [programRows]: any = await conn.execute(
-          'SELECT name FROM programs WHERE id = ? LIMIT 1',
-          [Number(programId)]
-        );
-
-        const programRow =
-          Array.isArray(programRows) && programRows.length > 0 ? programRows[0] : null;
-
-        if (!programRow?.name) {
-          console.warn('[porTurmaGeral] Programa não encontrado', { programId });
-          return [];
-        }
-
-        // 5) Buscar jornadas filtradas pela empresa do gestor
-        const jornadas = await getJornadasPorTurma(programRow.name);
-
-        console.log('[porTurmaGeral] OK', {
-          userId: ctx.user.id,
-          programId,
-          empresa: programRow.name,
-          total: Array.isArray(jornadas) ? jornadas.length : 0,
-        });
-
-        return jornadas;
+        
+        // Passar o nome da empresa para filtrar apenas a empresa do gerente
+        return await getJornadasPorTurma(program[0].name);
       } catch (error) {
         console.error('[porTurmaGeral] Erro:', error);
         return [];

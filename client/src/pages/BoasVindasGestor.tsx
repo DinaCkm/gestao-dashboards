@@ -1,3 +1,4 @@
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
 import { DashboardLayout } from '@/components/DashboardLayout';
@@ -6,7 +7,6 @@ import { Calendar, Users, BookOpen, Target, Briefcase } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
 export function BoasVindasGestor() {
-  // Página de boas-vindas do gestor com Gantt chart de ciclos
   const { user } = useAuth();
 
   // Buscar estatísticas do time
@@ -39,9 +39,7 @@ export function BoasVindasGestor() {
   const turmaColors = ['#1E3A5F', '#F5A623', '#2E7D32', '#D32F2F', '#7B1FA2', '#00838F', '#FF6F00', '#0097A7'];
 
   const fmtDate = (d: any) => {
-    if (!d) return '-';
     const date = new Date(d);
-    if (Number.isNaN(date.getTime())) return '-';
     return date.toLocaleDateString('pt-BR');
   };
 
@@ -63,30 +61,28 @@ export function BoasVindasGestor() {
   }, [allJornadas, selectedTurma]);
 
   return (
-    <div className="min-h-screen -m-6 bg-slate-50">
-      <div className="mx-auto max-w-7xl p-6 space-y-8">
-      {/* Hero Section - Refinado */}
-      <div className="mb-8">
-        <div className="flex flex-wrap gap-2 mb-4">
-          <span className="inline-block px-3 py-1 bg-cyan-100 text-cyan-700 rounded-full text-xs font-semibold">
-            Boas-vindas do Gestor
-          </span>
-          <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-            Timeline dos ciclos
+    <div className="min-h-screen -m-6 p-6">
+      {/* Hero Section - Fundo claro */}
+      <div className="mb-12 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-8">
+        <div className="mb-4">
+          <span className="inline-block px-3 py-1 bg-cyan-100 text-cyan-700 rounded-full text-sm font-medium">
+            Programa de Certificação
           </span>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">
-          Bem-vindo(a), <span className="text-cyan-600">{user?.name?.split(' ')[0]}</span>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          Bem-vindo(a), <span className="text-cyan-600">{user?.name?.split(' ')[0]}</span>!
         </h1>
-        <p className="text-gray-600 text-base leading-relaxed max-w-2xl">
-          Acompanhe a evolução da sua equipe, visualize os períodos dos macrociclos
-          e tenha uma visão rápida das principais métricas do programa.
+        <p className="text-gray-600 text-lg">
+          Você agora faz parte do <span className="font-semibold text-gray-900">Ecossistema de Desenvolvimento de Liderança</span> da CKM Talents.
+        </p>
+        <p className="text-gray-600 mt-4">
+          Acompanhe o progresso da sua equipe, visualize métricas de desenvolvimento e impulsione os resultados do programa de certificação.
         </p>
       </div>
 
-      {/* Estatísticas - Cards */}
+      {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card className="border border-slate-200 shadow-sm">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
@@ -98,7 +94,7 @@ export function BoasVindasGestor() {
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 shadow-sm">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
@@ -110,7 +106,7 @@ export function BoasVindasGestor() {
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 shadow-sm">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
@@ -122,7 +118,7 @@ export function BoasVindasGestor() {
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200 shadow-sm">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div>
@@ -168,7 +164,8 @@ export function BoasVindasGestor() {
       </div>
 
       {/* Gantt Chart: Timeline dos Ciclos */}
-      <Card className="border-0 shadow-sm ring-1 ring-slate-200">
+      {Object.keys(jornadasPorEmpresa).length > 0 && (
+        <Card className="mb-12 border shadow-md">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -179,16 +176,6 @@ export function BoasVindasGestor() {
                 <CardDescription>
                   Visualize o cronograma de execução dos ciclos agrupados por cliente e turma
                 </CardDescription>
-                <div className="flex gap-4 mt-4 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                    <span>Período do macrociclo</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-0.5 h-4 bg-red-500"></div>
-                    <span>Data atual</span>
-                  </div>
-                </div>
               </div>
               {turmasList.length > 0 && (
                 <div className="flex items-center gap-2">
@@ -211,32 +198,8 @@ export function BoasVindasGestor() {
           </CardHeader>
           <CardContent>
             {(() => {
-              if (!allJornadas || allJornadas.length === 0) {
-                return (
-                  <div className="py-12 text-center">
-                    <p className="text-lg font-semibold text-foreground mb-2">
-                      Ainda não foi possível carregar a timeline dos macrociclos.
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Assim que os dados do gestor forem resolvidos no backend, os períodos aparecerão aqui.
-                    </p>
-                  </div>
-                );
-              }
-              
               const empresas = Object.entries(jornadasPorEmpresa);
-              if (empresas.length === 0) {
-                return (
-                  <div className="py-12 text-center">
-                    <p className="text-lg font-semibold text-foreground mb-2">
-                      Ainda não foi possível carregar a timeline dos macrociclos.
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Assim que houver dados disponíveis, os períodos aparecerão aqui.
-                    </p>
-                  </div>
-                );
-              }
+              if (empresas.length === 0) return <p className="text-muted-foreground">Nenhum ciclo encontrado</p>;
               
               const [empresaNome, jornadas] = empresas[0];
               
@@ -283,11 +246,13 @@ export function BoasVindasGestor() {
 
                     <div className="space-y-3">
                       {(jornadas || [])
+                        .filter((j: any) => {
+                          const bsM = j.turmaNome?.match(/\[(BS\d+)\]/);
+                          return !!bsM;
+                        })
                         .map((jornada: any, jIdx: number) => {
                           const bsM = jornada.turmaNome?.match(/\[(BS\d+)\]/);
-                          const label = bsM
-                            ? `${bsM[1]} — ${jornada.trilhaNome || 'Sem trilha'}`
-                            : `${jornada.turmaNome || 'Turma'} — ${jornada.trilhaNome || 'Sem trilha'}`;
+                          const label = `${bsM[1]} — ${jornada.trilhaNome || 'Sem trilha'}`;
                           const color = turmaColors[jIdx % turmaColors.length];
 
                           const macroStart = jornada.macroInicio ? ((new Date(jornada.macroInicio).getTime() - minDate.getTime()) / totalMs) * 100 : 0;
@@ -323,7 +288,8 @@ export function BoasVindasGestor() {
               );
             })()}
           </CardContent>
-      </Card>
+        </Card>
+      )}
 
       {/* Fale Conosco */}
       <Card className="bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-200">
@@ -342,9 +308,6 @@ export function BoasVindasGestor() {
           </div>
         </CardContent>
       </Card>
-      </div>
     </div>
   );
 }
-
-export default BoasVindasGestor;
