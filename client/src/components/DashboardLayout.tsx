@@ -203,6 +203,7 @@ const otherMenuItems: MenuItemExtended[] = [
   
   // === GERENTE DE EMPRESA ===
   { icon: Home, label: "Boas-Vindas", path: "/boas-vindas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: BarChart3, label: "Visão Geral", path: "/dashboard/visao-geral", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
