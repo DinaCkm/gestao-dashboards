@@ -19,6 +19,7 @@ import Formulas from "./pages/Formulas";
 import Login from "./pages/Login";
 // History page merged into Upload
 import DashboardVisaoGeral from "./pages/DashboardVisaoGeral";
+import CiclosTurmas from "./pages/CiclosTurmas";
 import DashboardEmpresa from "./pages/DashboardEmpresa";
 import DashboardMentor from "./pages/DashboardMentor";
 import AdminCadastros from "./pages/AdminCadastros";
@@ -132,6 +133,7 @@ function Router() {
       <Route path={"/painel-revisoes"} component={PainelRevisoes} />
       <Route path={"/mentor/configuracoes"} component={MentorConfiguracoes} />
       <Route path={"/boas-vindas-gestor"} component={BoasVindasGestor} />
+      <Route path={"/dashboard/ciclos-turmas"} component={CiclosTurmas} />
       <Route path={"/precificacao-sessoes"} component={PrecificacaoSessoes} />
       <Route path={"/competencias-comp-tec"} component={CompetenciasCompTec} />
       <Route path={"/mentor/competencias-comp-tec"} component={MentorCompetenciasCompTec} />

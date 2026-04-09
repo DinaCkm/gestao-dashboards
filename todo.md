@@ -3565,3 +3565,17 @@
 - [ ] Ligar frontend novo a essas procedures
 - [ ] Validar indicadores 2 e 3 considerando apenas cursos com microciclo já iniciado
 - [ ] Testar ponta a ponta: detalhe do curso → cards → iniciar → concluir → avaliar
+
+
+## Timeline de Jornadas na Página do Gestor (08/04/2026)
+- [ ] Criar procedure gestorJornadasEmpresa no mentor router inline (server/routers.ts)
+- [ ] Resolver programId do gestor: users.programId → consultors.managedProgramId → vazio
+- [ ] Criar helper getGestorJornadasEmpresa em server/db.ts
+- [ ] Atualizar BoasVindasGestor.tsx para usar nova rota e exibir timeline de jornadas
+- [ ] Build local sem erros antes de commit
+
+## Aba Ciclos_Turmas
+- [x] Criar página CiclosTurmas.tsx com o Gantt movido do DashboardVisaoGeral
+- [x] Remover bloco do Gantt do DashboardVisaoGeral.tsx
+- [x] Registrar rota /dashboard/ciclos-turmas e item no sidebar do gerente
+- [x] Build local sem erros (EXIT_CODE=0)

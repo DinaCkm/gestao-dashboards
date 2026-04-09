@@ -84,11 +84,7 @@ export default function DashboardVisaoGeral() {
     return empresa?.nome || null;
   }, [empresas, user?.programId, isGerente]);
 
-  // Query jornadas: se gerente, filtrar por empresa; se admin, trazer todas
-  const { data: allJornadas = [] } = trpc.jornada.porTurmaGeral.useQuery(
-    { empresa: isGerente ? (empresaNome || '') : '' },
-    { enabled: isGerente ? !!empresaNome : true }
-  );
+
 
   // Alunos que faltam 1 sessão para fechar o ciclo
   const alunosFalta1 = allProgress.filter((p: any) => p.faltaUmaSessao);
@@ -155,15 +151,7 @@ export default function DashboardVisaoGeral() {
     alunos: emp.totalAlunos
   }));
 
-  // Agrupar jornadas por empresa/cliente
-  const jornadasPorEmpresa = (allJornadas || []).reduce((acc: any, jornada: any) => {
-    const empresaNome = jornada.empresaNome || 'Sem Empresa';
-    if (!acc[empresaNome]) {
-      acc[empresaNome] = [];
-    }
-    acc[empresaNome].push(jornada);
-    return acc;
-  }, {});
+
 
   return (
     <DashboardLayout>
@@ -278,102 +266,7 @@ export default function DashboardVisaoGeral() {
           </Card>
         </div>
 
-        {/* Gráfico de Gantt: Macrociclos por Cliente e Turma */}
-        {Object.keys(jornadasPorEmpresa).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Macrociclos por Cliente e Turma
-              </CardTitle>
-              <CardDescription>
-                Timeline de execução dos macrociclos agrupados por cliente (empresa) e turma
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {Object.entries(jornadasPorEmpresa).map(([empresaNome, jornadas]: [string, any]) => {
-                // Calcular range de datas para esta empresa
-                const allDates: Date[] = [];
-                (jornadas || []).forEach((j: any) => {
-                  if (j.macroInicio) allDates.push(new Date(j.macroInicio));
-                  if (j.macroTermino) allDates.push(new Date(j.macroTermino));
-                });
 
-                if (allDates.length < 2) return null;
-
-                const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
-                const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
-                const totalMs = maxDate.getTime() - minDate.getTime();
-                if (totalMs <= 0) return null;
-
-                const today = new Date();
-                const todayPct = Math.max(0, Math.min(100, ((today.getTime() - minDate.getTime()) / totalMs) * 100));
-
-                return (
-                  <div key={empresaNome} className="mb-8 pb-6 border-b last:border-b-0">
-                    <h3 className="text-lg font-semibold mb-4 text-foreground">{empresaNome}</h3>
-                    <div className="relative bg-muted/20 rounded-lg p-4 overflow-x-auto">
-                      {/* Header com meses */}
-                      <div className="relative h-6 mb-2 border-b border-muted">
-                        {(() => {
-                          const months: { label: string; pct: number }[] = [];
-                          const cur = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-                          while (cur <= maxDate) {
-                            const pct = ((cur.getTime() - minDate.getTime()) / totalMs) * 100;
-                            if (pct >= 0 && pct <= 100) {
-                              months.push({ label: cur.toLocaleDateString('pt-BR', { month: 'short' }), pct });
-                            }
-                            cur.setMonth(cur.getMonth() + 1);
-                          }
-                          return months.map((m, i) => (
-                            <span key={i} className="absolute text-[10px] text-muted-foreground -translate-x-1/2" style={{ left: `${m.pct}%` }}>
-                              {m.label}
-                            </span>
-                          ));
-                        })()}
-                      </div>
-
-                      {/* Barras por turma */}
-                      <div className="space-y-3">
-                        {(jornadas || []).map((jornada: any, jIdx: number) => {
-                          const bsM = jornada.turmaNome?.match(/\[(BS\d+)\]/);
-                          const label = bsM ? `${bsM[1]} — ${jornada.trilhaNome || 'Sem trilha'}` : jornada.trilhaNome || 'Sem trilha';
-                          const color = turmaColors[jIdx % turmaColors.length];
-
-                          const macroStart = jornada.macroInicio ? ((new Date(jornada.macroInicio).getTime() - minDate.getTime()) / totalMs) * 100 : 0;
-                          const macroEnd = jornada.macroTermino ? ((new Date(jornada.macroTermino).getTime() - minDate.getTime()) / totalMs) * 100 : 100;
-                          const macroWidth = Math.max(1, macroEnd - macroStart);
-
-                          return (
-                            <div key={jornada.turmaId} className="flex items-center gap-3">
-                              <div className="w-40 shrink-0 text-xs font-medium truncate" title={label}>{label}</div>
-                              <div className="flex-1 relative h-6 bg-muted/30 rounded">
-                                <div
-                                  className="absolute h-full rounded opacity-80"
-                                  style={{ left: `${macroStart}%`, width: `${macroWidth}%`, backgroundColor: color }}
-                                  title={`${label}: ${fmtDate(jornada.macroInicio)} → ${fmtDate(jornada.macroTermino)}`}
-                                />
-                              </div>
-                              <div className="w-24 shrink-0 text-[10px] text-muted-foreground text-right">
-                                {fmtDate(jornada.macroTermino)}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Linha do hoje */}
-                      <div className="absolute top-0 bottom-0" style={{ left: `${todayPct}%`, width: '2px' }}>
-                        <div className="w-0.5 h-full bg-red-500 opacity-70" />
-                        <span className="absolute -top-1 left-1 text-[9px] font-bold text-red-500">Hoje</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        )}
 
         {/* Indicadores Detalhados */}
         <div className="space-y-4">
