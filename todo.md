@@ -3579,3 +3579,7 @@
 - [x] Remover bloco do Gantt do DashboardVisaoGeral.tsx
 - [x] Registrar rota /dashboard/ciclos-turmas e item no sidebar do gerente
 - [x] Build local sem erros (EXIT_CODE=0)
+
+## Bug: 41 erros em produção - tabela in_app_notifications não existe (09/04/2026)
+- [ ] Corrigir erro: table in_app_notifications doesn't exist no banco de produção
+- [x] Remover item 'Visão Geral' do sidebar do gestor
