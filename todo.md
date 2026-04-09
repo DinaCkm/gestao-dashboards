@@ -3583,3 +3583,5 @@
 ## Bug: 41 erros em produção - tabela in_app_notifications não existe (09/04/2026)
 - [ ] Corrigir erro: table in_app_notifications doesn't exist no banco de produção
 - [x] Remover item 'Visão Geral' do sidebar do gestor
+- [ ] Criar tabela in_app_notifications no banco de produção Railway
+- [x] Adicionar DashboardLayout (sidebar/menu) na página Boas-Vindas do gestor

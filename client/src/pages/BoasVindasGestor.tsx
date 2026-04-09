@@ -3,6 +3,7 @@ import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, BookOpen, Target, Briefcase } from 'lucide-react';
+import DashboardLayout from '@/components/DashboardLayout';
 
 export default function BoasVindasGestor() {
   const { user } = useAuth();
@@ -25,7 +26,8 @@ export default function BoasVindasGestor() {
   };
 
   return (
-    <div className="min-h-screen -m-6 p-6">
+    <DashboardLayout>
+    <div className="min-h-screen">
       {/* Hero Section */}
       <div className="mb-12 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-8">
         <div className="mb-4">
@@ -143,5 +145,6 @@ export default function BoasVindasGestor() {
         </CardContent>
       </Card>
     </div>
+    </DashboardLayout>
   );
 }
