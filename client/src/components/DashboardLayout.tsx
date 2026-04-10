@@ -126,7 +126,6 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: BarChart3, label: "Dashboard de Mentores", path: "/dashboard/mentor" },
       { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias" },
       { icon: CalendarDays, label: "Painel de Agendamentos", path: "/agendamentos" },
-      { icon: BookOpen, label: "Atribuir Cursos", path: "/mentor/atribuir-cursos" },
       { icon: Edit3, label: "Editar Mentorias", path: "/editar-mentorias" },
       { icon: DollarSign, label: "Precificação de Sessões", path: "/precificacao-sessoes" },
     ],
@@ -152,6 +151,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Zap, label: "Atividades Extras", path: "/atividades-extras" },
       { icon: Calculator, label: "Fórmulas", path: "/formulas" },
       { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
+      { icon: BookOpen, label: "Atribuir Cursos", path: "/admin/atribuir-cursos" },
     ],
   },
   {
@@ -198,7 +198,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: CalendarDays, label: "Perfil / Agenda", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: BookOpen, label: "Atribuir Cursos", path: "/mentor/atribuir-cursos", roles: ["manager"], requireConsultorRole: 'mentor' },
+
   
   // === GERENTE DE EMPRESA ===
   { icon: Home, label: "Boas-Vindas", path: "/boas-vindas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },

@@ -148,6 +148,7 @@ function Router() {
       <Route path={"/mentor/competencias-comp-tec/alunos"} component={MentorListaAlunos} />
       <Route path={"/mentor/competencias-comp-tec/atribuir"} component={MentorAtribuirCurso} />
       <Route path={"/mentor/atribuir-cursos"} component={MentorAtribuirCurso} />
+      <Route path={"/admin/atribuir-cursos"} component={MentorAtribuirCurso} />
       <Route path={"/mentor/competencias-comp-tec/progresso"} component={MentorProgressoAlunos} />
 
 
