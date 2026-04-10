@@ -9301,22 +9301,24 @@ Responda APENAS em JSON com o formato especificado.`
 
     aluno: router({
       meusCursos: protectedProcedure.query(async ({ ctx }) => {
-        const database = await db.getDb();
-        if (!database) return [];
+  const database = await db.getDb();
+  if (!database) return [];
 
-        const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
-        if (!aluno) return [];
+  const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+  if (!aluno) return [];
 
-        return await database
-          .select({
-            progresso: alunoModuloProgresso,
-            modulo: competenciasModulos,
-          })
-          .from(alunoModuloProgresso)
-          .leftJoin(competenciasModulos, eq(alunoModuloProgresso.moduloId, competenciasModulos.id))
-          .where(eq(alunoModuloProgresso.alunoId, aluno.id))
-          .orderBy(desc(alunoModuloProgresso.updatedAt));
-      }),
+  return await database
+    .select({
+      atribuicao: alunoCursoAtribuido,
+      curso: cursosCompetencias,
+      competencia: competencias,
+    })
+    .from(alunoCursoAtribuido)
+    .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+    .leftJoin(competencias, eq(alunoCursoAtribuido.competenciaId, competencias.id))
+    .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
+    .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+}),
 
       getCursosAtribuidos: protectedProcedure.query(async ({ ctx }) => {
         const database = await db.getDb();

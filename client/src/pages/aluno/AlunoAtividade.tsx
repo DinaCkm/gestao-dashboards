@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,41 +13,32 @@ function getNumeroQuery(search: string, chave: string) {
 
 export default function AlunoAtividade() {
   const [, setLocation] = useLocation();
-  const [atividadeEmAndamento, setAtividadeEmAndamento] = useState<number | null>(null);
 
   const search = typeof window !== "undefined" ? window.location.search : "";
   const cursoId = getNumeroQuery(search, "cursoId");
   const cursoAtribuidoId = getNumeroQuery(search, "cursoAtribuidoId");
 
-  // Buscar atividades do curso
   const atividadesQuery = trpc.competenciasCompTec.aluno.obterAtividadesCurso.useQuery(
     { cursoId, cursoAtribuidoId },
     { enabled: !!cursoId && !!cursoAtribuidoId }
   );
 
-  // Mutation para iniciar atividade
+  const abrirConteudo = (atividadeId: number) => {
+    setLocation(
+      `/aluno/competencias-comp-tec/conteudo?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&atividadeId=${atividadeId}`
+    );
+  };
+
   const iniciarAtividadeMutation = trpc.competenciasCompTec.aluno.iniciarAtividade.useMutation({
-    onSuccess: (result, variables) => {
+    onSuccess: (_result, variables) => {
       if (variables.atividadeId) {
-        setAtividadeEmAndamento(variables.atividadeId);
-        // Abrir link da atividade em nova aba após 500ms
-        setTimeout(() => {
-          const atividade = atividades.find(a => a.id === variables.atividadeId);
-          if (atividade) {
-            const url = atividade.urlGenially || atividade.urlMidia;
-            if (url) {
-              window.open(url, "_blank");
-            }
-          }
-        }, 500);
+        abrirConteudo(variables.atividadeId);
       }
     },
   });
 
-  // Mutation para concluir atividade
   const concluirAtividadeMutation = trpc.competenciasCompTec.aluno.concluirAtividade.useMutation({
     onSuccess: async (_result, variables) => {
-      setAtividadeEmAndamento(null);
       const refetchResult = await atividadesQuery.refetch();
       const atividadesAtualizadas = refetchResult.data ?? [];
       const atividadeAtualizada = atividadesAtualizadas.find(
@@ -70,7 +61,6 @@ export default function AlunoAtividade() {
     return items.sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
   }, [atividadesQuery.data]);
 
-  // Determinar status de cada atividade
   const getStatusAtividade = (atividade: any, index: number) => {
     if (atividade.status === "concluida" || atividade.status === "aprovada") {
       return { label: "Concluída", color: "bg-green-100 text-green-800", icon: CheckCircle };
@@ -81,7 +71,6 @@ export default function AlunoAtividade() {
     if (atividade.status === "bloqueada") {
       return { label: "Bloqueada", color: "bg-gray-100 text-gray-800", icon: Lock };
     }
-    // Primeira atividade ou anterior foi aprovada = liberada
     if (index === 0 || atividades[index - 1]?.status === "aprovada") {
       return { label: "Liberada", color: "bg-yellow-100 text-yellow-800", icon: Play };
     }
@@ -100,7 +89,7 @@ export default function AlunoAtividade() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Aluno — Atividade</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Inicie a atividade para carregar a avaliação com questões aleatórias.
+          Acesse o conteúdo dentro da plataforma e siga para a avaliação após concluir a atividade.
         </p>
       </div>
 
@@ -108,7 +97,7 @@ export default function AlunoAtividade() {
         <CardHeader>
           <CardTitle>Atividades do Curso</CardTitle>
           <CardDescription>
-            Clique em uma atividade para iniciar. Você precisará concluir a atividade antes de acessar a avaliação.
+            O conteúdo do curso abre dentro do sistema. Depois, siga para a avaliação da atividade.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -134,7 +123,6 @@ export default function AlunoAtividade() {
                     key={atividade.id}
                     className="group relative overflow-hidden rounded-lg border bg-card transition-all hover:shadow-lg"
                   >
-                    {/* Imagem da atividade */}
                     <div className="relative h-48 w-full overflow-hidden bg-muted">
                       {atividade.imagemUrl ? (
                         <img
@@ -151,7 +139,6 @@ export default function AlunoAtividade() {
                         </div>
                       )}
 
-                      {/* Badge de status sobreposto */}
                       <div className="absolute right-2 top-2">
                         <Badge className={statusInfo.color}>
                           <StatusIcon className="mr-1 h-3 w-3" />
@@ -159,26 +146,28 @@ export default function AlunoAtividade() {
                         </Badge>
                       </div>
 
-                      {/* Overlay se bloqueada */}
-                      {!podeIniciarAtividade && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      {!podeIniciarAtividade && atividade.status !== "aprovada" && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                           <Lock className="h-8 w-8 text-white" />
                         </div>
                       )}
                     </div>
 
-                    {/* Conteúdo do card */}
                     <div className="p-4">
                       <div className="space-y-2">
-                        <h3 className="font-semibold line-clamp-2">{atividade.titulo}</h3>
+                        <h3 className="line-clamp-2 font-semibold">{atividade.titulo}</h3>
                         <p className="text-xs text-muted-foreground">
                           Atividade {index + 1} de {atividades.length}
                         </p>
                       </div>
 
-                      {/* Botões de ação */}
                       <div className="mt-4 space-y-2">
-                        {atividade.status === "concluida" && atividade.avaliacaoLiberada ? (
+                        {atividade.status === "aprovada" ? (
+                          <Button disabled className="w-full" size="sm">
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Concluída
+                          </Button>
+                        ) : atividade.status === "concluida" && atividade.avaliacaoLiberada ? (
                           <Button
                             onClick={() =>
                               setLocation(
@@ -188,47 +177,48 @@ export default function AlunoAtividade() {
                             className="w-full"
                             size="sm"
                           >
-                            Fazer avaliacao
+                            Fazer avaliação
                           </Button>
-                        ) : atividade.status === "aprovada" ? (
-                          <Button disabled className="w-full" size="sm">
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Concluida
-                          </Button>
-                        ) : podeIniciarAtividade ? (
+                        ) : atividade.status === "em_andamento" ? (
                           <>
                             <Button
+                              onClick={() => abrirConteudo(atividade.id)}
+                              className="w-full"
+                              size="sm"
+                            >
+                              Continuar conteúdo
+                            </Button>
+                            <Button
                               onClick={() =>
-                                iniciarAtividadeMutation.mutateAsync({
+                                concluirAtividadeMutation.mutateAsync({
                                   cursoId,
                                   cursoAtribuidoId,
                                   atividadeId: atividade.id,
                                 })
                               }
-                              disabled={iniciarAtividadeMutation.isPending}
+                              disabled={concluirAtividadeMutation.isPending}
+                              variant="outline"
                               className="w-full"
                               size="sm"
                             >
-                              {iniciarAtividadeMutation.isPending ? "Abrindo..." : "Iniciar"}
+                              {concluirAtividadeMutation.isPending ? "Abrindo avaliação..." : "Ir para avaliação"}
                             </Button>
-                            {atividadeEmAndamento === atividade.id && (
-                              <Button
-                                onClick={() =>
-                                  concluirAtividadeMutation.mutateAsync({
-                                    cursoId,
-                                    cursoAtribuidoId,
-                                    atividadeId: atividade.id,
-                                  })
-                                }
-                                disabled={concluirAtividadeMutation.isPending}
-                                variant="outline"
-                                className="w-full"
-                                size="sm"
-                              >
-                                {concluirAtividadeMutation.isPending ? "Concluindo..." : "Concluir"}
-                              </Button>
-                            )}
                           </>
+                        ) : podeIniciarAtividade ? (
+                          <Button
+                            onClick={() =>
+                              iniciarAtividadeMutation.mutateAsync({
+                                cursoId,
+                                cursoAtribuidoId,
+                                atividadeId: atividade.id,
+                              })
+                            }
+                            disabled={iniciarAtividadeMutation.isPending}
+                            className="w-full"
+                            size="sm"
+                          >
+                            {iniciarAtividadeMutation.isPending ? "Abrindo conteúdo..." : "Fazer o curso"}
+                          </Button>
                         ) : (
                           <Button disabled className="w-full" size="sm">
                             <Lock className="mr-2 h-4 w-4" />
@@ -245,7 +235,6 @@ export default function AlunoAtividade() {
         </CardContent>
       </Card>
 
-      {/* Botão voltar */}
       <div className="flex justify-start">
         <Button
           variant="outline"
