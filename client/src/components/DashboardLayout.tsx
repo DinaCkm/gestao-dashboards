@@ -55,7 +55,6 @@ import {
   Compass,
   Video,
   Megaphone,
-  ExternalLink,
   Calendar,
   Flag,
   ChevronRight,
@@ -633,21 +632,7 @@ function DashboardLayoutContent({
               </SidebarMenu>
             )}
 
-            {/* Botão P.D.I Evoluir - sai do sistema e redireciona */}
-            <SidebarMenu className="px-2 py-1 mt-2 mb-2">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip="P.D.I Evoluir"
-                  onClick={() => {
-                    window.location.href = "https://www.evoluirckm.com";
-                  }}
-                  className="h-10 transition-all font-medium bg-gradient-to-r from-orange-500/10 to-amber-500/10 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/20 hover:border-orange-500/40 text-orange-600 dark:text-orange-400 cursor-pointer"
-                >
-                  <ExternalLink className="h-4 w-4 shrink-0" />
-                  <span>P.D.I Evoluir</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
+
           </SidebarContent>
 
           {/* ===== FOOTER ===== */}
