@@ -52,7 +52,7 @@ export default function AlunoResultadoAvaliacao() {
               <Button
                 onClick={() =>
                   setLocation(
-                    `/aluno/reflexao?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
+                    `/aluno/competencias-comp-tec/reflexao?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
                   )
                 }
               >
@@ -62,7 +62,7 @@ export default function AlunoResultadoAvaliacao() {
               <Button
                 onClick={() =>
                   setLocation(
-                    `/aluno/atividade?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
+                    `/aluno/competencias-comp-tec/atividade?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
                   )
                 }
               >
@@ -72,7 +72,7 @@ export default function AlunoResultadoAvaliacao() {
 
             <Button
               variant="outline"
-              onClick={() => setLocation("/aluno/catalogo")}
+              onClick={() => setLocation("/aluno/competencias-comp-tec")}
             >
               Voltar ao catálogo
             </Button>
