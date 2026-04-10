@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,9 +66,16 @@ export default function MentorAtribuirCurso() {
   const [novoPrazo, setNovoPrazo] = useState("");
   const [novoStatus, setNovoStatus] = useState("");
 
+  const [location] = useLocation();
+  const { user } = useAuth();
+  const isAdmin = location.startsWith("/admin") || user?.role === "admin";
+
   const utils = trpc.useUtils();
 
-  const alunosQuery = trpc.competenciasCompTec.mentor.listarAlunos.useQuery();
+  // Se admin, buscar todos os alunos; se mentor, buscar apenas os do mentor
+  const alunosMentorQuery = trpc.competenciasCompTec.mentor.listarAlunos.useQuery(undefined, { enabled: !isAdmin });
+  const alunosAdminQuery = trpc.alunos.list.useQuery(undefined, { enabled: isAdmin });
+  const alunosQuery = isAdmin ? alunosAdminQuery : alunosMentorQuery;
   const competenciasQuery = trpc.planoIndividual.competenciasObrigatorias.useQuery(
     { alunoId: Number(alunoSelecionado) },
     { enabled: Number(alunoSelecionado) > 0 }
@@ -182,7 +191,7 @@ export default function MentorAtribuirCurso() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Mentor — Atribuir Curso</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{isAdmin ? "Administração" : "Mentor"} — Atribuir Curso</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Selecione um aluno, a competência do PDI, o curso e a data limite para iniciar o desenvolvimento.
         </p>
