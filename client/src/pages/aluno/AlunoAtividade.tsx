@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Play, CheckCircle, Clock } from "lucide-react";
+import { Lock, Play, CheckCircle, Clock, BookOpen, RefreshCw } from "lucide-react";
 
 function getNumeroQuery(search: string, chave: string) {
   const params = new URLSearchParams(search);
@@ -68,6 +68,9 @@ export default function AlunoAtividade() {
     if (atividade.status === "em_andamento") {
       return { label: "Em andamento", color: "bg-blue-100 text-blue-800", icon: Clock };
     }
+    if (atividade.status === "reprovada") {
+      return { label: "Reprovada", color: "bg-orange-100 text-orange-800", icon: RefreshCw };
+    }
     if (atividade.status === "bloqueada") {
       return { label: "Bloqueada", color: "bg-gray-100 text-gray-800", icon: Lock };
     }
@@ -80,6 +83,7 @@ export default function AlunoAtividade() {
   const podeIniciar = (atividade: any, index: number) => {
     if (atividade.status === "concluida" || atividade.status === "aprovada") return false;
     if (atividade.status === "bloqueada") return false;
+    if (atividade.status === "reprovada") return false;
     if (index === 0) return true;
     return atividades[index - 1]?.status === "aprovada";
   };
@@ -179,6 +183,30 @@ export default function AlunoAtividade() {
                           >
                             Fazer avaliação
                           </Button>
+                        ) : atividade.status === "reprovada" ? (
+                          <>
+                            <Button
+                              onClick={() => abrirConteudo(atividade.id)}
+                              className="w-full"
+                              size="sm"
+                            >
+                              <BookOpen className="mr-2 h-4 w-4" />
+                              Retornar ao conteúdo
+                            </Button>
+                            <Button
+                              onClick={() =>
+                                setLocation(
+                                  `/aluno/competencias-comp-tec/avaliacao?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&atividadeId=${atividade.id}&avaliacaoId=${atividade.avaliacaoId}`
+                                )
+                              }
+                              variant="outline"
+                              className="w-full"
+                              size="sm"
+                            >
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              Fazer nova prova
+                            </Button>
+                          </>
                         ) : atividade.status === "em_andamento" ? (
                           <>
                             <Button
