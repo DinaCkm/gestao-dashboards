@@ -418,15 +418,43 @@ export default function AlunoCompetenciasCompTec() {
                   Nenhum resultado disponível ainda.
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex flex-wrap gap-2">
                     <span className="rounded-full bg-muted px-3 py-1 text-sm">
-                      Nota: {String(resultadoAtual?.nota ?? "-")}
+                      Acertos: {String(resultadoAtual?.percentualAcerto ?? "-")}%
                     </span>
-                    <span className="rounded-full bg-muted px-3 py-1 text-sm">
+                    <span className={`rounded-full px-3 py-1 text-sm ${
+                      resultadoAtual?.aprovado 
+                        ? "bg-green-100 text-green-800" 
+                        : "bg-red-100 text-red-800"
+                    }`}>
                       {resultadoAtual?.aprovado ? "Aprovado" : "Não aprovado"}
                     </span>
+                    <span className="rounded-full bg-muted px-3 py-1 text-sm">
+                      Tentativa {resultadoAtual?.tentativasAtuais ?? 1}/3
+                    </span>
                   </div>
+                  
+                  <div className={`rounded-lg p-4 ${
+                    resultadoAtual?.bloqueado 
+                      ? "bg-red-50 border border-red-200" 
+                      : (resultadoAtual?.aprovado 
+                        ? "bg-green-50 border border-green-200" 
+                        : "bg-yellow-50 border border-yellow-200")
+                  }`}>
+                    <p className="text-sm font-medium">
+                      {resultadoAtual?.mensagem}
+                    </p>
+                  </div>
+                  
+                  {!resultadoAtual?.aprovado && !resultadoAtual?.bloqueado && (
+                    <Button 
+                      onClick={handleIniciarAtividade}
+                      className="w-full"
+                    >
+                      Refazer Avaliação
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>

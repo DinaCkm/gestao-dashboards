@@ -9744,10 +9744,18 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada para esta atividade" });
           }
 
-          // Retornar a estrutura esperada pelo frontend
+          // Lógica de 10 questões aleatórias
+          const todasQuestoes = JSON.parse(avaliacao.questoes || '[]');
+          const questoesEmbaralhadas = todasQuestoes.sort(() => 0.5 - Math.random());
+          const questoesSelecionadas = questoesEmbaralhadas.slice(0, 10);
+
+          // Retornar a estrutura esperada pelo frontend com as questões selecionadas
           return {
             atividade,
-            avaliacoes: avaliacao,
+            avaliacoes: {
+              ...avaliacao,
+              questoes: JSON.stringify(questoesSelecionadas),
+            },
           };
         }),
 
@@ -9801,15 +9809,21 @@ Responda APENAS em JSON com o formato especificado.`
           }
 
           const notaNumerica = Number(input.nota);
-          const aprovado = notaNumerica >= 8;
+          const percentualAcerto = (notaNumerica / 10) * 100; // Converter para percentual (0-100)
+          const aprovado = percentualAcerto >= 80; // Exigir 80% de acerto
           const notaPersistida = notaNumerica.toFixed(1);
+          const tentativasAtuais = (progresso.tentativas ?? 0) + 1;
+          const tentativasRestantes = 3 - tentativasAtuais;
+
+          // Verificar se atingiu o limite de 3 tentativas
+          const bloqueado = tentativasAtuais >= 3 && !aprovado;
 
           await database
             .update(alunoAtividadeProgresso)
             .set({
               notaFinal: notaPersistida,
-              status: aprovado ? "aprovada" : "reprovada",
-              tentativas: (progresso.tentativas ?? 0) + 1,
+              status: bloqueado ? "bloqueada" : (aprovado ? "aprovada" : "reprovada"),
+              tentativas: tentativasAtuais,
               updatedAt: new Date(),
             })
             .where(eq(alunoAtividadeProgresso.id, progresso.id));
@@ -9874,7 +9888,17 @@ Responda APENAS em JSON com o formato especificado.`
           return {
             success: true,
             aprovado,
+            bloqueado,
+            tentativasAtuais,
+            tentativasRestantes: Math.max(0, tentativasRestantes),
+            percentualAcerto: percentualAcerto.toFixed(1),
             proximaAtividadeDisponivel: aprovado && !!proximaAtividade,
+            mensagem: bloqueado 
+              ? "Você atingiu o limite de 3 tentativas. Por favor, fale com seu mentor."
+              : (aprovado 
+                ? "Parabéns! Você atingiu 80% de acerto!"
+                : `Você não atingiu 80% de acerto. Acertos: ${percentualAcerto.toFixed(1)}%. Tentativas restantes: ${tentativasRestantes}`
+              ),
           };
         }),
 
