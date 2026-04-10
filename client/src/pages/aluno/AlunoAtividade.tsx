@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,6 +90,7 @@ export default function AlunoAtividade() {
   };
 
   return (
+    <AlunoLayout>
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Aluno — Atividade</h1>
@@ -272,5 +274,6 @@ export default function AlunoAtividade() {
         </Button>
       </div>
     </div>
+    </AlunoLayout>
   );
 }

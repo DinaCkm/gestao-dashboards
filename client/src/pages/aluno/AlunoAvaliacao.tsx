@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { AlertTriangle, ArrowLeft, BookOpen, RefreshCw, Lock, MessageCircle } from "lucide-react";
+import AlunoLayout from "@/components/AlunoLayout";
 
 type ResultadoSubmissao = {
   success: boolean;
@@ -56,6 +57,7 @@ export default function AlunoAvaliacao() {
 
   if (!parametrosValidos) {
     return (
+      <AlunoLayout>
       <div className="container py-8">
         <Card>
           <CardHeader>
@@ -68,6 +70,7 @@ export default function AlunoAvaliacao() {
           </CardContent>
         </Card>
       </div>
+      </AlunoLayout>
     );
   }
 
@@ -130,6 +133,7 @@ export default function AlunoAvaliacao() {
     // Bloqueado na 3a tentativa - mensagem para falar com o mentor
     if (resultado.bloqueado) {
       return (
+        <AlunoLayout>
         <div className="space-y-6 p-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Aluno — Avaliação</h1>
@@ -190,11 +194,13 @@ export default function AlunoAvaliacao() {
             </CardContent>
           </Card>
         </div>
+        </AlunoLayout>
       );
     }
 
     // Reprovado mas ainda tem tentativas - mostrar opções
     return (
+      <AlunoLayout>
       <div className="space-y-6 p-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Aluno — Avaliação</h1>
@@ -255,11 +261,13 @@ export default function AlunoAvaliacao() {
           </CardContent>
         </Card>
       </div>
+      </AlunoLayout>
     );
   }
 
   // Tela normal da avaliação (questões)
   return (
+    <AlunoLayout>
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Aluno — Avaliação</h1>
@@ -337,5 +345,6 @@ export default function AlunoAvaliacao() {
         </CardContent>
       </Card>
     </div>
+    </AlunoLayout>
   );
 }

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -35,6 +36,7 @@ export default function AlunoDetalheCurso() {
   }, [detalheCursoQuery.data, cursoId]);
 
   return (
+    <AlunoLayout>
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Aluno — Detalhe do Curso</h1>
@@ -104,5 +106,6 @@ export default function AlunoDetalheCurso() {
         </CardContent>
       </Card>
     </div>
+    </AlunoLayout>
   );
 }

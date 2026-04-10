@@ -1,6 +1,7 @@
 import { useMemo, useRef } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink, Maximize } from "lucide-react";
@@ -62,6 +63,7 @@ export default function AlunoConteudoCurso() {
   };
 
   return (
+    <AlunoLayout>
     <div className="space-y-6 p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -139,5 +141,6 @@ export default function AlunoConteudoCurso() {
         </CardContent>
       </Card>
     </div>
+    </AlunoLayout>
   );
 }

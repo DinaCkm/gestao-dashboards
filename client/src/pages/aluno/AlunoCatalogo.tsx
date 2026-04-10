@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export default function AlunoCatalogo() {
   }, [meusCursosQuery.data, busca]);
 
   return (
+    <AlunoLayout>
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Aluno — Catálogo de Cursos</h1>
@@ -134,5 +136,6 @@ export default function AlunoCatalogo() {
         </CardContent>
       </Card>
     </div>
+    </AlunoLayout>
   );
 }

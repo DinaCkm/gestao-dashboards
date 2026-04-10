@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import AlunoLayout from "@/components/AlunoLayout";
 
 function getParam(search: string, chave: string) {
   const params = new URLSearchParams(search);
@@ -18,6 +19,7 @@ export default function AlunoResultadoAvaliacao() {
   const aprovado = getParam(search, "aprovado") === "1";
 
   return (
+    <AlunoLayout>
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Aluno — Resultado da Avaliação</h1>
@@ -80,5 +82,6 @@ export default function AlunoResultadoAvaliacao() {
         </CardContent>
       </Card>
     </div>
+    </AlunoLayout>
   );
 }
