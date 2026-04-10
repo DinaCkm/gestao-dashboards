@@ -9256,6 +9256,55 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true };
         }),
 
+      // === LIBERAR TENTATIVAS (ADMIN) - Reset de tentativas para aluno refazer curso/prova ===
+      liberarTentativas: protectedProcedure
+        .input(z.object({
+          cursoAtribuidoId: z.number(),
+          alunoId: z.number(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          // Buscar todas as atividades com progresso do aluno neste curso
+          const progressos = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, input.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+              )
+            );
+
+          // Resetar tentativas e status de todas as atividades bloqueadas/reprovadas
+          for (const prog of progressos) {
+            if (prog.status === "bloqueada" || prog.status === "reprovada") {
+              await database
+                .update(alunoAtividadeProgresso)
+                .set({
+                  tentativas: 0,
+                  status: "disponivel",
+                  notaFinal: null,
+                  aprovado: 0,
+                  avaliacaoLiberada: 0,
+                  updatedAt: new Date(),
+                })
+                .where(eq(alunoAtividadeProgresso.id, prog.id));
+            }
+          }
+
+          // Atualizar status do curso atribuído para em_progresso
+          await database
+            .update(alunoCursoAtribuido)
+            .set({ status: "em_progresso" })
+            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+
+          return { success: true, atividadesResetadas: progressos.filter(p => p.status === "bloqueada" || p.status === "reprovada").length };
+        }),
+
       acompanharProgresso: protectedProcedure
         .input(z.object({ alunoId: z.number() }))
         .query(async ({ input }) => {
@@ -9273,13 +9322,12 @@ Responda APENAS em JSON com o formato especificado.`
             .orderBy(desc(alunoModuloProgresso.updatedAt));
         }),
 
-      listarCursosAtribuidosAoAluno: protectedProcedure
+       listarCursosAtribuidosAoAluno: protectedProcedure
         .input(z.object({ alunoId: z.number() }))
         .query(async ({ input }) => {
           const database = await db.getDb();
           if (!database) return [];
-
-          return await database
+          const cursos = await database
             .select({
               id: alunoCursoAtribuido.id,
               alunoId: alunoCursoAtribuido.alunoId,
@@ -9296,6 +9344,26 @@ Responda APENAS em JSON com o formato especificado.`
             .leftJoin(competencias, eq(alunoCursoAtribuido.competenciaId, competencias.id))
             .where(eq(alunoCursoAtribuido.alunoId, input.alunoId))
             .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+
+          // Para cada curso, verificar se tem atividades bloqueadas
+          const resultado = await Promise.all(cursos.map(async (curso) => {
+            const atividadesBloqueadas = await database
+              .select()
+              .from(alunoAtividadeProgresso)
+              .where(
+                and(
+                  eq(alunoAtividadeProgresso.alunoId, input.alunoId),
+                  eq(alunoAtividadeProgresso.cursoAtribuidoId, curso.id),
+                  eq(alunoAtividadeProgresso.status, "bloqueada"),
+                )
+              );
+            return {
+              ...curso,
+              temAtividadeBloqueada: atividadesBloqueadas.length > 0,
+              qtdAtividadesBloqueadas: atividadesBloqueadas.length,
+            };
+          }));
+          return resultado;
         }),
     }),
 
@@ -9926,6 +9994,109 @@ Responda APENAS em JSON com o formato especificado.`
                 status: "concluido",
               })
               .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+          }
+
+          // === ENVIAR E-MAIL AO MENTOR (COM ADMIN EM CÓPIA) QUANDO BLOQUEADO NA 3a TENTATIVA ===
+          if (bloqueado) {
+            try {
+              const { sendEmail } = await import('./emailService');
+              const adminEmail = process.env.SMTP_USER || '';
+
+              // Buscar dados do aluno
+              const alunoData = await db.getAlunoById(user.alunoId);
+              const alunoNome = alunoData?.name || 'Aluno';
+              const alunoEmail = alunoData?.email || '';
+
+              // Buscar dados do curso atribuído para pegar o mentorId
+              const [cursoAtrib] = await database
+                .select()
+                .from(alunoCursoAtribuido)
+                .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+                .limit(1);
+
+              // Buscar dados do mentor
+              const mentorData = cursoAtrib?.mentorId ? await db.getConsultorById(cursoAtrib.mentorId) : null;
+              const mentorEmail = mentorData?.email || '';
+              const mentorNome = mentorData?.name || 'Mentor';
+
+              // Buscar nome da atividade
+              const [atividadeData] = await database
+                .select()
+                .from(atividadesCurso)
+                .where(eq(atividadesCurso.id, input.atividadeId))
+                .limit(1);
+              const atividadeNome = atividadeData?.titulo || 'Atividade';
+
+              // Buscar nome do curso
+              const [cursoData] = cursoAtrib?.cursoId ? await database
+                .select()
+                .from(cursosCompetencias)
+                .where(eq(cursosCompetencias.id, cursoAtrib.cursoId))
+                .limit(1) : [null];
+              const cursoNome = (cursoData as any)?.titulo || 'Curso';
+
+              const subject = `[ECOSSISTEMA DO BEM] Aluno bloqueado - ${alunoNome} precisa de orientação`;
+              const html = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="background: #dc2626; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0;">Aluno Bloqueado na Avaliação</h2>
+                  </div>
+                  <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p>Olá <strong>${mentorNome}</strong>,</p>
+                    <p>O aluno <strong>${alunoNome}</strong> atingiu o limite de <strong>3 tentativas</strong> sem alcançar a nota mínima de 80% na avaliação e foi bloqueado.</p>
+                    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                      <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 8px; font-weight: bold;">Aluno:</td>
+                        <td style="padding: 8px;">${alunoNome} (${alunoEmail})</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 8px; font-weight: bold;">Curso:</td>
+                        <td style="padding: 8px;">${cursoNome}</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 8px; font-weight: bold;">Atividade:</td>
+                        <td style="padding: 8px;">${atividadeNome}</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 8px; font-weight: bold;">Último aproveitamento:</td>
+                        <td style="padding: 8px;">${percentualAcerto.toFixed(1)}%</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px; font-weight: bold;">Tentativas realizadas:</td>
+                        <td style="padding: 8px;">3 de 3</td>
+                      </tr>
+                    </table>
+                    <p><strong>Ação necessária:</strong> Entre em contato com o aluno para conversar sobre as dificuldades que ele está enfrentando em relação ao conteúdo.</p>
+                    <p>Após a conversa, o <strong>Administrador</strong> poderá liberar novas tentativas para que o aluno refaça o curso e a avaliação.</p>
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+                    <p style="color: #6b7280; font-size: 12px;">Este e-mail foi enviado automaticamente pelo sistema ECOSSISTEMA DO BEM.</p>
+                  </div>
+                </div>
+              `;
+
+              if (mentorEmail) {
+                await sendEmail({
+                  to: mentorEmail,
+                  cc: adminEmail,
+                  subject,
+                  html,
+                  text: `Aluno ${alunoNome} foi bloqueado na avaliação da atividade ${atividadeNome} do curso ${cursoNome}. Tentativas: 3/3. Aproveitamento: ${percentualAcerto.toFixed(1)}%. Entre em contato com o aluno.`,
+                }).catch((err: any) => console.error('[Email bloqueio] Erro:', err.message));
+                console.log(`[Email bloqueio] Enviado para mentor=${mentorEmail}, cc=${adminEmail}, aluno=${alunoNome}`);
+              } else {
+                // Se não tem mentor, enviar direto para admin
+                await sendEmail({
+                  to: adminEmail || 'dina@ckmtalents.net',
+                  subject,
+                  html,
+                  text: `Aluno ${alunoNome} foi bloqueado na avaliação da atividade ${atividadeNome} do curso ${cursoNome}. Tentativas: 3/3. Aproveitamento: ${percentualAcerto.toFixed(1)}%. Entre em contato com o aluno.`,
+                }).catch((err: any) => console.error('[Email bloqueio] Erro:', err.message));
+                console.log(`[Email bloqueio] Enviado para admin=${adminEmail}, aluno=${alunoNome} (sem mentor)`);
+              }
+            } catch (emailError: any) {
+              console.error('[Email bloqueio] Falha ao enviar notificação:', emailError.message);
+              // Não bloquear o fluxo por falha de e-mail
+            }
           }
 
           return {

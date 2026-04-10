@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Calendar, CheckCircle2, Edit2, Trash2 } from "lucide-react";
+import { BookOpen, Calendar, CheckCircle2, Edit2, Trash2, Unlock, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -122,6 +122,18 @@ export default function MentorAtribuirCurso() {
     },
   });
 
+  const liberarTentativasMutation = trpc.competenciasCompTec.mentor.liberarTentativas.useMutation({
+    onSuccess: async () => {
+      await utils.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.invalidate();
+    },
+  });
+
+  async function liberarTentativas(cursoAtribuidoId: number, alunoId: number, cursoNome: string) {
+    if (confirm(`Tem certeza que deseja liberar novas tentativas para o aluno no curso "${cursoNome}"? Isso vai resetar as tentativas e permitir que o aluno refa\u00e7a o curso e a prova.`)) {
+      await liberarTentativasMutation.mutateAsync({ cursoAtribuidoId, alunoId });
+    }
+  }
+
   function abrirDialogoEditar(item: any) {
     setAtribuicaoEditando(item);
     setNovoPrazo(item.dataPrazo ? new Date(item.dataPrazo).toISOString().split('T')[0] : "");
@@ -165,11 +177,14 @@ export default function MentorAtribuirCurso() {
       console.log('Mapeando item:', item);
       return {
         id: item?.id ?? 0,
+        alunoId: item?.alunoId ?? 0,
         cursoNome: item?.cursoTitulo ?? "Curso desconhecido",
         competenciaNome: item?.competenciaNome ?? "Competência desconhecida",
         dataPrazo: item?.dataPrazo ?? "",
         status: item?.status ?? "nao_iniciado",
         dataAtribuicao: item?.dataAtribuicao ?? "",
+        temAtividadeBloqueada: item?.temAtividadeBloqueada ?? false,
+        qtdAtividadesBloqueadas: item?.qtdAtividadesBloqueadas ?? 0,
       };
     });
   }, [cursosAtribuidosQuery.data]);
@@ -336,9 +351,30 @@ export default function MentorAtribuirCurso() {
                           </span>
                         </div>
                       </div>
+                      {item.temAtividadeBloqueada && (
+                        <div className="flex items-center gap-2 mt-1 px-3 py-1.5 bg-red-50 border border-red-200 rounded-md">
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          <span className="text-xs font-medium text-red-700">
+                            {item.qtdAtividadesBloqueadas} atividade(s) bloqueada(s) — aluno atingiu o limite de tentativas
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="ml-4 flex items-center gap-3">
                       {getStatusBadge(item.status)}
+                      {item.temAtividadeBloqueada && isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => liberarTentativas(item.id, item.alunoId, item.cursoNome)}
+                          disabled={liberarTentativasMutation.isPending}
+                          className="h-9 px-3 flex items-center gap-1 hover:bg-amber-50 border-amber-300 text-amber-700"
+                          title="Liberar tentativas — resetar para o aluno refazer o curso e a prova"
+                        >
+                          <Unlock className="h-4 w-4" />
+                          <span className="text-xs">Liberar</span>
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
