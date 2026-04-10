@@ -139,7 +139,7 @@ export default function AlunoCompetenciasCompTec() {
     setResultadoAtual(null);
   }
 
-  async function handleIniciarAtividade() {
+  async function handleIniciarAtividade(cursoAtribuidoId?: number, atividadeId?: number) {
     if (!cursoSelecionado?.cursoId) return;
 
     setRespostas({});
@@ -147,7 +147,12 @@ export default function AlunoCompetenciasCompTec() {
 
     await iniciarAtividadeMutation.mutateAsync({
       moduloId: cursoSelecionado.cursoId,
+      cursoAtribuidoId: cursoAtribuidoId || cursoSelecionado.cursoAtribuidoId || 0,
+      atividadeId: atividadeId || 0,
     });
+    
+    // Scroll para o topo da página para ver as novas questões
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function atualizarResposta(questaoId: string, valor: string) {
@@ -387,12 +392,23 @@ export default function AlunoCompetenciasCompTec() {
                     );
                   })}
 
-                  <Button
-                    onClick={handleSubmeterAvaliacao}
-                    disabled={submeterAvaliacaoMutation.isPending}
-                  >
-                    {submeterAvaliacaoMutation.isPending ? "Enviando..." : "Submeter avaliação"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSubmeterAvaliacao}
+                      disabled={submeterAvaliacaoMutation.isPending}
+                      className="flex-1"
+                    >
+                      {submeterAvaliacaoMutation.isPending ? "Enviando..." : "Submeter avaliação"}
+                    </Button>
+                    
+                    <Button
+                      onClick={() => handleIniciarAtividade()}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Carregar Novas Questões
+                    </Button>
+                  </div>
 
                   {submeterAvaliacaoMutation.error && (
                     <p className="text-sm text-red-600">
@@ -449,10 +465,11 @@ export default function AlunoCompetenciasCompTec() {
                   
                   {!resultadoAtual?.aprovado && !resultadoAtual?.bloqueado && (
                     <Button 
-                      onClick={handleIniciarAtividade}
+                      onClick={() => handleIniciarAtividade()}
                       className="w-full"
+                      variant="default"
                     >
-                      Refazer Avaliação
+                      Refazer Avaliação com Novas Questões
                     </Button>
                   )}
                 </div>

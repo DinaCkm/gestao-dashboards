@@ -9607,7 +9607,46 @@ Responda APENAS em JSON com o formato especificado.`
               .where(eq(alunoAtividadeProgresso.id, existente.id));
           }
 
-          return { success: true };
+          // Buscar a avaliação da atividade para retornar as questões sorteadas
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.id, input.atividadeId))
+            .limit(1);
+
+          if (!atividade) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Atividade não encontrada.",
+            });
+          }
+
+          const [avaliacao] = await database
+            .select()
+            .from(avaliacoesAtividade)
+            .where(eq(avaliacoesAtividade.atividadeId, input.atividadeId))
+            .limit(1);
+
+          if (!avaliacao) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Avaliação não encontrada para esta atividade.",
+            });
+          }
+
+          // Lógica de 10 questões aleatórias
+          const todasQuestoes = JSON.parse(avaliacao.questoes || '[]');
+          const questoesEmbaralhadas = todasQuestoes.sort(() => 0.5 - Math.random());
+          const questoesSelecionadas = questoesEmbaralhadas.slice(0, 10);
+
+          return { 
+            success: true,
+            questoes: questoesSelecionadas,
+            avaliacao: {
+              ...avaliacao,
+              questoes: JSON.stringify(questoesSelecionadas),
+            },
+          };
         }),
 
       concluirAtividade: protectedProcedure
