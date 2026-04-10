@@ -3585,3 +3585,15 @@
 - [x] Remover item 'Visão Geral' do sidebar do gestor
 - [ ] Criar tabela in_app_notifications no banco de produção Railway
 - [x] Adicionar DashboardLayout (sidebar/menu) na página Boas-Vindas do gestor
+- [ ] Investigar onboarding do aluno Felipe travando no cadastro
+
+## Avaliação com Questões Randômicas e Limite de Tentativas (commits do GitHub - 10/04/2026)
+- [x] Implementar lógica de 10 questões aleatórias sorteadas do banco de questões
+- [x] Exigir 80% de acerto (8 de 10 questões) para aprovação
+- [x] Implementar limite de 3 tentativas por avaliação
+- [x] Status "bloqueada" quando aluno esgota 3 tentativas sem aprovação
+- [x] Retornar questões sorteadas no endpoint iniciarAtividade
+- [x] Retornar questões sorteadas no endpoint obterAtividadeParaAvaliar
+- [x] Retornar mensagens descritivas no resultado da avaliação (aprovado, reprovado com tentativas restantes, bloqueado)
+- [x] Botão "Refazer Avaliação com Novas Questões" no frontend (AlunoCompetenciasCompTec.tsx)
+- [x] Mostrar tentativas restantes e percentual de acerto no resultado

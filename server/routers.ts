@@ -9018,6 +9018,7 @@ Responda APENAS em JSON com o formato especificado.`
             titulo: z.string().min(1).optional(),
             tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]).optional(),
             urlGenially: z.string().optional(),
+            imagemUrl: z.string().optional(),
             descricao: z.string().optional(),
             ordem: z.number().optional(),
           })
@@ -9034,6 +9035,7 @@ Responda APENAS em JSON com o formato especificado.`
           if (input.urlGenially !== undefined) updates.urlGenially = input.urlGenially ?? null;
           if (input.descricao !== undefined) updates.descricao = input.descricao ?? null;
           if (input.ordem !== undefined) updates.ordem = input.ordem;
+          if (input.imagemUrl !== undefined) updates.imagemUrl = input.imagemUrl || null;
 
           await database
             .update(atividadesCurso)
