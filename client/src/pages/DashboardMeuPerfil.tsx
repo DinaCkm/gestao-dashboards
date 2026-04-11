@@ -119,7 +119,7 @@ function IndicadorCardAluno({
             <Info className="h-3.5 w-3.5" />
           </button>
         </div>
-        <p className="text-lg font-bold text-gray-900">{(percentual ?? 0).toFixed(0)}%</p>
+        <p className="text-lg font-bold text-gray-900">{(Number(percentual) ?? 0).toFixed(0)}%</p>
         <Progress value={percentual} className="h-1.5 mb-1" />
         <p className="text-xs text-gray-500">{valor} de {total}</p>
         {expanded && (
@@ -1102,7 +1102,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
             <IndicadorCardAluno
               numero={6} icon={Briefcase} label="Aplicabilidade"
               valor={data.aplicabilidadePratica?.percentual != null && data.aplicabilidadePratica.percentual > 0 ? `${data.aplicabilidadePratica.percentual}%` : (v2Filtrado.ind6_aplicabilidade > 0 ? "Entregue ✅" : "Pendente")} total="Meta: 80%"
-              percentual={data.aplicabilidadePratica?.percentual ?? v2Filtrado.ind6_aplicabilidade ?? 0}
+              percentual={Number(data.aplicabilidadePratica?.percentual ?? v2Filtrado.ind6_aplicabilidade ?? 0)}
               color="bg-rose-100 text-rose-600" borderColor="border-rose-200"
               regras={["Avaliação da aplicabilidade prática dos conteúdos (60% mentora + 40% aluno). Meta: 80%. Bônus +10% no Engajamento se nota 8-10.", "Válido a partir de 01/04/2026. Cases e tarefas anteriores não impactam."]}
             />
