@@ -291,8 +291,12 @@ function PlanoContent() {
 
   // Criar assessment mutation
   const criarAssessmentMutation = trpc.assessment.criar.useMutation({
-    onSuccess: () => {
-      toast.success("Assessment/PDI criado com sucesso!");
+    onSuccess: (data: any) => {
+      if (data?.addedToExisting) {
+        toast.success(`${data.addedCount} competência(s) adicionada(s) à trilha existente!`);
+      } else {
+        toast.success("Assessment/PDI criado com sucesso!");
+      }
       refetchAssessments(); refetchPlano(); refetchAlunos();
       resetNovoAssessmentForm();
     },
@@ -459,50 +463,72 @@ function PlanoContent() {
     else if (selectedAlunoData && (selectedAlunoData as any).consultorId) setNovoConsultorId(String((selectedAlunoData as any).consultorId));
     setShowNovoAssessment(true);
   }
+  // FIX: Detectar trilhas que já existem para este aluno (ativas)
+  const existingTrilhaIds = new Set(
+    assessments
+      .filter((a: any) => a.status === 'ativo')
+      .map((a: any) => a.trilhaId)
+  );
+  const novoTrilhaExists = novoTrilhaId ? existingTrilhaIds.has(parseInt(novoTrilhaId)) : false;
+  const existingCompetenciaIdsNovo = new Set(
+    assessments
+      .filter((a: any) => a.status === 'ativo' && a.trilhaId === parseInt(novoTrilhaId))
+      .flatMap((a: any) => (a.competencias || []).map((c: any) => c.competenciaId))
+  );
+
   // Sync competencias when trilha changes
   const compsByTrilhaKey = useMemo(() => compsByTrilha.map((c: any) => c.id).join(","), [compsByTrilha]);
   useEffect(() => {
     if (!compsByTrilhaKey) { setNovoCompConfig([]); return; }
-    setNovoCompConfig(compsByTrilha.map((c: any) => ({
-      competenciaId: c.id,
-      nome: c.nome || "Sem nome",
-      selected: true,
-      peso: "obrigatoria" as const,
-      notaCorte: "80",
-      microInicio: "",
-      microTermino: "",
-    })));
+    setNovoCompConfig(compsByTrilha.map((c: any) => {
+      const alreadyExists = existingCompetenciaIdsNovo.has(c.id);
+      return {
+        competenciaId: c.id,
+        nome: c.nome || "Sem nome",
+        selected: !alreadyExists,
+        peso: "obrigatoria" as const,
+        notaCorte: "80",
+        microInicio: "",
+        microTermino: "",
+      };
+    }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [compsByTrilhaKey]);
+  }, [compsByTrilhaKey, novoTrilhaId]);
 
   function handleSubmitNovoAssessment() {
-    if (!selectedAluno || !novoTrilhaId || !novoMacroInicio || !novoMacroTermino) {
-      toast.error("Preencha a trilha e as datas da Macro Jornada"); return;
+    if (!selectedAluno || !novoTrilhaId) {
+      toast.error("Selecione uma trilha"); return;
     }
-    if (novoMacroInicio >= novoMacroTermino) {
+    if (!novoTrilhaExists && (!novoMacroInicio || !novoMacroTermino)) {
+      toast.error("Preencha as datas da Macro Jornada"); return;
+    }
+    if (!novoTrilhaExists && novoMacroInicio >= novoMacroTermino) {
       toast.error("Data de início deve ser anterior à data de término"); return;
     }
     const selectedComps = novoCompConfig.filter(c => c.selected);
     if (selectedComps.length === 0) {
       toast.error("Selecione pelo menos uma competência"); return;
     }
-    for (const comp of selectedComps) {
-      if (comp.microInicio && comp.microInicio < novoMacroInicio) {
-        toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`); return;
-      }
-      if (comp.microTermino && comp.microTermino > novoMacroTermino) {
-        toast.error(`Micro Jornada de "${comp.nome}" não pode terminar depois da Macro Jornada`); return;
+    if (!novoTrilhaExists) {
+      for (const comp of selectedComps) {
+        if (comp.microInicio && comp.microInicio < novoMacroInicio) {
+          toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`); return;
+        }
+        if (comp.microTermino && comp.microTermino > novoMacroTermino) {
+          toast.error(`Micro Jornada de "${comp.nome}" não pode terminar depois da Macro Jornada`); return;
+        }
       }
     }
+    const effectiveMacroInicio = novoTrilhaExists ? '2000-01-01' : novoMacroInicio;
+    const effectiveMacroTermino = novoTrilhaExists ? '2099-12-31' : novoMacroTermino;
     criarAssessmentMutation.mutate({
       alunoId: selectedAluno,
       trilhaId: parseInt(novoTrilhaId),
       turmaId: (selectedAlunoData as any)?.turmaId || null,
       programId: (selectedAlunoData as any)?.programId || null,
       consultorId: novoConsultorId ? parseInt(novoConsultorId) : null,
-      macroInicio: novoMacroInicio,
-      macroTermino: novoMacroTermino,
-      // totalSessoesPrevistas removido - definido pelo admin no contrato
+      macroInicio: effectiveMacroInicio,
+      macroTermino: effectiveMacroTermino,
       competencias: selectedComps.map(c => ({
         competenciaId: c.competenciaId,
         peso: c.peso,

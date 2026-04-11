@@ -5194,6 +5194,50 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não é possível criar PDI para aluno inativo. Ative o aluno primeiro.' });
         }
         
+        // ===== FIX: Verificar se já existe uma trilha ativa para este aluno =====
+        const existingPdi = await db.getExistingActivePdiByTrilha(input.alunoId, input.trilhaId);
+        
+        if (existingPdi) {
+          // TRILHA JÁ EXISTE: Adicionar competências ao assessment existente (não criar duplicada)
+          console.log(`[Assessment] Trilha ${input.trilhaId} já existe para aluno ${input.alunoId} (PDI #${existingPdi.pdiId}). Adicionando ${competencias.length} competência(s) ao existente.`);
+          
+          const added = await db.addCompetenciasToExistingAssessment(existingPdi.pdiId, competencias);
+          
+          if (added === 0) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Todas as competências selecionadas já existem nesta trilha. Nenhuma nova competência foi adicionada.',
+            });
+          }
+          
+          // Auto-sincronizar plano_individual
+          try {
+            await db.syncPlanoFromAssessment(input.alunoId);
+          } catch (e) { /* sync não deve bloquear */ }
+          
+          // Notificar o aluno sobre novas competências adicionadas
+          try {
+            const alunoInfo = await db.getAlunoById(input.alunoId);
+            if (alunoInfo) {
+              const allUsers = await db.getAllUsers();
+              const alunoUser = allUsers.find((u: any) => u.alunoId === input.alunoId);
+              if (alunoUser) {
+                await db.createNotification({
+                  userId: alunoUser.id,
+                  title: 'Novas Competências Adicionadas',
+                  message: `${added} nova(s) competência(s) foram adicionadas à sua trilha existente.`,
+                  type: 'info',
+                  category: 'assessment',
+                  link: '/meu-dashboard',
+                });
+              }
+            }
+          } catch (e) { /* notificação não deve bloquear */ }
+          
+          return { success: true, pdiId: existingPdi.pdiId, addedToExisting: true, addedCount: added };
+        }
+        
+        // ===== TRILHA NOVA: Criar normalmente =====
         // Validate macro dates
         if (pdiData.macroInicio >= pdiData.macroTermino) {
           throw new TRPCError({

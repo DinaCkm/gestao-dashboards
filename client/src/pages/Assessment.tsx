@@ -893,6 +893,7 @@ function AssessmentContent() {
           programs={programs}
           mentores={mentores}
           isAdmin={isAdmin}
+          existingAssessments={assessments}
           onSuccess={() => {
             refetchAssessments();
             setTimeout(() => setShowCreateDialog(false), 100);
@@ -1397,6 +1398,7 @@ function CreateAssessmentDialog({
   mentores,
   onSuccess,
   isAdmin,
+  existingAssessments = [],
 }: {
   open: boolean;
   onClose: () => void;
@@ -1410,6 +1412,7 @@ function CreateAssessmentDialog({
   mentores: any[];
   onSuccess: () => void;
   isAdmin: boolean;
+  existingAssessments?: any[];
 }) {
   const [step, setStep] = useState(1);
   const [selectedTrilhaId, setSelectedTrilhaId] = useState<string>("");
@@ -1417,6 +1420,20 @@ function CreateAssessmentDialog({
   const [macroInicio, setMacroInicio] = useState("");
   const [macroTermino, setMacroTermino] = useState("");
   // Campo totalSessoesPrevistas removido - definido pelo admin no contrato
+  
+  // FIX: Detectar trilhas que já existem para este aluno (ativas)
+  const existingTrilhaIds = new Set(
+    existingAssessments
+      .filter((a: any) => a.status === 'ativo')
+      .map((a: any) => a.trilhaId)
+  );
+  const selectedTrilhaExists = selectedTrilhaId ? existingTrilhaIds.has(parseInt(selectedTrilhaId)) : false;
+  // Obter competências já existentes na trilha selecionada (para filtrar no step 2)
+  const existingCompetenciaIds = new Set(
+    existingAssessments
+      .filter((a: any) => a.status === 'ativo' && a.trilhaId === parseInt(selectedTrilhaId))
+      .flatMap((a: any) => (a.competencias || []).map((c: any) => c.competenciaId))
+  );
   const [competenciasConfig, setCompetenciasConfig] = useState<Array<{
     competenciaId: number;
     nome: string;
@@ -1440,39 +1457,53 @@ function CreateAssessmentDialog({
   useEffect(() => {
     if (competenciasTrilha.length > 0) {
       setCompetenciasConfig(
-        competenciasTrilha.map((c: any) => ({
-          competenciaId: c.id,
-          nome: c.nome || c.name || "Sem nome",
-          selected: true,
-          peso: "obrigatoria" as const,
-          notaCorte: "80",
-          nivelAtual: "",
-          metaCiclo1: "",
-          metaCiclo2: "",
-          metaFinal: "",
-          justificativa: "",
-          microInicio: "",
-          microTermino: "",
-        }))
+        competenciasTrilha.map((c: any) => {
+          const alreadyExists = existingCompetenciaIds.has(c.id);
+          return {
+            competenciaId: c.id,
+            nome: c.nome || c.name || "Sem nome",
+            selected: !alreadyExists, // Não selecionar competências que já existem
+            peso: "obrigatoria" as const,
+            notaCorte: "80",
+            nivelAtual: "",
+            metaCiclo1: "",
+            metaCiclo2: "",
+            metaFinal: "",
+            justificativa: "",
+            microInicio: "",
+            microTermino: "",
+          };
+        })
       );
     }
-  }, [competenciasTrilha]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [competenciasTrilha, selectedTrilhaId]);
 
   const criarMutation = trpc.assessment.criar.useMutation({
-    onSuccess: () => {
-      toast.success("Assessment criado com sucesso!");
+    onSuccess: (data: any) => {
+      if (data?.addedToExisting) {
+        toast.success(`${data.addedCount} competência(s) adicionada(s) à trilha existente!`);
+      } else {
+        toast.success("Assessment criado com sucesso!");
+      }
       onSuccess();
     },
     onError: (err: { message: string }) => toast.error(err.message),
   });
 
   const handleSubmit = () => {
-    if (!selectedTrilhaId || !macroInicio || !macroTermino) {
-      toast.error("Preencha a trilha e as datas da Macro Jornada");
+    if (!selectedTrilhaId) {
+      toast.error("Selecione uma trilha");
+      return;
+    }
+    
+    // Macro Jornada só é obrigatória para trilhas NOVAS
+    if (!selectedTrilhaExists && (!macroInicio || !macroTermino)) {
+      toast.error("Preencha as datas da Macro Jornada");
       return;
     }
 
-    if (macroInicio >= macroTermino) {
+    if (!selectedTrilhaExists && macroInicio >= macroTermino) {
       toast.error("Data de início deve ser anterior à data de término");
       return;
     }
@@ -1483,16 +1514,22 @@ function CreateAssessmentDialog({
       return;
     }
 
-    for (const comp of selectedComps) {
-      if (comp.microInicio && comp.microInicio < macroInicio) {
-        toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`);
-        return;
-      }
-      if (comp.microTermino && comp.microTermino > macroTermino) {
-        toast.error(`Micro Jornada de "${comp.nome}" não pode terminar depois da Macro Jornada`);
-        return;
+    if (!selectedTrilhaExists) {
+      for (const comp of selectedComps) {
+        if (comp.microInicio && comp.microInicio < macroInicio) {
+          toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`);
+          return;
+        }
+        if (comp.microTermino && comp.microTermino > macroTermino) {
+          toast.error(`Micro Jornada de "${comp.nome}" não pode terminar depois da Macro Jornada`);
+          return;
+        }
       }
     }
+
+    // Usar datas placeholder quando trilha já existe (o backend ignora e usa as do PDI existente)
+    const effectiveMacroInicio = selectedTrilhaExists ? '2000-01-01' : macroInicio;
+    const effectiveMacroTermino = selectedTrilhaExists ? '2099-12-31' : macroTermino;
 
     criarMutation.mutate({
       alunoId,
@@ -1500,9 +1537,8 @@ function CreateAssessmentDialog({
       turmaId: turmaId || null,
       programId: programId || null,
       consultorId: selectedConsultorId ? parseInt(selectedConsultorId) : null,
-      macroInicio,
-      macroTermino,
-      // totalSessoesPrevistas removido - definido pelo admin no contrato
+      macroInicio: effectiveMacroInicio,
+      macroTermino: effectiveMacroTermino,
       competencias: selectedComps.map(c => ({
         competenciaId: c.competenciaId,
         peso: c.peso,
@@ -1540,7 +1576,7 @@ function CreateAssessmentDialog({
             Novo Assessment — {alunoName}
           </DialogTitle>
           <DialogDescription>
-            {step === 1 ? "Defina a trilha e o período da Macro Jornada" : step === 2 ? "Selecione as competências e defina os pesos" : "Defina os níveis e metas de cada competência"}
+            {step === 1 ? (selectedTrilhaExists ? "Trilha já existente — selecione novas competências para adicionar" : "Defina a trilha e o período da Macro Jornada") : step === 2 ? "Selecione as competências e defina os pesos" : "Defina os níveis e metas de cada competência"}
           </DialogDescription>
         </DialogHeader>
 
@@ -1558,6 +1594,15 @@ function CreateAssessmentDialog({
                   ))}
                 </SelectContentNoPortal>
               </Select>
+              {selectedTrilhaExists && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-amber-800">
+                    <p className="font-medium">Esta trilha já existe para este aluno.</p>
+                    <p className="text-xs mt-0.5">As novas competências serão adicionadas à trilha existente. Os campos de Macro Jornada abaixo não serão utilizados (as datas do assessment original serão mantidas).</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -1609,7 +1654,7 @@ function CreateAssessmentDialog({
               <Button variant="outline" onClick={onClose}>Cancelar</Button>
               <Button
                 onClick={() => setStep(2)}
-                disabled={!selectedTrilhaId || !macroInicio || !macroTermino}
+                disabled={!selectedTrilhaId || (!selectedTrilhaExists && (!macroInicio || !macroTermino))}
                 className="bg-secondary hover:bg-secondary/90"
               >
                 Próximo: Competências
@@ -1646,11 +1691,14 @@ function CreateAssessmentDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {competenciasConfig.map((comp, idx) => (
-                      <TableRow key={comp.competenciaId} className={!comp.selected ? "opacity-50" : ""}>
+                    {competenciasConfig.map((comp, idx) => {
+                      const isAlreadyInAssessment = existingCompetenciaIds.has(comp.competenciaId);
+                      return (
+                      <TableRow key={comp.competenciaId} className={`${!comp.selected ? "opacity-50" : ""} ${isAlreadyInAssessment ? "bg-muted/40" : ""}`}>
                         <TableCell className="text-center">
                           <Checkbox
                             checked={comp.selected}
+                            disabled={isAlreadyInAssessment}
                             onCheckedChange={(checked) => {
                               setCompetenciasConfig(prev => {
                                 const next = [...prev];
@@ -1660,7 +1708,12 @@ function CreateAssessmentDialog({
                             }}
                           />
                         </TableCell>
-                        <TableCell className="text-sm font-medium">{comp.nome}</TableCell>
+                        <TableCell className="text-sm font-medium">
+                          {comp.nome}
+                          {isAlreadyInAssessment && (
+                            <span className="ml-2 text-xs text-amber-600 font-normal">(já existe)</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-center">
                           <select
                             value={comp.peso}
@@ -1713,7 +1766,8 @@ function CreateAssessmentDialog({
                           />
                         </TableCell>
                       </TableRow>
-                    ))}
+                    );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -1876,10 +1930,10 @@ function CreateAssessmentDialog({
                 disabled={criarMutation.isPending}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
-                {criarMutation.isPending ? "Criando..." : (
+                {criarMutation.isPending ? (selectedTrilhaExists ? "Adicionando..." : "Criando...") : (
                   <>
                     <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Salvar e Liberar Trilha
+                    {selectedTrilhaExists ? "Adicionar Competências à Trilha" : "Salvar e Liberar Trilha"}
                   </>
                 )}
               </Button>

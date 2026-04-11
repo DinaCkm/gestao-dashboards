@@ -58,7 +58,9 @@ import {
   atividadesCurso, InsertAtividadeCurso, AtividadeCurso,
   avaliacoesAtividade, InsertAvaliacaoAtividade, AvaliacaoAtividade,
   tentativasAvaliacao, InsertTentativaAvaliacao, TentativaAvaliacao,
-  alunoCursoAtribuido, InsertAlunoCursoAtribuido, AlunoCursoAtribuido,} from "../drizzle/schema";
+  alunoCursoAtribuido, InsertAlunoCursoAtribuido, AlunoCursoAtribuido,
+  assessmentPdi, AssessmentPdi, InsertAssessmentPdi,
+  assessmentCompetencias,} from "../drizzle/schema";
 import { ENV } from './_core/env';
 import * as schema from "../drizzle/schema";
 
@@ -4144,6 +4146,109 @@ export async function getAssessmentsByProgram(programId: number) {
       opcionais: comps.filter(c => c.peso === 'opcional').length,
     };
   });
+}
+
+/**
+ * Check if an active assessment PDI already exists for a given aluno + trilha combination.
+ * Returns the existing PDI id and its competencias if found, null otherwise.
+ */
+export async function getExistingActivePdiByTrilha(
+  alunoId: number,
+  trilhaId: number
+): Promise<{ pdiId: number; existingCompetenciaIds: number[] } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const existing = await db.select()
+    .from(assessmentPdi)
+    .where(and(
+      eq(assessmentPdi.alunoId, alunoId),
+      eq(assessmentPdi.trilhaId, trilhaId),
+      eq(assessmentPdi.status, 'ativo')
+    ))
+    .limit(1);
+  
+  if (existing.length === 0) return null;
+  
+  const pdiId = existing[0].id;
+  
+  // Get existing competencia IDs for this PDI
+  const existingComps = await db.select({ competenciaId: assessmentCompetencias.competenciaId })
+    .from(assessmentCompetencias)
+    .where(eq(assessmentCompetencias.assessmentPdiId, pdiId));
+  
+  return {
+    pdiId,
+    existingCompetenciaIds: existingComps.map(c => c.competenciaId),
+  };
+}
+
+/**
+ * Add multiple competencias to an existing assessment PDI.
+ * Skips competencias that already exist in the assessment.
+ */
+export async function addCompetenciasToExistingAssessment(
+  assessmentPdiId: number,
+  competenciasData: Array<{
+    competenciaId: number;
+    peso: 'obrigatoria' | 'opcional';
+    notaCorte: string;
+    nivelAtual?: number | null;
+    metaCiclo1?: number | null;
+    metaCiclo2?: number | null;
+    metaFinal?: number | null;
+    justificativa?: string | null;
+    microInicio?: string | null;
+    microTermino?: string | null;
+  }>
+): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  // Get existing competencia IDs to avoid duplicates
+  const existingComps = await db.select({ competenciaId: assessmentCompetencias.competenciaId })
+    .from(assessmentCompetencias)
+    .where(eq(assessmentCompetencias.assessmentPdiId, assessmentPdiId));
+  const existingIds = new Set(existingComps.map(c => c.competenciaId));
+  
+  // Filter out competencias that already exist
+  const newComps = competenciasData.filter(c => !existingIds.has(c.competenciaId));
+  
+  if (newComps.length === 0) return 0;
+  
+  // Validate micro dates against macro dates
+  const [pdi] = await db.select().from(assessmentPdi).where(eq(assessmentPdi.id, assessmentPdiId)).limit(1);
+  if (!pdi) throw new Error('Assessment PDI não encontrado');
+  const macroInicioStr = String(pdi.macroInicio);
+  const macroTerminoStr = String(pdi.macroTermino);
+  
+  for (const comp of newComps) {
+    if (comp.microInicio && comp.microInicio < macroInicioStr) {
+      throw new Error(`Micro ciclo início não pode ser anterior ao macro ciclo início (${macroInicioStr})`);
+    }
+    if (comp.microTermino && comp.microTermino > macroTerminoStr) {
+      throw new Error(`Micro ciclo término não pode ser posterior ao macro ciclo término (${macroTerminoStr})`);
+    }
+  }
+  
+  // Insert new competencias
+  await db.insert(assessmentCompetencias).values(
+    newComps.map(c => ({
+      assessmentPdiId,
+      competenciaId: c.competenciaId,
+      peso: c.peso,
+      notaCorte: c.notaCorte,
+      nivelAtual: c.nivelAtual != null ? String(c.nivelAtual) : null,
+      metaCiclo1: c.metaCiclo1 != null ? String(c.metaCiclo1) : null,
+      metaCiclo2: c.metaCiclo2 != null ? String(c.metaCiclo2) : null,
+      metaFinal: c.metaFinal != null ? String(c.metaFinal) : null,
+      justificativa: c.justificativa || null,
+      microInicio: c.microInicio || null,
+      microTermino: c.microTermino || null,
+    }))
+  );
+  
+  return newComps.length;
 }
 
 /**
