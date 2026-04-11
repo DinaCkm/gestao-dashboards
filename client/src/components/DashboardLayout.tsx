@@ -69,6 +69,7 @@ import {
   Edit3,
   Footprints,
   Home,
+  Monitor,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -152,6 +153,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Calculator, label: "Fórmulas", path: "/formulas" },
       { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
       { icon: BookOpen, label: "Atribuir Cursos", path: "/admin/atribuir-cursos" },
+      { icon: Monitor, label: "Gerenciar Plataforma de Cursos", path: "/admin/plataforma-aulas" },
     ],
   },
   {
