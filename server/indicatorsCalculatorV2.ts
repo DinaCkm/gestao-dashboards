@@ -254,7 +254,13 @@ export function calcularIndicadoresCiclo(
   let somaNotasProvas = 0;
   let provasRealizadas = 0;
   
-  for (const compId of ciclo.competenciaIds) {
+  // FALLBACK: Se competenciaIds (obrigatórias) está vazio mas allCompetenciaIds tem competências,
+  // usar allCompetenciaIds para que ciclos com apenas competências opcionais não fiquem zerados
+  const compIdsParaCalculo = ciclo.competenciaIds.length > 0 
+    ? ciclo.competenciaIds 
+    : (ciclo.allCompetenciaIds || []);
+  
+  for (const compId of compIdsParaCalculo) {
     const codigo = compIdToCodigoMap.get(compId);
     const perfComp = performanceAluno.find(p => {
       if (codigo) {
@@ -282,12 +288,12 @@ export function calcularIndicadoresCiclo(
   // % competências/cursos finalizados por ciclo
   // Finalizado = todas as aulas disponíveis concluídas
   // ============================================================
-  let totalComps = ciclo.competenciaIds.length;
+  let totalComps = compIdsParaCalculo.length;
   let compsFinalizadas = 0;
   let compsEmAndamento = 0;
   const competenciasDetalhe: CompetenciaDetalhe[] = [];
   
-  for (const compId of ciclo.competenciaIds) {
+  for (const compId of compIdsParaCalculo) {
     const codigo = compIdToCodigoMap.get(compId);
     const perfComp = performanceAluno.find(p => {
       if (codigo) {
@@ -530,19 +536,23 @@ export function calcularIndicadoresAluno(
   //   (dependem das competências específicas de cada ciclo)
   // ============================================================
   
-  // Ciclos finalizados COM competências obrigatórias (para Ind.2 e Ind.3)
-  const ciclosFinalizadosComObrig = ciclosFinalizados
+  // Ciclos finalizados COM competências (obrigatórias OU opcionais via fallback) para Ind.2 e Ind.3
+  // Com o fallback de compIdsParaCalculo, ciclos com apenas opcionais agora têm dados calculados
+  const ciclosFinalizadosComComps = ciclosFinalizados
     .filter(c => {
       const cicloOriginal = ciclos.find(co => co.nomeCiclo === c.nomeCiclo);
-      return cicloOriginal ? cicloOriginal.competenciaIds.length > 0 : true;
+      if (!cicloOriginal) return true;
+      // Incluir se tem obrigatórias OU se tem opcionais (allCompetenciaIds)
+      return cicloOriginal.competenciaIds.length > 0 || (cicloOriginal.allCompetenciaIds && cicloOriginal.allCompetenciaIds.length > 0);
     });
   
-  // Consolidar Ind.2 e Ind.3 pelos microciclos (apenas os com competências obrigatórias)
-  const ciclosParaInd2Ind3 = ciclosFinalizadosComObrig.length > 0
-    ? ciclosFinalizadosComObrig
+  // Consolidar Ind.2 e Ind.3 pelos microciclos (com competências obrigatórias ou opcionais via fallback)
+  const ciclosParaInd2Ind3 = ciclosFinalizadosComComps.length > 0
+    ? ciclosFinalizadosComComps
     : [...ciclosFinalizados, ...ciclosEmAndamento].filter(c => {
         const cicloOriginal = ciclos.find(co => co.nomeCiclo === c.nomeCiclo);
-        return cicloOriginal ? cicloOriginal.competenciaIds.length > 0 : true;
+        if (!cicloOriginal) return true;
+        return cicloOriginal.competenciaIds.length > 0 || (cicloOriginal.allCompetenciaIds && cicloOriginal.allCompetenciaIds.length > 0);
       });
   
   const consolidadoMicro = consolidarCiclos(ciclosParaInd2Ind3, trilha || 'Geral');
