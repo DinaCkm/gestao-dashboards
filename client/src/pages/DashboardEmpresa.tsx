@@ -148,7 +148,7 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold">{ciclo.percentualConclusao?.toFixed(0) || 0}%</p>
+                      <p className="text-sm font-bold">{(ciclo.ind3_competencias ?? ciclo.percentualConclusao ?? 0).toFixed(0)}%</p>
                       <Badge variant="outline" className={`text-xs ${ciclo.status === 'finalizado' ? 'text-green-600 border-green-300' : 'text-blue-600 border-blue-300'}`}>
                         {ciclo.status === 'finalizado' ? 'Finalizado' : ciclo.status === 'em_andamento' ? 'Em Andamento' : ciclo.status}
                       </Badge>

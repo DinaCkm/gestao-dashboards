@@ -9,7 +9,9 @@ import {
   getSaldoMentoriasAluno,
   getJornadasPorTurma,
   getAlunoByUserId,
-  getDb
+  getDb,
+  getStudentPerformanceByAluno,
+  getCompIdToCodigoMap
 } from "../db";
 import * as schema from '../../drizzle/schema';
 const { programs } = schema;
@@ -91,7 +93,22 @@ export const jornadaRouter = router({
           }
         }
 
-        // 5. Montar macroJornadas
+        // 5. Buscar dados de student_performance do aluno (upload Scaffold)
+        const studentPerf = await getStudentPerformanceByAluno(aluno.id);
+        
+        // 6. Buscar mapa competenciaId -> codigoIntegracao para cruzamento
+        const compIdToCodigoMap = await getCompIdToCodigoMap();
+        
+        // 7. Criar mapa de performance por codigoIntegracao para lookup rápido
+        const perfMap = new Map<string, any>();
+        for (const perf of studentPerf) {
+          if (perf.externalCompetenciaId) {
+            // Usar externalCompetenciaId como chave (case-insensitive)
+            perfMap.set(perf.externalCompetenciaId.toLowerCase(), perf);
+          }
+        }
+
+        // 8. Montar macroJornadas com dados de performance enriquecidos
         const macroJornadas = pdis.map((pdi: any) => {
           const trilha = trilhasMap.get(pdi.trilhaId);
           const competencias = competenciasMap.get(pdi.id) || [];
@@ -103,21 +120,63 @@ export const jornadaRouter = router({
             status: pdi.status, // 'ativo' ou 'congelado'
             macroInicio: pdi.macroInicio,
             macroTermino: pdi.macroTermino,
-            microJornadas: competencias.map((comp: any) => ({
-              id: comp.id,
-              competenciaId: comp.competenciaId,
-              competenciaNome: comp.nome || `Competência #${comp.competenciaId}`,
-              peso: 'obrigatoria', // TODO: adicionar campo peso ao schema se necessário
-              microInicio: comp.microInicio,
-              microTermino: comp.microTermino,
-            }))
+            microJornadas: competencias.map((comp: any) => {
+              // Cruzar competência com student_performance via codigoIntegracao
+              const codigo = compIdToCodigoMap.get(comp.competenciaId);
+              let perfComp: any = null;
+              
+              if (codigo) {
+                // Tentar match exato por codigoIntegracao
+                perfComp = perfMap.get(codigo.toLowerCase());
+                
+                // Se não encontrou, tentar match parcial (nome contém código)
+                if (!perfComp) {
+                  for (const perf of studentPerf) {
+                    if (perf.externalCompetenciaId?.toLowerCase() === codigo.toLowerCase() ||
+                        perf.competenciaName?.toLowerCase()?.includes(codigo.toLowerCase())) {
+                      perfComp = perf;
+                      break;
+                    }
+                  }
+                }
+              }
+              
+              // Se não encontrou por código, tentar por competenciaId direto
+              if (!perfComp) {
+                perfComp = studentPerf.find(p => p.competenciaId === comp.competenciaId);
+              }
+
+              return {
+                id: comp.id,
+                competenciaId: comp.competenciaId,
+                competenciaNome: comp.nome || `Competência #${comp.competenciaId}`,
+                peso: comp.peso || 'obrigatoria',
+                microInicio: comp.microInicio,
+                microTermino: comp.microTermino,
+                nivelAtual: comp.nivelAtual,
+                metaFinal: comp.metaFinal,
+                // Dados de student_performance (upload Scaffold)
+                aulasDisponiveis: perfComp?.aulasDisponiveis ?? 0,
+                aulasConcluidas: perfComp?.aulasConcluidas ?? 0,
+                aulasEmAndamento: perfComp?.aulasEmAndamento ?? 0,
+                progressoTotal: perfComp?.progressoTotal ?? 0,
+                notaPlataforma: perfComp?.mediaAvaliacoesFinais 
+                  ? Number(perfComp.mediaAvaliacoesFinais) * 10 
+                  : (perfComp?.mediaAvaliacoesRespondidas 
+                    ? Number(perfComp.mediaAvaliacoesRespondidas) * 10 
+                    : 0),
+                avaliacoesRespondidas: perfComp?.avaliacoesRespondidas ?? 0,
+                avaliacoesDisponiveis: perfComp?.avaliacoesDisponiveis ?? 0,
+                justificativa: comp.justificativa || null,
+              };
+            })
           };
         });
 
-        // 6. Buscar contrato (primeira mentoria ativa do aluno)
+        // 9. Buscar contrato (primeira mentoria ativa do aluno)
         const contrato = await getContratoMentoriaByAluno(aluno.id);
 
-        // 7. Calcular saldo de mentorias
+        // 10. Calcular saldo de mentorias
         const saldo = await getSaldoMentoriasAluno(aluno.id);
 
         return {
