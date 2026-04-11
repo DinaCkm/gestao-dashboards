@@ -202,7 +202,7 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
           {/* Link para dashboard individual */}
           {aluno.alunoDbId > 0 && (
             <div className="pt-2 border-t">
-              <Link href={`/dashboard/aluno/${aluno.alunoDbId}`}>
+              <Link href={`/dashboard/aluno?id=${aluno.alunoDbId}`}>
                 <Button variant="outline" size="sm" className="w-full">
                   Ver Dashboard Completo do Aluno
                 </Button>
