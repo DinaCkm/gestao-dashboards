@@ -157,8 +157,15 @@ export default function MentorAtribuirCurso() {
   }
 
   const alunos = useMemo(
-    () => (alunosQuery.data ?? []).map(normalizarAluno).filter((x) => x.id > 0),
-    [alunosQuery.data]
+    () => {
+      const dados = alunosQuery.data ?? [];
+      // Filtrar apenas alunos com plataforma sistema_interno (alunos scaffold cursam na plataforma externa)
+      const filtrados = isAdmin
+        ? dados.filter((item: any) => (item.plataformaAulas || 'sistema_interno') === 'sistema_interno')
+        : dados;
+      return filtrados.map(normalizarAluno).filter((x) => x.id > 0);
+    },
+    [alunosQuery.data, isAdmin]
   );
 
   const competencias = useMemo(
