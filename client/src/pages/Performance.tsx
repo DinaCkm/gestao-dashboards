@@ -1,5 +1,7 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { formatDateSafe, formatDateCustomSafe } from "@/lib/dateUtils";
+import { safeToFixed } from "@/_core/utils/safe-format";
+import { safeToFixed } from "@/_core/utils/safe-format";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import AlunoLayout from "@/components/AlunoLayout";
@@ -119,7 +121,7 @@ function IndicadorCardAluno({
             <Info className="h-3.5 w-3.5" />
           </button>
         </div>
-        <p className="text-lg font-bold text-gray-900">{(percentual ?? 0).toFixed(0)}%</p>
+        <p className="text-lg font-bold text-gray-900">{safeToFixed(percentual ?? 0, 0)}%</p>
         <Progress value={percentual} className="h-1.5 mb-1" />
         <p className="text-xs text-gray-500">{valor} de {total}</p>
         {expanded && (
@@ -500,7 +502,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
   }
 
   const { aluno, indicadores, ranking, sessoes, eventos, planoIndividual, assessments } = data;
-  const performanceGeral = indicadores.performanceGeral ?? (indicadores.notaFinal * 10);
+const performanceGeral = Number(indicadores.performanceGeral ?? (indicadores.notaFinal * 10)) || 0;
   const ciclosFinalizados = indicadores.ciclosFinalizados || [];
   const ciclosEmAndamento = indicadores.ciclosEmAndamento || [];
   // v2 já declarado acima
@@ -737,7 +739,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                     <InfoTooltip text={INDICADORES_INFO.ind7.explicacao} className="text-white/50 hover:text-white/80" />
                   </p>
                   <div className="text-4xl font-black text-[#F5991F]">
-                    {(v2Filtrado?.ind7_engajamentoFinal ?? performanceGeral).toFixed(0)}%
+                    {safeToFixed(v2Filtrado?.ind7_engajamentoFinal ?? performanceGeral, 0)}%
                   </div>
                   <Badge className={`mt-1 ${getClassificacaoBadge(v2Filtrado?.classificacao ?? indicadores.classificacao)}`}>
                     {v2Filtrado?.classificacao ?? indicadores.classificacao}
@@ -749,7 +751,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
               {v2Filtrado && (
                 <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
                   <p className="font-semibold mb-1 text-white/90">Ind. 7 — Engajamento Final:</p>
-                  <p>Média dos 5 indicadores: ({(v2Filtrado.ind1_webinars ?? 0).toFixed(0)} + {(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)} + {(v2Filtrado.ind3_competencias ?? 0).toFixed(0)} + {(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)} + {(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}) / 5 = <span className="text-[#F5991F] font-bold">{(v2Filtrado.ind7_engajamentoFinal ?? 0).toFixed(0)}%</span>{(data.aplicabilidadePratica?.bonusEngajamento || v2Filtrado.ind6_aplicabilidade > 0) ? <span className="text-green-400 ml-1">(Aplicabilidade Prática: +10% no Engajamento)</span> : null}</p>
+                  <p>Média dos 5 indicadores: ({safeToFixed(v2Filtrado.ind1_webinars ?? 0, 0)} + {safeToFixed(v2Filtrado.ind2_avaliacoes ?? 0, 0)} + {(v2Filtrado.ind3_competencias ?? 0).toFixed(0)} + {(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)} + {(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}) / 5 = <span className="text-[#F5991F] font-bold">{safeToFixed(v2Filtrado.ind7_engajamentoFinal ?? 0, 0)}%</span>{(data.aplicabilidadePratica?.bonusEngajamento || v2Filtrado.ind6_aplicabilidade > 0) ? <span className="text-green-400 ml-1">(Aplicabilidade Prática: +10% no Engajamento)</span> : null}</p>
                 </div>
               )}
             </CardContent>
@@ -980,28 +982,28 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
             />
             <IndicadorCardAluno
               numero={2} icon={GraduationCap} label="Avaliações"
-              valor={`${(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind2_avaliacoes ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind2_avaliacoes ?? 0}
               color="bg-red-100 text-red-600" borderColor="border-red-200"
               regras={[INDICADORES_INFO.ind2.explicacao, INDICADORES_INFO.ind2.formula]}
             />
             <IndicadorCardAluno
               numero={3} icon={BookOpen} label="Competências"
-              valor={`${(v2Filtrado.ind3_competencias ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind3_competencias ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind3_competencias ?? 0}
               color="bg-purple-100 text-purple-600" borderColor="border-purple-200"
               regras={[INDICADORES_INFO.ind3.explicacao, INDICADORES_INFO.ind3.formula]}
             />
             <IndicadorCardAluno
               numero={4} icon={ClipboardCheck} label="Tarefas"
-              valor={`${(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind4_tarefas ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind4_tarefas ?? 0}
               color="bg-emerald-100 text-emerald-600" borderColor="border-emerald-200"
               regras={[INDICADORES_INFO.ind4.explicacao, INDICADORES_INFO.ind4.formula]}
             />
             <IndicadorCardAluno
               numero={5} icon={Star} label="Engajamento"
-              valor={`${(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind5_engajamento ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind5_engajamento ?? 0}
               color="bg-amber-100 text-amber-600" borderColor="border-amber-200"
               regras={[INDICADORES_INFO.ind5.explicacao, INDICADORES_INFO.ind5.formula]}
