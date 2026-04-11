@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { formatDateSafe, formatDateCustomSafe } from "@/lib/dateUtils";
+import { safeToFixed, formatPercentage } from "@/_core/utils/safe-format";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import AlunoLayout from "@/components/AlunoLayout";
@@ -119,7 +120,7 @@ function IndicadorCardAluno({
             <Info className="h-3.5 w-3.5" />
           </button>
         </div>
-        <p className="text-lg font-bold text-gray-900">{(Number(percentual) ?? 0).toFixed(0)}%</p>
+        <p className="text-lg font-bold text-gray-900">{formatPercentage(percentual, 0)}</p>
         <Progress value={percentual} className="h-1.5 mb-1" />
         <p className="text-xs text-gray-500">{valor} de {total}</p>
         {expanded && (
