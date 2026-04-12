@@ -9970,12 +9970,12 @@ Responda APENAS em JSON com o formato especificado.`
 
           const segundosParaSomar = normalizarSegundosHeartbeat(input.segundosAtivos);
           
-          // Anti-duplicidade básica: se o último heartbeat foi há menos de 3 segundos, ignorar soma de tempo
+          // Anti-duplicidade básica: se o último heartbeat foi há menos de 10 segundos, ignorar soma de tempo
           const agora = new Date();
           const ultimaBatida = progresso.ultimoHeartbeatEm ? new Date(progresso.ultimoHeartbeatEm) : null;
           const diffSegundos = ultimaBatida ? (agora.getTime() - ultimaBatida.getTime()) / 1000 : 999;
           
-          const deveSomarTempo = diffSegundos > 3;
+          const deveSomarTempo = diffSegundos > 10;
           const novoTempoAcumulado = deveSomarTempo 
             ? (Number(progresso.tempoAtivoAcumuladoSegundos ?? 0) + segundosParaSomar)
             : Number(progresso.tempoAtivoAcumuladoSegundos ?? 0);
