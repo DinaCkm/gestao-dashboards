@@ -592,7 +592,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
   }
 
   const { aluno, indicadores, ranking, sessoes, eventos, planoIndividual, assessments } = data;
-  const performanceGeral = indicadores.performanceGeral ?? (indicadores.notaFinal * 10);
+  const performanceGeral = Number(indicadores.performanceGeral ?? (indicadores.notaFinal * 10)) || 0;
   const ciclosFinalizados = indicadores.ciclosFinalizados || [];
   const ciclosEmAndamento = indicadores.ciclosEmAndamento || [];
   // v2 já declarado acima
@@ -829,7 +829,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                     <InfoTooltip text={INDICADORES_INFO.ind7.explicacao} className="text-white/50 hover:text-white/80" />
                   </p>
                   <div className="text-4xl font-black text-[#F5991F]">
-                    {(v2Filtrado?.ind7_engajamentoFinal ?? performanceGeral).toFixed(0)}%
+                    {safeToFixed(v2Filtrado?.ind7_engajamentoFinal ?? performanceGeral, 0)}%
                   </div>
                   <Badge className={`mt-1 ${getClassificacaoBadge(v2Filtrado?.classificacao ?? indicadores.classificacao)}`}>
                     {v2Filtrado?.classificacao ?? indicadores.classificacao}
@@ -841,7 +841,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
               {v2Filtrado && (
                 <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
                   <p className="font-semibold mb-1 text-white/90">Ind. 7 — Engajamento Final:</p>
-                  <p>Média dos 5 indicadores: ({(v2Filtrado.ind1_webinars ?? 0).toFixed(0)} + {(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)} + {(v2Filtrado.ind3_competencias ?? 0).toFixed(0)} + {(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)} + {(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}) / 5 = <span className="text-[#F5991F] font-bold">{(v2Filtrado.ind7_engajamentoFinal ?? 0).toFixed(0)}%</span>{(data.aplicabilidadePratica?.bonusEngajamento || v2Filtrado.ind6_aplicabilidade > 0) ? <span className="text-green-400 ml-1">(Aplicabilidade Prática: +10% no Engajamento)</span> : null}</p>
+                  <p>Média dos 5 indicadores: ({safeToFixed(v2Filtrado.ind1_webinars ?? 0, 0)} + {safeToFixed(v2Filtrado.ind2_avaliacoes ?? 0, 0)} + {safeToFixed(v2Filtrado.ind3_competencias ?? 0, 0)} + {safeToFixed(v2Filtrado.ind4_tarefas ?? 0, 0)} + {safeToFixed(v2Filtrado.ind5_engajamento ?? 0, 0)}) / 5 = <span className="text-[#F5991F] font-bold">{safeToFixed(v2Filtrado.ind7_engajamentoFinal ?? 0, 0)}%</span>{(data.aplicabilidadePratica?.bonusEngajamento || v2Filtrado.ind6_aplicabilidade > 0) ? <span className="text-green-400 ml-1">(Aplicabilidade Prática: +10% no Engajamento)</span> : null}</p>
                 </div>
               )}
             </CardContent>
@@ -1067,35 +1067,35 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
           <div className="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <IndicadorCardAluno
               numero={1} icon={Video} label="Webinars"
-              valor={`${(v2Filtrado.ind1_webinars ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind1_webinars ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind1_webinars ?? 0}
               color="bg-blue-100 text-blue-600" borderColor="border-blue-200"
               regras={[INDICADORES_INFO.ind1.explicacao, INDICADORES_INFO.ind1.formula]}
             />
             <IndicadorCardAluno
               numero={2} icon={GraduationCap} label="Avaliações"
-              valor={`${(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind2_avaliacoes ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind2_avaliacoes ?? 0}
               color="bg-red-100 text-red-600" borderColor="border-red-200"
               regras={[INDICADORES_INFO.ind2.explicacao, INDICADORES_INFO.ind2.formula]}
             />
             <IndicadorCardAluno
               numero={3} icon={BookOpen} label="Competências"
-              valor={`${(v2Filtrado.ind3_competencias ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind3_competencias ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind3_competencias ?? 0}
               color="bg-purple-100 text-purple-600" borderColor="border-purple-200"
               regras={[INDICADORES_INFO.ind3.explicacao, INDICADORES_INFO.ind3.formula]}
             />
             <IndicadorCardAluno
               numero={4} icon={ClipboardCheck} label="Tarefas"
-              valor={`${(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind4_tarefas ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind4_tarefas ?? 0}
               color="bg-emerald-100 text-emerald-600" borderColor="border-emerald-200"
               regras={[INDICADORES_INFO.ind4.explicacao, INDICADORES_INFO.ind4.formula]}
             />
             <IndicadorCardAluno
               numero={5} icon={Star} label="Engajamento"
-              valor={`${(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind5_engajamento ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind5_engajamento ?? 0}
               color="bg-amber-100 text-amber-600" borderColor="border-amber-200"
               regras={[INDICADORES_INFO.ind5.explicacao, INDICADORES_INFO.ind5.formula]}
@@ -1353,7 +1353,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                 <p className="text-sm font-medium text-gray-900 truncate">{a.competenciaNome}</p>
                                 <p className="text-xs text-gray-500">
                                   {a.trilhaNome} • Aulas: {a.aulasConcluidas || 0}/{a.aulasDisponiveis || '?'}
-                                  {a.notaPlataforma > 0 && ` • Nota: ${(a.notaPlataforma ?? 0).toFixed(0)}`}
+                                  {a.notaPlataforma > 0 && ` • Nota: ${safeToFixed(a.notaPlataforma ?? 0, 0)}`}
                                 </p>
                               </div>
                               <div className={`text-right ml-3 ${
@@ -1420,13 +1420,13 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                           {macroJornada.nivelGeralAtual !== null && (
                             <div className="text-right">
                               <p className="text-xs text-gray-500">Nível Geral</p>
-                              <p className="text-lg font-bold text-gray-900">{(macroJornada?.nivelGeralAtual ?? 0).toFixed(0)}%</p>
+                              <p className="text-lg font-bold text-gray-900">{safeToFixed(macroJornada?.nivelGeralAtual ?? 0, 0)}%</p>
                             </div>
                           )}
                           {macroJornada.metaGeralFinal !== null && (
                             <div className="text-right">
                               <p className="text-xs text-gray-500">Meta Final</p>
-                              <p className="text-lg font-bold text-blue-700">{(macroJornada?.metaGeralFinal ?? 0).toFixed(0)}%</p>
+                              <p className="text-lg font-bold text-blue-700">{safeToFixed(macroJornada?.metaGeralFinal ?? 0, 0)}%</p>
                             </div>
                           )}
                           <Badge variant="outline" className={macroJornada.status === "ativo" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
@@ -1578,15 +1578,15 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                   <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${progressoAulas}%` }} />
                                 </div>
                                 <span className={`text-xs font-bold min-w-[35px] text-right ${competenciaConcluida ? 'text-emerald-600' : progressoAulas > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
-                                  {progressoAulas > 0 ? `${(progressoAulas ?? 0).toFixed(0)}%` : '—'}
+                                  {progressoAulas > 0 ? `${safeToFixed(progressoAulas ?? 0, 0)}%` : '—'}
                                 </span>
                               </div>
                               <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-gray-500">
                                 {aulasDisp > 0 && <span>Aulas: <strong className="text-gray-700">{aulasConc}/{aulasDisp}</strong></span>}
                                 {aulasAnd > 0 && <span>Em andamento: <strong className="text-blue-600">{aulasAnd}</strong></span>}
-                                {notaPlataforma > 0 && <span>Nota: <strong className={notaPlataforma >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{(notaPlataforma ?? 0).toFixed(0)}</strong></span>}
-                                {nivel > 0 && <span>Nível Mentora: <strong className="text-gray-700">{(nivel ?? 0).toFixed(0)}%</strong></span>}
-                                <span>Meta: <strong className="text-gray-700">{meta > 0 ? `${(meta ?? 0).toFixed(0)}%` : '—'}</strong></span>
+                                {notaPlataforma > 0 && <span>Nota: <strong className={notaPlataforma >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{safeToFixed(notaPlataforma ?? 0, 0)}</strong></span>}
+                                {nivel > 0 && <span>Nível Mentora: <strong className="text-gray-700">{safeToFixed(nivel ?? 0, 0)}%</strong></span>}
+                                <span>Meta: <strong className="text-gray-700">{meta > 0 ? `${safeToFixed(meta ?? 0, 0)}%` : '—'}</strong></span>
                               </div>
                               {micro.justificativa && (
                                 <div className="mt-1.5 p-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] text-gray-700">
