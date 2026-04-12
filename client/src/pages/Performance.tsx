@@ -501,7 +501,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
   }
 
   const { aluno, indicadores, ranking, sessoes, eventos, planoIndividual, assessments } = data;
-const performanceGeral = Number(indicadores.performanceGeral ?? (indicadores.notaFinal * 10)) || 0;
+  const performanceGeral = Number(indicadores.performanceGeral ?? (indicadores.notaFinal * 10)) || 0;
   const ciclosFinalizados = indicadores.ciclosFinalizados || [];
   const ciclosEmAndamento = indicadores.ciclosEmAndamento || [];
   // v2 já declarado acima
