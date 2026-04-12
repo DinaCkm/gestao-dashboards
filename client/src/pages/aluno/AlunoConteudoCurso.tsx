@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
@@ -46,6 +46,55 @@ export default function AlunoConteudoCurso() {
   const urlOriginal = atividade?.urlGenially || atividade?.urlMidia || "";
   const urlEmbed = adaptarUrlParaEmbed(urlOriginal);
 
+  const heartbeatMutation = trpc.competenciasCompTec.aluno.registrarHeartbeatAtividade.useMutation();
+  const pausarSessaoMutation = trpc.competenciasCompTec.aluno.pausarSessaoAtividade.useMutation();
+
+  useEffect(() => {
+    if (!cursoAtribuidoId || !atividadeId) return;
+
+    let intervalId: NodeJS.Timeout;
+    const HEARTBEAT_INTERVAL_MS = 15000;
+
+    const enviarHeartbeat = () => {
+      if (document.visibilityState === "visible" && document.hasFocus()) {
+        heartbeatMutation.mutate({
+          cursoAtribuidoId,
+          atividadeId,
+          segundosAtivos: HEARTBEAT_INTERVAL_MS / 1000,
+        });
+      }
+    };
+
+    const pausarSessao = () => {
+      pausarSessaoMutation.mutate({
+        cursoAtribuidoId,
+        atividadeId,
+      });
+    };
+
+    intervalId = setInterval(enviarHeartbeat, HEARTBEAT_INTERVAL_MS);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        pausarSessao();
+      }
+    };
+
+    const handleBlur = () => {
+      pausarSessao();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
+      pausarSessao();
+    };
+  }, [cursoAtribuidoId, atividadeId]);
+
   const voltarParaAtividades = () => {
     setLocation(
       `/aluno/competencias-comp-tec/atividade?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
@@ -82,10 +131,12 @@ export default function AlunoConteudoCurso() {
             <Maximize className="mr-2 h-4 w-4" />
             Tela cheia
           </Button>
-          <Button variant="outline" onClick={abrirNovaAba} disabled={!urlOriginal}>
-            <ExternalLink className="mr-2 h-4 w-4" />
-            Abrir em nova aba
-          </Button>
+          {atividade?.permitirAberturaExterna === 1 && (
+            <Button variant="outline" onClick={abrirNovaAba} disabled={!urlOriginal}>
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Abrir em nova aba
+            </Button>
+          )}
         </div>
       </div>
 
@@ -112,12 +163,14 @@ export default function AlunoConteudoCurso() {
               <p className="text-sm text-muted-foreground">
                 Esta atividade não possui uma URL válida para incorporação.
               </p>
-              <div className="flex justify-center">
-                <Button onClick={abrirNovaAba} disabled={!urlOriginal}>
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Abrir em nova aba
-                </Button>
-              </div>
+              {atividade?.permitirAberturaExterna === 1 && (
+                <div className="flex justify-center">
+                  <Button onClick={abrirNovaAba} disabled={!urlOriginal}>
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Abrir em nova aba
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

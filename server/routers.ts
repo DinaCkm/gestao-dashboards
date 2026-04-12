@@ -18,6 +18,7 @@ import {
   cursosCompetencias,
   onboardingVideos,
   alunoAtividadeProgresso,
+  sessoesEstudoAtividade,
   users,
 } from "../drizzle/schema";
 import * as db from "./db";
@@ -77,6 +78,73 @@ function getVal(
 
   const value = String(raw).trim();
   return value === "" ? undefined : value;
+}
+
+type AtividadeTempoConfig = {
+  tempoMinimoObrigatorioSegundos?: number | null;
+  tempoEstimadoMinutos?: number | null;
+  percentualMinimoLiberacao?: number | null;
+};
+
+type ProgressoTempoConfig = {
+  tempoAtivoAcumuladoSegundos?: number | null;
+  tempoMinimoExigidoSegundos?: number | null;
+  bloqueioPorTempo?: number | null;
+  liberadoParaAvaliacaoEm?: Date | null;
+  tempoCumpridoEm?: Date | null;
+};
+
+function calcularTempoMinimoExigidoSegundos(atividade: AtividadeTempoConfig): number {
+  if (atividade.tempoMinimoObrigatorioSegundos && atividade.tempoMinimoObrigatorioSegundos > 0) {
+    return atividade.tempoMinimoObrigatorioSegundos;
+  }
+
+  const tempoEstimadoMinutos = Number(atividade.tempoEstimadoMinutos ?? 0);
+  const percentualMinimoLiberacao = Number(atividade.percentualMinimoLiberacao ?? 60);
+
+  if (tempoEstimadoMinutos <= 0) return 0;
+
+  const calculado = Math.round((tempoEstimadoMinutos * 60 * percentualMinimoLiberacao) / 100);
+  return Math.max(0, calculado);
+}
+
+function normalizarSegundosHeartbeat(segundos: number | null | undefined): number {
+  const valor = Number(segundos ?? 0);
+  if (!Number.isFinite(valor) || valor <= 0) return 0;
+  return Math.min(120, Math.round(valor));
+}
+
+function montarResumoTempo(
+  atividade: AtividadeTempoConfig,
+  progresso?: ProgressoTempoConfig | null
+) {
+  const tempoMinimoExigidoSegundos =
+    Number(progresso?.tempoMinimoExigidoSegundos ?? 0) > 0
+      ? Number(progresso?.tempoMinimoExigidoSegundos ?? 0)
+      : calcularTempoMinimoExigidoSegundos(atividade);
+
+  const tempoAtivoAcumuladoSegundos = Number(progresso?.tempoAtivoAcumuladoSegundos ?? 0);
+  const tempoRestanteSegundos = Math.max(0, tempoMinimoExigidoSegundos - tempoAtivoAcumuladoSegundos);
+
+  const tempoCumprido =
+    tempoMinimoExigidoSegundos <= 0 || tempoAtivoAcumuladoSegundos >= tempoMinimoExigidoSegundos;
+
+  const percentualTempoCumprido =
+    tempoMinimoExigidoSegundos <= 0
+      ? 100
+      : Math.min(100, Math.round((tempoAtivoAcumuladoSegundos / tempoMinimoExigidoSegundos) * 100));
+
+  return {
+    tempoMinimoExigidoSegundos,
+    tempoAtivoAcumuladoSegundos,
+    tempoRestanteSegundos,
+    percentualTempoCumprido,
+    tempoCumprido,
+    bloqueioPorTempo: tempoCumprido ? 0 : 1,
+    liberadoParaAvaliacao: tempoCumprido,
+    liberadoParaAvaliacaoEm: progresso?.liberadoParaAvaliacaoEm ?? null,
+    tempoCumpridoEm: progresso?.tempoCumpridoEm ?? null,
+  };
 }
 
 // Admin-only procedure
@@ -9631,9 +9699,11 @@ Responda APENAS em JSON com o formato especificado.`
               urlMidia: atividade.urlMidia ?? null,
               status,
               notaFinal: progresso?.notaFinal ?? null,
-              avaliacaoLiberada: !!progresso?.avaliacaoLiberada,
+              tentativas: progresso?.tentativas ?? 0,
               avaliacaoId: avaliacao?.id ?? null,
-              podeAbrir: status !== "bloqueada",
+              avaliacaoLiberada: progresso?.avaliacaoLiberada === 1,
+              permitirAberturaExterna: atividade.permitirAberturaExterna ?? 0,
+              ...montarResumoTempo(atividade, progresso),
             };
           });
         }),
@@ -9687,6 +9757,24 @@ Responda APENAS em JSON com o formato especificado.`
             });
           }
 
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(
+              and(
+                eq(atividadesCurso.id, input.atividadeId),
+                eq(atividadesCurso.cursoId, input.cursoId)
+              )
+            )
+            .limit(1);
+
+          if (!atividade) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Atividade não encontrada.",
+            });
+          }
+
           const [existente] = await database
             .select()
             .from(alunoAtividadeProgresso)
@@ -9699,6 +9787,17 @@ Responda APENAS em JSON com o formato especificado.`
             )
             .limit(1);
 
+          const tempoMinimoExigidoSegundos =
+            Number(existente?.tempoMinimoExigidoSegundos ?? 0) > 0
+              ? Number(existente?.tempoMinimoExigidoSegundos ?? 0)
+              : calcularTempoMinimoExigidoSegundos(atividade);
+
+          const resumoTempoAtual = montarResumoTempo(atividade, existente ?? {
+            tempoAtivoAcumuladoSegundos: 0,
+            tempoMinimoExigidoSegundos,
+            bloqueioPorTempo: tempoMinimoExigidoSegundos > 0 ? 1 : 0,
+          });
+
           if (!existente) {
             await database.insert(alunoAtividadeProgresso).values({
               alunoId: user.alunoId,
@@ -9706,34 +9805,63 @@ Responda APENAS em JSON com o formato especificado.`
               atividadeId: input.atividadeId,
               status: "em_andamento",
               iniciadoEm: new Date(),
-              avaliacaoLiberada: 0,
+              avaliacaoLiberada: resumoTempoAtual.liberadoParaAvaliacao ? 1 : 0,
               tentativas: 0,
+              tempoAtivoAcumuladoSegundos: 0,
+              tempoMinimoExigidoSegundos,
+              ultimoHeartbeatEm: null,
+              tempoCumpridoEm: resumoTempoAtual.tempoCumprido ? new Date() : null,
+              liberadoParaAvaliacaoEm: resumoTempoAtual.liberadoParaAvaliacao ? new Date() : null,
+              bloqueioPorTempo: resumoTempoAtual.bloqueioPorTempo,
             });
-          } else if (
-            existente.status === "disponivel" ||
-            existente.status === "bloqueada"
-          ) {
+          } else {
+            const novoStatus =
+              existente.status === "aprovada"
+                ? "aprovada"
+                : "em_andamento";
+
             await database
               .update(alunoAtividadeProgresso)
               .set({
-                status: "em_andamento",
+                status: novoStatus,
                 iniciadoEm: existente.iniciadoEm ?? new Date(),
+                tempoMinimoExigidoSegundos,
+                avaliacaoLiberada: resumoTempoAtual.liberadoParaAvaliacao ? 1 : 0,
+                bloqueioPorTempo: resumoTempoAtual.bloqueioPorTempo,
+                tempoCumpridoEm:
+                  resumoTempoAtual.tempoCumprido && !existente.tempoCumpridoEm
+                    ? new Date()
+                    : existente.tempoCumpridoEm ?? null,
+                liberadoParaAvaliacaoEm:
+                  resumoTempoAtual.liberadoParaAvaliacao && !existente.liberadoParaAvaliacaoEm
+                    ? new Date()
+                    : existente.liberadoParaAvaliacaoEm ?? null,
                 updatedAt: new Date(),
               })
               .where(eq(alunoAtividadeProgresso.id, existente.id));
           }
 
-          // Buscar a avaliação da atividade para retornar as questões sorteadas
-          const [atividade] = await database
+          const [sessaoAtiva] = await database
             .select()
-            .from(atividadesCurso)
-            .where(eq(atividadesCurso.id, input.atividadeId))
+            .from(sessoesEstudoAtividade)
+            .where(
+              and(
+                eq(sessoesEstudoAtividade.alunoId, user.alunoId),
+                eq(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(sessoesEstudoAtividade.atividadeId, input.atividadeId),
+                eq(sessoesEstudoAtividade.statusSessao, "ativa")
+              )
+            )
             .limit(1);
 
-          if (!atividade) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Atividade não encontrada.",
+          if (!sessaoAtiva) {
+            await database.insert(sessoesEstudoAtividade).values({
+              alunoId: user.alunoId,
+              cursoAtribuidoId: input.cursoAtribuidoId,
+              atividadeId: input.atividadeId,
+              iniciadaEm: new Date(),
+              tempoAtivoSegundos: 0,
+              statusSessao: "ativa",
             });
           }
 
@@ -9744,25 +9872,194 @@ Responda APENAS em JSON com o formato especificado.`
             .limit(1);
 
           if (!avaliacao) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Avaliação não encontrada para esta atividade.",
-            });
+            return {
+              success: true,
+              questoes: [],
+              avaliacao: null,
+              tempo: {
+                tempoAtivoAcumuladoSegundos: resumoTempoAtual.tempoAtivoAcumuladoSegundos,
+                tempoMinimoExigidoSegundos: resumoTempoAtual.tempoMinimoExigidoSegundos,
+                tempoRestanteSegundos: resumoTempoAtual.tempoRestanteSegundos,
+                percentualTempoCumprido: resumoTempoAtual.percentualTempoCumprido,
+                bloqueioPorTempo: resumoTempoAtual.bloqueioPorTempo,
+                liberadoParaAvaliacao: resumoTempoAtual.liberadoParaAvaliacao,
+              },
+            };
           }
 
-          // Lógica de 10 questões aleatórias
-          const todasQuestoes = JSON.parse(avaliacao.questoes || '[]');
-          const questoesEmbaralhadas = todasQuestoes.sort(() => 0.5 - Math.random());
+          const todasQuestoes = JSON.parse(avaliacao.questoes || "[]");
+          const questoesEmbaralhadas = [...todasQuestoes].sort(() => 0.5 - Math.random());
           const questoesSelecionadas = questoesEmbaralhadas.slice(0, 10);
 
-          return { 
+          return {
             success: true,
             questoes: questoesSelecionadas,
             avaliacao: {
               ...avaliacao,
               questoes: JSON.stringify(questoesSelecionadas),
             },
+            tempo: {
+              tempoAtivoAcumuladoSegundos: resumoTempoAtual.tempoAtivoAcumuladoSegundos,
+              tempoMinimoExigidoSegundos: resumoTempoAtual.tempoMinimoExigidoSegundos,
+              tempoRestanteSegundos: resumoTempoAtual.tempoRestanteSegundos,
+              percentualTempoCumprido: resumoTempoAtual.percentualTempoCumprido,
+              bloqueioPorTempo: resumoTempoAtual.bloqueioPorTempo,
+              liberadoParaAvaliacao: resumoTempoAtual.liberadoParaAvaliacao,
+            },
           };
+        }),
+
+      registrarHeartbeatAtividade: protectedProcedure
+        .input(z.object({
+          cursoAtribuidoId: z.number(),
+          atividadeId: z.number(),
+          segundosAtivos: z.number().optional(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await getDb();
+          if (!database) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Banco de dados indisponível",
+            });
+          }
+
+          const userId = Number(ctx.user?.id ?? 0);
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN" });
+          }
+
+          const [progresso] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+              )
+            )
+            .limit(1);
+
+          if (!progresso) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Progresso não encontrado. Inicie a atividade primeiro.",
+            });
+          }
+
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.id, input.atividadeId))
+            .limit(1);
+
+          if (!atividade) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Atividade não encontrada." });
+          }
+
+          const segundosParaSomar = normalizarSegundosHeartbeat(input.segundosAtivos);
+          
+          // Anti-duplicidade básica: se o último heartbeat foi há menos de 10 segundos, ignorar soma de tempo
+          const agora = new Date();
+          const ultimaBatida = progresso.ultimoHeartbeatEm ? new Date(progresso.ultimoHeartbeatEm) : null;
+          const diffSegundos = ultimaBatida ? (agora.getTime() - ultimaBatida.getTime()) / 1000 : 999;
+          
+          const deveSomarTempo = diffSegundos > 10;
+          const novoTempoAcumulado = deveSomarTempo 
+            ? (Number(progresso.tempoAtivoAcumuladoSegundos ?? 0) + segundosParaSomar)
+            : Number(progresso.tempoAtivoAcumuladoSegundos ?? 0);
+
+          const resumo = montarResumoTempo(atividade, {
+            ...progresso,
+            tempoAtivoAcumuladoSegundos: novoTempoAcumulado,
+          });
+
+          // Atualizar progresso
+          await database
+            .update(alunoAtividadeProgresso)
+            .set({
+              tempoAtivoAcumuladoSegundos: novoTempoAcumulado,
+              ultimoHeartbeatEm: agora,
+              bloqueioPorTempo: resumo.bloqueioPorTempo,
+              avaliacaoLiberada: resumo.liberadoParaAvaliacao ? 1 : (progresso.avaliacaoLiberada ?? 0),
+              tempoCumpridoEm: (resumo.tempoCumprido && !progresso.tempoCumpridoEm) ? agora : progresso.tempoCumpridoEm,
+              liberadoParaAvaliacaoEm: (resumo.liberadoParaAvaliacao && !progresso.liberadoParaAvaliacaoEm) ? agora : progresso.liberadoParaAvaliacaoEm,
+              updatedAt: agora,
+            })
+            .where(eq(alunoAtividadeProgresso.id, progresso.id));
+
+          // Atualizar sessão ativa
+          const [sessaoAtiva] = await database
+            .select()
+            .from(sessoesEstudoAtividade)
+            .where(
+              and(
+                eq(sessoesEstudoAtividade.alunoId, user.alunoId),
+                eq(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(sessoesEstudoAtividade.atividadeId, input.atividadeId),
+                eq(sessoesEstudoAtividade.statusSessao, "ativa")
+              )
+            )
+            .limit(1);
+
+          if (sessaoAtiva && deveSomarTempo) {
+            await database
+              .update(sessoesEstudoAtividade)
+              .set({
+                tempoAtivoSegundos: (Number(sessaoAtiva.tempoAtivoSegundos ?? 0) + segundosParaSomar),
+                ultimaBatidaEm: agora,
+              })
+              .where(eq(sessoesEstudoAtividade.id, sessaoAtiva.id));
+          }
+
+          return {
+            success: true,
+            tempo: resumo,
+          };
+        }),
+
+      pausarSessaoAtividade: protectedProcedure
+        .input(z.object({
+          cursoAtribuidoId: z.number(),
+          atividadeId: z.number(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          }
+
+          const userId = Number(ctx.user?.id ?? 0);
+          const [user] = await database.select().from(users).where(eq(users.id, userId)).limit(1);
+          if (!user?.alunoId) throw new TRPCError({ code: "FORBIDDEN" });
+
+          await database
+            .update(sessoesEstudoAtividade)
+            .set({
+              statusSessao: "pausada",
+              encerradaEm: new Date(),
+            })
+            .where(
+              and(
+                eq(sessoesEstudoAtividade.alunoId, user.alunoId),
+                eq(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(sessoesEstudoAtividade.atividadeId, input.atividadeId),
+                eq(sessoesEstudoAtividade.statusSessao, "ativa")
+              )
+            );
+
+          return { success: true };
         }),
 
       concluirAtividade: protectedProcedure
@@ -9792,6 +10089,12 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "FORBIDDEN" });
           }
 
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.id, input.atividadeId))
+            .limit(1);
+
           const [progresso] = await database
             .select()
             .from(alunoAtividadeProgresso)
@@ -9808,12 +10111,21 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "NOT_FOUND", message: "Progresso da atividade não encontrado" });
           }
 
+          const resumo = montarResumoTempo(atividade || {}, progresso);
+          if (resumo.bloqueioPorTempo === 1) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Conclusão bloqueada. Tempo mínimo não cumprido.",
+            });
+          }
+
           await database
             .update(alunoAtividadeProgresso)
             .set({
               status: "concluida",
               concluidoEm: new Date(),
-              avaliacaoLiberada: 1,
+              avaliacaoLiberada: resumo.liberadoParaAvaliacao ? 1 : 0,
+              bloqueioPorTempo: resumo.bloqueioPorTempo,
               updatedAt: new Date(),
             })
             .where(eq(alunoAtividadeProgresso.id, progresso.id));
@@ -9899,6 +10211,27 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada para esta atividade" });
           }
 
+          // Validar trava de tempo
+          const [progresso] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+              )
+            )
+            .limit(1);
+
+          const resumo = montarResumoTempo(atividade, progresso);
+          if (resumo.bloqueioPorTempo === 1) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: `Avaliação bloqueada por tempo. Faltam ${Math.ceil(resumo.tempoRestanteSegundos / 60)} minutos.`,
+            });
+          }
+
           // Lógica de 10 questões aleatórias
           const todasQuestoes = JSON.parse(avaliacao.questoes || '[]');
           const questoesEmbaralhadas = todasQuestoes.sort(() => 0.5 - Math.random());
@@ -9959,7 +10292,21 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "NOT_FOUND", message: "Progresso da atividade não encontrado" });
           }
 
-          if (!progresso.avaliacaoLiberada) {
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.id, input.atividadeId))
+            .limit(1);
+
+          const resumo = montarResumoTempo(atividade || {}, progresso);
+          if (resumo.bloqueioPorTempo === 1) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Submissão bloqueada. Tempo mínimo não cumprido.",
+            });
+          }
+
+          if (!progresso.avaliacaoLiberada && !resumo.liberadoParaAvaliacao) {
             throw new TRPCError({ code: "FORBIDDEN", message: "Avaliação não foi liberada para esta atividade" });
           }
 
