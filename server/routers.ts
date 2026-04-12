@@ -10083,7 +10083,9 @@ Responda APENAS em JSON com o formato especificado.`
             .select()
             .from(users)
             .where(eq(users.id, userId))
-            .limit(1);          if (!user?.alunoId) {
+            .limit(1);
+
+          if (!user?.alunoId) {
             throw new TRPCError({ code: "FORBIDDEN" });
           }
 
@@ -10113,17 +10115,9 @@ Responda APENAS em JSON com o formato especificado.`
           if (resumo.bloqueioPorTempo === 1) {
             throw new TRPCError({
               code: "FORBIDDEN",
-              message: "Submissão bloqueada. Tempo mínimo não cumprido.",
+              message: "Conclusão bloqueada. Tempo mínimo não cumprido.",
             });
           }
-
-          await database
-            .insert(tentativasAvaliacao)t()
-            .from(atividadesCurso)
-            .where(eq(atividadesCurso.id, input.atividadeId))
-            .limit(1);
-
-          const resumo = montarResumoTempo(atividade || {}, progresso);
 
           await database
             .update(alunoAtividadeProgresso)
@@ -10298,7 +10292,21 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "NOT_FOUND", message: "Progresso da atividade não encontrado" });
           }
 
-          if (!progresso.avaliacaoLiberada) {
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.id, input.atividadeId))
+            .limit(1);
+
+          const resumo = montarResumoTempo(atividade || {}, progresso);
+          if (resumo.bloqueioPorTempo === 1) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Submissão bloqueada. Tempo mínimo não cumprido.",
+            });
+          }
+
+          if (!progresso.avaliacaoLiberada && !resumo.liberadoParaAvaliacao) {
             throw new TRPCError({ code: "FORBIDDEN", message: "Avaliação não foi liberada para esta atividade" });
           }
 
