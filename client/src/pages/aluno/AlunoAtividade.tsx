@@ -5,7 +5,8 @@ import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Play, CheckCircle, Clock, BookOpen, RefreshCw } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Lock, Play, CheckCircle, Clock, BookOpen, RefreshCw, AlertCircle } from "lucide-react";
 
 function getNumeroQuery(search: string, chave: string) {
   const params = new URLSearchParams(search);
@@ -167,6 +168,22 @@ export default function AlunoAtividade() {
                         </p>
                       </div>
 
+                      {atividade.status === "em_andamento" && atividade.tempoMinimoExigidoSegundos > 0 && (
+                        <div className="mt-4 space-y-1">
+                          <div className="flex justify-between text-[10px] text-muted-foreground">
+                            <span>Progresso de tempo</span>
+                            <span>{atividade.percentualTempoCumprido}%</span>
+                          </div>
+                          <Progress value={atividade.percentualTempoCumprido} className="h-1" />
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <span>
+                              {Math.floor(atividade.tempoAtivoAcumuladoSegundos / 60)}m / {Math.floor(atividade.tempoMinimoExigidoSegundos / 60)}m
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="mt-4 space-y-2">
                         {atividade.status === "aprovada" ? (
                           <Button disabled className="w-full" size="sm">
@@ -226,13 +243,19 @@ export default function AlunoAtividade() {
                                   atividadeId: atividade.id,
                                 })
                               }
-                              disabled={concluirAtividadeMutation.isPending}
+                              disabled={concluirAtividadeMutation.isPending || atividade.bloqueioPorTempo === 1}
                               variant="outline"
                               className="w-full"
                               size="sm"
                             >
                               {concluirAtividadeMutation.isPending ? "Abrindo avaliação..." : "Ir para avaliação"}
                             </Button>
+                            {atividade.bloqueioPorTempo === 1 && (
+                              <div className="flex items-center gap-1 rounded bg-amber-50 p-2 text-[10px] text-amber-700">
+                                <AlertCircle className="h-3 w-3" />
+                                <span>Aguardando tempo mínimo para liberar a avaliação</span>
+                              </div>
+                            )}
                           </>
                         ) : podeIniciarAtividade ? (
                           <Button
