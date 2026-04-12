@@ -1367,6 +1367,10 @@ export const atividadesCurso = mysqlTable("atividades_curso", {
   descricao: text("descricao"),
   ordem: int("ordem").default(0).notNull(),
   isActive: int("isActive").default(1).notNull(),
+  tempoEstimadoMinutos: int("tempo_estimado_minutos"),
+  percentualMinimoLiberacao: int("percentual_minimo_liberacao").default(60),
+  tempoMinimoObrigatorioSegundos: int("tempo_minimo_obrigatorio_segundos"),
+  permitirAberturaExterna: int("permitir_abertura_externa").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -1450,9 +1454,32 @@ export const alunoAtividadeProgresso = mysqlTable("aluno_atividade_progresso", {
   notaFinal: decimal("notaFinal", { precision: 3, scale: 1 }),
   aprovado: int("aprovado").default(0).notNull(),
   tentativas: int("tentativas").default(0).notNull(),
+  tempoAtivoAcumuladoSegundos: int("tempo_ativo_acumulado_segundos"),
+  tempoMinimoExigidoSegundos: int("tempo_minimo_exigido_segundos"),
+  ultimoHeartbeatEm: timestamp("ultimo_heartbeat_em"),
+  tempoCumpridoEm: timestamp("tempo_cumprido_em"),
+  liberadoParaAvaliacaoEm: timestamp("liberado_para_avaliacao_em"),
+  bloqueioPorTempo: int("bloqueio_por_tempo"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type AlunoAtividadeProgresso = typeof alunoAtividadeProgresso.$inferSelect;
 export type InsertAlunoAtividadeProgresso = typeof alunoAtividadeProgresso.$inferInsert;
+
+/**
+ * Sessoes Estudo Atividade - Registro de sessões de estudo individuais
+ */
+export const sessoesEstudoAtividade = mysqlTable("sessoes_estudo_atividade", {
+  id: int("id").autoincrement().primaryKey(),
+  atividadeId: int("atividade_id").notNull(),
+  alunoId: int("aluno_id").notNull(),
+  cursoAtribuidoId: int("curso_atribuido_id").notNull(),
+  iniciadaEm: timestamp("iniciada_em").defaultNow().notNull(),
+  encerradaEm: timestamp("encerrada_em"),
+  tempoAtivoSegundos: int("tempo_ativo_segundos").default(0),
+  statusSessao: varchar("status_sessao", { length: 50 }).default("ativa"),
+});
+
+export type SessaoEstudoAtividade = typeof sessoesEstudoAtividade.$inferSelect;
+export type InsertSessaoEstudoAtividade = typeof sessoesEstudoAtividade.$inferInsert;
