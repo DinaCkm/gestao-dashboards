@@ -877,7 +877,7 @@ function MentorAgendamentosTab({ consultorId }: { consultorId: number }) {
       {/* Botão Criar Sessão de Grupo */}
       <div className="flex justify-end">
         <Button onClick={() => setShowGroupForm(!showGroupForm)} className="bg-[#1E3A5F] hover:bg-[#2a4f7f]">
-          <Users className="h-4 w-4 mr-2" /> Criar Sessão de Grupo
+          <Users className="h-4 w-4 mr-2" /> Agendar Sessões Individuais/Grupais
         </Button>
       </div>
 
