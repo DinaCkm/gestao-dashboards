@@ -2807,8 +2807,8 @@ export default function OnboardingAluno() {
         <div className="rounded-xl bg-gradient-to-r from-[#0A1E3E] to-[#2a5a8a] p-6 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold">
-                Bem-vindo ao Programa de Certificação Líderes - Seja um líder 5 Estrelas. <Sparkles className="inline h-6 w-6 text-[#F5991F]" />
+              <h1 className="text-2xl font-bold text-white">
+                Bem-vindo ao Programa de Certificação Líderes - Seja um líder 5 Estrelas. <span className="inline-flex gap-0.5 ml-1">{[...Array(5)].map((_, i) => (<span key={i} className="text-[#F5991F] text-xl">⭐</span>))}</span>
               </h1>
               <p className="mt-1 text-white/80">
                 Conclua as etapas abaixo para iniciar sua jornada
