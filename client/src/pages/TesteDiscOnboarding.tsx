@@ -30,7 +30,7 @@ function MentoraGuiaBannerAssessment() {
           <span className="text-sm font-semibold text-[#0A1E3E]">Sua Guia</span>
           <Sparkles className="h-3.5 w-3.5 text-[#F5991F]" />
         </div>
-        <h3 className="text-base font-bold text-[#0A1E3E] mb-1">Hora de se conhecer melhor!</h3>
+        <h3 className="text-base font-bold text-[#0A1E3E] mb-1">Hora de se conhecer melhor! Vamos fazer abaixo 2 Testes de Avaliação de suas Potencialidades!</h3>
         <p className="text-sm text-gray-600 leading-relaxed">
           Agora vamos descobrir juntos o seu perfil comportamental e suas competências. 
           Responda com sinceridade — não existem respostas certas ou erradas. Esse é um momento só seu!
