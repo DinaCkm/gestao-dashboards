@@ -41,6 +41,7 @@ export default function AdminAtividades() {
     urlGenially: "",
     imagemUrl: "",
     ordem: "0",
+    tempoMinimoMinutos: "",
   });
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string>("");
@@ -77,6 +78,7 @@ export default function AdminAtividades() {
         urlGenially: "",
         imagemUrl: "",
         ordem: "0",
+        tempoMinimoMinutos: "",
       });
       setImagemFile(null);
       setImagemPreview("");
@@ -146,6 +148,9 @@ export default function AdminAtividades() {
         imagemUrl = uploadResult.url;
       }
 
+      const tempoMinutos = Number(formAtividade.tempoMinimoMinutos || 0);
+      const tempoSegundos = tempoMinutos > 0 ? tempoMinutos * 60 : 0;
+
       await criarAtividadeMutation.mutateAsync({
         cursoId,
         titulo: formAtividade.titulo.trim(),
@@ -154,6 +159,7 @@ export default function AdminAtividades() {
         urlGenially: formAtividade.urlGenially.trim(),
         imagemUrl,
         ordem: Number(formAtividade.ordem || 0),
+        tempoMinimoObrigatorioSegundos: tempoSegundos > 0 ? tempoSegundos : undefined,
       });
     } finally {
       setIsUploadingImage(false);
@@ -364,6 +370,28 @@ export default function AdminAtividades() {
                   disabled={cursoId <= 0}
                   className="text-sm"
                 />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="tempoMinimoMinutos" className="text-xs">
+                  Tempo mínimo obrigatório (minutos)
+                </Label>
+                <Input
+                  id="tempoMinimoMinutos"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formAtividade.tempoMinimoMinutos}
+                  onChange={(e) =>
+                    setFormAtividade((prev) => ({ ...prev, tempoMinimoMinutos: e.target.value }))
+                  }
+                  placeholder="Ex: 15 (vazio = sem trava)"
+                  disabled={cursoId <= 0}
+                  className="text-sm"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Tempo que o aluno deve permanecer no conteúdo antes de liberar a avaliação. Deixe vazio para sem trava.
+                </p>
               </div>
 
               <Button type="submit" disabled={cursoId <= 0 || isUploadingImage} className="w-full text-sm">

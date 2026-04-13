@@ -43,9 +43,14 @@ type FormDataType = {
   descricao: string;
   ordem: number;
   isActive: number;
+  tempoMinimoMinutos: string;
 };
 
 function getInitialFormData(atividade: any): FormDataType {
+  // Converter segundos para minutos ao carregar
+  const tempoSegundos = Number(atividade?.tempoMinimoObrigatorioSegundos ?? 0);
+  const tempoMinutos = tempoSegundos > 0 ? Math.round(tempoSegundos / 60) : 0;
+
   return {
     titulo: atividade?.titulo || "",
     tipoAtividade: (atividade?.tipoAtividade || "genially") as TipoAtividade,
@@ -54,6 +59,7 @@ function getInitialFormData(atividade: any): FormDataType {
     descricao: atividade?.descricao || "",
     ordem: Number(atividade?.ordem ?? 0),
     isActive: Number(atividade?.isActive ?? 1),
+    tempoMinimoMinutos: tempoMinutos > 0 ? String(tempoMinutos) : "",
   };
 }
 
@@ -129,6 +135,9 @@ export function AtividadeEditModal({
         imagemUrl = uploadResult.url;
       }
 
+      const tempoMinutos = Number(formData.tempoMinimoMinutos || 0);
+      const tempoSegundos = tempoMinutos > 0 ? tempoMinutos * 60 : 0;
+
       await updateAtividadeMutation.mutateAsync({
         id: Number(atividade.id),
         titulo: formData.titulo.trim(),
@@ -137,6 +146,7 @@ export function AtividadeEditModal({
         descricao: formData.descricao.trim(),
         ordem: Number(formData.ordem ?? 0),
         imagemUrl,
+        tempoMinimoObrigatorioSegundos: tempoSegundos > 0 ? tempoSegundos : null,
       });
 
       toast.success("Atividade atualizada com sucesso");
@@ -263,6 +273,24 @@ export function AtividadeEditModal({
                 setFormData((prev) => ({ ...prev, ordem: Number(e.target.value) }))
               }
             />
+          </div>
+
+          <div>
+            <Label htmlFor="tempoMinimoMinutos">Tempo mínimo obrigatório (minutos)</Label>
+            <Input
+              id="tempoMinimoMinutos"
+              type="number"
+              min="0"
+              step="1"
+              value={formData.tempoMinimoMinutos}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, tempoMinimoMinutos: e.target.value }))
+              }
+              placeholder="Ex: 15 (vazio = sem trava)"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Tempo que o aluno deve permanecer no conteúdo antes de liberar a avaliação. Deixe vazio para sem trava.
+            </p>
           </div>
 
           <div>

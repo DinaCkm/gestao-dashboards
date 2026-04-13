@@ -9032,6 +9032,7 @@ Responda APENAS em JSON com o formato especificado.`
             imagemUrl: z.string().optional(),
             descricao: z.string().optional(),
             ordem: z.number().optional(),
+            tempoMinimoObrigatorioSegundos: z.number().int().min(0).optional(),
           })
         )
         .mutation(async ({ input }) => {
@@ -9056,8 +9057,12 @@ Responda APENAS em JSON com o formato especificado.`
             const descricao = input.descricao?.trim() || null;
             const ordem = Number(input.ordem ?? 0);
 
-            const query = `INSERT INTO atividades_curso (cursoId, titulo, tipoAtividade, urlGenially, urlMidia, imagemUrl, descricao, ordem, isActive, createdAt, updatedAt) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+            const tempoMinimo = input.tempoMinimoObrigatorioSegundos != null && input.tempoMinimoObrigatorioSegundos > 0
+              ? input.tempoMinimoObrigatorioSegundos
+              : null;
+
+            const query = `INSERT INTO atividades_curso (cursoId, titulo, tipoAtividade, urlGenially, urlMidia, imagemUrl, descricao, ordem, isActive, tempo_minimo_obrigatorio_segundos, createdAt, updatedAt) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
             
             const [result] = await conn.execute(query, [
               Number(input.cursoId),
@@ -9068,7 +9073,8 @@ Responda APENAS em JSON com o formato especificado.`
               input.imagemUrl?.trim() || null,
               descricao,
               ordem,
-              1
+              1,
+              tempoMinimo
             ]);
 
             console.log("[criarAtividade] INSERT bem-sucedido", {
@@ -9133,6 +9139,7 @@ Responda APENAS em JSON com o formato especificado.`
             imagemUrl: z.string().optional(),
             descricao: z.string().optional(),
             ordem: z.number().optional(),
+            tempoMinimoObrigatorioSegundos: z.number().int().min(0).nullish(),
           })
         )
         .mutation(async ({ input }) => {
@@ -9148,6 +9155,12 @@ Responda APENAS em JSON com o formato especificado.`
           if (input.descricao !== undefined) updates.descricao = input.descricao ?? null;
           if (input.ordem !== undefined) updates.ordem = input.ordem;
           if (input.imagemUrl !== undefined) updates.imagemUrl = input.imagemUrl || null;
+          if (input.tempoMinimoObrigatorioSegundos !== undefined) {
+            updates.tempoMinimoObrigatorioSegundos =
+              input.tempoMinimoObrigatorioSegundos != null && input.tempoMinimoObrigatorioSegundos > 0
+                ? input.tempoMinimoObrigatorioSegundos
+                : null;
+          }
 
           await database
             .update(atividadesCurso)
