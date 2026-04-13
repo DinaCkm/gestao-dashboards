@@ -807,19 +807,24 @@ function ReguaAutopercepção({
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#0A1E3E]/10 to-[#F5991F]/10 flex items-center justify-center">
           <Gauge className="h-8 w-8 text-[#F5991F]" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900">Régua de Autopercepção</h2>
+        <h2 className="text-xl font-bold text-gray-900">Como você se enxerga hoje?</h2>
         <p className="text-gray-500 mt-1 max-w-lg mx-auto">
-          Avalie como você se percebe em cada competência. Seja honesto(a) — essa avaliação ajudará sua mentora a entender seu ponto de partida.
+          Convidamos você a fazer uma pausa e refletir honestamente sobre suas habilidades. Olhe para o seu potencial e avalie seu estágio atual de desenvolvimento:
         </p>
       </div>
 
       {/* Instrução */}
-      <div className="max-w-2xl mx-auto bg-amber-50 border border-amber-200 rounded-lg p-4">
+      <div className="max-w-2xl mx-auto bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
         <p className="text-sm text-amber-800 flex items-start gap-2">
           <Info className="h-4 w-4 mt-0.5 shrink-0" />
           <span>
-            <strong>Dica:</strong> Não se preocupe em acertar — o importante é como você se percebe hoje. 
-            Sua mentora usará essa informação como ponto de partida para construir sua trilha de desenvolvimento.
+            <strong>Marque de 0 a 3:</strong> Se você sente que ainda há espaço para crescer e quer investir no desenvolvimento desta habilidade.
+          </span>
+        </p>
+        <p className="text-sm text-amber-800 flex items-start gap-2">
+          <Info className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>
+            <strong>Marque 4 ou 5:</strong> Se você acredita que já domina a competência e está satisfeito com sua entrega atual.
           </span>
         </p>
       </div>
