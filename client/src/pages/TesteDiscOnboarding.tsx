@@ -508,12 +508,7 @@ function TesteDisc({
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {alreadyWatched ? (
-                    <>
-                      <FastForward className="h-5 w-5 mr-2" />
-                      Pular Vídeo e Iniciar o Teste DISC
-                    </>
-                  ) : videoCompleted ? (
+                  {(alreadyWatched || videoCompleted) ? (
                     <>
                       <ArrowRight className="h-5 w-5 mr-2" />
                       Iniciar o Teste DISC
