@@ -438,6 +438,19 @@ export default function NovoAssessment() {
         {/* Contract Info Card (Item 2.3) */}
         <ContratoInfoCard contratos={contratos} alunoName={selectedAluno?.name || "este aluno"} tipoMentoria={selectedAluno?.tipoMentoria} aluno={selectedAluno} />
 
+        {/* Callout: Aviso sobre liberação do plano */}
+        <div className="my-4 rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl leading-none mt-0.5">⚠️</span>
+            <div>
+              <p className="font-semibold text-amber-800 text-sm">Atenção: Liberação do Plano de Desenvolvimento</p>
+              <p className="text-amber-700 text-sm mt-1 leading-relaxed">
+                Para que o aluno visualize o plano criado no portal, é indispensável realizar o registro da <strong>Sessão de Mentoria nº 1 — Assessment</strong>. Sem esse registro, o conteúdo permanecerá oculto para o aluno durante o onboarding.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Step Indicator */}
         <StepIndicator currentStep={step} />
 
