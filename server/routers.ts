@@ -10494,10 +10494,12 @@ Responda APENAS em JSON com o formato especificado.`
             success: true,
             aprovado,
             bloqueado,
+            nota: notaPersistida,
             tentativasAtuais,
             tentativasRestantes: Math.max(0, tentativasRestantes),
             percentualAcerto: percentualAcerto.toFixed(1),
             proximaAtividadeDisponivel: aprovado && !!proximaAtividade,
+            status: bloqueado ? "bloqueada" : (aprovado ? "aprovada" : "reprovada"),
             mensagem: bloqueado 
               ? "Você atingiu o limite de 3 tentativas. Por favor, fale com seu mentor."
               : (aprovado 

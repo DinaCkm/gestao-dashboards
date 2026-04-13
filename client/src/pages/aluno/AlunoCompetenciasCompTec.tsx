@@ -437,7 +437,10 @@ export default function AlunoCompetenciasCompTec() {
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-2">
                     <span className="rounded-full bg-muted px-3 py-1 text-sm">
-                      Acertos: {String(resultadoAtual?.percentualAcerto ?? "-")}%
+                      Nota: {String(resultadoAtual?.nota ?? "-")}
+                    </span>
+                    <span className="rounded-full bg-muted px-3 py-1 text-sm">
+                      Aproveitamento: {String(resultadoAtual?.percentualAcerto ?? "-")}%
                     </span>
                     <span className={`rounded-full px-3 py-1 text-sm ${
                       resultadoAtual?.aprovado 

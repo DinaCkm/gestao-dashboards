@@ -12,10 +12,12 @@ type ResultadoSubmissao = {
   success: boolean;
   aprovado: boolean;
   bloqueado: boolean;
+  nota: string;
   tentativasAtuais: number;
   tentativasRestantes: number;
   percentualAcerto: string;
   proximaAtividadeDisponivel: boolean;
+  status: string;
   mensagem: string;
 };
 
@@ -117,7 +119,7 @@ export default function AlunoAvaliacao() {
 
       if (result?.aprovado) {
         setLocation(
-          `/aluno/competencias-comp-tec/resultado?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&avaliacaoId=${avaliacaoId}&nota=${result?.nota ?? nota}&aprovado=1`
+          `/aluno/competencias-comp-tec/resultado?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&avaliacaoId=${avaliacaoId}&nota=${result.nota}&percentual=${result.percentualAcerto}&aprovado=1`
         );
         return;
       }
