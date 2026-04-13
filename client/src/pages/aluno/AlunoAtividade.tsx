@@ -31,13 +31,21 @@ export default function AlunoAtividade() {
     );
   };
 
-  const iniciarAtividadeMutation = trpc.competenciasCompTec.aluno.iniciarAtividade.useMutation({
-    onSuccess: (_result, variables) => {
-      if (variables.atividadeId) {
-        abrirConteudo(variables.atividadeId);
-      }
-    },
-  });
+  const iniciarAtividadeMutation = trpc.competenciasCompTec.aluno.iniciarAtividade.useMutation();
+
+  const handleIniciarAtividade = async (atividadeId: number) => {
+    try {
+      await iniciarAtividadeMutation.mutateAsync({
+        cursoId,
+        cursoAtribuidoId,
+        atividadeId,
+      });
+      // Navegação imediata após sucesso — sem depender de onSuccess/callback
+      abrirConteudo(atividadeId);
+    } catch (error) {
+      console.error("Erro ao iniciar atividade:", error);
+    }
+  };
 
   const concluirAtividadeMutation = trpc.competenciasCompTec.aluno.concluirAtividade.useMutation({
     onSuccess: async (_result, variables) => {
@@ -259,13 +267,7 @@ export default function AlunoAtividade() {
                           </>
                         ) : podeIniciarAtividade ? (
                           <Button
-                            onClick={() =>
-                              iniciarAtividadeMutation.mutateAsync({
-                                cursoId,
-                                cursoAtribuidoId,
-                                atividadeId: atividade.id,
-                              })
-                            }
+                            onClick={() => handleIniciarAtividade(atividade.id)}
                             disabled={iniciarAtividadeMutation.isPending}
                             className="w-full"
                             size="sm"
