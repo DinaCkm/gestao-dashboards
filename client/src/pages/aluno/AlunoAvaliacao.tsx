@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { AlertTriangle, ArrowLeft, BookOpen, RefreshCw, Lock, MessageCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BookOpen, RefreshCw, Lock, MessageCircle, XCircle, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import AlunoLayout from "@/components/AlunoLayout";
 
 type ResultadoSubmissao = {
@@ -21,10 +21,19 @@ type ResultadoSubmissao = {
   mensagem: string;
 };
 
+type QuestaoErrada = {
+  numero: number;
+  enunciado: string;
+  respostaAluno: string;
+  respostaCorreta: string;
+};
+
 export default function AlunoAvaliacao() {
   const [, setLocation] = useLocation();
   const [respostas, setRespostas] = useState<Record<string, string>>({});
   const [resultado, setResultado] = useState<ResultadoSubmissao | null>(null);
+  const [questoesErradas, setQuestoesErradas] = useState<QuestaoErrada[]>([]);
+  const [mostrarErros, setMostrarErros] = useState(false);
 
   const searchParams = new URLSearchParams(window.location.search);
   const cursoId = Number(searchParams.get("cursoId") ?? 0);
@@ -89,7 +98,29 @@ export default function AlunoAvaliacao() {
   async function refazerProva() {
     setResultado(null);
     setRespostas({});
+    setQuestoesErradas([]);
+    setMostrarErros(false);
     await atividadeDetalhesQuery.refetch();
+  }
+
+  // Monta a lista de questões erradas a partir das questões e respostas do aluno
+  function montarQuestoesErradas(questoesLista: any[], respostasAluno: Record<string, string>): QuestaoErrada[] {
+    const erradas: QuestaoErrada[] = [];
+    questoesLista.forEach((questao: any, index: number) => {
+      const id = String(questao?.id ?? index);
+      const correta = questao?.respostaCorreta ?? questao?.correta ?? null;
+      const respostaDoAluno = respostasAluno[id] ?? "(não respondida)";
+
+      if (!correta || respostaDoAluno !== correta) {
+        erradas.push({
+          numero: index + 1,
+          enunciado: questao?.enunciado ?? questao?.pergunta ?? "Questão sem enunciado",
+          respostaAluno: respostaDoAluno,
+          respostaCorreta: correta ?? "Não disponível",
+        });
+      }
+    });
+    return erradas;
   }
 
   async function handleSubmeter() {
@@ -124,10 +155,66 @@ export default function AlunoAvaliacao() {
         return;
       }
 
+      // Montar lista de questões erradas antes de limpar o state
+      const erradas = montarQuestoesErradas(questoes, respostas);
+      setQuestoesErradas(erradas);
+      setMostrarErros(false);
       setResultado(result as ResultadoSubmissao);
     } catch (error) {
       console.error("Erro ao submeter avaliação:", error);
     }
+  }
+
+  // Componente reutilizável para exibir as questões erradas
+  function SecaoQuestoesErradas({ corBorda, corFundo, corTexto }: { corBorda: string; corFundo: string; corTexto: string }) {
+    if (questoesErradas.length === 0) return null;
+
+    return (
+      <div className="space-y-3 pt-2">
+        <Button
+          variant="ghost"
+          onClick={() => setMostrarErros(!mostrarErros)}
+          className={`w-full justify-between text-sm font-medium ${corTexto}`}
+        >
+          <span className="flex items-center gap-2">
+            <XCircle className="h-4 w-4" />
+            Questões que você errou ({questoesErradas.length})
+          </span>
+          {mostrarErros ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+
+        {mostrarErros && (
+          <div className="space-y-3">
+            {questoesErradas.map((q, idx) => (
+              <div key={idx} className={`rounded-lg border ${corBorda} ${corFundo} p-4`}>
+                <p className={`mb-3 text-sm font-semibold ${corTexto}`}>
+                  Questão {q.numero}
+                </p>
+                <p className="mb-3 text-sm text-gray-800">
+                  {q.enunciado}
+                </p>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2 rounded-md bg-red-50 border border-red-200 p-2.5">
+                    <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+                    <div className="text-sm">
+                      <span className="font-medium text-red-700">Sua resposta: </span>
+                      <span className="text-red-800">{q.respostaAluno}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 rounded-md bg-green-50 border border-green-200 p-2.5">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
+                    <div className="text-sm">
+                      <span className="font-medium text-green-700">Resposta correta: </span>
+                      <span className="text-green-800">{q.respostaCorreta}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   }
 
   // Tela de resultado quando reprovado
@@ -179,6 +266,12 @@ export default function AlunoAvaliacao() {
                   </div>
                 </div>
               </div>
+
+              <SecaoQuestoesErradas
+                corBorda="border-red-200"
+                corFundo="bg-white"
+                corTexto="text-red-800"
+              />
 
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button
@@ -240,6 +333,12 @@ export default function AlunoAvaliacao() {
             <div className="rounded-md border border-yellow-200 bg-white p-4 text-sm text-yellow-800">
               {resultado.mensagem}
             </div>
+
+            <SecaoQuestoesErradas
+              corBorda="border-yellow-200"
+              corFundo="bg-white"
+              corTexto="text-yellow-800"
+            />
 
             <div className="space-y-3 pt-2">
               <p className="text-sm font-medium text-yellow-800">O que deseja fazer?</p>
