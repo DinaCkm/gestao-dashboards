@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
@@ -240,6 +241,7 @@ export default function NovoAssessment() {
     assessmentCompetenciaId: number | null; // ID no banco para update/delete
     wasOriginallySelected: boolean; // estado original para detectar mudanças
   }>>([]);
+  const [confirmRemoveDialog, setConfirmRemoveDialog] = useState<{ open: boolean; idx: number; nome: string }>({ open: false, idx: -1, nome: '' });
 
   // Get user's consultorId for non-admin
   const { data: userRecord } = trpc.auth.me.useQuery();
@@ -698,11 +700,15 @@ export default function NovoAssessment() {
                             <Checkbox
                               checked={comp.selected}
                               onCheckedChange={(checked) => {
-                                setCompetenciasConfig(prev => {
-                                  const next = [...prev];
-                                  next[idx] = { ...next[idx], selected: !!checked };
-                                  return next;
-                                });
+                                if (!checked && comp.isExisting && comp.wasOriginallySelected) {
+                                  setConfirmRemoveDialog({ open: true, idx, nome: comp.nome });
+                                } else {
+                                  setCompetenciasConfig(prev => {
+                                    const next = [...prev];
+                                    next[idx] = { ...next[idx], selected: !!checked };
+                                    return next;
+                                  });
+                                }
                               }}
                             />
                           </TableCell>
@@ -925,6 +931,32 @@ export default function NovoAssessment() {
           </Card>
         )}
       </div>
+      <AlertDialog open={confirmRemoveDialog.open} onOpenChange={(open) => !open && setConfirmRemoveDialog({ open: false, idx: -1, nome: '' })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover Competência</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover a competência <strong>{confirmRemoveDialog.nome}</strong> da trilha deste aluno? Esta ação será aplicada ao salvar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                setCompetenciasConfig(prev => {
+                  const next = [...prev];
+                  next[confirmRemoveDialog.idx] = { ...next[confirmRemoveDialog.idx], selected: false };
+                  return next;
+                });
+                setConfirmRemoveDialog({ open: false, idx: -1, nome: '' });
+              }}
+            >
+              Sim, Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

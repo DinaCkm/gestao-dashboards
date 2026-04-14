@@ -3622,3 +3622,13 @@
 - [x] Backend: ajustar lógica de liberação da próxima atividade para funcionar sem avaliação
 - [x] Frontend: mostrar botão "Concluir Atividade" em vez de "Fazer Avaliação" quando não há avaliação
 - [x] Frontend: ajustar exibição de status para atividades sem avaliação
+
+## Erros de Tabelas Inexistentes no Banco Dev (14/04/2026)
+- [ ] Corrigir erro: tabela in_app_notifications não existe no banco dev
+- [ ] Corrigir erro: tabela onboarding_revisoes não existe no banco dev
+- [ ] Corrigir erro: tabela upload_batches não existe no banco dev
+- [ ] Corrigir erro: tabela departments não existe no banco dev
+
+## Confirmação ao Desmarcar Competências + Bug Onboarding Felipe (14/04/2026)
+- [x] Adicionar dialog de confirmação ao desmarcar competências existentes na Seleção de Competências
+- [x] Corrigir bug onboarding Felipe: colunas pdiLiberadoPelaMentora e pdiLiberadoEm já criadas pelo deploy automático do Railway
