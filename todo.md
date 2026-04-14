@@ -3600,3 +3600,4 @@
 
 ## Botão Voltar na Página de Cursos (14/04/2026)
 - [x] Adicionar botão de voltar na página Cursos Disponíveis (/meus-cursos)
+- [x] Bug: Botão Voltar na página de Cursos não navega, só acende

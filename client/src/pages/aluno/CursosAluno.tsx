@@ -72,6 +72,7 @@ function getYouTubeThumbnail(url: string): string | null {
 }
 
 export default function CursosAluno() {
+  const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [filterCategoria, setFilterCategoria] = useState<string>("all");
   const [filterNivel, setFilterNivel] = useState<string>("all");
@@ -128,7 +129,13 @@ export default function CursosAluno() {
           variant="ghost"
           size="sm"
           className="mb-2 -ml-2 text-muted-foreground hover:text-foreground"
-          onClick={() => window.history.back()}
+          onClick={() => {
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              setLocation("/meu-dashboard");
+            }
+          }}
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
           Voltar
