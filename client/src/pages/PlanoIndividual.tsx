@@ -907,9 +907,7 @@ function PlanoContent() {
                       <Calendar className="h-5 w-5 text-primary" />
                       <CardTitle className="text-base">Jornada / Assessment PDI</CardTitle>
                     </div>
-                    <Button size="sm" variant="outline" onClick={openNovoAssessment}>
-                      <Plus className="h-4 w-4 mr-1" /> Novo Assessment
-                    </Button>
+
                   </div>
                   <CardDescription>Trilhas, competências vinculadas, níveis e metas por ciclo</CardDescription>
                 </CardHeader>
@@ -948,9 +946,7 @@ function PlanoContent() {
                                 <span>{(ass.competencias || []).length} competências</span>
                               </div>
                             </div>
-                            <Button variant="outline" size="sm" onClick={() => setEditAssessment(ass)}>
-                              <Edit2 className="h-4 w-4 mr-1" /> Editar
-                            </Button>
+
                           </div>
                           {/* Competencias table */}
                           {(ass.competencias || []).length > 0 && (
