@@ -2906,7 +2906,7 @@ export async function getAlunosWithPlano(programId?: number) {
   return result;
 }
 
-// Buscar competências obrigatórias de um aluno (para cálculo de performance)
+// Buscar competências de um aluno (obrigatórias + opcionais) para atribuição de curso e cálculo de performance
 export async function getCompetenciasObrigatoriasAluno(alunoId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -2918,14 +2918,12 @@ export async function getCompetenciasObrigatoriasAluno(alunoId: number) {
     codigoIntegracao: competencias.codigoIntegracao,
     notaAtual: planoIndividual.notaAtual,
     metaNota: planoIndividual.metaNota,
-    status: planoIndividual.status
+    status: planoIndividual.status,
+    isObrigatoria: planoIndividual.isObrigatoria,
   })
   .from(planoIndividual)
   .leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id))
-  .where(and(
-    eq(planoIndividual.alunoId, alunoId),
-    eq(planoIndividual.isObrigatoria, 1)
-  ));
+  .where(eq(planoIndividual.alunoId, alunoId));
   
   return result;
 }

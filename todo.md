@@ -3632,3 +3632,10 @@
 ## Confirmação ao Desmarcar Competências + Bug Onboarding Felipe (14/04/2026)
 - [x] Adicionar dialog de confirmação ao desmarcar competências existentes na Seleção de Competências
 - [x] Corrigir bug onboarding Felipe: colunas pdiLiberadoPelaMentora e pdiLiberadoEm já criadas pelo deploy automático do Railway
+
+## Bug: Competências opcionais não aparecem na atribuição de curso (14/04/2026)
+- [x] Investigar por que competências opcionais atribuídas pelo mentor no assessment não aparecem quando admin atribui curso ao aluno
+
+## Competências opcionais na atribuição de curso e catálogo do aluno (14/04/2026)
+- [x] db.ts: Remover filtro isObrigatoria=1 na função getCompetenciasObrigatoriasAluno, incluir campo isObrigatoria no retorno
+- [x] AlunoCatalogo.tsx: Separar cursos em seções obrigatórias (azul) e opcionais (verde) cruzando dados no frontend
