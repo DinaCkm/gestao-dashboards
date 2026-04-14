@@ -3603,3 +3603,5 @@
 - [x] Bug: Botão Voltar na página de Cursos não navega, só acende
 - [x] Remover botão "+ Novo Assessment" da página Plano Individual
 - [x] Remover botão "Editar" do assessment na página Plano Individual
+- [x] Remover botão "Editar" da página Assessment (/assessment)
+- [x] Remover botão "Congelar" da página Assessment (/assessment)

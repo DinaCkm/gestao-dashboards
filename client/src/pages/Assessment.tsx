@@ -1143,37 +1143,7 @@ function AssessmentCard({
               <div>{pdi.obrigatorias} obrigatórias</div>
               <div>{pdi.opcionais} opcionais</div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              className="text-secondary border-secondary/30 hover:bg-secondary/10"
-            >
-              <Pencil className="h-3.5 w-3.5 mr-1" />
-              Editar
-            </Button>
-            {!isCongelado ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => { e.stopPropagation(); onCongelar(); }}
-                className="text-blue-600 border-blue-200 hover:bg-blue-50"
-              >
-                <Lock className="h-3.5 w-3.5 mr-1" />
-                Congelar
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => { e.stopPropagation(); onDescongelar(); }}
-                disabled={isDescongelando}
-                className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-              >
-                <LockOpen className="h-3.5 w-3.5 mr-1" />
-                {isDescongelando ? "Descongelando..." : "Descongelar"}
-              </Button>
-            )}
+
             {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
           </div>
         </div>
