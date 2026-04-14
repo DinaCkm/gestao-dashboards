@@ -3597,3 +3597,6 @@
 - [x] Retornar mensagens descritivas no resultado da avaliação (aprovado, reprovado com tentativas restantes, bloqueado)
 - [x] Botão "Refazer Avaliação com Novas Questões" no frontend (AlunoCompetenciasCompTec.tsx)
 - [x] Mostrar tentativas restantes e percentual de acerto no resultado
+
+## Botão Voltar na Página de Cursos (14/04/2026)
+- [x] Adicionar botão de voltar na página Cursos Disponíveis (/meus-cursos)

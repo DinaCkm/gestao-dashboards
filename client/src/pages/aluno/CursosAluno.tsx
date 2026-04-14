@@ -21,7 +21,9 @@ import {
   User,
   Filter,
   Play,
+  ArrowLeft,
 } from "lucide-react";
+import { useLocation } from "wouter";
 
 type CourseItem = {
   id: number;
@@ -122,6 +124,15 @@ export default function CursosAluno() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-2 -ml-2 text-muted-foreground hover:text-foreground"
+          onClick={() => window.history.back()}
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Voltar
+        </Button>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <GraduationCap className="h-7 w-7 text-primary" />
           Cursos Disponíveis
