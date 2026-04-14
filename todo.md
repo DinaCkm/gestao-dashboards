@@ -3605,3 +3605,5 @@
 - [x] Remover botão "Editar" do assessment na página Plano Individual
 - [x] Remover botão "Editar" da página Assessment (/assessment)
 - [x] Remover botão "Congelar" da página Assessment (/assessment)
+- [x] Remover ícone de editar (lápis) de todas as competências na página Assessment
+- [x] Renomear botão "Próximo: Competências" para "INCLUIR/EDITAR COMPETÊNCIAS" na página novo assessment

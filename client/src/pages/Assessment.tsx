@@ -1327,11 +1327,7 @@ function AssessmentCard({
                                 Micro Jornada: {formatDate(comp.microInicio)} → {formatDate(comp.microTermino)}
                               </span>
                             )}
-                            {!isCongelado && (
-                              <Button variant="ghost" size="sm" onClick={() => startEdit(comp)} className="h-7 w-7 p-0">
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
+
                           </div>
                         </div>
 

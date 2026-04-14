@@ -549,7 +549,7 @@ export default function NovoAssessment() {
                   className="bg-secondary hover:bg-secondary/90 gap-1.5"
                   size="lg"
                 >
-                  Próximo: Competências
+                  INCLUIR/EDITAR COMPETÊNCIAS
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
