@@ -420,6 +420,7 @@ export const assessmentCompetencias = mysqlTable("assessment_competencias", {
   justificativa: text("justificativa"), // Justificativa da mentora para a meta definida
   microInicio: date("microInicio", { mode: "string" }), // Data início da Micro Jornada
   microTermino: date("microTermino", { mode: "string" }), // Data término da Micro Jornada
+  isActive: int("isActive").default(1).notNull(), // 1 = ativa, 0 = inativa
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

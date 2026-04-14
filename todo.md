@@ -3607,3 +3607,9 @@
 - [x] Remover botão "Congelar" da página Assessment (/assessment)
 - [x] Remover ícone de editar (lápis) de todas as competências na página Assessment
 - [x] Renomear botão "Próximo: Competências" para "INCLUIR/EDITAR COMPETÊNCIAS" na página novo assessment
+
+## Edição de Competências Existentes no NovoAssessment (14/04/2026)
+- [x] Desbloquear checkbox de competências existentes (desmarcar = remover, marcar = reatribuir)
+- [x] Preencher campos com valores atuais do banco para competências existentes
+- [x] Tornar campos editáveis (meta, microciclo, nível, peso) para competências existentes
+- [x] Criar endpoint backend para atualizar/remover/reatribuir competências existentes

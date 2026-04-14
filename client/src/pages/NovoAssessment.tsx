@@ -236,6 +236,9 @@ export default function NovoAssessment() {
     justificativa: string;
     microInicio: string;
     microTermino: string;
+    isExisting: boolean; // true se já está atribuída ao aluno
+    assessmentCompetenciaId: number | null; // ID no banco para update/delete
+    wasOriginallySelected: boolean; // estado original para detectar mudanças
   }>>([]);
 
   // Get user's consultorId for non-admin
@@ -299,30 +302,47 @@ export default function NovoAssessment() {
       .flatMap((a: any) => (a.competencias || []).map((c: any) => c.competenciaId))
   );
 
+  // Mapa de competências existentes com seus dados atuais
+  const existingCompetenciasMap = useMemo(() => {
+    const map = new Map<number, any>();
+    existingAssessments
+      .filter((a: any) => a.status === 'ativo' && a.trilhaId === parseInt(selectedTrilhaId))
+      .forEach((a: any) => {
+        (a.competencias || []).forEach((c: any) => {
+          map.set(c.competenciaId, c);
+        });
+      });
+    return map;
+  }, [existingAssessments, selectedTrilhaId]);
+
   useEffect(() => {
     if (competenciasTrilha.length > 0) {
       setCompetenciasConfig(
         competenciasTrilha.map((c: any) => {
-          const alreadyExists = existingCompetenciaIds.has(c.id);
+          const existingComp = existingCompetenciasMap.get(c.id);
+          const alreadyExists = !!existingComp;
           return {
             competenciaId: c.id,
             nome: c.nome || c.name || "Sem nome",
-            selected: !alreadyExists,
-            peso: "obrigatoria" as const,
-            notaCorte: "80",
-            nivelAtual: "",
-            metaFinal: "",
-            metaCiclo1: "",
-            metaCiclo2: "",
-            justificativa: "",
-            microInicio: "",
-            microTermino: "",
+            selected: alreadyExists ? true : false, // existentes começam marcadas, novas desmarcadas
+            peso: alreadyExists ? (existingComp.peso || "obrigatoria") : "obrigatoria" as const,
+            notaCorte: alreadyExists ? String(existingComp.notaCorte || "80") : "80",
+            nivelAtual: alreadyExists && existingComp.nivelAtual != null ? String(existingComp.nivelAtual) : "",
+            metaFinal: alreadyExists && existingComp.metaFinal != null ? String(existingComp.metaFinal) : "",
+            metaCiclo1: alreadyExists && existingComp.metaCiclo1 != null ? String(existingComp.metaCiclo1) : "",
+            metaCiclo2: alreadyExists && existingComp.metaCiclo2 != null ? String(existingComp.metaCiclo2) : "",
+            justificativa: alreadyExists ? (existingComp.justificativa || "") : "",
+            microInicio: alreadyExists ? (existingComp.microInicio || "") : "",
+            microTermino: alreadyExists ? (existingComp.microTermino || "") : "",
+            isExisting: alreadyExists,
+            assessmentCompetenciaId: alreadyExists ? existingComp.id : null,
+            wasOriginallySelected: alreadyExists,
           };
         })
       );
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [competenciasTrilha, selectedTrilhaId]);
+  }, [competenciasTrilha, selectedTrilhaId, existingCompetenciasMap]);
 
   const criarMutation = trpc.assessment.criar.useMutation({
     onSuccess: (data: any) => {
@@ -331,6 +351,19 @@ export default function NovoAssessment() {
       } else {
         toast.success("Assessment criado com sucesso!");
       }
+      navigate("/assessment");
+    },
+    onError: (err: { message: string }) => toast.error(err.message),
+  });
+
+  // Mutation para atualizar competências existentes
+  const atualizarMutation = trpc.assessment.atualizarCompetencias.useMutation({
+    onSuccess: (data: any) => {
+      const msgs: string[] = [];
+      if (data?.updated > 0) msgs.push(`${data.updated} competência(s) atualizada(s)`);
+      if (data?.removed > 0) msgs.push(`${data.removed} competência(s) removida(s)`);
+      if (data?.added > 0) msgs.push(`${data.added} competência(s) adicionada(s)`);
+      toast.success(msgs.join(', ') || 'Alterações salvas!');
       navigate("/assessment");
     },
     onError: (err: { message: string }) => toast.error(err.message),
@@ -353,12 +386,63 @@ export default function NovoAssessment() {
     }
 
     const selectedComps = competenciasConfig.filter(c => c.selected);
-    if (selectedComps.length === 0) {
-      toast.error("Selecione pelo menos uma competência");
+    const newComps = selectedComps.filter(c => !c.isExisting);
+    const existingUpdatedComps = selectedComps.filter(c => c.isExisting);
+    const removedComps = competenciasConfig.filter(c => !c.selected && c.isExisting && c.wasOriginallySelected);
+
+    // Se não há novas e não há existentes selecionadas e não há removidas
+    if (newComps.length === 0 && existingUpdatedComps.length === 0 && removedComps.length === 0) {
+      toast.error("Nenhuma alteração detectada");
       return;
     }
 
-    if (!selectedTrilhaExists) {
+    // Se há competências existentes para atualizar/remover OU novas para adicionar a trilha existente
+    if (selectedTrilhaExists) {
+      // Buscar o assessmentPdiId da trilha existente
+      const existingAssessment = existingAssessments.find(
+        (a: any) => a.status === 'ativo' && a.trilhaId === parseInt(selectedTrilhaId)
+      );
+      if (!existingAssessment) {
+        toast.error("Assessment não encontrado");
+        return;
+      }
+
+      atualizarMutation.mutate({
+        assessmentPdiId: existingAssessment.id,
+        alunoId,
+        updated: existingUpdatedComps.map(c => ({
+          assessmentCompetenciaId: c.assessmentCompetenciaId!,
+          competenciaId: c.competenciaId,
+          peso: c.peso,
+          nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+          metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
+          metaCiclo1: c.metaCiclo1 ? parseFloat(c.metaCiclo1) : null,
+          metaCiclo2: c.metaCiclo2 ? parseFloat(c.metaCiclo2) : null,
+          justificativa: c.justificativa || null,
+          microInicio: c.microInicio || null,
+          microTermino: c.microTermino || null,
+        })),
+        removed: removedComps.map(c => c.assessmentCompetenciaId!),
+        added: newComps.map(c => ({
+          competenciaId: c.competenciaId,
+          peso: c.peso,
+          notaCorte: c.notaCorte,
+          nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+          metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
+          metaCiclo1: c.metaCiclo1 ? parseFloat(c.metaCiclo1) : null,
+          metaCiclo2: c.metaCiclo2 ? parseFloat(c.metaCiclo2) : null,
+          justificativa: c.justificativa || null,
+          microInicio: c.microInicio || null,
+          microTermino: c.microTermino || null,
+        })),
+      });
+    } else {
+      // Trilha nova: usar o fluxo original de criação
+      if (selectedComps.length === 0) {
+        toast.error("Selecione pelo menos uma competência");
+        return;
+      }
+
       for (const comp of selectedComps) {
         if (comp.microInicio && comp.microInicio < macroInicio) {
           toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`);
@@ -369,32 +453,29 @@ export default function NovoAssessment() {
           return;
         }
       }
+
+      criarMutation.mutate({
+        alunoId,
+        trilhaId: parseInt(selectedTrilhaId),
+        turmaId: selectedAluno?.turmaId || null,
+        programId: selectedAluno?.programId || null,
+        consultorId: selectedConsultorId ? parseInt(selectedConsultorId) : null,
+        macroInicio,
+        macroTermino,
+        competencias: selectedComps.map(c => ({
+          competenciaId: c.competenciaId,
+          peso: c.peso,
+          notaCorte: c.notaCorte,
+          nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+          metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
+          metaCiclo1: c.metaCiclo1 ? parseFloat(c.metaCiclo1) : null,
+          metaCiclo2: c.metaCiclo2 ? parseFloat(c.metaCiclo2) : null,
+          justificativa: c.justificativa || null,
+          microInicio: c.microInicio || null,
+          microTermino: c.microTermino || null,
+        })),
+      });
     }
-
-    const effectiveMacroInicio = selectedTrilhaExists ? '2000-01-01' : macroInicio;
-    const effectiveMacroTermino = selectedTrilhaExists ? '2099-12-31' : macroTermino;
-
-    criarMutation.mutate({
-      alunoId,
-      trilhaId: parseInt(selectedTrilhaId),
-      turmaId: selectedAluno?.turmaId || null,
-      programId: selectedAluno?.programId || null,
-      consultorId: selectedConsultorId ? parseInt(selectedConsultorId) : null,
-      macroInicio: effectiveMacroInicio,
-      macroTermino: effectiveMacroTermino,
-      competencias: selectedComps.map(c => ({
-        competenciaId: c.competenciaId,
-        peso: c.peso,
-        notaCorte: c.notaCorte,
-        nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
-        metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
-        metaCiclo1: c.metaCiclo1 ? parseFloat(c.metaCiclo1) : null,
-        metaCiclo2: c.metaCiclo2 ? parseFloat(c.metaCiclo2) : null,
-        justificativa: c.justificativa || null,
-        microInicio: c.microInicio || null,
-        microTermino: c.microTermino || null,
-      })),
-    });
   };
 
   const toggleAll = (selected: boolean) => {
@@ -598,14 +679,12 @@ export default function NovoAssessment() {
                   </TableHeader>
                   <TableBody>
                     {competenciasConfig.map((comp, idx) => {
-                      const isAlreadyInAssessment = existingCompetenciaIds.has(comp.competenciaId);
                       return (
                       <>
-                        <TableRow key={comp.competenciaId} className={`${!comp.selected ? "opacity-40 bg-muted/20" : "hover:bg-muted/10"} ${isAlreadyInAssessment ? "bg-muted/40" : ""}`}>
+                        <TableRow key={comp.competenciaId} className={`${!comp.selected ? "opacity-40 bg-muted/20" : "hover:bg-muted/10"} ${comp.isExisting && comp.selected ? "bg-blue-50/50" : ""}`}>
                           <TableCell className="text-center">
                             <Checkbox
                               checked={comp.selected}
-                              disabled={isAlreadyInAssessment}
                               onCheckedChange={(checked) => {
                                 setCompetenciasConfig(prev => {
                                   const next = [...prev];
@@ -617,8 +696,10 @@ export default function NovoAssessment() {
                           </TableCell>
                           <TableCell className="font-medium">
                             {comp.nome}
-                            {isAlreadyInAssessment && (
-                              <span className="ml-2 text-xs text-amber-600 font-normal">(já existe)</span>
+                            {comp.isExisting && (
+                              <span className={`ml-2 text-xs font-normal ${comp.selected ? 'text-blue-600' : 'text-red-500'}`}>
+                                {comp.selected ? '(atribuída)' : '(será removida)'}
+                              </span>
                             )}
                           </TableCell>
                           <TableCell className="text-center">
@@ -816,14 +897,14 @@ export default function NovoAssessment() {
                 </div>
                 <Button
                   onClick={handleSubmit}
-                  disabled={competenciasConfig.filter(c => c.selected).length === 0 || criarMutation.isPending}
+                  disabled={criarMutation.isPending || atualizarMutation.isPending}
                   className="bg-emerald-600 hover:bg-emerald-700 gap-1.5"
                   size="lg"
                 >
-                  {criarMutation.isPending ? (selectedTrilhaExists ? "Adicionando..." : "Criando...") : (
+                  {(criarMutation.isPending || atualizarMutation.isPending) ? "Salvando..." : (
                     <>
                       <CheckCircle2 className="h-4 w-4" />
-                      {selectedTrilhaExists ? "Adicionar Competências à Trilha" : "Criar Assessment e Liberar Trilha"}
+                      {selectedTrilhaExists ? "Salvar Alterações" : "Criar Assessment e Liberar Trilha"}
                     </>
                   )}
                 </Button>

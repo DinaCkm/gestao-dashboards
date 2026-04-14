@@ -5493,6 +5493,93 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success: true };
       }),
 
+    // Atualizar competências em lote (editar existentes, remover desmarcadas, adicionar novas)
+    atualizarCompetencias: protectedProcedure
+      .input(z.object({
+        assessmentPdiId: z.number(),
+        alunoId: z.number(),
+        updated: z.array(z.object({
+          assessmentCompetenciaId: z.number(),
+          competenciaId: z.number(),
+          peso: z.enum(['obrigatoria', 'opcional']),
+          nivelAtual: z.number().nullable(),
+          metaFinal: z.number().nullable(),
+          metaCiclo1: z.number().nullable(),
+          metaCiclo2: z.number().nullable(),
+          justificativa: z.string().nullable(),
+          microInicio: z.string().nullable(),
+          microTermino: z.string().nullable(),
+        })),
+        removed: z.array(z.number()), // assessmentCompetenciaId[]
+        added: z.array(z.object({
+          competenciaId: z.number(),
+          peso: z.enum(['obrigatoria', 'opcional']),
+          notaCorte: z.string().optional(),
+          nivelAtual: z.number().nullable(),
+          metaFinal: z.number().nullable(),
+          metaCiclo1: z.number().nullable(),
+          metaCiclo2: z.number().nullable(),
+          justificativa: z.string().nullable(),
+          microInicio: z.string().nullable(),
+          microTermino: z.string().nullable(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        let updatedCount = 0;
+        let removedCount = 0;
+        let addedCount = 0;
+
+        // 1. Atualizar competências existentes
+        for (const comp of input.updated) {
+          await db.updateAssessmentCompetencia(comp.assessmentCompetenciaId, {
+            peso: comp.peso,
+            microInicio: comp.microInicio,
+            microTermino: comp.microTermino,
+          });
+          // Atualizar campos extras via updateAssessmentCompetenciaFields
+          const extraUpdates: Record<string, any> = {};
+          if (comp.nivelAtual != null) extraUpdates.nivelAtual = String(comp.nivelAtual);
+          if (comp.metaFinal != null) extraUpdates.metaFinal = String(comp.metaFinal);
+          if (comp.metaCiclo1 != null) extraUpdates.metaCiclo1 = String(comp.metaCiclo1);
+          if (comp.metaCiclo2 != null) extraUpdates.metaCiclo2 = String(comp.metaCiclo2);
+          if (comp.justificativa) extraUpdates.justificativa = comp.justificativa;
+          if (Object.keys(extraUpdates).length > 0) {
+            await db.updateAssessmentCompetenciaFields(comp.assessmentCompetenciaId, extraUpdates);
+          }
+          updatedCount++;
+        }
+
+        // 2. Remover competências desmarcadas
+        for (const compId of input.removed) {
+          await db.removeCompetenciaFromAssessment(compId);
+          removedCount++;
+        }
+
+        // 3. Adicionar novas competências
+        for (const comp of input.added) {
+          await db.addCompetenciaToAssessment(input.assessmentPdiId, {
+            competenciaId: comp.competenciaId,
+            peso: comp.peso,
+            notaCorte: comp.notaCorte,
+            microInicio: comp.microInicio,
+            microTermino: comp.microTermino,
+            nivelAtual: comp.nivelAtual != null ? String(comp.nivelAtual) : null,
+            metaFinal: comp.metaFinal != null ? String(comp.metaFinal) : null,
+            metaCiclo1: comp.metaCiclo1 != null ? String(comp.metaCiclo1) : null,
+            metaCiclo2: comp.metaCiclo2 != null ? String(comp.metaCiclo2) : null,
+            justificativa: comp.justificativa,
+          });
+          addedCount++;
+        }
+
+        // Auto-sincronizar plano_individual
+        try {
+          await db.syncPlanoFromAssessment(input.alunoId);
+        } catch (e) { /* sync não deve bloquear */ }
+
+        return { success: true, updated: updatedCount, removed: removedCount, added: addedCount };
+      }),
+
     // Excluir assessment PDI completo
     excluir: protectedProcedure
       .input(z.object({
