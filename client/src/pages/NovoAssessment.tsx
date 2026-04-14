@@ -332,8 +332,20 @@ export default function NovoAssessment() {
             metaCiclo1: alreadyExists && existingComp.metaCiclo1 != null ? String(existingComp.metaCiclo1) : "",
             metaCiclo2: alreadyExists && existingComp.metaCiclo2 != null ? String(existingComp.metaCiclo2) : "",
             justificativa: alreadyExists ? (existingComp.justificativa || "") : "",
-            microInicio: alreadyExists ? (existingComp.microInicio || "") : "",
-            microTermino: alreadyExists ? (existingComp.microTermino || "") : "",
+            microInicio: alreadyExists && existingComp.microInicio
+              ? (existingComp.microInicio instanceof Date
+                ? existingComp.microInicio.toISOString().split('T')[0]
+                : typeof existingComp.microInicio === 'string' && existingComp.microInicio.includes('T')
+                  ? existingComp.microInicio.split('T')[0]
+                  : String(existingComp.microInicio))
+              : "",
+            microTermino: alreadyExists && existingComp.microTermino
+              ? (existingComp.microTermino instanceof Date
+                ? existingComp.microTermino.toISOString().split('T')[0]
+                : typeof existingComp.microTermino === 'string' && existingComp.microTermino.includes('T')
+                  ? existingComp.microTermino.split('T')[0]
+                  : String(existingComp.microTermino))
+              : "",
             isExisting: alreadyExists,
             assessmentCompetenciaId: alreadyExists ? existingComp.id : null,
             wasOriginallySelected: alreadyExists,

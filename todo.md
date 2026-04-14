@@ -3613,3 +3613,4 @@
 - [x] Preencher campos com valores atuais do banco para competências existentes
 - [x] Tornar campos editáveis (meta, microciclo, nível, peso) para competências existentes
 - [x] Criar endpoint backend para atualizar/remover/reatribuir competências existentes
+- [x] Bug CRÍTICO: Página /assessment/novo dá erro React #185 - causa: coluna isActive no schema Drizzle não existia no banco Railway. Solução: removida coluna isActive do schema (não necessária com abordagem de remover competências)
