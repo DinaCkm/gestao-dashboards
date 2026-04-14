@@ -3615,3 +3615,10 @@
 - [x] Criar endpoint backend para atualizar/remover/reatribuir competências existentes
 - [x] Bug CRÍTICO: Página /assessment/novo dá erro React #185 - causa: coluna isActive no schema Drizzle não existia no banco Railway. Solução: removida coluna isActive do schema (não necessária com abordagem de remover competências)
 - [x] Bug PERSISTENTE: Página /assessment/novo - causa raiz: existingCompetenciasMap nas dependências do useEffect causava loop infinito. Solução: removido das dependências, voltando para [competenciasTrilha, selectedTrilhaId]
+
+## Atividades sem Avaliação - Aprovação Automática (14/04/2026)
+- [x] Backend: ajustar lógica de listarAtividades para considerar atividade sem avaliação como "concluída/aprovada" quando tempo cumprido
+- [x] Backend: ajustar endpoint concluirAtividade para aprovar automaticamente quando não há avaliação cadastrada
+- [x] Backend: ajustar lógica de liberação da próxima atividade para funcionar sem avaliação
+- [x] Frontend: mostrar botão "Concluir Atividade" em vez de "Fazer Avaliação" quando não há avaliação
+- [x] Frontend: ajustar exibição de status para atividades sem avaliação

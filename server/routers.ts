@@ -9776,10 +9776,14 @@ Responda APENAS em JSON com o formato especificado.`
               : null;
 
             const primeiraAtividade = index === 0;
+            // Para atividades sem avaliação, "concluida" também conta como aprovada
+            const avaliacaoAnterior = atividadeAnterior ? avaliacaoMap.get(atividadeAnterior.id) : null;
+            const anteriorSemAvaliacao = atividadeAnterior && !avaliacaoAnterior;
             const anteriorAprovada =
               !atividadeAnterior ||
               progressoAnterior?.status === "aprovada" ||
-              Number(progressoAnterior?.notaFinal ?? 0) >= 8;
+              Number(progressoAnterior?.notaFinal ?? 0) >= 8 ||
+              (anteriorSemAvaliacao && progressoAnterior?.status === "concluida");
 
             let status = (progresso?.status ?? "nao_iniciado") as string;
 
@@ -9801,6 +9805,7 @@ Responda APENAS em JSON com o formato especificado.`
               notaFinal: progresso?.notaFinal ?? null,
               tentativas: progresso?.tentativas ?? 0,
               avaliacaoId: avaliacao?.id ?? null,
+              temAvaliacao: !!avaliacao,
               avaliacaoLiberada: progresso?.avaliacaoLiberada === 1,
               permitirAberturaExterna: atividade.permitirAberturaExterna ?? 0,
               ...montarResumoTempo(atividade, progresso),
@@ -10219,10 +10224,28 @@ Responda APENAS em JSON com o formato especificado.`
             });
           }
 
+          // Verificar se esta atividade tem avaliação cadastrada
+          const [avaliacaoExistente] = await database
+            .select({ id: avaliacoesAtividade.id })
+            .from(avaliacoesAtividade)
+            .where(
+              and(
+                eq(avaliacoesAtividade.atividadeId, input.atividadeId),
+                eq(avaliacoesAtividade.isActive, 1)
+              )
+            )
+            .limit(1);
+
+          const temAvaliacao = !!avaliacaoExistente;
+
+          // Se NÃO tem avaliação, marcar como "aprovada" direto e liberar próxima
+          // Se TEM avaliação, marcar como "concluida" (aguardando avaliação)
+          const novoStatus = temAvaliacao ? "concluida" : "aprovada";
+
           await database
             .update(alunoAtividadeProgresso)
             .set({
-              status: "concluida",
+              status: novoStatus,
               concluidoEm: new Date(),
               avaliacaoLiberada: resumo.liberadoParaAvaliacao ? 1 : 0,
               bloqueioPorTempo: resumo.bloqueioPorTempo,
@@ -10230,7 +10253,69 @@ Responda APENAS em JSON com o formato especificado.`
             })
             .where(eq(alunoAtividadeProgresso.id, progresso.id));
 
-          return { success: true };
+          // Se não tem avaliação, liberar a próxima atividade automaticamente
+          if (!temAvaliacao) {
+            const atividades = await database
+              .select()
+              .from(atividadesCurso)
+              .where(eq(atividadesCurso.cursoId, input.cursoId))
+              .orderBy(asc(atividadesCurso.ordem), asc(atividadesCurso.id));
+
+            const atividadeIndex = atividades.findIndex((a) => a.id === input.atividadeId);
+            const proximaAtividade = atividadeIndex >= 0 && atividadeIndex < atividades.length - 1
+              ? atividades[atividadeIndex + 1]
+              : null;
+
+            if (proximaAtividade) {
+              const [proximaJaExiste] = await database
+                .select()
+                .from(alunoAtividadeProgresso)
+                .where(
+                  and(
+                    eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                    eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                    eq(alunoAtividadeProgresso.atividadeId, proximaAtividade.id),
+                  )
+                )
+                .limit(1);
+
+              if (!proximaJaExiste) {
+                await database.insert(alunoAtividadeProgresso).values({
+                  alunoId: user.alunoId,
+                  cursoAtribuidoId: input.cursoAtribuidoId,
+                  atividadeId: proximaAtividade.id,
+                  status: "disponivel",
+                  avaliacaoLiberada: 0,
+                  tentativas: 0,
+                });
+              }
+            }
+
+            // Verificar se todas as atividades do curso foram aprovadas
+            const todasAsAtividades = await database
+              .select()
+              .from(alunoAtividadeProgresso)
+              .where(
+                and(
+                  eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                  eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                )
+              );
+
+            const todasAprovadas = todasAsAtividades.every((a) => a.status === "aprovada");
+
+            if (todasAprovadas && todasAsAtividades.length === atividades.length) {
+              await database
+                .update(alunoCursoAtribuido)
+                .set({
+                  status: "concluido",
+                  dataConclusao: new Date(),
+                })
+                .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+            }
+          }
+
+          return { success: true, aprovadaAutomaticamente: !temAvaliacao };
         }),
 
       obterAvaliacaoDaAtividade: protectedProcedure

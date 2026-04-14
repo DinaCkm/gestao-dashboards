@@ -55,6 +55,12 @@ export default function AlunoAtividade() {
         (a) => a.id === variables.atividadeId
       );
 
+      // Se a atividade não tem avaliação, já foi aprovada automaticamente pelo backend
+      if (!atividadeAtualizada?.temAvaliacao) {
+        // Atividade concluída sem avaliação — já liberou a próxima
+        return;
+      }
+
       if (!atividadeAtualizada?.avaliacaoId) {
         alert("Esta atividade ainda não possui avaliação vinculada.");
         return;
@@ -198,7 +204,7 @@ export default function AlunoAtividade() {
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Concluída
                           </Button>
-                        ) : atividade.status === "concluida" && atividade.avaliacaoLiberada ? (
+                        ) : atividade.status === "concluida" && atividade.avaliacaoLiberada && atividade.temAvaliacao ? (
                           <Button
                             onClick={() =>
                               setLocation(
@@ -209,6 +215,22 @@ export default function AlunoAtividade() {
                             size="sm"
                           >
                             Fazer avaliação
+                          </Button>
+                        ) : atividade.status === "concluida" && !atividade.temAvaliacao ? (
+                          <Button
+                            onClick={() =>
+                              concluirAtividadeMutation.mutateAsync({
+                                cursoId,
+                                cursoAtribuidoId,
+                                atividadeId: atividade.id,
+                              })
+                            }
+                            disabled={concluirAtividadeMutation.isPending}
+                            className="w-full bg-green-600 hover:bg-green-700"
+                            size="sm"
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            {concluirAtividadeMutation.isPending ? "Concluindo..." : "Concluir Atividade"}
                           </Button>
                         ) : atividade.status === "reprovada" ? (
                           <>
@@ -243,26 +265,46 @@ export default function AlunoAtividade() {
                             >
                               Continuar conteúdo
                             </Button>
-                            <Button
-                              onClick={() =>
-                                concluirAtividadeMutation.mutateAsync({
-                                  cursoId,
-                                  cursoAtribuidoId,
-                                  atividadeId: atividade.id,
-                                })
-                              }
-                              disabled={concluirAtividadeMutation.isPending || atividade.bloqueioPorTempo === 1}
-                              variant="outline"
-                              className="w-full"
-                              size="sm"
-                            >
-                              {concluirAtividadeMutation.isPending ? "Abrindo avaliação..." : "Ir para avaliação"}
-                            </Button>
-                            {atividade.bloqueioPorTempo === 1 && (
-                              <div className="flex items-center gap-1 rounded bg-amber-50 p-2 text-[10px] text-amber-700">
-                                <AlertCircle className="h-3 w-3" />
-                                <span>Aguardando tempo mínimo para liberar a avaliação</span>
-                              </div>
+                            {atividade.temAvaliacao ? (
+                              <>
+                                <Button
+                                  onClick={() =>
+                                    concluirAtividadeMutation.mutateAsync({
+                                      cursoId,
+                                      cursoAtribuidoId,
+                                      atividadeId: atividade.id,
+                                    })
+                                  }
+                                  disabled={concluirAtividadeMutation.isPending || atividade.bloqueioPorTempo === 1}
+                                  variant="outline"
+                                  className="w-full"
+                                  size="sm"
+                                >
+                                  {concluirAtividadeMutation.isPending ? "Abrindo avaliação..." : "Ir para avaliação"}
+                                </Button>
+                                {atividade.bloqueioPorTempo === 1 && (
+                                  <div className="flex items-center gap-1 rounded bg-amber-50 p-2 text-[10px] text-amber-700">
+                                    <AlertCircle className="h-3 w-3" />
+                                    <span>Aguardando tempo mínimo para liberar a avaliação</span>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <Button
+                                onClick={() =>
+                                  concluirAtividadeMutation.mutateAsync({
+                                    cursoId,
+                                    cursoAtribuidoId,
+                                    atividadeId: atividade.id,
+                                  })
+                                }
+                                disabled={concluirAtividadeMutation.isPending}
+                                className="w-full bg-green-600 hover:bg-green-700"
+                                size="sm"
+                              >
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                {concluirAtividadeMutation.isPending ? "Concluindo..." : "Concluir Atividade"}
+                              </Button>
                             )}
                           </>
                         ) : podeIniciarAtividade ? (
