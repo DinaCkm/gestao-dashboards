@@ -3614,3 +3614,4 @@
 - [x] Tornar campos editáveis (meta, microciclo, nível, peso) para competências existentes
 - [x] Criar endpoint backend para atualizar/remover/reatribuir competências existentes
 - [x] Bug CRÍTICO: Página /assessment/novo dá erro React #185 - causa: coluna isActive no schema Drizzle não existia no banco Railway. Solução: removida coluna isActive do schema (não necessária com abordagem de remover competências)
+- [x] Bug PERSISTENTE: Página /assessment/novo - causa raiz: existingCompetenciasMap nas dependências do useEffect causava loop infinito. Solução: removido das dependências, voltando para [competenciasTrilha, selectedTrilhaId]

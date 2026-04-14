@@ -354,7 +354,7 @@ export default function NovoAssessment() {
       );
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [competenciasTrilha, selectedTrilhaId, existingCompetenciasMap]);
+  }, [competenciasTrilha, selectedTrilhaId]);
 
   const criarMutation = trpc.assessment.criar.useMutation({
     onSuccess: (data: any) => {
