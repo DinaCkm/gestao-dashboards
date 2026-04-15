@@ -98,10 +98,7 @@ function Router() {
       <Route path={"/dashboard/empresa/:codigo"} component={DashboardEmpresa} />
       <Route path={"/dashboard/mentor"} component={DashboardMentor} />
       <Route path={"/cadastros"} component={AdminCadastros} />
-      <Route
-        path={"/admin/plataforma-aulas"}
-        component={AdminPlataformaAulas}
-      />
+      <Route path={"/admin/plataforma-aulas"} component={AdminPlataformaAulas} />
       <Route path={"/agendamentos"} component={AdminAgendamentos} />
       <Route path={"/trilhas-competencias"} component={TrilhasCompetencias} />
       <Route path={"/plano-individual"} component={PlanoIndividual} />
@@ -110,10 +107,7 @@ function Router() {
       <Route path={"/portal-aluno"} component={DashboardMeuPerfil} />
       <Route path={"/registro-mentoria"} component={RegistroMentoria} />
       <Route path={"/dashboard/gestor"} component={DashboardGestor} />
-      <Route
-        path={"/dashboard/ranking-geral-engajamento"}
-        component={RankingGeralEngajamento}
-      />
+      <Route path={"/dashboard/ranking-geral-engajamento"} component={RankingGeralEngajamento} />
       <Route path={"/assessment"} component={Assessment} />
       <Route path={"/assessment/novo/:alunoId"} component={NovoAssessment} />
       <Route path={"/tutoriais"} component={Tutoriais} />
@@ -124,10 +118,7 @@ function Router() {
       <Route path={"/onboarding"} component={OnboardingAluno} />
       <Route path={"/avisos"} component={AvisosAdmin} />
       <Route path={"/atividades-praticas"} component={AtividadesPraticas} />
-      <Route
-        path={"/demonstrativo-mentorias"}
-        component={DemonstrativoMentorias}
-      />
+      <Route path={"/demonstrativo-mentorias"} component={DemonstrativoMentorias} />
       <Route path={"/metas"} component={MetasDesenvolvimento} />
       <Route path={"/minhas-metas"} component={MinhasMetasAluno} />
       <Route path={"/metas-gestor"} component={MetasGestor} />
@@ -145,69 +136,27 @@ function Router() {
       <Route path={"/dashboard/ciclos-turmas"} component={CiclosTurmas} />
       <Route path={"/precificacao-sessoes"} component={PrecificacaoSessoes} />
       <Route path={"/competencias-comp-tec"} component={CompetenciasCompTec} />
-      <Route
-        path={"/mentor/competencias-comp-tec"}
-        component={MentorCompetenciasCompTec}
-      />
+      <Route path={"/mentor/competencias-comp-tec"} component={MentorCompetenciasCompTec} />
       <Route path={"/aluno/competencias-comp-tec"} component={AlunoCatalogo} />
 
-      <Route
-        path={"/admin/competencias-comp-tec/dashboard"}
-        component={AdminDashboardCompTec}
-      />
-      <Route
-        path={"/admin/competencias-comp-tec/atividades"}
-        component={AdminAtividades}
-      />
-      <Route
-        path={"/admin/competencias-comp-tec/avaliacoes"}
-        component={AdminAvaliacoes}
-      />
+      <Route path={"/admin/competencias-comp-tec/dashboard"} component={AdminDashboardCompTec} />
+      <Route path={"/admin/competencias-comp-tec/atividades"} component={AdminAtividades} />
+      <Route path={"/admin/competencias-comp-tec/avaliacoes"} component={AdminAvaliacoes} />
       <Route path={"/admin/avaliacoes"} component={AdminAvaliacoes} />
-      <Route
-        path={"/admin/competencias-comp-tec/questoes"}
-        component={AdminQuestoes}
-      />
+      <Route path={"/admin/competencias-comp-tec/questoes"} component={AdminQuestoes} />
 
-      <Route
-        path={"/mentor/competencias-comp-tec/alunos"}
-        component={MentorListaAlunos}
-      />
-      <Route
-        path={"/mentor/competencias-comp-tec/atribuir"}
-        component={MentorAtribuirCurso}
-      />
+      <Route path={"/mentor/competencias-comp-tec/alunos"} component={MentorListaAlunos} />
+      <Route path={"/mentor/competencias-comp-tec/atribuir"} component={MentorAtribuirCurso} />
       <Route path={"/mentor/atribuir-cursos"} component={MentorAtribuirCurso} />
       <Route path={"/admin/atribuir-cursos"} component={MentorAtribuirCurso} />
-      <Route
-        path={"/mentor/competencias-comp-tec/progresso"}
-        component={MentorProgressoAlunos}
-      />
+      <Route path={"/mentor/competencias-comp-tec/progresso"} component={MentorProgressoAlunos} />
 
-      <Route
-        path={"/aluno/competencias-comp-tec/detalhe"}
-        component={AlunoDetalheCurso}
-      />
-      <Route
-        path={"/aluno/competencias-comp-tec/atividade"}
-        component={AlunoAtividade}
-      />
-      <Route
-        path={"/aluno/competencias-comp-tec/conteudo"}
-        component={AlunoConteudoCurso}
-      />
-      <Route
-        path={"/aluno/competencias-comp-tec/avaliacao"}
-        component={AlunoAvaliacao}
-      />
-      <Route
-        path={"/aluno/competencias-comp-tec/resultado"}
-        component={AlunoResultadoAvaliacao}
-      />
-      <Route
-        path={"/aluno/competencias-comp-tec/reflexao"}
-        component={AlunoReflexaoFinal}
-      />
+      <Route path={"/aluno/competencias-comp-tec/detalhe"} component={AlunoDetalheCurso} />
+      <Route path={"/aluno/competencias-comp-tec/atividade"} component={AlunoAtividade} />
+      <Route path={"/aluno/competencias-comp-tec/conteudo"} component={AlunoConteudoCurso} />
+      <Route path={"/aluno/competencias-comp-tec/avaliacao"} component={AlunoAvaliacao} />
+      <Route path={"/aluno/competencias-comp-tec/resultado"} component={AlunoResultadoAvaliacao} />
+      <Route path={"/aluno/competencias-comp-tec/reflexao"} component={AlunoReflexaoFinal} />
       <Route path={"/admin/onboarding-videos"} component={OnboardingVideos} />
 
       <Route path={"/404"} component={NotFound} />

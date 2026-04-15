@@ -35,6 +35,7 @@ type RankingAluno = {
   ind4: number;
   ind5: number;
   ind7: number;
+  email: string | null;
 };
 
 const LOGO_URL =
@@ -109,6 +110,7 @@ export default function RankingGeralEngajamento() {
         ind4: Number(aluno?.consolidado?.ind4_tarefas ?? 0),
         ind5: Number(aluno?.consolidado?.ind5_engajamento ?? 0),
         ind7: Number(aluno?.consolidado?.ind7_engajamentoFinal ?? 0),
+        email: aluno?.email || null,
       };
     });
   }, [data?.alunos, turmaNames]);
@@ -139,25 +141,12 @@ export default function RankingGeralEngajamento() {
   const handleSendEmail = async (aluno: RankingAluno) => {
     await enviarLembrete.mutateAsync({
       alunoIdUsuario: aluno.idUsuario,
-      engajamentoFinal: aluno.ind7,
     });
   };
 
   const handleExport = async () => {
     const result = await exportarExcel.mutateAsync({
-      empresaNome: empresaNome || "empresa",
-      rows: rankingFiltrado.map(row => ({
-        posicao: row.posicao,
-        alunoIdUsuario: row.idUsuario,
-        pessoa: row.nomeAluno,
-        turma: row.turmaNome,
-        ind1Webinars: row.ind1,
-        ind2Avaliacoes: row.ind2,
-        ind3Competencias: row.ind3,
-        ind4Tarefas: row.ind4,
-        ind5Engajamento: row.ind5,
-        indMediaEngajamentoFinal: row.ind7,
-      })),
+      alunoIdsUsuario: rankingFiltrado.map(row => row.idUsuario),
     });
 
     const bytes = Uint8Array.from(atob(result.base64), c => c.charCodeAt(0));
@@ -174,8 +163,13 @@ export default function RankingGeralEngajamento() {
     URL.revokeObjectURL(url);
   };
 
+  const consultorRole = (user as any)?.consultorRole;
+  const hasConsultorId = !!(user as any)?.consultorId;
   const isGestor =
-    user?.role === "manager" && (user as any)?.consultorRole === "gerente";
+    user?.role === "manager" &&
+    (consultorRole === "gerente" ||
+      (!hasConsultorId && !(user as any)?.alunoId) ||
+      !!(user as any)?.alunoId);
   const semTurma = !loadingTurmas && (turmas?.length || 0) === 0;
   const semAluno = !isLoading && !error && rankingBase.length === 0;
   const semResultadoFiltro =
@@ -280,12 +274,26 @@ export default function RankingGeralEngajamento() {
                           <TableCell>{aluno.posicao}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <span>{aluno.nomeAluno}</span>
+                              <span>
+                                {aluno.nomeAluno}
+                                {!aluno.email && (
+                                  <span className="ml-2 text-xs text-muted-foreground">
+                                    (sem e-mail cadastrado)
+                                  </span>
+                                )}
+                              </span>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleSendEmail(aluno)}
-                                disabled={enviarLembrete.isPending}
+                                disabled={
+                                  enviarLembrete.isPending || !aluno.email
+                                }
+                                title={
+                                  aluno.email
+                                    ? "Enviar lembrete por e-mail"
+                                    : "Aluno sem e-mail cadastrado"
+                                }
                                 aria-label={`Enviar lembrete para ${aluno.nomeAluno}`}
                               >
                                 <Mail className="h-4 w-4" />

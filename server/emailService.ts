@@ -8,9 +8,7 @@ let transporter: nodemailer.Transporter | null = null;
 function getTransporter(): nodemailer.Transporter {
   if (!transporter) {
     if (!ENV.smtpUser || !ENV.smtpPass) {
-      throw new Error(
-        "SMTP_USER e SMTP_PASS não configurados. Configure as credenciais do Gmail."
-      );
+      throw new Error("SMTP_USER e SMTP_PASS não configurados. Configure as credenciais do Gmail.");
     }
     transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
@@ -35,13 +33,8 @@ export async function sendEmail(options: {
   cc?: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
   if (!ENV.emailEnabled) {
-    console.log(
-      `[Email] Envio desativado temporariamente. Destinatário: ${options.to}`
-    );
-    return {
-      success: false,
-      error: "Envio de e-mails temporariamente desativado.",
-    };
+    console.log(`[Email] Envio desativado temporariamente. Destinatário: ${options.to}`);
+    return { success: false, error: "Envio de e-mails temporariamente desativado." };
   }
 
   try {
@@ -54,9 +47,7 @@ export async function sendEmail(options: {
       html: options.html,
       text: options.text || "",
     });
-    console.log(
-      `[Email] Enviado para ${options.to}${options.cc ? ` (cc: ${options.cc})` : ""} - MessageID: ${info.messageId}`
-    );
+    console.log(`[Email] Enviado para ${options.to}${options.cc ? ` (cc: ${options.cc})` : ''} - MessageID: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error: any) {
     console.error(`[Email] Erro ao enviar para ${options.to}:`, error.message);
@@ -96,11 +87,10 @@ export function buildMentoringAlertEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `Alerta: ${data.diasSemSessao} dias sem sessão de mentoria — ${data.alunoName}`;
 
-  const logoUrl =
-    "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
   const ultimaSessaoStr = data.ultimaSessaoDate
-    ? new Date(data.ultimaSessaoDate).toLocaleDateString("pt-BR")
-    : "Nenhuma sessão registrada";
+    ? new Date(data.ultimaSessaoDate).toLocaleDateString('pt-BR')
+    : 'Nenhuma sessão registrada';
 
   const html = `
 <!DOCTYPE html>
@@ -251,8 +241,7 @@ export function buildOnboardingInviteEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `🎉 Parabéns! Sua jornada no ECOSSISTEMA DO BEM começa agora!`;
 
-  const logoUrl =
-    "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
 
   const html = `
 <!DOCTYPE html>
@@ -402,6 +391,7 @@ Este é um email automático do ECOSSISTEMA DO BEM.
   return { subject, html, text };
 }
 
+
 // ============ WEBINAR REMINDER EMAIL ============
 
 export function buildWebinarReminderEmail(data: {
@@ -416,27 +406,21 @@ export function buildWebinarReminderEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `Lembrete: ${data.webinarTitle} - ${data.eventDate} às ${data.eventTime}`;
 
-  const logoUrl =
-    "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
 
-  const speakerRow = data.speaker
-    ? `
+  const speakerRow = data.speaker ? `
                       <tr>
                         <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 140px;">Palestrante:</td>
                         <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.speaker}</td>
-                      </tr>`
-    : "";
+                      </tr>` : '';
 
-  const themeRow = data.theme
-    ? `
+  const themeRow = data.theme ? `
                       <tr>
                         <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 140px;">Tema:</td>
                         <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.theme}</td>
-                      </tr>`
-    : "";
+                      </tr>` : '';
 
-  const meetingLinkSection = data.meetingLink
-    ? `
+  const meetingLinkSection = data.meetingLink ? `
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 25px;">
                 <tr>
                   <td align="center">
@@ -451,8 +435,7 @@ export function buildWebinarReminderEmail(data: {
                     <a href="${data.meetingLink}" style="color: #1a4a5e; font-size: 12px; word-break: break-all;">${data.meetingLink}</a>
                   </td>
                 </tr>
-              </table>`
-    : "";
+              </table>` : '';
 
   const html = `
 <!DOCTYPE html>
@@ -589,7 +572,7 @@ Este é um lembrete do evento que está chegando:
 
 Evento: ${data.webinarTitle}
 Data: ${data.eventDate}
-Horário: ${data.eventTime} (horário de Brasília)${data.speaker ? `\nPalestrante: ${data.speaker}` : ""}${data.theme ? `\nTema: ${data.theme}` : ""}${data.meetingLink ? `\nLink da reunião: ${data.meetingLink}` : ""}
+Horário: ${data.eventTime} (horário de Brasília)${data.speaker ? `\nPalestrante: ${data.speaker}` : ''}${data.theme ? `\nTema: ${data.theme}` : ''}${data.meetingLink ? `\nLink da reunião: ${data.meetingLink}` : ''}
 
 Sua participação é muito importante para o seu desenvolvimento no programa.
 
@@ -601,6 +584,7 @@ Este e-mail foi enviado automaticamente pelo ECOSSISTEMA DO BEM.
   return { subject, html, text };
 }
 
+
 // ============ ONBOARDING STEP ADVANCEMENT EMAIL (for admin + dina) ============
 
 export function buildOnboardingStepEmail(data: {
@@ -611,35 +595,32 @@ export function buildOnboardingStepEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `${data.alunoName} avançou na trilha do onboarding — Etapa ${data.stepNumber}/${data.totalSteps}: ${data.stepName}`;
 
-  const logoUrl =
-    "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
 
   const stepNames = [
-    "Convite Enviado",
-    "Cadastro Preenchido",
-    "Teste Realizado",
-    "Mentoria Agendada",
-    "PDI Publicado",
-    "Termo de Compromisso Assinado",
+    'Convite Enviado',
+    'Cadastro Preenchido',
+    'Teste Realizado',
+    'Mentoria Agendada',
+    'PDI Publicado',
+    'Termo de Compromisso Assinado',
   ];
 
-  const stepsHtml = stepNames
-    .map((name, i) => {
-      const num = i + 1;
-      const isCompleted = num <= data.stepNumber;
-      const isCurrent = num === data.stepNumber;
-      const bgColor = isCompleted ? "#10b981" : "#e5e7eb";
-      const textColor = isCompleted ? "#ffffff" : "#9ca3af";
-      const border = isCurrent ? "3px solid #059669" : "none";
-      return `
+  const stepsHtml = stepNames.map((name, i) => {
+    const num = i + 1;
+    const isCompleted = num <= data.stepNumber;
+    const isCurrent = num === data.stepNumber;
+    const bgColor = isCompleted ? '#10b981' : '#e5e7eb';
+    const textColor = isCompleted ? '#ffffff' : '#9ca3af';
+    const border = isCurrent ? '3px solid #059669' : 'none';
+    return `
       <td align="center" style="padding: 4px;">
         <div style="width: 36px; height: 36px; border-radius: 50%; background-color: ${bgColor}; border: ${border}; display: inline-flex; align-items: center; justify-content: center; line-height: 36px; text-align: center;">
-          <span style="color: ${textColor}; font-size: 14px; font-weight: 700;">${isCompleted ? "✓" : num}</span>
+          <span style="color: ${textColor}; font-size: 14px; font-weight: 700;">${isCompleted ? '✓' : num}</span>
         </div>
-        <p style="color: ${isCompleted ? "#065f46" : "#9ca3af"}; font-size: 10px; margin: 4px 0 0; line-height: 1.2; max-width: 70px;">${name}</p>
+        <p style="color: ${isCompleted ? '#065f46' : '#9ca3af'}; font-size: 10px; margin: 4px 0 0; line-height: 1.2; max-width: 70px;">${name}</p>
       </td>`;
-    })
-    .join("");
+  }).join('');
 
   const html = `
 <!DOCTYPE html>
@@ -726,6 +707,7 @@ Este é um email automático do ECOSSISTEMA DO BEM.
   return { subject, html, text };
 }
 
+
 // ============ PDI PUBLISHED - INVITE STUDENT TO SIGN ============
 
 export function buildPdiPublishedInviteEmail(data: {
@@ -735,8 +717,7 @@ export function buildPdiPublishedInviteEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `Seu Plano de Desenvolvimento está pronto! Acesse e assine o Termo de Compromisso`;
 
-  const logoUrl =
-    "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
 
   const html = `
 <!DOCTYPE html>
@@ -879,6 +860,7 @@ Este é um email automático do ECOSSISTEMA DO BEM.
   return { subject, html, text };
 }
 
+
 // ============ ONBOARDING REMINDER EMAIL (24h) ============
 
 export function buildOnboardingReminderEmail(data: {
@@ -963,6 +945,7 @@ Este é um lembrete automático do ECOSSISTEMA DO BEM.
   return { subject, html, text };
 }
 
+
 // ============ CYCLE DEADLINE ALERT EMAIL ============
 
 export function buildCycleDeadlineAlertEmail(data: {
@@ -974,45 +957,17 @@ export function buildCycleDeadlineAlertEmail(data: {
   diasRestantes: number;
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
-  const urgencyLabel =
-    data.diasRestantes <= 7
-      ? "URGENTE"
-      : data.diasRestantes <= 15
-        ? "ATENÇÃO"
-        : "AVISO";
+  const urgencyLabel = data.diasRestantes <= 7 ? 'URGENTE' : data.diasRestantes <= 15 ? 'ATENÇÃO' : 'AVISO';
   const subject = `${urgencyLabel}: Ciclo de ${data.alunoName} vence em ${data.diasRestantes} dias — ${data.trilhaNome}`;
 
-  const logoUrl =
-    "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
-  const macroTerminoFormatted = new Date(
-    data.macroTermino + "T12:00:00"
-  ).toLocaleDateString("pt-BR");
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const macroTerminoFormatted = new Date(data.macroTermino + 'T12:00:00').toLocaleDateString('pt-BR');
 
   // Color scheme based on urgency
-  const bannerBg =
-    data.diasRestantes <= 7
-      ? "#fef2f2"
-      : data.diasRestantes <= 15
-        ? "#fef3c7"
-        : "#f0f7fa";
-  const bannerTextColor =
-    data.diasRestantes <= 7
-      ? "#991b1b"
-      : data.diasRestantes <= 15
-        ? "#92400e"
-        : "#0f2b3c";
-  const bannerSubColor =
-    data.diasRestantes <= 7
-      ? "#dc2626"
-      : data.diasRestantes <= 15
-        ? "#b45309"
-        : "#1e6a8a";
-  const daysColor =
-    data.diasRestantes <= 7
-      ? "#dc2626"
-      : data.diasRestantes <= 15
-        ? "#d97706"
-        : "#2563eb";
+  const bannerBg = data.diasRestantes <= 7 ? '#fef2f2' : data.diasRestantes <= 15 ? '#fef3c7' : '#f0f7fa';
+  const bannerTextColor = data.diasRestantes <= 7 ? '#991b1b' : data.diasRestantes <= 15 ? '#92400e' : '#0f2b3c';
+  const bannerSubColor = data.diasRestantes <= 7 ? '#dc2626' : data.diasRestantes <= 15 ? '#b45309' : '#1e6a8a';
+  const daysColor = data.diasRestantes <= 7 ? '#dc2626' : data.diasRestantes <= 15 ? '#d97706' : '#2563eb';
 
   const html = `
 <!DOCTYPE html>
@@ -1176,6 +1131,7 @@ Este e-mail foi enviado automaticamente. Mentor(a), administração e coordenaç
   return { subject, html, text };
 }
 
+
 // ============ EMAIL DE PARABÉNS - ACEITE DO ONBOARDING ============
 
 export function buildAceiteParabensEmail(data: {
@@ -1185,8 +1141,7 @@ export function buildAceiteParabensEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `🎉 Parabéns, ${data.alunoName}! Bem-vindo(a) à sua Jornada de Desenvolvimento!`;
 
-  const logoUrl =
-    "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
 
   const html = `
 <!DOCTYPE html>
@@ -1311,6 +1266,7 @@ Acesse seu portal: ${data.loginUrl}
   return { subject, html, text };
 }
 
+
 // ============ EMAIL DE ACEITE REALIZADO - NOTIFICAÇÃO PARA MENTORA E ADMIN ============
 
 export function buildAceiteNotificacaoEmail(data: {
@@ -1320,8 +1276,7 @@ export function buildAceiteNotificacaoEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `✅ ${data.alunoName} assinou o Termo de Compromisso — Onboarding Concluído!`;
 
-  const logoUrl =
-    "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
 
   const html = `
 <!DOCTYPE html>
@@ -1384,6 +1339,7 @@ O portal de desenvolvimento está agora totalmente liberado.
   return { subject, html, text };
 }
 
+
 // ============ EMAIL DE SOLICITAÇÃO DE REVISÃO DO ACEITE - NOTIFICAÇÃO PARA MENTORA E ADMIN ============
 
 export function buildRevisaoAceiteEmail(data: {
@@ -1395,8 +1351,7 @@ export function buildRevisaoAceiteEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `📝 ${data.alunoName} gostaria de rever o Plano de Desenvolvimento — Solicitação de Revisão`;
 
-  const logoUrl =
-    "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
 
   const html = `
 <!DOCTYPE html>
@@ -1490,6 +1445,7 @@ Acesse a plataforma: ${data.loginUrl}
   return { subject, html, text };
 }
 
+
 // ============ LEMBRETE DE APLICABILIDADE PRÁTICA (48h antes da sessão) ============
 
 export function buildLembreteAplicabilidadeEmail(data: {
@@ -1500,11 +1456,8 @@ export function buildLembreteAplicabilidadeEmail(data: {
   tarefaTitulo: string;
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
-  const dateParts = data.appointmentDate.split("-");
-  const dateFormatted =
-    dateParts.length === 3
-      ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`
-      : data.appointmentDate;
+  const dateParts = data.appointmentDate.split('-');
+  const dateFormatted = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : data.appointmentDate;
 
   const subject = `Lembrete: registre sua aplicabilidade prática antes da mentoria de ${dateFormatted}`;
 
@@ -1674,7 +1627,6 @@ Acesse a plataforma: ${data.loginUrl}
 }
 
 // ============ LEMBRETE DE ACESSO - RANKING GERAL DE ENGAJAMENTO ============
-
 export function buildLembreteEngajamentoEmail(data: {
   engajamentoFinal: number;
 }): { subject: string; html: string; text: string } {
