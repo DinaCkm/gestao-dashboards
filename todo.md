@@ -3639,3 +3639,6 @@
 ## Competências opcionais na atribuição de curso e catálogo do aluno (14/04/2026)
 - [x] db.ts: Remover filtro isObrigatoria=1 na função getCompetenciasObrigatoriasAluno, incluir campo isObrigatoria no retorno
 - [x] AlunoCatalogo.tsx: Separar cursos em seções obrigatórias (azul) e opcionais (verde) cruzando dados no frontend
+
+## Bug: Aluno não consegue marcar presença em evento com data passada (15/04/2026)
+- [x] Corrigir trava de presença: liberar para webinars com status completed, manter bloqueio para webinars futuros (published)

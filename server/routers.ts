@@ -6007,10 +6007,13 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           w.title?.toLowerCase().trim() === eventRecord.title?.toLowerCase().trim()
         );
         if (matchingWebinar) {
-          // É um webinário agendado - verificar se já iniciou (regra: libera assim que inicia)
-          const startDate = matchingWebinar.startDate || matchingWebinar.eventDate;
-          if (startDate && new Date(startDate) > new Date()) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'A marcação de presença só é liberada após o início do evento.' });
+          // Se o webinar já foi marcado como completed, liberar presença independente da data
+          if (matchingWebinar.status !== 'completed') {
+            // Webinar ainda não concluído - verificar se já iniciou (regra: libera assim que inicia)
+            const startDate = matchingWebinar.startDate || matchingWebinar.eventDate;
+            if (startDate && new Date(startDate) > new Date()) {
+              throw new TRPCError({ code: 'BAD_REQUEST', message: 'A marcação de presença só é liberada após o início do evento.' });
+            }
           }
         }
         // Para eventos importados (sem webinar agendado correspondente), permite marcar presença a qualquer momento
