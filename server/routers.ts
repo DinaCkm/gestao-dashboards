@@ -20,6 +20,7 @@ import {
   alunoAtividadeProgresso,
   sessoesEstudoAtividade,
   users,
+  emailAlertasLog,
 } from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
@@ -32,6 +33,7 @@ import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateTyp
 import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
+import { buildLembreteEngajamentoEmail, sendEmail } from "./emailService";
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -2291,6 +2293,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           return {
             ...ind,
             alunoDbId: alunoDb?.id || 0,
+            email: alunoDb?.email || null,
             turmaNome: turma?.name || 'Não definida',
             trilhaNome,
             trilhasReais,
@@ -2588,6 +2591,135 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const programs = await db.getPrograms();
       return programs.map(p => ({ id: p.id, nome: p.name, codigo: p.code }));
     }),
+
+    enviarLembreteEngajamento: managerProcedure
+      .input(z.object({
+        alunoIdUsuario: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const hasConsultorId = !!(ctx.user as any)?.consultorId;
+        const consultorRole = (ctx.user as any)?.consultorRole;
+        const isGestor = ctx.user.role === 'manager' && (
+          consultorRole === 'gerente' ||
+          (!hasConsultorId && !(ctx.user as any)?.alunoId) ||
+          !!(ctx.user as any)?.alunoId
+        );
+        if (!isGestor || !ctx.user.programId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito ao gestor da empresa.' });
+        }
+
+        const programs = await db.getPrograms();
+        const program = programs.find(p => p.id === ctx.user.programId);
+        if (!program) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Empresa do gestor não encontrada.' });
+        }
+
+        const caller = appRouter.createCaller(ctx);
+        const dashboardEmpresa = await caller.indicadores.porEmpresa({ empresa: program.name });
+        const alunoRanking = dashboardEmpresa.alunos.find((a: any) => a.idUsuario === input.alunoIdUsuario);
+        if (!alunoRanking) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Aluno não pertence à empresa do gestor.' });
+        }
+
+        if (!alunoRanking.email) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Aluno sem e-mail cadastrado.' });
+        }
+
+        const engajamentoFinal = Number(alunoRanking?.consolidado?.ind7_engajamentoFinal ?? 0);
+        const emailData = buildLembreteEngajamentoEmail({ engajamentoFinal });
+        const envio = await sendEmail({
+          to: alunoRanking.email,
+          subject: emailData.subject,
+          html: emailData.html,
+          text: emailData.text,
+        });
+
+        const dbConn = await getDb();
+        if (dbConn) {
+          await dbConn.insert(emailAlertasLog).values({
+            alunoId: alunoRanking.alunoDbId,
+            consultorId: 0,
+            tipoAlerta: 'ranking_engajamento_lembrete',
+            diasSemSessao: 0,
+            emailEnviado: envio.success ? 1 : 0,
+            erro: envio.success ? null : (envio.error || 'Falha no envio do lembrete de ranking'),
+          });
+        }
+
+        if (!envio.success) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: envio.error || 'Falha ao enviar e-mail.' });
+        }
+
+        return { success: true };
+      }),
+
+    exportarRankingEngajamentoExcel: managerProcedure
+      .input(z.object({
+        alunoIdsUsuario: z.array(z.string().min(1)),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const hasConsultorId = !!(ctx.user as any)?.consultorId;
+        const consultorRole = (ctx.user as any)?.consultorRole;
+        const isGestor = ctx.user.role === 'manager' && (
+          consultorRole === 'gerente' ||
+          (!hasConsultorId && !(ctx.user as any)?.alunoId) ||
+          !!(ctx.user as any)?.alunoId
+        );
+        if (!isGestor || !ctx.user.programId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito ao gestor da empresa.' });
+        }
+
+        const programs = await db.getPrograms();
+        const program = programs.find(p => p.id === ctx.user.programId);
+        if (!program) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Empresa do gestor não encontrada.' });
+        }
+
+        const caller = appRouter.createCaller(ctx);
+        const dashboardEmpresa = await caller.indicadores.porEmpresa({ empresa: program.name });
+        const alunosPorId = new Map<string, any>();
+        dashboardEmpresa.alunos.forEach((a: any) => alunosPorId.set(a.idUsuario, a));
+
+        const turmasEmpresa = await db.getTurmas(ctx.user.programId);
+        const turmaMap = new Map<string, string>();
+        turmasEmpresa.forEach(t => turmaMap.set(String(t.id), t.name));
+
+        const exportRows = input.alunoIdsUsuario.map((idUsuario, index) => {
+          const aluno = alunosPorId.get(idUsuario);
+          if (!aluno) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Tentativa de exportar aluno fora do escopo da empresa.' });
+          }
+          return {
+            'Posição': index + 1,
+            'Pessoa': aluno.nomeAluno || 'Sem nome',
+            'Turma': turmaMap.get(String(aluno.turma || '')) || 'Não definida',
+            'Ind. 1: Webinars': `${Math.round(Number(aluno?.consolidado?.ind1_webinars ?? 0))}%`,
+            'Ind. 2: Avaliações': `${Math.round(Number(aluno?.consolidado?.ind2_avaliacoes ?? 0))}%`,
+            'Ind. 3: Competências': `${Math.round(Number(aluno?.consolidado?.ind3_competencias ?? 0))}%`,
+            'Ind. 4: Tarefas': `${Math.round(Number(aluno?.consolidado?.ind4_tarefas ?? 0))}%`,
+            'Ind. 5: Engajamento': `${Math.round(Number(aluno?.consolidado?.ind5_engajamento ?? 0))}%`,
+            'Ind. Média: Engajamento Final': `${Math.round(Number(aluno?.consolidado?.ind7_engajamentoFinal ?? 0))}%`,
+          };
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(exportRows);
+        XLSX.utils.book_append_sheet(wb, ws, 'Ranking Engajamento');
+
+        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+        const safeEmpresa = program.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]/g, '-');
+        const date = new Date();
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const filename = `ranking-geral-engajamento-${safeEmpresa}-${yyyy}${mm}${dd}.xlsx`;
+
+        return {
+          success: true,
+          filename,
+          base64: buffer.toString('base64'),
+        };
+      }),
     
     // Performance Filtrada - BLOCO 3
     // Calcula indicadores considerando apenas competências obrigatórias do plano individual
