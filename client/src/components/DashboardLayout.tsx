@@ -32,15 +32,15 @@ import {
 } from "@/components/ui/collapsible";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { 
-  LayoutDashboard, 
-  LogOut, 
-  PanelLeft, 
-  Upload, 
-  Users, 
-  Building2, 
-  FileSpreadsheet, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  LogOut,
+  PanelLeft,
+  Upload,
+  Users,
+  Building2,
+  FileSpreadsheet,
+  BarChart3,
   Settings,
   FileText,
   Calculator,
@@ -74,7 +74,7 @@ import {
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
+import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 import CustomLogin from "./CustomLogin";
 import RoleSwitcher from "@/components/RoleSwitcher";
@@ -112,23 +112,51 @@ const adminMenuGroups: MenuGroup[] = [
     icon: GraduationCap,
     label: "Alunos",
     items: [
-      { icon: Footprints, label: "Onboarding Tracking", path: "/onboarding-tracking" },
-      { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes" },
+      {
+        icon: Footprints,
+        label: "Onboarding Tracking",
+        path: "/onboarding-tracking",
+      },
+      {
+        icon: ClipboardEdit,
+        label: "Painel de Revisões PDI",
+        path: "/painel-revisoes",
+      },
       { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment" },
       { icon: Target, label: "Plano Individual", path: "/plano-individual" },
       { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas" },
-      { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas" },
+      {
+        icon: ClipboardEdit,
+        label: "Atividades Práticas",
+        path: "/atividades-praticas",
+      },
     ],
   },
   {
     icon: UserCheck,
     label: "Mentores",
     items: [
-      { icon: BarChart3, label: "Dashboard de Mentores", path: "/dashboard/mentor" },
-      { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias" },
-      { icon: CalendarDays, label: "Painel de Agendamentos", path: "/agendamentos" },
+      {
+        icon: BarChart3,
+        label: "Dashboard de Mentores",
+        path: "/dashboard/mentor",
+      },
+      {
+        icon: Calendar,
+        label: "Sessões de Mentoria",
+        path: "/demonstrativo-mentorias",
+      },
+      {
+        icon: CalendarDays,
+        label: "Painel de Agendamentos",
+        path: "/agendamentos",
+      },
       { icon: Edit3, label: "Editar Mentorias", path: "/editar-mentorias" },
-      { icon: DollarSign, label: "Precificação de Sessões", path: "/precificacao-sessoes" },
+      {
+        icon: DollarSign,
+        label: "Precificação de Sessões",
+        path: "/precificacao-sessoes",
+      },
     ],
   },
   {
@@ -145,15 +173,35 @@ const adminMenuGroups: MenuGroup[] = [
     items: [
       { icon: Users, label: "Cadastros", path: "/cadastros" },
       { icon: GraduationCap, label: "Turmas", path: "/turmas" },
-      { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias" },
-      { icon: BookOpen, label: "Cursos_Criação", path: "/competencias-comp-tec" },
+      {
+        icon: BookOpen,
+        label: "Trilhas e Competências",
+        path: "/trilhas-competencias",
+      },
+      {
+        icon: BookOpen,
+        label: "Cursos_Criação",
+        path: "/competencias-comp-tec",
+      },
       { icon: BookOpen, label: "Mini-Cursos", path: "/cursos" },
       { icon: BookOpen, label: "Avaliações", path: "/admin/avaliacoes" },
       { icon: Zap, label: "Atividades Extras", path: "/atividades-extras" },
       { icon: Calculator, label: "Fórmulas", path: "/formulas" },
-      { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
-      { icon: BookOpen, label: "Atribuir Cursos", path: "/admin/atribuir-cursos" },
-      { icon: Monitor, label: "Gerenciar Plataforma de Cursos", path: "/admin/plataforma-aulas" },
+      {
+        icon: Library,
+        label: "Biblioteca de Tarefas",
+        path: "/biblioteca-tarefas",
+      },
+      {
+        icon: BookOpen,
+        label: "Atribuir Cursos",
+        path: "/admin/atribuir-cursos",
+      },
+      {
+        icon: Monitor,
+        label: "Gerenciar Plataforma de Cursos",
+        path: "/admin/plataforma-aulas",
+      },
     ],
   },
   {
@@ -161,7 +209,11 @@ const adminMenuGroups: MenuGroup[] = [
     label: "Conteúdo e Comunicação",
     items: [
       { icon: Video, label: "Webinars", path: "/webinars" },
-      { icon: Video, label: "Vídeos de Onboarding", path: "/admin/onboarding-videos" },
+      {
+        icon: Video,
+        label: "Vídeos de Onboarding",
+        path: "/admin/onboarding-videos",
+      },
       { icon: Bell, label: "Avisos e Comunicados", path: "/avisos" },
     ],
   },
@@ -184,37 +236,153 @@ type MenuItemExtended = {
   label: string;
   path: string;
   roles: ("admin" | "manager" | "user")[];
-  requireConsultorRole?: 'mentor' | 'gerente'; // Filtra por tipo de consultor
+  requireConsultorRole?: "mentor" | "gerente"; // Filtra por tipo de consultor
   requireConsultorId?: boolean; // Legacy: mantido para compatibilidade
   hideIfConsultorId?: boolean; // Legacy: mantido para compatibilidade
 };
 
 const otherMenuItems: MenuItemExtended[] = [
   // === MENTOR ===
-  { icon: UserCheck, label: "Meu Dashboard", path: "/dashboard/mentor", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: Target, label: "Plano Individual", path: "/plano-individual", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: CalendarDays, label: "Perfil / Agenda", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
+  {
+    icon: UserCheck,
+    label: "Meu Dashboard",
+    path: "/dashboard/mentor",
+    roles: ["manager"],
+    requireConsultorRole: "mentor",
+  },
+  {
+    icon: ClipboardEdit,
+    label: "Registro de Mentoria",
+    path: "/registro-mentoria",
+    roles: ["manager"],
+    requireConsultorRole: "mentor",
+  },
+  {
+    icon: ClipboardCheck,
+    label: "Assessment / PDI",
+    path: "/assessment",
+    roles: ["manager"],
+    requireConsultorRole: "mentor",
+  },
+  {
+    icon: Target,
+    label: "Plano Individual",
+    path: "/plano-individual",
+    roles: ["manager"],
+    requireConsultorRole: "mentor",
+  },
+  {
+    icon: Flag,
+    label: "Metas de Desenvolvimento",
+    path: "/metas",
+    roles: ["manager"],
+    requireConsultorRole: "mentor",
+  },
+  {
+    icon: ClipboardEdit,
+    label: "Atividades Práticas",
+    path: "/atividades-praticas",
+    roles: ["manager"],
+    requireConsultorRole: "mentor",
+  },
+  {
+    icon: ClipboardEdit,
+    label: "Painel de Revisões PDI",
+    path: "/painel-revisoes",
+    roles: ["manager"],
+    requireConsultorRole: "mentor",
+  },
+  {
+    icon: CalendarDays,
+    label: "Perfil / Agenda",
+    path: "/mentor/configuracoes",
+    roles: ["manager"],
+    requireConsultorRole: "mentor",
+  },
+  {
+    icon: FileText,
+    label: "Relatórios dos Meus Alunos",
+    path: "/relatorios",
+    roles: ["manager"],
+    requireConsultorRole: "mentor",
+  },
 
-  
   // === GERENTE DE EMPRESA ===
-  { icon: Home, label: "Boas-Vindas", path: "/boas-vindas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
-  { icon: CalendarDays, label: "Ciclos & Turmas", path: "/dashboard/ciclos-turmas", roles: ["manager"], requireConsultorRole: 'gerente' },
-  { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
-  { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], requireConsultorRole: 'gerente' },
-  { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
-  { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'gerente' },
-  
+  {
+    icon: Home,
+    label: "Boas-Vindas",
+    path: "/boas-vindas-gestor",
+    roles: ["manager"],
+    requireConsultorRole: "gerente",
+  },
+  {
+    icon: CalendarDays,
+    label: "Ciclos & Turmas",
+    path: "/dashboard/ciclos-turmas",
+    roles: ["manager"],
+    requireConsultorRole: "gerente",
+  },
+  {
+    icon: Building2,
+    label: "Minha Empresa",
+    path: "/dashboard/gestor",
+    roles: ["manager"],
+    requireConsultorRole: "gerente",
+  },
+  {
+    icon: BarChart3,
+    label: "Ranking Geral de Engajamento",
+    path: "/dashboard/ranking-geral-engajamento",
+    roles: ["manager"],
+    requireConsultorRole: "gerente",
+  },
+  {
+    icon: Calendar,
+    label: "Sessões de Mentoria",
+    path: "/demonstrativo-mentorias",
+    roles: ["manager"],
+    requireConsultorRole: "gerente",
+  },
+  {
+    icon: Flag,
+    label: "Metas de Desenvolvimento",
+    path: "/metas-gestor",
+    roles: ["manager"],
+    requireConsultorRole: "gerente",
+  },
+  {
+    icon: FileText,
+    label: "Relatórios",
+    path: "/relatorios",
+    roles: ["manager"],
+    requireConsultorRole: "gerente",
+  },
+
   // === ALUNO ===
-  { icon: Compass, label: "Portal do Aluno", path: "/meu-dashboard", roles: ["user"] },
-  { icon: GraduationCap, label: "Cursos Disponíveis", path: "/meus-cursos", roles: ["user"] },
-  { icon: BookOpen, label: "Competências Comportamentais", path: "/aluno/competencias-comp-tec", roles: ["user"] },
-  { icon: Zap, label: "Atividades Extras", path: "/minhas-atividades", roles: ["user"] },
+  {
+    icon: Compass,
+    label: "Portal do Aluno",
+    path: "/meu-dashboard",
+    roles: ["user"],
+  },
+  {
+    icon: GraduationCap,
+    label: "Cursos Disponíveis",
+    path: "/meus-cursos",
+    roles: ["user"],
+  },
+  {
+    icon: BookOpen,
+    label: "Competências Comportamentais",
+    path: "/aluno/competencias-comp-tec",
+    roles: ["user"],
+  },
+  {
+    icon: Zap,
+    label: "Atividades Extras",
+    path: "/minhas-atividades",
+    roles: ["user"],
+  },
   { icon: PlayCircle, label: "Tutoriais", path: "/tutoriais", roles: ["user"] },
 ];
 
@@ -247,7 +415,7 @@ export default function DashboardLayout({
   }, [sidebarWidth]);
 
   if (loading) {
-    return <DashboardLayoutSkeleton />
+    return <DashboardLayoutSkeleton />;
   }
 
   if (!user) {
@@ -292,25 +460,32 @@ function DashboardLayoutContent({
 
   const isAdmin = user?.role === "admin";
   const hasConsultorId = !!(user as any)?.consultorId;
-  const consultorRole = (user as any)?.consultorRole as string | null | undefined;
-  const isGerente = consultorRole === 'gerente' || (!hasConsultorId && user?.role === 'manager' && !(user as any)?.alunoId);
+  const consultorRole = (user as any)?.consultorRole as
+    | string
+    | null
+    | undefined;
+  const isGerente =
+    consultorRole === "gerente" ||
+    (!hasConsultorId && user?.role === "manager" && !(user as any)?.alunoId);
 
   // Badge de revisões pendentes para admin e mentor
-  const isMentorOrAdmin = isAdmin || consultorRole === 'mentor';
-  const { data: revisoesPendentes } = trpc.onboarding.contarRevisoesPendentes.useQuery(undefined, {
-    enabled: isMentorOrAdmin,
-    refetchInterval: 30000, // Atualiza a cada 30s
-  });
+  const isMentorOrAdmin = isAdmin || consultorRole === "mentor";
+  const { data: revisoesPendentes } =
+    trpc.onboarding.contarRevisoesPendentes.useQuery(undefined, {
+      enabled: isMentorOrAdmin,
+      refetchInterval: 30000, // Atualiza a cada 30s
+    });
   const revisoesBadgeCount = revisoesPendentes?.count || 0;
 
   // Para admin, determinar qual grupo está ativo (para abrir automaticamente)
   const activeGroupIndex = useMemo(() => {
     if (!isAdmin) return -1;
-    const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+    const currentSearch =
+      typeof window !== "undefined" ? window.location.search : "";
     const currentParams = new URLSearchParams(currentSearch);
     const currentTab = currentParams.get("tab");
     const locationBase = location.split("?")[0];
-    
+
     return adminMenuGroups.findIndex(group =>
       group.items.some(item => {
         const [itemBase, itemQuery] = item.path.split("?");
@@ -338,17 +513,22 @@ function DashboardLayoutContent({
   const filteredOtherItems = useMemo(() => {
     const userRole = user?.role || "user";
     return otherMenuItems.filter(item => {
-      if (!item.roles.includes(userRole as "admin" | "manager" | "user")) return false;
+      if (!item.roles.includes(userRole as "admin" | "manager" | "user"))
+        return false;
       // Nova lógica: usar consultorRole para distinguir mentor de gestor
       if (item.requireConsultorRole) {
-        if (item.requireConsultorRole === 'mentor') {
-          return consultorRole === 'mentor';
+        if (item.requireConsultorRole === "mentor") {
+          return consultorRole === "mentor";
         }
-        if (item.requireConsultorRole === 'gerente') {
+        if (item.requireConsultorRole === "gerente") {
           // Gestor puro (consultorRole=gerente) OU gestor sem consultorId OU manager+aluno (gerente que também é aluno)
-          return consultorRole === 'gerente' || 
-                 (!hasConsultorId && userRole === 'manager' && !(user as any)?.alunoId) ||
-                 (userRole === 'manager' && (user as any)?.alunoId);
+          return (
+            consultorRole === "gerente" ||
+            (!hasConsultorId &&
+              userRole === "manager" &&
+              !(user as any)?.alunoId) ||
+            (userRole === "manager" && (user as any)?.alunoId)
+          );
         }
       }
       // Legacy fallback
@@ -413,9 +593,12 @@ function DashboardLayoutContent({
   }, [isResizing, setSidebarWidth]);
 
   const getRoleBadge = (role: string, cRole: string | null | undefined) => {
-    if (role === 'admin') return { label: "Admin", className: "bg-primary/20 text-primary" };
-    if (role === 'manager' && cRole === 'mentor') return { label: "Mentor", className: "bg-orange-100 text-orange-700" };
-    if (role === 'manager') return { label: "Gerente", className: "bg-secondary/20 text-secondary" };
+    if (role === "admin")
+      return { label: "Admin", className: "bg-primary/20 text-primary" };
+    if (role === "manager" && cRole === "mentor")
+      return { label: "Mentor", className: "bg-orange-100 text-orange-700" };
+    if (role === "manager")
+      return { label: "Gerente", className: "bg-secondary/20 text-secondary" };
     return { label: "Aluno", className: "bg-green-100 text-green-700" };
   };
 
@@ -425,33 +608,38 @@ function DashboardLayoutContent({
   const isPathActive = (path: string) => {
     const [itemBase, itemQuery] = path.split("?");
     const locationBase = location.split("?")[0];
-    
+
     // Se o item tem query param (ex: /cadastros?tab=mentores)
     if (itemQuery) {
       const itemParams = new URLSearchParams(itemQuery);
       const itemTab = itemParams.get("tab");
       if (itemTab) {
         // Verificar se estamos na mesma base path E com o mesmo tab
-        const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+        const currentSearch =
+          typeof window !== "undefined" ? window.location.search : "";
         const currentParams = new URLSearchParams(currentSearch);
         const currentTab = currentParams.get("tab");
         return locationBase === itemBase && currentTab === itemTab;
       }
     }
-    
+
     // Para paths sem query params, verificar se não há outro item com query param que seria mais específico
     // Ex: /cadastros sem tab deve ser ativo quando não há ?tab= na URL
-    const hasQueryItems = adminMenuGroups.some(g => 
+    const hasQueryItems = adminMenuGroups.some(g =>
       g.items.some(i => i.path.startsWith(itemBase + "?"))
     );
     if (hasQueryItems && !itemQuery) {
-      const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+      const currentSearch =
+        typeof window !== "undefined" ? window.location.search : "";
       const currentParams = new URLSearchParams(currentSearch);
       const currentTab = currentParams.get("tab");
       // Se estamos em /cadastros sem tab, é a lista de alunos
-      return (locationBase === itemBase && !currentTab) || (locationBase === itemBase && currentTab === "acesso");
+      return (
+        (locationBase === itemBase && !currentTab) ||
+        (locationBase === itemBase && currentTab === "acesso")
+      );
     }
-    
+
     return locationBase === itemBase || location.startsWith(itemBase + "/");
   };
 
@@ -467,31 +655,31 @@ function DashboardLayoutContent({
           <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
             <div className="flex items-center gap-3 px-2 transition-all w-full justify-between">
               <div className="flex items-center gap-3">
-              <button
-                onClick={toggleSidebar}
-                className="h-8 w-8 flex items-center justify-center hover:bg-sidebar-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
-                aria-label="Toggle navigation"
-              >
-                <PanelLeft className="h-4 w-4 text-muted-foreground" />
-              </button>
-              {!isCollapsed ? (
-                <div className="flex items-center gap-2 min-w-0">
+                <button
+                  onClick={toggleSidebar}
+                  className="h-8 w-8 flex items-center justify-center hover:bg-sidebar-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+                  aria-label="Toggle navigation"
+                >
+                  <PanelLeft className="h-4 w-4 text-muted-foreground" />
+                </button>
+                {!isCollapsed ? (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <img
+                      src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
+                      alt="B.E.M."
+                      className="h-7 object-contain shrink-0"
+                    />
+                    <span className="font-bold tracking-tight text-sidebar-foreground text-sm whitespace-nowrap">
+                      ECOSSISTEMA DO BEM
+                    </span>
+                  </div>
+                ) : (
                   <img
                     src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
                     alt="B.E.M."
-                    className="h-7 object-contain shrink-0"
+                    className="h-7 object-contain"
                   />
-                  <span className="font-bold tracking-tight text-sidebar-foreground text-sm whitespace-nowrap">
-                    ECOSSISTEMA DO BEM
-                  </span>
-                </div>
-              ) : (
-                <img
-                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
-                  alt="B.E.M."
-                  className="h-7 object-contain"
-                />
-              )}
+                )}
               </div>
               {!isCollapsed && <NotificationBell />}
             </div>
@@ -509,15 +697,24 @@ function DashboardLayoutContent({
                         isActive={location === "/"}
                         onClick={() => setLocation("/")}
                         tooltip="Painel Inicial"
-                        className={`h-10 transition-all font-normal ${location === "/"
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "hover:bg-sidebar-accent/50"
+                        className={`h-10 transition-all font-normal ${
+                          location === "/"
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "hover:bg-sidebar-accent/50"
                         }`}
                       >
                         <LayoutDashboard
                           className={`h-4 w-4 ${location === "/" ? "text-primary" : "text-muted-foreground"}`}
                         />
-                        <span className={location === "/" ? "text-foreground font-medium" : ""}>Painel Inicial</span>
+                        <span
+                          className={
+                            location === "/"
+                              ? "text-foreground font-medium"
+                              : ""
+                          }
+                        >
+                          Painel Inicial
+                        </span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>
@@ -538,15 +735,18 @@ function DashboardLayoutContent({
                             <CollapsibleTrigger asChild>
                               <SidebarMenuButton
                                 tooltip={group.label}
-                                className={`h-10 transition-all font-normal ${isGroupActive
-                                  ? "text-primary font-medium"
-                                  : "hover:bg-sidebar-accent/50"
+                                className={`h-10 transition-all font-normal ${
+                                  isGroupActive
+                                    ? "text-primary font-medium"
+                                    : "hover:bg-sidebar-accent/50"
                                 }`}
                               >
                                 <group.icon
                                   className={`h-4 w-4 ${isGroupActive ? "text-primary" : "text-muted-foreground"}`}
                                 />
-                                <span className="flex-1 text-left">{group.label}</span>
+                                <span className="flex-1 text-left">
+                                  {group.label}
+                                </span>
                                 <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                               </SidebarMenuButton>
                             </CollapsibleTrigger>
@@ -563,31 +763,42 @@ function DashboardLayoutContent({
                                         onClick={() => {
                                           if (isPlaceholder) {
                                             // Import toast dynamically
-                                            import("sonner").then(({ toast }) => {
-                                              toast.info("Funcionalidade em breve", {
-                                                description: `A gestão de ${item.label} será implementada em breve.`,
-                                              });
-                                            });
+                                            import("sonner").then(
+                                              ({ toast }) => {
+                                                toast.info(
+                                                  "Funcionalidade em breve",
+                                                  {
+                                                    description: `A gestão de ${item.label} será implementada em breve.`,
+                                                  }
+                                                );
+                                              }
+                                            );
                                             return;
                                           }
                                           setLocation(item.path);
                                         }}
-                                        className={`cursor-pointer h-8 ${isActive
-                                          ? "bg-primary/10 text-primary font-medium"
-                                          : isPlaceholder
-                                            ? "opacity-50"
-                                            : ""
+                                        className={`cursor-pointer h-8 ${
+                                          isActive
+                                            ? "bg-primary/10 text-primary font-medium"
+                                            : isPlaceholder
+                                              ? "opacity-50"
+                                              : ""
                                         }`}
                                       >
-                                        <item.icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                                        <item.icon
+                                          className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                                        />
                                         <span>{item.label}</span>
-                                        {item.path === '/painel-revisoes' && revisoesBadgeCount > 0 && (
-                                          <span className="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">
-                                            {revisoesBadgeCount}
-                                          </span>
-                                        )}
+                                        {item.path === "/painel-revisoes" &&
+                                          revisoesBadgeCount > 0 && (
+                                            <span className="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">
+                                              {revisoesBadgeCount}
+                                            </span>
+                                          )}
                                         {isPlaceholder && (
-                                          <span className="ml-auto text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">Em breve</span>
+                                          <span className="ml-auto text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                            Em breve
+                                          </span>
                                         )}
                                       </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
@@ -613,28 +824,34 @@ function DashboardLayoutContent({
                         isActive={isActive}
                         onClick={() => setLocation(item.path)}
                         tooltip={item.label}
-                        className={`h-10 transition-all font-normal ${isActive
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "hover:bg-sidebar-accent/50"
+                        className={`h-10 transition-all font-normal ${
+                          isActive
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "hover:bg-sidebar-accent/50"
                         }`}
                       >
                         <item.icon
                           className={`h-4 w-4 ${isActive ? "text-primary" : "text-muted-foreground"}`}
                         />
-                        <span className={isActive ? "text-foreground font-medium" : ""}>{item.label}</span>
-                        {item.path === '/painel-revisoes' && revisoesBadgeCount > 0 && (
-                          <span className="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">
-                            {revisoesBadgeCount}
-                          </span>
-                        )}
+                        <span
+                          className={
+                            isActive ? "text-foreground font-medium" : ""
+                          }
+                        >
+                          {item.label}
+                        </span>
+                        {item.path === "/painel-revisoes" &&
+                          revisoesBadgeCount > 0 && (
+                            <span className="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">
+                              {revisoesBadgeCount}
+                            </span>
+                          )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
                 })}
               </SidebarMenu>
             )}
-
-
           </SidebarContent>
 
           {/* ===== FOOTER ===== */}
@@ -658,7 +875,9 @@ function DashboardLayoutContent({
                       <p className="text-sm font-medium truncate leading-none">
                         {user?.name || "-"}
                       </p>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${badge.className}`}>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full ${badge.className}`}
+                      >
                         {badge.label}
                       </span>
                     </div>
@@ -671,11 +890,11 @@ function DashboardLayoutContent({
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem
                   onClick={() => {
-                    if (consultorRole === 'mentor') {
+                    if (consultorRole === "mentor") {
                       setLocation("/mentor/configuracoes");
-                    } else if (consultorRole === 'gerente') {
+                    } else if (consultorRole === "gerente") {
                       setLocation("/dashboard/gestor");
-                    } else if (user?.role === 'user') {
+                    } else if (user?.role === "user") {
                       setLocation("/meu-dashboard");
                     } else {
                       setLocation("/dashboard/individual");
