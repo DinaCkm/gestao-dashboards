@@ -206,6 +206,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: Home, label: "Boas-Vindas", path: "/boas-vindas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: CalendarDays, label: "Ciclos & Turmas", path: "/dashboard/ciclos-turmas", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: BarChart3, label: "Ranking Geral de Engajamento", path: "/dashboard/ranking-geral-engajamento", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'gerente' },
