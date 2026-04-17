@@ -6139,25 +6139,28 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
 
         // CORREÇÃO: Redirecionar presença para o ID canônico (o que aparece na lista do aluno)
         const allEvents = await db.getWebinarsPendingAttendance(aluno.id);
-        const normalizedInputTitle = eventRecord.title.toLowerCase().trim();
-        const inputDateStr = eventRecord.eventDate ? new Date(eventRecord.eventDate).toISOString().split('T')[0] : 'nodate';
+        const normalizedInputTitle = eventRecord?.title?.toLowerCase()?.trim() || '';
+        const inputDateStr = eventRecord?.eventDate ? new Date(eventRecord.eventDate).toISOString().split('T')[0] : 'nodate';
         
         const canonicalEvent = allEvents.find((e: any) => {
-          const eTitle = e.title.toLowerCase().trim();
+          const eTitle = e.title?.toLowerCase()?.trim() || '';
           const eDateStr = e.eventDate ? new Date(e.eventDate).toISOString().split('T')[0] : 'nodate';
           return eTitle === normalizedInputTitle && eDateStr === inputDateStr;
         });
 
         if (canonicalEvent && canonicalEvent.id !== realEventId) {
-          realEventId = canonicalEvent.id;
-          eventRecord = await db.getEventById(realEventId);
+          const nextEventRecord = await db.getEventById(canonicalEvent.id);
+          if (nextEventRecord) {
+            realEventId = canonicalEvent.id;
+            eventRecord = nextEventRecord;
+          }
         }
 
         // Verificar se é um webinário agendado (tem endDate) - verificar se já iniciou
         const allWebinars = await db.listWebinars();
-        const matchingWebinar = allWebinars.find((w: any) => 
-          w.title?.toLowerCase().trim() === eventRecord.title?.toLowerCase().trim()
-        );
+        const matchingWebinar = eventRecord?.title ? allWebinars.find((w: any) => 
+          w.title?.toLowerCase()?.trim() === eventRecord.title?.toLowerCase()?.trim()
+        ) : null;
         if (matchingWebinar) {
           // Se o webinar já foi marcado como completed, liberar presença independente da data
           if (matchingWebinar.status !== 'completed') {
