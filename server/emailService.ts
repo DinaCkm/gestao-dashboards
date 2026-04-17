@@ -1625,3 +1625,34 @@ Acesse a plataforma: ${data.loginUrl}
 
   return { subject, html, text };
 }
+
+// ============ LEMBRETE DE ACESSO - RANKING GERAL DE ENGAJAMENTO ============
+export function buildLembreteEngajamentoEmail(data: {
+  engajamentoFinal: number;
+}): { subject: string; html: string; text: string } {
+  const percentual = `${Math.round(data.engajamentoFinal)}%`;
+  const subject = "Lembrete de acesso à plataforma";
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; margin: 0; padding: 24px; color: #1f2937;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb;">
+    <tr>
+      <td style="padding: 28px 24px;">
+        <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.7;">
+          Acesse a plataforma <a href="http://ecolider.ecodobem.com" style="color: #1d4ed8; text-decoration: none;">http://ecolider.ecodobem.com</a> e acompanhe sua performance.
+        </p>
+        <p style="margin: 0; font-size: 15px; line-height: 1.7;">
+          Segue seu engajamento: <strong>${percentual}</strong>
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Acesse a plataforma http://ecolider.ecodobem.com e acompanhe sua performance.\n\nSegue seu engajamento: **${percentual}**`;
+
+  return { subject, html, text };
+}

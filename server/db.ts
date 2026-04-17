@@ -977,7 +977,7 @@ export async function getEventsByProgram(programId: number): Promise<Event[]> {
 export async function getEventsByProgramOrGlobal(programId: number): Promise<Event[]> {
   const db = await getDb();
   if (!db) return [];
-  const allEvts = await db.select().from(events).where(
+  const allEvtsRaw = await db.select().from(events).where(
     or(eq(events.programId, programId), isNull(events.programId))
   );
 
@@ -988,17 +988,42 @@ export async function getEventsByProgramOrGlobal(programId: number): Promise<Eve
       eq(scheduledWebinars.status, 'completed')
     )
   );
+  const activeScheduledIds = new Set(allScheduledWebinars.map(w => w.id));
+  const linkedWebinarId = (externalId?: string | null): number | null => {
+    if (!externalId) return null;
+    const match = externalId.match(/^sw-(\d+)$/);
+    return match ? Number(match[1]) : null;
+  };
+
+  // Remover eventos órfãos (sw-<id> sem webinar válido)
+  const allEvts = allEvtsRaw.filter(evt => {
+    const swId = linkedWebinarId(evt.externalId);
+    if (!swId) return true;
+    return activeScheduledIds.has(swId);
+  });
 
   // Deduplicar eventos por título normalizado (evita duplicados como 4x "2025/19 Estrutura e Conceitos")
   const normTitle = (t: string | null): string => {
     if (!t) return '';
-    return t.toLowerCase().trim()
+    const withoutSpeakerSuffix = t
+      .trim()
+      .replace(
+        /(?:,\s*|\s+-\s+)?com\s+(?:(?:a|o)\s+(?:palestrante|professor(?:a)?|mentor(?:a)?)\s+)?[A-ZÀ-Ý][\p{L}'’.\-]+(?:\s+[A-ZÀ-Ý][\p{L}'’.\-]+){0,6}\.?\s*$/u,
+        ''
+      );
+    return withoutSpeakerSuffix
+      .toLowerCase()
       .replace(/[\u2013\u2014]/g, '-')
       .replace(/\s+/g, ' ')
       .replace(/\s*-\s*/g, ' - ')
+      .replace(/[.,;:!?]+$/g, '')
       .trim();
   };
-  const coreTitle = (n: string): string => n.replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '').trim();
+  const coreTitle = (n: string): string => n
+    .replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '')
+    .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   // Criar set de títulos normalizados dos eventos existentes para detectar duplicatas
   const existingCoreKeys = new Set<string>();
@@ -1038,13 +1063,24 @@ export async function getEventsByProgramOrGlobal(programId: number): Promise<Eve
   // Deduplicar por core title + data (para não juntar aulas diferentes do mesmo tema em datas diferentes)
   const seen = new Map<string, Event>();
   const deduped: Event[] = [];
+  const scoreEvent = (evt: Event): number => {
+    const swId = linkedWebinarId(evt.externalId);
+    const linkedToActiveWebinar = swId && activeScheduledIds.has(swId) ? 1 : 0;
+    const hasVideo = evt.videoLink ? 1 : 0;
+    return linkedToActiveWebinar * 100 + hasVideo * 10 + evt.id;
+  };
   for (const evt of combined) {
     const core = coreTitle(normTitle(evt.title));
     const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
     const dedupKey = `${core}|${dateStr}`;
-    if (!seen.has(dedupKey)) {
+    const existing = seen.get(dedupKey);
+    if (!existing) {
       seen.set(dedupKey, evt);
       deduped.push(evt);
+    } else if (scoreEvent(evt) > scoreEvent(existing)) {
+      const idx = deduped.findIndex(d => d.id === existing.id);
+      if (idx >= 0) deduped[idx] = evt;
+      seen.set(dedupKey, evt);
     }
   }
   return deduped;
@@ -3737,10 +3773,17 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
   // DEDUPLICAR eventos por título normalizado (mesma lógica de getWebinarsPendingAttendance)
   const normalizeTitleDedup = (title: string | null): string => {
     if (!title) return '';
-    return title.toLowerCase().trim()
+    const withoutSpeakerSuffix = title
+      .trim()
+      .replace(
+        /(?:,\s*|\s+-\s+)?com\s+(?:(?:a|o)\s+(?:palestrante|professor(?:a)?|mentor(?:a)?)\s+)?[A-ZÀ-Ý][\p{L}'’.\-]+(?:\s+[A-ZÀ-Ý][\p{L}'’.\-]+){0,6}\.?\s*$/u,
+        ''
+      );
+    return withoutSpeakerSuffix.toLowerCase()
       .replace(/[\u2013\u2014]/g, '-')
       .replace(/\s+/g, ' ')
       .replace(/\s*-\s*/g, ' - ')
+      .replace(/[.,;:!?]+$/g, '')
       .trim();
   };
   const extractCoreDedup = (normalized: string): string => {
@@ -3749,6 +3792,13 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
       .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')  // Remove "- 01 -" no meio do título
       .replace(/\s+/g, ' ')
       .trim();
+  };
+  const scoreDedupEvent = (evt: Event): number => {
+    const hasParticipation = participationMap.has(evt.id) ? 1 : 0;
+    const linkedWebinar = evt.externalId?.startsWith('sw-') ? 1 : 0;
+    const hasVideo = evt.videoLink ? 1 : 0;
+    const recency = evt.createdAt ? new Date(evt.createdAt).getTime() : 0;
+    return linkedWebinar * 1000000 + hasVideo * 100000 + hasParticipation * 10000 + recency + evt.id;
   };
   const seenCoresDedup = new Map<string, Event>();
   const deduplicatedProgramEvents: Event[] = [];
@@ -3761,10 +3811,8 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
       seenCoresDedup.set(dedupKey, evt);
       deduplicatedProgramEvents.push(evt);
     } else {
-      // Preferir o evento que tem participação
-      const existingPart = participationMap.get(existing.id);
-      const currentPart = participationMap.get(evt.id);
-      if (!existingPart && currentPart) {
+      // Priorizar: vinculado a webinar, com vídeo, com participação e mais recente
+      if (scoreDedupEvent(evt) > scoreDedupEvent(existing)) {
         const idx = deduplicatedProgramEvents.indexOf(existing);
         if (idx >= 0) deduplicatedProgramEvents[idx] = evt;
         seenCoresDedup.set(dedupKey, evt);
@@ -4991,6 +5039,13 @@ export async function updateWebinar(id: number, data: Partial<InsertScheduledWeb
 export async function deleteWebinar(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
+  // Limpar eventos e participações vinculados ao webinar para evitar órfãos
+  const linkedEvents = await db.select().from(events).where(eq(events.externalId, `sw-${id}`));
+  if (linkedEvents.length > 0) {
+    const linkedEventIds = linkedEvents.map(e => e.id);
+    await db.delete(eventParticipation).where(inArray(eventParticipation.eventId, linkedEventIds));
+    await db.delete(events).where(inArray(events.id, linkedEventIds));
+  }
   await db.delete(scheduledWebinars).where(eq(scheduledWebinars.id, id));
 }
 
@@ -5243,7 +5298,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
   // Buscar todos os eventos do programa do aluno
   // Se o aluno tem programId, buscar eventos do programa OU eventos sem programa (programId NULL)
   // Se o aluno não tem programId, buscar todos os eventos
-  const dbEvents = aluno.programId
+  const dbEventsRaw = aluno.programId
     ? await db.select().from(events).where(
         or(eq(events.programId, aluno.programId), isNull(events.programId))
       )
@@ -5258,6 +5313,18 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
 
   // Buscar webinars agendados para verificar endDate e youtubeLink
   const allScheduledWebinars = await db.select().from(scheduledWebinars);
+  const allScheduledIds = new Set(allScheduledWebinars.map(w => w.id));
+  const linkedWebinarId = (externalId?: string | null): number | null => {
+    if (!externalId) return null;
+    const match = externalId.match(/^sw-(\d+)$/);
+    return match ? Number(match[1]) : null;
+  };
+  // Excluir eventos órfãos vinculados a webinars removidos
+  const dbEvents = dbEventsRaw.filter(evt => {
+    const swId = linkedWebinarId(evt.externalId);
+    if (!swId) return true;
+    return allScheduledIds.has(swId);
+  });
 
   // CORREÇÃO: Incluir scheduled_webinars (published/completed) que NÃO existem na tabela events
   // Isso garante que webinars agendados pelo admin apareçam para o aluno mesmo antes do upload de planilha
@@ -5305,11 +5372,15 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
   const normalizeTitle = (title: string | null): string => {
     if (!title) return '';
     return title
+      .replace(
+        /(?:,\s*|\s+-\s+)?com\s+(?:(?:a|o)\s+(?:palestrante|professor(?:a)?|mentor(?:a)?)\s+)?[A-ZÀ-Ý][\p{L}'’.\-]+(?:\s+[A-ZÀ-Ý][\p{L}'’.\-]+){0,6}\.?\s*$/u,
+        ''
+      )
       .toLowerCase()
-      .trim()
       .replace(/[\u2013\u2014]/g, '-')  // Converter em-dash e en-dash para hífen
       .replace(/\s+/g, ' ')             // Normalizar espaços múltiplos
       .replace(/\s*-\s*/g, ' - ')       // Normalizar espaços ao redor de hífens
+      .replace(/[.,;:!?]+$/g, '')       // Remover pontuação final variável
       .trim();
   };
   // Criar mapa com título normalizado
@@ -5336,6 +5407,16 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       .replace(/\s+/g, ' ')
       .trim();
   };
+  const scoreAlunoEvent = (evt: typeof allEvents[0]): number => {
+    const part = participationMap.get(evt.id);
+    const swId = linkedWebinarId(evt.externalId);
+    const linkedToActiveWebinar = !!swId && allScheduledIds.has(swId) ? 1 : 0;
+    const hasVideo = evt.videoLink ? 1 : 0;
+    const hasParticipation = part ? 1 : 0;
+    const isPresent = part?.status === 'presente' ? 1 : 0;
+    const recency = evt.createdAt ? new Date(evt.createdAt).getTime() : 0;
+    return linkedToActiveWebinar * 1000000 + hasVideo * 100000 + hasParticipation * 10000 + isPresent * 1000 + recency + evt.id;
+  };
 
   // DEDUPLICAR eventos por título normalizado + data (manter o que tem participação, ou o primeiro)
   const seenCores = new Map<string, typeof allEvents[0]>();
@@ -5349,21 +5430,16 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       seenCores.set(dedupKey, evt);
       deduplicatedEvents.push(evt);
     } else {
-      // Se o evento atual tem participação e o existente não, substituir
-      const existingPart = participationMap.get(existing.id);
-      const currentPart = participationMap.get(evt.id);
-      if (!existingPart && currentPart) {
-        // Substituir: remover o antigo e adicionar o novo
+      if (scoreAlunoEvent(evt) > scoreAlunoEvent(existing)) {
         const idx = deduplicatedEvents.indexOf(existing);
         if (idx >= 0) deduplicatedEvents[idx] = evt;
         seenCores.set(dedupKey, evt);
       }
-      // Se ambos têm ou ambos não têm participação, manter o primeiro (já está no array)
     }
   }
 
-  // Retornar TODOS os eventos (deduplicados) com status de presença
-  return deduplicatedEvents.map(evt => {
+  // Mapear eventos para payload final com status de presença
+  const mappedEvents = deduplicatedEvents.map(evt => {
     const part = participationMap.get(evt.id);
     // Tentar match exato normalizado primeiro, depois match parcial sem prefixo
     const normalizedEvtTitle = normalizeTitle(evt.title);
@@ -5423,7 +5499,41 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       hasEnded,
       dentroDoMacrociclo,
     };
-  }).sort((a, b) => {
+  });
+
+  // Deduplicação final:
+  // 1) Se o evento está vinculado a um scheduled_webinar, usar esse vínculo como chave (elimina "fantasma" com mesmo webinar)
+  // 2) Senão, fallback por título-base + data
+  const sourceEventById = new Map(allEvents.map(evt => [evt.id, evt]));
+  const finalByKey = new Map<string, typeof mappedEvents[0]>();
+  const scoreFinal = (item: typeof mappedEvents[0]): number => {
+    const isLinkedToActiveWebinar = !!item.scheduledWebinarId && allScheduledIds.has(item.scheduledWebinarId) ? 1 : 0;
+    const hasParticipation = participationMap.has(item.eventId) ? 1 : 0;
+    const isPresent = item.status === 'presente' ? 1 : 0;
+    const hasVideo = item.videoLink ? 1 : 0;
+    const sourceEvent = sourceEventById.get(item.eventId);
+    const recency = sourceEvent?.createdAt ? new Date(sourceEvent.createdAt).getTime() : 0;
+    return isLinkedToActiveWebinar * 1000000 + hasVideo * 100000 + hasParticipation * 10000 + isPresent * 1000 + recency + item.eventId;
+  };
+
+  for (const item of mappedEvents) {
+    const dateStr = item.eventDate ? new Date(item.eventDate).toISOString().split('T')[0] : 'nodate';
+    const fallbackCore = extractCore(normalizeTitle(item.title));
+    const dedupKey = item.scheduledWebinarId
+      ? `sw-${item.scheduledWebinarId}`
+      : `${fallbackCore}|${dateStr}`;
+
+    const existing = finalByKey.get(dedupKey);
+    if (!existing) {
+      finalByKey.set(dedupKey, item);
+      continue;
+    }
+    if (scoreFinal(item) > scoreFinal(existing)) {
+      finalByKey.set(dedupKey, item);
+    }
+  }
+
+  return Array.from(finalByKey.values()).sort((a, b) => {
     // Ordenar por data decrescente (mais recentes primeiro)
     const dateA = a.eventDate ? new Date(a.eventDate).getTime() : 0;
     const dateB = b.eventDate ? new Date(b.eventDate).getTime() : 0;

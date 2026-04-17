@@ -32,6 +32,7 @@ import DashboardAluno from "./pages/DashboardAluno";
 import Performance from "./pages/Performance";
 import RegistroMentoria from "./pages/RegistroMentoria";
 import DashboardGestor from "./pages/DashboardGestor";
+import RankingGeralEngajamento from "./pages/RankingGeralEngajamento";
 import DashboardMeuPerfil from "./pages/DashboardMeuPerfil";
 import Assessment from "./pages/Assessment";
 import NovoAssessment from "./pages/NovoAssessment";
@@ -106,6 +107,7 @@ function Router() {
       <Route path={"/portal-aluno"} component={DashboardMeuPerfil} />
       <Route path={"/registro-mentoria"} component={RegistroMentoria} />
       <Route path={"/dashboard/gestor"} component={DashboardGestor} />
+      <Route path={"/dashboard/ranking-geral-engajamento"} component={RankingGeralEngajamento} />
       <Route path={"/assessment"} component={Assessment} />
       <Route path={"/assessment/novo/:alunoId"} component={NovoAssessment} />
       <Route path={"/tutoriais"} component={Tutoriais} />
