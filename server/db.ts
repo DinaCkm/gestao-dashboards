@@ -5475,16 +5475,23 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
     const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
     const dedupKey = `${core}|${dateStr}`;
     
-    // CORREÇÃO: Buscar participação em QUALQUER um dos IDs que foram deduplicados para este evento
-    const allRelatedIds = coreToAllIds.get(dedupKey) || [evt.id];
+    // CORREÇÃO DEFINITIVA: Buscar participação em QUALQUER evento que tenha o mesmo título base e data
+    // Isso resolve o caso onde a presença foi marcada em um ID (ex: Aula 04) mas a listagem exibe outro (ex: Aula 05)
     let part = participationMap.get(evt.id);
     
     if (!part || part.status !== 'presente') {
-      for (const relatedId of allRelatedIds) {
-        const relatedPart = participationMap.get(relatedId);
-        if (relatedPart && relatedPart.status === 'presente') {
-          part = relatedPart;
-          break;
+      // Procurar em todas as participações do aluno por um título e data compatíveis
+      for (const [pEventId, pRecord] of participationMap.entries()) {
+        if (pRecord.status === 'presente') {
+          const pEvent = allEvents.find(e => e.id === pEventId);
+          if (pEvent) {
+            const pCore = extractCore(normalizeTitle(pEvent.title));
+            const pDateStr = pEvent.eventDate ? new Date(pEvent.eventDate).toISOString().split('T')[0] : 'nodate';
+            if (pCore === core && pDateStr === dateStr) {
+              part = pRecord;
+              break;
+            }
+          }
         }
       }
     }
