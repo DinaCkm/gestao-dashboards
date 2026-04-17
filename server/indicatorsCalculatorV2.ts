@@ -236,16 +236,20 @@ function eventScore(evento: EventRecord): number {
 function deduplicarEventosParaIndicador(eventos: EventRecord[]): EventRecord[] {
   const grupos = new Map<string, EventRecord>();
 
-  for (const [index, evento] of eventos.entries()) {
+  for (const evento of eventos) {
     const baseTitle = normalizeEventTitleBase(evento.tituloEvento);
-    const dateKey = eventDateKey(evento.dataEvento);
-    // Sem data confiável, não deduplicar automaticamente para evitar perda de registros legítimos.
-    const key = dateKey === 'sem-data'
-      ? `sem-data|${baseTitle || 'sem-titulo'}|${index}`
-      : `${dateKey}|${baseTitle || 'sem-titulo'}`;
+    // CORREÇÃO DEFINITIVA: Deduplicar apenas pelo título base para eliminar fantasmas.
+    // Se o título for o mesmo, tratamos como o mesmo evento para o indicador.
+    const key = baseTitle || 'sem-titulo';
     const atual = grupos.get(key);
 
     if (!atual) {
+      grupos.set(key, evento);
+      continue;
+    }
+
+    // Se qualquer um dos duplicados tiver presença, o registro unificado deve ter presença.
+    if (evento.presenca === 'presente' && atual.presenca !== 'presente') {
       grupos.set(key, evento);
       continue;
     }
