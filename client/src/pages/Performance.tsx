@@ -31,6 +31,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DualIndicators from "@/components/DualIndicators";
+import { TaskSubmissionForm } from "@/components/tasks/TaskSubmissionForm";
 import { lazy, Suspense } from "react";
 const RelatorioAutoconhecimentoTab = lazy(() => import("./TesteDiscOnboarding").then(m => ({ default: m.default })));
 
@@ -2367,7 +2368,7 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
 
                           {/* Dialog de envio de link para a sessão */}
                           <Dialog open={taskDetailOpen === sessao.id} onOpenChange={(open) => { if (!open) setTimeout(() => setTaskDetailOpen(null), 100); }}>
-                            <DialogContent className="max-w-lg">
+                            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                               <DialogHeader>
                                 <DialogTitle className="text-gray-900 flex items-center gap-2">
                                   <Link2 className="h-5 w-5 text-[#F5991F]" />
@@ -2377,167 +2378,15 @@ const handleEvidenceSubmit = async (sessionId: number): Promise<boolean> => {
                                   {sessao.sessionDate ? formatDateCustomSafe(sessao.sessionDate, { day: "2-digit", month: "long", year: "numeric" }) : ""}
                                 </DialogDescription>
                               </DialogHeader>
-
-                              <div className="space-y-4">
-                                {/* Instrução de compartilhamento na nuvem */}
-                                <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-                                  <p className="text-xs font-semibold text-blue-900 mb-1 flex items-center gap-2">
-                                    <Cloud className="h-4 w-4" /> Instruções de envio
-                                  </p>
-                                  <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
-                                    <li>Salve sua atividade na nuvem (Google Drive, OneDrive, Dropbox, etc.)</li>
-                                    <li>Compartilhe o arquivo com o e-mail do(a) seu(sua) mentor(a){aluno.mentorEmail ? `: ` : ''}
-                                      {aluno.mentorEmail && <strong className="text-blue-900">{aluno.mentorEmail}</strong>}
-                                    </li>
-                                    <li>Copie o link de compartilhamento e cole no campo abaixo</li>
-                                  </ol>
-                                </div>
-
-                                {/* Campo de link */}
-                                <div className="space-y-2">
-                                  <Label className="text-xs text-gray-700 flex items-center gap-1">
-  <Link2 className="h-3 w-3" /> Link do arquivo na nuvem (opcional)
-</Label>
-<Input
-  type="url"
-  placeholder="Cole um link completo, por exemplo: https://drive.google.com/... Se for enviar só a imagem, deixe em branco."
-                                    value={evidenceLink[sessao.id] || ''}
-                                    onChange={(e) => setEvidenceLink(prev => ({ ...prev, [sessao.id]: e.target.value }))}
-                                    className="text-sm"
-                                  />
-                                </div>
-
-                                {/* Campo de imagem opcional */}
-                                <div className="space-y-2">
-                                  <Label className="text-xs text-gray-700">Imagem de evidência (opcional, máx 5MB: JPG, PNG, WebP)</Label>
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        const input = document.createElement('input');
-                                        input.type = 'file';
-                                        input.accept = 'image/jpeg,image/png,image/webp';
-                                        input.onchange = (e: any) => {
-                                          const file = e.target.files?.[0];
-                                          if (file) {
-                                            if (file.size > 5 * 1024 * 1024) {
-                                              alert('Imagem deve ter no máximo 5MB');
-                                              return;
-                                            }
-                                            setEvidenceFile(prev => ({ ...prev, [sessao.id]: file }));
-                                          }
-                                        };
-                                        input.click();
-                                      }}
-                                      className="text-xs"
-                                    >
-                                      <Paperclip className="h-3 w-3 mr-1" /> Anexar Imagem
-                                    </Button>
-                                    {evidenceFile[sessao.id] && (
-                                      <span className="text-xs text-gray-600 flex items-center gap-1">
-                                        <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                                        {evidenceFile[sessao.id]!.name}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Relato opcional */}
-                                <div className="space-y-2">
-                                  <Label className="text-xs text-gray-700">Relato (opcional)</Label>
-                                  <Textarea
-                                    placeholder="Descreva como foi a realização desta atividade..."
-                                    value={relatoText[sessao.id] || ''}
-                                    onChange={(e) => setRelatoText(prev => ({ ...prev, [sessao.id]: e.target.value }))}
-                                    className="text-sm min-h-[60px] overflow-auto"
-                                  />
-                                </div>
-
-                                {/* Aplicabilidade Prática - obrigatório a partir de 01/04/2026 */}
-                                <div className="space-y-3 border-t pt-3 mt-2">
-                                  <div className="flex items-center gap-2">
-                                    <Target className="h-4 w-4 text-amber-600" />
-                                    <Label className="text-xs font-semibold text-gray-800">Aplicabilidade Prática</Label>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="text-xs text-gray-700">Como você aplicou na prática o que aprendeu nesta tarefa? <span className="text-red-500">*</span></Label>
-                                    <Textarea
-                                      placeholder="Descreva uma situação real em que você aplicou o conhecimento desta tarefa no seu dia a dia..."
-                                      value={aplicabilidadeText[sessao.id] || ''}
-                                      onChange={(e) => setAplicabilidadeText(prev => ({ ...prev, [sessao.id]: e.target.value }))}
-                                      className="text-sm min-h-[80px] overflow-auto"
-                                      maxLength={500}
-                                    />
-                                    <p className="text-xs text-gray-400 text-right">{(aplicabilidadeText[sessao.id] || '').length}/500</p>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="text-xs text-gray-700">De 0 a 10, o quanto esta tarefa ampliou seu conhecimento ou habilidade prática? <span className="text-red-500">*</span></Label>
-                                    <div className="flex gap-1 flex-wrap">
-                                      {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
-                                        <Button
-                                          key={n}
-                                          type="button"
-                                          variant={aplicabilidadeNota[sessao.id] === n ? 'default' : 'outline'}
-                                          size="sm"
-                                          className={`w-9 h-9 text-xs ${aplicabilidadeNota[sessao.id] === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
-                                          onClick={() => setAplicabilidadeNota(prev => ({ ...prev, [sessao.id]: n }))}
-                                        >
-                                          {n}
-                                        </Button>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Botão de envio */}
-                                <Button
-                                  onClick={async () => {
-                                    if (!aplicabilidadeText[sessao.id]?.trim()) {
-                                      toast.error('Preencha o campo de aplicabilidade prática');
-                                      return;
-                                    }
-                                    if (aplicabilidadeNota[sessao.id] === undefined) {
-                                      toast.error('Selecione uma nota de 0 a 10 para a aplicabilidade prática');
-                                      return;
-                                    }
-                                    const rawLink = (evidenceLink[sessao.id] || '').trim();
-if (rawLink) {
-  try {
-    new URL(rawLink);
-  } catch {
-    toast.error("Cole um link válido, começando com https://, ou deixe esse campo em branco se for enviar só a imagem.");
-    return;
-  }
-}
-                                    
-                                    if (relatoText[sessao.id]) {
-                                      await submitRelato.mutateAsync({ sessionId: sessao.id, relatoAluno: relatoText[sessao.id] });
-                                    }
-                                    await submitAplicabilidade.mutateAsync({
-                                      sessionId: sessao.id,
-                                      textoAplicabilidade: aplicabilidadeText[sessao.id],
-                                      notaAlunoAplicabilidade: aplicabilidadeNota[sessao.id],
-                                    });
-                                    const evidenceSent = await handleEvidenceSubmit(sessao.id);
-if (!evidenceSent) return;
-toast.success('Atividade enviada com sucesso!');
-                                    setTimeout(() => setTaskDetailOpen(null), 100);
-                                  }}
-                                  disabled={(!evidenceLink[sessao.id] && !evidenceFile[sessao.id]) || submitEvidence.isPending || !aplicabilidadeText[sessao.id]?.trim() || aplicabilidadeNota[sessao.id] === undefined}
-                                  className="w-full bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
-                                >
-                                  <Send className="h-4 w-4 mr-2" />
-                                  {submitEvidence.isPending ? 'Enviando...' : 'Enviar Atividade'}
-                                </Button>
-                                {submitEvidence.isError && (
-  <p className="text-xs text-red-600">
-    {submitEvidence.error?.message?.includes("Invalid URL")
-      ? "Cole um link válido, começando com https://, ou deixe o campo em branco se for enviar apenas a imagem."
-      : "Não foi possível enviar agora. Revise os campos e tente novamente."}
-  </p>
-)}
-                              </div>
+                              <TaskSubmissionForm
+                                submitLabel="Enviar atividade"
+                                isSubmitting={submitEvidence.isPending}
+                                submitError={submitEvidence.error?.message}
+                                onSubmit={async (payload) => {
+                                  await submitEvidence.mutateAsync({ sessionId: sessao.id, ...payload });
+                                }}
+                                onSuccess={() => setTimeout(() => setTaskDetailOpen(null), 100)}
+                              />
                             </DialogContent>
                           </Dialog>
                         </div>
@@ -2698,149 +2547,15 @@ toast.success('Atividade enviada com sucesso!');
 
                                 {/* Se PENDENTE: formulário de envio */}
                                 {task.taskStatus === 'nao_entregue' && (
-                                  <div className="space-y-3 p-4 rounded-lg bg-amber-50/50 border border-amber-200">
-                                    <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                                      <Upload className="h-4 w-4 text-[#F5991F]" /> Enviar Evidência
-                                    </h4>
-                                    <div className="space-y-2">
-                                      <Label className="text-xs text-gray-700 flex items-center gap-1">
-  <Link2 className="h-3 w-3" /> Link do arquivo na nuvem (opcional)
-</Label>
-<Input
-  type="url"
-  placeholder="Cole um link completo, por exemplo: https://drive.google.com/... Se for enviar só a imagem, deixe em branco."
-                                        value={evidenceLink[task.sessionId] || ''}
-                                        onChange={(e) => setEvidenceLink(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
-                                        className="text-sm"
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-xs text-gray-700">Imagem (opcional, máx 5MB: JPG, PNG, WebP)</Label>
-                                      <div className="flex items-center gap-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => {
-                                            const input = document.createElement('input');
-                                            input.type = 'file';
-                                            input.accept = 'image/jpeg,image/png,image/webp';
-                                            input.onchange = (e: any) => {
-                                              const file = e.target.files?.[0];
-                                              if (file) {
-                                                if (file.size > 5 * 1024 * 1024) {
-                                                  alert('Imagem deve ter no máximo 5MB');
-                                                  return;
-                                                }
-                                                setEvidenceFile(prev => ({ ...prev, [task.sessionId]: file }));
-                                              }
-                                            };
-                                            input.click();
-                                          }}
-                                          className="text-xs"
-                                        >
-                                          <Paperclip className="h-3 w-3 mr-1" /> Anexar Imagem
-                                        </Button>
-                                        {evidenceFile[task.sessionId] && (
-                                          <span className="text-xs text-gray-600 flex items-center gap-1">
-                                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                                            {evidenceFile[task.sessionId]!.name}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-xs text-gray-700">Relato (opcional)</Label>
-                                      <Textarea
-                                        placeholder="Descreva como foi a realização desta tarefa..."
-                                        value={relatoText[task.sessionId] || ''}
-                                        onChange={(e) => setRelatoText(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
-                                        className="text-sm min-h-[60px]"
-                                      />
-                                    </div>
-
-                                    {/* Aplicabilidade Prática - obrigatório */}
-                                    <div className="space-y-3 border-t pt-3 mt-2">
-                                      <div className="flex items-center gap-2">
-                                        <Target className="h-4 w-4 text-amber-600" />
-                                        <Label className="text-xs font-semibold text-gray-800">Aplicabilidade Prática</Label>
-                                      </div>
-                                      <div className="space-y-2">
-                                        <Label className="text-xs text-gray-700">Como você aplicou na prática o que aprendeu nesta tarefa? <span className="text-red-500">*</span></Label>
-                                        <Textarea
-                                          placeholder="Descreva uma situação real em que você aplicou o conhecimento desta tarefa no seu dia a dia..."
-                                          value={aplicabilidadeText[task.sessionId] || ''}
-                                          onChange={(e) => setAplicabilidadeText(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
-                                          className="text-sm min-h-[80px]"
-                                          maxLength={500}
-                                        />
-                                        <p className="text-xs text-gray-400 text-right">{(aplicabilidadeText[task.sessionId] || '').length}/500</p>
-                                      </div>
-                                      <div className="space-y-2">
-                                        <Label className="text-xs text-gray-700">De 0 a 10, o quanto esta tarefa ampliou seu conhecimento ou habilidade prática? <span className="text-red-500">*</span></Label>
-                                        <div className="flex gap-1 flex-wrap">
-                                          {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
-                                            <Button
-                                              key={n}
-                                              type="button"
-                                              variant={aplicabilidadeNota[task.sessionId] === n ? 'default' : 'outline'}
-                                              size="sm"
-                                              className={`w-9 h-9 text-xs ${aplicabilidadeNota[task.sessionId] === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
-                                              onClick={() => setAplicabilidadeNota(prev => ({ ...prev, [task.sessionId]: n }))}
-                                            >
-                                              {n}
-                                            </Button>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <Button
-                                      onClick={async () => {
-                                        if (!aplicabilidadeText[task.sessionId]?.trim()) {
-                                          toast.error('Preencha o campo de aplicabilidade prática');
-                                          return;
-                                        }
-                                        if (aplicabilidadeNota[task.sessionId] === undefined) {
-                                          toast.error('Selecione uma nota de 0 a 10 para a aplicabilidade prática');
-                                          return;
-                                        }
-
-const rawLink = (evidenceLink[task.sessionId] || '').trim();
-if (rawLink) {
-  try {
-    new URL(rawLink);
-  } catch {
-    toast.error("Cole um link válido, começando com https://, ou deixe esse campo em branco se for enviar só a imagem.");
-    return;
-  }
-}
-                                        
-                                        if (relatoText[task.sessionId]) {
-                                          await submitRelato.mutateAsync({ sessionId: task.sessionId, relatoAluno: relatoText[task.sessionId] });
-                                        }
-                                        await submitAplicabilidade.mutateAsync({
-                                          sessionId: task.sessionId,
-                                          textoAplicabilidade: aplicabilidadeText[task.sessionId],
-                                          notaAlunoAplicabilidade: aplicabilidadeNota[task.sessionId],
-                                        });
-                                        const evidenceSent = await handleEvidenceSubmit(task.sessionId);
-if (!evidenceSent) return;
-toast.success('Evidência enviada com sucesso!');
-                                      }}
-                                      disabled={(!evidenceLink[task.sessionId] && !evidenceFile[task.sessionId]) || submitEvidence.isPending || !aplicabilidadeText[task.sessionId]?.trim() || aplicabilidadeNota[task.sessionId] === undefined}
-                                      className="w-full bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
-                                    >
-                                      <Send className="h-4 w-4 mr-2" />
-                                      {submitEvidence.isPending ? 'Enviando...' : 'Enviar Evidência'}
-                                    </Button>
-                                   {submitEvidence.isError && (
-  <p className="text-xs text-red-600">
-    {submitEvidence.error?.message?.includes("Invalid URL")
-      ? "Cole um link válido, começando com https://, ou deixe o campo em branco se for enviar apenas a imagem."
-      : "Não foi possível enviar agora. Revise os campos e tente novamente."}
-  </p>
-)}
-                                  </div>
+                                  <TaskSubmissionForm
+                                    submitLabel="Enviar evidência"
+                                    isSubmitting={submitEvidence.isPending}
+                                    submitError={submitEvidence.error?.message}
+                                    onSubmit={async (payload) => {
+                                      await submitEvidence.mutateAsync({ sessionId: task.sessionId, ...payload });
+                                    }}
+                                    successMessage="Evidência enviada com sucesso!"
+                                  />
                                 )}
 
                                 {/* Se ENTREGUE ou VALIDADA: mostrar evidência enviada */}

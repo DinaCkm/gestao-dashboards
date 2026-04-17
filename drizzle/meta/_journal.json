@@ -540,6 +540,13 @@
       "when": 1775672442033,
       "tag": "0076_activity_time_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "5",
+      "when": 1776456873280,
+      "tag": "0077_submission_type",
+      "breakpoints": true
     }
   ]
 }

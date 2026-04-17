@@ -237,6 +237,7 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   evidenceLink: varchar("evidenceLink", { length: 1000 }), // URL da evidência
   evidenceImageUrl: text("evidenceImageUrl"), // URL da imagem no S3
   evidenceImageKey: varchar("evidenceImageKey", { length: 512 }), // Key da imagem no S3
+  submissionType: mysqlEnum("submissionType", ["tarefa", "atualizacao_projeto"]),
   submittedAt: timestamp("submittedAt"), // Data/hora que o aluno enviou a evidência
   // Campos de validação (mentor valida a entrega)
   validatedBy: int("validatedBy"), // ID do consultor/mentor que validou
