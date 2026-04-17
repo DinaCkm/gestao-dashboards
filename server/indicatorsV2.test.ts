@@ -156,6 +156,27 @@ describe('calcularIndicadoresAluno', () => {
       expect(resultComMacro.consolidado.detalhes.webinars.presentes).toBe(2);
     });
 
+    it('deve deduplicar webinars com variação de sufixo "com Nome" no mesmo dia', () => {
+      const eventos = [
+        mkEvento({
+          tituloEvento: '2026/07 - Aula 01 - Relações Intergeracionais na Prática: Pensando Diferente… Juntos”.',
+          dataEvento: new Date('2026-04-15T10:00:00Z'),
+          presenca: 'presente',
+        }),
+        mkEvento({
+          tituloEvento: '2026/07 - Aula 01 - Relações Intergeracionais na Prática: Pensando Diferente… Juntos”, com Cíntia Gandarely.',
+          dataEvento: new Date('2026-04-15T20:00:00Z'),
+          presenca: 'ausente',
+        }),
+      ];
+      const ciclos = [mkCiclo({ dataInicio: '2026-01-01', dataFim: '2026-12-31' })];
+      const result = calcularIndicadoresAluno('aluno1', [], eventos, [], ciclos, emptyMap, []);
+
+      expect(result.consolidado.detalhes.webinars.total).toBe(1);
+      expect(result.consolidado.detalhes.webinars.presentes).toBe(1);
+      expect(result.consolidado.ind1_webinars).toBe(100);
+    });
+
     it('deve contar corretamente webinars em ciclos diferentes', () => {
       const eventos = [
         mkEvento({ presenca: 'presente', dataEvento: new Date('2024-03-15') }), // ciclo 1

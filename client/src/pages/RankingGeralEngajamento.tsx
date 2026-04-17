@@ -128,7 +128,15 @@ export default function RankingGeralEngajamento() {
 
   const enviarLembrete = trpc.indicadores.enviarLembreteEngajamento.useMutation(
     {
-      onSuccess: () => toast.success("Lembrete enviado com sucesso."),
+      onSuccess: result => {
+        if (result?.emailEnabled === false) {
+          toast.warning(
+            "Envio de e-mail desativado no ambiente. Lembrete registrado sem envio."
+          );
+          return;
+        }
+        toast.success("Lembrete enviado com sucesso.");
+      },
       onError: err => toast.error(err.message || "Falha ao enviar lembrete."),
     }
   );
@@ -253,8 +261,8 @@ export default function RankingGeralEngajamento() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto rounded-md border">
-                  <Table>
+                <div className="overflow-x-scroll rounded-md border">
+                  <Table className="min-w-[1200px] whitespace-nowrap">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Posição</TableHead>

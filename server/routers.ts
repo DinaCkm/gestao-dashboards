@@ -2647,10 +2647,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         }
 
         if (!envio.success) {
+          const envioDesativado = (envio.error || '').toLowerCase().includes('temporariamente desativado');
+          if (envioDesativado) {
+            return { success: true, emailEnabled: false };
+          }
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: envio.error || 'Falha ao enviar e-mail.' });
         }
 
-        return { success: true };
+        return { success: true, emailEnabled: true };
       }),
 
     exportarRankingEngajamentoExcel: managerProcedure
