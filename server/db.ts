@@ -1042,9 +1042,38 @@ export async function getEventsByProgramOrGlobal(programId: number): Promise<Eve
     const core = coreTitle(normTitle(evt.title));
     const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
     const dedupKey = `${core}|${dateStr}`;
-    if (!seen.has(dedupKey)) {
+    
+    const existing = seen.get(dedupKey);
+    if (!existing) {
       seen.set(dedupKey, evt);
       deduped.push(evt);
+    } else {
+      // Critério de preferência:
+      // 1. Evento com vídeo (videoLink)
+      // 2. Evento vinculado a webinar ativo (externalId sw-)
+      // 3. Evento mais recente (createdAt)
+      let preferCurrent = false;
+      
+      if (!existing.videoLink && evt.videoLink) {
+        preferCurrent = true;
+      } else if (existing.videoLink === evt.videoLink) {
+        const existingIsSw = existing.externalId?.startsWith('sw-');
+        const currentIsSw = evt.externalId?.startsWith('sw-');
+        
+        if (!existingIsSw && currentIsSw) {
+          preferCurrent = true;
+        } else if (existingIsSw === currentIsSw) {
+          if (evt.createdAt && existing.createdAt && evt.createdAt > existing.createdAt) {
+            preferCurrent = true;
+          }
+        }
+      }
+      
+      if (preferCurrent) {
+        const idx = deduped.indexOf(existing);
+        if (idx >= 0) deduped[idx] = evt;
+        seen.set(dedupKey, evt);
+      }
     }
   }
   return deduped;
@@ -4991,6 +5020,19 @@ export async function updateWebinar(id: number, data: Partial<InsertScheduledWeb
 export async function deleteWebinar(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
+
+  // 1. Buscar eventos vinculados a este webinar (via externalId = sw-<id>)
+  const linkedEvents = await db.select().from(events).where(eq(events.externalId, `sw-${id}`));
+  const eventIds = linkedEvents.map(e => e.id);
+
+  if (eventIds.length > 0) {
+    // 2. Remover participações vinculadas a estes eventos
+    await db.delete(eventParticipation).where(inArray(eventParticipation.eventId, eventIds));
+    // 3. Remover os eventos vinculados
+    await db.delete(events).where(inArray(events.id, eventIds));
+  }
+
+  // 4. Remover o webinar
   await db.delete(scheduledWebinars).where(eq(scheduledWebinars.id, id));
 }
 
@@ -5357,8 +5399,16 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
         const idx = deduplicatedEvents.indexOf(existing);
         if (idx >= 0) deduplicatedEvents[idx] = evt;
         seenCores.set(dedupKey, evt);
+      } else if (!existingPart && !currentPart) {
+        // Se nenhum tem participação, preferir o evento vinculado a webinar válido (externalId sw-)
+        const existingIsSw = existing.externalId?.startsWith('sw-');
+        const currentIsSw = evt.externalId?.startsWith('sw-');
+        if (!existingIsSw && currentIsSw) {
+          const idx = deduplicatedEvents.indexOf(existing);
+          if (idx >= 0) deduplicatedEvents[idx] = evt;
+          seenCores.set(dedupKey, evt);
+        }
       }
-      // Se ambos têm ou ambos não têm participação, manter o primeiro (já está no array)
     }
   }
 
