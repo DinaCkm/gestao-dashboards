@@ -5428,8 +5428,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
 
   for (const evt of allEvents) {
     const core = extractCore(normalizeTitle(evt.title));
-    const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
-    const dedupKey = `${core}|${dateStr}`;
+    const dedupKey = core;
     
     if (!coreToAllIds.has(dedupKey)) coreToAllIds.set(dedupKey, []);
     coreToAllIds.get(dedupKey)!.push(evt.id);
@@ -5472,22 +5471,20 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
   // Mapear eventos para payload final com status de presença
   const mappedEvents = deduplicatedEvents.map(evt => {
     const core = extractCore(normalizeTitle(evt.title));
-    const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
-    const dedupKey = `${core}|${dateStr}`;
+    const dedupKey = core;
     
-    // CORREÇÃO DEFINITIVA: Buscar participação em QUALQUER evento que tenha o mesmo título base e data
-    // Isso resolve o caso onde a presença foi marcada em um ID (ex: Aula 04) mas a listagem exibe outro (ex: Aula 05)
+    // CORREÇÃO DEFINITIVA: Buscar participação em QUALQUER evento que tenha o mesmo título base
+    // Removemos a dependência da data para garantir que a presença marcada na "Aula 04" 
+    // seja assumida por qualquer registro que o sistema identifique como "Aula 04".
     let part = participationMap.get(evt.id);
     
     if (!part || part.status !== 'presente') {
-      // Procurar em todas as participações do aluno por um título e data compatíveis
       for (const [pEventId, pRecord] of participationMap.entries()) {
         if (pRecord.status === 'presente') {
           const pEvent = allEvents.find(e => e.id === pEventId);
           if (pEvent) {
             const pCore = extractCore(normalizeTitle(pEvent.title));
-            const pDateStr = pEvent.eventDate ? new Date(pEvent.eventDate).toISOString().split('T')[0] : 'nodate';
-            if (pCore === core && pDateStr === dateStr) {
+            if (pCore === core) {
               part = pRecord;
               break;
             }
