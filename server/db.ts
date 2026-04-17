@@ -5394,8 +5394,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
     return normalized
       .replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '')
       .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')
-      .replace(/,\s*com\s+.*$/i, '')
-      .replace(/\s+com\s+.*$/i, '')
+      .replace(/[,.]?\s*(com|palestrante:)\s+.*$/i, '') // Normalização radical de palestrante
       .replace(/[.,!?;:"]+$/, '')
       .replace(/\s+/g, ' ')
       .trim();

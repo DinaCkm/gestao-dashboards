@@ -6132,9 +6132,25 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         }
 
         // Buscar o evento na tabela events
-        const eventRecord = await db.getEventById(realEventId);
+        let eventRecord = await db.getEventById(realEventId);
         if (!eventRecord) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Evento não encontrado.' });
+        }
+
+        // CORREÇÃO: Redirecionar presença para o ID canônico (o que aparece na lista do aluno)
+        const allEvents = await db.getWebinarsPendingAttendance(aluno.id);
+        const normalizedInputTitle = eventRecord.title.toLowerCase().trim();
+        const inputDateStr = eventRecord.eventDate ? new Date(eventRecord.eventDate).toISOString().split('T')[0] : 'nodate';
+        
+        const canonicalEvent = allEvents.find((e: any) => {
+          const eTitle = e.title.toLowerCase().trim();
+          const eDateStr = e.eventDate ? new Date(e.eventDate).toISOString().split('T')[0] : 'nodate';
+          return eTitle === normalizedInputTitle && eDateStr === inputDateStr;
+        });
+
+        if (canonicalEvent && canonicalEvent.id !== realEventId) {
+          realEventId = canonicalEvent.id;
+          eventRecord = await db.getEventById(realEventId);
         }
 
         // Verificar se é um webinário agendado (tem endDate) - verificar se já iniciou
