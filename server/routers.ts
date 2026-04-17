@@ -3802,7 +3802,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               taskStatus: s.taskStatus,
               evidenceLink: s.evidenceLink,
               evidenceImageUrl: s.evidenceImageUrl,
-              submissionType: s.submissionType,
               submittedAt: s.submittedAt,
               validatedAt: s.validatedAt,
             };
@@ -6297,7 +6296,6 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
               // Campos de evidência
               evidenceLink: s.evidenceLink,
               evidenceImageUrl: s.evidenceImageUrl,
-              submissionType: s.submissionType,
               submittedAt: s.submittedAt,
               // Campos de validação
               validatedBy: s.validatedBy,
@@ -6398,7 +6396,6 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           evidenceImageUrl: imageUrl,
           evidenceImageKey: imageKey,
           relatoAluno: relatoAluno || undefined,
-          submissionType: input.submissionType,
           textoAplicabilidade: input.submissionType === "tarefa" ? input.textoAplicabilidade?.trim() : undefined,
           notaAlunoAplicabilidade: input.submissionType === "tarefa" ? input.notaAlunoAplicabilidade ?? null : undefined,
           submittedAt: new Date(),
