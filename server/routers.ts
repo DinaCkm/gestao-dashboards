@@ -2684,6 +2684,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const alunosPorId = new Map<string, any>();
         dashboardEmpresa.alunos.forEach((a: any) => alunosPorId.set(a.idUsuario, a));
 
+        const turmasEmpresa = await db.getTurmas(ctx.user.programId);
+        const turmaMap = new Map<string, string>();
+        turmasEmpresa.forEach(t => turmaMap.set(String(t.id), t.name));
+
         const exportRows = input.alunoIdsUsuario.map((idUsuario, index) => {
           const aluno = alunosPorId.get(idUsuario);
           if (!aluno) {
@@ -2692,7 +2696,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           return {
             'Posição': index + 1,
             'Pessoa': aluno.nomeAluno || 'Sem nome',
-            'Turma': aluno.turmaNome || 'Não definida',
+            'Turma': turmaMap.get(String(aluno.turma || '')) || 'Não definida',
             'Ind. 1: Webinars': `${Math.round(Number(aluno?.consolidado?.ind1_webinars ?? 0))}%`,
             'Ind. 2: Avaliações': `${Math.round(Number(aluno?.consolidado?.ind2_avaliacoes ?? 0))}%`,
             'Ind. 3: Competências': `${Math.round(Number(aluno?.consolidado?.ind3_competencias ?? 0))}%`,

@@ -1019,11 +1019,16 @@ export async function getEventsByProgramOrGlobal(programId: number): Promise<Eve
       .replace(/[.,;:!?]+$/g, '')
       .trim();
   };
-  const coreTitle = (n: string): string => n
-    .replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '')
-    .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const coreTitle = (n: string): string => {
+    return n
+      .replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '')
+      .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')
+      .replace(/,\s*com\s+.*$/i, '')
+      .replace(/\s+com\s+.*$/i, '')
+      .replace(/[.,!?;:"]+$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
 
   // Criar set de títulos normalizados dos eventos existentes para detectar duplicatas
   const existingCoreKeys = new Set<string>();
@@ -5368,7 +5373,6 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
   // O campo dentroDoMacrociclo será usado pelo frontend para separar visualmente
   const allEvents = [...dbEvents, ...syntheticEvents];
   // Função de normalização de título para matching tolerante
-  // Remove diferenças de traços (– vs -), espaços extras, "Aula 01 - ", etc.
   const normalizeTitle = (title: string | null): string => {
     if (!title) return '';
     return title
@@ -5394,16 +5398,18 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       .replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '')
       .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')
       .replace(/\s+/g, ' ')
+      .replace(/\s*-\s*/g, ' - ')
       .trim();
-    if (withoutAula) webinarByTitleNoPrefix.set(withoutAula, w);
-  }
-  const now = new Date();
+  };
 
-  // Função auxiliar para extrair o conteúdo principal do título (sem prefixo "aula XX" e sem "- 01 -" no meio)
+  // Função auxiliar para extrair o conteúdo principal do título
   const extractCore = (normalized: string): string => {
     return normalized
       .replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '')
-      .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')  // Remove "- 01 -" no meio do título
+      .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')
+      .replace(/,\s*com\s+.*$/i, '')
+      .replace(/\s+com\s+.*$/i, '')
+      .replace(/[.,!?;:"]+$/, '')
       .replace(/\s+/g, ' ')
       .trim();
   };
@@ -5418,6 +5424,16 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
     return linkedToActiveWebinar * 1000000 + hasVideo * 100000 + hasParticipation * 10000 + isPresent * 1000 + recency + evt.id;
   };
 
+  // Criar mapa com título normalizado
+  const webinarByTitle = new Map(allScheduledWebinars.map(w => [normalizeTitle(w.title), w]));
+  const webinarByTitleNoPrefix = new Map<string, typeof allScheduledWebinars[0]>();
+  for (const w of allScheduledWebinars) {
+    const normalized = normalizeTitle(w.title);
+    const core = extractCore(normalized);
+    if (core) webinarByTitleNoPrefix.set(core, w);
+  }
+  const now = new Date();
+
   // DEDUPLICAR eventos por título normalizado + data (manter o que tem participação, ou o primeiro)
   const seenCores = new Map<string, typeof allEvents[0]>();
   const deduplicatedEvents: typeof allEvents = [];
@@ -5430,7 +5446,34 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       seenCores.set(dedupKey, evt);
       deduplicatedEvents.push(evt);
     } else {
-      if (scoreAlunoEvent(evt) > scoreAlunoEvent(existing)) {
+      // Critério de priorização:
+      // 1. Evento com participação do aluno
+      // 2. Evento com vídeo (videoLink)
+      // 3. Evento vinculado a webinar ativo (externalId sw-)
+      // 4. Evento mais recente (createdAt)
+      const existingPart = participationMap.get(existing.id);
+      const currentPart = participationMap.get(evt.id);
+      
+      let preferCurrent = false;
+      if (!existingPart && currentPart) {
+        preferCurrent = true;
+      } else if (!!existingPart === !!currentPart) {
+        if (!existing.videoLink && evt.videoLink) {
+          preferCurrent = true;
+        } else if (!!existing.videoLink === !!evt.videoLink) {
+          const existingIsSw = existing.externalId?.startsWith('sw-');
+          const currentIsSw = evt.externalId?.startsWith('sw-');
+          if (!existingIsSw && currentIsSw) {
+            preferCurrent = true;
+          } else if (existingIsSw === currentIsSw) {
+            if (evt.createdAt && existing.createdAt && evt.createdAt > existing.createdAt) {
+              preferCurrent = true;
+            }
+          }
+        }
+      }
+
+      if (preferCurrent) {
         const idx = deduplicatedEvents.indexOf(existing);
         if (idx >= 0) deduplicatedEvents[idx] = evt;
         seenCores.set(dedupKey, evt);
