@@ -761,6 +761,7 @@ export async function updateMentoringSession(sessionId: number, data: {
   evidenceLink?: string | null;
   evidenceImageUrl?: string | null;
   evidenceImageKey?: string | null;
+  submissionType?: "tarefa" | "atualizacao_projeto" | null;
   submittedAt?: Date | null;
   validatedBy?: number | null;
   customTaskTitle?: string | null;
@@ -791,6 +792,7 @@ export async function updateMentoringSession(sessionId: number, data: {
   if (data.evidenceLink !== undefined) updateData.evidenceLink = data.evidenceLink;
   if (data.evidenceImageUrl !== undefined) updateData.evidenceImageUrl = data.evidenceImageUrl;
   if (data.evidenceImageKey !== undefined) updateData.evidenceImageKey = data.evidenceImageKey;
+  if (data.submissionType !== undefined) updateData.submissionType = data.submissionType;
   if (data.submittedAt !== undefined) updateData.submittedAt = data.submittedAt;
   if (data.validatedBy !== undefined) updateData.validatedBy = data.validatedBy;
   if (data.validatedAt !== undefined) updateData.validatedAt = data.validatedAt;
