@@ -72,18 +72,18 @@ describe("Módulo Atividades Práticas", () => {
       await expect(
         caller.attendance.submitEvidence({
           sessionId: "abc" as any,
-          submissionType: "tarefa",
         })
       ).rejects.toThrow();
     });
 
-    it("deve exigir submissionType", async () => {
+    it("deve rejeitar se evidenceLink não for URL válida", async () => {
       const ctx = createUserContext();
       const caller = appRouter.createCaller(ctx);
       
       await expect(
         caller.attendance.submitEvidence({
           sessionId: 1,
+          evidenceLink: "not-a-url",
         })
       ).rejects.toThrow();
     });
@@ -96,7 +96,6 @@ describe("Módulo Atividades Práticas", () => {
       await expect(
         caller.attendance.submitEvidence({
           sessionId: 999999,
-          submissionType: "tarefa",
           evidenceLink: "https://example.com/evidence",
         })
       ).rejects.toThrow(); // Falha no DB, não na validação
@@ -311,7 +310,6 @@ describe("Módulo Atividades Práticas", () => {
       await expect(
         caller.attendance.submitEvidence({
           sessionId: 999999,
-          submissionType: "tarefa",
           evidenceLink: "https://docs.google.com/presentation/d/123",
         })
       ).rejects.toThrow(); // Falha no DB
@@ -324,9 +322,8 @@ describe("Módulo Atividades Práticas", () => {
       await expect(
         caller.attendance.submitEvidence({
           sessionId: 999999,
-          submissionType: "atualizacao_projeto",
           evidenceImageBase64: "data:image/png;base64,iVBORw0KGgo=",
-          evidenceImageName: "foto.png",
+          evidenceImageFilename: "foto.png",
         })
       ).rejects.toThrow(); // Falha no DB
     });

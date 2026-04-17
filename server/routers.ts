@@ -3802,7 +3802,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               taskStatus: s.taskStatus,
               evidenceLink: s.evidenceLink,
               evidenceImageUrl: s.evidenceImageUrl,
-              submissionType: s.submissionType,
               submittedAt: s.submittedAt,
               validatedAt: s.validatedAt,
             };
@@ -6297,7 +6296,6 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
               // Campos de evidência
               evidenceLink: s.evidenceLink,
               evidenceImageUrl: s.evidenceImageUrl,
-              submissionType: s.submissionType,
               submittedAt: s.submittedAt,
               // Campos de validação
               validatedBy: s.validatedBy,
@@ -6315,15 +6313,9 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
     submitEvidence: protectedProcedure
       .input(z.object({
         sessionId: z.number(),
-        submissionType: z.enum(["tarefa", "atualizacao_projeto"]),
-        evidenceLink: z.string().optional(),
-        evidenceImageBase64: z.string().optional(), // compatibilidade
+        evidenceLink: z.string().url().optional(),
+        evidenceImageBase64: z.string().optional(), // Base64 da imagem
         evidenceImageName: z.string().optional(),
-        evidenceFileBase64: z.string().optional(),
-        evidenceFileName: z.string().optional(),
-        relatoAluno: z.string().optional(),
-        textoAplicabilidade: z.string().optional(),
-        notaAlunoAplicabilidade: z.number().min(0).max(10).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const aluno = await db.getAlunoByEmail(ctx.user.email || '');
@@ -6340,53 +6332,28 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Atividade já foi validada, não pode ser alterada' });
         }
 
-        const evidenceLink = input.evidenceLink?.trim();
-        const relatoAluno = input.relatoAluno?.trim();
-        const fileBase64 = input.evidenceFileBase64 || input.evidenceImageBase64;
-        const fileName = input.evidenceFileName || input.evidenceImageName;
-
-        if (!evidenceLink && !fileBase64 && !relatoAluno) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Para enviar a atividade, preencha pelo menos um dos campos: link, anexo ou relato.' });
-        }
-
-        if (evidenceLink) {
-          try {
-            new URL(evidenceLink);
-          } catch {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Link inválido. Informe uma URL válida começando com https://.' });
-          }
-        }
-
-        if (input.submissionType === "tarefa") {
-          if (!input.textoAplicabilidade?.trim()) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Preencha a aplicabilidade prática para envios do tipo Tarefa.' });
-          }
-          if (input.notaAlunoAplicabilidade === undefined) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Informe uma nota de aplicabilidade de 0 a 10 para envios do tipo Tarefa.' });
-          }
+        // Exigir pelo menos link ou imagem
+        if (!input.evidenceLink && !input.evidenceImageBase64) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Envie pelo menos um link ou uma imagem como evidência' });
         }
 
         let imageUrl: string | null = null;
         let imageKey: string | null = null;
 
-        // Upload de arquivo para S3 se fornecido
-        if (fileBase64) {
-          const buffer = Buffer.from(fileBase64, 'base64');
-          if (buffer.length > 10 * 1024 * 1024) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'O anexo deve ter no máximo 10MB.' });
+        // Upload de imagem para S3 se fornecida
+        if (input.evidenceImageBase64) {
+          const buffer = Buffer.from(input.evidenceImageBase64, 'base64');
+          // Validar tamanho (5MB)
+          if (buffer.length > 5 * 1024 * 1024) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Imagem deve ter no máximo 5MB' });
           }
-          const ext = fileName?.split('.').pop()?.toLowerCase() || '';
-          if (!['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Formato de anexo inválido. Use PDF, DOC, DOCX, JPG, JPEG, PNG ou WEBP.' });
+          const ext = input.evidenceImageName?.split('.').pop()?.toLowerCase() || 'jpg';
+          if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Formato de imagem inválido. Use JPG, PNG ou WebP' });
           }
           const randomSuffix = Math.random().toString(36).substring(2, 10);
-          const fileKey = `evidence/${aluno.id}-${input.sessionId}-${randomSuffix}.${ext || "bin"}`;
-          const contentType =
-            ext === "pdf" ? "application/pdf" :
-            ext === "doc" ? "application/msword" :
-            ext === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" :
-            ext === "png" ? "image/png" :
-            ext === "webp" ? "image/webp" : "image/jpeg";
+          const fileKey = `evidence/${aluno.id}-${input.sessionId}-${randomSuffix}.${ext}`;
+          const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
           const result = await storagePut(fileKey, buffer, contentType);
           imageUrl = result.url;
           imageKey = result.key;
@@ -6394,13 +6361,9 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
 
         // Atualizar sessão com evidência
         await db.updateMentoringSession(input.sessionId, {
-          evidenceLink: evidenceLink || null,
+          evidenceLink: input.evidenceLink || null,
           evidenceImageUrl: imageUrl,
           evidenceImageKey: imageKey,
-          relatoAluno: relatoAluno || undefined,
-          submissionType: input.submissionType,
-          textoAplicabilidade: input.submissionType === "tarefa" ? input.textoAplicabilidade?.trim() : undefined,
-          notaAlunoAplicabilidade: input.submissionType === "tarefa" ? input.notaAlunoAplicabilidade ?? null : undefined,
           submittedAt: new Date(),
           taskStatus: 'entregue',
         });
