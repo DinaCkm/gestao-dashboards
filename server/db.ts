@@ -5420,23 +5420,25 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
   }
   const now = new Date();
 
-  // DEDUPLICAR eventos por título normalizado + data (manter o que tem participação, ou o primeiro)
+  // DEDUPLICAR eventos por título normalizado + data
+  // CORREÇÃO: Mapear TODOS os IDs que pertencem ao mesmo evento para consolidar a presença
   const seenCores = new Map<string, typeof allEvents[0]>();
+  const coreToAllIds = new Map<string, number[]>();
   const deduplicatedEvents: typeof allEvents = [];
+
   for (const evt of allEvents) {
     const core = extractCore(normalizeTitle(evt.title));
     const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
     const dedupKey = `${core}|${dateStr}`;
+    
+    if (!coreToAllIds.has(dedupKey)) coreToAllIds.set(dedupKey, []);
+    coreToAllIds.get(dedupKey)!.push(evt.id);
+
     const existing = seenCores.get(dedupKey);
     if (!existing) {
       seenCores.set(dedupKey, evt);
       deduplicatedEvents.push(evt);
     } else {
-      // Critério de priorização:
-      // 1. Evento com participação do aluno
-      // 2. Evento com vídeo (videoLink)
-      // 3. Evento vinculado a webinar ativo (externalId sw-)
-      // 4. Evento mais recente (createdAt)
       const existingPart = participationMap.get(existing.id);
       const currentPart = participationMap.get(evt.id);
       
@@ -5469,7 +5471,23 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
 
   // Mapear eventos para payload final com status de presença
   const mappedEvents = deduplicatedEvents.map(evt => {
-    const part = participationMap.get(evt.id);
+    const core = extractCore(normalizeTitle(evt.title));
+    const dateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
+    const dedupKey = `${core}|${dateStr}`;
+    
+    // CORREÇÃO: Buscar participação em QUALQUER um dos IDs que foram deduplicados para este evento
+    const allRelatedIds = coreToAllIds.get(dedupKey) || [evt.id];
+    let part = participationMap.get(evt.id);
+    
+    if (!part || part.status !== 'presente') {
+      for (const relatedId of allRelatedIds) {
+        const relatedPart = participationMap.get(relatedId);
+        if (relatedPart && relatedPart.status === 'presente') {
+          part = relatedPart;
+          break;
+        }
+      }
+    }
     // Tentar match exato normalizado primeiro, depois match parcial sem prefixo
     const normalizedEvtTitle = normalizeTitle(evt.title);
     let matchedWebinar = webinarByTitle.get(normalizedEvtTitle) || null;
