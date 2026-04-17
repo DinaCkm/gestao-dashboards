@@ -5388,20 +5388,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       .trim();
   };
   // Criar mapa com título normalizado
-  const webinarByTitle = new Map(allScheduledWebinars.map(w => [normalizeTitle(w.title), w]));
-    // Também criar mapa secundário sem prefixo "aula XX - " para matching parcial
-  const webinarByTitleNoPrefix = new Map<string, typeof allScheduledWebinars[0]>();
-  for (const w of allScheduledWebinars) {
-    const normalized = normalizeTitle(w.title);
-    // Remover prefixo como "2025/19 - aula 01 - " e "- 01 -" no meio para ficar só com o conteúdo principal
-    const withoutAula = normalized
-      .replace(/^(\d{4}\/\d+\s*-\s*)?(aula\s*\d+\s*-\s*)?/i, '')
-      .replace(/\s*-\s*\d{1,2}\s*-\s*/g, ' - ')
-      .replace(/\s+/g, ' ')
-      .replace(/\s*-\s*/g, ' - ')
-      .trim();
-  };
-
+  
   // Função auxiliar para extrair o conteúdo principal do título
   const extractCore = (normalized: string): string => {
     return normalized
