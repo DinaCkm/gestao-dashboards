@@ -188,6 +188,86 @@ function diasEntre(data1: string, data2: Date): number {
   return Math.ceil((d1.getTime() - data2.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function normalizeEventTitleBase(title?: string): string {
+  if (!title) return '';
+
+  let normalized = title
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/["'`´“”‘’]/g, '')
+    .trim()
+    .replace(/[.,;:!?]+$/g, '');
+
+  // Remove sufixos comuns com nome do palestrante no final
+  // Ex.: ", com Cintia Gandarely" / " com a palestrante X"
+  normalized = normalized.replace(/\s*[,:;\-–—]?\s*com\s+(?:o\s+|a\s+)?(?:palestrante\s+)?[^,.!?;:()\[\]{}]+\s*$/i, '');
+
+  // Remover prefixos usuais de ciclo/aula no início
+  normalized = normalized.replace(/^\s*(\d{4}\s*[\/-]\s*\d{1,2})\s*[-–—:]\s*/g, '');
+  normalized = normalized.replace(/^\s*aula\s*\d+\s*[-–—:]\s*/g, '');
+
+  // Padronizar separadores/espaços e limpar pontuação final
+  normalized = normalized
+    .replace(/[–—-]/g, ' ')
+    .replace(/[.,;:!?()\[\]{}]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return normalized;
+}
+
+function eventDateKey(dataEvento?: Date): string {
+  if (!dataEvento) return 'sem-data';
+  const date = new Date(dataEvento);
+  if (Number.isNaN(date.getTime())) return 'sem-data';
+  return date.toISOString().slice(0, 10);
+}
+
+function eventScore(evento: EventRecord): number {
+  let score = 0;
+  if (evento.presenca === 'presente') score += 100;
+  if (evento.tipoEvento && evento.tipoEvento !== 'Evento') score += 10;
+  if (evento.tituloEvento) score += Math.min(20, normalizeEventTitleBase(evento.tituloEvento).length / 4);
+  if (evento.dataEvento) score += 5;
+  return score;
+}
+
+function deduplicarEventosParaIndicador(eventos: EventRecord[]): EventRecord[] {
+  const grupos = new Map<string, EventRecord>();
+
+  for (const [index, evento] of eventos.entries()) {
+    const baseTitle = normalizeEventTitleBase(evento.tituloEvento);
+    const dateKey = eventDateKey(evento.dataEvento);
+    // Sem data confiável, não deduplicar automaticamente para evitar perda de registros legítimos.
+    const key = dateKey === 'sem-data'
+      ? `sem-data|${baseTitle || 'sem-titulo'}|${index}`
+      : `${dateKey}|${baseTitle || 'sem-titulo'}`;
+    const atual = grupos.get(key);
+
+    if (!atual) {
+      grupos.set(key, evento);
+      continue;
+    }
+
+    const atualScore = eventScore(atual);
+    const novoScore = eventScore(evento);
+    if (novoScore > atualScore) {
+      grupos.set(key, evento);
+      continue;
+    }
+
+    // Desempate por data mais recente (se houver)
+    if (novoScore === atualScore) {
+      const atualDate = atual.dataEvento ? new Date(atual.dataEvento).getTime() : 0;
+      const novoDate = evento.dataEvento ? new Date(evento.dataEvento).getTime() : 0;
+      if (novoDate > atualDate) grupos.set(key, evento);
+    }
+  }
+
+  return Array.from(grupos.values());
+}
+
 // ============================================================
 // CALCULADOR PRINCIPAL
 // ============================================================
@@ -222,7 +302,7 @@ export function calcularIndicadoresCiclo(
     return true;
   });
   
-  const eventosAluno = eventos.filter(e => {
+  const eventosAlunoRaw = eventos.filter(e => {
     if (e.idUsuario !== idUsuario) return false;
     // Se tem data do evento, filtrar pelo período do ciclo
     if (e.dataEvento) {
@@ -232,6 +312,7 @@ export function calcularIndicadoresCiclo(
     // Se não tem data, incluir (fallback para dados antigos sem data)
     return true;
   });
+  const eventosAluno = deduplicarEventosParaIndicador(eventosAlunoRaw);
   
   const performanceAluno = performance.filter(p => p.idUsuario === idUsuario);
   
@@ -436,7 +517,8 @@ export function calcularIndicadoresAluno(
 ): StudentIndicatorsV2 {
   // Filtrar registros do aluno
   const mentoriasAluno = mentorias.filter(m => m.idUsuario === idUsuario);
-  const eventosAluno = eventos.filter(e => e.idUsuario === idUsuario);
+  const eventosAlunoRaw = eventos.filter(e => e.idUsuario === idUsuario);
+  const eventosAluno = deduplicarEventosParaIndicador(eventosAlunoRaw);
   
   // Dados básicos
   const primeiroRegistro = mentoriasAluno[0] || eventosAluno[0];
