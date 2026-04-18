@@ -3319,18 +3319,24 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         })),
         // === Indicador 6: Aplicabilidade Prática ===
         aplicabilidadePratica: await (async () => {
-          // Buscar sessões com notas de aplicabilidade (sem filtro de data)
-          const todasSessoes = await db.getMentoringSessionsByAluno(aluno!.id);
-          const sessoesComAplic = todasSessoes.filter(s =>
-            s.notaAlunoAplicabilidade !== null || s.notaMentoraAplicabilidade !== null
-          );
+          const CUTOFF_DATE = new Date('2026-04-01');
           
-          // Buscar cases com notas de aplicabilidade (sem filtro de data)
-          const casesComAplic = casesAluno.filter(c =>
-            c.entregue === 1 && (
+          // Buscar sessões com notas de aplicabilidade (após 01/04/2026)
+          const todasSessoes = await db.getMentoringSessionsByAluno(aluno!.id);
+          const sessoesComAplic = todasSessoes.filter(s => {
+            const dataSession = s.sessionDate ? new Date(s.sessionDate) : null;
+            return dataSession && dataSession >= CUTOFF_DATE && (
+              s.notaAlunoAplicabilidade !== null || s.notaMentoraAplicabilidade !== null
+            );
+          });
+          
+          // Buscar cases com notas de aplicabilidade (após 01/04/2026)
+          const casesComAplic = casesAluno.filter(c => {
+            const dataCase = c.dataEntrega ? new Date(c.dataEntrega) : null;
+            return dataCase && dataCase >= CUTOFF_DATE && c.entregue === 1 && (
               (c as any).notaAlunoAplicabilidade !== null || (c as any).notaMentoraAplicabilidade !== null
-            )
-          );
+            );
+          });
           
           const microTarefa = calcularMicroTarefaAplicabilidade(
             sessoesComAplic.map((s) => ({
