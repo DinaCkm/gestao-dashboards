@@ -1130,42 +1130,6 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
         </a>
         )}
 
-        {/* Card B.E.M. - Área de Aulas - Apenas para alunos com plataforma Scaffold */}
-        {aluno?.plataformaAulas === 'scaffold' && (
-        <a
-          href="https://sebraeto.competenciasdobem.com.br"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block relative overflow-hidden rounded-2xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-blue-50/80 to-amber-50/60" />
-          <div className="absolute top-0 right-0 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
-          <div className="relative flex items-center gap-4 p-4 sm:p-5">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-blue-100 shadow-lg p-2">
-              <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
-                alt="eco do bem"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-bold text-[#0A1E3E] mb-0.5">
-                B.E.M. - Área de Aulas
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-600">
-                Acesso exclusivo para os alunos que fazem as aulas na plataforma Scaffold.
-              </p>
-            </div>
-            <div className="flex-shrink-0">
-              <div className="w-9 h-9 rounded-full bg-[#0A1E3E] flex items-center justify-center group-hover:bg-[#0A1E3E]/80 transition-colors shadow-lg">
-                <ExternalLink className="h-4 w-4 text-amber-400" />
-              </div>
-            </div>
-          </div>
-        </a>
-        )}
-
         {/* Tabs com seções detalhadas */}
         <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'webinars'} className="w-full">
           <TabsList className="bg-gray-100 border border-gray-200 w-full flex flex-wrap h-auto gap-1 p-1 rounded-xl">
@@ -1199,6 +1163,42 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
               <Activity className="h-4 w-4 mr-1" /> Meu Perfil
             </TabsTrigger>
           </TabsList>
+
+          {/* Card B.E.M. - Área de Aulas - Apenas para alunos com plataforma Scaffold */}
+          {aluno?.plataformaAulas === 'scaffold' && (
+          <a
+            href="https://sebraeto.competenciasdobem.com.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block relative overflow-hidden rounded-2xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 group mt-3"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white via-blue-50/80 to-amber-50/60" />
+            <div className="absolute top-0 right-0 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
+            <div className="relative flex items-center gap-4 p-4 sm:p-5">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-blue-100 shadow-lg p-2">
+                <img
+                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
+                  alt="eco do bem"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base sm:text-lg font-bold text-[#0A1E3E] mb-0.5">
+                  B.E.M. - Área de Aulas
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Acesso exclusivo para os alunos que fazem as aulas na plataforma Scaffold.
+                </p>
+              </div>
+              <div className="flex-shrink-0">
+                <div className="w-9 h-9 rounded-full bg-[#0A1E3E] flex items-center justify-center group-hover:bg-[#0A1E3E]/80 transition-colors shadow-lg">
+                  <ExternalLink className="h-4 w-4 text-amber-400" />
+                </div>
+              </div>
+            </div>
+          </a>
+          )}
 
           {/* === MINHA JORNADA (unificada: Trilha + PDI + Competências) === */}
           <TabsContent value="jornada" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
