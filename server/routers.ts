@@ -7980,6 +7980,10 @@ Responda APENAS em JSON com o formato:
           nomeAceite: input.nomeAceite,
         });
 
+        // Zerar onboardingLiberado para que o aluno não fique preso no onboarding
+        // após concluir um novo ciclo liberado pelo admin
+        await db.resetOnboardingLiberado(input.alunoId);
+
         // Enviar emails: parabéns para aluno + notificação para mentora e admin
         try {
           const aluno = await db.getAlunoById(input.alunoId);

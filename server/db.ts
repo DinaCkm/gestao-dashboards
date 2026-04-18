@@ -6582,6 +6582,18 @@ export async function liberarOnboardingEmMassa(alunoIds: number[]) {
   };
 }
 
+/**
+ * Zera o flag onboardingLiberado do aluno após ele concluir o aceite.
+ * Evita que o aluno fique preso no onboarding indefinidamente após um novo ciclo liberado pelo admin.
+ */
+export async function resetOnboardingLiberado(alunoId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(alunos)
+    .set({ onboardingLiberado: 0, onboardingLiberadoEm: null })
+    .where(eq(alunos.id, alunoId));
+}
+
 // ============ STATUS DE ONBOARDING DO ALUNO ============
 
 export async function getAlunoOnboardingStatus(user: {
