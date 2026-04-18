@@ -174,6 +174,8 @@ export default function AvisosAdmin() {
     });
   }, [announcements, typeFilter, statusFilter, searchTerm]);
 
+  const uploadImageMutation = trpc.announcements.uploadImage.useMutation();
+
   const handleSubmit = async () => {
     if (!form.title.trim()) {
       toast.error("O título é obrigatório");
@@ -182,13 +184,26 @@ export default function AvisosAdmin() {
 
     let imageUrl: string | undefined;
     if (imageFile) {
-      const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve) => {
+      // Converter para base64 puro (sem prefixo data:...) e fazer upload real para storage
+      const base64Full = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
         reader.readAsDataURL(imageFile);
       });
-      // For now, store as base64 or upload via separate mechanism
-      imageUrl = base64;
+      // Extrair apenas a parte base64 (sem o prefixo "data:image/...;base64,")
+      const base64Data = base64Full.split(',')[1];
+      try {
+        const result = await uploadImageMutation.mutateAsync({
+          imageBase64: base64Data,
+          mimeType: imageFile.type || 'image/jpeg',
+          fileName: imageFile.name,
+        });
+        imageUrl = result.url;
+      } catch (err: any) {
+        toast.error(`Erro ao fazer upload da imagem: ${err.message}`);
+        return;
+      }
     }
 
     const payload: any = {

@@ -6090,6 +6090,21 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return { success: true };
       }),
 
+    // Upload de imagem de capa para avisos
+    uploadImage: adminProcedure
+      .input(z.object({
+        imageBase64: z.string(),
+        mimeType: z.string().default('image/jpeg'),
+        fileName: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.imageBase64, 'base64');
+        const ext = input.mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+        const key = `announcements/cover-${Date.now()}.${ext}`;
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        return { url, success: true };
+      }),
+
     // Public endpoint for students
     active: protectedProcedure
       .query(async () => {
