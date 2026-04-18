@@ -1076,37 +1076,163 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
 
         {/* Tabs com seções detalhadas */}
         <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'webinars'} className="w-full">
-          <TabsList className="bg-gray-100 border border-gray-200 w-full flex flex-wrap h-auto gap-1 p-1 rounded-xl">
-            <TabsTrigger value="jornada" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600" title="Acesse as aulas de suas competencias">
-              <BookOpen className="h-4 w-4 mr-1" /> Aulas
-            </TabsTrigger>
-            <TabsTrigger value="mentorias" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600" title="Clique aqui e veja os relatorios das suas mentorias">
-              <MessageSquare className="h-4 w-4 mr-1" /> Mentorias
-            </TabsTrigger>
-            <TabsTrigger value="eventos" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600" title="clique aqui e marque presença nos eventos online">
-              <Video className="h-4 w-4 mr-1" /> Eventos
-            </TabsTrigger>
 
-            <TabsTrigger value="tarefas" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <ClipboardCheck className="h-4 w-4 mr-1" /> Tarefas
-            </TabsTrigger>
+          {/* JORNADA DE DESENVOLVIMENTO — grade de cards compactos */}
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Jornada de Desenvolvimento</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
 
-            <a
-              href="https://ecolider.ecodobem.com/meus-cursos"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 min-w-[120px] inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-gray-600 hover:bg-[#0A1E3E] hover:text-white cursor-pointer"
-              title="Aproveite os minicursos para ampliar seu desenvolvimento"
-            >
-              <GraduationCap className="h-4 w-4 mr-1" /> Mini_Cursos <ExternalLink className="h-3 w-3 ml-1 opacity-60" />
-            </a>
-            <TabsTrigger value="cases" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600" title="Registre seus cases de sucesso">
-              <Briefcase className="h-4 w-4 mr-1" /> Cases de Sucesso
-            </TabsTrigger>
-            <TabsTrigger value="meu-perfil-disc" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <Activity className="h-4 w-4 mr-1" /> Meu Perfil
-            </TabsTrigger>
-          </TabsList>
+              {/* Aulas */}
+              <TabsTrigger value="jornada" asChild>
+                <button className="group flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full">
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    {/* Ilustração: livro aberto com estrela */}
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                      <rect x="8" y="18" width="22" height="28" rx="3" fill="#DBEAFE" stroke="#3B82F6" strokeWidth="1.5"/>
+                      <rect x="34" y="18" width="22" height="28" rx="3" fill="#EFF6FF" stroke="#3B82F6" strokeWidth="1.5"/>
+                      <line x1="30" y1="18" x2="30" y2="46" stroke="#3B82F6" strokeWidth="1.5"/>
+                      <line x1="13" y1="26" x2="25" y2="26" stroke="#93C5FD" strokeWidth="1.5" strokeLinecap="round"/>
+                      <line x1="13" y1="31" x2="25" y2="31" stroke="#93C5FD" strokeWidth="1.5" strokeLinecap="round"/>
+                      <line x1="13" y1="36" x2="21" y2="36" stroke="#93C5FD" strokeWidth="1.5" strokeLinecap="round"/>
+                      <line x1="39" y1="26" x2="51" y2="26" stroke="#BFDBFE" strokeWidth="1.5" strokeLinecap="round"/>
+                      <line x1="39" y1="31" x2="51" y2="31" stroke="#BFDBFE" strokeWidth="1.5" strokeLinecap="round"/>
+                      <line x1="39" y1="36" x2="47" y2="36" stroke="#BFDBFE" strokeWidth="1.5" strokeLinecap="round"/>
+                      <polygon points="32,6 34,11 40,11 35,15 37,20 32,17 27,20 29,15 24,11 30,11" fill="#FCD34D" stroke="#D97706" strokeWidth="0.5"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold leading-tight">Aulas</span>
+                  <span className="text-[10px] text-gray-400 group-data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Competências</span>
+                </button>
+              </TabsTrigger>
+
+              {/* Mentorias */}
+              <TabsTrigger value="mentorias" asChild>
+                <button className="group flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full">
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    {/* Ilustração: duas pessoas conversando */}
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                      <circle cx="20" cy="18" r="9" fill="#C4B5FD" stroke="#7C3AED" strokeWidth="1.5"/>
+                      <path d="M8 42c0-6.627 5.373-12 12-12s12 5.373 12 12" fill="#DDD6FE" stroke="#7C3AED" strokeWidth="1.5"/>
+                      <circle cx="44" cy="22" r="7" fill="#A5B4FC" stroke="#6366F1" strokeWidth="1.5"/>
+                      <path d="M33 46c0-6.075 4.925-11 11-11s11 4.925 11 11" fill="#C7D2FE" stroke="#6366F1" strokeWidth="1.5"/>
+                      <path d="M29 26 Q36 22 37 27" stroke="#7C3AED" strokeWidth="1.5" strokeDasharray="2 2" fill="none"/>
+                      <circle cx="36" cy="24" r="2" fill="#7C3AED" opacity="0.6"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold leading-tight">Mentorias</span>
+                  <span className="text-[10px] text-gray-400 group-data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Com a mentora</span>
+                </button>
+              </TabsTrigger>
+
+              {/* Eventos */}
+              <TabsTrigger value="eventos" asChild>
+                <button className="group flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full">
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    {/* Ilustração: tela de apresentação ao vivo */}
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                      <rect x="6" y="10" width="52" height="34" rx="4" fill="#D1FAE5" stroke="#10B981" strokeWidth="1.5"/>
+                      <rect x="10" y="14" width="44" height="26" rx="2" fill="#A7F3D0"/>
+                      <circle cx="32" cy="24" r="6" fill="#10B981"/>
+                      <path d="M23 36c0-4.97 4.03-9 9-9s9 4.03 9 9" fill="#6EE7B7"/>
+                      <line x1="32" y1="44" x2="32" y2="52" stroke="#10B981" strokeWidth="2"/>
+                      <line x1="20" y1="52" x2="44" y2="52" stroke="#10B981" strokeWidth="2" strokeLinecap="round"/>
+                      <circle cx="52" cy="14" r="6" fill="#FCA5A5"/>
+                      <circle cx="52" cy="14" r="3" fill="#EF4444"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold leading-tight">Eventos</span>
+                  <span className="text-[10px] text-gray-400 group-data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Webinars</span>
+                </button>
+              </TabsTrigger>
+
+              {/* Tarefas */}
+              <TabsTrigger value="tarefas" asChild>
+                <button className="group flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full">
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    {/* Ilustração: prancheta com checklist */}
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                      <rect x="12" y="14" width="40" height="44" rx="4" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5"/>
+                      <rect x="24" y="8" width="16" height="12" rx="3" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5"/>
+                      <circle cx="22" cy="30" r="4" fill="#10B981"/>
+                      <path d="M20 30 l2 2 l4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <line x1="30" y1="30" x2="46" y2="30" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round"/>
+                      <circle cx="22" cy="42" r="4" fill="#10B981"/>
+                      <path d="M20 42 l2 2 l4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <line x1="30" y1="42" x2="46" y2="42" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round"/>
+                      <circle cx="22" cy="52" r="4" fill="#E5E7EB" stroke="#9CA3AF" strokeWidth="1"/>
+                      <line x1="30" y1="52" x2="42" y2="52" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold leading-tight">Tarefas</span>
+                  <span className="text-[10px] text-gray-400 group-data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Entregas</span>
+                </button>
+              </TabsTrigger>
+
+              {/* Mini_Cursos — link externo */}
+              <a
+                href="https://ecolider.ecodobem.com/meus-cursos"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md text-gray-600 transition-all shadow-sm cursor-pointer w-full no-underline"
+              >
+                <div className="w-12 h-12 flex items-center justify-center">
+                  {/* Ilustração: capelo de formatura com seta externa */}
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    <polygon points="32,12 58,26 32,40 6,26" fill="#99F6E4" stroke="#0D9488" strokeWidth="1.5" strokeLinejoin="round"/>
+                    <path d="M46 32 v10 c0 6-8 10-14 10s-14-4-14-10 V32" fill="#CCFBF1" stroke="#0D9488" strokeWidth="1.5"/>
+                    <line x1="58" y1="26" x2="58" y2="40" stroke="#0D9488" strokeWidth="2"/>
+                    <circle cx="58" cy="42" r="3" fill="#F59E0B"/>
+                    <rect x="42" y="8" width="14" height="14" rx="3" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1"/>
+                    <path d="M46 18 l3-6 l3 6" stroke="#D97706" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <line x1="49" y1="12" x2="49" y2="18" stroke="#D97706" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold leading-tight flex items-center gap-0.5">Mini_Cursos <ExternalLink className="h-2.5 w-2.5 opacity-50" /></span>
+                <span className="text-[10px] text-gray-400 leading-tight text-center hidden sm:block">Aprendizado</span>
+              </a>
+
+              {/* Cases de Sucesso */}
+              <TabsTrigger value="cases" asChild>
+                <button className="group flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full">
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    {/* Ilustração: troféu com estrela */}
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                      <rect x="24" y="48" width="16" height="6" rx="2" fill="#FCD34D" stroke="#D97706" strokeWidth="1.5"/>
+                      <rect x="20" y="54" width="24" height="4" rx="2" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/>
+                      <path d="M20 16 h24 v18 c0 9-24 9-24 0 Z" fill="#FCD34D" stroke="#D97706" strokeWidth="1.5"/>
+                      <path d="M20 22 c-8 0-8 14 0 14" fill="none" stroke="#D97706" strokeWidth="1.5"/>
+                      <path d="M44 22 c8 0 8 14 0 14" fill="none" stroke="#D97706" strokeWidth="1.5"/>
+                      <line x1="32" y1="34" x2="32" y2="48" stroke="#D97706" strokeWidth="1.5"/>
+                      <polygon points="32,20 33.5,24.5 38,24.5 34.5,27 36,31.5 32,29 28,31.5 29.5,27 26,24.5 30.5,24.5" fill="#F59E0B"/>
+                      <circle cx="12" cy="12" r="4" fill="#FCD34D" opacity="0.6"/>
+                      <circle cx="52" cy="10" r="3" fill="#FCD34D" opacity="0.6"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold leading-tight">Cases</span>
+                  <span className="text-[10px] text-gray-400 group-data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Resultados</span>
+                </button>
+              </TabsTrigger>
+
+              {/* Meu Perfil */}
+              <TabsTrigger value="meu-perfil-disc" asChild>
+                <button className="group flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full">
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    {/* Ilustração: pessoa com gráfico de evolução */}
+                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                      <circle cx="28" cy="18" r="10" fill="#FECDD3" stroke="#F43F5E" strokeWidth="1.5"/>
+                      <path d="M12 50c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="#FFE4E6" stroke="#F43F5E" strokeWidth="1.5"/>
+                      <rect x="40" y="28" width="18" height="18" rx="3" fill="#FFF1F2" stroke="#F43F5E" strokeWidth="1"/>
+                      <polyline points="43,42 46,38 49,40 52,34 55,36" stroke="#F43F5E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                      <circle cx="55" cy="36" r="1.5" fill="#F43F5E"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold leading-tight">Meu Perfil</span>
+                  <span className="text-[10px] text-gray-400 group-data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Evolução</span>
+                </button>
+              </TabsTrigger>
+
+            </div>
+          </div>
 
           {/* Convite para Relatório de Impacto */}
           {v2?.alertaCasePendente && v2.alertaCasePendente.length > 0 && (
