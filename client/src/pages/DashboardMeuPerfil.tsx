@@ -760,7 +760,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                     );
                   })()}
                 </div>
-                <div className="text-right">
+                <div className="hidden text-right">
                   <p className="text-xs text-white/70 mb-1 flex items-center gap-1 justify-end">
                     Engajamento Final
                     <InfoTooltip text={INDICADORES_INFO.ind7.explicacao} className="text-white/50 hover:text-white/80" />
@@ -775,7 +775,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
               </div>
 
               {/* Explicação do Engajamento Final */}
-              {v2Filtrado && (
+              {false && v2Filtrado && (
                 <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
                   <p className="font-semibold mb-1 text-white/90">Ind. 7 — Engajamento Final:</p>
                   <p>Média dos 5 indicadores: ({safeToFixed(v2Filtrado.ind1_webinars ?? 0, 0)} + {safeToFixed(v2Filtrado.ind2_avaliacoes ?? 0, 0)} + {safeToFixed(v2Filtrado.ind3_competencias ?? 0, 0)} + {safeToFixed(v2Filtrado.ind4_tarefas ?? 0, 0)} + {safeToFixed(v2Filtrado.ind5_engajamento ?? 0, 0)}) / 5 = <span className="text-[#F5991F] font-bold">{safeToFixed(v2Filtrado.ind7_engajamentoFinal ?? 0, 0)}%</span></p>
