@@ -114,7 +114,6 @@ export interface AplicabilidadeData {
   notaFinal: number | null;
   percentual: number;
   provisoria: boolean;
-  bonusEngajamento: boolean;
   mediaAluno: number | null;
   mediaMentora: number | null;
   totalAvaliacoes: number;
@@ -338,11 +337,12 @@ export default function DualIndicators({
                           <Info className="h-3.5 w-3.5" />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
+                      <TooltipContent side="top" className="max-w-sm">
                         <p className="text-xs leading-relaxed">
                           <strong>Indicador de Aplicabilidade (meta: 80%)</strong><br />
                           Mede a aplicação prática do aprendizado por meio de <strong>2 microindicadores</strong>: <strong>Tarefas com aplicabilidade</strong> e <strong>Case</strong>.<br />
                           A nota final é a <strong>média dos microindicadores válidos</strong>.<br />
+                          Se houver Tarefa + Case, calcula a média dos dois; se houver apenas um deles, usa apenas o válido; se o Case ainda não for aplicável, ele não penaliza a média.<br />
                           As tarefas usam notas de <strong>0 a 10</strong> convertidas para base 100.<br />
                           O Case vale <strong>100%</strong> quando entregue e <strong>0%</strong> quando não entregue.<br />
                           A Aplicabilidade é um indicador <strong>separado</strong> e <strong>não compõe o Engajamento</strong>.
@@ -373,7 +373,6 @@ export default function DualIndicators({
                       </span>
                     )
                   )}
-
                   {!compact && (
                     <div className="mt-2 space-y-1">
                       {aplicabilidade.microTarefaPercentual != null && (

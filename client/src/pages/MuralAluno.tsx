@@ -17,7 +17,7 @@ import {
   Sparkles, GraduationCap, Zap, ChevronRight,
   Info, CalendarDays, Users, Star, Loader2,
   CheckCircle2, AlertTriangle, MessageSquareText, HandHeart,
-  ArrowLeft, Send, BookOpen, TrendingUp
+  ArrowLeft, Send, BookOpen, TrendingUp, Trophy, Building2, UserRound
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -530,6 +530,9 @@ export default function MuralAluno() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [currentView, setCurrentView] = useState<ViewType>("home");
+  const [caseModalOpen, setCaseModalOpen] = useState(false);
+  const [selectedCase, setSelectedCase] = useState<any | null>(null);
+  const [caseNotifPopup, setCaseNotifPopup] = useState<any | null>(null);
 
   // Verificar se o aluno precisa de onboarding (sem PDI ou admin liberou novo ciclo)
   const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
@@ -549,6 +552,25 @@ export default function MuralAluno() {
   const { data: activeCourses } = trpc.courses.listActive.useQuery();
   const { data: pendingAttendance, refetch: refetchPending } = trpc.attendance.pending.useQuery();
   const { data: myAttendance, refetch: refetchMyAttendance } = trpc.attendance.myAttendance.useQuery();
+  const { data: casesVitrine } = trpc.cases.vitrineMural.useQuery(
+    { limit: 8 },
+    { enabled: !!user }
+  );
+  const { data: notificationsData, refetch: refetchNotifications } = trpc.notifications.list.useQuery(
+    { limit: 20 },
+    { enabled: !!user }
+  );
+  const markNotificationRead = trpc.notifications.markRead.useMutation();
+  const demonstrarInteresseMutation = trpc.cases.demonstrarInteresse.useMutation({
+    onSuccess: () => {
+      toast.success("Interesse enviado com sucesso! O autor do case foi notificado.");
+      setCaseModalOpen(false);
+      setSelectedCase(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Não foi possível enviar seu interesse.");
+    }
+  });
 
 
 
@@ -577,6 +599,25 @@ export default function MuralAluno() {
 
   const firstName = user?.name?.split(" ")[0] || "Aluno";
   const pendingCount = pendingAttendance?.events?.length || 0;
+
+  const mensagemInteresse = useMemo(() => {
+    const nome = user?.name || "Aluno interessado";
+    const email = user?.email || "email-nao-informado";
+    return `Olá! Parabéns pelo Case de Sucesso.
+Queria conhecer o seu case.
+Poderíamos conversar para ampliar o meu aprendizado?
+
+Interessado: ${nome}
+E-mail: ${email}`;
+  }, [user?.email, user?.name]);
+
+  useEffect(() => {
+    if (caseNotifPopup || !notificationsData || notificationsData.length === 0) return;
+    const firstUnreadCaseInterest = notificationsData.find(
+      (n: any) => n.category === "case_interesse" && Number(n.isRead) === 0
+    );
+    if (firstUnreadCaseInterest) setCaseNotifPopup(firstUnreadCaseInterest);
+  }, [notificationsData, caseNotifPopup]);
 
   const getAttendanceStatus = (webinarId: number): "confirmed" | "pending" | null => {
     // Comparar com scheduledWebinarId (mapeado de events -> scheduled_webinars)
@@ -610,6 +651,85 @@ export default function MuralAluno() {
     return (
       <AlunoLayout>
         <div className="space-y-6 animate-in fade-in duration-500">
+          <Dialog
+            open={!!caseNotifPopup}
+            onOpenChange={async (open) => {
+              if (!open && caseNotifPopup) {
+                try {
+                  await markNotificationRead.mutateAsync({ notificationId: caseNotifPopup.id });
+                } catch {}
+                setCaseNotifPopup(null);
+                refetchNotifications();
+              }
+            }}
+          >
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-amber-700">
+                  <Trophy className="h-5 w-5" />
+                  Interesse no seu Case de Sucesso
+                </DialogTitle>
+                <DialogDescription>
+                  Um aluno demonstrou interesse no seu case. Isso é reconhecimento real da sua entrega!
+                </DialogDescription>
+              </DialogHeader>
+              <div className="rounded-lg border bg-amber-50 p-4 text-sm whitespace-pre-line">
+                {caseNotifPopup?.message}
+              </div>
+              <DialogFooter>
+                <Button
+                  className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90"
+                  onClick={async () => {
+                    if (!caseNotifPopup) return;
+                    await markNotificationRead.mutateAsync({ notificationId: caseNotifPopup.id });
+                    setCaseNotifPopup(null);
+                    refetchNotifications();
+                  }}
+                >
+                  Entendi
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={caseModalOpen} onOpenChange={setCaseModalOpen}>
+            <DialogContent className="max-w-xl">
+              <DialogHeader>
+                <DialogTitle>Quero conhecer este case</DialogTitle>
+                <DialogDescription>
+                  Sua mensagem será enviada internamente ao autor do case.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                {selectedCase && (
+                  <div className="rounded-lg border bg-slate-50 p-3 text-sm">
+                    <p><strong>Case:</strong> {selectedCase.titulo}</p>
+                    <p><strong>Autor:</strong> {selectedCase.alunoNome}</p>
+                    <p><strong>Empresa:</strong> {selectedCase.empresa}</p>
+                  </div>
+                )}
+                <Textarea value={mensagemInteresse} readOnly className="min-h-[170px]" />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCaseModalOpen(false)}>Cancelar</Button>
+                <Button
+                  className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
+                  disabled={!selectedCase || demonstrarInteresseMutation.isPending}
+                  onClick={async () => {
+                    if (!selectedCase) return;
+                    await demonstrarInteresseMutation.mutateAsync({ caseId: selectedCase.caseId });
+                  }}
+                >
+                  {demonstrarInteresseMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
+                  ) : (
+                    <><Send className="h-4 w-4 mr-2" /> Enviar interesse</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {/* Logo + Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -634,8 +754,63 @@ export default function MuralAluno() {
             </div>
           </div>
 
-          {/* Next Webinar Highlight */}
+           {/* Next Webinar Highlight */}
           {nextWebinar && <NextWebinarHighlight webinar={nextWebinar} />}
+
+          {/* Cases de Sucesso da Comunidade */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                Cases de Sucesso da Comunidade
+              </h2>
+              <Badge className="bg-amber-100 text-amber-800 border-amber-200">Vitrine inspiradora</Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {(casesVitrine || []).map((c: any) => (
+                <Card key={c.caseId} className="border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 shadow-sm hover:shadow-md transition-all">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1 min-w-0">
+                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                          <Building2 className="h-3.5 w-3.5 text-amber-600" />
+                          {c.empresa}
+                        </p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                          <UserRound className="h-3.5 w-3.5 text-amber-600" />
+                          {c.alunoNome}
+                        </p>
+                        <h3 className="font-semibold text-[#0A1E3E] line-clamp-2">{c.titulo}</h3>
+                      </div>
+                      <Trophy className="h-5 w-5 text-amber-500 shrink-0" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-gray-500">
+                        {c.dataEntrega ? `Publicado em ${formatDate(c.dataEntrega)}` : "Case publicado"}
+                      </span>
+                      <Button
+                        size="sm"
+                        className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
+                        onClick={() => {
+                          setSelectedCase(c);
+                          setCaseModalOpen(true);
+                        }}
+                      >
+                        Quero conhecer este case
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            {(!casesVitrine || casesVitrine.length === 0) && (
+              <Card className="border-dashed border-amber-200 bg-amber-50/60">
+                <CardContent className="p-5 text-center">
+                  <p className="text-sm text-amber-800 font-medium">Em breve, novos Cases de Sucesso da comunidade.</p>
+                  <p className="text-xs text-amber-700 mt-1">Entregue seu case para aparecer nesta vitrine inspiradora.</p>
+                </CardContent>
+              </Card>
+            )}
+          </section>
 
           {/* Stat Cards - Click to drill down */}
           <div>

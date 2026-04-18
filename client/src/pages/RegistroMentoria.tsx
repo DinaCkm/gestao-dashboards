@@ -1607,27 +1607,37 @@ export default function RegistroMentoria() {
                                   <span className="text-gray-400 italic">N/A</span>
                                 )}
                               </div>
-                              {/* Aplicabilidade Prática - mini indicador (regra nova) */}
-                              {((session as any).notaAlunoAplicabilidade !== null || (session as any).notaMentoraAplicabilidade !== null) && (() => {
-                                const notaOficialMini = (session as any).notaMentoraAplicabilidade !== null && (session as any).notaMentoraAplicabilidade !== undefined
-                                  ? (session as any).notaMentoraAplicabilidade
-                                  : (session as any).notaAlunoAplicabilidade;
-                                const isProvisorioMini = (session as any).notaMentoraAplicabilidade === null || (session as any).notaMentoraAplicabilidade === undefined;
-                                const notaColor = notaOficialMini >= 8 ? 'text-emerald-700' : notaOficialMini >= 5 ? 'text-amber-600' : 'text-red-600';
-                                const badgeBg = notaOficialMini >= 8 ? 'bg-emerald-100 text-emerald-800' : notaOficialMini >= 5 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800';
-                                return (
-                                  <>
-                                    <span className="text-gray-300">|</span>
-                                    <div className="flex items-center gap-1.5">
-                                      <Target className="h-3.5 w-3.5 text-indigo-500" />
-                                      <span className="text-gray-600">Aplic.:</span>
-                                      <Badge className={`text-[10px] px-1.5 py-0 border-0 ${badgeBg}`}>
-                                        {notaOficialMini}/10{isProvisorioMini ? ' (prov.)' : ''}
+                              {/* Aplicabilidade Prática - mini comparativo */}
+                              {((session as any).notaAlunoAplicabilidade !== null || (session as any).notaMentoraAplicabilidade !== null) && (
+                                <>
+                                  <span className="text-gray-300">|</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <Target className="h-3.5 w-3.5 text-indigo-500" />
+                                    <span className="text-gray-600">Aplic.:</span>
+                                    {(session as any).notaAlunoAplicabilidade !== null && (
+                                      <span className={`font-medium ${(session as any).notaAlunoAplicabilidade >= 8 ? 'text-emerald-700' : (session as any).notaAlunoAplicabilidade >= 5 ? 'text-amber-600' : 'text-red-600'}`}>
+                                        A:{(session as any).notaAlunoAplicabilidade}
+                                      </span>
+                                    )}
+                                    {(session as any).notaMentoraAplicabilidade !== null && (
+                                      <span className={`font-medium ${(session as any).notaMentoraAplicabilidade >= 8 ? 'text-emerald-700' : (session as any).notaMentoraAplicabilidade >= 5 ? 'text-amber-600' : 'text-red-600'}`}>
+                                        M:{(session as any).notaMentoraAplicabilidade}
+                                      </span>
+                                    )}
+                                    {(session as any).notaAlunoAplicabilidade !== null && (session as any).notaMentoraAplicabilidade !== null && (
+                                      <Badge className={`text-[10px] px-1.5 py-0 border-0 ${
+                                        ((session as any).notaAlunoAplicabilidade + (session as any).notaMentoraAplicabilidade) / 2 >= 8 
+                                          ? 'bg-emerald-100 text-emerald-800' 
+                                          : ((session as any).notaAlunoAplicabilidade + (session as any).notaMentoraAplicabilidade) / 2 >= 5 
+                                            ? 'bg-amber-100 text-amber-800' 
+                                            : 'bg-red-100 text-red-800'
+                                      }`}>
+                                        {(((((session as any)?.notaAlunoAplicabilidade ?? 0) + ((session as any)?.notaMentoraAplicabilidade ?? 0)) / 2) ?? 0).toFixed(1)}
                                       </Badge>
-                                    </div>
-                                  </>
-                                );
-                              })()}
+                                    )}
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </>
                         )}
@@ -1747,16 +1757,16 @@ export default function RegistroMentoria() {
                     return 'bg-red-50 border-red-200';
                   };
                   
-                  // Regra nova: nota oficial é a da mentora (quando disponível), senão a do aluno (provisória)
-                  const notaOficial = notaMentora !== null && notaMentora !== undefined ? notaMentora : notaAluno;
-                  const isProvisoria = notaMentora === null || notaMentora === undefined;
+                  // Calculate average
+                  const hasAvg = notaAluno !== null && notaAluno !== undefined && notaMentora !== null && notaMentora !== undefined;
+                  const avg = hasAvg ? ((notaAluno + notaMentora) / 2).toFixed(1) : null;
                   
                   return (
                     <div className="rounded-lg border border-indigo-200 overflow-hidden">
                       <div className="bg-indigo-50 px-4 py-2.5 border-b border-indigo-200">
                         <p className="text-sm font-semibold text-indigo-800 flex items-center gap-2">
                           <Target className="h-4 w-4" />
-                          Aplicabilidade Prática — Registro da Tarefa
+                          Aplicabilidade Pr\u00e1tica — Comparativo
                         </p>
                       </div>
                       <div className="p-4 space-y-3">
@@ -1764,45 +1774,43 @@ export default function RegistroMentoria() {
                         <div className="grid grid-cols-2 gap-3">
                           {/* Nota do Aluno */}
                           <div className={`rounded-lg p-3 border ${getNotaBg(notaAluno)}`}>
-                            <p className="text-xs text-gray-500 mb-1 font-medium">Autoavaliação do Aluno</p>
+                            <p className="text-xs text-gray-500 mb-1 font-medium">Autoavalia\u00e7\u00e3o do Aluno</p>
                             {notaAluno !== null && notaAluno !== undefined ? (
                               <div className="flex items-baseline gap-1">
                                 <span className={`font-bold text-2xl ${getNotaColor(notaAluno)}`}>{notaAluno}</span>
                                 <span className="text-gray-400 text-sm">/10</span>
                               </div>
                             ) : (
-                              <span className="text-gray-400 italic text-sm">Não preenchido</span>
+                              <span className="text-gray-400 italic text-sm">N\u00e3o preenchido</span>
                             )}
                           </div>
                           {/* Nota da Mentora */}
                           <div className={`rounded-lg p-3 border ${getNotaBg(notaMentora)}`}>
-                            <p className="text-xs text-gray-500 mb-1 font-medium">Avaliação da Mentora</p>
+                            <p className="text-xs text-gray-500 mb-1 font-medium">Avalia\u00e7\u00e3o da Mentora</p>
                             {notaMentora !== null && notaMentora !== undefined ? (
                               <div className="flex items-baseline gap-1">
                                 <span className={`font-bold text-2xl ${getNotaColor(notaMentora)}`}>{notaMentora}</span>
                                 <span className="text-gray-400 text-sm">/10</span>
                               </div>
                             ) : (
-                              <span className="text-gray-400 italic text-sm">Não avaliado</span>
+                              <span className="text-gray-400 italic text-sm">N\u00e3o avaliado</span>
                             )}
                           </div>
                         </div>
-                        {/* Nota oficial da tarefa */}
-                        {notaOficial !== null && notaOficial !== undefined && (
-                          <div className={`rounded-lg p-3 border text-center ${Number(notaOficial) >= 8 ? 'bg-emerald-50 border-emerald-300' : Number(notaOficial) >= 5 ? 'bg-amber-50 border-amber-300' : 'bg-red-50 border-red-300'}`}>
-                            <p className="text-xs text-gray-500 mb-1">
-                              {isProvisoria ? 'Nota da Tarefa (provisória — aguardando avaliação da mentora)' : 'Nota Oficial da Tarefa (avaliada pela mentora)'}
-                            </p>
-                            <span className={`font-bold text-xl ${Number(notaOficial) >= 8 ? 'text-emerald-700' : Number(notaOficial) >= 5 ? 'text-amber-600' : 'text-red-600'}`}>{notaOficial}/10</span>
-                            {isProvisoria && (
-                              <p className="text-xs text-amber-600 mt-1 font-medium">Provisória — a mentora ainda não avaliou esta tarefa.</p>
+                        {/* Average / Indicator */}
+                        {hasAvg && avg && (
+                          <div className={`rounded-lg p-3 border text-center ${Number(avg) >= 8 ? 'bg-emerald-50 border-emerald-300' : Number(avg) >= 5 ? 'bg-amber-50 border-amber-300' : 'bg-red-50 border-red-300'}`}>
+                            <p className="text-xs text-gray-500 mb-1">M\u00e9dia (Indicador de Aplicabilidade)</p>
+                            <span className={`font-bold text-xl ${Number(avg) >= 8 ? 'text-emerald-700' : Number(avg) >= 5 ? 'text-amber-600' : 'text-red-600'}`}>{avg}/10</span>
+                            {Number(avg) >= 8 && (
+                              <p className="text-xs text-emerald-600 mt-1 font-medium">Boa aplicabilidade prática registrada.</p>
                             )}
                           </div>
                         )}
                         {/* Texto descritivo do aluno */}
                         {textoAplic && (
                           <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                            <p className="text-xs text-gray-500 mb-1 font-medium">Relato do Aluno sobre a Aplicação Prática</p>
+                            <p className="text-xs text-gray-500 mb-1 font-medium">Relato do Aluno sobre a Aplica\u00e7\u00e3o Pr\u00e1tica</p>
                             <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{textoAplic}</p>
                           </div>
                         )}
