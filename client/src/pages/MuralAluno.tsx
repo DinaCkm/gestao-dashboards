@@ -873,8 +873,8 @@ E-mail: ${email}`;
             </div>
           </div>
 
-          {/* Plataformas Externas - Mini Cards */}
-          <div>
+          {/* Plataformas Externas - Mini Cards (oculto) */}
+          {false && <div>
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Plataformas Externas
             </h2>
@@ -935,7 +935,7 @@ E-mail: ${email}`;
                 </Card>
               </a>
             </div>
-          </div>
+          </div>}
 
 
         </div>
