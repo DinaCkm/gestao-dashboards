@@ -340,10 +340,12 @@ export default function DualIndicators({
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-xs">
                         <p className="text-xs leading-relaxed">
-                          <strong>Indicador de Aplicabilidade Prática (meta: 80%)</strong><br />
-                          Macroindicador separado do Engajamento.<br />
-                          Cálculo: média dos microindicadores válidos.<br />
-                          Micro 1: Tarefas com aplicabilidade. Micro 2: Case.
+                          <strong>Indicador de Aplicabilidade (meta: 80%)</strong><br />
+                          Mede a aplicação prática do aprendizado por meio de <strong>2 microindicadores</strong>: <strong>Tarefas com aplicabilidade</strong> e <strong>Case</strong>.<br />
+                          A nota final é a <strong>média dos microindicadores válidos</strong>.<br />
+                          As tarefas usam notas de <strong>0 a 10</strong> convertidas para base 100.<br />
+                          O Case vale <strong>100%</strong> quando entregue e <strong>0%</strong> quando não entregue.<br />
+                          A Aplicabilidade é um indicador <strong>separado</strong> e <strong>não compõe o Engajamento</strong>.
                         </p>
                       </TooltipContent>
                     </Tooltip>
