@@ -379,11 +379,11 @@ export default function DualIndicators({
                       {aplicabilidade.microTarefaPercentual != null && (
                         <DetailBar label="Tarefas" value={aplicabilidade.microTarefaPercentual} />
                       )}
-                      {aplicabilidade.caseAplicavel ? (
-                        <DetailBar label="Case" value={aplicabilidade.microCasePercentual ?? 0} />
+                      {aplicabilidade.caseAplicavel && (aplicabilidade.microCasePercentual ?? 0) > 0 ? (
+                        <DetailBar label="Case" value={aplicabilidade.microCasePercentual!} />
                       ) : (
                         <p className="text-[11px] text-gray-500">
-                          Case: não aplicável ainda
+                          {aplicabilidade.caseAplicavel ? 'Case: não entregue ainda' : 'Case: não aplicável ainda'}
                         </p>
                       )}
                     </div>
