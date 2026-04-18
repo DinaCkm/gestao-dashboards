@@ -34,6 +34,7 @@ import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
 import { buildLembreteEngajamentoEmail, sendEmail } from "./emailService";
+import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -3337,49 +3338,26 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             );
           });
           
-          // Calcular médias
-          let somaNotaAluno = 0, countNotaAluno = 0;
-          let somaNotaMentora = 0, countNotaMentora = 0;
-          
-          for (const s of sessoesComAplic) {
-            if (s.notaAlunoAplicabilidade !== null && s.notaAlunoAplicabilidade !== undefined) {
-              somaNotaAluno += Number(s.notaAlunoAplicabilidade);
-              countNotaAluno++;
-            }
-            if (s.notaMentoraAplicabilidade !== null && s.notaMentoraAplicabilidade !== undefined) {
-              somaNotaMentora += Number(s.notaMentoraAplicabilidade);
-              countNotaMentora++;
-            }
-          }
-          
-          for (const c of casesComAplic) {
-            if ((c as any).notaAlunoAplicabilidade !== null) {
-              somaNotaAluno += Number((c as any).notaAlunoAplicabilidade);
-              countNotaAluno++;
-            }
-            if ((c as any).notaMentoraAplicabilidade !== null) {
-              somaNotaMentora += Number((c as any).notaMentoraAplicabilidade);
-              countNotaMentora++;
-            }
-          }
-          
-          const mediaAluno = countNotaAluno > 0 ? somaNotaAluno / countNotaAluno : null;
-          const mediaMentora = countNotaMentora > 0 ? somaNotaMentora / countNotaMentora : null;
-          
-          // Cálculo final: 60% mentora + 40% aluno
-          let notaFinal: number | null = null;
-          let provisoria = false;
-          if (mediaMentora !== null && mediaAluno !== null) {
-            notaFinal = mediaMentora * 0.6 + mediaAluno * 0.4;
-          } else if (mediaAluno !== null) {
-            notaFinal = mediaAluno; // provisória
-            provisoria = true;
-          } else if (mediaMentora !== null) {
-            notaFinal = mediaMentora;
-          }
-          
-          const percentual = notaFinal !== null ? Math.round(notaFinal * 10) : 0;
-          const bonusEngajamento = notaFinal !== null && notaFinal >= 8; // +10% se >= 8
+          const microTarefa = calcularMicroTarefaAplicabilidade(
+            sessoesComAplic.map((s) => ({
+              notaAlunoAplicabilidade: s.notaAlunoAplicabilidade,
+              notaMentoraAplicabilidade: s.notaMentoraAplicabilidade,
+            })),
+          );
+
+          // Case é microindicador independente: entregue=100, não entregue=0, não aplicável=null
+          const caseAplicavel = casesAluno.length > 0;
+          const anyCaseEntregue = casesAluno.some((c) => c.entregue === 1);
+          const microCasePercentual = caseAplicavel ? (anyCaseEntregue ? 100 : 0) : null;
+
+          const aplicabilidade = calcularAplicabilidadeFinal({
+            microTarefaPercentual: microTarefa.percentual,
+            microCasePercentual,
+            caseAplicavel,
+            provisoria: microTarefa.provisoria,
+            totalTarefasComAplicabilidade: microTarefa.total,
+            totalCasesConsiderados: caseAplicavel ? 1 : 0,
+          });
           
           // Detalhes por sessão
           const detalhes = sessoesComAplic.map(s => ({
@@ -3390,17 +3368,29 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             notaMentora: s.notaMentoraAplicabilidade,
             textoAplicabilidade: s.textoAplicabilidade || null,
           }));
+
+          const avaliacoesAluno = sessoesComAplic.filter(s => s.notaAlunoAplicabilidade != null).length
+            + casesComAplic.filter(c => (c as any).notaAlunoAplicabilidade != null).length;
+          const avaliacoesMentora = sessoesComAplic.filter(s => s.notaMentoraAplicabilidade != null).length
+            + casesComAplic.filter(c => (c as any).notaMentoraAplicabilidade != null).length;
           
           return {
-            notaFinal: notaFinal !== null ? Math.round(notaFinal * 100) / 100 : null,
-            percentual,
-            provisoria,
-            bonusEngajamento,
-            mediaAluno: mediaAluno !== null ? Math.round(mediaAluno * 100) / 100 : null,
-            mediaMentora: mediaMentora !== null ? Math.round(mediaMentora * 100) / 100 : null,
+            percentual: aplicabilidade.percentualFinal ?? 0,
+            provisoria: aplicabilidade.provisoria,
+            bonusEngajamento: false,
+            notaFinal: aplicabilidade.percentualFinal != null ? Math.round(aplicabilidade.percentualFinal / 10 * 100) / 100 : null,
+            mediaAluno: null,
+            mediaMentora: null,
+            // Novo retorno padronizado (fonte oficial)
+            percentualFinal: aplicabilidade.percentualFinal,
+            microTarefaPercentual: aplicabilidade.microTarefaPercentual,
+            microCasePercentual: aplicabilidade.microCasePercentual,
+            caseAplicavel: aplicabilidade.caseAplicavel,
+            totalTarefasComAplicabilidade: aplicabilidade.totalTarefasComAplicabilidade,
+            totalCasesConsiderados: aplicabilidade.totalCasesConsiderados,
             totalAvaliacoes: sessoesComAplic.length + casesComAplic.length,
-            avaliacoesAluno: countNotaAluno,
-            avaliacoesMentora: countNotaMentora,
+            avaliacoesAluno,
+            avaliacoesMentora,
             detalhes,
           };
         })(),
