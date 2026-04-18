@@ -114,12 +114,17 @@ export interface AplicabilidadeData {
   notaFinal: number | null;
   percentual: number;
   provisoria: boolean;
-  bonusEngajamento: boolean;
   mediaAluno: number | null;
   mediaMentora: number | null;
   totalAvaliacoes: number;
   avaliacoesAluno: number;
   avaliacoesMentora: number;
+  percentualFinal?: number | null;
+  microTarefaPercentual?: number | null;
+  microCasePercentual?: number | null;
+  caseAplicavel?: boolean;
+  totalTarefasComAplicabilidade?: number;
+  totalCasesConsiderados?: number;
 }
 
 export interface DualIndicatorsProps {
@@ -332,12 +337,15 @@ export default function DualIndicators({
                           <Info className="h-3.5 w-3.5" />
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
+                      <TooltipContent side="top" className="max-w-sm">
                         <p className="text-xs leading-relaxed">
-                          <strong>Indicador de Aplicabilidade Prática (meta: 80%)</strong><br />
-                          Mede o quanto você está aplicando na prática o que aprendeu.<br />
-                          Composto pela avaliação do aluno (40%) e da mentora (60%).<br />
-                          Se atingir nota 8-10, você ganha +10% no Engajamento Final!
+                          <strong>Indicador de Aplicabilidade (meta: 80%)</strong><br />
+                          Mede a aplicação prática do aprendizado por meio de <strong>2 microindicadores</strong>: <strong>Tarefas com aplicabilidade</strong> e <strong>Case</strong>.<br />
+                          A nota final é a <strong>média dos microindicadores válidos</strong>.<br />
+                          Se houver Tarefa + Case, calcula a média dos dois; se houver apenas um deles, usa apenas o válido; se o Case ainda não for aplicável, ele não penaliza a média.<br />
+                          As tarefas usam notas de <strong>0 a 10</strong> convertidas para base 100.<br />
+                          O Case vale <strong>100%</strong> quando entregue e <strong>0%</strong> quando não entregue.<br />
+                          A Aplicabilidade é um indicador <strong>separado</strong> e <strong>não compõe o Engajamento</strong>.
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -367,26 +375,22 @@ export default function DualIndicators({
                   )}
                   {!compact && (
                     <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                      Avaliação da aplicabilidade prática dos conteúdos.
-                      {aplicabilidade.totalAvaliacoes === 0
-                        ? ' Disponível a partir das próximas tarefas (01/04/2026).'
-                        : ` ${aplicabilidade.totalAvaliacoes} avaliação(s) registrada(s).`
-                      }
+                      Aplicabilidade calculada separadamente do Engajamento.
+                      {aplicabilidade.totalAvaliacoes === 0 ? ' Sem avaliações registradas no período.' : ` ${aplicabilidade.totalAvaliacoes} avaliação(ões) registrada(s).`}
                     </p>
                   )}
-                  {!compact && aplicabilidade.totalAvaliacoes > 0 && (
+                  {!compact && (
                     <div className="mt-2 space-y-1">
-                      {aplicabilidade.mediaAluno !== null && (
-                        <DetailBar label="Sua nota" value={aplicabilidade.mediaAluno * 10} />
+                      {aplicabilidade.microTarefaPercentual != null && (
+                        <DetailBar label="Tarefas" value={aplicabilidade.microTarefaPercentual} />
                       )}
-                      {aplicabilidade.mediaMentora !== null && (
-                        <DetailBar label="Nota Mentora" value={aplicabilidade.mediaMentora * 10} />
+                      {aplicabilidade.caseAplicavel ? (
+                        <DetailBar label="Case" value={aplicabilidade.microCasePercentual ?? 0} />
+                      ) : (
+                        <p className="text-[11px] text-gray-500">
+                          Case: não aplicável ainda
+                        </p>
                       )}
-                    </div>
-                  )}
-                  {aplicabilidade.bonusEngajamento && !compact && (
-                    <div className="mt-2 px-2 py-1 bg-green-50 border border-green-200 rounded text-xs text-green-700 font-medium">
-                      ✨ Bônus +10% no Engajamento Final ativo!
                     </div>
                   )}
                 </div>

@@ -34,6 +34,7 @@ import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
 import { buildLembreteEngajamentoEmail, sendEmail } from "./emailService";
+import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -3337,49 +3338,26 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             );
           });
           
-          // Calcular médias
-          let somaNotaAluno = 0, countNotaAluno = 0;
-          let somaNotaMentora = 0, countNotaMentora = 0;
-          
-          for (const s of sessoesComAplic) {
-            if (s.notaAlunoAplicabilidade !== null && s.notaAlunoAplicabilidade !== undefined) {
-              somaNotaAluno += Number(s.notaAlunoAplicabilidade);
-              countNotaAluno++;
-            }
-            if (s.notaMentoraAplicabilidade !== null && s.notaMentoraAplicabilidade !== undefined) {
-              somaNotaMentora += Number(s.notaMentoraAplicabilidade);
-              countNotaMentora++;
-            }
-          }
-          
-          for (const c of casesComAplic) {
-            if ((c as any).notaAlunoAplicabilidade !== null) {
-              somaNotaAluno += Number((c as any).notaAlunoAplicabilidade);
-              countNotaAluno++;
-            }
-            if ((c as any).notaMentoraAplicabilidade !== null) {
-              somaNotaMentora += Number((c as any).notaMentoraAplicabilidade);
-              countNotaMentora++;
-            }
-          }
-          
-          const mediaAluno = countNotaAluno > 0 ? somaNotaAluno / countNotaAluno : null;
-          const mediaMentora = countNotaMentora > 0 ? somaNotaMentora / countNotaMentora : null;
-          
-          // Cálculo final: 60% mentora + 40% aluno
-          let notaFinal: number | null = null;
-          let provisoria = false;
-          if (mediaMentora !== null && mediaAluno !== null) {
-            notaFinal = mediaMentora * 0.6 + mediaAluno * 0.4;
-          } else if (mediaAluno !== null) {
-            notaFinal = mediaAluno; // provisória
-            provisoria = true;
-          } else if (mediaMentora !== null) {
-            notaFinal = mediaMentora;
-          }
-          
-          const percentual = notaFinal !== null ? Math.round(notaFinal * 10) : 0;
-          const bonusEngajamento = notaFinal !== null && notaFinal >= 8; // +10% se >= 8
+          const microTarefa = calcularMicroTarefaAplicabilidade(
+            sessoesComAplic.map((s) => ({
+              notaAlunoAplicabilidade: s.notaAlunoAplicabilidade,
+              notaMentoraAplicabilidade: s.notaMentoraAplicabilidade,
+            })),
+          );
+
+          // Case é microindicador independente: entregue=100, não entregue=0, não aplicável=null
+          const caseAplicavel = casesAluno.length > 0;
+          const anyCaseEntregue = casesAluno.some((c) => c.entregue === 1);
+          const microCasePercentual = caseAplicavel ? (anyCaseEntregue ? 100 : 0) : null;
+
+          const aplicabilidade = calcularAplicabilidadeFinal({
+            microTarefaPercentual: microTarefa.percentual,
+            microCasePercentual,
+            caseAplicavel,
+            provisoria: microTarefa.provisoria,
+            totalTarefasComAplicabilidade: microTarefa.total,
+            totalCasesConsiderados: caseAplicavel ? 1 : 0,
+          });
           
           // Detalhes por sessão
           const detalhes = sessoesComAplic.map(s => ({
@@ -3390,17 +3368,29 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             notaMentora: s.notaMentoraAplicabilidade,
             textoAplicabilidade: s.textoAplicabilidade || null,
           }));
+
+          const avaliacoesAluno = sessoesComAplic.filter(s => s.notaAlunoAplicabilidade != null).length
+            + casesComAplic.filter(c => (c as any).notaAlunoAplicabilidade != null).length;
+          const avaliacoesMentora = sessoesComAplic.filter(s => s.notaMentoraAplicabilidade != null).length
+            + casesComAplic.filter(c => (c as any).notaMentoraAplicabilidade != null).length;
           
           return {
-            notaFinal: notaFinal !== null ? Math.round(notaFinal * 100) / 100 : null,
-            percentual,
-            provisoria,
-            bonusEngajamento,
-            mediaAluno: mediaAluno !== null ? Math.round(mediaAluno * 100) / 100 : null,
-            mediaMentora: mediaMentora !== null ? Math.round(mediaMentora * 100) / 100 : null,
+            percentual: aplicabilidade.percentualFinal ?? 0,
+            provisoria: aplicabilidade.provisoria,
+            bonusEngajamento: false,
+            notaFinal: aplicabilidade.percentualFinal != null ? Math.round(aplicabilidade.percentualFinal / 10 * 100) / 100 : null,
+            mediaAluno: null,
+            mediaMentora: null,
+            // Novo retorno padronizado (fonte oficial)
+            percentualFinal: aplicabilidade.percentualFinal,
+            microTarefaPercentual: aplicabilidade.microTarefaPercentual,
+            microCasePercentual: aplicabilidade.microCasePercentual,
+            caseAplicavel: aplicabilidade.caseAplicavel,
+            totalTarefasComAplicabilidade: aplicabilidade.totalTarefasComAplicabilidade,
+            totalCasesConsiderados: aplicabilidade.totalCasesConsiderados,
             totalAvaliacoes: sessoesComAplic.length + casesComAplic.length,
-            avaliacoesAluno: countNotaAluno,
-            avaliacoesMentora: countNotaMentora,
+            avaliacoesAluno,
+            avaliacoesMentora,
             detalhes,
           };
         })(),
@@ -6708,6 +6698,9 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         trilhaId: z.number(),
         trilhaNome: z.string(),
         titulo: z.string().min(1, 'T\u00edtulo \u00e9 obrigat\u00f3rio'),
+        resumoPublico: z.string()
+          .min(20, 'Resumo público deve ter ao menos 20 caracteres')
+          .max(500, 'Resumo público deve ter no máximo 500 caracteres'),
         descricao: z.string().optional(),
         // Campos estruturados do Relat\u00f3rio de Impacto
         oQueAprendi: z.string().min(1, 'Campo "O que aprendi" \u00e9 obrigat\u00f3rio'),
@@ -6766,6 +6759,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
 
         const caseData = {
           titulo: input.titulo,
+          resumoPublico: input.resumoPublico,
           descricao: input.descricao || null,
           fileUrl,
           fileKey,
@@ -6811,6 +6805,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
             `O aluno **${alunoNome}** enviou um Relat\u00f3rio de Impacto para a trilha **${trilhaNome}**.`,
             ``,
             `**T\u00edtulo:** ${input.titulo}`,
+            `**Resumo público:** ${input.resumoPublico.substring(0, 150)}${input.resumoPublico.length > 150 ? '...' : ''}`,
             `**O que aprendi:** ${input.oQueAprendi.substring(0, 150)}${input.oQueAprendi.length > 150 ? '...' : ''}`,
             `**O que mudei:** ${input.oQueMudei.substring(0, 150)}${input.oQueMudei.length > 150 ? '...' : ''}`,
             `**Resultado mensur\u00e1vel:** ${input.resultadoMensuravel.substring(0, 150)}${input.resultadoMensuravel.length > 150 ? '...' : ''}`,
@@ -6864,6 +6859,99 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         }
 
         return { id: resultId, url: fileUrl, updated };
+      }),
+
+    // Vitrine pública de cases para o Mural do aluno
+    vitrineMural: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(30).optional() }).optional())
+      .query(async ({ input }) => {
+        const items = await db.getCasesVitrineMural(input?.limit ?? 12);
+        return items.map((i) => ({
+          caseId: i.caseId,
+          empresa: i.empresa || "Comunidade",
+          alunoNome: i.autorNome,
+          titulo: i.titulo || "Case de Sucesso",
+          resumoPublico: i.resumoPublico || "",
+          dataEntrega: i.dataEntrega,
+        }));
+      }),
+
+    // Aluno demonstra interesse em conhecer um case da vitrine
+    demonstrarInteresse: protectedProcedure
+      .input(z.object({
+        caseId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+        const caseSelecionado = await db.getCaseSucessoById(input.caseId);
+        if (!caseSelecionado || caseSelecionado.entregue !== 1) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Case não encontrado ou indisponível." });
+        }
+
+        const alunoInteressado = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!alunoInteressado) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Perfil de aluno interessado não encontrado." });
+        }
+
+        if (alunoInteressado.id === caseSelecionado.alunoId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode demonstrar interesse no seu próprio case." });
+        }
+
+        const mensagem = `Olá! Parabéns pelo Case de Sucesso.
+Queria conhecer o seu case.
+Poderíamos conversar para ampliar o meu aprendizado?
+
+Interessado: ${alunoInteressado.name}
+E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
+
+        const interesseId = await db.createCaseInteresse({
+          caseId: caseSelecionado.id,
+          autorAlunoId: caseSelecionado.alunoId,
+          interessadoAlunoId: alunoInteressado.id,
+          interessadoNome: alunoInteressado.name,
+          interessadoEmail: alunoInteressado.email || ctx.user.email || "nao-informado@ecossistemadobem.com",
+          mensagem,
+          status: "nao_lido",
+        });
+
+        const [autorUser] = (await db.getAllUsers())
+          .filter((u) => Number(u.alunoId) === Number(caseSelecionado.alunoId))
+          .slice(0, 1);
+
+        if (autorUser) {
+          await db.createNotification({
+            userId: autorUser.id,
+            title: "🌟 Interesse no seu Case de Sucesso",
+            message: `${alunoInteressado.name} (${alunoInteressado.email || ctx.user.email || "sem e-mail"}) quer conhecer seu case.\n\n${mensagem}`,
+            type: "action",
+            category: "case_interesse",
+            link: "/mural",
+          });
+        }
+
+        return { success: true, interesseId, mensagem };
+      }),
+
+    // Autor do case lista interesses recebidos
+    meusInteressesRecebidos: protectedProcedure
+      .input(z.object({ onlyUnread: z.boolean().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!aluno) return [];
+        return await db.getCaseInteressesByAutor(aluno.id, Boolean(input?.onlyUnread));
+      }),
+
+    // Autor do case marca interesse como lido
+    marcarInteresseLido: protectedProcedure
+      .input(z.object({ interesseId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!aluno) throw new TRPCError({ code: "NOT_FOUND", message: "Perfil do aluno não encontrado." });
+        await db.markCaseInteresseAsRead(input.interesseId, aluno.id);
+        return { success: true };
       }),
   }),
 

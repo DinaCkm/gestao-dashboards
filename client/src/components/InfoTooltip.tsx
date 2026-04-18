@@ -66,14 +66,14 @@ export const INDICADORES_INFO = {
   ind5: {
     nome: "Engajamento (Nota Mentora)",
     icone: "Star",
-    explicacao: "Mede a média das notas de engajamento atribuídas pela mentora após cada sessão de mentoria. A nota original vai de 0 a 10 e é convertida para escala de 0 a 100. Bônus: quem entrega o Case de Sucesso recebe +10% neste indicador (limitado a 100%).",
-    formula: "(Média das notas da mentora / 10) × 100 [+10% se Case entregue]",
+    explicacao: "Mede a média das notas de engajamento atribuídas pela mentora após cada sessão de mentoria. A nota original vai de 0 a 10 e é convertida para escala de 0 a 100.",
+    formula: "(Média das notas da mentora / 10) × 100",
   },
   ind6: {
-    nome: "Case de Sucesso (Bônus)",
+    nome: "Aplicabilidade",
     icone: "Briefcase",
-    explicacao: "Indica se o aluno entregou o Case de Sucesso ao final do macrociclo/trilha. Não entra na média dos 5 indicadores. Quem entrega recebe um bônus de +10% no Ind. 5 (Engajamento), limitado a 100%. Pendente de +10% no Ind. 5 significa que o aluno ainda não entregou o Case.",
-    formula: "Bônus de +10% no Ind. 5 se entregue",
+    explicacao: "Macroindicador separado formado por dois microindicadores: tarefas com aplicabilidade e case. A nota final é a média dos microindicadores válidos e não altera o Engajamento.",
+    formula: "Aplicabilidade Final = média(Tarefa, Case) considerando apenas os válidos",
   },
   ind7: {
     nome: "Engajamento Final",

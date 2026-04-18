@@ -8,7 +8,7 @@
  * 3. Performance nas Competências: % competências/cursos finalizados por ciclo
  * 4. Tarefas Práticas: Entregue=100, Não entregue=0, média das entregas
  * 5. Engajamento (Nota da Mentora): Média notas 0-100 por sessão
- * 6. Aplicabilidade Prática (Case de Sucesso): Informativo apenas (não entra na média). Quem entrega recebe +10% no Ind. 5 (limitado a 100)
+ * 6. Aplicabilidade Prática: macroindicador separado (tarefa+case), não altera o Engajamento
  * 7. Engajamento Final: Média dos 5 indicadores (1 a 5), POR CICLO
  */
 
@@ -428,7 +428,7 @@ export function calcularIndicadoresCiclo(
   // IND 5: Engajamento (Nota da Mentora)
   // Média das notas 0-100 por sessão
   // Nota original é 0-10, converter para 0-100
-  // BÔNUS: Se o aluno entregou o Case de Sucesso da trilha, +10% (limitado a 100)
+  // Não há bônus de case no engajamento
   // ============================================================
   const notasEngajamento = mentoriasAluno
     .filter(m => m.engajamento !== undefined && m.engajamento !== null)
@@ -442,8 +442,7 @@ export function calcularIndicadoresCiclo(
   
   // ============================================================
   // IND 6: Aplicabilidade Prática (Case de Sucesso)
-  // Campo INFORMATIVO apenas — NÃO entra na média dos indicadores
-  // Quem entrega o case recebe +10% no Ind. 5 (Engajamento), limitado a 100
+  // Campo separado — NÃO entra na média do Engajamento
   // ============================================================
   const isMacrocicloFinalizado = status === 'finalizado';
   const caseAluno = casesData.find(c => 
@@ -457,16 +456,12 @@ export function calcularIndicadoresCiclo(
     ind6_aplicabilidade = caseEntregue ? 100 : 0;
   }
   
-  // Aplicar bônus de +10% no Ind. 5 se o case foi entregue (limitado a 100)
-  let ind5_engajamento = ind5_engajamento_base;
-  if (caseEntregue && ind5_engajamento_base > 0) {
-    ind5_engajamento = Math.min(100, ind5_engajamento_base * 1.10);
-  }
+  const ind5_engajamento = ind5_engajamento_base;
   
   // ============================================================
   // IND 7: Engajamento Final
   // Média dos 5 indicadores (1 a 5), POR CICLO
-  // Case NÃO entra na média — é apenas bônus no Ind. 5
+  // Case NÃO entra na média do engajamento
   // ============================================================
   const somaIndicadores = ind1_webinars + ind2_avaliacoes + ind3_competencias + ind4_tarefas + ind5_engajamento;
   const numIndicadores = 5;
@@ -583,11 +578,7 @@ export function calcularIndicadoresAluno(
   let macroInd5Base = macroTotalSessoesEng > 0
     ? (macroSomaEng / macroTotalSessoesEng) * 10
     : 0;
-  // Aplicar bônus de +10% se algum case foi entregue
-  const anyCaseEntregue = casesData.some(c => c.entregue);
-  const macroInd5 = anyCaseEntregue && macroInd5Base > 0
-    ? Math.round(Math.min(100, macroInd5Base * 1.10) * 100) / 100
-    : Math.round(macroInd5Base * 100) / 100;
+  const macroInd5 = Math.round(macroInd5Base * 100) / 100;
   
   // Calcular indicadores por ciclo (para Ind.2 e Ind.3 que dependem de competências)
   const todosCiclos: IndicadoresCiclo[] = [];

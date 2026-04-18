@@ -1803,7 +1803,7 @@ export default function RegistroMentoria() {
                             <p className="text-xs text-gray-500 mb-1">M\u00e9dia (Indicador de Aplicabilidade)</p>
                             <span className={`font-bold text-xl ${Number(avg) >= 8 ? 'text-emerald-700' : Number(avg) >= 5 ? 'text-amber-600' : 'text-red-600'}`}>{avg}/10</span>
                             {Number(avg) >= 8 && (
-                              <p className="text-xs text-emerald-600 mt-1 font-medium">B\u00f4nus de +10% no engajamento!</p>
+                              <p className="text-xs text-emerald-600 mt-1 font-medium">Boa aplicabilidade prática registrada.</p>
                             )}
                           </div>
                         )}

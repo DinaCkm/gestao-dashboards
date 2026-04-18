@@ -531,7 +531,7 @@ export default function DashboardGestor() {
               {isFiltered ? "Média dos alunos filtrados" : "Média de todos os alunos da empresa"} — Apenas ciclos finalizados
             </p>
             
-            {/* Mini resumo dos 5 indicadores V2 + bônus case — idêntico ao DashboardAluno */}
+            {/* Mini resumo dos 5 indicadores V2 + aplicabilidade separada */}
             <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-4">
               <div className="text-center p-2 bg-blue-50 rounded">
                 <p className="text-lg font-bold text-blue-700">{(filteredKPIs?.mediaInd1 ?? 0).toFixed(0)}%</p>
@@ -566,7 +566,7 @@ export default function DashboardGestor() {
               <div className="text-center p-2 bg-green-50 rounded">
                 <p className="text-lg font-bold text-green-700">{(filteredKPIs?.mediaInd6 ?? 0).toFixed(0)}%</p>
                 <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
-                  Case <InfoTooltip text={INDICADORES_INFO.ind6.explicacao} />
+                  Aplicabilidade <InfoTooltip text={INDICADORES_INFO.ind6.explicacao} />
                 </p>
               </div>
             </div>
@@ -977,7 +977,7 @@ export default function DashboardGestor() {
                       </div>
                     </div>
                     <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
-                      <p className="font-medium text-green-700">Bônus: {INDICADORES_INFO.ind6.nome}</p>
+                      <p className="font-medium text-green-700">Aplicabilidade: {INDICADORES_INFO.ind6.nome}</p>
                       <p className="text-xs text-muted-foreground">{INDICADORES_INFO.ind6.explicacao}</p>
                     </div>
                     <div className="border-t pt-4">

@@ -675,6 +675,7 @@ export const casesSucesso = mysqlTable("cases_sucesso", {
   entregue: int("entregue").default(0).notNull(), // 1 = entregue, 0 = não entregue
   dataEntrega: timestamp("dataEntrega"), // Data em que o case foi entregue
   titulo: varchar("titulo", { length: 500 }), // Título do case
+  resumoPublico: varchar("resumoPublico", { length: 500 }), // Resumo curto público para vitrine no mural (sem dados sensíveis)
   descricao: text("descricao"), // Descrição/resumo do case
   avaliadoPor: int("avaliadoPor"), // FK para consultors (mentora que avaliou)
   observacao: text("observacao"), // Observação da mentora
@@ -698,6 +699,26 @@ export const casesSucesso = mysqlTable("cases_sucesso", {
 });
 export type CaseSucesso = typeof casesSucesso.$inferSelect;
 export type InsertCaseSucesso = typeof casesSucesso.$inferInsert;
+
+/**
+ * Interesse em Case de Sucesso (vitrine do mural)
+ * Registra quando um aluno demonstra interesse em conhecer o case de outro aluno.
+ */
+export const caseInteresses = mysqlTable("case_interesses", {
+  id: int("id").autoincrement().primaryKey(),
+  caseId: int("caseId").notNull(), // FK para cases_sucesso
+  autorAlunoId: int("autorAlunoId").notNull(), // Aluno autor do case
+  interessadoAlunoId: int("interessadoAlunoId").notNull(), // Aluno que demonstrou interesse
+  interessadoNome: varchar("interessadoNome", { length: 255 }).notNull(),
+  interessadoEmail: varchar("interessadoEmail", { length: 320 }).notNull(),
+  mensagem: text("mensagem").notNull(),
+  status: mysqlEnum("status", ["nao_lido", "lido"]).default("nao_lido").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CaseInteresse = typeof caseInteresses.$inferSelect;
+export type InsertCaseInteresse = typeof caseInteresses.$inferInsert;
 
 /**
  * Comentários em Atividades Práticas

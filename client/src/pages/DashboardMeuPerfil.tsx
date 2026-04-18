@@ -299,6 +299,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
   const [caseTrilhaId, setCaseTrilhaId] = useState<number | null>(null);
   const [caseTrilhaNome, setCaseTrilhaNome] = useState("");
   const [caseTitulo, setCaseTitulo] = useState("");
+  const [caseResumoPublico, setCaseResumoPublico] = useState("");
   const [caseDescricao, setCaseDescricao] = useState("");
   const [caseOQueAprendi, setCaseOQueAprendi] = useState("");
   const [caseOQueMudei, setCaseOQueMudei] = useState("");
@@ -315,6 +316,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
       utils.indicadores.meuDashboard.invalidate();
       setCaseDialogOpen(false);
       setCaseTitulo("");
+      setCaseResumoPublico("");
       setCaseDescricao("");
       setCaseOQueAprendi("");
       setCaseOQueMudei("");
@@ -337,12 +339,13 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
   };
 
   const handleCaseSubmit = async () => {
-    if (!caseTrilhaId || !caseTitulo || !caseOQueAprendi || !caseOQueMudei || !caseResultadoMensuravel || !caseAntesVsDepois) return;
+    if (!caseTrilhaId || !caseTitulo || !caseResumoPublico || !caseOQueAprendi || !caseOQueMudei || !caseResultadoMensuravel || !caseAntesVsDepois) return;
 
     const payload: any = {
       trilhaId: caseTrilhaId,
       trilhaNome: caseTrilhaNome,
       titulo: caseTitulo,
+      resumoPublico: caseResumoPublico,
       descricao: caseDescricao || undefined,
       oQueAprendi: caseOQueAprendi,
       oQueMudei: caseOQueMudei,
@@ -778,7 +781,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
               {v2Filtrado && (
                 <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
                   <p className="font-semibold mb-1 text-white/90">Ind. 7 — Engajamento Final:</p>
-                  <p>Média dos 5 indicadores: ({safeToFixed(v2Filtrado.ind1_webinars ?? 0, 0)} + {safeToFixed(v2Filtrado.ind2_avaliacoes ?? 0, 0)} + {safeToFixed(v2Filtrado.ind3_competencias ?? 0, 0)} + {safeToFixed(v2Filtrado.ind4_tarefas ?? 0, 0)} + {safeToFixed(v2Filtrado.ind5_engajamento ?? 0, 0)}) / 5 = <span className="text-[#F5991F] font-bold">{safeToFixed(v2Filtrado.ind7_engajamentoFinal ?? 0, 0)}%</span>{(data.aplicabilidadePratica?.bonusEngajamento || v2Filtrado.ind6_aplicabilidade > 0) ? <span className="text-green-400 ml-1">(Aplicabilidade Prática: +10% no Engajamento)</span> : null}</p>
+                  <p>Média dos 5 indicadores: ({safeToFixed(v2Filtrado.ind1_webinars ?? 0, 0)} + {safeToFixed(v2Filtrado.ind2_avaliacoes ?? 0, 0)} + {safeToFixed(v2Filtrado.ind3_competencias ?? 0, 0)} + {safeToFixed(v2Filtrado.ind4_tarefas ?? 0, 0)} + {safeToFixed(v2Filtrado.ind5_engajamento ?? 0, 0)}) / 5 = <span className="text-[#F5991F] font-bold">{safeToFixed(v2Filtrado.ind7_engajamentoFinal ?? 0, 0)}%</span></p>
                 </div>
               )}
             </CardContent>
@@ -895,12 +898,11 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                       <div className="mt-3 p-3 bg-white/70 rounded-lg border border-amber-200">
                         <p className="text-sm font-semibold text-amber-900 flex items-center gap-2">
                           <Trophy className="h-4 w-4 text-amber-600" />
-                          Bônus de +10% no Engajamento
+                          Aplicabilidade separada do Engajamento
                         </p>
                         <p className="text-xs text-amber-700 mt-1">
-                          Ao entregar o Relatório de Impacto, você recebe um bônus de <strong>+10%</strong> no seu 
-                          Indicador 5 (Engajamento), aumentando sua nota final. É a sua chance de valorizar 
-                          ainda mais sua jornada de desenvolvimento!
+                          Ao entregar o Relatório de Impacto, o microindicador de Case passa a compor a Aplicabilidade Final.
+                          Esse indicador é separado do Engajamento e mostra sua evolução prática na trilha.
                         </p>
                       </div>
                       <div className="flex items-center justify-between mt-3">
@@ -1042,7 +1044,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
               valor={data.aplicabilidadePratica?.percentual != null && data.aplicabilidadePratica.percentual > 0 ? `${data.aplicabilidadePratica.percentual}%` : (v2Filtrado.ind6_aplicabilidade > 0 ? "Entregue ✅" : "Pendente")} total="Meta: 80%"
               percentual={Number(data.aplicabilidadePratica?.percentual ?? v2Filtrado.ind6_aplicabilidade ?? 0)}
               color="bg-rose-100 text-rose-600" borderColor="border-rose-200"
-              regras={["Avaliação da aplicabilidade prática dos conteúdos (60% mentora + 40% aluno). Meta: 80%. Bônus +10% no Engajamento se nota 8-10.", "Válido a partir de 01/04/2026. Cases e tarefas anteriores não impactam."]}
+              regras={["Aplicabilidade é macroindicador separado, com Tarefas + Case.", "Aplicabilidade Final = média dos microindicadores válidos (não altera o Engajamento)."]}
             />
           </div>
         )}
@@ -2750,6 +2752,22 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   value={caseTitulo}
                   onChange={e => setCaseTitulo(e.target.value)}
                 />
+              </div>
+
+              {/* Resumo público para vitrine */}
+              <div className="space-y-2">
+                <Label htmlFor="case-resumo-publico">Resumo público do CASE *</Label>
+                <p className="text-xs text-gray-500">
+                  Escreva um resumo curto para publicação no Mural. Não cite nomes de pessoas envolvidas.
+                </p>
+                <Textarea
+                  id="case-resumo-publico"
+                  placeholder="Desperte o interesse sobre o case em poucas linhas (máx. 500 caracteres)."
+                  value={caseResumoPublico}
+                  onChange={e => setCaseResumoPublico(e.target.value.slice(0, 500))}
+                  rows={3}
+                />
+                <p className="text-[11px] text-gray-400">{caseResumoPublico.length}/500</p>
               </div>
 
               {/* 1. O que aprendi */}

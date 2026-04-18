@@ -97,21 +97,21 @@ describe("Aplicabilidade Prática - submitAplicabilidade", () => {
 });
 
 describe("Aplicabilidade Prática - Indicator Calculation Logic", () => {
-  it("should correctly calculate weighted average (60% mentora + 40% aluno)", () => {
+  it("should use mentor score as official task grade when available", () => {
     const notaAluno = 8;
     const notaMentora = 6;
-    const expected = notaMentora * 0.6 + notaAluno * 0.4;
-    expect(expected).toBe(6.8);
+    const notaOficial = notaMentora ?? notaAluno;
+    expect(notaOficial).toBe(6);
   });
 
-  it("should correctly determine bonus eligibility (8-10 = +10% engajamento)", () => {
-    const checkBonus = (nota: number) => nota >= 8;
+  it("should not generate engagement bonus from case/aplicabilidade", () => {
+    const calculateEngagement = (ind1: number, ind2: number, ind3: number, ind4: number, ind5: number) =>
+      (ind1 + ind2 + ind3 + ind4 + ind5) / 5;
+    const withCaseDelivered = calculateEngagement(80, 70, 60, 90, 85);
+    const withoutCaseDelivered = calculateEngagement(80, 70, 60, 90, 85);
 
-    expect(checkBonus(8)).toBe(true);
-    expect(checkBonus(9)).toBe(true);
-    expect(checkBonus(10)).toBe(true);
-    expect(checkBonus(7.9)).toBe(false);
-    expect(checkBonus(0)).toBe(false);
+    expect(withCaseDelivered).toBe(77);
+    expect(withoutCaseDelivered).toBe(77);
   });
 
   it("should correctly determine color status based on percentage", () => {
