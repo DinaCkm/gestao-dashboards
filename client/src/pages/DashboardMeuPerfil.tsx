@@ -619,7 +619,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
     <AlunoLayout>
       <div className="space-y-6">
         {/* Header com informações do aluno */}
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="hidden flex-col lg:flex-row gap-6">
           <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white flex-1 shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
