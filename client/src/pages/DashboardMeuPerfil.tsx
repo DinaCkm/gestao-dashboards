@@ -18,7 +18,7 @@ import {
   Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
   ClipboardCheck, Play, ExternalLink, FileText, Send, Route, FileBarChart,
   AlertTriangle, Briefcase, HelpCircle, Upload, Paperclip, FileUp, Bell, Lock, Snowflake,
-  Cloud, Link2, Share2, Linkedin, X,
+  Cloud, Link2, Share2, Linkedin, X, Flag,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -96,6 +96,35 @@ function getCicloStatusLabel(status: string) {
     case "atrasado": return "Atrasado";
     case "futuro": return "Futuro";
     default: return status;
+  }
+}
+
+function getMetaStatusConfig(status?: string | null) {
+  switch (status) {
+    case "cumprida":
+      return {
+        label: "Cumprida",
+        className: "bg-emerald-50 text-emerald-700 border-emerald-300",
+        icon: <CheckCircle2 className="h-3 w-3" />,
+      };
+    case "parcial":
+      return {
+        label: "Parcial",
+        className: "bg-amber-50 text-amber-700 border-amber-300",
+        icon: <Clock className="h-3 w-3" />,
+      };
+    case "nao_cumprida":
+      return {
+        label: "Não cumprida",
+        className: "bg-red-50 text-red-700 border-red-300",
+        icon: <XCircle className="h-3 w-3" />,
+      };
+    default:
+      return {
+        label: "Pendente",
+        className: "bg-gray-100 text-gray-600 border-gray-300",
+        icon: <Minus className="h-3 w-3" />,
+      };
   }
 }
 
@@ -352,6 +381,8 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
 
   const [expandedTask, setExpandedTask] = useState<number | null>(null);
   const [taskDetailOpen, setTaskDetailOpen] = useState<number | null>(null);
+  const [expandedMeta, setExpandedMeta] = useState<number | null>(null);
+  const [metaDetailOpen, setMetaDetailOpen] = useState<number | null>(null);
 
   // State para reflexão de webinar e eventos importados
   const [reflexaoText, setReflexaoText] = useState<Record<number, string>>({});
@@ -375,6 +406,20 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
       setExpandedEventoImportado(null);
     },
   });
+
+  const metasOrdenadas = useMemo(() => {
+    const list = metasData?.metas ?? [];
+    return [...list].sort((a: any, b: any) =>
+      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+  }, [metasData?.metas]);
+
+  const metaPrincipal = metasOrdenadas[0] ?? null;
+
+  const microMetas = useMemo(() => {
+    if (metasOrdenadas.length <= 1) return metasOrdenadas;
+    return metasOrdenadas.slice(1);
+  }, [metasOrdenadas]);
 
   // === Case de Sucesso ===
   // === Relatório de Impacto (antigo Case de Sucesso) ===
@@ -1164,7 +1209,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
           {/* Navegação por botões simples (não usa TabsList/TabsTrigger) para evitar conflito com RovingFocusGroup do Radix */}
           <div className="mb-4">
             <h2 className="text-lg font-bold text-[#0A1E3E] mb-3 tracking-tight">Jornada de Desenvolvimento</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-2">
 
               {/* TabsList oculto — obrigatório para o Radix funcionar, mas sem conteúdo visual */}
               <TabsList className="hidden">
@@ -1172,6 +1217,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                 <TabsTrigger value="mentorias">Mentorias</TabsTrigger>
                 <TabsTrigger value="eventos">Eventos</TabsTrigger>
                 <TabsTrigger value="tarefas">Tarefas</TabsTrigger>
+                <TabsTrigger value="metas">Metas</TabsTrigger>
                 <TabsTrigger value="cases">Cases</TabsTrigger>
                 <TabsTrigger value="meu-perfil-disc">Meu Perfil</TabsTrigger>
               </TabsList>
@@ -1258,6 +1304,25 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                 </div>
                 <span className="text-xs font-semibold leading-tight">Tarefas</span>
                 <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Entregas</span>
+              </button>
+
+              {/* Metas */}
+              <button onClick={() => setActiveTab('metas')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'metas' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    <circle cx="32" cy="32" r="22" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
+                    <circle cx="32" cy="32" r="14" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5" />
+                    <circle cx="32" cy="32" r="5" fill="#F59E0B" />
+                    <line x1="32" y1="10" x2="32" y2="4" stroke="#D97706" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="32" y1="60" x2="32" y2="54" stroke="#D97706" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="10" y1="32" x2="4" y2="32" stroke="#D97706" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="60" y1="32" x2="54" y2="32" stroke="#D97706" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold leading-tight">Metas</span>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Desafios</span>
               </button>
 
               {/* Mini_Cursos — link externo */}
@@ -2354,6 +2419,252 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
             </div>
           </TabsContent>
 
+
+          {/* === METAS DESAFIADORAS === */}
+          <TabsContent value="metas" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {(() => {
+              const resumo = metasData?.resumo ?? { total: 0, cumpridas: 0, percentual: 0 };
+              const totalMicroMetas = microMetas.length;
+              const microMetasCumpridas = microMetas.filter((m: any) => m.ultimoStatus === "cumprida").length;
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Card className="bg-blue-50 border border-blue-200 shadow-sm">
+                      <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+                          <Flag className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-blue-900">{resumo.total}</p>
+                        <p className="text-xs text-blue-700 font-medium">Total de Metas</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-emerald-50 border border-emerald-200 shadow-sm">
+                      <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center mb-2">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-emerald-900">{resumo.cumpridas}</p>
+                        <p className="text-xs text-emerald-700 font-medium">Cumpridas</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-amber-50 border border-amber-200 shadow-sm">
+                      <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mb-2">
+                          <Target className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-amber-900">{totalMicroMetas}</p>
+                        <p className="text-xs text-amber-700 font-medium">Micro Metas</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-purple-50 border border-purple-200 shadow-sm">
+                      <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
+                          <TrendingUp className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-purple-900">{resumo.percentual}%</p>
+                        <p className="text-xs text-purple-700 font-medium">Evolução Geral</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Card className="bg-white border border-gray-200 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                        <Flag className="h-4 w-4 text-[#F5991F]" />
+                        Meta Desafiadora
+                      </CardTitle>
+                      <CardDescription className="text-gray-500">
+                        Situação atual: {microMetasCumpridas} de {totalMicroMetas} micro metas cumpridas • Progresso geral {resumo.percentual}%
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {metaPrincipal ? (
+                        <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <p className="text-base font-semibold text-gray-900">{metaPrincipal.titulo}</p>
+                            <Badge variant="outline" className={getMetaStatusConfig(metaPrincipal.ultimoStatus).className}>
+                              <span className="flex items-center gap-1">
+                                {getMetaStatusConfig(metaPrincipal.ultimoStatus).icon}
+                                {getMetaStatusConfig(metaPrincipal.ultimoStatus).label}
+                              </span>
+                            </Badge>
+                          </div>
+                          {metaPrincipal.descricao && (
+                            <p className="text-sm text-gray-600 mt-2">{metaPrincipal.descricao}</p>
+                          )}
+                          <div className="mt-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-gray-500">Percentual total de evolução</span>
+                              <span className="text-xs font-semibold text-purple-700">{resumo.percentual}%</span>
+                            </div>
+                            <Progress value={resumo.percentual} className="h-2" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-10 text-gray-500">
+                          <Flag className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                          <p>Nenhuma meta desafiadora cadastrada ainda.</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-white border border-gray-200 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                        <Target className="h-4 w-4 text-[#F5991F]" />
+                        Micro Metas
+                      </CardTitle>
+                      <CardDescription className="text-gray-500">
+                        Envie evidências para cada micro meta usando o mesmo fluxo das tarefas práticas.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {microMetas.length === 0 ? (
+                        <div className="text-center py-10 text-gray-500">
+                          <Target className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                          <p>Você ainda não possui micro metas cadastradas.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {microMetas.map((meta: any) => {
+                            const metaStatus = getMetaStatusConfig(meta.ultimoStatus);
+                            const tarefaVinculada = (myTasks || []).find((task: any) => Number(task.taskId) === Number(meta.taskLibraryId));
+                            const possuiEnvio = !!tarefaVinculada && (tarefaVinculada.taskStatus === "entregue" || tarefaVinculada.taskStatus === "validada");
+                            const podeEnviar = !!tarefaVinculada && tarefaVinculada.taskStatus === "nao_entregue";
+
+                            return (
+                              <div key={meta.id} className="p-4 rounded-lg border bg-gray-50 border-gray-100">
+                                <div className="flex items-start justify-between gap-2 flex-wrap">
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                      <p className="text-sm font-semibold text-gray-900">{meta.titulo}</p>
+                                      <Badge variant="outline" className={metaStatus.className}>
+                                        <span className="flex items-center gap-1">{metaStatus.icon} {metaStatus.label}</span>
+                                      </Badge>
+                                    </div>
+                                    {meta.descricao && (
+                                      <p className="text-xs text-gray-600">{meta.descricao}</p>
+                                    )}
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Competência: {meta.competenciaNome} • Prazo: {meta.ultimoMes && meta.ultimoAno ? `${String(meta.ultimoMes).padStart(2, "0")}/${meta.ultimoAno}` : "não informado"}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setMetaDetailOpen(meta.id)}
+                                      disabled={!tarefaVinculada}
+                                      className="text-[#F5991F] border-[#F5991F] hover:bg-[#F5991F]/10 text-xs disabled:opacity-60"
+                                    >
+                                      <Upload className="h-3 w-3 mr-1" /> Enviar Evidência
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setExpandedMeta(expandedMeta === meta.id ? null : meta.id)}
+                                      className="text-gray-500 hover:text-gray-900"
+                                    >
+                                      {expandedMeta === meta.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                {expandedMeta === meta.id && (
+                                  <div className="mt-3 space-y-2">
+                                    {tarefaVinculada ? (
+                                      <div className="p-3 rounded bg-white border border-gray-200 space-y-2">
+                                        <p className="text-xs text-gray-600">
+                                          Sessão vinculada: <strong>{tarefaVinculada.sessionNumber}</strong> • Status de validação:{" "}
+                                          <strong>{tarefaVinculada.taskStatus === "validada" ? "Validada pela mentora" : tarefaVinculada.taskStatus === "entregue" ? "Aguardando validação" : "Pendente de envio"}</strong>
+                                        </p>
+                                        {tarefaVinculada.submittedAt && (
+                                          <p className="text-xs text-gray-500">Data de envio: {new Date(tarefaVinculada.submittedAt).toLocaleString("pt-BR")}</p>
+                                        )}
+                                        {tarefaVinculada.evidenceLink && (
+                                          <a href={tarefaVinculada.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                            <ExternalLink className="h-3 w-3" /> {tarefaVinculada.evidenceLink}
+                                          </a>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="p-3 rounded bg-amber-50 border border-amber-200 text-xs text-amber-700">
+                                        Esta micro meta ainda não possui tarefa vinculada para envio de evidência.
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                <Dialog open={metaDetailOpen === meta.id} onOpenChange={(open) => { if (!open) setTimeout(() => setMetaDetailOpen(null), 100); }}>
+                                  <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+                                    <DialogHeader>
+                                      <DialogTitle className="text-gray-900 flex items-center gap-2">
+                                        <Flag className="h-5 w-5 text-[#F5991F]" />
+                                        Evidência da Micro Meta
+                                      </DialogTitle>
+                                      <DialogDescription className="text-gray-500">
+                                        {meta.titulo}
+                                      </DialogDescription>
+                                    </DialogHeader>
+
+                                    {!tarefaVinculada ? (
+                                      <div className="p-3 rounded bg-amber-50 border border-amber-200 text-xs text-amber-700">
+                                        Não encontramos uma tarefa vinculada a esta micro meta para envio de evidência.
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-3">
+                                        {podeEnviar && (
+                                          <TaskSubmissionForm
+                                            submitLabel="Enviar evidência da micro meta"
+                                            isSubmitting={submitEvidence.isPending}
+                                            submitError={submitEvidence.error?.message}
+                                            onSubmit={async (payload) => {
+                                              await submitEvidence.mutateAsync({ sessionId: tarefaVinculada.sessionId, ...payload });
+                                            }}
+                                            onSuccess={() => setTimeout(() => setMetaDetailOpen(null), 100)}
+                                            successMessage="Evidência da micro meta enviada com sucesso!"
+                                          />
+                                        )}
+
+                                        {possuiEnvio && (
+                                          <div className="space-y-2">
+                                            <p className="text-xs text-gray-600">
+                                              Enviado em: {tarefaVinculada.submittedAt ? new Date(tarefaVinculada.submittedAt).toLocaleString("pt-BR") : "—"}
+                                            </p>
+                                            {tarefaVinculada.relatoAluno && (
+                                              <div className="p-3 rounded bg-gray-50 border border-gray-200">
+                                                <p className="text-xs font-medium text-gray-700 mb-1">Relato do aluno</p>
+                                                <p className="text-xs text-gray-600">{tarefaVinculada.relatoAluno}</p>
+                                              </div>
+                                            )}
+                                            {tarefaVinculada.evidenceImageUrl && (
+                                              <img src={tarefaVinculada.evidenceImageUrl} alt="Evidência da micro meta" className="max-w-full max-h-64 rounded-lg border" />
+                                            )}
+                                            {tarefaVinculada.evidenceLink && (
+                                              <a href={tarefaVinculada.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="h-3 w-3" /> Abrir link da evidência
+                                              </a>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </DialogContent>
+                                </Dialog>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })()}
+          </TabsContent>
 
           {/* === TAREFAS PRÁTICAS === */}
           <TabsContent value="tarefas" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
