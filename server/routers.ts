@@ -6698,6 +6698,9 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         trilhaId: z.number(),
         trilhaNome: z.string(),
         titulo: z.string().min(1, 'T\u00edtulo \u00e9 obrigat\u00f3rio'),
+        resumoPublico: z.string()
+          .min(20, 'Resumo público deve ter ao menos 20 caracteres')
+          .max(500, 'Resumo público deve ter no máximo 500 caracteres'),
         descricao: z.string().optional(),
         // Campos estruturados do Relat\u00f3rio de Impacto
         oQueAprendi: z.string().min(1, 'Campo "O que aprendi" \u00e9 obrigat\u00f3rio'),
@@ -6756,6 +6759,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
 
         const caseData = {
           titulo: input.titulo,
+          resumoPublico: input.resumoPublico,
           descricao: input.descricao || null,
           fileUrl,
           fileKey,
@@ -6801,6 +6805,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
             `O aluno **${alunoNome}** enviou um Relat\u00f3rio de Impacto para a trilha **${trilhaNome}**.`,
             ``,
             `**T\u00edtulo:** ${input.titulo}`,
+            `**Resumo público:** ${input.resumoPublico.substring(0, 150)}${input.resumoPublico.length > 150 ? '...' : ''}`,
             `**O que aprendi:** ${input.oQueAprendi.substring(0, 150)}${input.oQueAprendi.length > 150 ? '...' : ''}`,
             `**O que mudei:** ${input.oQueMudei.substring(0, 150)}${input.oQueMudei.length > 150 ? '...' : ''}`,
             `**Resultado mensur\u00e1vel:** ${input.resultadoMensuravel.substring(0, 150)}${input.resultadoMensuravel.length > 150 ? '...' : ''}`,
@@ -6866,6 +6871,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           empresa: i.empresa || "Comunidade",
           alunoNome: i.autorNome,
           titulo: i.titulo || "Case de Sucesso",
+          resumoPublico: i.resumoPublico || "",
           dataEntrega: i.dataEntrega,
         }));
       }),

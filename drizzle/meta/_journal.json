@@ -547,6 +547,13 @@
       "when": 1775779200000,
       "tag": "0077_mural_case_interesses",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "5",
+      "when": 1775865600000,
+      "tag": "0078_cases_resumo_publico",
+      "breakpoints": true
     }
   ]
 }

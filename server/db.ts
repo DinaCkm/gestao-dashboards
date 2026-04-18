@@ -6154,6 +6154,7 @@ export async function getCasesVitrineMural(limit = 12) {
   return db.select({
     caseId: casesSucesso.id,
     titulo: casesSucesso.titulo,
+    resumoPublico: casesSucesso.resumoPublico,
     dataEntrega: casesSucesso.dataEntrega,
     autorAlunoId: alunos.id,
     autorNome: alunos.name,
@@ -6165,7 +6166,8 @@ export async function getCasesVitrineMural(limit = 12) {
     .where(and(
       eq(casesSucesso.entregue, 1),
       isNotNull(casesSucesso.dataEntrega),
-      isNotNull(casesSucesso.titulo)
+      isNotNull(casesSucesso.titulo),
+      isNotNull(casesSucesso.resumoPublico)
     ))
     .orderBy(desc(casesSucesso.dataEntrega), desc(casesSucesso.createdAt))
     .limit(limit);

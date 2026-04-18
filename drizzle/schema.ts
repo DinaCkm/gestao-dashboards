@@ -675,6 +675,7 @@ export const casesSucesso = mysqlTable("cases_sucesso", {
   entregue: int("entregue").default(0).notNull(), // 1 = entregue, 0 = não entregue
   dataEntrega: timestamp("dataEntrega"), // Data em que o case foi entregue
   titulo: varchar("titulo", { length: 500 }), // Título do case
+  resumoPublico: varchar("resumoPublico", { length: 500 }), // Resumo curto público para vitrine no mural (sem dados sensíveis)
   descricao: text("descricao"), // Descrição/resumo do case
   avaliadoPor: int("avaliadoPor"), // FK para consultors (mentora que avaliou)
   observacao: text("observacao"), // Observação da mentora

@@ -706,6 +706,9 @@ E-mail: ${email}`;
                     <p><strong>Case:</strong> {selectedCase.titulo}</p>
                     <p><strong>Autor:</strong> {selectedCase.alunoNome}</p>
                     <p><strong>Empresa:</strong> {selectedCase.empresa}</p>
+                    <p className="mt-2 text-gray-700">
+                      <strong>Resumo público:</strong> {selectedCase.resumoPublico || "Resumo não informado."}
+                    </p>
                   </div>
                 )}
                 <Textarea value={mensagemInteresse} readOnly className="min-h-[170px]" />

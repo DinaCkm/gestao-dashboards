@@ -374,15 +374,21 @@ export default function DualIndicators({
                     )
                   )}
                   {!compact && (
+                    <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                      Aplicabilidade calculada separadamente do Engajamento.
+                      {aplicabilidade.totalAvaliacoes === 0 ? ' Sem avaliações registradas no período.' : ` ${aplicabilidade.totalAvaliacoes} avaliação(ões) registrada(s).`}
+                    </p>
+                  )}
+                  {!compact && (
                     <div className="mt-2 space-y-1">
                       {aplicabilidade.microTarefaPercentual != null && (
                         <DetailBar label="Tarefas" value={aplicabilidade.microTarefaPercentual} />
                       )}
-                      {aplicabilidade.caseAplicavel && (aplicabilidade.microCasePercentual ?? 0) > 0 ? (
-                        <DetailBar label="Case" value={aplicabilidade.microCasePercentual!} />
+                      {aplicabilidade.caseAplicavel ? (
+                        <DetailBar label="Case" value={aplicabilidade.microCasePercentual ?? 0} />
                       ) : (
                         <p className="text-[11px] text-gray-500">
-                          {aplicabilidade.caseAplicavel ? 'Case: não entregue ainda' : 'Case: não aplicável ainda'}
+                          Case: não aplicável ainda
                         </p>
                       )}
                     </div>

@@ -208,6 +208,7 @@ export default function Performance() {
   const [caseTrilhaId, setCaseTrilhaId] = useState<number | null>(null);
   const [caseTrilhaNome, setCaseTrilhaNome] = useState("");
   const [caseTitulo, setCaseTitulo] = useState("");
+  const [caseResumoPublico, setCaseResumoPublico] = useState("");
   const [caseDescricao, setCaseDescricao] = useState("");
   const [caseOQueAprendi, setCaseOQueAprendi] = useState("");
   const [caseOQueMudei, setCaseOQueMudei] = useState("");
@@ -224,6 +225,7 @@ export default function Performance() {
       utils.indicadores.meuDashboard.invalidate();
       setCaseDialogOpen(false);
       setCaseTitulo("");
+      setCaseResumoPublico("");
       setCaseDescricao("");
       setCaseOQueAprendi("");
       setCaseOQueMudei("");
@@ -246,12 +248,13 @@ export default function Performance() {
   };
 
   const handleCaseSubmit = async () => {
-    if (!caseTrilhaId || !caseTitulo || !caseOQueAprendi || !caseOQueMudei || !caseResultadoMensuravel || !caseAntesVsDepois) return;
+    if (!caseTrilhaId || !caseTitulo || !caseResumoPublico || !caseOQueAprendi || !caseOQueMudei || !caseResultadoMensuravel || !caseAntesVsDepois) return;
 
     const payload: any = {
       trilhaId: caseTrilhaId,
       trilhaNome: caseTrilhaNome,
       titulo: caseTitulo,
+      resumoPublico: caseResumoPublico,
       descricao: caseDescricao || undefined,
       oQueAprendi: caseOQueAprendi,
       oQueMudei: caseOQueMudei,
@@ -2754,6 +2757,22 @@ export default function Performance() {
                   value={caseTitulo}
                   onChange={e => setCaseTitulo(e.target.value)}
                 />
+              </div>
+
+              {/* Resumo público para vitrine */}
+              <div className="space-y-2">
+                <Label htmlFor="case-resumo-publico">Resumo público do CASE *</Label>
+                <p className="text-xs text-gray-500">
+                  Escreva um resumo curto para publicação no Mural. Não cite nomes de pessoas envolvidas.
+                </p>
+                <Textarea
+                  id="case-resumo-publico"
+                  placeholder="Desperte o interesse sobre o case em poucas linhas (máx. 500 caracteres)."
+                  value={caseResumoPublico}
+                  onChange={e => setCaseResumoPublico(e.target.value.slice(0, 500))}
+                  rows={3}
+                />
+                <p className="text-[11px] text-gray-400">{caseResumoPublico.length}/500</p>
               </div>
 
               {/* 1. O que aprendi */}
