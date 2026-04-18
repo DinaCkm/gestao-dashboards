@@ -704,7 +704,7 @@ export default function MuralAluno() {
               {/* ECO_EVOLUIR - apenas para SEBRAE TO (programId=17) */}
               {user?.programId === 17 && (
                 <a
-                  href="https://www.evoluirckm.com"
+                  href="https://pdi.ecodobem.com/login"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block group"

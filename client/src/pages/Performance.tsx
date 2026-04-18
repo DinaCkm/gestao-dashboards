@@ -1002,7 +1002,7 @@ export default function Performance() {
         {/* Card ECO_EVOLUIR - apenas para SEBRAE TO */}
         {aluno.programa && aluno.programa.toUpperCase().includes('SEBRAE') && aluno.programa.toUpperCase().includes('TO') && (
         <a
-          href="https://www.evoluirckm.com"
+          href="https://pdi.ecodobem.com/login"
           target="_blank"
           rel="noopener noreferrer"
           className="block relative overflow-hidden rounded-2xl border border-amber-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
