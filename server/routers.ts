@@ -8832,6 +8832,55 @@ Responda APENAS em JSON com o formato especificado.`
       .query(async ({ input }) => {
         return await db.getOnboardingTrackingList(input?.programId);
       }),
+    /**
+     * Corrige o estado de onboarding de um aluno:
+     * - Zera onboardingLiberado (remove trava de novo ciclo)
+     * - Garante que onboarding_jornada tem cadastroConfirmado=1 e aceiteRealizado=1
+     * Útil quando o admin liberou onboarding por engano ou o registro foi perdido.
+     */
+    corrigirOnboarding: adminProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        const { alunos: alunosTable, onboardingJornada } = await import('../drizzle/schema');
+        const { eq } = await import('drizzle-orm');
+
+        // 1) Zerar onboardingLiberado
+        await database.update(alunosTable)
+          .set({ onboardingLiberado: 0, onboardingLiberadoEm: null })
+          .where(eq(alunosTable.id, input.alunoId));
+
+        // 2) Garantir registro na onboarding_jornada com aceite marcado
+        const [existing] = await database.select().from(onboardingJornada)
+          .where(eq(onboardingJornada.alunoId, input.alunoId)).limit(1);
+
+        if (existing) {
+          // Só marca aceite se ainda não foi feito
+          if (!existing.aceiteRealizado) {
+            await database.update(onboardingJornada)
+              .set({ cadastroConfirmado: 1, aceiteRealizado: 1, aceiteRealizadoEm: new Date() })
+              .where(eq(onboardingJornada.alunoId, input.alunoId));
+          } else {
+            // Apenas garante cadastroConfirmado
+            await database.update(onboardingJornada)
+              .set({ cadastroConfirmado: 1 })
+              .where(eq(onboardingJornada.alunoId, input.alunoId));
+          }
+        } else {
+          // Criar registro do zero
+          await database.insert(onboardingJornada).values({
+            alunoId: input.alunoId,
+            cadastroConfirmado: 1,
+            cadastroConfirmadoEm: new Date(),
+            aceiteRealizado: 1,
+            aceiteRealizadoEm: new Date(),
+          });
+        }
+
+        return { success: true };
+      }),
     resendInvite: adminProcedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
