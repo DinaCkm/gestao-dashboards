@@ -2491,7 +2491,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                             </Badge>
                           </div>
                           {metaPrincipal.descricao && (
-                            <p className="text-sm text-gray-600 mt-2">{metaPrincipal.descricao}</p>
+                            <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{metaPrincipal.descricao}</p>
                           )}
                           <div className="mt-3">
                             <div className="flex items-center justify-between mb-1">
@@ -2545,7 +2545,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                       </Badge>
                                     </div>
                                     {meta.descricao && (
-                                      <p className="text-xs text-gray-600">{meta.descricao}</p>
+                                      <p className="text-xs text-gray-600 whitespace-pre-wrap">{meta.descricao}</p>
                                     )}
                                     <p className="text-xs text-gray-500 mt-1">
                                       Competência: {meta.competenciaNome} • Prazo: {meta.ultimoMes && meta.ultimoAno ? `${String(meta.ultimoMes).padStart(2, "0")}/${meta.ultimoAno}` : "não informado"}
