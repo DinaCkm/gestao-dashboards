@@ -205,7 +205,7 @@ function CicloIndicadores({
               />
               {tipo === 'finalizado' && (
                 <IndicadorCard
-                  label="6. Relatório de Impacto (Bônus)"
+                  label="6. Aplicabilidade"
                   valor={ind.ind6_aplicabilidade}
                   descricao={INDICADORES_INFO.ind6.formula}
                   icon={Briefcase}
@@ -222,7 +222,7 @@ function CicloIndicadores({
                         <Briefcase className="h-5 w-5 text-gray-400" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">6. Aplicabilidade Prática (Case)</p>
+                        <p className="text-xs text-gray-400">6. Aplicabilidade (Tarefa + Case)</p>
                         <p className="text-sm text-gray-400 italic">Avaliado ao final do macrociclo</p>
                       </div>
                     </div>
@@ -725,7 +725,7 @@ export default function DashboardAluno() {
                               : `Filtrado por: ${filtroOpcoes.find(o => o.value === indicadorFiltro)?.label || indicadorFiltro}`}
                           </p>
                           
-                          {/* Mini resumo dos 5 indicadores + bônus case */}
+                          {/* Mini resumo dos 5 indicadores + aplicabilidade separada */}
                           <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-4">
                             <div className="text-center p-2 bg-blue-50 rounded">
                               <p className="text-lg font-bold text-blue-700">{(v2Filtrado.ind1_webinars ?? 0).toFixed(0)}%</p>
@@ -749,7 +749,7 @@ export default function DashboardAluno() {
                             </div>
                           </div>
                           {v2Filtrado.ind6_aplicabilidade > 0 && (
-                            <p className="text-xs text-green-600 mt-2 font-medium">✅ Relatório de Impacto entregue (+10% no Engajamento)</p>
+                            <p className="text-xs text-green-600 mt-2 font-medium">✅ Case entregue (compõe a Aplicabilidade)</p>
                           )}
                         </CardContent>
                       </Card>

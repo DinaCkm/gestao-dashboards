@@ -457,7 +457,7 @@ export default function DashboardEmpresa() {
           <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <PartyPopper className="h-4 w-4" /> Ind. 6: Aplicabilidade (Bônus)
+                <PartyPopper className="h-4 w-4" /> Ind. 6: Aplicabilidade
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -612,7 +612,7 @@ export default function DashboardEmpresa() {
                     </DialogHeader>
                     <div className="space-y-4 text-sm">
                       <p className="text-muted-foreground">
-                        O Engajamento Final de cada aluno é calculado com base em <strong>5 indicadores</strong>, cada um com peso igual (o Ind. 6 é bônus):
+                        O Engajamento Final de cada aluno é calculado com base em <strong>5 indicadores</strong>, cada um com peso igual (Aplicabilidade é separada):
                       </p>
                       <div className="space-y-3">
                         <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
@@ -653,8 +653,8 @@ export default function DashboardEmpresa() {
                         <div className="flex items-start gap-3 p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
                           <span className="font-bold text-orange-600">6.</span>
                           <div>
-                            <p className="font-medium">Aplicabilidade (Bônus)</p>
-                            <p className="text-xs text-muted-foreground">Relatório de Impacto (+10% no Engajamento) — não entra na média</p>
+                            <p className="font-medium">Aplicabilidade</p>
+                            <p className="text-xs text-muted-foreground">Aplicabilidade (Tarefa + Case) é separada e não entra na média do Engajamento</p>
                           </div>
                         </div>
                       </div>

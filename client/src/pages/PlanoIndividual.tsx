@@ -1309,7 +1309,7 @@ function PlanoContent() {
                         { label: "3. Competências", value: performanceFiltrada.indicadoresV2?.consolidado?.ind3_competencias ?? performanceFiltrada.indicadores.engajamento },
                         { label: "4. Tarefas", value: performanceFiltrada.indicadoresV2?.consolidado?.ind4_tarefas ?? performanceFiltrada.indicadores.performanceCompetencias },
                         { label: "5. Engajamento", value: performanceFiltrada.indicadoresV2?.consolidado?.ind5_engajamento ?? (performanceFiltrada.indicadores as any).performanceAprendizado ?? 0 },
-                        { label: "6. Aplicabilidade (Bônus)", value: performanceFiltrada.indicadoresV2?.consolidado?.ind6_aplicabilidade ?? performanceFiltrada.indicadores.participacaoEventos },
+                        { label: "6. Aplicabilidade", value: performanceFiltrada.indicadoresV2?.consolidado?.ind6_aplicabilidade ?? performanceFiltrada.indicadores.participacaoEventos },
                       ].map(ind => (
                         <div key={ind.label}>
                           <div className="flex justify-between mb-1">
