@@ -1163,7 +1163,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
           {/* JORNADA DE DESENVOLVIMENTO — grade de cards compactos */}
           {/* Navegação por botões simples (não usa TabsList/TabsTrigger) para evitar conflito com RovingFocusGroup do Radix */}
           <div className="mb-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Jornada de Desenvolvimento</p>
+            <h2 className="text-lg font-bold text-[#0A1E3E] mb-3 tracking-tight">Jornada de Desenvolvimento</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
 
               {/* TabsList oculto — obrigatório para o Radix funcionar, mas sem conteúdo visual */}
