@@ -879,63 +879,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
           </Card>
         )}
 
-        {/* Convite para Relatório de Impacto */}
-        {v2?.alertaCasePendente && v2.alertaCasePendente.length > 0 && (
-          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 shadow-md">
-            <CardContent className="p-5">
-              {v2.alertaCasePendente.map((alerta: any, idx: number) => (
-                <div key={idx} className={`${idx > 0 ? 'mt-4 pt-4 border-t border-amber-200' : ''}`}>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-full bg-amber-100 shrink-0">
-                      <PartyPopper className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-amber-900 text-base">Compartilhe sua Experiência!</p>
-                      <p className="text-sm text-amber-800 mt-2">
-                        A trilha <strong>{alerta.trilhaNome}</strong> está chegando ao final! 
-                        Este é o momento de documentar tudo o que você aprendeu e como aplicou na prática.
-                      </p>
-                      <div className="mt-3 p-3 bg-white/70 rounded-lg border border-amber-200">
-                        <p className="text-sm font-semibold text-amber-900 flex items-center gap-2">
-                          <Trophy className="h-4 w-4 text-amber-600" />
-                          Aplicabilidade separada do Engajamento
-                        </p>
-                        <p className="text-xs text-amber-700 mt-1">
-                          Ao entregar o Relatório de Impacto, o microindicador de Case passa a compor a Aplicabilidade Final.
-                          Esse indicador é separado do Engajamento e mostra sua evolução prática na trilha.
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center gap-2 text-xs text-amber-700">
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>
-                            Entrega até <strong>{alerta.dataLimite ? formatDateSafe(alerta.dataLimite + 'T00:00:00') : `${alerta.diasRestantes} dias`}</strong>
-                            {alerta.diasRestantes !== undefined && ` (${alerta.diasRestantes} dias restantes)`}
-                          </span>
-                        </div>
-                        <Button
-                          size="sm"
-                          className="bg-[#F5991F] hover:bg-[#e08a1a] text-white font-semibold"
-                          onClick={() => {
-                            setCaseTrilhaId(alerta.trilhaId);
-                            setCaseTrilhaNome(alerta.trilhaNome);
-                            setCaseTitulo('');
-                            setCaseDescricao('');
-                            setCaseFile(null);
-                            setCaseDialogOpen(true);
-                          }}
-                        >
-                          <FileUp className="h-3.5 w-3.5 mr-1.5" />
-                          Enviar Relatório de Impacto
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+
 
 
 
@@ -1163,6 +1107,64 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
               <Activity className="h-4 w-4 mr-1" /> Meu Perfil
             </TabsTrigger>
           </TabsList>
+
+          {/* Convite para Relatório de Impacto */}
+          {v2?.alertaCasePendente && v2.alertaCasePendente.length > 0 && (
+            <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 shadow-md mt-3">
+              <CardContent className="p-5">
+                {v2.alertaCasePendente.map((alerta: any, idx: number) => (
+                  <div key={idx} className={`${idx > 0 ? 'mt-4 pt-4 border-t border-amber-200' : ''}`}>
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-full bg-amber-100 shrink-0">
+                        <PartyPopper className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-amber-900 text-base">Compartilhe sua Experiência!</p>
+                        <p className="text-sm text-amber-800 mt-2">
+                          A trilha <strong>{alerta.trilhaNome}</strong> está chegando ao final! 
+                          Este é o momento de documentar tudo o que você aprendeu e como aplicou na prática.
+                        </p>
+                        <div className="mt-3 p-3 bg-white/70 rounded-lg border border-amber-200">
+                          <p className="text-sm font-semibold text-amber-900 flex items-center gap-2">
+                            <Trophy className="h-4 w-4 text-amber-600" />
+                            Aplicabilidade separada do Engajamento
+                          </p>
+                          <p className="text-xs text-amber-700 mt-1">
+                            Ao entregar o Relatório de Impacto, o microindicador de Case passa a compor a Aplicabilidade Final.
+                            Esse indicador é separado do Engajamento e mostra sua evolução prática na trilha.
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center gap-2 text-xs text-amber-700">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>
+                              Entrega até <strong>{alerta.dataLimite ? formatDateSafe(alerta.dataLimite + 'T00:00:00') : `${alerta.diasRestantes} dias`}</strong>
+                              {alerta.diasRestantes !== undefined && ` (${alerta.diasRestantes} dias restantes)`}
+                            </span>
+                          </div>
+                          <Button
+                            size="sm"
+                            className="bg-[#F5991F] hover:bg-[#e08a1a] text-white font-semibold"
+                            onClick={() => {
+                              setCaseTrilhaId(alerta.trilhaId);
+                              setCaseTrilhaNome(alerta.trilhaNome);
+                              setCaseTitulo('');
+                              setCaseDescricao('');
+                              setCaseFile(null);
+                              setCaseDialogOpen(true);
+                            }}
+                          >
+                            <FileUp className="h-3.5 w-3.5 mr-1.5" />
+                            Enviar Relatório de Impacto
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Card B.E.M. - Área de Aulas - Apenas para alunos com plataforma Scaffold */}
           {aluno?.plataformaAulas === 'scaffold' && (
