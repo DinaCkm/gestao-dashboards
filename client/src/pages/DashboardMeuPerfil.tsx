@@ -3160,6 +3160,13 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                 setCaseTrilhaNome(trilha.name);
                                 setCaseTitulo(caseEntregue.titulo || '');
                                 setCaseDescricao(caseEntregue.descricao || '');
+                                setCaseResumoPublico(caseEntregue.resumoPublico || '');
+                                setCaseOQueAprendi(caseEntregue.oQueAprendi || '');
+                                setCaseOQueMudei(caseEntregue.oQueMudei || '');
+                                setCaseResultadoMensuravel(caseEntregue.resultadoMensuravel || '');
+                                setCaseAntesVsDepois(caseEntregue.antesVsDepois || '');
+                                setCaseNotaAplicabilidade(caseEntregue.notaAplicabilidade ?? 5);
+                                setCaseFile(null);
                                 setCaseDialogOpen(true);
                               }}
                             >
