@@ -634,9 +634,6 @@ export default function MuralAluno() {
             </div>
           </div>
 
-          {/* Attendance Banner - redireciona para Portal do Aluno aba Eventos */}
-          <AttendanceBanner />
-
           {/* Next Webinar Highlight */}
           {nextWebinar && <NextWebinarHighlight webinar={nextWebinar} />}
 
