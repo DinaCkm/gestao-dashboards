@@ -5015,8 +5015,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .mutation(async ({ input }) => {
         return await db.liberarOnboardingEmMassa(input.alunoIds);
       }),
-
-    // ============ PAINEL DE AGENDAMENTOS ============
+    // Reverter onboarding liberado (desfaz liberarOnboarding)
+    reverterOnboarding: adminProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.resetOnboardingLiberado(input.alunoId);
+        return { success: true, message: 'Onboarding revertido com sucesso.' };
+      }),
+    // ============ PAINEL DE AGENDAMENTOS =============
     allAppointments: adminProcedure
       .input(z.object({
         status: z.string().optional(),

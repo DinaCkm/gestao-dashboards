@@ -271,6 +271,17 @@ export default function AdminCadastros() {
     },
     onError: (err: any) => toast.error(`Erro ao liberar onboarding: ${err.message}`),
   });
+  const reverterOnboarding = trpc.admin.reverterOnboarding.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast.success("Onboarding revertido!", { description: "O aluno foi liberado do onboarding e pode acessar o portal normalmente." });
+        refetchAllAlunos();
+      } else {
+        toast.error(data.message || "Erro ao reverter onboarding");
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao reverter onboarding: ${err.message}`),
+  });
   const liberarOnboardingEmMassa = trpc.admin.liberarOnboardingEmMassa.useMutation({
     onSuccess: (data: any) => {
       if (data.success) {
@@ -394,6 +405,8 @@ export default function AdminCadastros() {
               isLiberandoOnboarding={liberarOnboarding.isPending}
               onLiberarOnboardingEmMassa={liberarOnboardingEmMassa.mutate}
               isLiberandoEmMassa={liberarOnboardingEmMassa.isPending}
+              onReverterOnboarding={reverterOnboarding.mutate}
+              isRevertendoOnboarding={reverterOnboarding.isPending}
             />
           </TabsContent>
 
@@ -445,7 +458,7 @@ export default function AdminCadastros() {
 }
 
 // ============ ALUNOS TAB ============
-function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding, onLiberarOnboardingEmMassa, isLiberandoEmMassa }: {
+function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding, onLiberarOnboardingEmMassa, isLiberandoEmMassa, onReverterOnboarding, isRevertendoOnboarding }: {
   alunos: any[];
   empresas: any[];
   mentoresList: any[];
@@ -464,6 +477,8 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   isLiberandoOnboarding: boolean;
   onLiberarOnboardingEmMassa: (data: any) => void;
   isLiberandoEmMassa: boolean;
+  onReverterOnboarding: (data: any) => void;
+  isRevertendoOnboarding: boolean;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [editAluno, setEditAluno] = useState<any>(null);
@@ -1252,17 +1267,36 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                             <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Excluir
                           </Button>
                           {aluno.hasPdi && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className={aluno.onboardingLiberado === 1 ? "text-orange-600 border-orange-300 bg-orange-50" : "text-blue-600 hover:bg-blue-600 hover:text-white"}
-                              onClick={(e) => { e.stopPropagation(); onLiberarOnboarding({ alunoId: aluno.id }); }}
-                              disabled={isLiberandoOnboarding || aluno.onboardingLiberado === 1}
-                              title={aluno.onboardingLiberado === 1 ? "Onboarding j\u00e1 liberado para novo ciclo" : "Liberar onboarding para novo ciclo (renova\u00e7\u00e3o de contrato)"}
-                            >
-                              <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-                              {aluno.onboardingLiberado === 1 ? "Onboarding Liberado" : "Liberar Onboarding"}
-                            </Button>
+                            aluno.onboardingLiberado === 1 ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-orange-600 border-orange-300 bg-orange-50 hover:bg-orange-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm(`Reverter onboarding de ${aluno.name}?\n\nIsso irá zerar o flag onboardingLiberado, liberando o aluno para acessar o portal normalmente.`)) {
+                                    onReverterOnboarding({ alunoId: aluno.id });
+                                  }
+                                }}
+                                disabled={isRevertendoOnboarding}
+                                title="Clique para reverter: zera onboardingLiberado e libera acesso ao portal"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                                {isRevertendoOnboarding ? 'Revertendo...' : 'Onboarding Liberado ✕'}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-blue-600 hover:bg-blue-600 hover:text-white"
+                                onClick={(e) => { e.stopPropagation(); onLiberarOnboarding({ alunoId: aluno.id }); }}
+                                disabled={isLiberandoOnboarding}
+                                title="Liberar onboarding para novo ciclo (renovação de contrato)"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                                Liberar Onboarding
+                              </Button>
+                            )
                           )}
                         </div>
                       </div>
