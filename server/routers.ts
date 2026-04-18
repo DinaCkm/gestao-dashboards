@@ -6855,6 +6855,77 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
 
         return { id: resultId, url: fileUrl, updated };
       }),
+
+    // Vitrine pública de cases para o Mural do aluno
+    vitrineMural: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(30).optional() }).optional())
+      .query(async ({ input }) => {
+        const items = await db.getCasesVitrineMural(input?.limit ?? 12);
+        return items.map((i) => ({
+          caseId: i.caseId,
+          empresa: i.empresa || "Comunidade",
+          alunoNome: i.autorNome,
+          titulo: i.titulo || "Case de Sucesso",
+          dataEntrega: i.dataEntrega,
+        }));
+      }),
+
+    // Aluno demonstra interesse em conhecer um case da vitrine
+    demonstrarInteresse: protectedProcedure
+      .input(z.object({
+        caseId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+        const caseSelecionado = await db.getCaseSucessoById(input.caseId);
+        if (!caseSelecionado || caseSelecionado.entregue !== 1) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Case não encontrado ou indisponível." });
+        }
+
+        const alunoInteressado = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!alunoInteressado) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Perfil de aluno interessado não encontrado." });
+        }
+
+        if (alunoInteressado.id === caseSelecionado.alunoId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode demonstrar interesse no seu próprio case." });
+        }
+
+        const mensagem = `Olá! Parabéns pelo Case de Sucesso.
+Queria conhecer o seu case.
+Poderíamos conversar para ampliar o meu aprendizado?
+
+Interessado: ${alunoInteressado.name}
+E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
+
+        const interesseId = await db.createCaseInteresse({
+          caseId: caseSelecionado.id,
+          autorAlunoId: caseSelecionado.alunoId,
+          interessadoAlunoId: alunoInteressado.id,
+          interessadoNome: alunoInteressado.name,
+          interessadoEmail: alunoInteressado.email || ctx.user.email || "nao-informado@ecossistemadobem.com",
+          mensagem,
+          status: "nao_lido",
+        });
+
+        const [autorUser] = (await db.getAllUsers())
+          .filter((u) => Number(u.alunoId) === Number(caseSelecionado.alunoId))
+          .slice(0, 1);
+
+        if (autorUser) {
+          await db.createNotification({
+            userId: autorUser.id,
+            title: "🌟 Interesse no seu Case de Sucesso",
+            message: `${alunoInteressado.name} (${alunoInteressado.email || ctx.user.email || "sem e-mail"}) quer conhecer seu case.\n\n${mensagem}`,
+            type: "action",
+            category: "case_interesse",
+            link: "/mural",
+          });
+        }
+
+        return { success: true, interesseId, mensagem };
+      }),
   }),
 
   // ============ METAS DE DESENVOLVIMENTO ============

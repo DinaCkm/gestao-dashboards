@@ -28,6 +28,7 @@ import {
   contratosAluno, InsertContratoAluno, ContratoAluno,
   historicoNivelCompetencia, InsertHistoricoNivelCompetencia, HistoricoNivelCompetencia,
   casesSucesso, InsertCaseSucesso, CaseSucesso,
+  caseInteresses, InsertCaseInteresse, CaseInteresse,
   practicalActivityComments, InsertPracticalActivityComment, PracticalActivityComment,
   mentorAvailability, InsertMentorAvailability, MentorAvailability,
   mentorAppointments, InsertMentorAppointment, MentorAppointment,
@@ -6135,6 +6136,64 @@ export async function getAllCasesSucesso() {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(casesSucesso).orderBy(desc(casesSucesso.createdAt));
+}
+
+export async function getCaseSucessoById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.select().from(casesSucesso).where(eq(casesSucesso.id, id)).limit(1);
+  return result || null;
+}
+
+/**
+ * Cases publicados para vitrine no mural (sem dados sensíveis)
+ */
+export async function getCasesVitrineMural(limit = 12) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    caseId: casesSucesso.id,
+    titulo: casesSucesso.titulo,
+    dataEntrega: casesSucesso.dataEntrega,
+    autorAlunoId: alunos.id,
+    autorNome: alunos.name,
+    empresa: programs.name,
+  })
+    .from(casesSucesso)
+    .innerJoin(alunos, eq(casesSucesso.alunoId, alunos.id))
+    .leftJoin(programs, eq(alunos.programId, programs.id))
+    .where(and(
+      eq(casesSucesso.entregue, 1),
+      isNotNull(casesSucesso.dataEntrega),
+      isNotNull(casesSucesso.titulo)
+    ))
+    .orderBy(desc(casesSucesso.dataEntrega), desc(casesSucesso.createdAt))
+    .limit(limit);
+}
+
+export async function createCaseInteresse(data: InsertCaseInteresse) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(caseInteresses).values(data);
+  return result.insertId;
+}
+
+export async function getCaseInteressesByAutor(autorAlunoId: number, onlyUnread = false) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(caseInteresses.autorAlunoId, autorAlunoId)];
+  if (onlyUnread) conditions.push(eq(caseInteresses.status, "nao_lido"));
+  return db.select().from(caseInteresses)
+    .where(and(...conditions))
+    .orderBy(desc(caseInteresses.createdAt));
+}
+
+export async function markCaseInteresseAsRead(id: number, autorAlunoId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(caseInteresses)
+    .set({ status: "lido" })
+    .where(and(eq(caseInteresses.id, id), eq(caseInteresses.autorAlunoId, autorAlunoId)));
 }
 
 /**
