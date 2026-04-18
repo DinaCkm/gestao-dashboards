@@ -341,15 +341,15 @@ export default function DashboardVisaoGeral() {
             />
             <IndicadorCard
               numero={6}
-              titulo="Aplicabilidade (Bônus)"
+              titulo="Aplicabilidade"
               valor={visaoGeral.mediaInd6 || visaoGeral.mediaParticipacaoEventos}
               icone={<PartyPopper className="h-4 w-4" />}
               cor="#1976D2"
-              descricao="Relatório de Impacto (bônus de +10% no Engajamento)"
+              descricao="Aplicabilidade (Tarefa + Case, separada do Engajamento)"
               regras={[
-                "Relatório entregue = +10% no indicador de Engajamento",
+                "Case compõe o microindicador de Aplicabilidade",
                 "Não entra na média dos 5 indicadores",
-                "É um bônus adicional"
+                "Não altera o cálculo de Engajamento"
               ]}
             />
           </div>

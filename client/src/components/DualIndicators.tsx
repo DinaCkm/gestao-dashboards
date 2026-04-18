@@ -120,6 +120,12 @@ export interface AplicabilidadeData {
   totalAvaliacoes: number;
   avaliacoesAluno: number;
   avaliacoesMentora: number;
+  percentualFinal?: number | null;
+  microTarefaPercentual?: number | null;
+  microCasePercentual?: number | null;
+  caseAplicavel?: boolean;
+  totalTarefasComAplicabilidade?: number;
+  totalCasesConsiderados?: number;
 }
 
 export interface DualIndicatorsProps {
@@ -335,9 +341,9 @@ export default function DualIndicators({
                       <TooltipContent side="top" className="max-w-xs">
                         <p className="text-xs leading-relaxed">
                           <strong>Indicador de Aplicabilidade Prática (meta: 80%)</strong><br />
-                          Mede o quanto você está aplicando na prática o que aprendeu.<br />
-                          Composto pela avaliação do aluno (40%) e da mentora (60%).<br />
-                          Se atingir nota 8-10, você ganha +10% no Engajamento Final!
+                          Macroindicador separado do Engajamento.<br />
+                          Cálculo: média dos microindicadores válidos.<br />
+                          Micro 1: Tarefas com aplicabilidade. Micro 2: Case.
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -367,26 +373,22 @@ export default function DualIndicators({
                   )}
                   {!compact && (
                     <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                      Avaliação da aplicabilidade prática dos conteúdos.
-                      {aplicabilidade.totalAvaliacoes === 0
-                        ? ' Disponível a partir das próximas tarefas (01/04/2026).'
-                        : ` ${aplicabilidade.totalAvaliacoes} avaliação(s) registrada(s).`
-                      }
+                      Aplicabilidade calculada separadamente do Engajamento.
+                      {aplicabilidade.totalAvaliacoes === 0 ? ' Sem avaliações registradas no período.' : ` ${aplicabilidade.totalAvaliacoes} avaliação(ões) registrada(s).`}
                     </p>
                   )}
-                  {!compact && aplicabilidade.totalAvaliacoes > 0 && (
+                  {!compact && (
                     <div className="mt-2 space-y-1">
-                      {aplicabilidade.mediaAluno !== null && (
-                        <DetailBar label="Sua nota" value={aplicabilidade.mediaAluno * 10} />
+                      {aplicabilidade.microTarefaPercentual != null && (
+                        <DetailBar label="Tarefas" value={aplicabilidade.microTarefaPercentual} />
                       )}
-                      {aplicabilidade.mediaMentora !== null && (
-                        <DetailBar label="Nota Mentora" value={aplicabilidade.mediaMentora * 10} />
+                      {aplicabilidade.caseAplicavel ? (
+                        <DetailBar label="Case" value={aplicabilidade.microCasePercentual ?? 0} />
+                      ) : (
+                        <p className="text-[11px] text-gray-500">
+                          Case: não aplicável ainda
+                        </p>
                       )}
-                    </div>
-                  )}
-                  {aplicabilidade.bonusEngajamento && !compact && (
-                    <div className="mt-2 px-2 py-1 bg-green-50 border border-green-200 rounded text-xs text-green-700 font-medium">
-                      ✨ Bônus +10% no Engajamento Final ativo!
                     </div>
                   )}
                 </div>
