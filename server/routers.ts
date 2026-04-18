@@ -6926,6 +6926,27 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
 
         return { success: true, interesseId, mensagem };
       }),
+
+    // Autor do case lista interesses recebidos
+    meusInteressesRecebidos: protectedProcedure
+      .input(z.object({ onlyUnread: z.boolean().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!aluno) return [];
+        return await db.getCaseInteressesByAutor(aluno.id, Boolean(input?.onlyUnread));
+      }),
+
+    // Autor do case marca interesse como lido
+    marcarInteresseLido: protectedProcedure
+      .input(z.object({ interesseId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!aluno) throw new TRPCError({ code: "NOT_FOUND", message: "Perfil do aluno não encontrado." });
+        await db.markCaseInteresseAsRead(input.interesseId, aluno.id);
+        return { success: true };
+      }),
   }),
 
   // ============ METAS DE DESENVOLVIMENTO ============
