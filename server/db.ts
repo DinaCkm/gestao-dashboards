@@ -6589,9 +6589,27 @@ export async function liberarOnboardingEmMassa(alunoIds: number[]) {
 export async function resetOnboardingLiberado(alunoId: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
+  // 1. Zera o flag onboardingLiberado na tabela alunos
   await db.update(alunos)
     .set({ onboardingLiberado: 0, onboardingLiberadoEm: null })
     .where(eq(alunos.id, alunoId));
+  // 2. Garante que o registro onboarding_jornada existe com aceite e cadastro marcados
+  //    Isso é necessário para alunos novos (isAlunoNovo=true) onde a regra
+  //    needsOnboarding = isAlunoNovo && !aceiteRealizado também precisa ser satisfeita
+  const existing = await getOnboardingJornada(alunoId);
+  if (existing) {
+    await db.update(onboardingJornada)
+      .set({ cadastroConfirmado: 1, aceiteRealizado: 1, aceiteRealizadoEm: existing.aceiteRealizadoEm ?? new Date() })
+      .where(eq(onboardingJornada.alunoId, alunoId));
+  } else {
+    await db.insert(onboardingJornada).values({
+      alunoId,
+      ciclo: 1,
+      cadastroConfirmado: 1,
+      aceiteRealizado: 1,
+      aceiteRealizadoEm: new Date(),
+    });
+  }
 }
 
 // ============ STATUS DE ONBOARDING DO ALUNO ============
