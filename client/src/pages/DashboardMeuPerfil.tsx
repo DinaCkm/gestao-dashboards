@@ -157,6 +157,9 @@ export default function DashboardMeuPerfil() {
   const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
   const [showGlossario, setShowGlossario] = useState(false);
   const [showAllTrilhasCard, setShowAllTrilhasCard] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>(
+    new URLSearchParams(window.location.search).get('tab') || 'jornada'
+  );
 
   // Dados de indicadores - declarado cedo para uso nos useMemo
   const v2 = data?.found ? ((data as any).indicadoresV2 as {
@@ -1075,15 +1078,30 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
         )}
 
         {/* Tabs com seções detalhadas */}
-        <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'webinars'} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
 
           {/* JORNADA DE DESENVOLVIMENTO — grade de cards compactos */}
+          {/* Navegação por botões simples (não usa TabsList/TabsTrigger) para evitar conflito com RovingFocusGroup do Radix */}
           <div className="mb-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Jornada de Desenvolvimento</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
 
+              {/* TabsList oculto — obrigatório para o Radix funcionar, mas sem conteúdo visual */}
+              <TabsList className="hidden">
+                <TabsTrigger value="jornada">Aulas</TabsTrigger>
+                <TabsTrigger value="mentorias">Mentorias</TabsTrigger>
+                <TabsTrigger value="eventos">Eventos</TabsTrigger>
+                <TabsTrigger value="tarefas">Tarefas</TabsTrigger>
+                <TabsTrigger value="cases">Cases</TabsTrigger>
+                <TabsTrigger value="meu-perfil-disc">Meu Perfil</TabsTrigger>
+              </TabsList>
+
+              {/* Botões visuais de navegação — simples, sem Radix */}
+
               {/* Aulas */}
-              <TabsTrigger value="jornada" className="flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full h-auto">
+              <button onClick={() => setActiveTab('jornada')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'jornada' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
                 <div className="w-12 h-12 flex items-center justify-center">
                   <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                     <rect x="8" y="18" width="22" height="28" rx="3" fill="#DBEAFE" stroke="#3B82F6" strokeWidth="1.5"/>
@@ -1099,11 +1117,13 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   </svg>
                 </div>
                 <span className="text-xs font-semibold leading-tight">Aulas</span>
-                <span className="text-[10px] text-gray-400 data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Competências</span>
-              </TabsTrigger>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Competências</span>
+              </button>
 
               {/* Mentorias */}
-              <TabsTrigger value="mentorias" className="flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full h-auto">
+              <button onClick={() => setActiveTab('mentorias')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'mentorias' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
                 <div className="w-12 h-12 flex items-center justify-center">
                   <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                     <circle cx="20" cy="18" r="9" fill="#C4B5FD" stroke="#7C3AED" strokeWidth="1.5"/>
@@ -1115,11 +1135,13 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   </svg>
                 </div>
                 <span className="text-xs font-semibold leading-tight">Mentorias</span>
-                <span className="text-[10px] text-gray-400 data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Com a mentora</span>
-              </TabsTrigger>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Com a mentora</span>
+              </button>
 
               {/* Eventos */}
-              <TabsTrigger value="eventos" className="flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full h-auto">
+              <button onClick={() => setActiveTab('eventos')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'eventos' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
                 <div className="w-12 h-12 flex items-center justify-center">
                   <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                     <rect x="6" y="10" width="52" height="34" rx="4" fill="#D1FAE5" stroke="#10B981" strokeWidth="1.5"/>
@@ -1133,11 +1155,13 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   </svg>
                 </div>
                 <span className="text-xs font-semibold leading-tight">Eventos</span>
-                <span className="text-[10px] text-gray-400 data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Webinars</span>
-              </TabsTrigger>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Webinars</span>
+              </button>
 
               {/* Tarefas */}
-              <TabsTrigger value="tarefas" className="flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full h-auto">
+              <button onClick={() => setActiveTab('tarefas')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'tarefas' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
                 <div className="w-12 h-12 flex items-center justify-center">
                   <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                     <rect x="12" y="14" width="40" height="44" rx="4" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5"/>
@@ -1153,18 +1177,17 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   </svg>
                 </div>
                 <span className="text-xs font-semibold leading-tight">Tarefas</span>
-                <span className="text-[10px] text-gray-400 data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Entregas</span>
-              </TabsTrigger>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Entregas</span>
+              </button>
 
               {/* Mini_Cursos — link externo */}
               <a
                 href="https://ecolider.ecodobem.com/meus-cursos"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md text-gray-600 transition-all shadow-sm cursor-pointer w-full no-underline"
+                className="flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md text-gray-600 transition-all shadow-sm cursor-pointer no-underline"
               >
                 <div className="w-12 h-12 flex items-center justify-center">
-                  {/* Ilustração: capelo de formatura com seta externa */}
                   <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                     <polygon points="32,12 58,26 32,40 6,26" fill="#99F6E4" stroke="#0D9488" strokeWidth="1.5" strokeLinejoin="round"/>
                     <path d="M46 32 v10 c0 6-8 10-14 10s-14-4-14-10 V32" fill="#CCFBF1" stroke="#0D9488" strokeWidth="1.5"/>
@@ -1179,8 +1202,10 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                 <span className="text-[10px] text-gray-400 leading-tight text-center hidden sm:block">Aprendizado</span>
               </a>
 
-              {/* Cases de Sucesso */}
-              <TabsTrigger value="cases" className="flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full h-auto">
+              {/* Cases */}
+              <button onClick={() => setActiveTab('cases')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'cases' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
                 <div className="w-12 h-12 flex items-center justify-center">
                   <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                     <rect x="24" y="48" width="16" height="6" rx="2" fill="#FCD34D" stroke="#D97706" strokeWidth="1.5"/>
@@ -1195,11 +1220,13 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   </svg>
                 </div>
                 <span className="text-xs font-semibold leading-tight">Cases</span>
-                <span className="text-[10px] text-gray-400 data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Resultados</span>
-              </TabsTrigger>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Resultados</span>
+              </button>
 
               {/* Meu Perfil */}
-              <TabsTrigger value="meu-perfil-disc" className="flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md data-[state=active]:border-[#0A1E3E] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600 transition-all shadow-sm cursor-pointer w-full h-auto">
+              <button onClick={() => setActiveTab('meu-perfil-disc')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'meu-perfil-disc' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
                 <div className="w-12 h-12 flex items-center justify-center">
                   <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                     <circle cx="28" cy="18" r="10" fill="#FECDD3" stroke="#F43F5E" strokeWidth="1.5"/>
@@ -1210,8 +1237,8 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   </svg>
                 </div>
                 <span className="text-xs font-semibold leading-tight">Meu Perfil</span>
-                <span className="text-[10px] text-gray-400 data-[state=active]:text-white/70 leading-tight text-center hidden sm:block">Evolução</span>
-              </TabsTrigger>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Evolução</span>
+              </button>
 
             </div>
           </div>
