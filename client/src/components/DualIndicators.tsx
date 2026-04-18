@@ -330,7 +330,7 @@ export default function DualIndicators({
                       aplicabilidade.percentual >= 80 ? 'text-emerald-600' : aplicabilidade.percentual >= 60 ? 'text-amber-600' : 'text-red-600'
                     }`} />
                     <h3 className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-gray-800`}>
-                      Aplicabilidade
+                      Aplicabilidade Prática do Conhecimento
                     </h3>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -373,12 +373,7 @@ export default function DualIndicators({
                       </span>
                     )
                   )}
-                  {!compact && (
-                    <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                      Aplicabilidade calculada separadamente do Engajamento.
-                      {aplicabilidade.totalAvaliacoes === 0 ? ' Sem avaliações registradas no período.' : ` ${aplicabilidade.totalAvaliacoes} avaliação(ões) registrada(s).`}
-                    </p>
-                  )}
+
                   {!compact && (
                     <div className="mt-2 space-y-1">
                       {aplicabilidade.microTarefaPercentual != null && (
