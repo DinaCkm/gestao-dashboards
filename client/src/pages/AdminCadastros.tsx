@@ -1289,9 +1289,22 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                                 variant="outline"
                                 size="sm"
                                 className="text-blue-600 hover:bg-blue-600 hover:text-white"
-                                onClick={(e) => { e.stopPropagation(); onLiberarOnboarding({ alunoId: aluno.id }); }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm(
+                                    `⚠️ ATENÇÃO — Liberar Onboarding para ${aluno.name}?\n\n` +
+                                    `Esta ação irá:\n` +
+                                    `• RESETAR todo o progresso do onboarding anterior deste aluno\n` +
+                                    `• Abrir um NOVO ciclo de onboarding do zero\n` +
+                                    `• O aluno será redirecionado para a tela de onboarding no próximo acesso\n\n` +
+                                    `Use apenas em caso de renovação de contrato ou novo ciclo intencional.\n\n` +
+                                    `Tem certeza que deseja continuar?`
+                                  )) {
+                                    onLiberarOnboarding({ alunoId: aluno.id });
+                                  }
+                                }}
                                 disabled={isLiberandoOnboarding}
-                                title="Liberar onboarding para novo ciclo (renovação de contrato)"
+                                title="Liberar onboarding para novo ciclo (renovação de contrato) — RESETA o onboarding anterior"
                               >
                                 <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
                                 Liberar Onboarding
