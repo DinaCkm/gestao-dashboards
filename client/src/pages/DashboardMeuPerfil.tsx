@@ -1343,7 +1343,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                     <line x1="49" y1="12" x2="49" y2="18" stroke="#D97706" strokeWidth="1.2" strokeLinecap="round"/>
                   </svg>
                 </div>
-                <span className="text-xs font-semibold leading-tight flex items-center gap-0.5">Mini_Cursos <ExternalLink className="h-2.5 w-2.5 opacity-50" /></span>
+                <span className="text-xs font-semibold leading-tight flex items-center gap-0.5">Dicas de Comportamento <ExternalLink className="h-2.5 w-2.5 opacity-50" /></span>
                 <span className="text-[10px] text-gray-400 leading-tight text-center hidden sm:block">Aprendizado</span>
               </a>
 
