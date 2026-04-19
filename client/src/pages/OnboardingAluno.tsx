@@ -1278,6 +1278,8 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   const sessoesContratadas = contrato?.totalSessoesContratadas || 0;
   const totalSessoesPrevistas = sessoesContratadas > 0 ? sessoesContratadas : totalMeses;
   const tipoMentoriaContrato = (contrato as any)?.tipoMentoria || 'individual';
+  const metasPrevistas = jornadaData?.resumoOnboarding?.metasPrevistas ?? 0;
+  const casesPrevistos = jornadaData?.resumoOnboarding?.casesPrevistos ?? 0;
 
   // Dados de tarefas
   const tarefasEntregues = dashData?.found ? (dashData as any).indicadores?.atividadesEntregues || 0 : 0;
@@ -1312,6 +1314,9 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
     { id: 'visao-geral', label: 'Visão Geral', icon: Layers },
     { id: 'competencias', label: 'Competências', icon: Target },
   ];
+
+  // Controle explícito para facilitar ajuste direto via GitHub sem apagar estrutura do card.
+  const exibirResumoPlanoNoAceite = false;
 
   return (
     <div className="space-y-6">
@@ -1380,6 +1385,16 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                     <Video className="h-6 w-6 text-pink-400 mx-auto mb-1" />
                     <p className="text-2xl font-bold">{Math.ceil(totalMeses * 2)}</p>
                     <p className="text-xs text-white/60">Webinares</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                    <Target className="h-6 w-6 text-fuchsia-400 mx-auto mb-1" />
+                    <p className="text-2xl font-bold">{metasPrevistas}</p>
+                    <p className="text-xs text-white/60">Metas</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                    <FileText className="h-6 w-6 text-amber-300 mx-auto mb-1" />
+                    <p className="text-2xl font-bold">{casesPrevistos}</p>
+                    <p className="text-xs text-white/60">Cases</p>
                   </div>
                 </div>
                 {/* Lista de trilhas */}
@@ -2469,7 +2484,7 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
           ) : (
             <div className="space-y-6">
               {/* Resumo do PDI */}
-              {hasPdi && (
+              {hasPdi && exibirResumoPlanoNoAceite && (
                 <div className="bg-gray-50 rounded-xl p-5">
                   <h3 className="font-bold text-[#0A1E3E] mb-3 flex items-center gap-2">
                     <Target className="h-5 w-5 text-purple-600" />
@@ -2500,11 +2515,6 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                       
                       // Tarefas: igual ao número de mentorias
                       const totalTarefas = sessoesContratadas;
-                      
-                      // Texto de mentoria
-                      const mentoriaLabel = temMentoria 
-                        ? `${sessoesContratadas} (${tipoMentoria === 'grupo' ? 'Grupo' : 'Individual'})`
-                        : 'Sem mentoria';
                       
                       const cards = [
                         { valor: String(totalCompetencias), label: 'Competências', cor: 'text-purple-600', link: '/trilhas-competencias', subtitle: '' },
