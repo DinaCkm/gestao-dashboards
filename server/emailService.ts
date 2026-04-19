@@ -32,9 +32,15 @@ export async function sendEmail(options: {
   text?: string;
   cc?: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  if (!ENV.emailEnabled) {
-    console.log(`[Email] Envio desativado temporariamente. Destinatário: ${options.to}`);
+  // Envio habilitado quando SMTP_USER e SMTP_PASS estiverem configurados
+  // EMAIL_ENABLED=false desativa explicitamente (ex: ambiente de desenvolvimento sem SMTP)
+  const smtpConfigurado = !!(ENV.smtpUser && ENV.smtpPass);
+  if (!ENV.emailEnabled && !smtpConfigurado) {
+    console.log(`[Email] Envio desativado: EMAIL_ENABLED=false e sem credenciais SMTP. Destinatário: ${options.to}`);
     return { success: false, error: "Envio de e-mails temporariamente desativado." };
+  }
+  if (!ENV.emailEnabled && smtpConfigurado) {
+    console.log(`[Email] EMAIL_ENABLED=false ignorado pois SMTP está configurado. Prosseguindo envio para: ${options.to}`);
   }
 
   try {
@@ -1628,31 +1634,83 @@ Acesse a plataforma: ${data.loginUrl}
 
 // ============ LEMBRETE DE ACESSO - RANKING GERAL DE ENGAJAMENTO ============
 export function buildLembreteEngajamentoEmail(data: {
+  nomeAluno: string;
+  turma: string;
+  posicao: number;
+  ind1Webinars: number;
+  ind2Avaliacoes: number;
+  ind3Competencias: number;
+  ind4Tarefas: number;
+  ind5Engajamento: number;
   engajamentoFinal: number;
 }): { subject: string; html: string; text: string } {
-  const percentual = `${Math.round(data.engajamentoFinal)}%`;
-  const subject = "Lembrete de acesso à plataforma";
+  const fmt = (v: number) => `${Math.round(v)}%`;
+  const subject = "Performance de Engajamento — Ecossistema do Bem";
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; margin: 0; padding: 24px; color: #1f2937;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 680px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb;">
+    <!-- Header com logo -->
     <tr>
-      <td style="padding: 28px 24px;">
-        <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.7;">
-          Acesse a plataforma <a href="http://ecolider.ecodobem.com" style="color: #1d4ed8; text-decoration: none;">http://ecolider.ecodobem.com</a> e acompanhe sua performance.
+      <td style="padding: 28px 24px 16px; text-align: center; border-bottom: 1px solid #e5e7eb;">
+        <img src="${logoUrl}" alt="Ecossistema do Bem" width="160" style="display:block;margin:0 auto 12px;" />
+        <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #0A1E3E;">Performance de Engajamento</h1>
+      </td>
+    </tr>
+    <!-- Corpo -->
+    <tr>
+      <td style="padding: 24px;">
+        <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.7; color: #374151;">
+          Olá, <strong>${data.nomeAluno}</strong>! Confira abaixo o resumo da sua performance na plataforma.
         </p>
-        <p style="margin: 0; font-size: 15px; line-height: 1.7;">
-          Segue seu engajamento: <strong>${percentual}</strong>
+        <!-- Tabela de indicadores -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: #0A1E3E; color: #ffffff;">
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Posição</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #1e3a5f;">Pessoa</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #1e3a5f;">Turma</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. 1: Webinars</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. 2: Avaliações</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. 3: Competências</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. 4: Tarefas</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. 5: Engajamento</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. Média: Engajamento Final</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background: #f0fdf4;">
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 700; color: #0A1E3E;">${data.posicao}º</td>
+              <td style="padding: 10px 8px; text-align: left; border: 1px solid #d1d5db; font-weight: 600;">${data.nomeAluno}</td>
+              <td style="padding: 10px 8px; text-align: left; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">${data.turma}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db;">${fmt(data.ind1Webinars)}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db;">${fmt(data.ind2Avaliacoes)}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db;">${fmt(data.ind3Competencias)}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db;">${fmt(data.ind4Tarefas)}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db;">${fmt(data.ind5Engajamento)}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 700; color: #059669;">${fmt(data.engajamentoFinal)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin: 20px 0 0; font-size: 14px; line-height: 1.7; color: #374151;">
+          Acesse a plataforma e continue evoluindo: <a href="http://ecolider.ecodobem.com" style="color: #1d4ed8; text-decoration: none;">ecolider.ecodobem.com</a>
         </p>
+      </td>
+    </tr>
+    <!-- Footer -->
+    <tr>
+      <td style="padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af;">
+        Ecossistema do Bem &mdash; Este é um e-mail automático, por favor não responda.
       </td>
     </tr>
   </table>
 </body>
 </html>`;
 
-  const text = `Acesse a plataforma http://ecolider.ecodobem.com e acompanhe sua performance.\n\nSegue seu engajamento: **${percentual}**`;
+  const text = `Performance de Engajamento\n\nOlá, ${data.nomeAluno}!\n\nPosição: ${data.posicao}º\nTurma: ${data.turma}\nInd. 1 Webinars: ${fmt(data.ind1Webinars)}\nInd. 2 Avaliações: ${fmt(data.ind2Avaliacoes)}\nInd. 3 Competências: ${fmt(data.ind3Competencias)}\nInd. 4 Tarefas: ${fmt(data.ind4Tarefas)}\nInd. 5 Engajamento: ${fmt(data.ind5Engajamento)}\nEngajamento Final: ${fmt(data.engajamentoFinal)}\n\nAcesse: http://ecolider.ecodobem.com`;
 
   return { subject, html, text };
 }
