@@ -604,7 +604,7 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
               </div>
             </CardContent>
           </Card>
-        )}
+        ))}
       </div>
 
       {selectedMentora && !readOnly && (
