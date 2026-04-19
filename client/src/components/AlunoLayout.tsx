@@ -6,7 +6,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
-import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp } from "lucide-react";
+import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp, Sparkles } from "lucide-react";
 import RoleSwitcher from "@/components/RoleSwitcher";
 
 /** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
@@ -24,9 +24,28 @@ const ALL_NAV_ITEMS = [
 /** Rotas que ficam bloqueadas até o aceite (para alunos novos) */
 const BLOCKED_PATHS = ALL_NAV_ITEMS.filter(i => i.requiresAceite).map(i => i.path);
 
+/** Helper: seleciona a Dica da Semana dentre os anúncios ativos */
+function useDicaDaSemana() {
+  const { data: activeAnnouncements } = trpc.announcements.active.useQuery();
+  return useMemo(() => {
+    return (
+      (activeAnnouncements ?? [])
+        .filter((a: any) =>
+          a.type === "news" &&
+          Number(a.isActive) === 1 &&
+          !!a.actionUrl &&
+          Number(a.priority ?? 0) > 0 &&
+          (a.title || "").toLowerCase().includes("dica")
+        )
+        .sort((a: any, b: any) => Number(b.priority ?? 0) - Number(a.priority ?? 0))[0] ?? null
+    );
+  }, [activeAnnouncements]);
+}
+
 export default function AlunoLayout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
+  const dicaDaSemana = useDicaDaSemana();
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => { window.location.href = "/"; },
   });
@@ -128,6 +147,19 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
                 </div>
               )}
             </nav>
+
+            {/* Selo Dica da Semana */}
+            {dicaDaSemana && (
+              <button
+                onClick={() => window.open(dicaDaSemana.actionUrl, "_blank")}
+                title={dicaDaSemana.title}
+                className="relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 shadow-[0_0_18px_rgba(245,153,31,0.5)] animate-pulse hover:scale-105 hover:shadow-[0_0_28px_rgba(245,153,31,0.7)] transition-all duration-200 border border-orange-300/50 whitespace-nowrap"
+              >
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">DICA DA SEMANA</span>
+                <span className="sm:hidden">DICA</span>
+              </button>
+            )}
 
             {/* Alternância de Papel (Gerente ↔ Aluno) */}
             <RoleSwitcher />

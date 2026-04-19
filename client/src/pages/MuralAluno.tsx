@@ -588,6 +588,21 @@ export default function MuralAluno() {
     );
   }, [myAttendance]);
 
+  // Dica da Semana: primeiro anuncio ativo do tipo news com actionUrl, priority > 0 e titulo contendo 'dica'
+  const dicaDaSemana = useMemo(() => {
+    return (
+      (activeAnnouncements ?? [])
+        .filter((a: any) =>
+          a.type === "news" &&
+          Number(a.isActive) === 1 &&
+          !!a.actionUrl &&
+          Number(a.priority ?? 0) > 0 &&
+          (a.title || "").toLowerCase().includes("dica")
+        )
+        .sort((a: any, b: any) => Number(b.priority ?? 0) - Number(a.priority ?? 0))[0] ?? null
+    );
+  }, [activeAnnouncements]);
+
   // Announcements by type
   const announcementsByType = useMemo(() => {
     if (!activeAnnouncements) return { courses: [], activities: [], notices: [], news: [] };
@@ -761,6 +776,66 @@ E-mail: ${email}`;
 
            {/* Next Webinar Highlight */}
           {nextWebinar && <NextWebinarHighlight webinar={nextWebinar} />}
+
+          {/* Dica da Semana */}
+          {dicaDaSemana && (
+            <div className="animate-in fade-in zoom-in duration-500">
+              <div className="relative overflow-hidden rounded-2xl border border-orange-300 bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 shadow-[0_0_30px_rgba(245,153,31,0.35)] p-5 sm:p-6">
+                {/* Glow de fundo */}
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 via-amber-300/5 to-red-400/10 pointer-events-none" />
+
+                <div className="relative flex flex-col sm:flex-row gap-4 items-start">
+                  {/* Conteudo */}
+                  <div className="flex-1 min-w-0">
+                    {/* Badge */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 px-3 py-1 text-xs font-bold text-white shadow-md animate-pulse">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        DICA DA SEMANA
+                      </span>
+                      {dicaDaSemana.publishAt && (
+                        <span className="text-xs text-orange-600/70">
+                          {formatDate(dicaDaSemana.publishAt)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Titulo */}
+                    <h2 className="text-xl sm:text-2xl font-bold text-[#0A1E3E] leading-snug mb-2">
+                      {dicaDaSemana.title}
+                    </h2>
+
+                    {/* Descricao */}
+                    {dicaDaSemana.content && (
+                      <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+                        {dicaDaSemana.content}
+                      </p>
+                    )}
+
+                    {/* Botao */}
+                    <Button
+                      onClick={() => window.open(dicaDaSemana.actionUrl, "_blank")}
+                      className="bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold shadow-md hover:shadow-[0_0_20px_rgba(245,153,31,0.5)] hover:scale-105 transition-all duration-200"
+                    >
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      {dicaDaSemana.actionLabel || "Assistir agora"}
+                    </Button>
+                  </div>
+
+                  {/* Imagem lateral (se houver) */}
+                  {dicaDaSemana.imageUrl && (
+                    <div className="shrink-0 w-full sm:w-48">
+                      <img
+                        src={dicaDaSemana.imageUrl}
+                        alt={dicaDaSemana.title}
+                        className="w-full rounded-xl object-cover aspect-video sm:aspect-square shadow-md border border-orange-200"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Cases de Sucesso da Comunidade */}
           <section className="space-y-3">
