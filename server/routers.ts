@@ -6890,7 +6890,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
 
     // Vitrine pública de cases para o Mural do aluno
     vitrineMural: protectedProcedure
-      .input(z.object({ limit: z.number().min(1).max(30).optional() }).optional())
+      .input(z.object({ limit: z.number().min(1).max(200).optional() }).optional())
       .query(async ({ input }) => {
         const items = await db.getCasesVitrineMural(input?.limit ?? 12);
         return items.map((i) => ({
