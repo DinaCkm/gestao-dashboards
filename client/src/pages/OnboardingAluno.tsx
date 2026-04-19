@@ -3017,7 +3017,7 @@ export default function OnboardingAluno() {
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
             readOnly={readOnly}
             mentoraAtual={selectedMentora}
-            mentoraConfirmada={!!progressoData?.mentoraId && progressStep > 3}
+            mentoraConfirmada={!!progressoData?.mentoraId}
             podeSolicitarAlteracao={!!progressoData?.mentoraId && !globalReadOnly}
           />
         )}
