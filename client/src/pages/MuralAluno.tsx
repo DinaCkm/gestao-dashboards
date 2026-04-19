@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   Video, Calendar, Clock, ExternalLink, Youtube, Bell,
-  Sparkles, GraduationCap, Zap, ChevronRight,
+  Sparkles, GraduationCap, Zap, ChevronRight, ChevronDown, ChevronUp,
   Info, CalendarDays, Users, Star, Loader2,
   CheckCircle2, AlertTriangle, MessageSquareText, HandHeart,
   ArrowLeft, Send, BookOpen, TrendingUp, Trophy, Building2, UserRound
@@ -556,8 +556,8 @@ export default function MuralAluno() {
     { limit: 200 },
     { enabled: !!user }
   );
-  const VITRINE_PAGE_SIZE = 12;
-  const [vitrineVisible, setVitrineVisible] = useState(VITRINE_PAGE_SIZE);
+  const VITRINE_INICIAL = 6;
+  const [vitrineExpandida, setVitrineExpandida] = useState(false);
   const { data: notificationsData, refetch: refetchNotifications } = trpc.notifications.list.useQuery(
     { limit: 20 },
     { enabled: !!user }
@@ -771,7 +771,9 @@ E-mail: ${email}`;
               <Badge className="bg-amber-100 text-amber-800 border-amber-200">Vitrine inspiradora</Badge>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {(casesVitrine || []).slice(0, vitrineVisible).map((c: any) => (
+              {(casesVitrine || [])
+                .slice(0, vitrineExpandida ? undefined : VITRINE_INICIAL)
+                .map((c: any) => (
                 <Card key={c.caseId} className="border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 shadow-sm hover:shadow-md transition-all">
                   <CardContent className="p-3">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
@@ -807,15 +809,19 @@ E-mail: ${email}`;
                 </CardContent>
               </Card>
             )}
-            {casesVitrine && vitrineVisible < casesVitrine.length && (
+            {casesVitrine && casesVitrine.length > VITRINE_INICIAL && (
               <div className="flex justify-center pt-1">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-amber-300 text-amber-700 hover:bg-amber-50 text-xs"
-                  onClick={() => setVitrineVisible((v) => v + VITRINE_PAGE_SIZE)}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50 text-xs gap-1.5"
+                  onClick={() => setVitrineExpandida((v) => !v)}
                 >
-                  Mostrar mais ({casesVitrine.length - vitrineVisible} restantes)
+                  {vitrineExpandida ? (
+                    <><ChevronUp className="h-3.5 w-3.5" /> Recolher vitrine</>
+                  ) : (
+                    <><ChevronDown className="h-3.5 w-3.5" /> Ver todos os cases ({casesVitrine.length})</>
+                  )}
                 </Button>
               </div>
             )}
