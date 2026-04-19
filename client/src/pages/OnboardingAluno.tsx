@@ -472,13 +472,6 @@ function EtapaMentora({
     }));
   }, [mentoresData]);
   const mentorasVisiveis = selectedMentora ? [selectedMentora] : mentoras;
-  console.log('DEBUG EtapaMentora', {
-    mentoraAtual,
-    selectedMentora,
-    mentoraConfirmada,
-    podeSolicitarAlteracao,
-    readOnly,
-  });
   // Sincronizar selectedMentora interno quando mentoraAtual chega de forma assíncrona
   // (progressoData e mentoresData carregam após a montagem do componente)
   useEffect(() => {
@@ -2914,16 +2907,6 @@ export default function OnboardingAluno() {
   const isViewingPreviousStep = !globalReadOnly && currentStep < progressStep;
   const readOnly = globalReadOnly || isViewingPreviousStep;
   const reassessmentElegivel = !!(progressoData?.reassessmentElegivel);
-  console.log('DEBUG OnboardingAluno', {
-    progressoData,
-    progressoMentoraId: progressoData?.mentoraId,
-    selectedMentora,
-    globalReadOnly,
-    mentoraConfirmadaProp: !!progressoData?.mentoraId,
-    podeSolicitarAlteracaoProp: !!progressoData?.mentoraId && !globalReadOnly,
-    currentStep,
-    progressStep,
-  });
   // Aguardar carregamento do status de onboarding para evitar flash de conteúdo incorreto
   if (!onboardingStatus && user) {
     return (
@@ -3040,7 +3023,7 @@ export default function OnboardingAluno() {
             readOnly={readOnly}
             mentoraAtual={selectedMentora}
             mentoraConfirmada={!!progressoData?.mentoraId}
-            podeSolicitarAlteracao={!!progressoData?.mentoraId && !globalReadOnly}
+            podeSolicitarAlteracao={!!progressoData?.mentoraId}
           />
         )}
         {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
