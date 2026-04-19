@@ -2626,10 +2626,29 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Aluno sem e-mail cadastrado.' });
         }
 
-        const engajamentoFinal = Number(alunoRanking?.consolidado?.ind7_engajamentoFinal ?? 0);
-        const emailData = buildLembreteEngajamentoEmail({ engajamentoFinal });
+        // Calcular posicao do aluno no ranking da empresa
+        const posicaoRanking = dashboardEmpresa.alunos
+          .sort((a: any, b: any) => b.notaFinal - a.notaFinal)
+          .findIndex((a: any) => a.idUsuario === input.alunoIdUsuario) + 1;
+
+        const emailData = buildLembreteEngajamentoEmail({
+          nomeAluno: alunoRanking.nomeAluno || alunoRanking.email || 'Aluno',
+          turma: alunoRanking.turmaNome || alunoRanking.turma || 'Não definida',
+          posicao: posicaoRanking || 1,
+          ind1Webinars: Number(alunoRanking?.consolidado?.ind1_webinars ?? 0),
+          ind2Avaliacoes: Number(alunoRanking?.consolidado?.ind2_avaliacoes ?? 0),
+          ind3Competencias: Number(alunoRanking?.consolidado?.ind3_competencias ?? 0),
+          ind4Tarefas: Number(alunoRanking?.consolidado?.ind4_tarefas ?? 0),
+          ind5Engajamento: Number(alunoRanking?.consolidado?.ind5_engajamento ?? 0),
+          engajamentoFinal: Number(alunoRanking?.consolidado?.ind7_engajamentoFinal ?? 0),
+        });
+
+        // Gestor que disparou o lembrete recebe copia
+        const gestorEmail = ctx.user.email || null;
+
         const envio = await sendEmail({
           to: alunoRanking.email,
+          cc: gestorEmail || undefined,
           subject: emailData.subject,
           html: emailData.html,
           text: emailData.text,
