@@ -427,10 +427,10 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
 // ETAPA 3: ESCOLHA DA MENTORA
 // ============================================================
 
-function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }: { onComplete: () => void; onSelectMentora: (m: Mentora) => void; alunoId: number; readOnly?: boolean }) {
+function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false, mentoraInicial = null }: { onComplete: () => void; onSelectMentora: (m: Mentora) => void; alunoId: number; readOnly?: boolean; mentoraInicial?: Mentora | null }) {
   const { data: mentoresData } = trpc.mentor.list.useQuery();
   const escolherMentora = trpc.onboarding.escolherMentora.useMutation();
-  const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
+  const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(mentoraInicial);
   const [detailMentora, setDetailMentora] = useState<Mentora | null>(null);
   const [saving, setSaving] = useState(false);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
@@ -2920,6 +2920,7 @@ export default function OnboardingAluno() {
             onSelectMentora={setSelectedMentora}
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
             readOnly={readOnly}
+            mentoraInicial={selectedMentora}
           />
         )}
         {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
