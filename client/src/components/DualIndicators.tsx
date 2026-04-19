@@ -262,7 +262,7 @@ export default function DualIndicators({
                 <div className="flex items-center gap-2 mb-1">
                   <Target className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} text-emerald-600`} />
                   <h3 className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-gray-800`}>
-                    Desenvolvimento
+                    Jornada de Superação: Meta Desafiadora
                   </h3>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -272,11 +272,10 @@ export default function DualIndicators({
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
                       <p className="text-xs leading-relaxed">
-                        <strong>Indicador de Desenvolvimento (meta: 100%)</strong><br />
-                        Mede o cumprimento dos desafios e metas de desenvolvimento
-                        atribuídos pelo mentor para cada competência trabalhada.<br />
-                        O mentor lança metas específicas e acompanha se foram cumpridas.<br />
-                        Fórmula: (Metas cumpridas / Total de metas lançadas) × 100
+                        <strong>Jornada de Superação: Meta Desafiadora (meta: 100%)</strong><br />
+                        Mostra o avanço do aluno nas micrometas desafiadoras definidas pela mentora em seu plano de desenvolvimento.<br />
+                        Cada micrometa representa uma etapa concreta de evolução rumo à Meta-Mestre.<br />
+                        Fórmula: (Micrometas cumpridas / Total de micrometas definidas) × 100
                       </p>
                     </TooltipContent>
                   </Tooltip>
