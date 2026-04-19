@@ -1350,7 +1350,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
                     <Trophy className="h-6 w-6 text-[#F5991F] mx-auto mb-1" />
                     <p className="text-2xl font-bold">{todasCompetencias.length}</p>
-                    <p className="text-xs text-white/60">Competências</p>
+                    <p className="text-xs text-white/60">Competências/Cursos</p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
                     <Layers className="h-6 w-6 text-purple-400 mx-auto mb-1" />
