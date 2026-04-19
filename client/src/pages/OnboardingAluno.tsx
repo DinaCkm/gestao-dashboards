@@ -478,7 +478,7 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
     checkAll();
     return () => { cancelled = true; };
   }, [mentoras.length]);
-
+  const mentorasVisiveis = selectedMentora ? [selectedMentora] : mentoras;
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <MentoraGuiaBanner etapa={3} />
@@ -488,7 +488,7 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
       </div>
 
       <div className="grid gap-5 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {mentoras.map((mentora) => (
+        {mentorasVisiveis.map((mentora) => (
           <Card
             key={mentora.id}
             className={`transition-all duration-300 hover:shadow-lg cursor-pointer group relative ${
@@ -604,8 +604,21 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
               </div>
             </CardContent>
           </Card>
-        ))}
+         )}
       </div>
+
+      {selectedMentora && !readOnly && (
+        <div className="flex justify-end -mt-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-sm text-[#0A1E3E] hover:text-[#F5991F]"
+            onClick={() => setSelectedMentora(null)}
+          >
+            Trocar mentora
+          </Button>
+        </div>
+      )}
 
       {/* Dialog de Currículo Completo */}
       <Dialog open={!!detailMentora} onOpenChange={() => setDetailMentora(null)}>
