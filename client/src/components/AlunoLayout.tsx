@@ -33,7 +33,6 @@ function useDicaDaSemana() {
         .filter((a: any) =>
           a.type === "news" &&
           Number(a.isActive) === 1 &&
-          !!a.actionUrl &&
           Number(a.priority ?? 0) > 0
         )
         .sort((a: any, b: any) => Number(b.priority ?? 0) - Number(a.priority ?? 0))[0] ?? null
