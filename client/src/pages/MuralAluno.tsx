@@ -553,9 +553,11 @@ export default function MuralAluno() {
   const { data: pendingAttendance, refetch: refetchPending } = trpc.attendance.pending.useQuery();
   const { data: myAttendance, refetch: refetchMyAttendance } = trpc.attendance.myAttendance.useQuery();
   const { data: casesVitrine } = trpc.cases.vitrineMural.useQuery(
-    { limit: 8 },
+    { limit: 200 },
     { enabled: !!user }
   );
+  const VITRINE_PAGE_SIZE = 12;
+  const [vitrineVisible, setVitrineVisible] = useState(VITRINE_PAGE_SIZE);
   const { data: notificationsData, refetch: refetchNotifications } = trpc.notifications.list.useQuery(
     { limit: 20 },
     { enabled: !!user }
@@ -768,38 +770,30 @@ E-mail: ${email}`;
               </h2>
               <Badge className="bg-amber-100 text-amber-800 border-amber-200">Vitrine inspiradora</Badge>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(casesVitrine || []).map((c: any) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {(casesVitrine || []).slice(0, vitrineVisible).map((c: any) => (
                 <Card key={c.caseId} className="border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 shadow-sm hover:shadow-md transition-all">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1 min-w-0">
-                        <p className="text-xs text-gray-500 flex items-center gap-1">
-                          <Building2 className="h-3.5 w-3.5 text-amber-600" />
-                          {c.empresa}
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] text-gray-400 truncate">
+                          <Building2 className="h-3 w-3 text-amber-500 inline mr-1" />
+                          {c.empresa} · {c.alunoNome}
                         </p>
-                        <p className="text-xs text-gray-500 flex items-center gap-1">
-                          <UserRound className="h-3.5 w-3.5 text-amber-600" />
-                          {c.alunoNome}
-                        </p>
-                        <h3 className="font-semibold text-[#0A1E3E] line-clamp-2">{c.titulo}</h3>
+                        <h3 className="text-sm font-semibold text-[#0A1E3E] line-clamp-2 mt-0.5 leading-snug">{c.titulo}</h3>
                       </div>
-                      <Trophy className="h-5 w-5 text-amber-500 shrink-0" />
+                      <Trophy className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-gray-500">
-                        {c.dataEntrega ? `Publicado em ${formatDate(c.dataEntrega)}` : "Case publicado"}
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[10px] text-gray-400">
+                        {c.dataEntrega ? formatDate(c.dataEntrega) : "—"}
                       </span>
-                      <Button
-                        size="sm"
-                        className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
-                        onClick={() => {
-                          setSelectedCase(c);
-                          setCaseModalOpen(true);
-                        }}
+                      <button
+                        className="text-[11px] font-medium text-[#0A1E3E] hover:text-amber-600 transition-colors flex items-center gap-0.5"
+                        onClick={() => { setSelectedCase(c); setCaseModalOpen(true); }}
                       >
-                        Quero conhecer este case
-                      </Button>
+                        Ver case <ChevronRight className="h-3 w-3" />
+                      </button>
                     </div>
                   </CardContent>
                 </Card>
@@ -812,6 +806,18 @@ E-mail: ${email}`;
                   <p className="text-xs text-amber-700 mt-1">Entregue seu case para aparecer nesta vitrine inspiradora.</p>
                 </CardContent>
               </Card>
+            )}
+            {casesVitrine && vitrineVisible < casesVitrine.length && (
+              <div className="flex justify-center pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50 text-xs"
+                  onClick={() => setVitrineVisible((v) => v + VITRINE_PAGE_SIZE)}
+                >
+                  Mostrar mais ({casesVitrine.length - vitrineVisible} restantes)
+                </Button>
+              </div>
             )}
           </section>
 
