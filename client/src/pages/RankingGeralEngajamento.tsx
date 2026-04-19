@@ -43,6 +43,14 @@ const LOGO_URL =
 
 const toPercent = (value: number) => `${Math.round(Number(value || 0))}%`;
 
+// Extrai apenas o código da turma entre colchetes, ex: "[2025] SEBRAE Tocantins - Basic [BS1]" -> "BS1"
+// Se não houver código entre colchetes no final, retorna o nome completo
+const extrairCodigoTurma = (nome: string | null | undefined): string => {
+  if (!nome) return "Sem turma";
+  const match = nome.match(/\[([^\]]+)\]\s*$/);
+  return match ? match[1] : nome;
+};
+
 export default function RankingGeralEngajamento() {
   const { user } = useAuth();
   const [pessoaFiltro, setPessoaFiltro] = useState("");
@@ -103,7 +111,7 @@ export default function RankingGeralEngajamento() {
         idUsuario: String(aluno?.idUsuario || ""),
         nomeAluno: String(aluno?.nomeAluno || "Sem nome"),
         turmaId,
-        turmaNome: turmaNames.get(turmaId) || "Não definida",
+        turmaNome: extrairCodigoTurma(turmaNames.get(turmaId)) || "Sem turma",
         ind1: Number(aluno?.consolidado?.ind1_webinars ?? 0),
         ind2: Number(aluno?.consolidado?.ind2_avaliacoes ?? 0),
         ind3: Number(aluno?.consolidado?.ind3_competencias ?? 0),
@@ -239,7 +247,7 @@ export default function RankingGeralEngajamento() {
                     <SelectItem value="todas">Todas as turmas</SelectItem>
                     {(turmas || []).map(turma => (
                       <SelectItem key={turma.id} value={String(turma.id)}>
-                        {turma.name}
+                        {extrairCodigoTurma(turma.name)}
                       </SelectItem>
                     ))}
                   </SelectContent>
