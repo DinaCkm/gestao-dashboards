@@ -7621,7 +7621,10 @@ Responda APENAS em JSON com o formato:
         const mentoraAtual = await db.getConsultorById(aluno.consultorId);
         const { sendEmail, buildSolicitacaoAlteracaoMentoraEmail } = await import('./emailService');
 
-        const adminEmail = process.env.SMTP_USER || '';
+        // Destinatarios: Adriana (to) e Dina (cc) — configuravel via env se necessario
+        const TO_SOLICITACAO = process.env.SOLICITACAO_MENTORA_TO || 'adriana.deus@makiyama.com.br';
+        const CC_SOLICITACAO = process.env.SOLICITACAO_MENTORA_CC || 'dina@ckmtalents.net';
+
         const payload = buildSolicitacaoAlteracaoMentoraEmail({
           alunoName: aluno.name || 'Aluno',
           alunoEmail: aluno.email || 'Não informado',
@@ -7629,15 +7632,25 @@ Responda APENAS em JSON com o formato:
           justificativa,
         });
 
+        console.log('[Solicitacao Alteracao Mentora] alunoId=', alunoId);
+        console.log('[Solicitacao Alteracao Mentora] aluno=', aluno?.name, aluno?.email);
+        console.log('[Solicitacao Alteracao Mentora] mentoraAtual=', mentoraAtual?.name, mentoraAtual?.email);
+        console.log('[Solicitacao Alteracao Mentora] recipients=', { to: TO_SOLICITACAO, cc: CC_SOLICITACAO });
+        console.log('[Solicitacao Alteracao Mentora] subject=', payload.subject);
+        console.log('[Solicitacao Alteracao Mentora] EMAIL_ENABLED=', process.env.EMAIL_ENABLED);
+
         const envio = await sendEmail({
-          to: 'adriana.deus@makiyama.com.br',
-          cc: 'dina@ckmtalents.net',
+          to: TO_SOLICITACAO,
+          cc: CC_SOLICITACAO,
           subject: payload.subject,
           html: payload.html,
           text: payload.text,
         });
 
+        console.log('[Solicitacao Alteracao Mentora] resultado envio=', JSON.stringify(envio));
+
         if (!envio.success) {
+          console.error('[Solicitacao Alteracao Mentora] erro real no envio:', envio.error);
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Não foi possível enviar a solicitação. Tente novamente em instantes.' });
         }
 
