@@ -452,6 +452,7 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
       disponivel: c.isActive === 1,
     }));
   }, [mentoresData]);
+  const mentorasVisiveis = selectedMentora ? [selectedMentora] : mentoras;
 
   // Verificar disponibilidade de agenda de todas as mentoras ao carregar
   useEffect(() => {
