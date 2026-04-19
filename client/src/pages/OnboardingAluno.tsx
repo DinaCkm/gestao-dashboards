@@ -472,7 +472,13 @@ function EtapaMentora({
     }));
   }, [mentoresData]);
   const mentorasVisiveis = selectedMentora ? [selectedMentora] : mentoras;
-
+  // Sincronizar selectedMentora interno quando mentoraAtual chega de forma assíncrona
+  // (progressoData e mentoresData carregam após a montagem do componente)
+  useEffect(() => {
+    if (mentoraAtual && !selectedMentora) {
+      setSelectedMentora(mentoraAtual);
+    }
+  }, [mentoraAtual]);
   // Verificar disponibilidade de agenda de todas as mentoras ao carregar
   useEffect(() => {
     if (!mentoras.length) return;
