@@ -645,22 +645,25 @@ function EtapaMentora({
         </div>
       )}
 
-      {mentoraConfirmada && selectedMentora && podeSolicitarAlteracao && (
+      {mentoraConfirmada && selectedMentora && (
         <Card className="border border-emerald-200 bg-emerald-50">
           <CardContent className="p-4 space-y-3">
             <p className="text-sm text-emerald-800 font-medium">
               Parabéns, excelente escolha, sua mentora já recebeu um e-mail informando a sua escolha.
             </p>
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                className="border-emerald-300 text-emerald-800 hover:bg-emerald-100"
-                onClick={() => setShowSolicitacaoDialog(true)}
-              >
-                Solicitar alteração de mentora
-              </Button>
-            </div>
+
+            {podeSolicitarAlteracao && (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-emerald-300 text-emerald-800 hover:bg-emerald-100"
+                  onClick={() => setShowSolicitacaoDialog(true)}
+                >
+                  Solicitar alteração de mentora
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
