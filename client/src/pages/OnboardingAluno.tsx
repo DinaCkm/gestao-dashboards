@@ -479,7 +479,6 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
     checkAll();
     return () => { cancelled = true; };
   }, [mentoras.length]);
-  const mentorasVisiveis = selectedMentora ? [selectedMentora] : mentoras;
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <MentoraGuiaBanner etapa={3} />
@@ -605,7 +604,7 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
               </div>
             </CardContent>
           </Card>
-         )}
+        )}
       </div>
 
       {selectedMentora && !readOnly && (
