@@ -7651,7 +7651,28 @@ Responda APENAS em JSON com o formato:
 
         if (!envio.success) {
           console.error('[Solicitacao Alteracao Mentora] erro real no envio:', envio.error);
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Não foi possível enviar a solicitação. Tente novamente em instantes.' });
+          // Nao bloquear: notificacao in-app garante que admins sejam avisados mesmo sem email
+        }
+
+        // Notificar todos os admins via sininho (in-app notification)
+        try {
+          const allUsers = await db.getAllUsers();
+          const adminUsers = allUsers.filter((u: any) => u.role === 'admin');
+          const notifTitle = 'Solicitação de alteração de mentora';
+          const notifMessage = `${aluno.name || 'Aluno'} solicitou alteração de mentora. Mentora atual: ${mentoraAtual?.name || 'Não identificada'}. Justificativa: ${justificativa.substring(0, 120)}${justificativa.length > 120 ? '...' : ''}`;
+          for (const adminUser of adminUsers) {
+            await db.createNotification({
+              userId: adminUser.id,
+              title: notifTitle,
+              message: notifMessage,
+              type: 'action',
+              category: 'onboarding',
+              link: '/cadastros',
+            });
+          }
+          console.log('[Solicitacao Alteracao Mentora] Notificacoes in-app criadas para', adminUsers.length, 'admin(s)');
+        } catch (notifError) {
+          console.error('[Solicitacao Alteracao Mentora] Erro ao criar notificacoes in-app:', notifError);
         }
 
         return { success: true };
