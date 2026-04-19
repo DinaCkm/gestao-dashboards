@@ -9976,6 +9976,8 @@ export async function getAssessmentCompetenciasByPdi(pdiId: number) {
         peso: assessmentCompetencias.peso,
         nivelAtual: assessmentCompetencias.nivelAtual,
         metaFinal: assessmentCompetencias.metaFinal,
+        metaCiclo1: assessmentCompetencias.metaCiclo1,
+        metaCiclo2: assessmentCompetencias.metaCiclo2,
         microInicio: assessmentCompetencias.microInicio,
         microTermino: assessmentCompetencias.microTermino,
         createdAt: assessmentCompetencias.createdAt,

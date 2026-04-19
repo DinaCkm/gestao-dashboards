@@ -42,6 +42,11 @@ const LOGO_URL =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
 
 const toPercent = (value: number) => `${Math.round(Number(value || 0))}%`;
+const getTurmaCurta = (nomeTurma?: string | null) => {
+  if (!nomeTurma) return "Não definida";
+  const match = nomeTurma.match(/\[([^\]]+)\]/);
+  return match?.[1]?.trim() || nomeTurma;
+};
 
 export default function RankingGeralEngajamento() {
   const { user } = useAuth();
@@ -97,7 +102,7 @@ export default function RankingGeralEngajamento() {
     });
 
     return sorted.map((aluno: any, index) => {
-      const turmaId = String(aluno?.turma || "");
+      const turmaId = String(aluno?.turmaId || aluno?.turma || "");
       return {
         posicao: index + 1,
         idUsuario: String(aluno?.idUsuario || ""),
@@ -239,7 +244,7 @@ export default function RankingGeralEngajamento() {
                     <SelectItem value="todas">Todas as turmas</SelectItem>
                     {(turmas || []).map(turma => (
                       <SelectItem key={turma.id} value={String(turma.id)}>
-                        {turma.name}
+                        {getTurmaCurta(turma.name)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -308,7 +313,7 @@ export default function RankingGeralEngajamento() {
                               </Button>
                             </div>
                           </TableCell>
-                          <TableCell>{aluno.turmaNome}</TableCell>
+                        <TableCell>{getTurmaCurta(aluno.turmaNome)}</TableCell>
                           <TableCell>{toPercent(aluno.ind1)}</TableCell>
                           <TableCell>{toPercent(aluno.ind2)}</TableCell>
                           <TableCell>{toPercent(aluno.ind3)}</TableCell>

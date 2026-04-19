@@ -1656,3 +1656,50 @@ export function buildLembreteEngajamentoEmail(data: {
 
   return { subject, html, text };
 }
+
+export function buildSolicitacaoAlteracaoMentoraEmail(data: {
+  alunoName: string;
+  alunoEmail: string;
+  mentoraAtualNome: string;
+  justificativa: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Solicitação de alteração de mentora — ${data.alunoName}`;
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: Arial, sans-serif; background: #f8fafc; padding: 24px; color: #111827;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+    <tr>
+      <td style="padding: 24px;">
+        <h2 style="margin: 0 0 16px; color: #0A1E3E;">Solicitação de alteração de mentora</h2>
+        <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6;">Um aluno enviou solicitação de alteração de mentora durante o onboarding.</p>
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+          <p style="margin: 0 0 6px; font-size: 14px;"><strong>Aluno:</strong> ${data.alunoName}</p>
+          <p style="margin: 0 0 6px; font-size: 14px;"><strong>E-mail:</strong> ${data.alunoEmail}</p>
+          <p style="margin: 0; font-size: 14px;"><strong>Mentora atual:</strong> ${data.mentoraAtualNome}</p>
+        </div>
+        <p style="margin: 0 0 6px; font-size: 14px;"><strong>Justificativa:</strong></p>
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${data.justificativa}</div>
+        <p style="margin: 18px 0 0; font-size: 13px; line-height: 1.6; color: #374151;">
+          Para efetivar a alteração, acesse <strong>Cadastros &gt; Alunos</strong> e edite o campo da mentora (<strong>consultorId</strong>) no cadastro do aluno.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Solicitação de alteração de mentora
+
+Aluno: ${data.alunoName}
+E-mail: ${data.alunoEmail}
+Mentora atual: ${data.mentoraAtualNome}
+
+Justificativa:
+${data.justificativa}
+
+Para efetivar a alteração, acesse Cadastros > Alunos e edite o campo da mentora (consultorId) no cadastro do aluno.`;
+
+  return { subject, html, text };
+}

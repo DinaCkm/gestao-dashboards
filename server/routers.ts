@@ -2295,6 +2295,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             ...ind,
             alunoDbId: alunoDb?.id || 0,
             email: alunoDb?.email || null,
+            turmaId: alunoDb?.turmaId ? String(alunoDb.turmaId) : '',
             turmaNome: turma?.name || 'Não definida',
             trilhaNome,
             trilhasReais,
@@ -7598,6 +7599,50 @@ Responda APENAS em JSON com o formato:
         }
 
         return result;
+      }),
+
+    // Solicitar alteração de mentora (sem trocar consultorId)
+    solicitarAlteracaoMentora: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        justificativa: z.string().trim().min(15, "A justificativa deve ter no mínimo 15 caracteres.").max(1000, "A justificativa deve ter no máximo 1000 caracteres."),
+      }))
+      .mutation(async ({ input }) => {
+        const { alunoId, justificativa } = input;
+
+        const aluno = await db.getAlunoById(alunoId);
+        if (!aluno) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado.' });
+        }
+
+        if (!aluno.consultorId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não há mentora confirmada para este aluno.' });
+        }
+
+        const mentoraAtual = await db.getConsultorById(aluno.consultorId);
+        const { sendEmail, buildSolicitacaoAlteracaoMentoraEmail } = await import('./emailService');
+
+        const adminEmail = process.env.SMTP_USER || '';
+        const payload = buildSolicitacaoAlteracaoMentoraEmail({
+          alunoName: aluno.name || 'Aluno',
+          alunoEmail: aluno.email || 'Não informado',
+          mentoraAtualNome: mentoraAtual?.name || 'Não identificada',
+          justificativa,
+        });
+
+        const envio = await sendEmail({
+          to: adminEmail || 'dina@ckmtalents.net',
+          cc: adminEmail ? 'dina@ckmtalents.net' : undefined,
+          subject: payload.subject,
+          html: payload.html,
+          text: payload.text,
+        });
+
+        if (!envio.success) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Não foi possível enviar a solicitação. Tente novamente em instantes.' });
+        }
+
+        return { success: true };
       }),
 
     // Criar agendamento (etapa 4)

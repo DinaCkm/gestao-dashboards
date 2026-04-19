@@ -14,7 +14,7 @@ import {
   getCompIdToCodigoMap
 } from "../db";
 import * as schema from '../../drizzle/schema';
-const { programs } = schema;
+const { programs, ciclosExecucao } = schema;
 
 const CalcularIndicadoresInput = z.object({
   alunoId: z.number().int().positive(),
@@ -53,6 +53,10 @@ export const jornadaRouter = router({
           macroJornadas: [],
           contrato: null,
           saldo: null,
+          resumoOnboarding: {
+            metasPrevistas: 0,
+            casesPrevistos: 0,
+          },
         };
       }
 
@@ -64,6 +68,10 @@ export const jornadaRouter = router({
             macroJornadas: [],
             contrato: null,
             saldo: null,
+            resumoOnboarding: {
+              metasPrevistas: 0,
+              casesPrevistos: 0,
+            },
           };
         }
 
@@ -74,6 +82,10 @@ export const jornadaRouter = router({
             macroJornadas: [],
             contrato: null,
             saldo: null,
+            resumoOnboarding: {
+              metasPrevistas: 0,
+              casesPrevistos: 0,
+            },
           };
         }
 
@@ -155,6 +167,8 @@ export const jornadaRouter = router({
                 microTermino: comp.microTermino,
                 nivelAtual: comp.nivelAtual,
                 metaFinal: comp.metaFinal,
+                metaCiclo1: comp.metaCiclo1 ?? null,
+                metaCiclo2: comp.metaCiclo2 ?? null,
                 // Dados de student_performance (upload Scaffold)
                 aulasDisponiveis: perfComp?.aulasDisponiveis ?? 0,
                 aulasConcluidas: perfComp?.aulasConcluidas ?? 0,
@@ -179,6 +193,22 @@ export const jornadaRouter = router({
         // 10. Calcular saldo de mentorias
         const saldo = await getSaldoMentoriasAluno(aluno.id);
 
+        // 11. Resumo estático do onboarding (apenas dados planejados no assessment)
+        const metasPrevistas = Array.from(competenciasMap.values())
+          .flat()
+          .filter((comp: any) =>
+            comp.metaFinal != null ||
+            comp.metaCiclo1 != null ||
+            comp.metaCiclo2 != null
+          ).length;
+
+        // 1 ciclo definido pela mentora = 1 case previsto
+        const ciclosAluno = await db
+          .select({ id: ciclosExecucao.id })
+          .from(ciclosExecucao)
+          .where(eq(ciclosExecucao.alunoId, aluno.id));
+        const casesPrevistos = ciclosAluno.length;
+
         return {
           macroJornadas,
           contrato: contrato
@@ -196,6 +226,10 @@ export const jornadaRouter = router({
                 percentualUsado: saldo.percentualUsado || 0,
               }
             : null,
+          resumoOnboarding: {
+            metasPrevistas,
+            casesPrevistos,
+          },
         };
       } catch (error) {
         console.error('Erro ao buscar jornada do aluno:', error);
@@ -203,6 +237,10 @@ export const jornadaRouter = router({
           macroJornadas: [],
           contrato: null,
           saldo: null,
+          resumoOnboarding: {
+            metasPrevistas: 0,
+            casesPrevistos: 0,
+          },
         };
       }
     }),

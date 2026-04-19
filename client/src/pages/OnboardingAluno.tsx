@@ -427,11 +427,30 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
 // ETAPA 3: ESCOLHA DA MENTORA
 // ============================================================
 
-function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }: { onComplete: () => void; onSelectMentora: (m: Mentora) => void; alunoId: number; readOnly?: boolean }) {
+function EtapaMentora({
+  onComplete,
+  onSelectMentora,
+  alunoId,
+  readOnly = false,
+  mentoraAtual = null,
+  mentoraConfirmada = false,
+  podeSolicitarAlteracao = false,
+}: {
+  onComplete: () => void;
+  onSelectMentora: (m: Mentora) => void;
+  alunoId: number;
+  readOnly?: boolean;
+  mentoraAtual?: Mentora | null;
+  mentoraConfirmada?: boolean;
+  podeSolicitarAlteracao?: boolean;
+}) {
   const { data: mentoresData } = trpc.mentor.list.useQuery();
   const escolherMentora = trpc.onboarding.escolherMentora.useMutation();
+  const solicitarAlteracaoMentora = trpc.onboarding.solicitarAlteracaoMentora.useMutation();
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
   const [detailMentora, setDetailMentora] = useState<Mentora | null>(null);
+  const [showSolicitacaoDialog, setShowSolicitacaoDialog] = useState(false);
+  const [justificativaAlteracao, setJustificativaAlteracao] = useState("");
   const [saving, setSaving] = useState(false);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [availabilityMap, setAvailabilityMap] = useState<Record<number, boolean>>({});
@@ -452,6 +471,13 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
       disponivel: c.isActive === 1,
     }));
   }, [mentoresData]);
+  const mentorasVisiveis = selectedMentora ? [selectedMentora] : mentoras;
+
+  useEffect(() => {
+    if (mentoraAtual && !selectedMentora) {
+      setSelectedMentora(mentoraAtual);
+    }
+  }, [mentoraAtual, selectedMentora]);
 
   // Verificar disponibilidade de agenda de todas as mentoras ao carregar
   useEffect(() => {
@@ -488,7 +514,7 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
       </div>
 
       <div className="grid gap-5 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {mentoras.map((mentora) => (
+        {mentorasVisiveis.map((mentora) => (
           <Card
             key={mentora.id}
             className={`transition-all duration-300 hover:shadow-lg cursor-pointer group relative ${
@@ -607,6 +633,39 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
         ))}
       </div>
 
+      {selectedMentora && !readOnly && !mentoraConfirmada && (
+        <div className="flex justify-end -mt-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-sm text-[#0A1E3E] hover:text-[#F5991F]"
+            onClick={() => setSelectedMentora(null)}
+          >
+            Trocar mentora
+          </Button>
+        </div>
+      )}
+
+      {mentoraConfirmada && selectedMentora && podeSolicitarAlteracao && (
+        <Card className="border border-emerald-200 bg-emerald-50">
+          <CardContent className="p-4 space-y-3">
+            <p className="text-sm text-emerald-800 font-medium">
+              Parabéns, excelente escolha, sua mentora já recebeu um e-mail informando a sua escolha.
+            </p>
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-emerald-300 text-emerald-800 hover:bg-emerald-100"
+                onClick={() => setShowSolicitacaoDialog(true)}
+              >
+                Solicitar alteração de mentora
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Dialog de Currículo Completo */}
       <Dialog open={!!detailMentora} onOpenChange={() => setDetailMentora(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -686,6 +745,63 @@ function EtapaMentora({ onComplete, onSelectMentora, alunoId, readOnly = false }
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSolicitacaoDialog} onOpenChange={setShowSolicitacaoDialog}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Solicitar alteração de mentora</DialogTitle>
+            <DialogDescription>
+              Informe a justificativa da sua solicitação. Seu pedido será enviado para a administração.
+              A troca da mentora, se aprovada, será realizada pela equipe administrativa no seu cadastro.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <Textarea
+              value={justificativaAlteracao}
+              onChange={(e) => setJustificativaAlteracao(e.target.value)}
+              placeholder="Descreva o motivo da solicitação..."
+              rows={6}
+              maxLength={1000}
+            />
+            <p className="text-xs text-gray-500 text-right">{justificativaAlteracao.trim().length}/1000</p>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowSolicitacaoDialog(false);
+                setJustificativaAlteracao("");
+              }}
+              disabled={solicitarAlteracaoMentora.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
+              disabled={solicitarAlteracaoMentora.isPending || justificativaAlteracao.trim().length < 15}
+              onClick={async () => {
+                try {
+                  await solicitarAlteracaoMentora.mutateAsync({
+                    alunoId,
+                    justificativa: justificativaAlteracao.trim(),
+                  });
+                  toast.success("Solicitação enviada para a administração com sucesso.");
+                  setShowSolicitacaoDialog(false);
+                  setJustificativaAlteracao("");
+                } catch (error: any) {
+                  toast.error(error?.message || "Não foi possível enviar sua solicitação. Tente novamente.");
+                }
+              }}
+            >
+              {solicitarAlteracaoMentora.isPending ? "Enviando..." : "Enviar solicitação"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -1278,6 +1394,8 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   const sessoesContratadas = contrato?.totalSessoesContratadas || 0;
   const totalSessoesPrevistas = sessoesContratadas > 0 ? sessoesContratadas : totalMeses;
   const tipoMentoriaContrato = (contrato as any)?.tipoMentoria || 'individual';
+  const metasPrevistas = jornadaData?.resumoOnboarding?.metasPrevistas ?? 0;
+  const casesPrevistos = jornadaData?.resumoOnboarding?.casesPrevistos ?? 0;
 
   // Dados de tarefas
   const tarefasEntregues = dashData?.found ? (dashData as any).indicadores?.atividadesEntregues || 0 : 0;
@@ -1312,6 +1430,9 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
     { id: 'visao-geral', label: 'Visão Geral', icon: Layers },
     { id: 'competencias', label: 'Competências', icon: Target },
   ];
+
+  // Controle explícito para facilitar ajuste direto via GitHub sem apagar estrutura do card.
+  const exibirResumoPlanoNoAceite = false;
 
   return (
     <div className="space-y-6">
@@ -1380,6 +1501,16 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                     <Video className="h-6 w-6 text-pink-400 mx-auto mb-1" />
                     <p className="text-2xl font-bold">{Math.ceil(totalMeses * 2)}</p>
                     <p className="text-xs text-white/60">Webinares</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                    <Target className="h-6 w-6 text-fuchsia-400 mx-auto mb-1" />
+                    <p className="text-2xl font-bold">{metasPrevistas}</p>
+                    <p className="text-xs text-white/60">Metas</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+                    <FileText className="h-6 w-6 text-amber-300 mx-auto mb-1" />
+                    <p className="text-2xl font-bold">{casesPrevistos}</p>
+                    <p className="text-xs text-white/60">Cases</p>
                   </div>
                 </div>
                 {/* Lista de trilhas */}
@@ -2469,7 +2600,7 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
           ) : (
             <div className="space-y-6">
               {/* Resumo do PDI */}
-              {hasPdi && (
+              {hasPdi && exibirResumoPlanoNoAceite && (
                 <div className="bg-gray-50 rounded-xl p-5">
                   <h3 className="font-bold text-[#0A1E3E] mb-3 flex items-center gap-2">
                     <Target className="h-5 w-5 text-purple-600" />
@@ -2500,11 +2631,6 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                       
                       // Tarefas: igual ao número de mentorias
                       const totalTarefas = sessoesContratadas;
-                      
-                      // Texto de mentoria
-                      const mentoriaLabel = temMentoria 
-                        ? `${sessoesContratadas} (${tipoMentoria === 'grupo' ? 'Grupo' : 'Individual'})`
-                        : 'Sem mentoria';
                       
                       const cards = [
                         { valor: String(totalCompetencias), label: 'Competências', cor: 'text-purple-600', link: '/trilhas-competencias', subtitle: '' },
@@ -2893,6 +3019,9 @@ export default function OnboardingAluno() {
             onSelectMentora={setSelectedMentora}
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
             readOnly={readOnly}
+            mentoraAtual={selectedMentora}
+            mentoraConfirmada={!!progressoData?.mentoraId && progressStep > 3}
+            podeSolicitarAlteracao={!!progressoData?.mentoraId && !globalReadOnly}
           />
         )}
         {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
