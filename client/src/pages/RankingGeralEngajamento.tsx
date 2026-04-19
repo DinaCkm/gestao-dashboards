@@ -91,6 +91,17 @@ export default function RankingGeralEngajamento() {
     return map;
   }, [turmas]);
 
+  // Lista de códigos únicos de turma para o filtro (ex: ["BS1", "BS2", "BS3"])
+  const codigosTurmaUnicos = useMemo(() => {
+    if (!turmas) return [];
+    const codigos = new Set<string>();
+    turmas.forEach(t => {
+      const codigo = extrairCodigoTurma(t.name);
+      codigos.add(codigo);
+    });
+    return Array.from(codigos).sort();
+  }, [turmas]);
+
   const rankingBase = useMemo<RankingAluno[]>(() => {
     const alunos = Array.isArray(data?.alunos) ? data.alunos : [];
 
@@ -130,7 +141,7 @@ export default function RankingGeralEngajamento() {
         if (!pessoa) return true;
         return aluno.nomeAluno.toLowerCase().includes(pessoa);
       })
-      .filter(aluno => turmaFiltro === "todas" || aluno.turmaId === turmaFiltro)
+      .filter(aluno => turmaFiltro === "todas" || aluno.turmaNome === turmaFiltro)
       .map((aluno, index) => ({ ...aluno, posicao: index + 1 }));
   }, [rankingBase, pessoaFiltro, turmaFiltro]);
 
@@ -245,9 +256,9 @@ export default function RankingGeralEngajamento() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todas">Todas as turmas</SelectItem>
-                    {(turmas || []).map(turma => (
-                      <SelectItem key={turma.id} value={String(turma.id)}>
-                        {extrairCodigoTurma(turma.name)}
+                    {codigosTurmaUnicos.map(codigo => (
+                      <SelectItem key={codigo} value={codigo}>
+                        {codigo}
                       </SelectItem>
                     ))}
                   </SelectContent>
