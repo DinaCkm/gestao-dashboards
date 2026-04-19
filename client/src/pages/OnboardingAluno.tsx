@@ -2331,6 +2331,10 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   const jaAceitou = progressoData?.aceiteRealizado;
   const assinaturaPreenchida = todosCheckados && nomeValido;
 
+  // Flag para controlar a exibição do resumo do plano na aba de aceite
+  // Deixamos como false por padrão para ocultar, mas preservamos o código para fácil reativação
+  const exibirResumoPlanoNoAceite = false;
+
   // Dados consolidados de todas as trilhas
   const totalCompetencias = allMacroJornadas.reduce((sum: number, mj: any) => sum + (mj.totalCompetencias || 0), 0);
   const allInicios = allMacroJornadas.map((mj: any) => mj.macroInicio).filter(Boolean).sort();
@@ -2483,8 +2487,8 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Resumo do PDI */}
-              {hasPdi && exibirResumoPlanoNoAceite && (
+              {/* Resumo do PDI - Controlado por flag para fácil manutenção */}
+              {exibirResumoPlanoNoAceite && hasPdi && (
                 <div className="bg-gray-50 rounded-xl p-5">
                   <h3 className="font-bold text-[#0A1E3E] mb-3 flex items-center gap-2">
                     <Target className="h-5 w-5 text-purple-600" />
