@@ -644,6 +644,29 @@ export type ContratoAluno = typeof contratosAluno.$inferSelect;
 export type InsertContratoAluno = typeof contratosAluno.$inferInsert;
 
 /**
+ * Contrato Níveis - Histórico formal dos níveis do aluno dentro de um contrato
+ * Fase 1: camada nova, sem substituir contratos_aluno e fluxos existentes.
+ */
+export const contratoNiveis = mysqlTable("contrato_niveis", {
+  id: int("id").autoincrement().primaryKey(),
+  contratoId: int("contratoId").notNull(), // FK para contratos_aluno
+  alunoId: int("alunoId").notNull(), // FK para alunos (desnormalizado para consultas rápidas)
+  nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+  dataInicio: date("dataInicio", { mode: "string" }).notNull(),
+  dataFim: date("dataFim", { mode: "string" }).notNull(),
+  dataFechamentoOperacional: date("dataFechamentoOperacional", { mode: "string" }).notNull(),
+  dataLimiteAjustes: date("dataLimiteAjustes", { mode: "string" }).notNull(),
+  status: mysqlEnum("status", ["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]).default("planejado").notNull(),
+  assessmentPdiId: int("assessmentPdiId"), // FK opcional para assessment_pdi (fase futura)
+  mentoraPrincipalId: int("mentoraPrincipalId"), // FK opcional para consultors
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ContratoNivel = typeof contratoNiveis.$inferSelect;
+export type InsertContratoNivel = typeof contratoNiveis.$inferInsert;
+
+/**
  * Histórico de Nível de Competência - Registra a evolução do nível do aluno
  * A mentora atualiza o nível atual a cada 3 sessões de mentoria
  */

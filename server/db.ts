@@ -26,6 +26,7 @@ import {
   scheduledWebinars, InsertScheduledWebinar, ScheduledWebinar,
   announcements, InsertAnnouncement, Announcement,
   contratosAluno, InsertContratoAluno, ContratoAluno,
+  contratoNiveis, InsertContratoNivel, ContratoNivel,
   historicoNivelCompetencia, InsertHistoricoNivelCompetencia, HistoricoNivelCompetencia,
   casesSucesso, InsertCaseSucesso, CaseSucesso,
   caseInteresses, InsertCaseInteresse, CaseInteresse,
@@ -64,6 +65,13 @@ import {
   assessmentCompetencias,} from "../drizzle/schema";
 import { ENV } from './_core/env';
 import * as schema from "../drizzle/schema";
+import {
+  createContratoNivelRepo,
+  getContratoNivelVigenteByAlunoRepo,
+  getContratoNiveisByAlunoRepo,
+  getContratoNiveisByContratoRepo,
+  validarNivelEmAndamentoUnicoRepo,
+} from "./contrato-niveis.service";
 
 const createDbClient = () =>
   drizzle(process.env.DATABASE_URL!, { schema, mode: "default" });
@@ -5711,6 +5719,158 @@ export async function deleteContrato(contratoId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(contratosAluno).set({ isActive: 0 }).where(eq(contratosAluno.id, contratoId));
+}
+
+// ============ NÍVEIS DO CONTRATO ============
+
+const CONTRATO_NIVEL_STATUS_EM_ANDAMENTO = "em_andamento" as const;
+
+export async function validarNivelEmAndamentoUnico(
+  contratoId: number,
+  alunoId: number,
+  ignoreNivelId?: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return validarNivelEmAndamentoUnicoRepo({
+    async findEmAndamento(repoContratoId, repoAlunoId, repoIgnoreNivelId) {
+      const conditions = [
+        eq(contratoNiveis.contratoId, repoContratoId),
+        eq(contratoNiveis.alunoId, repoAlunoId),
+        eq(contratoNiveis.status, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO),
+      ];
+      if (repoIgnoreNivelId) {
+        conditions.push(ne(contratoNiveis.id, repoIgnoreNivelId));
+      }
+      return db.select({ id: contratoNiveis.id }).from(contratoNiveis).where(and(...conditions)).limit(1);
+    },
+    async insertNivel() {
+      throw new Error("Not implemented");
+    },
+    async listByAluno() {
+      return [];
+    },
+    async listByContrato() {
+      return [];
+    },
+    async findVigenteByAluno() {
+      return null;
+    },
+  }, contratoId, alunoId, ignoreNivelId);
+}
+
+export async function createContratoNivel(data: InsertContratoNivel) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return createContratoNivelRepo({
+    async findEmAndamento(repoContratoId, repoAlunoId) {
+      return db
+        .select({ id: contratoNiveis.id })
+        .from(contratoNiveis)
+        .where(and(
+          eq(contratoNiveis.contratoId, repoContratoId),
+          eq(contratoNiveis.alunoId, repoAlunoId),
+          eq(contratoNiveis.status, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO),
+        ))
+        .limit(1);
+    },
+    async insertNivel(insertData) {
+      const [result] = await db.insert(contratoNiveis).values(insertData);
+      return result.insertId;
+    },
+    async listByAluno() {
+      return [];
+    },
+    async listByContrato() {
+      return [];
+    },
+    async findVigenteByAluno() {
+      return null;
+    },
+  }, data);
+}
+
+export async function getContratoNiveisByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return getContratoNiveisByAlunoRepo({
+    async findEmAndamento() {
+      return [];
+    },
+    async insertNivel() {
+      throw new Error("Not implemented");
+    },
+    async listByAluno(repoAlunoId) {
+      return db
+        .select()
+        .from(contratoNiveis)
+        .where(eq(contratoNiveis.alunoId, repoAlunoId))
+        .orderBy(desc(contratoNiveis.dataInicio), desc(contratoNiveis.createdAt));
+    },
+    async listByContrato() {
+      return [];
+    },
+    async findVigenteByAluno() {
+      return null;
+    },
+  }, alunoId);
+}
+
+export async function getContratoNiveisByContrato(contratoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return getContratoNiveisByContratoRepo({
+    async findEmAndamento() {
+      return [];
+    },
+    async insertNivel() {
+      throw new Error("Not implemented");
+    },
+    async listByAluno() {
+      return [];
+    },
+    async listByContrato(repoContratoId) {
+      return db
+        .select()
+        .from(contratoNiveis)
+        .where(eq(contratoNiveis.contratoId, repoContratoId))
+        .orderBy(asc(contratoNiveis.dataInicio), asc(contratoNiveis.id));
+    },
+    async findVigenteByAluno() {
+      return null;
+    },
+  }, contratoId);
+}
+
+export async function getContratoNivelVigenteByAluno(alunoId: number): Promise<ContratoNivel | null> {
+  const db = await getDb();
+  if (!db) return null;
+  return getContratoNivelVigenteByAlunoRepo({
+    async findEmAndamento() {
+      return [];
+    },
+    async insertNivel() {
+      throw new Error("Not implemented");
+    },
+    async listByAluno() {
+      return [];
+    },
+    async listByContrato() {
+      return [];
+    },
+    async findVigenteByAluno(repoAlunoId) {
+      const [nivelVigente] = await db
+        .select()
+        .from(contratoNiveis)
+        .where(and(
+          eq(contratoNiveis.alunoId, repoAlunoId),
+          eq(contratoNiveis.status, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO),
+        ))
+        .orderBy(desc(contratoNiveis.dataInicio), desc(contratoNiveis.id))
+        .limit(1);
+      return nivelVigente || null;
+    },
+  }, alunoId);
 }
 
 // ============ SALDO DE SESSÕES ============

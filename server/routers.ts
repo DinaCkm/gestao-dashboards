@@ -6563,6 +6563,53 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
   }),
 
+  // ============ NÍVEIS DO CONTRATO ============
+  contratoNiveis: router({
+    // Nível vigente do aluno (status em_andamento)
+    vigente: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getContratoNivelVigenteByAluno(input.alunoId);
+      }),
+
+    // Histórico de níveis por aluno
+    historico: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getContratoNiveisByAluno(input.alunoId);
+      }),
+
+    // Listagem de níveis por contrato (inspeção/admin)
+    byContrato: protectedProcedure
+      .input(z.object({ contratoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getContratoNiveisByContrato(input.contratoId);
+      }),
+
+    // Criação manual de nível (fase 1 - ambiente de teste/admin)
+    create: adminProcedure
+      .input(z.object({
+        contratoId: z.number(),
+        alunoId: z.number(),
+        nivel: z.enum(["I", "II", "III", "IV"]),
+        dataInicio: z.string(),
+        dataFim: z.string(),
+        dataFechamentoOperacional: z.string(),
+        dataLimiteAjustes: z.string(),
+        status: z.enum(["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]),
+        assessmentPdiId: z.number().nullable().optional(),
+        mentoraPrincipalId: z.number().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createContratoNivel({
+          ...input,
+          assessmentPdiId: input.assessmentPdiId ?? null,
+          mentoraPrincipalId: input.mentoraPrincipalId ?? null,
+        } as any);
+        return { id, success: true };
+      }),
+  }),
+
   // ============ JORNADA DO ALUNO ============
  jornadaAntiga: router({
     // Jornada completa (Contrato + Macro Jornadas + Micro Jornadas)
