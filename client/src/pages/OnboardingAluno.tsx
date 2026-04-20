@@ -2640,7 +2640,7 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
                       
                       const cards = [
                         { valor: String(totalCompetencias), label: 'Competências', cor: 'text-purple-600', link: '/trilhas-competencias', subtitle: '' },
-                        { valor: totalWebinares > 0 ? String(totalWebinares) : '---', label: 'Webinares', cor: 'text-blue-600', link: '/cursos', subtitle: totalWebinares > 0 ? '(2 por mês)' : '' },
+                        { valor: totalWebinares > 0 ? String(totalWebinares) : '---', label: 'Webinares previstos', cor: 'text-blue-600', link: '/cursos', subtitle: totalWebinares > 0 ? '(estimativa da jornada)' : '' },
                         { valor: temMentoria ? String(sessoesContratadas) : '---', label: 'Mentorias', cor: 'text-teal-600', link: '/meu-dashboard', subtitle: temMentoria ? (tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual') : 'Sem mentoria' },
                         { valor: temMentoria ? String(totalTarefas) : '---', label: 'Tarefas', cor: 'text-amber-600', link: '/minhas-atividades', subtitle: temMentoria ? 'A critério da mentora' : '' },
                         { valor: inicio ? inicio.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }) : '---', label: 'Início', cor: 'text-[#0A1E3E]', link: '/meu-dashboard', subtitle: '' },
