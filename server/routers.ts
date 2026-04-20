@@ -166,6 +166,21 @@ const managerProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+async function ensureNivelAbertoParaAtribuicao(
+  alunoId: number,
+  contratoNivelId: number | null | undefined,
+  operacao: string
+) {
+  try {
+    await db.assertNivelPermiteNovasAtribuicoes(alunoId, contratoNivelId, operacao);
+  } catch (error: any) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: error?.message || "Nível em fechamento/encerrado. Novas atribuições estão bloqueadas.",
+    });
+  }
+}
+
 export const appRouter = router({
   system: systemRouter,
   jornada: jornadaRouter,
@@ -3610,6 +3625,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (!aluno) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
         }
+        await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.createSession");
 
         // Calcular próximo número de sessão
         const sessions = await db.getMentoringSessionsByAluno(input.alunoId);
@@ -5215,6 +5231,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (!aluno) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
         }
+        await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.adminCreateSession");
 
         const sessionId = await db.createMentoringSession({
           alunoId: input.alunoId,
@@ -5413,6 +5430,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }))
       .mutation(async ({ input }) => {
         const { competencias, ...pdiData } = input;
+        await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "assessment.criar");
         
         // Guard: verificar se o aluno está ativo antes de criar PDI
         const alunoCheck = await db.getAlunoById(input.alunoId);
@@ -6576,6 +6594,17 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return await db.getContratoNivelVigenteByAluno(input.alunoId);
       }),
 
+    statusOperacional: protectedProcedure
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
+      .query(async ({ input }) => {
+        const nivel = await db.getContratoNivelComStatusOperacional(input.alunoId, input.contratoNivelId ?? null);
+        return {
+          nivel,
+          bloqueadoNovasAtribuicoes: nivel ? ["fechamento", "ajustes", "encerrado"].includes(nivel.statusOperacional) : false,
+          encerrado: nivel ? nivel.statusOperacional === "encerrado" : false,
+        };
+      }),
+
     // Histórico de níveis por aluno
     historico: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
@@ -6749,6 +6778,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         observacao: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
+        await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "cases.create");
         const id = await db.createCaseSucesso({
           alunoId: input.alunoId,
           contratoNivelId: input.contratoNivelId ?? null,
@@ -7106,6 +7136,7 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
         descricao: z.string().nullable().optional()
       }))
       .mutation(async ({ input, ctx }) => {
+        await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "metas.criar");
         // Buscar consultor pelo openId do usuário logado ou pelo consultorId
         const consultors = await db.getConsultors();
         const consultor = consultors.find(c => c.loginId === ctx.user.openId || (ctx.user.consultorId && c.id === ctx.user.consultorId));

@@ -2869,6 +2869,10 @@ export default function OnboardingAluno() {
     { enabled: alunoId > 0 }
   );
   const contratoNivelId = contextoNivel?.visualizandoNivelId ?? queryNivel ?? undefined;
+  const { data: nivelStatus } = trpc.contratoNiveis.statusOperacional.useQuery(
+    { alunoId, contratoNivelId: contratoNivelId ?? null },
+    { enabled: alunoId > 0 }
+  );
   const { data: progressoData } = trpc.onboarding.progresso.useQuery(
     { alunoId, contratoNivelId: contratoNivelId ?? null },
     { enabled: alunoId > 0 }
@@ -2972,7 +2976,20 @@ export default function OnboardingAluno() {
         {contextoNivel?.vigente && (
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700">
             <span className="font-semibold">Nível vigente:</span> {contextoNivel.vigente.nivel}
+            {nivelStatus?.nivel?.statusOperacional && (
+              <span className="ml-2">• <span className="font-semibold">Status:</span> {nivelStatus.nivel.statusOperacional}</span>
+            )}
             {contextoNivel.isHistorico && <span className="ml-2 text-amber-700 font-semibold">• Visualizando onboarding histórico (somente leitura)</span>}
+          </div>
+        )}
+
+        {nivelStatus?.bloqueadoNovasAtribuicoes && (
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-orange-600 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-orange-800">Nível em fechamento operacional</p>
+              <p className="text-xs text-orange-700">Novas atribuições pedagógicas estão bloqueadas neste nível. Apenas regularização de pendências já abertas é permitida.</p>
+            </div>
           </div>
         )}
 
@@ -3036,7 +3053,7 @@ export default function OnboardingAluno() {
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
             contratoNivelId={contratoNivelId}
             onComplete={handleStepComplete}
-            readOnly={readOnly && !reassessmentElegivel}
+            readOnly={(readOnly && !reassessmentElegivel) || !!nivelStatus?.bloqueadoNovasAtribuicoes}
           />
         )}
         {currentStep === 3 && (

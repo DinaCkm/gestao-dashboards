@@ -67,9 +67,13 @@ import { ENV } from './_core/env';
 import * as schema from "../drizzle/schema";
 import {
   createContratoNivelRepo,
+  getContratoNivelOperationalStatus,
   getContratoNivelVigenteByAlunoRepo,
   getContratoNiveisByAlunoRepo,
   getContratoNiveisByContratoRepo,
+  isContratoNivelBloqueadoParaNovasAtribuicoes,
+  isContratoNivelEncerrado,
+  calcularDataFechamentoOperacional,
   validarNivelEmAndamentoUnicoRepo,
 } from "./contrato-niveis.service";
 
@@ -896,6 +900,7 @@ export async function createMentoringSession(data: {
 }): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await assertNivelPermiteNovasAtribuicoes(data.alunoId, data.contratoNivelId, "mentoringSessions.create");
   const contratoNivelIdResolved = await resolveContratoNivelId(data.alunoId, data.contratoNivelId);
   
   const result = await db.insert(mentoringSessions).values({
@@ -2893,6 +2898,7 @@ export async function addCompetenciaToPlano(data: {
 }) {
   const db = await getDb();
   if (!db) return null;
+  await assertNivelPermiteNovasAtribuicoes(data.alunoId, data.contratoNivelId, "planoIndividual.addCompetencia");
   const contratoNivelIdResolved = await resolveContratoNivelId(data.alunoId, data.contratoNivelId);
   
   const [result] = await db.insert(planoIndividual).values({
@@ -2911,6 +2917,7 @@ export async function addCompetenciaToPlano(data: {
 export async function addCompetenciasToPlano(alunoId: number, competenciaIds: number[], contratoNivelId?: number | null) {
   const db = await getDb();
   if (!db) return false;
+  await assertNivelPermiteNovasAtribuicoes(alunoId, contratoNivelId, "planoIndividual.addMultiple");
   const contratoNivelIdResolved = await resolveContratoNivelId(alunoId, contratoNivelId);
   
   const values = competenciaIds.map(competenciaId => ({
@@ -4383,6 +4390,13 @@ export async function addCompetenciasToExistingAssessment(
 ): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
+  const [pdiContext] = await db.select({ alunoId: assessmentPdi.alunoId, contratoNivelId: assessmentPdi.contratoNivelId })
+    .from(assessmentPdi)
+    .where(eq(assessmentPdi.id, assessmentPdiId))
+    .limit(1);
+  if (pdiContext?.alunoId) {
+    await assertNivelPermiteNovasAtribuicoes(pdiContext.alunoId, pdiContext.contratoNivelId, "assessment.addCompetencias");
+  }
   
   // Get existing competencia IDs to avoid duplicates
   const existingComps = await db.select({ competenciaId: assessmentCompetencias.competenciaId })
@@ -4460,6 +4474,7 @@ export async function createAssessmentPdi(
 ) {
   const db = await getDb();
   if (!db) return null;
+  await assertNivelPermiteNovasAtribuicoes(pdiData.alunoId, pdiData.contratoNivelId, "assessment.create");
   
   // Validate: micro dates must not exceed macro dates
   const macroInicio = pdiData.macroInicio;
@@ -4563,6 +4578,13 @@ export async function addCompetenciaToAssessment(
 ) {
   const db = await getDb();
   if (!db) return null;
+  const [pdiCtx] = await db.select({ alunoId: assessmentPdi.alunoId, contratoNivelId: assessmentPdi.contratoNivelId })
+    .from(assessmentPdi)
+    .where(eq(assessmentPdi.id, assessmentPdiId))
+    .limit(1);
+  if (pdiCtx?.alunoId) {
+    await assertNivelPermiteNovasAtribuicoes(pdiCtx.alunoId, pdiCtx.contratoNivelId, "assessment.addCompetencia");
+  }
 
   // Validate micro dates against macro dates
   const [pdi] = await db.select().from(assessmentPdi).where(eq(assessmentPdi.id, assessmentPdiId)).limit(1);
@@ -5853,6 +5875,7 @@ export async function deleteContrato(contratoId: number) {
 // ============ NÍVEIS DO CONTRATO ============
 
 const CONTRATO_NIVEL_STATUS_EM_ANDAMENTO = "em_andamento" as const;
+const CONTRATO_NIVEL_STATUS_ATIVOS = ["em_andamento", "fechamento", "ajustes"] as const;
 
 export async function validarNivelEmAndamentoUnico(
   contratoId: number,
@@ -5993,13 +6016,73 @@ export async function getContratoNivelVigenteByAluno(alunoId: number): Promise<C
         .from(contratoNiveis)
         .where(and(
           eq(contratoNiveis.alunoId, repoAlunoId),
-          eq(contratoNiveis.status, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO),
+          inArray(contratoNiveis.status, [...CONTRATO_NIVEL_STATUS_ATIVOS] as any),
         ))
         .orderBy(desc(contratoNiveis.dataInicio), desc(contratoNiveis.id))
         .limit(1);
       return nivelVigente || null;
     },
   }, alunoId);
+}
+
+export async function getContratoNivelComStatusOperacional(
+  alunoId: number,
+  contratoNivelId?: number | null
+): Promise<(ContratoNivel & { statusOperacional: "em_andamento" | "fechamento" | "ajustes" | "encerrado" }) | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const nivel = contratoNivelId
+    ? (await db.select().from(contratoNiveis).where(eq(contratoNiveis.id, contratoNivelId)).limit(1))[0] || null
+    : await getContratoNivelVigenteByAluno(alunoId);
+
+  if (!nivel) return null;
+
+  const statusOperacional = getContratoNivelOperationalStatus(nivel);
+  const fechamentoCalculado = nivel.dataFechamentoOperacional || calcularDataFechamentoOperacional(nivel.dataFim);
+
+  // Sincroniza status/datas no banco de forma idempotente
+  if (nivel.status !== statusOperacional || nivel.dataFechamentoOperacional !== fechamentoCalculado) {
+    await db.update(contratoNiveis)
+      .set({
+        status: statusOperacional as any,
+        dataFechamentoOperacional: fechamentoCalculado,
+      })
+      .where(eq(contratoNiveis.id, nivel.id));
+  }
+
+  return {
+    ...nivel,
+    status: statusOperacional as any,
+    dataFechamentoOperacional: fechamentoCalculado,
+    statusOperacional,
+  };
+}
+
+export async function isContratoNivelBloqueado(alunoId: number, contratoNivelId?: number | null): Promise<boolean> {
+  const nivel = await getContratoNivelComStatusOperacional(alunoId, contratoNivelId);
+  if (!nivel) return false;
+  return isContratoNivelBloqueadoParaNovasAtribuicoes(nivel.statusOperacional);
+}
+
+export async function isContratoNivelEncerradoDb(alunoId: number, contratoNivelId?: number | null): Promise<boolean> {
+  const nivel = await getContratoNivelComStatusOperacional(alunoId, contratoNivelId);
+  if (!nivel) return false;
+  return isContratoNivelEncerrado(nivel.statusOperacional);
+}
+
+export async function assertNivelPermiteNovasAtribuicoes(
+  alunoId: number,
+  contratoNivelId: number | null | undefined,
+  operacao: string
+): Promise<void> {
+  const nivel = await getContratoNivelComStatusOperacional(alunoId, contratoNivelId);
+  if (!nivel) return;
+  if (isContratoNivelBloqueadoParaNovasAtribuicoes(nivel.statusOperacional)) {
+    throw new Error(
+      `Operação bloqueada (${operacao}): nível ${nivel.nivel} em status ${nivel.statusOperacional}.`
+    );
+  }
 }
 
 export async function getPedagogiaByNivel(alunoId: number, contratoNivelId?: number | null) {
@@ -6547,6 +6630,7 @@ export async function markCaseInteresseAsRead(id: number, autorAlunoId: number) 
 export async function createCaseSucesso(data: InsertCaseSucesso) {
   const db = await getDb();
   if (!db) return null;
+  await assertNivelPermiteNovasAtribuicoes(data.alunoId, data.contratoNivelId, "cases.create");
   const contratoNivelIdResolved = await resolveContratoNivelId(data.alunoId, data.contratoNivelId);
   const [result] = await db.insert(casesSucesso).values({ ...data, contratoNivelId: contratoNivelIdResolved });
   return result.insertId;
@@ -7989,6 +8073,7 @@ export async function getMetasByCompetencia(alunoId: number, assessmentCompetenc
 export async function createMeta(data: InsertMeta) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await assertNivelPermiteNovasAtribuicoes(data.alunoId, data.contratoNivelId, "metas.create");
 
   let contratoNivelId = data.contratoNivelId ?? null;
   if (!contratoNivelId && data.assessmentPdiId) {
