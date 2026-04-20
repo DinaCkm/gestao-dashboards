@@ -151,10 +151,11 @@ export default function Performance() {
   }, [onboardingStatus, setLocation]);
 
   const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
+  const { data: performanceNivelAtual, isLoading: isLoadingNivelAtual } = trpc.indicadores.performanceNivelAtual.useQuery();
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
   // Filtro de indicadores: "consolidado" | "trilha:NomeTrilha" | "ciclo:CicloId"
-  const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
+  const [indicadorFiltro, setIndicadorFiltro] = useState<string>("nivel_atual");
   const [showGlossario, setShowGlossario] = useState(false);
   const [showAllTrilhasCard, setShowAllTrilhasCard] = useState(false);
 
@@ -291,7 +292,9 @@ export default function Performance() {
 
   // Dados filtrados conforme seleção
   const v2Filtrado = useMemo(() => {
-    if (!v2) return null;
+    const indicadoresNivel = (performanceNivelAtual as any)?.found ? (performanceNivelAtual as any).indicadoresNivel : null;
+    if (indicadorFiltro === "nivel_atual") return indicadoresNivel;
+    if (!v2) return indicadoresNivel;
     if (indicadorFiltro === "consolidado") {
       return v2.consolidado;
     }
@@ -336,15 +339,16 @@ export default function Performance() {
         ind7_engajamentoFinal: ciclo.ind7_engajamentoFinal ?? ciclo.indicadores?.ind7_engajamentoFinal ?? 0,
       };
     }
-    return v2.consolidado;
-  }, [v2, indicadorFiltro]);
+    return indicadoresNivel ?? v2.consolidado;
+  }, [v2, indicadorFiltro, performanceNivelAtual]);
 
   // Opções de filtro disponíveis
   const filtroOpcoes = useMemo(() => {
-    if (!v2) return [];
     const opcoes: { value: string; label: string; group: string }[] = [
-      { value: "consolidado", label: "Consolidado (Todos os ciclos finalizados)", group: "Geral" },
+      { value: "nivel_atual", label: "Nível Atual (visão principal)", group: "Principal" },
     ];
+    if (!v2) return opcoes;
+    opcoes.push({ value: "consolidado", label: "Consolidado (Todos os ciclos finalizados)", group: "Geral" });
     const trilhas = new Set<string>();
     const allCiclos = [...(v2.ciclosFinalizados || []), ...(v2.ciclosEmAndamento || [])];
     allCiclos.forEach((c: any) => {
@@ -416,7 +420,7 @@ export default function Performance() {
     ].filter(d => d.value > 0);
   }, [trilhaStats]);
 
-  if (isLoading) {
+  if (isLoading || isLoadingNivelAtual) {
     return (
       <AlunoLayout>
         <div className="flex items-center justify-center h-96">
@@ -441,6 +445,9 @@ export default function Performance() {
   }
 
   const { aluno, indicadores, ranking, sessoes, eventos, planoIndividual, assessments } = data;
+  const nivelAtual = (performanceNivelAtual as any)?.found ? (performanceNivelAtual as any).nivel : null;
+  const indicadoresNivelAtual = (performanceNivelAtual as any)?.found ? (performanceNivelAtual as any).indicadoresNivel : null;
+  const mentorNivelAtual = (aluno as any)?.mentor || "Não definido";
   const performanceGeral = Number(indicadores.performanceGeral ?? (indicadores.notaFinal * 10)) || 0;
   const ciclosFinalizados = indicadores.ciclosFinalizados || [];
   const ciclosEmAndamento = indicadores.ciclosEmAndamento || [];
@@ -538,6 +545,20 @@ export default function Performance() {
                 <div>
                   <h1 className="text-2xl font-bold">{aluno.name}</h1>
                   <div className="flex flex-wrap gap-2 mt-2">
+                    {nivelAtual && (
+                      <>
+                        <Badge className="bg-[#F5991F]/30 text-[#F5991F] border-[#F5991F]/40">
+                          <Target className="h-3 w-3 mr-1" />Nível vigente: {nivelAtual.nome}
+                        </Badge>
+                        <Badge className="bg-white/20 text-white border-white/30">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {formatDateSafe(nivelAtual.dataInicio)} — {formatDateSafe(nivelAtual.dataFim)}
+                        </Badge>
+                        <Badge className="bg-white/20 text-white border-white/30">
+                          <Activity className="h-3 w-3 mr-1" />Status: {nivelAtual.statusOperacional}
+                        </Badge>
+                      </>
+                    )}
                     <Badge className="bg-white/20 text-white border-white/30">
                       <GraduationCap className="h-3 w-3 mr-1" />{aluno.programa}
                     </Badge>
@@ -545,7 +566,7 @@ export default function Performance() {
                       <Users className="h-3 w-3 mr-1" />{aluno.turma}
                     </Badge>
                     <Badge className="bg-white/20 text-white border-white/30">
-                      <User className="h-3 w-3 mr-1" />Mentor: {aluno.mentor}
+                      <User className="h-3 w-3 mr-1" />Mentora: {mentorNivelAtual}
                     </Badge>
                     {assessments && assessments.length > 0 && (
                       <Badge className="bg-[#F5991F]/30 text-[#F5991F] border-[#F5991F]/40">
@@ -716,6 +737,8 @@ export default function Performance() {
         {/* === INDICADORES DE DESTAQUE: Engajamento e Desenvolvimento === */}
         <DualIndicators
           engajamento={
+            indicadoresNivelAtual?.ind7_engajamentoFinal ??
+            v2Filtrado?.ind7_engajamentoFinal ??
             v2?.consolidado?.ind7_engajamentoFinal ??
             performanceGeral ??
             0
@@ -724,13 +747,13 @@ export default function Performance() {
             metasData?.resumo?.percentual ?? 0
           }
           engajamentoDetalhes={
-            v2?.consolidado
+            (indicadoresNivelAtual || v2Filtrado || v2?.consolidado)
               ? {
-                  ind1_webinars: v2.consolidado.ind1_webinars,
-                  ind2_avaliacoes: v2.consolidado.ind2_avaliacoes,
-                  ind3_competencias: v2.consolidado.ind3_competencias,
-                  ind4_tarefas: v2.consolidado.ind4_tarefas,
-                  ind5_engajamento: v2.consolidado.ind5_engajamento,
+                  ind1_webinars: (indicadoresNivelAtual || v2Filtrado || v2?.consolidado)?.ind1_webinars ?? 0,
+                  ind2_avaliacoes: (indicadoresNivelAtual || v2Filtrado || v2?.consolidado)?.ind2_avaliacoes ?? 0,
+                  ind3_competencias: (indicadoresNivelAtual || v2Filtrado || v2?.consolidado)?.ind3_competencias ?? 0,
+                  ind4_tarefas: (indicadoresNivelAtual || v2Filtrado || v2?.consolidado)?.ind4_tarefas ?? 0,
+                  ind5_engajamento: (indicadoresNivelAtual || v2Filtrado || v2?.consolidado)?.ind5_engajamento ?? 0,
                 }
               : undefined
           }
@@ -891,7 +914,7 @@ export default function Performance() {
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-600">Visualizar indicadores por:</span>
-              <InfoTooltip text="Selecione o período para filtrar os indicadores. O consolidado mostra a média de todos os ciclos finalizados. Você também pode filtrar por trilha ou por microciclo específico." />
+              <InfoTooltip text="A visão principal é sempre o Nível Atual. Use os demais filtros apenas como apoio histórico (consolidado, trilha e microciclo)." />
             </div>
             <Select value={indicadorFiltro} onValueChange={setIndicadorFiltro}>
               <SelectTrigger className="w-[320px] bg-white">
