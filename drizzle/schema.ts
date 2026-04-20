@@ -381,6 +381,7 @@ export type InsertReport = typeof reports.$inferInsert;
 export const assessmentPdi = mysqlTable("assessment_pdi", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (onboarding por nível)
   trilhaId: int("trilhaId").notNull(), // FK para trilhas (Básica, Essencial, Master, Visão de Futuro)
   turmaId: int("turmaId"), // FK para turmas (BS1, BS2, BS3, etc.)
   consultorId: int("consultorId"), // FK para consultors (mentora que criou o assessment)
@@ -890,6 +891,7 @@ export type InsertDiscResposta = typeof discRespostas.$inferInsert;
 export const discResultados = mysqlTable("disc_resultados", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (ciclo por nível)
   ciclo: int("ciclo").default(1).notNull(), // Ciclo do assessment (1 = inicial, 2 = reassessment, etc.)
   scoreD: decimal("scoreD", { precision: 5, scale: 2 }).notNull(), // Score Dominância normalizado (0-100)
   scoreI: decimal("scoreI", { precision: 5, scale: 2 }).notNull(), // Score Influência normalizado (0-100)
@@ -919,6 +921,7 @@ export type InsertDiscResultado = typeof discResultados.$inferInsert;
 export const autopercepcoesCompetencias = mysqlTable("autopercepcoes_competencias", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (onboarding por nível)
   competenciaId: int("competenciaId").notNull(), // FK para competencias
   trilhaId: int("trilhaId").notNull(), // FK para trilhas (desnormalizado)
   nota: int("nota").notNull(), // Autoavaliação 1-5
@@ -1138,6 +1141,7 @@ export type InsertEmailAlertaLog = typeof emailAlertasLog.$inferInsert;
 export const onboardingJornada = mysqlTable("onboarding_jornada", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (onboarding por nível)
   ciclo: int("ciclo").default(1).notNull(), // Número do ciclo de onboarding (1 = primeiro, 2 = renovação, etc.)
   // Etapa 1 - Cadastro confirmado pelo aluno
   cadastroConfirmado: int("cadastroConfirmado").default(0).notNull(), // 1 = aluno revisou e confirmou seus dados
