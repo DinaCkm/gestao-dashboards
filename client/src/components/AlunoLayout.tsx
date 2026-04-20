@@ -149,9 +149,9 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
             {/* Selo Dica da Semana */}
             {dicaDaSemana && (
               <button
-                onClick={() => dicaDaSemana.actionUrl ? window.open(dicaDaSemana.actionUrl, "_blank") : undefined}
+                onClick={() => setLocation("/mural")}
                 title={dicaDaSemana.title}
-                className={`relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 shadow-[0_0_18px_rgba(245,153,31,0.5)] animate-pulse hover:scale-105 hover:shadow-[0_0_28px_rgba(245,153,31,0.7)] transition-all duration-200 border border-orange-300/50 whitespace-nowrap${!dicaDaSemana.actionUrl ? " cursor-default" : ""}`}
+                className="relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 shadow-[0_0_18px_rgba(245,153,31,0.5)] animate-pulse hover:scale-105 hover:shadow-[0_0_28px_rgba(245,153,31,0.7)] transition-all duration-200 border border-orange-300/50 whitespace-nowrap cursor-pointer"
               >
                 <Sparkles className="h-3.5 w-3.5 shrink-0" />
                 <span className="hidden sm:inline">DICA DA SEMANA</span>
