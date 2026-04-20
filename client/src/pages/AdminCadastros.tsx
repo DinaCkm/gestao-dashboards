@@ -458,7 +458,7 @@ export default function AdminCadastros() {
 }
 
 // ============ ALUNOS TAB ============
-function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding, onLiberarOnboardingEmMassa, isLiberandoEmMassa, onReverterOnboarding, isRevertendoOnboarding }: {
+function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding, onLiberarOnboardingEmMassa, isLiberandoEmMassa, onReverterOnboarding, isRevertendoOnboarding, onCreateAlunoSuccess }: {
   alunos: any[];
   empresas: any[];
   mentoresList: any[];
@@ -467,7 +467,6 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   onUpdate: (data: any) => void;
   onCreateAluno: (data: any) => void;
   isCreatingAluno: boolean;
-
   isUpdating: boolean;
   onDelete: (data: any) => void;
   isDeleting: boolean;
@@ -479,6 +478,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   isLiberandoEmMassa: boolean;
   onReverterOnboarding: (data: any) => void;
   isRevertendoOnboarding: boolean;
+  onCreateAlunoSuccess?: () => void;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [editAluno, setEditAluno] = useState<any>(null);
@@ -651,27 +651,35 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       toast.error("Selecione a empresa vinculada");
       return;
     }
-    onCreateAluno({
-      name: onboardNome,
-      email: onboardEmail,
-      externalId: idDigits,
-      programId: parseInt(onboardProgramId),
-      contratoInicio: onboardContratoInicio || undefined,
-      contratoFim: onboardContratoFim || undefined,
-      totalSessoesContratadas: onboardTotalSessoes ? parseInt(onboardTotalSessoes) : undefined,
-      tipoMentoria: onboardTipoMentoria,
-      plataformaAulas: onboardPlataformaAulas,
-    });
-    setOnboardNome("");
-    setOnboardEmail("");
-    setOnboardId("");
-    setOnboardProgramId("");
-    setOnboardContratoInicio("");
-    setOnboardContratoFim("");
-    setOnboardTotalSessoes("");
-    setOnboardTipoMentoria('individual');
-    setOnboardPlataformaAulas('sistema_interno');
-    setOnboardOpen(false);
+    onCreateAluno(
+      {
+        name: onboardNome,
+        email: onboardEmail,
+        externalId: idDigits,
+        programId: parseInt(onboardProgramId),
+        contratoInicio: onboardContratoInicio || undefined,
+        contratoFim: onboardContratoFim || undefined,
+        totalSessoesContratadas: onboardTotalSessoes ? parseInt(onboardTotalSessoes) : undefined,
+        tipoMentoria: onboardTipoMentoria,
+        plataformaAulas: onboardPlataformaAulas,
+      },
+      {
+        onSuccess: () => {
+          // Fechar modal e limpar campos apenas após confirmação de sucesso
+          setOnboardNome("");
+          setOnboardEmail("");
+          setOnboardId("");
+          setOnboardProgramId("");
+          setOnboardContratoInicio("");
+          setOnboardContratoFim("");
+          setOnboardTotalSessoes("");
+          setOnboardTipoMentoria('individual');
+          setOnboardPlataformaAulas('sistema_interno');
+          setOnboardOpen(false);
+          onCreateAlunoSuccess?.();
+        },
+      }
+    );
   };
 
   // Cadastro Direto removido - manter apenas Cadastrar Aluno para Onboarding

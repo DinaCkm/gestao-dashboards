@@ -4789,6 +4789,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         contratoFim: z.string().optional(),
         totalSessoesContratadas: z.number().optional(),
         tipoMentoria: z.enum(['individual', 'grupo']).optional(),
+        plataformaAulas: z.enum(['scaffold', 'sistema_interno']).optional(),
       }))
       .mutation(async ({ input }) => {
         const result = await db.createAluno(input);
