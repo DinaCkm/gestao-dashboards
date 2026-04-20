@@ -2931,7 +2931,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         aluno = allAlunos.find(a => a.id === ctx.user!.alunoId) || undefined;
       }
       if (!aluno && ctx.user.email) {
-        aluno = await db.getAlunoByEmail(ctx.user.email);
+        aluno = await db.getAlunoFromCtx(ctx.user);
       }
       if (!aluno) {
         aluno = await db.getAlunoByExternalId(ctx.user.openId);
@@ -6051,7 +6051,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
     // Avisos ativos para alunos (filtrado por programa)
     activeForStudent: protectedProcedure
       .query(async ({ ctx }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         return await db.listActiveAnnouncementsForStudent(aluno?.programId || undefined);
       }),
     list: adminProcedure
@@ -6153,7 +6153,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }))
       .mutation(async ({ input, ctx }) => {
         // Buscar alunoId pelo userId logado
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
         }
@@ -6216,7 +6216,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
     // Listar TODOS os eventos do aluno (lista unificada com status)
     pending: protectedProcedure
       .query(async ({ ctx }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) return { events: [], periodoInicio: null, periodoFim: null };
         const events = await db.getWebinarsPendingAttendance(aluno.id);
         // Buscar período do macrociclo para exibir ao aluno
@@ -6249,7 +6249,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
     // Listar webinars já confirmados pelo aluno (com reflexão)
     myAttendance: protectedProcedure
       .query(async ({ ctx }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) return [];
         const participations = await db.getEventParticipationByAluno(aluno.id);
         // Buscar events pelos IDs das participacoes (sem filtrar por programa)
@@ -6280,7 +6280,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
     // Tarefas práticas atribuídas ao aluno pelo mentor
     myTasks: protectedProcedure
       .query(async ({ ctx }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) return [];
         const sessions = await db.getMentoringSessionsByAluno(aluno.id);
         // Incluir sessões com qualquer modo de tarefa (biblioteca, personalizada, livre)
@@ -6360,7 +6360,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         notaAlunoAplicabilidade: z.number().min(0).max(10).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
 
         // Verificar se a sessão pertence ao aluno
@@ -6449,7 +6449,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         notaAlunoAplicabilidade: z.number().min(0).max(10),
       }))
       .mutation(async ({ ctx, input }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
 
         const session = await db.getMentoringSessionById(input.sessionId);
@@ -6473,7 +6473,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
     myTaskComments: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
       .query(async ({ ctx, input }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) return [];
         // Verificar se a sessão pertence ao aluno
         const session = await db.getMentoringSessionById(input.sessionId);
@@ -6574,7 +6574,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
     // Jornada do aluno logado (para o Portal do Aluno)
     minha: protectedProcedure
       .query(async ({ ctx }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) return null;
         return await db.getJornadaCompleta(aluno.id);
       }),
@@ -6731,7 +6731,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         const allAlunos = await db.getAlunos();
         aluno = allAlunos.find(a => a.id === ctx.user!.alunoId) || undefined;
       }
-      if (!aluno && ctx.user.email) aluno = await db.getAlunoByEmail(ctx.user.email);
+      if (!aluno && ctx.user.email) aluno = await db.getAlunoFromCtx(ctx.user);
       if (!aluno) aluno = await db.getAlunoByExternalId(ctx.user.openId);
       if (!aluno) return [];
       return await db.getCasesSucessoByAluno(aluno.id);
@@ -6771,7 +6771,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           const allAlunos = await db.getAlunos();
           aluno = allAlunos.find(a => a.id === ctx.user!.alunoId) || undefined;
         }
-        if (!aluno && ctx.user.email) aluno = await db.getAlunoByEmail(ctx.user.email);
+        if (!aluno && ctx.user.email) aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) aluno = await db.getAlunoByExternalId(ctx.user.openId);
         if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Perfil de aluno n\u00e3o encontrado' });
 
@@ -7115,7 +7115,7 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
         // Encontrar alunoId do user logado
         let alunoId: number | null = ctx.user.alunoId || null;
         if (!alunoId && ctx.user.email) {
-          const aluno = await db.getAlunoByEmail(ctx.user.email);
+          const aluno = await db.getAlunoFromCtx(ctx.user);
           if (aluno) alunoId = aluno.id;
         }
         if (!alunoId) {

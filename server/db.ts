@@ -704,6 +704,31 @@ export async function getAlunoByEmail(email: string): Promise<Aluno | undefined>
   return result[0];
 }
 
+/**
+ * Helper robusto para obter o aluno a partir do contexto do usuário autenticado.
+ * Tenta na ordem: (1) users.alunoId, (2) alunos.email, (3) alunos.externalId (openId).
+ * Resolve casos onde o email de login difere do email cadastrado no aluno
+ * (ex: aluno que fez primeiro login com email alternativo e depois teve o email corrigido).
+ */
+export async function getAlunoFromCtx(user: { alunoId?: number | null; email?: string | null; openId?: string | null }): Promise<Aluno | undefined> {
+  // 1) Prioridade: alunoId direto do registro de usuário
+  if (user.alunoId) {
+    const byId = await getAlunoById(user.alunoId);
+    if (byId) return byId;
+  }
+  // 2) Fallback: email cadastrado no aluno
+  if (user.email) {
+    const byEmail = await getAlunoByEmail(user.email);
+    if (byEmail) return byEmail;
+  }
+  // 3) Fallback final: externalId (openId do provedor de autenticação)
+  if (user.openId) {
+    const byExternal = await getAlunoByExternalId(user.openId);
+    if (byExternal) return byExternal;
+  }
+  return undefined;
+}
+
 export async function getAlunoById(alunoId: number): Promise<Aluno | undefined> {
   const db = await getDb();
   if (!db) return undefined;
