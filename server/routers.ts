@@ -181,6 +181,19 @@ async function ensureNivelAbertoParaAtribuicao(
   }
 }
 
+function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, value));
+}
+
+function classifyByPercent(percentual: number): string {
+  if (percentual >= 90) return "Excelência";
+  if (percentual >= 75) return "Avançado";
+  if (percentual >= 60) return "Intermediário";
+  if (percentual >= 40) return "Básico";
+  return "Inicial";
+}
+
 export const appRouter = router({
   system: systemRouter,
   jornada: jornadaRouter,
@@ -2762,6 +2775,152 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         };
       }),
     
+    performanceNivelAtual: protectedProcedure
+      .input(z.object({ alunoId: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        // Resolve aluno-alvo:
+        // - sem input: aluno da sessão
+        // - com input.alunoId: permitido para admin/manager
+        let alunoIdAlvo: number | null = null;
+        if (input?.alunoId) {
+          if (ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para consultar outro aluno." });
+          }
+          alunoIdAlvo = input.alunoId;
+        } else if (ctx.user.alunoId) {
+          alunoIdAlvo = ctx.user.alunoId;
+        } else {
+          const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+          if (alunoCtx?.id) alunoIdAlvo = alunoCtx.id;
+        }
+
+        if (!alunoIdAlvo) {
+          const byExternal = await db.getAlunoByExternalId(ctx.user.openId);
+          alunoIdAlvo = byExternal?.id ?? null;
+        }
+        if (!alunoIdAlvo) {
+          return { found: false as const, message: "Aluno não encontrado para a sessão atual." };
+        }
+
+        const alunos = await db.getAlunos();
+        const aluno = alunos.find((a) => a.id === alunoIdAlvo);
+        if (!aluno) {
+          return { found: false as const, message: "Aluno não encontrado." };
+        }
+
+        const nivelOperacional = await db.getContratoNivelComStatusOperacional(aluno.id, null);
+        let nivelReferencia = nivelOperacional;
+        if (!nivelReferencia) {
+          const historico = await db.getContratoNiveisByAluno(aluno.id);
+          nivelReferencia = historico[0]
+            ? {
+                ...historico[0],
+                statusOperacional: "encerrado" as const,
+              }
+            : null;
+        }
+
+        const pedagogia = await db.getPedagogiaByNivel(aluno.id, nivelReferencia?.id ?? null);
+        const [programas, turmas] = await Promise.all([db.getPrograms(), db.getTurmas()]);
+        const programa = aluno.programId ? (programas.find((p) => p.id === aluno.programId) || null) : null;
+        const turma = aluno.turmaId ? (turmas.find((t) => t.id === aluno.turmaId) || null) : null;
+
+        const mentorias = pedagogia.mentoringSessions || [];
+        const eventos = pedagogia.eventParticipation || [];
+        const plano = pedagogia.planoIndividual || [];
+        const assessments = pedagogia.assessments || [];
+        const metas = pedagogia.metas || [];
+        const cases = pedagogia.casesSucesso || [];
+
+        const webinarsTotal = eventos.length;
+        const webinarsPresente = eventos.filter((e: any) => e.status === "presente").length;
+        const ind1_webinars = webinarsTotal > 0 ? clampPercent((webinarsPresente / webinarsTotal) * 100) : 0;
+
+        const avaliacoesTotal = assessments.length;
+        const avaliacoesConcluidas = assessments.filter((a: any) => ["finalizado", "concluido"].includes(String(a.status))).length;
+        const ind2_avaliacoes = avaliacoesTotal > 0 ? clampPercent((avaliacoesConcluidas / avaliacoesTotal) * 100) : 0;
+
+        const compObrigatorias = plano.filter((c: any) => Number(c.isObrigatoria ?? 1) === 1);
+        const compAprovadas = compObrigatorias.filter((c: any) => {
+          const nota = Number(c.notaAtual ?? 0);
+          const meta = Number(c.metaNota ?? 7);
+          return Number.isFinite(nota) && nota >= meta;
+        }).length;
+        const ind3_competencias = compObrigatorias.length > 0 ? clampPercent((compAprovadas / compObrigatorias.length) * 100) : 0;
+
+        const tarefasValidas = mentorias.filter((s: any) => s.taskStatus === "entregue" || s.taskStatus === "nao_entregue");
+        const tarefasEntregues = tarefasValidas.filter((s: any) => s.taskStatus === "entregue").length;
+        const ind4_tarefas = tarefasValidas.length > 0 ? clampPercent((tarefasEntregues / tarefasValidas.length) * 100) : 0;
+
+        const engajamentos = mentorias
+          .map((s: any) => (s.engagementScore == null ? null : Number(s.engagementScore)))
+          .filter((v: number | null): v is number => v != null && Number.isFinite(v));
+        const avgEngajamento = engajamentos.length > 0
+          ? engajamentos.reduce((acc: number, v: number) => acc + v, 0) / engajamentos.length
+          : 0;
+        const ind5_engajamento = clampPercent(avgEngajamento * 20);
+
+        const aplicTotal = cases.length;
+        const aplicEntregues = cases.filter((c: any) => c.entregue === 1).length;
+        const ind6_aplicabilidade = aplicTotal > 0 ? clampPercent((aplicEntregues / aplicTotal) * 100) : 0;
+
+        const ind7_engajamentoFinal = clampPercent(
+          (ind1_webinars + ind2_avaliacoes + ind3_competencias + ind4_tarefas + ind5_engajamento) / 5
+        );
+
+        const indicadoresNivel = {
+          ind1_webinars,
+          ind2_avaliacoes,
+          ind3_competencias,
+          ind4_tarefas,
+          ind5_engajamento,
+          ind6_aplicabilidade,
+          ind7_engajamentoFinal,
+          classificacao: classifyByPercent(ind7_engajamentoFinal),
+        };
+
+        return {
+          found: true as const,
+          aluno: {
+            id: aluno.id,
+            name: aluno.name,
+            programa: programa?.name || "Não definido",
+            turma: turma?.name || "Não definida",
+            trilha: turma?.name || "Não definida",
+          },
+          nivel: nivelReferencia
+            ? {
+                id: nivelReferencia.id,
+                nome: nivelReferencia.nivel,
+                dataInicio: nivelReferencia.dataInicio,
+                dataFim: nivelReferencia.dataFim,
+                statusOperacional: (nivelReferencia as any).statusOperacional || "encerrado",
+                isFallbackEncerrado: !nivelOperacional,
+              }
+            : null,
+          indicadoresNivel,
+          entregas: {
+            webinars: { total: webinarsTotal, presente: webinarsPresente },
+            avaliacoes: { total: avaliacoesTotal, concluidas: avaliacoesConcluidas },
+            competencias: { totalObrigatorias: compObrigatorias.length, aprovadas: compAprovadas },
+            tarefas: { total: tarefasValidas.length, entregues: tarefasEntregues },
+            mentorias: { total: mentorias.length },
+            metas: { total: metas.length, concluidas: metas.filter((m: any) => m.status === "concluida").length },
+            cases: { total: aplicTotal, entregues: aplicEntregues },
+          },
+          pedagogia: {
+            contratoNivelId: pedagogia.contratoNivelId,
+            assessments,
+            planoIndividual: plano,
+            metas,
+            mentoringSessions: mentorias,
+            eventParticipation: eventos,
+            casesSucesso: cases,
+            studentPerformance: pedagogia.studentPerformance || [],
+          },
+        };
+      }),
+
     // Performance Filtrada - BLOCO 3
     // Calcula indicadores considerando apenas competências obrigatórias do plano individual
     performanceFiltrada: protectedProcedure
