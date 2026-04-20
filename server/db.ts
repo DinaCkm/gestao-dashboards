@@ -118,6 +118,15 @@ export async function getDb() {
   return _db;
 }
 
+async function resolveContratoNivelId(
+  alunoId: number,
+  contratoNivelId?: number | null
+): Promise<number | null> {
+  if (contratoNivelId) return contratoNivelId;
+  const vigente = await getContratoNivelVigenteByAluno(alunoId);
+  return vigente?.id ?? null;
+}
+
 // ============ USER FUNCTIONS ============
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
@@ -779,6 +788,16 @@ export async function getMentoringSessionsByAluno(alunoId: number): Promise<Ment
   return await db.select().from(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
 }
 
+export async function getMentoringSessionsByAlunoAndNivel(alunoId: number, contratoNivelId?: number | null): Promise<MentoringSession[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (!contratoNivelId) return getMentoringSessionsByAluno(alunoId);
+  return await db.select().from(mentoringSessions).where(and(
+    eq(mentoringSessions.alunoId, alunoId),
+    eq(mentoringSessions.contratoNivelId, contratoNivelId),
+  ));
+}
+
 export async function updateMentoringSession(sessionId: number, data: {
   sessionDate?: string;
   sessionNumber?: number;
@@ -853,6 +872,7 @@ export async function deleteMentoringSession(sessionId: number): Promise<boolean
 
 export async function createMentoringSession(data: {
   alunoId: number;
+  contratoNivelId?: number | null;
   consultorId: number;
   turmaId?: number | null;
   trilhaId?: number | null;
@@ -876,9 +896,11 @@ export async function createMentoringSession(data: {
 }): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  const contratoNivelIdResolved = await resolveContratoNivelId(data.alunoId, data.contratoNivelId);
   
   const result = await db.insert(mentoringSessions).values({
     alunoId: data.alunoId,
+    contratoNivelId: contratoNivelIdResolved,
     consultorId: data.consultorId,
     turmaId: data.turmaId ?? null,
     trilhaId: data.trilhaId ?? null,
@@ -1142,6 +1164,16 @@ export async function getEventParticipationByAluno(alunoId: number): Promise<Eve
   const db = await getDb();
   if (!db) return [];
   return await db.select().from(eventParticipation).where(eq(eventParticipation.alunoId, alunoId));
+}
+
+export async function getEventParticipationByAlunoAndNivel(alunoId: number, contratoNivelId?: number | null): Promise<EventParticipation[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (!contratoNivelId) return getEventParticipationByAluno(alunoId);
+  return await db.select().from(eventParticipation).where(and(
+    eq(eventParticipation.alunoId, alunoId),
+    eq(eventParticipation.contratoNivelId, contratoNivelId),
+  ));
 }
 
 export async function getAllEventParticipation(): Promise<EventParticipation[]> {
@@ -2822,18 +2854,50 @@ export async function getPlanoIndividualByAluno(alunoId: number) {
   return result;
 }
 
+export async function getPlanoIndividualByAlunoAndNivel(alunoId: number, contratoNivelId?: number | null) {
+  if (!contratoNivelId) return getPlanoIndividualByAluno(alunoId);
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select({
+    id: planoIndividual.id,
+    alunoId: planoIndividual.alunoId,
+    contratoNivelId: planoIndividual.contratoNivelId,
+    competenciaId: planoIndividual.competenciaId,
+    isObrigatoria: planoIndividual.isObrigatoria,
+    notaAtual: planoIndividual.notaAtual,
+    metaNota: planoIndividual.metaNota,
+    status: planoIndividual.status,
+    competenciaNome: competencias.nome,
+    competenciaCodigo: competencias.codigoIntegracao,
+    trilhaId: competencias.trilhaId,
+    trilhaNome: trilhas.name
+  })
+    .from(planoIndividual)
+    .leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id))
+    .leftJoin(trilhas, eq(competencias.trilhaId, trilhas.id))
+    .where(and(
+      eq(planoIndividual.alunoId, alunoId),
+      eq(planoIndividual.contratoNivelId, contratoNivelId),
+    ))
+    .orderBy(trilhas.ordem, competencias.ordem);
+}
+
 // Adicionar competência ao plano individual
 export async function addCompetenciaToPlano(data: {
   alunoId: number;
+  contratoNivelId?: number | null;
   competenciaId: number;
   isObrigatoria?: number;
   metaNota?: string;
 }) {
   const db = await getDb();
   if (!db) return null;
+  const contratoNivelIdResolved = await resolveContratoNivelId(data.alunoId, data.contratoNivelId);
   
   const [result] = await db.insert(planoIndividual).values({
     alunoId: data.alunoId,
+    contratoNivelId: contratoNivelIdResolved,
     competenciaId: data.competenciaId,
     isObrigatoria: data.isObrigatoria ?? 1,
     metaNota: data.metaNota ?? "7.00",
@@ -2844,12 +2908,14 @@ export async function addCompetenciaToPlano(data: {
 }
 
 // Adicionar múltiplas competências ao plano individual
-export async function addCompetenciasToPlano(alunoId: number, competenciaIds: number[]) {
+export async function addCompetenciasToPlano(alunoId: number, competenciaIds: number[], contratoNivelId?: number | null) {
   const db = await getDb();
   if (!db) return false;
+  const contratoNivelIdResolved = await resolveContratoNivelId(alunoId, contratoNivelId);
   
   const values = competenciaIds.map(competenciaId => ({
     alunoId,
+    contratoNivelId: contratoNivelIdResolved,
     competenciaId,
     isObrigatoria: 1,
     metaNota: "7.00",
@@ -4175,6 +4241,33 @@ export async function getAssessmentsByAluno(alunoId: number) {
   });
 }
 
+export async function getAssessmentsByAlunoAndNivel(alunoId: number, contratoNivelId?: number | null) {
+  if (!contratoNivelId) {
+    return getAssessmentsByAluno(alunoId);
+  }
+
+  const db = await getDb();
+  if (!db) return [];
+
+  const pdis = await db.select().from(assessmentPdi)
+    .where(and(
+      eq(assessmentPdi.alunoId, alunoId),
+      eq(assessmentPdi.contratoNivelId, contratoNivelId),
+    ))
+    .orderBy(desc(assessmentPdi.createdAt));
+
+  if (pdis.length === 0) return [];
+
+  const pdiIds = pdis.map(p => p.id);
+  const allComps = await db.select().from(assessmentCompetencias)
+    .where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map(id => sql`${id}`), sql`, `)})`);
+
+  return pdis.map(pdi => ({
+    ...pdi,
+    competencias: allComps.filter(c => c.assessmentPdiId === pdi.id),
+  }));
+}
+
 /**
  * Get all assessments for a program (for admin/mentor views)
  */
@@ -4343,6 +4436,7 @@ export async function addCompetenciasToExistingAssessment(
 export async function createAssessmentPdi(
   pdiData: {
     alunoId: number;
+    contratoNivelId?: number | null;
     trilhaId: number;
     turmaId?: number | null;
     consultorId?: number | null;
@@ -4383,6 +4477,7 @@ export async function createAssessmentPdi(
   // Insert PDI - convert string dates to Date objects
   const result = await db.insert(assessmentPdi).values({
     alunoId: pdiData.alunoId,
+    contratoNivelId: pdiData.contratoNivelId || null,
     trilhaId: pdiData.trilhaId,
     turmaId: pdiData.turmaId || null,
     consultorId: pdiData.consultorId || null,
@@ -4941,6 +5036,36 @@ export async function getStudentPerformanceByAluno(alunoId: number): Promise<Stu
   return await db.select().from(studentPerformance).where(eq(studentPerformance.alunoId, alunoId));
 }
 
+export async function getStudentPerformanceByAlunoAndNivel(alunoId: number, contratoNivelId?: number | null): Promise<StudentPerformance[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (!contratoNivelId) {
+    return getStudentPerformanceByAluno(alunoId);
+  }
+
+  const pdis = await db.select({ id: assessmentPdi.id })
+    .from(assessmentPdi)
+    .where(and(
+      eq(assessmentPdi.alunoId, alunoId),
+      eq(assessmentPdi.contratoNivelId, contratoNivelId),
+    ));
+
+  if (pdis.length === 0) return [];
+  const pdiIds = pdis.map(p => p.id);
+  const comps = await db.select({
+    competenciaId: assessmentCompetencias.competenciaId,
+  }).from(assessmentCompetencias)
+    .where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map(id => sql`${id}`), sql`, `)})`);
+
+  const compIds = comps.map(c => c.competenciaId).filter((v): v is number => !!v);
+  if (compIds.length === 0) return [];
+
+  return await db.select().from(studentPerformance).where(and(
+    eq(studentPerformance.alunoId, alunoId),
+    inArray(studentPerformance.competenciaId, compIds),
+  ));
+}
+
 export async function getStudentPerformanceByExternalUserId(externalUserId: string): Promise<StudentPerformance[]> {
   const db = await getDb();
   if (!db) return [];
@@ -5282,10 +5407,12 @@ export async function getActiveManagersWithIds(): Promise<{id: number; email: st
 export async function markWebinarAttendance(
   alunoId: number,
   eventId: number,
-  reflexao: string
+  reflexao: string,
+  contratoNivelId?: number | null
 ): Promise<{ updated: boolean; created: boolean }> {
   const db = await getDb();
   if (!db) return { updated: false, created: false };
+  const contratoNivelIdResolved = await resolveContratoNivelId(alunoId, contratoNivelId);
 
   // Verificar se já existe registro de participação
   const existing = await db.select()
@@ -5303,6 +5430,7 @@ export async function markWebinarAttendance(
         status: "presente",
         reflexao,
         selfReportedAt: new Date(),
+        contratoNivelId: existing[0].contratoNivelId ?? contratoNivelIdResolved,
       })
       .where(eq(eventParticipation.id, existing[0].id));
     return { updated: true, created: false };
@@ -5310,6 +5438,7 @@ export async function markWebinarAttendance(
     // Criar novo registro
     await db.insert(eventParticipation).values({
       alunoId,
+      contratoNivelId: contratoNivelIdResolved,
       eventId,
       status: "presente",
       reflexao,
@@ -5873,6 +6002,35 @@ export async function getContratoNivelVigenteByAluno(alunoId: number): Promise<C
   }, alunoId);
 }
 
+export async function getPedagogiaByNivel(alunoId: number, contratoNivelId?: number | null) {
+  const nivelVigente = contratoNivelId
+    ? null
+    : await getContratoNivelVigenteByAluno(alunoId);
+  const nivelId = contratoNivelId ?? nivelVigente?.id ?? null;
+
+  const [assessments, plano, metasNivel, mentorias, participacoes, cases, performance] = await Promise.all([
+    getAssessmentsByAlunoAndNivel(alunoId, nivelId),
+    getPlanoIndividualByAlunoAndNivel(alunoId, nivelId),
+    getMetasDetalhadasByNivel(alunoId, nivelId),
+    getMentoringSessionsByAlunoAndNivel(alunoId, nivelId),
+    getEventParticipationByAlunoAndNivel(alunoId, nivelId),
+    getCasesSucessoByAlunoAndNivel(alunoId, nivelId),
+    getStudentPerformanceByAlunoAndNivel(alunoId, nivelId),
+  ]);
+
+  return {
+    contratoNivelId: nivelId,
+    assessments,
+    competencias: assessments.flatMap((a: any) => a.competencias || []),
+    planoIndividual: plano,
+    metas: metasNivel,
+    mentoringSessions: mentorias,
+    eventParticipation: participacoes,
+    casesSucesso: cases,
+    studentPerformance: performance,
+  };
+}
+
 // ============ SALDO DE SESSÕES ============
 
 export async function getSaldoSessoes(alunoId: number) {
@@ -6389,8 +6547,19 @@ export async function markCaseInteresseAsRead(id: number, autorAlunoId: number) 
 export async function createCaseSucesso(data: InsertCaseSucesso) {
   const db = await getDb();
   if (!db) return null;
-  const [result] = await db.insert(casesSucesso).values(data);
+  const contratoNivelIdResolved = await resolveContratoNivelId(data.alunoId, data.contratoNivelId);
+  const [result] = await db.insert(casesSucesso).values({ ...data, contratoNivelId: contratoNivelIdResolved });
   return result.insertId;
+}
+
+export async function getCasesSucessoByAlunoAndNivel(alunoId: number, contratoNivelId?: number | null) {
+  const db = await getDb();
+  if (!db) return [];
+  if (!contratoNivelId) return getCasesSucessoByAluno(alunoId);
+  return db.select().from(casesSucesso).where(and(
+    eq(casesSucesso.alunoId, alunoId),
+    eq(casesSucesso.contratoNivelId, contratoNivelId),
+  ));
 }
 
 /**
@@ -7770,18 +7939,31 @@ export async function getAllAssessmentPdis() {
 /**
  * Listar metas de um aluno (opcionalmente filtrar por competência ou assessment)
  */
-export async function getMetasByAluno(alunoId: number, assessmentPdiId?: number) {
+export async function getMetasByAluno(alunoId: number, assessmentPdiId?: number, contratoNivelId?: number | null) {
   const db = await getDb();
   if (!db) return [];
   
+  if (assessmentPdiId && contratoNivelId) {
+    return await db.select().from(metas)
+      .where(and(
+        eq(metas.alunoId, alunoId),
+        eq(metas.assessmentPdiId, assessmentPdiId),
+        eq(metas.contratoNivelId, contratoNivelId),
+        eq(metas.isActive, 1)
+      ))
+      .orderBy(metas.competenciaId, metas.createdAt);
+  }
+
   if (assessmentPdiId) {
     return await db.select().from(metas)
       .where(and(eq(metas.alunoId, alunoId), eq(metas.assessmentPdiId, assessmentPdiId), eq(metas.isActive, 1)))
       .orderBy(metas.competenciaId, metas.createdAt);
   }
   
+  const conditions = [eq(metas.alunoId, alunoId), eq(metas.isActive, 1)];
+  if (contratoNivelId) conditions.push(eq(metas.contratoNivelId, contratoNivelId));
   return await db.select().from(metas)
-    .where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1)))
+    .where(and(...conditions))
     .orderBy(metas.competenciaId, metas.createdAt);
 }
 
@@ -7807,9 +7989,34 @@ export async function getMetasByCompetencia(alunoId: number, assessmentCompetenc
 export async function createMeta(data: InsertMeta) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  const result = await db.insert(metas).values(data);
+
+  let contratoNivelId = data.contratoNivelId ?? null;
+  if (!contratoNivelId && data.assessmentPdiId) {
+    const [pdi] = await db.select({ contratoNivelId: assessmentPdi.contratoNivelId })
+      .from(assessmentPdi)
+      .where(eq(assessmentPdi.id, data.assessmentPdiId))
+      .limit(1);
+    contratoNivelId = pdi?.contratoNivelId ?? null;
+  }
+  if (!contratoNivelId) {
+    contratoNivelId = await resolveContratoNivelId(data.alunoId, null);
+  }
+
+  const result = await db.insert(metas).values({ ...data, contratoNivelId });
   return { id: Number(result[0].insertId) };
+}
+
+export async function getMetasDetalhadasByNivel(alunoId: number, contratoNivelId?: number | null) {
+  if (!contratoNivelId) {
+    return getMetasDetalhadas(alunoId);
+  }
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(metas).where(and(
+    eq(metas.alunoId, alunoId),
+    eq(metas.contratoNivelId, contratoNivelId),
+    eq(metas.isActive, 1),
+  )).orderBy(metas.createdAt);
 }
 
 /**
@@ -8133,6 +8340,7 @@ export async function getDiscRespostas(alunoId: number) {
 
 export async function saveDiscResultado(data: {
   alunoId: number;
+  contratoNivelId?: number | null;
   scoreD: string;
   scoreI: string;
   scoreS: string;
@@ -8151,9 +8359,13 @@ export async function saveDiscResultado(data: {
   if (!dbConn) throw new Error("Database not available");
   
   // Buscar o ciclo mais recente do aluno para determinar o próximo
+  const whereClause = data.contratoNivelId
+    ? and(eq(discResultados.alunoId, data.alunoId), eq(discResultados.contratoNivelId, data.contratoNivelId))
+    : eq(discResultados.alunoId, data.alunoId);
+
   const existing = await dbConn.select({ ciclo: discResultados.ciclo })
     .from(discResultados)
-    .where(eq(discResultados.alunoId, data.alunoId))
+    .where(whereClause)
     .orderBy(desc(discResultados.ciclo))
     .limit(1);
   
@@ -8180,6 +8392,22 @@ export async function getDiscResultado(alunoId: number) {
   return result[0] || null;
 }
 
+export async function getDiscResultadoByNivel(alunoId: number, contratoNivelId?: number | null) {
+  if (!contratoNivelId) {
+    return getDiscResultado(alunoId);
+  }
+  const dbConn = await getDb();
+  if (!dbConn) return null;
+  const result = await dbConn.select().from(discResultados)
+    .where(and(
+      eq(discResultados.alunoId, alunoId),
+      eq(discResultados.contratoNivelId, contratoNivelId),
+    ))
+    .orderBy(desc(discResultados.ciclo))
+    .limit(1);
+  return result[0] || null;
+}
+
 export async function getAllDiscResultadosByAluno(alunoId: number) {
   const dbConn = await getDb();
   if (!dbConn) return [];
@@ -8191,16 +8419,26 @@ export async function getAllDiscResultadosByAluno(alunoId: number) {
 
 // ============ AUTOPERCEPÇÃO FUNCTIONS ============
 
-export async function saveAutopercepcoes(alunoId: number, avaliacoes: InsertAutopercepcaoCompetencia[]) {
+export async function saveAutopercepcoes(
+  alunoId: number,
+  avaliacoes: InsertAutopercepcaoCompetencia[],
+  contratoNivelId?: number | null
+) {
   const dbConn = await getDb();
   if (!dbConn) throw new Error("Database not available");
   
-  // Deletar avaliações anteriores do aluno
-  await dbConn.delete(autopercepcoesCompetencias).where(eq(autopercepcoesCompetencias.alunoId, alunoId));
+  // Deletar avaliações anteriores do aluno no contexto do nível
+  await dbConn.delete(autopercepcoesCompetencias).where(
+    contratoNivelId
+      ? and(eq(autopercepcoesCompetencias.alunoId, alunoId), eq(autopercepcoesCompetencias.contratoNivelId, contratoNivelId))
+      : eq(autopercepcoesCompetencias.alunoId, alunoId)
+  );
   
   // Inserir novas avaliações
   if (avaliacoes.length > 0) {
-    await dbConn.insert(autopercepcoesCompetencias).values(avaliacoes);
+    await dbConn.insert(autopercepcoesCompetencias).values(
+      avaliacoes.map((a) => ({ ...a, contratoNivelId: contratoNivelId ?? null }))
+    );
   }
 }
 
@@ -8208,6 +8446,18 @@ export async function getAutopercepcoes(alunoId: number) {
   const dbConn = await getDb();
   if (!dbConn) return [];
   return dbConn.select().from(autopercepcoesCompetencias).where(eq(autopercepcoesCompetencias.alunoId, alunoId));
+}
+
+export async function getAutopercepcoesByNivel(alunoId: number, contratoNivelId?: number | null) {
+  if (!contratoNivelId) {
+    return getAutopercepcoes(alunoId);
+  }
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  return dbConn.select().from(autopercepcoesCompetencias).where(and(
+    eq(autopercepcoesCompetencias.alunoId, alunoId),
+    eq(autopercepcoesCompetencias.contratoNivelId, contratoNivelId),
+  ));
 }
 
 // ============ MENTORA CONTRIBUIÇÕES FUNCTIONS ============
@@ -9019,6 +9269,22 @@ export async function getOnboardingJornada(alunoId: number): Promise<OnboardingJ
   return rows[0] || null;
 }
 
+export async function getOnboardingJornadaByNivel(
+  alunoId: number,
+  contratoNivelId?: number | null
+): Promise<OnboardingJornada | null> {
+  if (!contratoNivelId) {
+    return getOnboardingJornada(alunoId);
+  }
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(onboardingJornada).where(and(
+    eq(onboardingJornada.alunoId, alunoId),
+    eq(onboardingJornada.contratoNivelId, contratoNivelId),
+  )).limit(1);
+  return rows[0] || null;
+}
+
 export async function upsertOnboardingJornada(alunoId: number, data: Partial<InsertOnboardingJornada>): Promise<void> {
   const db = await getDb();
   if (!db) return;
@@ -9027,6 +9293,27 @@ export async function upsertOnboardingJornada(alunoId: number, data: Partial<Ins
     await db.update(onboardingJornada).set(data).where(eq(onboardingJornada.alunoId, alunoId));
   } else {
     await db.insert(onboardingJornada).values({ alunoId, ...data });
+  }
+}
+
+export async function upsertOnboardingJornadaByNivel(
+  alunoId: number,
+  contratoNivelId: number | null | undefined,
+  data: Partial<InsertOnboardingJornada>
+): Promise<void> {
+  if (!contratoNivelId) {
+    await upsertOnboardingJornada(alunoId, data);
+    return;
+  }
+
+  const db = await getDb();
+  if (!db) return;
+
+  const existing = await getOnboardingJornadaByNivel(alunoId, contratoNivelId);
+  if (existing) {
+    await db.update(onboardingJornada).set(data).where(eq(onboardingJornada.id, existing.id));
+  } else {
+    await db.insert(onboardingJornada).values({ alunoId, contratoNivelId, ...data });
   }
 }
 

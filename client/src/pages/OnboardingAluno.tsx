@@ -224,7 +224,7 @@ function OnboardingStepper({ currentStep, progressStep, onStepClick, readOnly = 
 // ETAPA 1: CADASTRO / PERFIL
 // ============================================================
 
-function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
+function EtapaCadastro({ onComplete, alunoId, contratoNivelId, readOnly = false }: { onComplete: () => void; alunoId: number; contratoNivelId?: number; readOnly?: boolean }) {
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
   const alunoReal = dashData?.found ? dashData.aluno : null;
   const salvarCadastro = trpc.onboarding.salvarCadastro.useMutation();
@@ -270,6 +270,7 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
     try {
       await salvarCadastro.mutateAsync({
         alunoId,
+        contratoNivelId: contratoNivelId ?? null,
         nome: perfil.nome || undefined,
         email: perfil.email || undefined,
         telefone: perfil.telefone || undefined,
@@ -1345,7 +1346,7 @@ function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData, readOnly = 
 // ETAPA 6: MEU PDI — Visualização Completa do Plano de Desenvolvimento
 // ============================================================
 
-function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
+function EtapaMeuPDI({ onComplete, alunoId, contratoNivelId, readOnly = false }: { onComplete: () => void; alunoId: number; contratoNivelId?: number; readOnly?: boolean }) {
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const { data: metasData } = trpc.metas.minhas.useQuery();
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
@@ -1419,7 +1420,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   const handleVisualizar = async () => {
     if (readOnly) return;
     try {
-      await marcarPdi.mutateAsync({ alunoId });
+      await marcarPdi.mutateAsync({ alunoId, contratoNivelId: contratoNivelId ?? null });
       setVisualizado(true);
       utils.onboarding.progresso.invalidate();
       onComplete();
@@ -2190,9 +2191,9 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
 // ETAPA 7: SUA JORNADA — Vídeos de Apresentação
 // ============================================================
 
-function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
+function EtapaSuaJornada({ onComplete, alunoId, contratoNivelId, readOnly = false }: { onComplete: () => void; alunoId: number; contratoNivelId?: number; readOnly?: boolean }) {
   const { data: videos } = trpc.onboarding.videos.useQuery();
-  const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId }, { enabled: alunoId > 0 });
+  const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId, contratoNivelId: contratoNivelId ?? null }, { enabled: alunoId > 0 });
   const marcarVideo = trpc.onboarding.marcarVideoAssistido.useMutation();
   const utils = trpc.useUtils();
 
@@ -2229,7 +2230,7 @@ function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete
   const handleMarcarAssistido = async (chave: string) => {
     if (readOnly || assistidos[chave]) return;
     try {
-      const result = await marcarVideo.mutateAsync({ alunoId, chave: chave as any });
+      const result = await marcarVideo.mutateAsync({ alunoId, contratoNivelId: contratoNivelId ?? null, chave: chave as any });
       setAssistidos(prev => ({ ...prev, [chave]: true }));
       utils.onboarding.progresso.invalidate();
       if (result.todosAssistidos) {
@@ -2422,11 +2423,11 @@ function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete
 // ETAPA 8: ACEITE E INÍCIO — Compromisso Formal
 // ============================================================
 
-function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
+function EtapaAceite({ onComplete, alunoId, contratoNivelId, readOnly = false }: { onComplete: () => void; alunoId: number; contratoNivelId?: number; readOnly?: boolean }) {
   const [, setLocation] = useLocation();
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
-  const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId }, { enabled: alunoId > 0 });
+  const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId, contratoNivelId: contratoNivelId ?? null }, { enabled: alunoId > 0 });
   const realizarAceite = trpc.onboarding.realizarAceite.useMutation();
   const solicitarRevisao = trpc.onboarding.solicitarRevisaoAceite.useMutation();
   const utils = trpc.useUtils();
@@ -2524,7 +2525,7 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
   const handleDeAcordo = async () => {
     if (readOnly || !assinaturaPreenchida) return;
     try {
-      await realizarAceite.mutateAsync({ alunoId, nomeAceite: nomeAceite.trim() });
+      await realizarAceite.mutateAsync({ alunoId, contratoNivelId: contratoNivelId ?? null, nomeAceite: nomeAceite.trim() });
       setAceitou(true);
       utils.onboarding.progresso.invalidate();
       utils.aluno.onboardingStatus.invalidate();
@@ -2855,10 +2856,21 @@ export default function OnboardingAluno() {
   const [stepInitialized, setStepInitialized] = useState(false);
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
+  const queryNivel = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const raw = new URLSearchParams(window.location.search).get("nivelId");
+    const parsed = raw ? Number(raw) : NaN;
+    return Number.isFinite(parsed) ? parsed : null;
+  }, []);
 
   const alunoId = dashData?.found ? dashData.aluno?.id || 0 : 0;
+  const { data: contextoNivel } = trpc.onboarding.contextoNivel.useQuery(
+    { alunoId, contratoNivelId: queryNivel ?? undefined },
+    { enabled: alunoId > 0 }
+  );
+  const contratoNivelId = contextoNivel?.visualizandoNivelId ?? queryNivel ?? undefined;
   const { data: progressoData } = trpc.onboarding.progresso.useQuery(
-    { alunoId },
+    { alunoId, contratoNivelId: contratoNivelId ?? null },
     { enabled: alunoId > 0 }
   );
 
@@ -2904,7 +2916,8 @@ export default function OnboardingAluno() {
   // - Aluno COM onboardingCompleto = readOnly (completou o fluxo)
   // - Aluno SEM PDI ou COM onboarding liberado = pode editar (aluno novo ou novo ciclo)
   const globalReadOnly = !!(progressoData?.onboardingCompleto) || 
-    !!(onboardingStatus?.hasPdi && !onboardingStatus?.needsOnboarding);
+    !!(onboardingStatus?.hasPdi && !onboardingStatus?.needsOnboarding) ||
+    !!contextoNivel?.isHistorico;
   
   // Etapas anteriores ao progresso real ficam em readOnly (para não refazer)
   const isViewingPreviousStep = !globalReadOnly && currentStep < progressStep;
@@ -2955,6 +2968,13 @@ export default function OnboardingAluno() {
             </Button>
           </div>
         </div>
+
+        {contextoNivel?.vigente && (
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700">
+            <span className="font-semibold">Nível vigente:</span> {contextoNivel.vigente.nivel}
+            {contextoNivel.isHistorico && <span className="ml-2 text-amber-700 font-semibold">• Visualizando onboarding histórico (somente leitura)</span>}
+          </div>
+        )}
 
         {/* Stepper */}
         <OnboardingStepper currentStep={currentStep} progressStep={progressStep} onStepClick={(step) => {
@@ -3010,10 +3030,11 @@ export default function OnboardingAluno() {
         )}
 
         {/* Etapas */}
-        {currentStep === 1 && <EtapaCadastro onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
+        {currentStep === 1 && <EtapaCadastro onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} contratoNivelId={contratoNivelId} readOnly={readOnly} />}
         {currentStep === 2 && (
           <EtapaAssessmentCompleta
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
+            contratoNivelId={contratoNivelId}
             onComplete={handleStepComplete}
             readOnly={readOnly && !reassessmentElegivel}
           />
@@ -3031,9 +3052,9 @@ export default function OnboardingAluno() {
         )}
         {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
         {currentStep === 5 && <EtapaPrimeiroEncontro mentora={selectedMentora} onComplete={handleStepComplete} progressoData={progressoData ?? undefined} readOnly={readOnly} />}
-        {currentStep === 6 && <EtapaSuaJornada onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
-        {currentStep === 7 && <EtapaMeuPDI onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
-        {currentStep === 8 && <EtapaAceite onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
+        {currentStep === 6 && <EtapaSuaJornada onComplete={handleStepComplete} alunoId={alunoId} contratoNivelId={contratoNivelId} readOnly={readOnly} />}
+        {currentStep === 7 && <EtapaMeuPDI onComplete={handleStepComplete} alunoId={alunoId} contratoNivelId={contratoNivelId} readOnly={readOnly} />}
+        {currentStep === 8 && <EtapaAceite onComplete={handleStepComplete} alunoId={alunoId} contratoNivelId={contratoNivelId} readOnly={readOnly} />}
       </div>
     </AlunoLayout>
   );

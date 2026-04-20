@@ -1835,15 +1835,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   planoIndividual: router({
     // Buscar plano de um aluno
     byAluno: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getPlanoIndividualByAluno(input.alunoId);
+        return await db.getPlanoIndividualByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
     
     // Adicionar competência ao plano
     addCompetencia: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         competenciaId: z.number(),
         isObrigatoria: z.number().optional(),
         metaNota: z.string().optional()
@@ -1857,10 +1858,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     addMultiple: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         competenciaIds: z.array(z.number())
       }))
       .mutation(async ({ input }) => {
-        const success = await db.addCompetenciasToPlano(input.alunoId, input.competenciaIds);
+        const success = await db.addCompetenciasToPlano(input.alunoId, input.competenciaIds, input.contratoNivelId ?? null);
         return { success };
       }),
     
@@ -3469,9 +3471,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
     // Sessões de mentoria por aluno
     sessionsByAluno: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getMentoringSessionsByAluno(input.alunoId);
+        return await db.getMentoringSessionsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
     
     // Progresso de sessões por aluno (baseado no Assessment PDI macro ciclo)
@@ -5365,9 +5367,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   assessment: router({
     // Listar assessments de um aluno
     porAluno: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getAssessmentsByAluno(input.alunoId);
+        return await db.getAssessmentsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
 
     // Listar assessments de um programa (admin/mentor)
@@ -5388,6 +5390,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     criar: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         trilhaId: z.number(),
         turmaId: z.number().nullable().optional(),
         programId: z.number().nullable().optional(),
@@ -6151,6 +6154,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       .input(z.object({
         eventId: z.number(),
         reflexao: z.string().min(20, 'A reflexão deve ter pelo menos 20 caracteres'),
+        contratoNivelId: z.number().nullable().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         // Buscar alunoId pelo userId logado
@@ -6210,7 +6214,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         }
         // Para eventos importados (sem webinar agendado correspondente), permite marcar presença a qualquer momento
 
-        const result = await db.markWebinarAttendance(aluno.id, realEventId, input.reflexao);
+        const result = await db.markWebinarAttendance(aluno.id, realEventId, input.reflexao, input.contratoNivelId ?? null);
         return { success: true, ...result };
       }),
 
@@ -6610,6 +6614,21 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
   }),
 
+  pedagogiaNivel: router({
+    vigente: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const vigente = await db.getContratoNivelVigenteByAluno(input.alunoId);
+        const snapshot = await db.getPedagogiaByNivel(input.alunoId, vigente?.id ?? null);
+        return { vigente, snapshot };
+      }),
+    porNivel: protectedProcedure
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPedagogiaByNivel(input.alunoId, input.contratoNivelId);
+      }),
+  }),
+
   // ============ JORNADA DO ALUNO ============
  jornadaAntiga: router({
     // Jornada completa (Contrato + Macro Jornadas + Micro Jornadas)
@@ -6707,9 +6726,9 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
   cases: router({
     // Listar cases de um aluno
     byAluno: adminProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getCasesSucessoByAluno(input.alunoId);
+        return await db.getCasesSucessoByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
     
     // Listar todos os cases (admin)
@@ -6721,6 +6740,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
     create: adminProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         trilhaId: z.number().optional(),
         trilhaNome: z.string().optional(),
         entregue: z.number().min(0).max(1),
@@ -6731,6 +6751,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       .mutation(async ({ input }) => {
         const id = await db.createCaseSucesso({
           alunoId: input.alunoId,
+          contratoNivelId: input.contratoNivelId ?? null,
           trilhaId: input.trilhaId || null,
           trilhaNome: input.trilhaNome || null,
           entregue: input.entregue,
@@ -7055,10 +7076,11 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
     listar: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
-        assessmentPdiId: z.number().optional()
+        assessmentPdiId: z.number().optional(),
+        contratoNivelId: z.number().nullable().optional(),
       }))
       .query(async ({ input }) => {
-        return await db.getMetasDetalhadas(input.alunoId);
+        return await db.getMetasDetalhadasByNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
 
     // Listar metas por competência específica
@@ -7078,6 +7100,7 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
         assessmentCompetenciaId: z.number(),
         competenciaId: z.number(),
         assessmentPdiId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         taskLibraryId: z.number().nullable().optional(),
         titulo: z.string().min(1),
         descricao: z.string().nullable().optional()
@@ -7266,6 +7289,7 @@ Responda APENAS em JSON com o formato:
     salvarRespostas: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         respostas: z.array(z.object({
           blocoIndex: z.number(),
           maisId: z.string(),
@@ -7278,7 +7302,7 @@ Responda APENAS em JSON com o formato:
         const { calcularDiscScores } = require('../shared/discData');
         
         // Determinar ciclo
-        const existingResult = await db.getDiscResultado(input.alunoId);
+        const existingResult = await db.getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
         const ciclo = existingResult ? existingResult.ciclo + 1 : 1;
         
         // Salvar respostas no formato escolha forçada
@@ -7290,6 +7314,7 @@ Responda APENAS em JSON com o formato:
         // Salvar resultado com novos campos
         await db.saveDiscResultado({
           alunoId: input.alunoId,
+          contratoNivelId: input.contratoNivelId ?? null,
           scoreD: String(resultado.scores.D),
           scoreI: String(resultado.scores.I),
           scoreS: String(resultado.scores.S),
@@ -7328,9 +7353,9 @@ Responda APENAS em JSON com o formato:
 
     // Buscar resultado DISC de um aluno
     resultado: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getDiscResultado(input.alunoId);
+        return await db.getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
 
     // Buscar perfis DISC (descrições)
@@ -7451,6 +7476,7 @@ Responda APENAS em JSON com o formato:
     salvar: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         avaliacoes: z.array(z.object({
           competenciaId: z.number(),
           trilhaId: z.number(),
@@ -7463,15 +7489,15 @@ Responda APENAS em JSON com o formato:
           competenciaId: a.competenciaId,
           trilhaId: a.trilhaId,
           nota: a.nota,
-        })));
+        })), input.contratoNivelId ?? null);
         return { success: true };
       }),
 
     // Buscar autoavaliação de um aluno
     porAluno: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getAutopercepcoes(input.alunoId);
+        return await db.getAutopercepcoesByNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
   }),
 
@@ -7526,10 +7552,25 @@ Responda APENAS em JSON com o formato:
 
   // ============ PROGRESSO DO ONBOARDING ============
   onboarding: router({
+    contextoNivel: protectedProcedure
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().optional() }))
+      .query(async ({ input }) => {
+        const vigente = await db.getContratoNivelVigenteByAluno(input.alunoId);
+        const historico = await db.getContratoNiveisByAluno(input.alunoId);
+        const visualizandoNivelId = input.contratoNivelId ?? vigente?.id ?? null;
+        return {
+          vigente,
+          historico,
+          visualizandoNivelId,
+          isHistorico: !!(vigente?.id && visualizandoNivelId && vigente.id !== visualizandoNivelId),
+        };
+      }),
+
     // Salvar dados do cadastro (etapa 1)
     salvarCadastro: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         nome: z.string().optional(),
         email: z.string().optional(),
         telefone: z.string().optional(),
@@ -7555,7 +7596,7 @@ Responda APENAS em JSON com o formato:
           quemEVoce: quemEVoce || null,
         });
         // Marcar cadastro como confirmado na tabela onboarding_jornada
-        await db.upsertOnboardingJornada(alunoId, {
+        await db.upsertOnboardingJornadaByNivel(alunoId, input.contratoNivelId ?? null, {
           cadastroConfirmado: 1,
           cadastroConfirmadoEm: new Date(),
         });
@@ -7926,17 +7967,18 @@ Responda APENAS em JSON com o formato:
 
     // Retorna o step atual do onboarding baseado nos dados do banco
     progresso: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
         const { alunoId } = input;
         if (!alunoId || alunoId === 0) return { step: 1, discCompleto: false, mentoraEscolhida: false, agendamentoFeito: false };
+        const contratoNivelId = input.contratoNivelId ?? (await db.getContratoNivelVigenteByAluno(alunoId))?.id ?? null;
 
         // Verificar se fez o teste DISC
-        const discResult = await db.getDiscResultado(alunoId);
+        const discResult = await db.getDiscResultadoByNivel(alunoId, contratoNivelId);
         const discCompleto = !!discResult;
 
         // Verificar se fez a autopercepção
-        const autopercepcoes = await db.getAutopercepcoes(alunoId);
+        const autopercepcoes = await db.getAutopercepcoesByNivel(alunoId, contratoNivelId);
         const autopercepCompleta = autopercepcoes.length > 0;
 
         // Verificar se tem mentora vinculada
@@ -7959,11 +8001,11 @@ Responda APENAS em JSON com o formato:
         }
 
         // Verificar se a mentora registrou presença (sessão de mentoria)
-        const sessoes = await db.getMentoringSessionsByAluno(alunoId);
+        const sessoes = await db.getMentoringSessionsByAlunoAndNivel(alunoId, contratoNivelId);
         const presencaRegistrada = sessoes.some(s => s.presence === 'presente');
 
         // Verificar se a mentora fez o assessment/PDI do aluno
-        const assessments = await db.getAssessmentsByAluno(alunoId);
+        const assessments = await db.getAssessmentsByAlunoAndNivel(alunoId, contratoNivelId);
         const assessmentFeito = assessments.length > 0;
 
         // Verificar se a mentora fez o relatório (sessão com feedback preenchido)
@@ -7979,7 +8021,7 @@ Responda APENAS em JSON com o formato:
         const encontroData = sessaoRealizada?.sessionDate ? String(sessaoRealizada.sessionDate) : null;
 
         // Buscar progresso da jornada (etapas 6-8)
-        const jornada = await db.getOnboardingJornada(alunoId);
+        const jornada = await db.getOnboardingJornadaByNivel(alunoId, contratoNivelId);
         const pdiVisualizado = !!(jornada?.pdiVisualizado);
         const todosVideosAssistidos = !!(jornada?.videoBoasVindas && jornada?.videoCompetencias && jornada?.videoWebinars && jornada?.videoTarefas && jornada?.videoMetas);
         const aceiteRealizado = !!(jornada?.aceiteRealizado);
@@ -8049,6 +8091,7 @@ Responda APENAS em JSON com o formato:
           reassessmentElegivel,
           contratoTermino,
           cicloAtual,
+          contratoNivelId,
           // Etapas 6-8
           pdiVisualizado,
           todosVideosAssistidos,
@@ -8067,13 +8110,13 @@ Responda APENAS em JSON com o formato:
 
     // Marcar PDI como visualizado (etapa 6)
     marcarPdiVisualizado: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .mutation(async ({ input, ctx }) => {
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
         if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
-        await db.upsertOnboardingJornada(input.alunoId, {
+        await db.upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
           pdiVisualizado: 1,
           pdiVisualizadoEm: new Date(),
         });
@@ -8084,6 +8127,7 @@ Responda APENAS em JSON com o formato:
     marcarVideoAssistido: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         chave: z.enum(['boas_vindas', 'competencias', 'webinars', 'tarefas', 'metas']),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -8102,7 +8146,7 @@ Responda APENAS em JSON com o formato:
         const updateData: any = { [field]: 1 };
         
         // Verificar se todos os vídeos foram assistidos após esta marcação
-        const jornada = await db.getOnboardingJornada(input.alunoId);
+        const jornada = await db.getOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null);
         const videoStates: any = {
           videoBoasVindas: jornada?.videoBoasVindas || 0,
           videoCompetencias: jornada?.videoCompetencias || 0,
@@ -8116,7 +8160,7 @@ Responda APENAS em JSON com o formato:
           updateData.todosVideosEm = new Date();
         }
         
-        await db.upsertOnboardingJornada(input.alunoId, updateData);
+        await db.upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, updateData);
         return { success: true, todosAssistidos };
       }),
 
@@ -8124,6 +8168,7 @@ Responda APENAS em JSON com o formato:
     realizarAceite: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         nomeAceite: z.string().min(2),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -8131,7 +8176,7 @@ Responda APENAS em JSON com o formato:
         if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
-        await db.upsertOnboardingJornada(input.alunoId, {
+        await db.upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
           aceiteRealizado: 1,
           aceiteRealizadoEm: new Date(),
           nomeAceite: input.nomeAceite,
