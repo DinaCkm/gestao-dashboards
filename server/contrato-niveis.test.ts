@@ -1,198 +1,169 @@
-import { afterAll, describe, expect, it } from "vitest";
-import { eq } from "drizzle-orm";
-import * as db from "./db";
-import { contratoNiveis, contratosAluno } from "../drizzle/schema";
+import { describe, expect, it } from "vitest";
+import type { ContratoNivel, InsertContratoNivel } from "../drizzle/schema";
+import {
+  assertContratoNivelDateConsistency,
+  createContratoNivelRepo,
+  getContratoNivelVigenteByAlunoRepo,
+  getContratoNiveisByAlunoRepo,
+  getContratoNiveisByContratoRepo,
+  validarNivelEmAndamentoUnicoRepo,
+  type ContratoNivelRepo,
+} from "./contrato-niveis.service";
+
+function makeInMemoryRepo(seed: ContratoNivel[] = []): ContratoNivelRepo {
+  const data: ContratoNivel[] = [...seed];
+  let idSeq = data.reduce((max, item) => Math.max(max, item.id), 0) + 1;
+
+  return {
+    async findEmAndamento(contratoId, alunoId, ignoreNivelId) {
+      return data
+        .filter((item) => item.contratoId === contratoId && item.alunoId === alunoId && item.status === "em_andamento")
+        .filter((item) => (ignoreNivelId ? item.id !== ignoreNivelId : true))
+        .map((item) => ({ id: item.id }));
+    },
+
+    async insertNivel(payload) {
+      const entity: ContratoNivel = {
+        id: idSeq++,
+        contratoId: payload.contratoId,
+        alunoId: payload.alunoId,
+        nivel: payload.nivel,
+        dataInicio: String(payload.dataInicio),
+        dataFim: String(payload.dataFim),
+        dataFechamentoOperacional: String(payload.dataFechamentoOperacional),
+        dataLimiteAjustes: String(payload.dataLimiteAjustes),
+        status: payload.status ?? "planejado",
+        assessmentPdiId: payload.assessmentPdiId ?? null,
+        mentoraPrincipalId: payload.mentoraPrincipalId ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      data.push(entity);
+      return entity.id;
+    },
+
+    async listByAluno(alunoId) {
+      return [...data]
+        .filter((item) => item.alunoId === alunoId)
+        .sort((a, b) => {
+          if (a.dataInicio === b.dataInicio) return b.createdAt.getTime() - a.createdAt.getTime();
+          return a.dataInicio < b.dataInicio ? 1 : -1;
+        });
+    },
+
+    async listByContrato(contratoId) {
+      return [...data]
+        .filter((item) => item.contratoId === contratoId)
+        .sort((a, b) => {
+          if (a.dataInicio === b.dataInicio) return a.id - b.id;
+          return a.dataInicio < b.dataInicio ? -1 : 1;
+        });
+    },
+
+    async findVigenteByAluno(alunoId) {
+      const vigente = [...data]
+        .filter((item) => item.alunoId === alunoId && item.status === "em_andamento")
+        .sort((a, b) => (a.dataInicio < b.dataInicio ? 1 : -1))[0];
+      return vigente ?? null;
+    },
+  };
+}
+
+const base: InsertContratoNivel = {
+  contratoId: 10,
+  alunoId: 20,
+  nivel: "I",
+  dataInicio: "2026-01-01",
+  dataFim: "2026-03-31",
+  dataFechamentoOperacional: "2026-04-05",
+  dataLimiteAjustes: "2026-04-10",
+  status: "planejado",
+  assessmentPdiId: null,
+  mentoraPrincipalId: null,
+};
 
 describe("Contrato Níveis - Fase 1", () => {
-  const integrationEnabled = Boolean(process.env.DATABASE_URL);
-  const createdContratoIds: number[] = [];
-  const createdNivelIds: number[] = [];
-
-  async function createContratoBase() {
-    const alunos = await db.getAlunos();
-    expect(alunos.length).toBeGreaterThan(0);
-
-    const aluno = alunos.find((a) => a.programId) ?? alunos[0];
-    const contractId = await db.createContrato({
-      alunoId: aluno.id,
-      programId: aluno.programId ?? 1,
-      turmaId: aluno.turmaId ?? null,
-      periodoInicio: "2026-01-01",
-      periodoTermino: "2026-12-31",
-      totalSessoesContratadas: 12,
-      observacoes: "Contrato teste níveis",
-      criadoPor: null,
-      isActive: 1,
-    });
-
-    createdContratoIds.push(contractId);
-    return { alunoId: aluno.id, contratoId: contractId };
-  }
-
-  afterAll(async () => {
-    const client = await db.getDb();
-    if (!client) return;
-
-    for (const nivelId of createdNivelIds) {
-      await client.delete(contratoNiveis).where(eq(contratoNiveis.id, nivelId));
-    }
-
-    for (const contratoId of createdContratoIds) {
-      await client.delete(contratosAluno).where(eq(contratosAluno.id, contratoId));
-    }
-  });
-
-  it("exporta funções de contrato_niveis no backend", () => {
-    expect(typeof db.createContratoNivel).toBe("function");
-    expect(typeof db.getContratoNiveisByAluno).toBe("function");
-    expect(typeof db.getContratoNivelVigenteByAluno).toBe("function");
-    expect(typeof db.getContratoNiveisByContrato).toBe("function");
-    expect(typeof db.validarNivelEmAndamentoUnico).toBe("function");
-  });
-
-  it.skipIf(!integrationEnabled)("cria nível I com assessmentPdiId nulo", async () => {
-    const { alunoId, contratoId } = await createContratoBase();
-
-    const nivelId = await db.createContratoNivel({
-      contratoId,
-      alunoId,
+  it("criação de nível aprovada (nível I e assessmentPdiId nulo)", async () => {
+    const repo = makeInMemoryRepo();
+    const id = await createContratoNivelRepo(repo, {
+      ...base,
       nivel: "I",
-      dataInicio: "2026-01-01",
-      dataFim: "2026-03-31",
-      dataFechamentoOperacional: "2026-04-05",
-      dataLimiteAjustes: "2026-04-10",
       status: "em_andamento",
       assessmentPdiId: null,
-      mentoraPrincipalId: null,
     });
 
-    createdNivelIds.push(nivelId);
-
-    const historico = await db.getContratoNiveisByAluno(alunoId);
-    const created = historico.find((item) => item.id === nivelId);
+    const historico = await getContratoNiveisByAlunoRepo(repo, base.alunoId);
+    const created = historico.find((item) => item.id === id);
 
     expect(created).toBeDefined();
     expect(created?.nivel).toBe("I");
     expect(created?.assessmentPdiId).toBeNull();
   });
 
-  it.skipIf(!integrationEnabled)("permite múltiplos níveis para um mesmo contrato e ordena histórico por dataInicio desc", async () => {
-    const { alunoId, contratoId } = await createContratoBase();
+  it("busca nível vigente aprovada", async () => {
+    const repo = makeInMemoryRepo();
 
-    const nivelI = await db.createContratoNivel({
-      contratoId,
-      alunoId,
-      nivel: "I",
-      dataInicio: "2026-01-01",
-      dataFim: "2026-03-31",
-      dataFechamentoOperacional: "2026-04-05",
-      dataLimiteAjustes: "2026-04-10",
-      status: "encerrado",
-      assessmentPdiId: null,
-      mentoraPrincipalId: null,
+    await createContratoNivelRepo(repo, { ...base, nivel: "I", status: "encerrado" });
+    const vigenteId = await createContratoNivelRepo(repo, {
+      ...base,
+      nivel: "II",
+      status: "em_andamento",
+      dataInicio: "2026-04-01",
+      dataFim: "2026-06-30",
     });
 
-    const nivelII = await db.createContratoNivel({
-      contratoId,
-      alunoId,
+    const vigente = await getContratoNivelVigenteByAlunoRepo(repo, base.alunoId);
+    expect(vigente?.id).toBe(vigenteId);
+    expect(vigente?.status).toBe("em_andamento");
+  });
+
+  it("histórico de níveis aprovado (múltiplos níveis + ordenação)", async () => {
+    const repo = makeInMemoryRepo();
+
+    const idI = await createContratoNivelRepo(repo, { ...base, nivel: "I", status: "encerrado" });
+    const idII = await createContratoNivelRepo(repo, {
+      ...base,
       nivel: "II",
+      status: "planejado",
       dataInicio: "2026-04-01",
       dataFim: "2026-06-30",
       dataFechamentoOperacional: "2026-07-05",
       dataLimiteAjustes: "2026-07-10",
-      status: "planejado",
-      assessmentPdiId: null,
-      mentoraPrincipalId: null,
     });
 
-    createdNivelIds.push(nivelI, nivelII);
+    const historico = await getContratoNiveisByAlunoRepo(repo, base.alunoId);
+    expect(historico[0]?.id).toBe(idII);
+    expect(historico[1]?.id).toBe(idI);
 
-    const historico = await db.getContratoNiveisByAluno(alunoId);
-    const indexNivelII = historico.findIndex((item) => item.id === nivelII);
-    const indexNivelI = historico.findIndex((item) => item.id === nivelI);
-
-    expect(indexNivelII).toBeGreaterThanOrEqual(0);
-    expect(indexNivelI).toBeGreaterThanOrEqual(0);
-    expect(indexNivelII).toBeLessThan(indexNivelI);
-
-    const porContrato = await db.getContratoNiveisByContrato(contratoId);
-    expect(porContrato.length).toBeGreaterThanOrEqual(2);
+    const porContrato = await getContratoNiveisByContratoRepo(repo, base.contratoId);
+    expect(porContrato.map((x) => x.id)).toEqual([idI, idII]);
   });
 
-  it.skipIf(!integrationEnabled)("busca nível vigente do aluno", async () => {
-    const { alunoId, contratoId } = await createContratoBase();
+  it("bloqueio de duplicidade de nível em andamento aprovado", async () => {
+    const repo = makeInMemoryRepo();
 
-    const nivelId = await db.createContratoNivel({
-      contratoId,
-      alunoId,
-      nivel: "III",
-      dataInicio: "2026-08-01",
-      dataFim: "2026-10-31",
-      dataFechamentoOperacional: "2026-11-05",
-      dataLimiteAjustes: "2026-11-10",
-      status: "em_andamento",
-      assessmentPdiId: null,
-      mentoraPrincipalId: null,
-    });
-
-    createdNivelIds.push(nivelId);
-
-    const vigente = await db.getContratoNivelVigenteByAluno(alunoId);
-    expect(vigente).not.toBeNull();
-    expect(vigente?.id).toBe(nivelId);
-    expect(vigente?.status).toBe("em_andamento");
-  });
-
-  it.skipIf(!integrationEnabled)("bloqueia dois níveis simultâneos em andamento no mesmo contrato", async () => {
-    const { alunoId, contratoId } = await createContratoBase();
-
-    const nivelId = await db.createContratoNivel({
-      contratoId,
-      alunoId,
-      nivel: "I",
-      dataInicio: "2026-01-01",
-      dataFim: "2026-03-31",
-      dataFechamentoOperacional: "2026-04-05",
-      dataLimiteAjustes: "2026-04-10",
-      status: "em_andamento",
-      assessmentPdiId: null,
-      mentoraPrincipalId: null,
-    });
-
-    createdNivelIds.push(nivelId);
+    await createContratoNivelRepo(repo, { ...base, status: "em_andamento" });
 
     await expect(
-      db.createContratoNivel({
-        contratoId,
-        alunoId,
+      createContratoNivelRepo(repo, {
+        ...base,
         nivel: "II",
         dataInicio: "2026-04-01",
         dataFim: "2026-06-30",
         dataFechamentoOperacional: "2026-07-05",
         dataLimiteAjustes: "2026-07-10",
         status: "em_andamento",
-        assessmentPdiId: null,
-        mentoraPrincipalId: null,
       })
     ).rejects.toThrow("Já existe um nível em andamento");
+
+    const unico = await validarNivelEmAndamentoUnicoRepo(repo, base.contratoId, base.alunoId);
+    expect(unico).toBe(false);
   });
 
-  it.skipIf(!integrationEnabled)("valida consistência de datas: dataInicio deve ser menor que dataFim", async () => {
-    const { alunoId, contratoId } = await createContratoBase();
-
-    await expect(
-      db.createContratoNivel({
-        contratoId,
-        alunoId,
-        nivel: "I",
-        dataInicio: "2026-04-10",
-        dataFim: "2026-04-10",
-        dataFechamentoOperacional: "2026-04-15",
-        dataLimiteAjustes: "2026-04-20",
-        status: "planejado",
-        assessmentPdiId: null,
-        mentoraPrincipalId: null,
-      })
-    ).rejects.toThrow("data de início");
+  it("consistência de datas aprovada (dataInicio < dataFim)", () => {
+    expect(() => assertContratoNivelDateConsistency("2026-01-01", "2026-03-31")).not.toThrow();
+    expect(() => assertContratoNivelDateConsistency("2026-04-10", "2026-04-10")).toThrow(
+      "data de início"
+    );
   });
 });
