@@ -1835,15 +1835,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   planoIndividual: router({
     // Buscar plano de um aluno
     byAluno: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getPlanoIndividualByAluno(input.alunoId);
+        return await db.getPlanoIndividualByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
     
     // Adicionar competência ao plano
     addCompetencia: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         competenciaId: z.number(),
         isObrigatoria: z.number().optional(),
         metaNota: z.string().optional()
@@ -1857,10 +1858,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     addMultiple: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         competenciaIds: z.array(z.number())
       }))
       .mutation(async ({ input }) => {
-        const success = await db.addCompetenciasToPlano(input.alunoId, input.competenciaIds);
+        const success = await db.addCompetenciasToPlano(input.alunoId, input.competenciaIds, input.contratoNivelId ?? null);
         return { success };
       }),
     
@@ -3469,9 +3471,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
     // Sessões de mentoria por aluno
     sessionsByAluno: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getMentoringSessionsByAluno(input.alunoId);
+        return await db.getMentoringSessionsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
     
     // Progresso de sessões por aluno (baseado no Assessment PDI macro ciclo)
@@ -5365,9 +5367,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   assessment: router({
     // Listar assessments de um aluno
     porAluno: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getAssessmentsByAluno(input.alunoId);
+        return await db.getAssessmentsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
 
     // Listar assessments de um programa (admin/mentor)
@@ -6152,6 +6154,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       .input(z.object({
         eventId: z.number(),
         reflexao: z.string().min(20, 'A reflexão deve ter pelo menos 20 caracteres'),
+        contratoNivelId: z.number().nullable().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         // Buscar alunoId pelo userId logado
@@ -6211,7 +6214,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         }
         // Para eventos importados (sem webinar agendado correspondente), permite marcar presença a qualquer momento
 
-        const result = await db.markWebinarAttendance(aluno.id, realEventId, input.reflexao);
+        const result = await db.markWebinarAttendance(aluno.id, realEventId, input.reflexao, input.contratoNivelId ?? null);
         return { success: true, ...result };
       }),
 
@@ -6611,6 +6614,21 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
   }),
 
+  pedagogiaNivel: router({
+    vigente: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const vigente = await db.getContratoNivelVigenteByAluno(input.alunoId);
+        const snapshot = await db.getPedagogiaByNivel(input.alunoId, vigente?.id ?? null);
+        return { vigente, snapshot };
+      }),
+    porNivel: protectedProcedure
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPedagogiaByNivel(input.alunoId, input.contratoNivelId);
+      }),
+  }),
+
   // ============ JORNADA DO ALUNO ============
  jornadaAntiga: router({
     // Jornada completa (Contrato + Macro Jornadas + Micro Jornadas)
@@ -6708,9 +6726,9 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
   cases: router({
     // Listar cases de um aluno
     byAluno: adminProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getCasesSucessoByAluno(input.alunoId);
+        return await db.getCasesSucessoByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
     
     // Listar todos os cases (admin)
@@ -6722,6 +6740,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
     create: adminProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         trilhaId: z.number().optional(),
         trilhaNome: z.string().optional(),
         entregue: z.number().min(0).max(1),
@@ -6732,6 +6751,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       .mutation(async ({ input }) => {
         const id = await db.createCaseSucesso({
           alunoId: input.alunoId,
+          contratoNivelId: input.contratoNivelId ?? null,
           trilhaId: input.trilhaId || null,
           trilhaNome: input.trilhaNome || null,
           entregue: input.entregue,
@@ -7056,10 +7076,11 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
     listar: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
-        assessmentPdiId: z.number().optional()
+        assessmentPdiId: z.number().optional(),
+        contratoNivelId: z.number().nullable().optional(),
       }))
       .query(async ({ input }) => {
-        return await db.getMetasDetalhadas(input.alunoId);
+        return await db.getMetasDetalhadasByNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
 
     // Listar metas por competência específica
@@ -7079,6 +7100,7 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
         assessmentCompetenciaId: z.number(),
         competenciaId: z.number(),
         assessmentPdiId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         taskLibraryId: z.number().nullable().optional(),
         titulo: z.string().min(1),
         descricao: z.string().nullable().optional()
@@ -7979,7 +8001,7 @@ Responda APENAS em JSON com o formato:
         }
 
         // Verificar se a mentora registrou presença (sessão de mentoria)
-        const sessoes = await db.getMentoringSessionsByAluno(alunoId);
+        const sessoes = await db.getMentoringSessionsByAlunoAndNivel(alunoId, contratoNivelId);
         const presencaRegistrada = sessoes.some(s => s.presence === 'presente');
 
         // Verificar se a mentora fez o assessment/PDI do aluno

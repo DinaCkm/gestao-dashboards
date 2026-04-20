@@ -158,6 +158,7 @@ export type InsertCicloCompetencia = typeof cicloCompetencias.$inferInsert;
 export const planoIndividual = mysqlTable("plano_individual", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   competenciaId: int("competenciaId").notNull(), // FK para competencias
   isObrigatoria: int("isObrigatoria").default(1).notNull(), // 1 = obrigatória, 0 = opcional
   notaAtual: decimal("notaAtual", { precision: 5, scale: 2 }), // Nota atual na competência
@@ -213,6 +214,7 @@ export type InsertAluno = typeof alunos.$inferInsert;
 export const mentoringSessions = mysqlTable("mentoring_sessions", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   consultorId: int("consultorId").notNull(),
   turmaId: int("turmaId"),
   trilhaId: int("trilhaId"),
@@ -280,6 +282,7 @@ export const eventParticipation = mysqlTable("event_participation", {
   id: int("id").autoincrement().primaryKey(),
   eventId: int("eventId").notNull(),
   alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   status: mysqlEnum("status", ["presente", "ausente"]).notNull(),
   reflexao: text("reflexao"), // Reflexão do aluno após assistir o webinar
   selfReportedAt: timestamp("selfReportedAt"), // Data/hora que o aluno marcou presença
@@ -694,6 +697,7 @@ export type InsertHistoricoNivelCompetencia = typeof historicoNivelCompetencia.$
 export const casesSucesso = mysqlTable("cases_sucesso", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   trilhaId: int("trilhaId"), // FK para trilhas (macrociclo: Básicas, Essenciais, etc.)
   trilhaNome: varchar("trilhaNome", { length: 255 }), // Nome do macrociclo para referência rápida
   entregue: int("entregue").default(0).notNull(), // 1 = entregue, 0 = não entregue
@@ -829,6 +833,7 @@ export type InsertAppointmentParticipant = typeof appointmentParticipants.$infer
 export const metas = mysqlTable("metas", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   assessmentCompetenciaId: int("assessmentCompetenciaId").notNull(), // FK para assessment_competencias
   competenciaId: int("competenciaId").notNull(), // FK para competencias (desnormalizado para queries rápidas)
   assessmentPdiId: int("assessmentPdiId").notNull(), // FK para assessment_pdi
