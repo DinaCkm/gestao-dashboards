@@ -1989,7 +1989,7 @@ export async function updateAluno(alunoId: number, data: {
   return { success: true };
 }
 
-export async function createAluno(data: { name: string; email: string; externalId: string; programId?: number; contratoInicio?: string; contratoFim?: string; totalSessoesContratadas?: number; tipoMentoria?: 'individual' | 'grupo' }) {
+export async function createAluno(data: { name: string; email: string; externalId: string; programId?: number; contratoInicio?: string; contratoFim?: string; totalSessoesContratadas?: number; tipoMentoria?: 'individual' | 'grupo'; plataformaAulas?: 'scaffold' | 'sistema_interno' }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
   
@@ -2036,6 +2036,7 @@ export async function createAluno(data: { name: string; email: string; externalI
     contratoInicio: data.contratoInicio ? new Date(data.contratoInicio) : null,
     contratoFim: data.contratoFim ? new Date(data.contratoFim) : null,
     tipoMentoria: data.tipoMentoria || 'individual',
+    plataformaAulas: data.plataformaAulas || 'sistema_interno',
   });
 
   const alunoId = result.insertId;
