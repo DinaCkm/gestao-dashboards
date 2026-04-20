@@ -20,6 +20,7 @@ import {
   ArrowLeft, Send, BookOpen, TrendingUp, Trophy, Building2, UserRound
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // ============================================================
 // HELPERS
@@ -919,18 +920,29 @@ E-mail: ${email}`;
                 onClick={() => setCurrentView("webinars")}
               />
 
-              <StatCard
-                icon={GraduationCap}
-                count={activeCourses?.length || 0}
-                label="Dicas"
-                gradientFrom="from-purple-50"
-                gradientBorder="border-purple-100"
-                iconBg="bg-purple-100"
-                iconColor="text-purple-600"
-                countColor="text-purple-700"
-                labelColor="text-purple-600/70"
-                onClick={() => setLocation("/meus-cursos")}
-              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <StatCard
+                        icon={GraduationCap}
+                        count={activeCourses?.length || 0}
+                        label="Dicas"
+                        gradientFrom="from-purple-50"
+                        gradientBorder="border-purple-100"
+                        iconBg="bg-purple-100"
+                        iconColor="text-purple-600"
+                        countColor="text-purple-700"
+                        labelColor="text-purple-600/70"
+                        onClick={() => setCurrentView("cursos")}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs text-center">
+                    <p>Clique aqui e tenha acesso a inúmeras postagens com dicas de desenvolvimento. Não deixe de curtir e seguir a página 😊</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <StatCard
                 icon={Zap}
                 count={announcementsByType.activities.length}
