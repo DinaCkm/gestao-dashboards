@@ -69,7 +69,7 @@ const VIEW_CONFIG: Record<Exclude<ViewType, "home">, {
   },
 
   cursos: {
-    title: "Cursos Disponíveis",
+    title: "Dicas",
     icon: GraduationCap,
     emptyTitle: "Nenhum curso disponível",
     emptyDesc: "Novos cursos serão divulgados aqui quando disponíveis.",
@@ -922,7 +922,7 @@ E-mail: ${email}`;
               <StatCard
                 icon={GraduationCap}
                 count={activeCourses?.length || 0}
-                label="Cursos Disponíveis"
+                label="Dicas"
                 gradientFrom="from-purple-50"
                 gradientBorder="border-purple-100"
                 iconBg="bg-purple-100"
