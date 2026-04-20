@@ -621,7 +621,7 @@ export default function DashboardAluno() {
                       { termo: "Webinar", desc: GLOSSARIO.webinar, icon: Video, color: "bg-orange-50 border-orange-200 text-orange-700" },
                       { termo: "Mentoria", desc: GLOSSARIO.mentoria, icon: MessageSquare, color: "bg-pink-50 border-pink-200 text-pink-700" },
                       { termo: "Tarefa Prática", desc: GLOSSARIO.tarefa, icon: ClipboardCheck, color: "bg-teal-50 border-teal-200 text-teal-700" },
-                      { termo: "Relatório de Impacto", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
+                      { termo: "Case de Impacto do Aprendizado", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
                     ]).map(({ termo, desc, icon: Icon, color }) => (
                       <div key={termo} className={`p-3 rounded-lg border ${color}`}>
                         <div className="flex items-center gap-2 mb-1">
@@ -643,12 +643,12 @@ export default function DashboardAluno() {
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="h-6 w-6 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-amber-800">Alerta: Relatório de Impacto Pendente</p>
+                      <p className="font-semibold text-amber-800">Alerta: Case de Impacto do Aprendizado Pendente</p>
                       {v2.alertaCasePendente.map((alerta: any, idx: number) => (
                         <p key={idx} className="text-sm text-amber-700 mt-1">
                           O ciclo <strong>{alerta.cicloNome}</strong> está finalizando 
                           {alerta.dataFim && ` (término: ${formatDateSafe(alerta.dataFim)})`}. 
-                          O aluno precisa entregar o <strong>Relatório de Impacto</strong> para completar a avaliação do macrociclo.
+                          O aluno precisa entregar o <strong>Case de Impacto do Aprendizado</strong> para completar a avaliação do macrociclo.
                         </p>
                       ))}
                     </div>

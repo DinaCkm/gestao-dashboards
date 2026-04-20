@@ -217,7 +217,7 @@ function AlertaCasePendente({ alerta, onEnviar }: { alerta: any; onEnviar: () =>
               Aplicabilidade separada do Engajamento
             </p>
             <p className="text-xs text-amber-700 mt-1">
-              Ao entregar o Relatório de Impacto, o microindicador de Case passa a compor a Aplicabilidade Final.
+              Ao entregar o Case de Impacto do Aprendizado, o microindicador de Case passa a compor a Aplicabilidade Final.
               Esse indicador é separado do Engajamento e mostra sua evolução prática na trilha.
             </p>
           </div>
@@ -235,7 +235,7 @@ function AlertaCasePendente({ alerta, onEnviar }: { alerta: any; onEnviar: () =>
               onClick={onEnviar}
             >
               <FileUp className="h-3.5 w-3.5 mr-1.5" />
-              Enviar Relatório de Impacto
+              Enviar Case de Impacto do Aprendizado
             </Button>
           </div>
         </div>
@@ -422,7 +422,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
   }, [metasOrdenadas]);
 
   // === Case de Sucesso ===
-  // === Relatório de Impacto (antigo Case de Sucesso) ===
+  // === Case de Impacto do Aprendizado (antigo Case de Sucesso) ===
   const [caseDialogOpen, setCaseDialogOpen] = useState(false);
   const [caseTrilhaId, setCaseTrilhaId] = useState<number | null>(null);
   const [caseTrilhaNome, setCaseTrilhaNome] = useState("");
@@ -1035,7 +1035,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   { termo: "Webinar", desc: GLOSSARIO.webinar, icon: Video, color: "bg-orange-50 border-orange-200 text-orange-700" },
                   { termo: "Mentoria", desc: GLOSSARIO.mentoria, icon: MessageSquare, color: "bg-pink-50 border-pink-200 text-pink-700" },
                   { termo: "Tarefa Prática", desc: GLOSSARIO.tarefa, icon: ClipboardCheck, color: "bg-teal-50 border-teal-200 text-teal-700" },
-                  { termo: "Relatório de Impacto", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
+                  { termo: "Case de Impacto do Aprendizado", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
                 ]).map(({ termo, desc, icon: Icon, color }) => (
                   <div key={termo} className={`p-3 rounded-lg border ${color}`}>
                     <div className="flex items-center gap-2 mb-1">
@@ -1388,7 +1388,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
             </div>
           </div>
 
-          {/* Notificação colapsável — Relatório de Impacto pendente */}
+          {/* Notificação colapsável — Case de Impacto do Aprendizado pendente */}
           {v2?.alertaCasePendente && v2.alertaCasePendente.length > 0 && (
             <>
               {v2.alertaCasePendente.map((alerta: any, idx: number) => (
@@ -3094,9 +3094,9 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   <div className="flex items-start gap-3">
                     <Briefcase className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
                     <div>
-                      <p className="font-semibold text-amber-800 text-sm">Relatório de Impacto</p>
+                      <p className="font-semibold text-amber-800 text-sm">Case de Impacto do Aprendizado</p>
                       <p className="text-xs text-amber-700 mt-1">
-                        Ao final de cada trilha (Basic, Essential, Master, etc.), você deve entregar um Relatório de Impacto 
+                        Ao final de cada trilha (Basic, Essential, Master, etc.), você deve entregar um Case de Impacto do Aprendizado 
                         documentando a aplicação prática dos aprendizados. A entrega do case é obrigatória e impacta 
                         diretamente no seu Indicador 6 (Aplicabilidade Prática).
                       </p>
@@ -3123,7 +3123,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                             </div>
                             <div>
                               <p className="font-semibold text-sm text-gray-800">Trilha {trilha.name}</p>
-                              <InfoTooltip text="Relatório de Impacto: formulário estruturado que comprova a aplicação prática dos aprendizados da trilha" />
+                              <InfoTooltip text="Case de Impacto do Aprendizado: formulário estruturado que comprova a aplicação prática dos aprendizados da trilha" />
                             </div>
                           </div>
                           <Badge className={caseEntregue?.entregue 
@@ -3176,7 +3176,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                         ) : (
                           <div className="space-y-3">
                             <p className="text-xs text-gray-500">
-                              Envie seu Relatório de Impacto para a trilha {trilha.name}. 
+                              Envie seu Case de Impacto do Aprendizado para a trilha {trilha.name}. 
                               Formatos aceitos: PDF, DOC, DOCX, PPT, PPTX (máx. 10MB).
                             </p>
                             <Button
@@ -3190,7 +3190,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                 setCaseDialogOpen(true);
                               }}
                             >
-                              <FileUp className="h-4 w-4 mr-2" /> Enviar Relatório de Impacto
+                              <FileUp className="h-4 w-4 mr-2" /> Enviar Case de Impacto do Aprendizado
                             </Button>
                           </div>
                         )}
@@ -3227,13 +3227,13 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
           </TabsContent>
         </Tabs>
 
-        {/* Dialog de envio de Relatório de Impacto */}
+        {/* Dialog de envio de Case de Impacto do Aprendizado */}
         <Dialog open={caseDialogOpen} onOpenChange={setCaseDialogOpen}>
           <DialogContent className="sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileBarChart className="h-5 w-5 text-[#5B3A7D]" />
-                Relatório de Impacto
+                Case de Impacto do Aprendizado
               </DialogTitle>
               <DialogDescription>
                 Trilha: <strong>{caseTrilhaNome}</strong> — Descreva o impacto real do que você aprendeu

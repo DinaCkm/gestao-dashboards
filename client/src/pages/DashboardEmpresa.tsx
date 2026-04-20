@@ -462,7 +462,7 @@ export default function DashboardEmpresa() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{((visaoEmpresa?.mediaInd6 || visaoEmpresa?.mediaParticipacaoEventos) ?? 0).toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Relatório de Impacto</p>
+              <p className="text-xs text-muted-foreground">Case de Impacto do Aprendizado</p>
             </CardContent>
           </Card>
 
