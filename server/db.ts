@@ -26,6 +26,7 @@ import {
   scheduledWebinars, InsertScheduledWebinar, ScheduledWebinar,
   announcements, InsertAnnouncement, Announcement,
   contratosAluno, InsertContratoAluno, ContratoAluno,
+  contratoNiveis, InsertContratoNivel, ContratoNivel,
   historicoNivelCompetencia, InsertHistoricoNivelCompetencia, HistoricoNivelCompetencia,
   casesSucesso, InsertCaseSucesso, CaseSucesso,
   caseInteresses, InsertCaseInteresse, CaseInteresse,
@@ -5685,6 +5686,121 @@ export async function deleteContrato(contratoId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(contratosAluno).set({ isActive: 0 }).where(eq(contratosAluno.id, contratoId));
+}
+
+// ============ NÍVEIS DO CONTRATO ============
+
+const CONTRATO_NIVEL_STATUS_EM_ANDAMENTO = "em_andamento" as const;
+
+function normalizeDateOnly(value: string | Date) {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new Error("Data inválida");
+    }
+    return value.toISOString().split("T")[0];
+  }
+  return value;
+}
+
+function assertContratoNivelDateConsistency(dataInicio: string | Date, dataFim: string | Date) {
+  const inicio = new Date(normalizeDateOnly(dataInicio));
+  const fim = new Date(normalizeDateOnly(dataFim));
+  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) {
+    throw new Error("Datas do nível inválidas");
+  }
+  if (inicio >= fim) {
+    throw new Error("A data de início do nível deve ser menor que a data de fim");
+  }
+}
+
+export async function validarNivelEmAndamentoUnico(
+  contratoId: number,
+  alunoId: number,
+  ignoreNivelId?: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const conditions = [
+    eq(contratoNiveis.contratoId, contratoId),
+    eq(contratoNiveis.alunoId, alunoId),
+    eq(contratoNiveis.status, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO),
+  ];
+
+  if (ignoreNivelId) {
+    conditions.push(ne(contratoNiveis.id, ignoreNivelId));
+  }
+
+  const existing = await db
+    .select({ id: contratoNiveis.id })
+    .from(contratoNiveis)
+    .where(and(...conditions))
+    .limit(1);
+
+  return existing.length === 0;
+}
+
+export async function createContratoNivel(data: InsertContratoNivel) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  assertContratoNivelDateConsistency(data.dataInicio, data.dataFim);
+
+  if (data.status === CONTRATO_NIVEL_STATUS_EM_ANDAMENTO) {
+    const canCreate = await validarNivelEmAndamentoUnico(data.contratoId, data.alunoId);
+    if (!canCreate) {
+      throw new Error("Já existe um nível em andamento para este aluno neste contrato");
+    }
+  }
+
+  const [result] = await db.insert(contratoNiveis).values({
+    ...data,
+    dataInicio: normalizeDateOnly(data.dataInicio),
+    dataFim: normalizeDateOnly(data.dataFim),
+    dataFechamentoOperacional: normalizeDateOnly(data.dataFechamentoOperacional),
+    dataLimiteAjustes: normalizeDateOnly(data.dataLimiteAjustes),
+  } as InsertContratoNivel);
+
+  return result.insertId;
+}
+
+export async function getContratoNiveisByAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select()
+    .from(contratoNiveis)
+    .where(eq(contratoNiveis.alunoId, alunoId))
+    .orderBy(desc(contratoNiveis.dataInicio), desc(contratoNiveis.createdAt));
+}
+
+export async function getContratoNiveisByContrato(contratoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select()
+    .from(contratoNiveis)
+    .where(eq(contratoNiveis.contratoId, contratoId))
+    .orderBy(asc(contratoNiveis.dataInicio), asc(contratoNiveis.id));
+}
+
+export async function getContratoNivelVigenteByAluno(alunoId: number): Promise<ContratoNivel | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [nivelVigente] = await db
+    .select()
+    .from(contratoNiveis)
+    .where(and(
+      eq(contratoNiveis.alunoId, alunoId),
+      eq(contratoNiveis.status, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO),
+    ))
+    .orderBy(desc(contratoNiveis.dataInicio), desc(contratoNiveis.id))
+    .limit(1);
+
+  return nivelVigente || null;
 }
 
 // ============ SALDO DE SESSÕES ============
