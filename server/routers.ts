@@ -36,6 +36,7 @@ import { getDb } from "./db";
 import { buildLembreteEngajamentoEmail, sendEmail } from "./emailService";
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
 import { mapHistoricoCertificado, validarPrecondicoesEmissaoCertificacao } from "./certificacao.service";
+import { runNivelAnnouncementAutomations } from "./nivel-announcements-automation.service";
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -6957,6 +6958,9 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
         const nivel = await db.getContratoNivelComStatusOperacional(input.alunoId, input.contratoNivelId ?? null);
+        if (nivel) {
+          await runNivelAnnouncementAutomations(input.alunoId, nivel.id);
+        }
         return {
           nivel,
           bloqueadoNovasAtribuicoes: nivel ? ["fechamento", "ajustes", "encerrado"].includes(nivel.statusOperacional) : false,
@@ -6978,6 +6982,12 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return await db.getContratoNiveisByContrato(input.contratoId);
       }),
 
+    runAutomations: adminProcedure
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return await runNivelAnnouncementAutomations(input.alunoId, input.contratoNivelId, (ctx.user as any).id || 1);
+      }),
+
     // Criação manual de nível (fase 1 - ambiente de teste/admin)
     create: adminProcedure
       .input(z.object({
@@ -6992,12 +7002,13 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         assessmentPdiId: z.number().nullable().optional(),
         mentoraPrincipalId: z.number().nullable().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const id = await db.createContratoNivel({
           ...input,
           assessmentPdiId: input.assessmentPdiId ?? null,
           mentoraPrincipalId: input.mentoraPrincipalId ?? null,
         } as any);
+        await runNivelAnnouncementAutomations(input.alunoId, id, (ctx.user as any).id || 1);
         return { id, success: true };
       }),
   }),
@@ -7162,6 +7173,8 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           } as any,
           mentorasUnicas.map((m: any) => ({ consultorId: m.consultorId, nomeMentora: m.consultorNome || `Mentora #${m.consultorId}` }))
         );
+
+        await runNivelAnnouncementAutomations(alunoId, input.contratoNivelId, (ctx.user as any).id || 1);
 
         return { id: certId, arquivoUrl, hashDocumento, totalMentoras: mentorasUnicas.length };
       }),

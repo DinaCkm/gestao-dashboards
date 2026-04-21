@@ -611,6 +611,8 @@ export const announcements = mysqlTable("announcements", {
   actionLabel: varchar("actionLabel", { length: 100 }), // Texto do botão (ex: "Inscreva-se", "Acessar")
   programId: int("programId"), // Empresa específica ou null para todos
   targetAudience: mysqlEnum("targetAudience", ["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).default("all"),
+  sourceType: varchar("sourceType", { length: 80 }), // rastreabilidade de automações (sem quebrar CRUD manual)
+  sourceRefId: varchar("sourceRefId", { length: 160 }), // referência única por evento automático
   priority: int("priority").default(0).notNull(), // Maior = mais destaque
   publishAt: timestamp("publishAt"), // Data de publicação (agendamento)
   expiresAt: timestamp("expiresAt"), // Data de expiração

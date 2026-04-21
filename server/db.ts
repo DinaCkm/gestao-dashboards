@@ -5322,6 +5322,27 @@ export async function listAnnouncements(activeOnly: boolean = false): Promise<An
   return await db.select().from(announcements).orderBy(desc(announcements.priority), desc(announcements.createdAt));
 }
 
+export async function getAnnouncementBySource(
+  sourceType: string,
+  sourceRefId: string,
+  targetAudience?: "all" | "sebrae_to" | "sebrae_acre" | "embrapii" | "banrisul"
+): Promise<Announcement | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const cond = targetAudience
+    ? and(
+        eq(announcements.sourceType, sourceType as any),
+        eq(announcements.sourceRefId, sourceRefId),
+        eq(announcements.targetAudience, targetAudience as any),
+      )
+    : and(
+        eq(announcements.sourceType, sourceType as any),
+        eq(announcements.sourceRefId, sourceRefId),
+      );
+  const rows = await db.select().from(announcements).where(cond).limit(1);
+  return rows[0];
+}
+
 export async function listActiveAnnouncementsForStudent(programId?: number): Promise<Announcement[]> {
   const db = await getDb();
   if (!db) return [];
