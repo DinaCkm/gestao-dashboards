@@ -6975,13 +6975,35 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         observacoes: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const id = await db.createContrato({
+        const dataInicio = new Date(input.periodoInicio);
+        const dataFim = new Date(input.periodoTermino);
+        const contratoId = await db.createContrato({
           ...input,
-          periodoInicio: new Date(input.periodoInicio),
-          periodoTermino: new Date(input.periodoTermino),
+          periodoInicio: dataInicio,
+          periodoTermino: dataFim,
           criadoPor: ctx.user.id,
         } as any);
-        return { id, success: true };
+        // Sincronizar automaticamente com contrato_niveis
+        try {
+          const hoje = new Date();
+          hoje.setHours(0, 0, 0, 0);
+          const ajustes = new Date(dataFim);
+          ajustes.setDate(ajustes.getDate() + 15);
+          await db.createContratoNivel({
+            contratoId,
+            alunoId: input.alunoId,
+            nivel: 'I',
+            dataInicio,
+            dataFim,
+            dataFechamentoOperacional: dataFim,
+            dataLimiteAjustes: ajustes,
+            status: dataFim < hoje ? 'encerrado' : 'em_andamento',
+          } as any);
+        } catch (e) {
+          // Não falhar o cadastro do contrato se a sincronização falhar
+          console.warn('[contratos.create] Falha ao sincronizar contrato_niveis:', e);
+        }
+        return { id: contratoId, success: true };
       }),
 
     // Atualizar contrato (admin)
@@ -7001,6 +7023,17 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         if (data.periodoInicio) updateData.periodoInicio = new Date(data.periodoInicio);
         if (data.periodoTermino) updateData.periodoTermino = new Date(data.periodoTermino);
         await db.updateContrato(id, updateData);
+        // Sincronizar automaticamente com contrato_niveis
+        try {
+          const nivelData: { dataInicio?: Date; dataFim?: Date } = {};
+          if (data.periodoInicio) nivelData.dataInicio = new Date(data.periodoInicio);
+          if (data.periodoTermino) nivelData.dataFim = new Date(data.periodoTermino);
+          if (Object.keys(nivelData).length > 0) {
+            await db.updateContratoNivelByContratoId(id, nivelData);
+          }
+        } catch (e) {
+          console.warn('[contratos.update] Falha ao sincronizar contrato_niveis:', e);
+        }
         return { success: true };
       }),
 

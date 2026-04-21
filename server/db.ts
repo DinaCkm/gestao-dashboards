@@ -5876,6 +5876,31 @@ export async function deleteContrato(contratoId: number) {
   await db.update(contratosAluno).set({ isActive: 0 }).where(eq(contratosAluno.id, contratoId));
 }
 
+export async function updateContratoNivelByContratoId(
+  contratoId: number,
+  data: { dataInicio?: Date; dataFim?: Date }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const updateData: Record<string, any> = {};
+  if (data.dataInicio !== undefined) updateData.dataInicio = data.dataInicio;
+  if (data.dataFim !== undefined) {
+    updateData.dataFim = data.dataFim;
+    // Recalcular dataFechamentoOperacional = dataFim
+    updateData.dataFechamentoOperacional = data.dataFim;
+    // dataLimiteAjustes = dataFim + 15 dias
+    const ajustes = new Date(data.dataFim);
+    ajustes.setDate(ajustes.getDate() + 15);
+    updateData.dataLimiteAjustes = ajustes;
+    // Recalcular status baseado na data de fim
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    updateData.status = data.dataFim < hoje ? 'encerrado' : 'em_andamento';
+  }
+  if (Object.keys(updateData).length === 0) return;
+  await db.update(contratoNiveis).set(updateData).where(eq(contratoNiveis.contratoId, contratoId));
+}
+
 // ============ NÍVEIS DO CONTRATO ============
 
 const CONTRATO_NIVEL_STATUS_EM_ANDAMENTO = "em_andamento" as const;
