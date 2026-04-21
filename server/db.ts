@@ -27,6 +27,10 @@ import {
   announcements, InsertAnnouncement, Announcement,
   contratosAluno, InsertContratoAluno, ContratoAluno,
   contratoNiveis, InsertContratoNivel, ContratoNivel,
+  certificationTemplates, InsertCertificationTemplate, CertificationTemplate,
+  certificationSignatures, InsertCertificationSignature, CertificationSignature,
+  nivelCertificates, InsertNivelCertificate, NivelCertificate,
+  nivelCertificateMentoras, InsertNivelCertificateMentora, NivelCertificateMentora,
   historicoNivelCompetencia, InsertHistoricoNivelCompetencia, HistoricoNivelCompetencia,
   casesSucesso, InsertCaseSucesso, CaseSucesso,
   caseInteresses, InsertCaseInteresse, CaseInteresse,
@@ -10920,3 +10924,152 @@ export async function atualizarStatusCursoAtribuido(alunoId: number, cursoId: nu
  * @param moduloId ID do modulo/curso
  * @returns true se pode fazer avaliacao, false se esta bloqueado
  */
+
+// ============ CERTIFICAÇÃO DE NÍVEL (FASE 7) ============
+
+export async function getCertificationTemplates(nivel?: "I" | "II" | "III" | "IV"): Promise<CertificationTemplate[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (nivel) {
+    return await db.select().from(certificationTemplates).where(eq(certificationTemplates.nivel, nivel)).orderBy(desc(certificationTemplates.updatedAt));
+  }
+  return await db.select().from(certificationTemplates).orderBy(desc(certificationTemplates.updatedAt));
+}
+
+export async function getActiveCertificationTemplateByNivel(nivel: "I" | "II" | "III" | "IV"): Promise<CertificationTemplate | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [tpl] = await db.select().from(certificationTemplates)
+    .where(and(eq(certificationTemplates.nivel, nivel), eq(certificationTemplates.ativo, 1)))
+    .orderBy(desc(certificationTemplates.updatedAt))
+    .limit(1);
+  return tpl || null;
+}
+
+export async function createCertificationTemplate(data: InsertCertificationTemplate): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(certificationTemplates).values(data);
+  return result.insertId;
+}
+
+export async function setCertificationTemplateActive(templateId: number, nivel: "I" | "II" | "III" | "IV") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(certificationTemplates).set({ ativo: 0 }).where(eq(certificationTemplates.nivel, nivel));
+  await db.update(certificationTemplates).set({ ativo: 1 }).where(eq(certificationTemplates.id, templateId));
+}
+
+export async function getCertificationSignatures(tipo?: "gerente" | "mentora" | "gestor_master"): Promise<CertificationSignature[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const cond = tipo ? and(eq(certificationSignatures.ativo, 1), eq(certificationSignatures.tipo, tipo)) : eq(certificationSignatures.ativo, 1);
+  return await db.select().from(certificationSignatures).where(cond as any).orderBy(asc(certificationSignatures.tipo), asc(certificationSignatures.nomeExibicao));
+}
+
+export async function createCertificationSignature(data: InsertCertificationSignature): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(certificationSignatures).values(data);
+  return result.insertId;
+}
+
+export async function getNivelCertificatesByAluno(alunoId: number): Promise<NivelCertificate[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(nivelCertificates)
+    .where(eq(nivelCertificates.alunoId, alunoId))
+    .orderBy(desc(nivelCertificates.emitidoEm));
+}
+
+export async function getNivelCertificateByAlunoNivel(alunoId: number, contratoNivelId: number): Promise<NivelCertificate | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [cert] = await db.select().from(nivelCertificates)
+    .where(and(
+      eq(nivelCertificates.alunoId, alunoId),
+      eq(nivelCertificates.contratoNivelId, contratoNivelId),
+      eq(nivelCertificates.status, "emitido"),
+    ))
+    .orderBy(desc(nivelCertificates.emitidoEm))
+    .limit(1);
+  return cert || null;
+}
+
+export async function createNivelCertificate(
+  data: InsertNivelCertificate,
+  mentoras: Array<{ consultorId: number; nomeMentora: string }>
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(nivelCertificates).values(data);
+  const certificateId = result.insertId;
+  if (mentoras.length > 0) {
+    await db.insert(nivelCertificateMentoras).values(
+      mentoras.map((m) => ({ certificateId, consultorId: m.consultorId, nomeMentora: m.nomeMentora }))
+    );
+  }
+  return certificateId;
+}
+
+export async function getCertificateMentoras(certificateId: number): Promise<NivelCertificateMentora[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(nivelCertificateMentoras).where(eq(nivelCertificateMentoras.certificateId, certificateId));
+}
+
+export async function avaliarElegibilidadeCertificacao(alunoId: number, contratoNivelId: number) {
+  const nivel = await getContratoNivelComStatusOperacional(alunoId, contratoNivelId);
+  if (!nivel) {
+    return { elegivel: false, motivo: "Nível não encontrado." };
+  }
+
+  const pedagogia = await getPedagogiaByNivel(alunoId, contratoNivelId);
+  const assessments = pedagogia.assessments || [];
+  const metasNivel = pedagogia.metas || [];
+  const eventos = pedagogia.eventParticipation || [];
+  const cases = pedagogia.casesSucesso || [];
+
+  const nivelEncerrado = nivel.statusOperacional === "encerrado";
+  const resultadoFinalFechado = assessments.some((a: any) => ["finalizado", "concluido"].includes(String(a.status)));
+  const engajamento = eventos.length > 0
+    ? (eventos.filter((e: any) => e.status === "presente").length / eventos.length) * 100
+    : 0;
+  const desafios = metasNivel.length > 0
+    ? (metasNivel.filter((m: any) => String(m.status || "").toLowerCase() === "concluida").length / metasNivel.length) * 100
+    : 0;
+  const evidencias = cases.filter((c: any) => c.entregue === 1).length;
+
+  const criterios = {
+    nivelEncerrado,
+    resultadoFinalFechado,
+    engajamentoMin80: engajamento >= 80,
+    desafiosMin80: desafios >= 80,
+    evidenciasMinimas: evidencias > 0,
+  };
+
+  const elegivel = criterios.nivelEncerrado
+    && criterios.resultadoFinalFechado
+    && criterios.engajamentoMin80
+    && criterios.desafiosMin80
+    && criterios.evidenciasMinimas;
+
+  const motivos: string[] = [];
+  if (!criterios.nivelEncerrado) motivos.push("Nível não está encerrado.");
+  if (!criterios.resultadoFinalFechado) motivos.push("Resultado final do nível não está fechado.");
+  if (!criterios.engajamentoMin80) motivos.push("Engajamento final abaixo de 80%.");
+  if (!criterios.desafiosMin80) motivos.push("Desafios concluídos abaixo de 80%.");
+  if (!criterios.evidenciasMinimas) motivos.push("Sem evidências/cases entregues no nível.");
+
+  return {
+    elegivel,
+    criterios,
+    metricas: {
+      engajamento: Number(engajamento.toFixed(2)),
+      desafios: Number(desafios.toFixed(2)),
+      evidencias,
+    },
+    motivo: motivos.join(" "),
+    nivel,
+  };
+}

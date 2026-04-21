@@ -246,9 +246,10 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
   });
 
   const itens = await Promise.all(niveis.map(async (nivel) => {
-    const [pedagogia, nivelOperacional] = await Promise.all([
+    const [pedagogia, nivelOperacional, certificado] = await Promise.all([
       db.getPedagogiaByNivel(alunoId, nivel.id),
       db.getContratoNivelComStatusOperacional(alunoId, nivel.id),
+      db.getNivelCertificateByAlunoNivel(alunoId, nivel.id),
     ]);
 
     const assessments = pedagogia.assessments || [];
@@ -356,6 +357,15 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
         performanceFinal: classifyByPercent(avgProgresso),
       },
       elegibilidadeCertificacaoFutura: elegibilidade,
+      certificadoEmitido: certificado
+        ? {
+            id: certificado.id,
+            status: certificado.status,
+            arquivoUrl: certificado.arquivoUrl,
+            emitidoEm: certificado.emitidoEm,
+            hashDocumento: certificado.hashDocumento,
+          }
+        : null,
       disc: {
         totalNoNivel: discPorNivel.length,
         historico: discPorNivel,
@@ -7035,6 +7045,176 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       .input(z.object({ alunoId: z.number() }))
       .query(async ({ input }) => {
         return await buildEvolucaoAlunoPayload(input.alunoId);
+      }),
+  }),
+
+  certificacao: router({
+    elegibilidade: protectedProcedure
+      .input(z.object({ contratoNivelId: z.number(), alunoId: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        let alunoId = input.alunoId ?? ctx.user.alunoId ?? null;
+        if (!alunoId) {
+          const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+          alunoId = alunoCtx?.id ?? null;
+        }
+        if (!alunoId) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+        if (input.alunoId && input.alunoId !== alunoId && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para consultar outro aluno." });
+        }
+        return await db.avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
+      }),
+
+    statusPorNivel: protectedProcedure
+      .input(z.object({ alunoId: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        let alunoId = input?.alunoId ?? ctx.user.alunoId ?? null;
+        if (!alunoId) {
+          const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+          alunoId = alunoCtx?.id ?? null;
+        }
+        if (!alunoId) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+        if (input?.alunoId && input.alunoId !== alunoId && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para consultar outro aluno." });
+        }
+
+        const niveis = await db.getContratoNiveisByAluno(alunoId);
+        const status = await Promise.all(niveis.map(async (n) => {
+          const [elig, cert] = await Promise.all([
+            db.avaliarElegibilidadeCertificacao(alunoId!, n.id),
+            db.getNivelCertificateByAlunoNivel(alunoId!, n.id),
+          ]);
+          return {
+            contratoNivelId: n.id,
+            nivel: n.nivel,
+            elegivel: elig.elegivel,
+            motivo: elig.motivo,
+            certificadoEmitido: !!cert,
+            certificado: cert,
+          };
+        }));
+        return status;
+      }),
+
+    minhas: protectedProcedure.query(async ({ ctx }) => {
+      let alunoId = ctx.user.alunoId ?? null;
+      if (!alunoId) {
+        const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+        alunoId = alunoCtx?.id ?? null;
+      }
+      if (!alunoId) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+      return await db.getNivelCertificatesByAluno(alunoId);
+    }),
+
+    emitir: protectedProcedure
+      .input(z.object({ contratoNivelId: z.number(), alunoId: z.number().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        let alunoId = input.alunoId ?? ctx.user.alunoId ?? null;
+        if (!alunoId) {
+          const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+          alunoId = alunoCtx?.id ?? null;
+        }
+        if (!alunoId) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+        if (input.alunoId && input.alunoId !== alunoId && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para emitir para outro aluno." });
+        }
+
+        const existing = await db.getNivelCertificateByAlunoNivel(alunoId, input.contratoNivelId);
+        if (existing) {
+          throw new TRPCError({ code: "CONFLICT", message: "Já existe certificado emitido para este nível." });
+        }
+
+        const elegibilidade = await db.avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
+        if (!elegibilidade.elegivel) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: elegibilidade.motivo || "Nível não elegível para certificação." });
+        }
+
+        const nivel = elegibilidade.nivel;
+        const template = await db.getActiveCertificationTemplateByNivel((nivel?.nivel || "I") as any);
+        if (!template) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sem template ativo para este nível." });
+        }
+
+        const assinaturas = await db.getCertificationSignatures();
+        const gerente = assinaturas.find((a) => a.tipo === "gerente");
+        const gestorMaster = assinaturas.find((a) => a.tipo === "gestor_master");
+        if (!gerente || !gestorMaster) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Assinaturas obrigatórias (gerente/gestor_master) ausentes." });
+        }
+
+        const pedagogia = await db.getPedagogiaByNivel(alunoId, input.contratoNivelId);
+        const mentorasUnicas = Array.from(
+          new Map(
+            (pedagogia.mentoringSessions || [])
+              .filter((s: any) => s.consultorId)
+              .map((s: any) => [s.consultorId, s])
+          ).values()
+        );
+        if (mentorasUnicas.length === 0) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Nenhuma mentora válida encontrada no nível." });
+        }
+
+        const hashDocumento = `${alunoId}-${input.contratoNivelId}-${Date.now()}`;
+        const arquivoUrl = `/certificados/${alunoId}/${input.contratoNivelId}/${hashDocumento}.pdf`;
+        const certId = await db.createNivelCertificate(
+          {
+            alunoId,
+            contratoNivelId: input.contratoNivelId,
+            nivel: (nivel?.nivel || "I") as any,
+            templateId: template.id,
+            status: "emitido",
+            arquivoUrl,
+            emitidoPor: (ctx.user as any).id || null,
+            hashDocumento,
+          } as any,
+          mentorasUnicas.map((m: any) => ({ consultorId: m.consultorId, nomeMentora: m.consultorNome || `Mentora #${m.consultorId}` }))
+        );
+
+        return { id: certId, arquivoUrl, hashDocumento, totalMentoras: mentorasUnicas.length };
+      }),
+
+    templates: adminProcedure.query(async () => {
+      return await db.getCertificationTemplates();
+    }),
+
+    createTemplate: adminProcedure
+      .input(z.object({
+        nome: z.string().min(1),
+        nivel: z.enum(["I", "II", "III", "IV"]),
+        ativo: z.number().min(0).max(1).optional(),
+        arquivoModelo: z.string().optional(),
+        camposMapeados: z.any().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createCertificationTemplate({
+          ...input,
+          ativo: input.ativo ?? 1,
+          createdBy: (ctx.user as any).id || null,
+        } as any);
+        if ((input.ativo ?? 1) === 1) {
+          await db.setCertificationTemplateActive(id, input.nivel);
+        }
+        return { id };
+      }),
+
+    assinaturas: adminProcedure.query(async () => {
+      return await db.getCertificationSignatures();
+    }),
+
+    createAssinatura: adminProcedure
+      .input(z.object({
+        userId: z.number().optional(),
+        tipo: z.enum(["gerente", "mentora", "gestor_master"]),
+        nomeExibicao: z.string().min(1),
+        cargo: z.string().optional(),
+        imagemAssinaturaUrl: z.string().optional(),
+        ativo: z.number().min(0).max(1).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createCertificationSignature({
+          ...input,
+          ativo: input.ativo ?? 1,
+        } as any);
+        return { id };
       }),
   }),
 

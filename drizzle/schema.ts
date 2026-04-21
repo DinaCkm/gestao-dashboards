@@ -671,6 +671,74 @@ export type ContratoNivel = typeof contratoNiveis.$inferSelect;
 export type InsertContratoNivel = typeof contratoNiveis.$inferInsert;
 
 /**
+ * Templates de certificado por nível.
+ * Um template ativo por nível por vez.
+ */
+export const certificationTemplates = mysqlTable("certification_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+  ativo: int("ativo").default(1).notNull(),
+  arquivoModelo: text("arquivoModelo"), // URL/chave do modelo
+  camposMapeados: json("camposMapeados"), // mapeamento dinâmico de campos
+  createdBy: int("createdBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CertificationTemplate = typeof certificationTemplates.$inferSelect;
+export type InsertCertificationTemplate = typeof certificationTemplates.$inferInsert;
+
+/**
+ * Assinaturas formais utilizadas na emissão.
+ */
+export const certificationSignatures = mysqlTable("certification_signatures", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"), // pode apontar para users/consultors conforme contexto
+  tipo: mysqlEnum("tipo", ["gerente", "mentora", "gestor_master"]).notNull(),
+  nomeExibicao: varchar("nomeExibicao", { length: 255 }).notNull(),
+  cargo: varchar("cargo", { length: 255 }),
+  imagemAssinaturaUrl: text("imagemAssinaturaUrl"),
+  ativo: int("ativo").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CertificationSignature = typeof certificationSignatures.$inferSelect;
+export type InsertCertificationSignature = typeof certificationSignatures.$inferInsert;
+
+/**
+ * Certificados emitidos por nível.
+ */
+export const nivelCertificates = mysqlTable("nivel_certificates", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId").notNull(),
+  nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+  templateId: int("templateId").notNull(),
+  status: mysqlEnum("status", ["emitido", "revogado"]).default("emitido").notNull(),
+  arquivoUrl: text("arquivoUrl"),
+  emitidoEm: timestamp("emitidoEm").defaultNow().notNull(),
+  emitidoPor: int("emitidoPor"),
+  hashDocumento: varchar("hashDocumento", { length: 128 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type NivelCertificate = typeof nivelCertificates.$inferSelect;
+export type InsertNivelCertificate = typeof nivelCertificates.$inferInsert;
+
+/**
+ * Mentoras vinculadas ao certificado emitido (suporta múltiplas mentoras).
+ */
+export const nivelCertificateMentoras = mysqlTable("nivel_certificate_mentoras", {
+  id: int("id").autoincrement().primaryKey(),
+  certificateId: int("certificateId").notNull(),
+  consultorId: int("consultorId").notNull(),
+  nomeMentora: varchar("nomeMentora", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type NivelCertificateMentora = typeof nivelCertificateMentoras.$inferSelect;
+export type InsertNivelCertificateMentora = typeof nivelCertificateMentoras.$inferInsert;
+
+/**
  * Histórico de Nível de Competência - Registra a evolução do nível do aluno
  * A mentora atualiza o nível atual a cada 3 sessões de mentoria
  */

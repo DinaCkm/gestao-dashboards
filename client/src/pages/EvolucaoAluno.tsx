@@ -3,8 +3,10 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { formatDateSafe } from "@/lib/dateUtils";
 import { BookOpen, Calendar, CheckCircle2, Clock3, LineChart, Target, TrendingUp, User } from "lucide-react";
+import { toast } from "sonner";
 
 function statusBadgeClass(status: string) {
   switch (status) {
@@ -23,6 +25,17 @@ function statusBadgeClass(status: string) {
 
 export default function EvolucaoAluno() {
   const { data, isLoading } = trpc.evolucao.minha.useQuery();
+  const { data: statusCert } = trpc.certificacao.statusPorNivel.useQuery();
+  const utils = trpc.useUtils();
+  const emitirCert = trpc.certificacao.emitir.useMutation({
+    onSuccess: () => {
+      toast.success("Certificado emitido com sucesso.");
+      utils.evolucao.minha.invalidate();
+      utils.certificacao.statusPorNivel.invalidate();
+      utils.certificacao.minhas.invalidate();
+    },
+    onError: (err) => toast.error(err.message || "Falha ao emitir certificado."),
+  });
 
   if (isLoading) {
     return (
@@ -86,7 +99,10 @@ export default function EvolucaoAluno() {
         )}
 
         <div className="space-y-4">
-          {data.timeline.map((item: any, index: number) => (
+          {data.timeline.map((item: any, index: number) => {
+            const certStatus = statusCert?.find((s: any) => s.contratoNivelId === item.nivel.id);
+            const podeEmitir = !!certStatus?.elegivel && !certStatus?.certificadoEmitido;
+            return (
             <Card key={item.nivel.id} className="border border-slate-200">
               <CardHeader>
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -143,12 +159,36 @@ export default function EvolucaoAluno() {
                   <div className="rounded-md border p-3 bg-white">
                     <p className="font-semibold mb-1">Certificação futura</p>
                     <p className="inline-flex items-center gap-1"><TrendingUp className="h-3 w-3" />{item.elegibilidadeCertificacaoFutura}</p>
-                    <p className="text-muted-foreground mt-1">Sem emissão nesta fase.</p>
+                    {certStatus?.certificadoEmitido ? (
+                      <p className="text-emerald-700 mt-1">Certificado emitido em {formatDateSafe(certStatus?.certificado?.emitidoEm)}</p>
+                    ) : (
+                      <p className="text-muted-foreground mt-1">{certStatus?.motivo || "Certificação ainda não disponível."}</p>
+                    )}
                   </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-lg border bg-slate-50 p-3">
+                  <div className="text-xs">
+                    <p className="font-semibold text-slate-800">Certificação formal do nível</p>
+                    <p className="text-slate-600">
+                      Emissão disponível somente para nível encerrado e elegível, com critérios mínimos validados no backend.
+                    </p>
+                  </div>
+                  {certStatus?.certificadoEmitido ? (
+                    <Button variant="outline" disabled>Certificado já emitido</Button>
+                  ) : (
+                    <Button
+                      disabled={!podeEmitir || emitirCert.isPending}
+                      onClick={() => emitirCert.mutate({ contratoNivelId: item.nivel.id })}
+                    >
+                      Emitir Certificação
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       </div>
     </AlunoLayout>
