@@ -14,6 +14,16 @@ export type ContratoNivelOperationalStatus =
   | "ajustes"
   | "encerrado";
 
+/**
+ * ContratoNivel enriquecido com as datas vindas de contratos_aluno (fonte única).
+ * dataInicio = contratos_aluno.periodoInicio
+ * dataFim    = contratos_aluno.periodoTermino
+ */
+export type ContratoNivelComDatas = ContratoNivel & {
+  dataInicio: string;
+  dataFim: string;
+};
+
 export type ContratoNivelRepo = {
   findEmAndamento: (
     contratoId: number,
@@ -21,9 +31,9 @@ export type ContratoNivelRepo = {
     ignoreNivelId?: number
   ) => Promise<Array<Pick<ContratoNivel, "id">>>;
   insertNivel: (data: InsertContratoNivel) => Promise<number>;
-  listByAluno: (alunoId: number) => Promise<ContratoNivel[]>;
-  listByContrato: (contratoId: number) => Promise<ContratoNivel[]>;
-  findVigenteByAluno: (alunoId: number) => Promise<ContratoNivel | null>;
+  listByAluno: (alunoId: number) => Promise<ContratoNivelComDatas[]>;
+  listByContrato: (contratoId: number) => Promise<ContratoNivelComDatas[]>;
+  findVigenteByAluno: (alunoId: number) => Promise<ContratoNivelComDatas | null>;
 };
 
 const STATUS_EM_ANDAMENTO: ContratoNivelStatus = "em_andamento";
@@ -39,17 +49,6 @@ function normalizeDateOnly(value: string | Date) {
   return value;
 }
 
-export function assertContratoNivelDateConsistency(dataInicio: string | Date, dataFim: string | Date) {
-  const inicio = new Date(normalizeDateOnly(dataInicio));
-  const fim = new Date(normalizeDateOnly(dataFim));
-  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) {
-    throw new Error("Datas do nível inválidas");
-  }
-  if (inicio >= fim) {
-    throw new Error("A data de início do nível deve ser menor que a data de fim");
-  }
-}
-
 export async function validarNivelEmAndamentoUnicoRepo(
   repo: ContratoNivelRepo,
   contratoId: number,
@@ -61,22 +60,13 @@ export async function validarNivelEmAndamentoUnicoRepo(
 }
 
 export async function createContratoNivelRepo(repo: ContratoNivelRepo, data: InsertContratoNivel) {
-  assertContratoNivelDateConsistency(data.dataInicio, data.dataFim);
-
   if (data.status === STATUS_EM_ANDAMENTO) {
     const canCreate = await validarNivelEmAndamentoUnicoRepo(repo, data.contratoId, data.alunoId);
     if (!canCreate) {
       throw new Error("Já existe um nível em andamento para este aluno neste contrato");
     }
   }
-
-  return repo.insertNivel({
-    ...data,
-    dataInicio: normalizeDateOnly(data.dataInicio),
-    dataFim: normalizeDateOnly(data.dataFim),
-    dataFechamentoOperacional: normalizeDateOnly(data.dataFechamentoOperacional),
-    dataLimiteAjustes: normalizeDateOnly(data.dataLimiteAjustes),
-  });
+  return repo.insertNivel(data);
 }
 
 export async function getContratoNiveisByAlunoRepo(repo: ContratoNivelRepo, alunoId: number) {
@@ -101,14 +91,12 @@ export function calcularDataFechamentoOperacional(dataFim: string | Date): strin
 }
 
 export function getContratoNivelOperationalStatus(
-  nivel: Pick<ContratoNivel, "status" | "dataFim" | "dataFechamentoOperacional">,
+  nivel: Pick<ContratoNivelComDatas, "status" | "dataFim">,
   referenceDate = new Date()
 ): ContratoNivelOperationalStatus {
   const hoje = new Date(referenceDate.toISOString().split("T")[0]);
   const dataFim = new Date(normalizeDateOnly(nivel.dataFim));
-  const dataFechamento = new Date(
-    normalizeDateOnly(nivel.dataFechamentoOperacional || calcularDataFechamentoOperacional(nivel.dataFim))
-  );
+  const dataFechamento = new Date(calcularDataFechamentoOperacional(nivel.dataFim));
 
   if (!Number.isNaN(dataFim.getTime()) && hoje >= dataFim) {
     return "encerrado";

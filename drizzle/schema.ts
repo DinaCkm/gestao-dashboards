@@ -653,13 +653,10 @@ export type InsertContratoAluno = typeof contratosAluno.$inferInsert;
  */
 export const contratoNiveis = mysqlTable("contrato_niveis", {
   id: int("id").autoincrement().primaryKey(),
-  contratoId: int("contratoId").notNull(), // FK para contratos_aluno
+  contratoId: int("contratoId").notNull(), // FK para contratos_aluno (fonte única das datas)
   alunoId: int("alunoId").notNull(), // FK para alunos (desnormalizado para consultas rápidas)
   nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
-  dataInicio: date("dataInicio", { mode: "string" }).notNull(),
-  dataFim: date("dataFim", { mode: "string" }).notNull(),
-  dataFechamentoOperacional: date("dataFechamentoOperacional", { mode: "string" }).notNull(),
-  dataLimiteAjustes: date("dataLimiteAjustes", { mode: "string" }).notNull(),
+  // dataInicio e dataFim removidos — lidos de contratos_aluno.periodoInicio / periodoTermino via JOIN
   status: mysqlEnum("status", ["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]).default("planejado").notNull(),
   assessmentPdiId: int("assessmentPdiId"), // FK opcional para assessment_pdi (fase futura)
   mentoraPrincipalId: int("mentoraPrincipalId"), // FK opcional para consultors

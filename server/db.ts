@@ -79,6 +79,7 @@ import {
   isContratoNivelEncerrado,
   calcularDataFechamentoOperacional,
   validarNivelEmAndamentoUnicoRepo,
+  type ContratoNivelComDatas,
 } from "./contrato-niveis.service";
 
 const createDbClient = () =>
@@ -5876,31 +5877,6 @@ export async function deleteContrato(contratoId: number) {
   await db.update(contratosAluno).set({ isActive: 0 }).where(eq(contratosAluno.id, contratoId));
 }
 
-export async function updateContratoNivelByContratoId(
-  contratoId: number,
-  data: { dataInicio?: Date; dataFim?: Date }
-) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const updateData: Record<string, any> = {};
-  if (data.dataInicio !== undefined) updateData.dataInicio = data.dataInicio;
-  if (data.dataFim !== undefined) {
-    updateData.dataFim = data.dataFim;
-    // Recalcular dataFechamentoOperacional = dataFim
-    updateData.dataFechamentoOperacional = data.dataFim;
-    // dataLimiteAjustes = dataFim + 15 dias
-    const ajustes = new Date(data.dataFim);
-    ajustes.setDate(ajustes.getDate() + 15);
-    updateData.dataLimiteAjustes = ajustes;
-    // Recalcular status baseado na data de fim
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    updateData.status = data.dataFim < hoje ? 'encerrado' : 'em_andamento';
-  }
-  if (Object.keys(updateData).length === 0) return;
-  await db.update(contratoNiveis).set(updateData).where(eq(contratoNiveis.contratoId, contratoId));
-}
-
 // ============ NÍVEIS DO CONTRATO ============
 
 const CONTRATO_NIVEL_STATUS_EM_ANDAMENTO = "em_andamento" as const;
@@ -5971,119 +5947,128 @@ export async function createContratoNivel(data: InsertContratoNivel) {
   }, data);
 }
 
-export async function getContratoNiveisByAluno(alunoId: number) {
+export async function getContratoNiveisByAluno(alunoId: number): Promise<ContratoNivelComDatas[]> {
   const db = await getDb();
   if (!db) return [];
-  return getContratoNiveisByAlunoRepo({
-    async findEmAndamento() {
-      return [];
-    },
-    async insertNivel() {
-      throw new Error("Not implemented");
-    },
-    async listByAluno(repoAlunoId) {
-      return db
-        .select()
-        .from(contratoNiveis)
-        .where(eq(contratoNiveis.alunoId, repoAlunoId))
-        .orderBy(desc(contratoNiveis.dataInicio), desc(contratoNiveis.createdAt));
-    },
-    async listByContrato() {
-      return [];
-    },
-    async findVigenteByAluno() {
-      return null;
-    },
-  }, alunoId);
+  const rows = await db
+    .select({
+      id: contratoNiveis.id,
+      contratoId: contratoNiveis.contratoId,
+      alunoId: contratoNiveis.alunoId,
+      nivel: contratoNiveis.nivel,
+      status: contratoNiveis.status,
+      assessmentPdiId: contratoNiveis.assessmentPdiId,
+      mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
+      createdAt: contratoNiveis.createdAt,
+      updatedAt: contratoNiveis.updatedAt,
+      dataInicio: contratosAluno.periodoInicio,
+      dataFim: contratosAluno.periodoTermino,
+    })
+    .from(contratoNiveis)
+    .innerJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id))
+    .where(eq(contratoNiveis.alunoId, alunoId))
+    .orderBy(desc(contratosAluno.periodoInicio), desc(contratoNiveis.createdAt));
+  return rows as ContratoNivelComDatas[];
 }
 
-export async function getContratoNiveisByContrato(contratoId: number) {
+export async function getContratoNiveisByContrato(contratoId: number): Promise<ContratoNivelComDatas[]> {
   const db = await getDb();
   if (!db) return [];
-  return getContratoNiveisByContratoRepo({
-    async findEmAndamento() {
-      return [];
-    },
-    async insertNivel() {
-      throw new Error("Not implemented");
-    },
-    async listByAluno() {
-      return [];
-    },
-    async listByContrato(repoContratoId) {
-      return db
-        .select()
-        .from(contratoNiveis)
-        .where(eq(contratoNiveis.contratoId, repoContratoId))
-        .orderBy(asc(contratoNiveis.dataInicio), asc(contratoNiveis.id));
-    },
-    async findVigenteByAluno() {
-      return null;
-    },
-  }, contratoId);
+  const rows = await db
+    .select({
+      id: contratoNiveis.id,
+      contratoId: contratoNiveis.contratoId,
+      alunoId: contratoNiveis.alunoId,
+      nivel: contratoNiveis.nivel,
+      status: contratoNiveis.status,
+      assessmentPdiId: contratoNiveis.assessmentPdiId,
+      mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
+      createdAt: contratoNiveis.createdAt,
+      updatedAt: contratoNiveis.updatedAt,
+      dataInicio: contratosAluno.periodoInicio,
+      dataFim: contratosAluno.periodoTermino,
+    })
+    .from(contratoNiveis)
+    .innerJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id))
+    .where(eq(contratoNiveis.contratoId, contratoId))
+    .orderBy(asc(contratosAluno.periodoInicio), asc(contratoNiveis.id));
+  return rows as ContratoNivelComDatas[];
 }
 
-export async function getContratoNivelVigenteByAluno(alunoId: number): Promise<ContratoNivel | null> {
+export async function getContratoNivelVigenteByAluno(alunoId: number): Promise<ContratoNivelComDatas | null> {
   const db = await getDb();
   if (!db) return null;
-  return getContratoNivelVigenteByAlunoRepo({
-    async findEmAndamento() {
-      return [];
-    },
-    async insertNivel() {
-      throw new Error("Not implemented");
-    },
-    async listByAluno() {
-      return [];
-    },
-    async listByContrato() {
-      return [];
-    },
-    async findVigenteByAluno(repoAlunoId) {
-      const [nivelVigente] = await db
-        .select()
-        .from(contratoNiveis)
-        .where(and(
-          eq(contratoNiveis.alunoId, repoAlunoId),
-          inArray(contratoNiveis.status, [...CONTRATO_NIVEL_STATUS_ATIVOS] as any),
-        ))
-        .orderBy(desc(contratoNiveis.dataInicio), desc(contratoNiveis.id))
-        .limit(1);
-      return nivelVigente || null;
-    },
-  }, alunoId);
+  const [nivelVigente] = await db
+    .select({
+      id: contratoNiveis.id,
+      contratoId: contratoNiveis.contratoId,
+      alunoId: contratoNiveis.alunoId,
+      nivel: contratoNiveis.nivel,
+      status: contratoNiveis.status,
+      assessmentPdiId: contratoNiveis.assessmentPdiId,
+      mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
+      createdAt: contratoNiveis.createdAt,
+      updatedAt: contratoNiveis.updatedAt,
+      dataInicio: contratosAluno.periodoInicio,
+      dataFim: contratosAluno.periodoTermino,
+    })
+    .from(contratoNiveis)
+    .innerJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id))
+    .where(and(
+      eq(contratoNiveis.alunoId, alunoId),
+      inArray(contratoNiveis.status, [...CONTRATO_NIVEL_STATUS_ATIVOS] as any),
+    ))
+    .orderBy(desc(contratosAluno.periodoInicio), desc(contratoNiveis.id))
+    .limit(1);
+  return (nivelVigente as ContratoNivelComDatas) || null;
 }
 
 export async function getContratoNivelComStatusOperacional(
   alunoId: number,
   contratoNivelId?: number | null
-): Promise<(ContratoNivel & { statusOperacional: "em_andamento" | "fechamento" | "ajustes" | "encerrado" }) | null> {
+): Promise<(ContratoNivelComDatas & { statusOperacional: "em_andamento" | "fechamento" | "ajustes" | "encerrado" }) | null> {
   const db = await getDb();
   if (!db) return null;
 
-  const nivel = contratoNivelId
-    ? (await db.select().from(contratoNiveis).where(eq(contratoNiveis.id, contratoNivelId)).limit(1))[0] || null
-    : await getContratoNivelVigenteByAluno(alunoId);
+  let nivel: ContratoNivelComDatas | null = null;
+  if (contratoNivelId) {
+    const [row] = await db
+      .select({
+        id: contratoNiveis.id,
+        contratoId: contratoNiveis.contratoId,
+        alunoId: contratoNiveis.alunoId,
+        nivel: contratoNiveis.nivel,
+        status: contratoNiveis.status,
+        assessmentPdiId: contratoNiveis.assessmentPdiId,
+        mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
+        createdAt: contratoNiveis.createdAt,
+        updatedAt: contratoNiveis.updatedAt,
+        dataInicio: contratosAluno.periodoInicio,
+        dataFim: contratosAluno.periodoTermino,
+      })
+      .from(contratoNiveis)
+      .innerJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id))
+      .where(eq(contratoNiveis.id, contratoNivelId))
+      .limit(1);
+    nivel = (row as ContratoNivelComDatas) || null;
+  } else {
+    nivel = await getContratoNivelVigenteByAluno(alunoId);
+  }
 
   if (!nivel) return null;
 
   const statusOperacional = getContratoNivelOperationalStatus(nivel);
-  const fechamentoCalculado = nivel.dataFechamentoOperacional || calcularDataFechamentoOperacional(nivel.dataFim);
 
-  // Sincroniza status/datas no banco de forma idempotente
-  if (nivel.status !== statusOperacional || nivel.dataFechamentoOperacional !== fechamentoCalculado) {
+  // Sincroniza status no banco de forma idempotente
+  if (nivel.status !== statusOperacional) {
     await db.update(contratoNiveis)
-      .set({
-        status: statusOperacional as any,
-        dataFechamentoOperacional: fechamentoCalculado,
-      })
+      .set({ status: statusOperacional as any })
       .where(eq(contratoNiveis.id, nivel.id));
   }
 
   return {
     ...nivel,
     status: statusOperacional as any,
-    dataFechamentoOperacional: fechamentoCalculado,
     statusOperacional,
   };
 }

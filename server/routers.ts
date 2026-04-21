@@ -6983,25 +6983,18 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           periodoTermino: dataFim,
           criadoPor: ctx.user.id,
         } as any);
-        // Sincronizar automaticamente com contrato_niveis
+        // Criar automaticamente o registro em contrato_niveis (sem datas próprias — fonte única é contratos_aluno)
         try {
           const hoje = new Date();
           hoje.setHours(0, 0, 0, 0);
-          const ajustes = new Date(dataFim);
-          ajustes.setDate(ajustes.getDate() + 15);
           await db.createContratoNivel({
             contratoId,
             alunoId: input.alunoId,
             nivel: 'I',
-            dataInicio,
-            dataFim,
-            dataFechamentoOperacional: dataFim,
-            dataLimiteAjustes: ajustes,
             status: dataFim < hoje ? 'encerrado' : 'em_andamento',
           } as any);
         } catch (e) {
-          // Não falhar o cadastro do contrato se a sincronização falhar
-          console.warn('[contratos.create] Falha ao sincronizar contrato_niveis:', e);
+          console.warn('[contratos.create] Falha ao criar contrato_niveis:', e);
         }
         return { id: contratoId, success: true };
       }),
@@ -7022,18 +7015,8 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         const updateData: any = { ...data };
         if (data.periodoInicio) updateData.periodoInicio = new Date(data.periodoInicio);
         if (data.periodoTermino) updateData.periodoTermino = new Date(data.periodoTermino);
+        // Atualizar apenas contratos_aluno — contrato_niveis lê as datas via JOIN
         await db.updateContrato(id, updateData);
-        // Sincronizar automaticamente com contrato_niveis
-        try {
-          const nivelData: { dataInicio?: Date; dataFim?: Date } = {};
-          if (data.periodoInicio) nivelData.dataInicio = new Date(data.periodoInicio);
-          if (data.periodoTermino) nivelData.dataFim = new Date(data.periodoTermino);
-          if (Object.keys(nivelData).length > 0) {
-            await db.updateContratoNivelByContratoId(id, nivelData);
-          }
-        } catch (e) {
-          console.warn('[contratos.update] Falha ao sincronizar contrato_niveis:', e);
-        }
         return { success: true };
       }),
 
@@ -7087,16 +7070,13 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return await db.getContratoNiveisByContrato(input.contratoId);
       }),
 
-    // Criação manual de nível (fase 1 - ambiente de teste/admin)
+    // Criação manual de nível (admin)
+    // As datas são lidas de contratos_aluno via JOIN — não precisam ser informadas aqui
     create: adminProcedure
       .input(z.object({
         contratoId: z.number(),
         alunoId: z.number(),
         nivel: z.enum(["I", "II", "III", "IV"]),
-        dataInicio: z.string(),
-        dataFim: z.string(),
-        dataFechamentoOperacional: z.string(),
-        dataLimiteAjustes: z.string(),
         status: z.enum(["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]),
         assessmentPdiId: z.number().nullable().optional(),
         mentoraPrincipalId: z.number().nullable().optional(),
