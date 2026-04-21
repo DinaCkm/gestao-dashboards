@@ -250,9 +250,11 @@ const COMPETENCIA_DESCRICOES: Record<string, { oQueE: string; impacto: string }>
 
 function TesteDisc({
   alunoId,
+  contratoNivelId,
   onComplete,
 }: {
   alunoId: number;
+  contratoNivelId?: number;
   onComplete: (scores: DiscScores, predominante: DiscDimensao, secundario: DiscDimensao) => void;
 }) {
   const { data: perguntasData } = trpc.disc.perguntas.useQuery();
@@ -354,6 +356,7 @@ function TesteDisc({
 
       const resultado = await salvarMutation.mutateAsync({
         alunoId,
+        contratoNivelId: contratoNivelId ?? null,
         respostas: respostasArray,
       });
 
@@ -706,9 +709,11 @@ function TesteDisc({
 
 function ReguaAutopercepção({
   alunoId,
+  contratoNivelId,
   onComplete,
 }: {
   alunoId: number;
+  contratoNivelId?: number;
   onComplete: () => void;
 }) {
   const { data: competenciasData } = trpc.competencias.listWithTrilha.useQuery();
@@ -784,7 +789,7 @@ function ReguaAutopercepção({
         };
       });
 
-      await salvarMutation.mutateAsync({ alunoId, avaliacoes });
+      await salvarMutation.mutateAsync({ alunoId, contratoNivelId: contratoNivelId ?? null, avaliacoes });
       toast.success("Autopercepção salva com sucesso!");
       onComplete();
     } catch {
@@ -989,19 +994,21 @@ function ReguaAutopercepção({
 
 function RelatorioAutoconhecimento({
   alunoId,
+  contratoNivelId,
   discScores,
   perfilPredominante,
   perfilSecundario,
   onComplete,
 }: {
   alunoId: number;
+  contratoNivelId?: number;
   discScores: DiscScores | null;
   perfilPredominante: DiscDimensao | null;
   perfilSecundario: DiscDimensao | null;
   onComplete: () => void;
 }) {
   const { data: perfisData } = trpc.disc.perfis.useQuery();
-  const { data: autopercepcoesData } = trpc.autopercepção.porAluno.useQuery({ alunoId });
+  const { data: autopercepcoesData } = trpc.autopercepção.porAluno.useQuery({ alunoId, contratoNivelId: contratoNivelId ?? null });
   const { data: competenciasData } = trpc.competencias.listWithTrilha.useQuery();
   const { data: trilhasData } = trpc.trilhas.list.useQuery();
   const { data: contribuicoesData } = trpc.contribuicoesMentora.porAluno.useQuery({ alunoId });
@@ -1356,16 +1363,18 @@ function RelatorioAutoconhecimento({
 
 export default function EtapaAssessmentCompleta({
   alunoId,
+  contratoNivelId,
   onComplete,
   readOnly = false,
 }: {
   alunoId: number;
+  contratoNivelId?: number;
   onComplete: () => void;
   readOnly?: boolean;
 }) {
   // Verificar se já fez o teste
-  const { data: discResultado } = trpc.disc.resultado.useQuery({ alunoId }, { enabled: !!alunoId });
-  const { data: autopercepcoesExistentes } = trpc.autopercepção.porAluno.useQuery({ alunoId }, { enabled: !!alunoId });
+  const { data: discResultado } = trpc.disc.resultado.useQuery({ alunoId, contratoNivelId: contratoNivelId ?? null }, { enabled: !!alunoId });
+  const { data: autopercepcoesExistentes } = trpc.autopercepção.porAluno.useQuery({ alunoId, contratoNivelId: contratoNivelId ?? null }, { enabled: !!alunoId });
 
   const [subEtapa, setSubEtapa] = useState<SubEtapa>("disc");
   const [discScores, setDiscScores] = useState<DiscScores | null>(null);
@@ -1447,6 +1456,7 @@ export default function EtapaAssessmentCompleta({
       {subEtapa === "disc" && (
         <TesteDisc
           alunoId={alunoId}
+          contratoNivelId={contratoNivelId}
           onComplete={(scores, predominante, secundario) => {
             setDiscScores(scores);
             setPerfilPredominante(predominante);
@@ -1459,6 +1469,7 @@ export default function EtapaAssessmentCompleta({
       {subEtapa === "autopercepção" && (
         <ReguaAutopercepção
           alunoId={alunoId}
+          contratoNivelId={contratoNivelId}
           onComplete={() => setSubEtapa("relatorio")}
         />
       )}
@@ -1466,6 +1477,7 @@ export default function EtapaAssessmentCompleta({
       {subEtapa === "relatorio" && (
         <RelatorioAutoconhecimento
           alunoId={alunoId}
+          contratoNivelId={contratoNivelId}
           discScores={discScores}
           perfilPredominante={perfilPredominante}
           perfilSecundario={perfilSecundario}

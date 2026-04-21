@@ -8,6 +8,12 @@ export type ContratoNivelStatus =
   | "encerrado"
   | "certificado";
 
+export type ContratoNivelOperationalStatus =
+  | "em_andamento"
+  | "fechamento"
+  | "ajustes"
+  | "encerrado";
+
 export type ContratoNivelRepo = {
   findEmAndamento: (
     contratoId: number,
@@ -21,6 +27,7 @@ export type ContratoNivelRepo = {
 };
 
 const STATUS_EM_ANDAMENTO: ContratoNivelStatus = "em_andamento";
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function normalizeDateOnly(value: string | Date) {
   if (value instanceof Date) {
@@ -82,4 +89,43 @@ export async function getContratoNiveisByContratoRepo(repo: ContratoNivelRepo, c
 
 export async function getContratoNivelVigenteByAlunoRepo(repo: ContratoNivelRepo, alunoId: number) {
   return repo.findVigenteByAluno(alunoId);
+}
+
+export function calcularDataFechamentoOperacional(dataFim: string | Date): string {
+  const fim = new Date(normalizeDateOnly(dataFim));
+  if (Number.isNaN(fim.getTime())) {
+    throw new Error("Data final do nível inválida");
+  }
+  const fechamento = new Date(fim.getTime() - 15 * DAY_MS);
+  return fechamento.toISOString().split("T")[0];
+}
+
+export function getContratoNivelOperationalStatus(
+  nivel: Pick<ContratoNivel, "status" | "dataFim" | "dataFechamentoOperacional">,
+  referenceDate = new Date()
+): ContratoNivelOperationalStatus {
+  const hoje = new Date(referenceDate.toISOString().split("T")[0]);
+  const dataFim = new Date(normalizeDateOnly(nivel.dataFim));
+  const dataFechamento = new Date(
+    normalizeDateOnly(nivel.dataFechamentoOperacional || calcularDataFechamentoOperacional(nivel.dataFim))
+  );
+
+  if (!Number.isNaN(dataFim.getTime()) && hoje >= dataFim) {
+    return "encerrado";
+  }
+
+  if (!Number.isNaN(dataFechamento.getTime()) && hoje >= dataFechamento) {
+    if (nivel.status === "ajustes") return "ajustes";
+    return "fechamento";
+  }
+
+  return "em_andamento";
+}
+
+export function isContratoNivelBloqueadoParaNovasAtribuicoes(status: ContratoNivelOperationalStatus): boolean {
+  return status === "fechamento" || status === "ajustes" || status === "encerrado";
+}
+
+export function isContratoNivelEncerrado(status: ContratoNivelOperationalStatus): boolean {
+  return status === "encerrado";
 }
