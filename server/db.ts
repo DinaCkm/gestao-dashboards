@@ -5950,6 +5950,8 @@ export async function createContratoNivel(data: InsertContratoNivel) {
 export async function getContratoNiveisByAluno(alunoId: number): Promise<ContratoNivelComDatas[]> {
   const db = await getDb();
   if (!db) return [];
+  // LEFT JOIN: alunos legados sem contratos_aluno também aparecem
+  // Fallback de datas: usa assessment_pdi quando não há contrato formal
   const rows = await db
     .select({
       id: contratoNiveis.id,
@@ -5965,10 +5967,32 @@ export async function getContratoNiveisByAluno(alunoId: number): Promise<Contrat
       dataFim: contratosAluno.periodoTermino,
     })
     .from(contratoNiveis)
-    .innerJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id))
+    .leftJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id))
     .where(eq(contratoNiveis.alunoId, alunoId))
-    .orderBy(desc(contratosAluno.periodoInicio), desc(contratoNiveis.createdAt));
-  return rows as ContratoNivelComDatas[];
+    .orderBy(desc(contratoNiveis.createdAt));
+
+  // Para níveis sem contrato formal, buscar datas do assessment_pdi
+  const result: ContratoNivelComDatas[] = [];
+  for (const row of rows) {
+    if (row.dataInicio && row.dataFim) {
+      result.push(row as ContratoNivelComDatas);
+    } else {
+      // Fallback: buscar datas do assessment_pdi mais recente do aluno
+      const assessments = await db
+        .select({ macroInicio: assessmentPdi.macroInicio, macroTermino: assessmentPdi.macroTermino })
+        .from(assessmentPdi)
+        .where(eq(assessmentPdi.alunoId, alunoId))
+        .orderBy(desc(assessmentPdi.createdAt))
+        .limit(1);
+      const ap = assessments[0];
+      result.push({
+        ...row,
+        dataInicio: ap?.macroInicio ?? null,
+        dataFim: ap?.macroTermino ?? null,
+      } as ContratoNivelComDatas);
+    }
+  }
+  return result;
 }
 
 export async function getContratoNiveisByContrato(contratoId: number): Promise<ContratoNivelComDatas[]> {
@@ -6013,14 +6037,29 @@ export async function getContratoNivelVigenteByAluno(alunoId: number): Promise<C
       dataFim: contratosAluno.periodoTermino,
     })
     .from(contratoNiveis)
-    .innerJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id))
+    .leftJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id))
     .where(and(
       eq(contratoNiveis.alunoId, alunoId),
       inArray(contratoNiveis.status, [...CONTRATO_NIVEL_STATUS_ATIVOS] as any),
     ))
-    .orderBy(desc(contratosAluno.periodoInicio), desc(contratoNiveis.id))
+    .orderBy(desc(contratoNiveis.id))
     .limit(1);
-  return (nivelVigente as ContratoNivelComDatas) || null;
+  if (!nivelVigente) return null;
+  // Fallback de datas para alunos legados sem contratos_aluno
+  if (!nivelVigente.dataInicio || !nivelVigente.dataFim) {
+    const [ap] = await db
+      .select({ macroInicio: assessmentPdi.macroInicio, macroTermino: assessmentPdi.macroTermino })
+      .from(assessmentPdi)
+      .where(eq(assessmentPdi.alunoId, alunoId))
+      .orderBy(desc(assessmentPdi.createdAt))
+      .limit(1);
+    return {
+      ...nivelVigente,
+      dataInicio: ap?.macroInicio ?? null,
+      dataFim: ap?.macroTermino ?? null,
+    } as ContratoNivelComDatas;
+  }
+  return nivelVigente as ContratoNivelComDatas;
 }
 
 export async function getContratoNivelComStatusOperacional(
@@ -6047,10 +6086,27 @@ export async function getContratoNivelComStatusOperacional(
         dataFim: contratosAluno.periodoTermino,
       })
       .from(contratoNiveis)
-      .innerJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id))
+      .leftJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id))
       .where(eq(contratoNiveis.id, contratoNivelId))
       .limit(1);
-    nivel = (row as ContratoNivelComDatas) || null;
+    if (row) {
+      // Fallback de datas para alunos legados sem contratos_aluno
+      if (!row.dataInicio || !row.dataFim) {
+        const [ap] = await db
+          .select({ macroInicio: assessmentPdi.macroInicio, macroTermino: assessmentPdi.macroTermino })
+          .from(assessmentPdi)
+          .where(eq(assessmentPdi.alunoId, alunoId))
+          .orderBy(desc(assessmentPdi.createdAt))
+          .limit(1);
+        nivel = {
+          ...row,
+          dataInicio: ap?.macroInicio ?? null,
+          dataFim: ap?.macroTermino ?? null,
+        } as ContratoNivelComDatas;
+      } else {
+        nivel = row as ContratoNivelComDatas;
+      }
+    }
   } else {
     nivel = await getContratoNivelVigenteByAluno(alunoId);
   }
