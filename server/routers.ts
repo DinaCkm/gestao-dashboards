@@ -35,6 +35,7 @@ import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionType
 import { getDb } from "./db";
 import { buildLembreteEngajamentoEmail, sendEmail } from "./emailService";
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
+import { mapHistoricoCertificado, validarPrecondicoesEmissaoCertificacao } from "./certificacao.service";
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -357,15 +358,7 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
         performanceFinal: classifyByPercent(avgProgresso),
       },
       elegibilidadeCertificacaoFutura: elegibilidade,
-      certificadoEmitido: certificado
-        ? {
-            id: certificado.id,
-            status: certificado.status,
-            arquivoUrl: certificado.arquivoUrl,
-            emitidoEm: certificado.emitidoEm,
-            hashDocumento: certificado.hashDocumento,
-          }
-        : null,
+      certificadoEmitido: mapHistoricoCertificado(certificado),
       disc: {
         totalNoNivel: discPorNivel.length,
         historico: discPorNivel,
@@ -7119,27 +7112,13 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         }
 
         const existing = await db.getNivelCertificateByAlunoNivel(alunoId, input.contratoNivelId);
-        if (existing) {
-          throw new TRPCError({ code: "CONFLICT", message: "Já existe certificado emitido para este nível." });
-        }
-
         const elegibilidade = await db.avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
-        if (!elegibilidade.elegivel) {
-          throw new TRPCError({ code: "PRECONDITION_FAILED", message: elegibilidade.motivo || "Nível não elegível para certificação." });
-        }
-
         const nivel = elegibilidade.nivel;
         const template = await db.getActiveCertificationTemplateByNivel((nivel?.nivel || "I") as any);
-        if (!template) {
-          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sem template ativo para este nível." });
-        }
-
         const assinaturas = await db.getCertificationSignatures();
         const gerente = assinaturas.find((a) => a.tipo === "gerente");
+        const mentoraAssinatura = assinaturas.find((a) => a.tipo === "mentora");
         const gestorMaster = assinaturas.find((a) => a.tipo === "gestor_master");
-        if (!gerente || !gestorMaster) {
-          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Assinaturas obrigatórias (gerente/gestor_master) ausentes." });
-        }
 
         const pedagogia = await db.getPedagogiaByNivel(alunoId, input.contratoNivelId);
         const mentorasUnicas = Array.from(
@@ -7149,8 +7128,23 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
               .map((s: any) => [s.consultorId, s])
           ).values()
         );
-        if (mentorasUnicas.length === 0) {
-          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Nenhuma mentora válida encontrada no nível." });
+        try {
+          validarPrecondicoesEmissaoCertificacao({
+            certificadoExistente: !!existing,
+            elegivel: !!elegibilidade.elegivel,
+            motivoElegibilidade: elegibilidade.motivo,
+            templateAtivo: !!template,
+            assinaturaGerente: !!gerente,
+            assinaturaGestorMaster: !!gestorMaster,
+            assinaturaMentora: !!mentoraAssinatura,
+            totalMentorasNivel: mentorasUnicas.length,
+          });
+        } catch (error: any) {
+          const message = String(error?.message || "Pré-condições de certificação inválidas.");
+          if (message.includes("Já existe certificado emitido")) {
+            throw new TRPCError({ code: "CONFLICT", message });
+          }
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message });
         }
 
         const hashDocumento = `${alunoId}-${input.contratoNivelId}-${Date.now()}`;

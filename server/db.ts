@@ -80,6 +80,7 @@ import {
   calcularDataFechamentoOperacional,
   validarNivelEmAndamentoUnicoRepo,
 } from "./contrato-niveis.service";
+import { calcularElegibilidadeCertificacao } from "./certificacao.service";
 
 const createDbClient = () =>
   drizzle(process.env.DATABASE_URL!, { schema, mode: "default" });
@@ -11030,7 +11031,6 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
   const eventos = pedagogia.eventParticipation || [];
   const cases = pedagogia.casesSucesso || [];
 
-  const nivelEncerrado = nivel.statusOperacional === "encerrado";
   const resultadoFinalFechado = assessments.some((a: any) => ["finalizado", "concluido"].includes(String(a.status)));
   const engajamento = eventos.length > 0
     ? (eventos.filter((e: any) => e.status === "presente").length / eventos.length) * 100
@@ -11040,36 +11040,16 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
     : 0;
   const evidencias = cases.filter((c: any) => c.entregue === 1).length;
 
-  const criterios = {
-    nivelEncerrado,
+  const avaliacao = calcularElegibilidadeCertificacao({
+    statusOperacional: nivel.statusOperacional,
     resultadoFinalFechado,
-    engajamentoMin80: engajamento >= 80,
-    desafiosMin80: desafios >= 80,
-    evidenciasMinimas: evidencias > 0,
-  };
-
-  const elegivel = criterios.nivelEncerrado
-    && criterios.resultadoFinalFechado
-    && criterios.engajamentoMin80
-    && criterios.desafiosMin80
-    && criterios.evidenciasMinimas;
-
-  const motivos: string[] = [];
-  if (!criterios.nivelEncerrado) motivos.push("Nível não está encerrado.");
-  if (!criterios.resultadoFinalFechado) motivos.push("Resultado final do nível não está fechado.");
-  if (!criterios.engajamentoMin80) motivos.push("Engajamento final abaixo de 80%.");
-  if (!criterios.desafiosMin80) motivos.push("Desafios concluídos abaixo de 80%.");
-  if (!criterios.evidenciasMinimas) motivos.push("Sem evidências/cases entregues no nível.");
+    engajamento,
+    desafios,
+    evidencias,
+  });
 
   return {
-    elegivel,
-    criterios,
-    metricas: {
-      engajamento: Number(engajamento.toFixed(2)),
-      desafios: Number(desafios.toFixed(2)),
-      evidencias,
-    },
-    motivo: motivos.join(" "),
+    ...avaliacao,
     nivel,
   };
 }

@@ -176,13 +176,15 @@ export default function EvolucaoAluno() {
                   </div>
                   {certStatus?.certificadoEmitido ? (
                     <Button variant="outline" disabled>Certificado já emitido</Button>
-                  ) : (
+                  ) : podeEmitir ? (
                     <Button
-                      disabled={!podeEmitir || emitirCert.isPending}
+                      disabled={emitirCert.isPending}
                       onClick={() => emitirCert.mutate({ contratoNivelId: item.nivel.id })}
                     >
                       Emitir Certificação
                     </Button>
+                  ) : (
+                    <span className="text-xs text-slate-500">Emissão indisponível para este nível.</span>
                   )}
                 </div>
               </CardContent>
