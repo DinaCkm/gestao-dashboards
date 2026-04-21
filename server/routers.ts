@@ -194,6 +194,203 @@ function classifyByPercent(percentual: number): string {
   return "Inicial";
 }
 
+async function buildEvolucaoAlunoPayload(alunoId: number) {
+  const alunos = await db.getAlunos();
+  const aluno = alunos.find((a) => a.id === alunoId);
+  if (!aluno) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+  }
+
+  const [niveisRaw, programas, turmas, allDisc, discComparativo] = await Promise.all([
+    db.getContratoNiveisByAluno(alunoId),
+    db.getPrograms(),
+    db.getTurmas(),
+    db.getAllDiscResultadosByAluno(alunoId),
+    (async () => {
+      const resultados = await db.getAllDiscResultadosByAluno(alunoId);
+      if (resultados.length < 2) return null;
+      const primeiro = resultados[0];
+      const ultimo = resultados[resultados.length - 1];
+      return {
+        cicloInicial: {
+          ciclo: primeiro.ciclo,
+          data: primeiro.completedAt,
+          scores: { D: Number(primeiro.scoreD), I: Number(primeiro.scoreI), S: Number(primeiro.scoreS), C: Number(primeiro.scoreC) },
+          perfilPredominante: primeiro.perfilPredominante,
+        },
+        cicloAtual: {
+          ciclo: ultimo.ciclo,
+          data: ultimo.completedAt,
+          scores: { D: Number(ultimo.scoreD), I: Number(ultimo.scoreI), S: Number(ultimo.scoreS), C: Number(ultimo.scoreC) },
+          perfilPredominante: ultimo.perfilPredominante,
+        },
+        evolucao: {
+          D: Number(ultimo.scoreD) - Number(primeiro.scoreD),
+          I: Number(ultimo.scoreI) - Number(primeiro.scoreI),
+          S: Number(ultimo.scoreS) - Number(primeiro.scoreS),
+          C: Number(ultimo.scoreC) - Number(primeiro.scoreC),
+        },
+        totalCiclos: resultados.length,
+      };
+    })(),
+  ]);
+
+  const programa = aluno.programId ? programas.find((p) => p.id === aluno.programId) : null;
+  const turma = aluno.turmaId ? turmas.find((t) => t.id === aluno.turmaId) : null;
+
+  const niveis = [...niveisRaw].sort((a, b) => {
+    const da = new Date(a.dataInicio as any).getTime();
+    const dbb = new Date(b.dataInicio as any).getTime();
+    if (Number.isFinite(da) && Number.isFinite(dbb)) return da - dbb;
+    return a.id - b.id;
+  });
+
+  const itens = await Promise.all(niveis.map(async (nivel) => {
+    const [pedagogia, nivelOperacional] = await Promise.all([
+      db.getPedagogiaByNivel(alunoId, nivel.id),
+      db.getContratoNivelComStatusOperacional(alunoId, nivel.id),
+    ]);
+
+    const assessments = pedagogia.assessments || [];
+    const plano = pedagogia.planoIndividual || [];
+    const metas = pedagogia.metas || [];
+    const mentorias = pedagogia.mentoringSessions || [];
+    const eventos = pedagogia.eventParticipation || [];
+    const cases = pedagogia.casesSucesso || [];
+    const studentPerf = pedagogia.studentPerformance || [];
+
+    const assessmentInicial = [...assessments].sort((a: any, b: any) => {
+      const da = new Date(a.createdAt || a.updatedAt || a.macroInicio || 0).getTime();
+      const dbb = new Date(b.createdAt || b.updatedAt || b.macroInicio || 0).getTime();
+      return da - dbb;
+    })[0] || null;
+
+    const obrigatorias = plano.filter((p: any) => Number(p.isObrigatoria ?? 1) === 1);
+    const obrigatoriasAprovadas = obrigatorias.filter((p: any) => {
+      const nota = Number(p.notaAtual ?? 0);
+      const meta = Number(p.metaNota ?? 7);
+      return Number.isFinite(nota) && nota >= meta;
+    }).length;
+    const metasConcluidas = metas.filter((m: any) => String(m.status || "").toLowerCase() === "concluida").length;
+    const eventosPresentes = eventos.filter((e: any) => e.status === "presente").length;
+    const avgNotaPerformance = studentPerf.length > 0
+      ? studentPerf.reduce((acc: number, p: any) => acc + Number(p.notaAvaliacao ?? 0), 0) / studentPerf.length
+      : 0;
+    const avgProgresso = studentPerf.length > 0
+      ? studentPerf.reduce((acc: number, p: any) => acc + Number(p.progressoTotal ?? 0), 0) / studentPerf.length
+      : 0;
+
+    const mentoraId = nivel.mentoraPrincipalId || mentorias.find((s: any) => s.consultorId)?.consultorId || null;
+    const mentora = mentoraId ? await db.getConsultorById(mentoraId) : null;
+
+    const discPorNivel = allDisc
+      .filter((d: any) => d.contratoNivelId === nivel.id)
+      .map((d: any) => ({
+        id: d.id,
+        ciclo: d.ciclo,
+        completedAt: d.completedAt,
+        perfilPredominante: d.perfilPredominante,
+        scores: { D: Number(d.scoreD), I: Number(d.scoreI), S: Number(d.scoreS), C: Number(d.scoreC) },
+      }));
+
+    const statusOperacional = (nivelOperacional as any)?.statusOperacional || nivel.status;
+    const isEmAndamento = statusOperacional === "em_andamento" || statusOperacional === "fechamento" || statusOperacional === "ajustes";
+    const elegibilidade = !isEmAndamento && obrigatorias.length > 0 && obrigatoriasAprovadas === obrigatorias.length
+      ? "elegivel_futuramente"
+      : !isEmAndamento
+        ? "aguardando_certificacao"
+        : "em_desenvolvimento";
+
+    return {
+      nivel: {
+        id: nivel.id,
+        nome: nivel.nivel,
+        dataInicio: nivel.dataInicio,
+        dataFim: nivel.dataFim,
+        statusFinal: statusOperacional,
+        emAndamento: isEmAndamento,
+      },
+      mentora: mentora ? { id: mentora.id, nome: mentora.name, email: mentora.email } : null,
+      assessmentInicial: assessmentInicial
+        ? {
+            id: assessmentInicial.id,
+            trilhaNome: (assessmentInicial as any).trilhaNome || null,
+            macroInicio: assessmentInicial.macroInicio || null,
+            macroTermino: assessmentInicial.macroTermino || null,
+            status: assessmentInicial.status || null,
+          }
+        : null,
+      pdi: {
+        totalAssessments: assessments.length,
+        totalCompetenciasDefinidas: assessments.reduce((acc: number, a: any) => acc + (a.totalCompetencias || 0), 0),
+        totalCompetenciasObrigatorias: assessments.reduce((acc: number, a: any) => acc + (a.obrigatorias || 0), 0),
+      },
+      proposto: {
+        competenciasDefinidas: obrigatorias.length,
+        metasPrevistas: metas.length,
+        sessoesPrevistas: assessmentInicial?.totalSessoesPrevistas || null,
+      },
+      obtido: {
+        competenciasAprovadas: obrigatoriasAprovadas,
+        metasConcluidas,
+        mentoriasRealizadas: mentorias.filter((s: any) => s.presence === "presente").length,
+        mentoriasTotal: mentorias.length,
+        eventosPresenca: eventosPresentes,
+        eventosTotal: eventos.length,
+        casesEntregues: cases.filter((c: any) => c.entregue === 1).length,
+        casesTotal: cases.length,
+        mediaNotaPerformance: Number.isFinite(avgNotaPerformance) ? Number(avgNotaPerformance.toFixed(2)) : 0,
+        mediaProgressoPerformance: Number.isFinite(avgProgresso) ? Number(avgProgresso.toFixed(2)) : 0,
+      },
+      resultados: {
+        competencias: {
+          total: obrigatorias.length,
+          aprovadas: obrigatoriasAprovadas,
+          percentualAprovacao: obrigatorias.length > 0 ? clampPercent((obrigatoriasAprovadas / obrigatorias.length) * 100) : 0,
+        },
+        metas: {
+          total: metas.length,
+          concluidas: metasConcluidas,
+          percentualConclusao: metas.length > 0 ? clampPercent((metasConcluidas / metas.length) * 100) : 0,
+        },
+        performanceFinal: classifyByPercent(avgProgresso),
+      },
+      elegibilidadeCertificacaoFutura: elegibilidade,
+      disc: {
+        totalNoNivel: discPorNivel.length,
+        historico: discPorNivel,
+      },
+      snapshotPedagogico: {
+        contratoNivelId: pedagogia.contratoNivelId,
+        assessments,
+        planoIndividual: plano,
+        metas,
+        mentoringSessions: mentorias,
+        eventParticipation: eventos,
+        casesSucesso: cases,
+        studentPerformance: studentPerf,
+      },
+    };
+  }));
+
+  return {
+    aluno: {
+      id: aluno.id,
+      nome: aluno.name,
+      email: aluno.email,
+      programa: programa?.name || "Não definido",
+      turma: turma?.name || "Não definida",
+    },
+    resumo: {
+      totalNiveis: itens.length,
+      niveisConcluidos: itens.filter((i) => !i.nivel.emAndamento).length,
+      nivelAtual: itens.find((i) => i.nivel.emAndamento) || null,
+    },
+    discComparativo,
+    timeline: itens,
+  };
+}
+
 export const appRouter = router({
   system: systemRouter,
   jornada: jornadaRouter,
@@ -6814,6 +7011,30 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       .input(z.object({ alunoId: z.number(), contratoNivelId: z.number() }))
       .query(async ({ input }) => {
         return await db.getPedagogiaByNivel(input.alunoId, input.contratoNivelId);
+      }),
+  }),
+
+  evolucao: router({
+    minha: protectedProcedure.query(async ({ ctx }) => {
+      let alunoId: number | null = ctx.user.alunoId ?? null;
+      if (!alunoId) {
+        const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+        alunoId = alunoCtx?.id ?? null;
+      }
+      if (!alunoId) {
+        const byExternal = await db.getAlunoByExternalId(ctx.user.openId);
+        alunoId = byExternal?.id ?? null;
+      }
+      if (!alunoId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado para a sessão atual." });
+      }
+      return await buildEvolucaoAlunoPayload(alunoId);
+    }),
+
+    porAluno: managerProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await buildEvolucaoAlunoPayload(input.alunoId);
       }),
   }),
 
