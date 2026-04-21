@@ -3039,39 +3039,108 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const metas = pedagogia.metas || [];
         const cases = pedagogia.casesSucesso || [];
 
+        // === CÁLCULO DE INDICADORES VIA V2 (usa student_performance para Ind.2 e Ind.3) ===
+        const idUsuarioNivel = aluno.externalId || String(aluno.id);
+
+        // Montar PerformanceRecord[] a partir do student_performance do nível
+        const studentPerfNivel = (pedagogia.studentPerformance || []) as any[];
+        const performanceNivelRecs: PerformanceRecord[] = [];
+        for (const sp of studentPerfNivel) {
+          performanceNivelRecs.push({
+            idUsuario: idUsuarioNivel,
+            nomeTurma: sp.turmaName || '',
+            idCompetencia: sp.externalCompetenciaId || String(sp.competenciaId || ''),
+            nomeCompetencia: sp.competenciaName || '',
+            notaAvaliacao: sp.mediaAvaliacoesRespondidas != null ? Number(sp.mediaAvaliacoesRespondidas) / 10 : undefined,
+            aulasConcluidas: sp.aulasConcluidas || 0,
+            aulasDisponiveis: sp.aulasDisponiveis || 0,
+            aprovado: (sp.progressoTotal || 0) >= 100,
+          } as any);
+        }
+        // Complementar com plano_individual.notaAtual quando disponível
+        for (const item of plano) {
+          if ((item as any).notaAtual) {
+            const key = String((item as any).competenciaId);
+            if (!performanceNivelRecs.find(p => p.idCompetencia === key)) {
+              performanceNivelRecs.push({
+                idUsuario: idUsuarioNivel,
+                nomeTurma: '',
+                idCompetencia: key,
+                nomeCompetencia: (item as any).competenciaNome || '',
+                notaAvaliacao: parseFloat((item as any).notaAtual),
+                aprovado: parseFloat((item as any).notaAtual) >= 7,
+              } as any);
+            }
+          }
+        }
+
+        // Montar MentoringRecord[] e EventRecord[] para o V2
+        const mentoriasNivelRecs: MentoringRecord[] = mentorias.map((s: any) => ({
+          idUsuario: idUsuarioNivel,
+          nomeAluno: aluno.name,
+          empresa: programa?.name || '',
+          turma: turma?.name || '',
+          trilha: '',
+          ciclo: s.ciclo || '',
+          sessao: s.sessionNumber || 0,
+          dataSessao: s.sessionDate ? new Date(s.sessionDate) : undefined,
+          presenca: s.presence as 'presente' | 'ausente',
+          atividadeEntregue: s.isAssessment ? 'sem_tarefa' : ((s.taskStatus || 'sem_tarefa') as any),
+          engajamento: s.engagementScore || undefined,
+          feedback: s.feedback || '',
+        }));
+        const eventosNivelRecs: EventRecord[] = eventos.map((e: any) => ({
+          idUsuario: idUsuarioNivel,
+          nomeAluno: aluno.name,
+          empresa: programa?.name || '',
+          turma: '',
+          trilha: '',
+          tituloEvento: e.eventTitle || 'Evento',
+          dataEvento: e.eventDate ? new Date(e.eventDate) : undefined,
+          presenca: e.status as 'presente' | 'ausente',
+        }));
+
+        // Buscar ciclos e compIdToCodigoMap para o V2
+        const ciclosNivelCalc = await db.getCiclosForCalculator(aluno.id);
+        const ciclosV2Nivel = ciclosNivelCalc.map((c: any) => ({
+          ...c,
+          trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
+        }));
+        const compIdToCodigoMapNivel = await db.getCompIdToCodigoMap();
+        const casesDataNivel: CaseSucessoData[] = cases.map((c: any) => ({
+          alunoId: c.alunoId,
+          trilhaId: c.trilhaId,
+          trilhaNome: c.trilhaNome || '',
+          entregue: c.entregue === 1,
+        }));
+        const macrocicloPorAlunoNivel = await db.getMacrocicloPorAluno();
+        const macrocicloNivel = macrocicloPorAlunoNivel.get(idUsuarioNivel);
+        const indV2Nivel = calcularIndicadoresAlunoV2(
+          idUsuarioNivel, mentoriasNivelRecs, eventosNivelRecs, performanceNivelRecs,
+          ciclosV2Nivel, compIdToCodigoMapNivel, casesDataNivel, undefined, macrocicloNivel
+        );
+
+        // Indicadores: usar V2 para todos (Ind.1 a Ind.7)
         const webinarsTotal = eventos.length;
         const webinarsPresente = eventos.filter((e: any) => e.status === "presente").length;
-        const ind1_webinars = webinarsTotal > 0 ? clampPercent((webinarsPresente / webinarsTotal) * 100) : 0;
-
-        const avaliacoesTotal = assessments.length;
-        const avaliacoesConcluidas = assessments.filter((a: any) => ["finalizado", "concluido"].includes(String(a.status))).length;
-        const ind2_avaliacoes = avaliacoesTotal > 0 ? clampPercent((avaliacoesConcluidas / avaliacoesTotal) * 100) : 0;
-
-        const compObrigatorias = plano.filter((c: any) => Number(c.isObrigatoria ?? 1) === 1);
-        const compAprovadas = compObrigatorias.filter((c: any) => {
-          const nota = Number(c.notaAtual ?? 0);
-          const meta = Number(c.metaNota ?? 7);
-          return Number.isFinite(nota) && nota >= meta;
-        }).length;
-        const ind3_competencias = compObrigatorias.length > 0 ? clampPercent((compAprovadas / compObrigatorias.length) * 100) : 0;
-
+        const ind1_webinars = indV2Nivel.consolidado?.ind1_webinars ?? (webinarsTotal > 0 ? clampPercent((webinarsPresente / webinarsTotal) * 100) : 0);
+        const ind2_avaliacoes = indV2Nivel.consolidado?.ind2_avaliacoes ?? 0;
+        const ind3_competencias = indV2Nivel.consolidado?.ind3_competencias ?? 0;
         const tarefasValidas = mentorias.filter((s: any) => s.taskStatus === "entregue" || s.taskStatus === "nao_entregue");
         const tarefasEntregues = tarefasValidas.filter((s: any) => s.taskStatus === "entregue").length;
-        const ind4_tarefas = tarefasValidas.length > 0 ? clampPercent((tarefasEntregues / tarefasValidas.length) * 100) : 0;
-
+        const ind4_tarefas = indV2Nivel.consolidado?.ind4_tarefas ?? (tarefasValidas.length > 0 ? clampPercent((tarefasEntregues / tarefasValidas.length) * 100) : 0);
         const engajamentos = mentorias
           .map((s: any) => (s.engagementScore == null ? null : Number(s.engagementScore)))
           .filter((v: number | null): v is number => v != null && Number.isFinite(v));
         const avgEngajamento = engajamentos.length > 0
           ? engajamentos.reduce((acc: number, v: number) => acc + v, 0) / engajamentos.length
           : 0;
-        const ind5_engajamento = clampPercent(avgEngajamento * 20);
-
+        const ind5_engajamento = indV2Nivel.consolidado?.ind5_engajamento ?? clampPercent(avgEngajamento * 20);
+        const compObrigatorias = plano.filter((c: any) => Number(c.isObrigatoria ?? 1) === 1);
         const aplicTotal = cases.length;
         const aplicEntregues = cases.filter((c: any) => c.entregue === 1).length;
-        const ind6_aplicabilidade = aplicTotal > 0 ? clampPercent((aplicEntregues / aplicTotal) * 100) : 0;
-
-        const ind7_engajamentoFinal = clampPercent(
+        const ind6_aplicabilidade = indV2Nivel.consolidado?.ind6_aplicabilidade ?? (aplicTotal > 0 ? clampPercent((aplicEntregues / aplicTotal) * 100) : 0);
+        const ind7_engajamentoFinal = indV2Nivel.consolidado?.ind7_engajamentoFinal ?? clampPercent(
           (ind1_webinars + ind2_avaliacoes + ind3_competencias + ind4_tarefas + ind5_engajamento) / 5
         );
 
@@ -3083,7 +3152,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           ind5_engajamento,
           ind6_aplicabilidade,
           ind7_engajamentoFinal,
-          classificacao: classifyByPercent(ind7_engajamentoFinal),
+          classificacao: indV2Nivel.consolidado?.classificacao ?? classifyByPercent(ind7_engajamentoFinal),
         };
 
         return {
