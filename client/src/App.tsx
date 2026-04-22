@@ -30,6 +30,7 @@ import TrilhasCompetencias from "./pages/TrilhasCompetencias";
 import PlanoIndividual from "./pages/PlanoIndividual";
 import DashboardAluno from "./pages/DashboardAluno";
 import Performance from "./pages/Performance";
+import EvolucaoAluno from "./pages/EvolucaoAluno";
 import RegistroMentoria from "./pages/RegistroMentoria";
 import DashboardGestor from "./pages/DashboardGestor";
 import RankingGeralEngajamento from "./pages/RankingGeralEngajamento";
@@ -115,6 +116,7 @@ function Router() {
       <Route path={"/webinars"} component={WebinarsAdmin} />
       <Route path={"/mural"} component={MuralAluno} />
       <Route path={"/performance"} component={Performance} />
+      <Route path={"/evolucao"} component={EvolucaoAluno} />
       <Route path={"/onboarding"} component={OnboardingAluno} />
       <Route path={"/avisos"} component={AvisosAdmin} />
       <Route path={"/atividades-praticas"} component={AtividadesPraticas} />
