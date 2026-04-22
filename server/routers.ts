@@ -186,6 +186,27 @@ function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, value));
 }
 
+function getFallbackDates(empresa?: string | null, turma?: string | null) {
+  const emp = empresa?.toLowerCase() || "";
+  const trm = turma?.toLowerCase() || "";
+
+  if (emp.includes("sebrae acre")) {
+    return { inicio: "2024-10-01", fim: "2026-10-30" };
+  }
+  
+  if (emp.includes("sebrae to")) {
+    if (trm.includes("bs1")) return { inicio: "2025-05-01", fim: "2026-04-30" };
+    if (trm.includes("bs2")) return { inicio: "2025-04-01", fim: "2026-04-30" };
+    if (trm.includes("bs3")) return { inicio: "2025-09-01", fim: "2026-08-31" };
+  }
+
+  if (emp.includes("ebrapii") || emp.includes("embrap")) {
+    return { inicio: "2025-03-24", fim: "2026-10-30" };
+  }
+
+  return { inicio: null, fim: null };
+}
+
 function classifyByPercent(percentual: number): string {
   if (percentual >= 90) return "Excelência";
   if (percentual >= 75) return "Avançado";
@@ -302,16 +323,17 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
         ? "aguardando_certificacao"
         : "em_desenvolvimento";
 
-    return {
-      nivel: {
-        id: nivel.id,
-        nome: nivel.nivel,
-        // Priorizar datas do nível, mas usar datas do cadastro do aluno como fallback
-        dataInicio: nivel.dataInicio || (aluno as any).contratoInicio || null,
-        dataFim: nivel.dataFim || (aluno as any).contratoFim || null,
-        statusFinal: statusOperacional,
-        emAndamento: isEmAndamento,
-      },
+        const fallback = getFallbackDates(programa?.name, turma?.name);
+        return {
+          nivel: {
+            id: nivel.id,
+            nome: nivel.nivel,
+            // Priorizar datas do nível, depois cadastro do aluno, depois regra por empresa/turma
+            dataInicio: nivel.dataInicio || (aluno as any).contratoInicio || fallback.inicio || null,
+            dataFim: nivel.dataFim || (aluno as any).contratoFim || fallback.fim || null,
+            statusFinal: statusOperacional,
+            emAndamento: isEmAndamento,
+          },
       mentora: mentora ? { id: mentora.id, nome: mentora.name, email: mentora.email } : null,
       assessmentInicial: assessmentInicial
         ? {
@@ -3169,9 +3191,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             ? {
                 id: nivelReferencia.id,
                 nome: nivelReferencia.nivel,
-                // Priorizar datas do nível, mas usar datas do cadastro do aluno como fallback
-                dataInicio: nivelReferencia.dataInicio || (aluno as any).contratoInicio || null,
-                dataFim: nivelReferencia.dataFim || (aluno as any).contratoFim || null,
+                // Priorizar datas do nível, depois cadastro do aluno, depois regra por empresa/turma
+                dataInicio: nivelReferencia.dataInicio || (aluno as any).contratoInicio || getFallbackDates(programa?.name, turma?.name).inicio || null,
+                dataFim: nivelReferencia.dataFim || (aluno as any).contratoFim || getFallbackDates(programa?.name, turma?.name).fim || null,
                 statusOperacional: (nivelReferencia as any).statusOperacional || "encerrado",
                 isFallbackEncerrado: !nivelOperacional,
               }
