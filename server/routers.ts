@@ -328,9 +328,10 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
           nivel: {
             id: nivel.id,
             nome: nivel.nivel,
-            // Priorizar datas do nível, depois cadastro do aluno, depois regra por empresa/turma
-            dataInicio: nivel.dataInicio || (aluno as any).contratoInicio || fallback.inicio || null,
-            dataFim: nivel.dataFim || (aluno as any).contratoFim || fallback.fim || null,
+            // PRIORIDADE ABSOLUTA: Cadastro do Aluno (Formulário)
+            // Depois: Datas do Nível, Depois: Regra por Empresa/Turma
+            dataInicio: (aluno as any).contratoInicio || nivel.dataInicio || fallback.inicio || null,
+            dataFim: (aluno as any).contratoFim || nivel.dataFim || fallback.fim || null,
             statusFinal: statusOperacional,
             emAndamento: isEmAndamento,
           },
@@ -3191,9 +3192,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             ? {
                 id: nivelReferencia.id,
                 nome: nivelReferencia.nivel,
-                // Priorizar datas do nível, depois cadastro do aluno, depois regra por empresa/turma
-                dataInicio: nivelReferencia.dataInicio || (aluno as any).contratoInicio || getFallbackDates(programa?.name, turma?.name).inicio || null,
-                dataFim: nivelReferencia.dataFim || (aluno as any).contratoFim || getFallbackDates(programa?.name, turma?.name).fim || null,
+                // PRIORIDADE ABSOLUTA: Cadastro do Aluno (Formulário)
+                // Depois: Datas do Nível, Depois: Regra por Empresa/Turma
+                dataInicio: (aluno as any).contratoInicio || nivelReferencia.dataInicio || getFallbackDates(programa?.name, turma?.name).inicio || null,
+                dataFim: (aluno as any).contratoFim || nivelReferencia.dataFim || getFallbackDates(programa?.name, turma?.name).fim || null,
                 statusOperacional: (nivelReferencia as any).statusOperacional || "encerrado",
                 isFallbackEncerrado: !nivelOperacional,
               }
