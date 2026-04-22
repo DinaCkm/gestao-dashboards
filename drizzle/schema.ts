@@ -158,6 +158,7 @@ export type InsertCicloCompetencia = typeof cicloCompetencias.$inferInsert;
 export const planoIndividual = mysqlTable("plano_individual", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   competenciaId: int("competenciaId").notNull(), // FK para competencias
   isObrigatoria: int("isObrigatoria").default(1).notNull(), // 1 = obrigatória, 0 = opcional
   notaAtual: decimal("notaAtual", { precision: 5, scale: 2 }), // Nota atual na competência
@@ -213,6 +214,7 @@ export type InsertAluno = typeof alunos.$inferInsert;
 export const mentoringSessions = mysqlTable("mentoring_sessions", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   consultorId: int("consultorId").notNull(),
   turmaId: int("turmaId"),
   trilhaId: int("trilhaId"),
@@ -280,6 +282,7 @@ export const eventParticipation = mysqlTable("event_participation", {
   id: int("id").autoincrement().primaryKey(),
   eventId: int("eventId").notNull(),
   alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   status: mysqlEnum("status", ["presente", "ausente"]).notNull(),
   reflexao: text("reflexao"), // Reflexão do aluno após assistir o webinar
   selfReportedAt: timestamp("selfReportedAt"), // Data/hora que o aluno marcou presença
@@ -381,6 +384,7 @@ export type InsertReport = typeof reports.$inferInsert;
 export const assessmentPdi = mysqlTable("assessment_pdi", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (onboarding por nível)
   trilhaId: int("trilhaId").notNull(), // FK para trilhas (Básica, Essencial, Master, Visão de Futuro)
   turmaId: int("turmaId"), // FK para turmas (BS1, BS2, BS3, etc.)
   consultorId: int("consultorId"), // FK para consultors (mentora que criou o assessment)
@@ -607,6 +611,8 @@ export const announcements = mysqlTable("announcements", {
   actionLabel: varchar("actionLabel", { length: 100 }), // Texto do botão (ex: "Inscreva-se", "Acessar")
   programId: int("programId"), // Empresa específica ou null para todos
   targetAudience: mysqlEnum("targetAudience", ["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).default("all"),
+  sourceType: varchar("sourceType", { length: 80 }), // rastreabilidade de automações (sem quebrar CRUD manual)
+  sourceRefId: varchar("sourceRefId", { length: 160 }), // referência única por evento automático
   priority: int("priority").default(0).notNull(), // Maior = mais destaque
   publishAt: timestamp("publishAt"), // Data de publicação (agendamento)
   expiresAt: timestamp("expiresAt"), // Data de expiração
@@ -644,6 +650,97 @@ export type ContratoAluno = typeof contratosAluno.$inferSelect;
 export type InsertContratoAluno = typeof contratosAluno.$inferInsert;
 
 /**
+ * Contrato Níveis - Histórico formal dos níveis do aluno dentro de um contrato
+ * Fase 1: camada nova, sem substituir contratos_aluno e fluxos existentes.
+ */
+export const contratoNiveis = mysqlTable("contrato_niveis", {
+  id: int("id").autoincrement().primaryKey(),
+  contratoId: int("contratoId").notNull(), // FK para contratos_aluno
+  alunoId: int("alunoId").notNull(), // FK para alunos (desnormalizado para consultas rápidas)
+  nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+  dataInicio: date("dataInicio", { mode: "string" }).notNull(),
+  dataFim: date("dataFim", { mode: "string" }).notNull(),
+  dataFechamentoOperacional: date("dataFechamentoOperacional", { mode: "string" }).notNull(),
+  dataLimiteAjustes: date("dataLimiteAjustes", { mode: "string" }).notNull(),
+  status: mysqlEnum("status", ["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]).default("planejado").notNull(),
+  assessmentPdiId: int("assessmentPdiId"), // FK opcional para assessment_pdi (fase futura)
+  mentoraPrincipalId: int("mentoraPrincipalId"), // FK opcional para consultors
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ContratoNivel = typeof contratoNiveis.$inferSelect;
+export type InsertContratoNivel = typeof contratoNiveis.$inferInsert;
+
+/**
+ * Templates de certificado por nível.
+ * Um template ativo por nível por vez.
+ */
+export const certificationTemplates = mysqlTable("certification_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+  ativo: int("ativo").default(1).notNull(),
+  arquivoModelo: text("arquivoModelo"), // URL/chave do modelo
+  camposMapeados: json("camposMapeados"), // mapeamento dinâmico de campos
+  createdBy: int("createdBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CertificationTemplate = typeof certificationTemplates.$inferSelect;
+export type InsertCertificationTemplate = typeof certificationTemplates.$inferInsert;
+
+/**
+ * Assinaturas formais utilizadas na emissão.
+ */
+export const certificationSignatures = mysqlTable("certification_signatures", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"), // pode apontar para users/consultors conforme contexto
+  tipo: mysqlEnum("tipo", ["gerente", "mentora", "gestor_master"]).notNull(),
+  nomeExibicao: varchar("nomeExibicao", { length: 255 }).notNull(),
+  cargo: varchar("cargo", { length: 255 }),
+  imagemAssinaturaUrl: text("imagemAssinaturaUrl"),
+  ativo: int("ativo").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CertificationSignature = typeof certificationSignatures.$inferSelect;
+export type InsertCertificationSignature = typeof certificationSignatures.$inferInsert;
+
+/**
+ * Certificados emitidos por nível.
+ */
+export const nivelCertificates = mysqlTable("nivel_certificates", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId").notNull(),
+  nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+  templateId: int("templateId").notNull(),
+  status: mysqlEnum("status", ["emitido", "revogado"]).default("emitido").notNull(),
+  arquivoUrl: text("arquivoUrl"),
+  emitidoEm: timestamp("emitidoEm").defaultNow().notNull(),
+  emitidoPor: int("emitidoPor"),
+  hashDocumento: varchar("hashDocumento", { length: 128 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type NivelCertificate = typeof nivelCertificates.$inferSelect;
+export type InsertNivelCertificate = typeof nivelCertificates.$inferInsert;
+
+/**
+ * Mentoras vinculadas ao certificado emitido (suporta múltiplas mentoras).
+ */
+export const nivelCertificateMentoras = mysqlTable("nivel_certificate_mentoras", {
+  id: int("id").autoincrement().primaryKey(),
+  certificateId: int("certificateId").notNull(),
+  consultorId: int("consultorId").notNull(),
+  nomeMentora: varchar("nomeMentora", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type NivelCertificateMentora = typeof nivelCertificateMentoras.$inferSelect;
+export type InsertNivelCertificateMentora = typeof nivelCertificateMentoras.$inferInsert;
+
+/**
  * Histórico de Nível de Competência - Registra a evolução do nível do aluno
  * A mentora atualiza o nível atual a cada 3 sessões de mentoria
  */
@@ -670,6 +767,7 @@ export type InsertHistoricoNivelCompetencia = typeof historicoNivelCompetencia.$
 export const casesSucesso = mysqlTable("cases_sucesso", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   trilhaId: int("trilhaId"), // FK para trilhas (macrociclo: Básicas, Essenciais, etc.)
   trilhaNome: varchar("trilhaNome", { length: 255 }), // Nome do macrociclo para referência rápida
   entregue: int("entregue").default(0).notNull(), // 1 = entregue, 0 = não entregue
@@ -805,6 +903,7 @@ export type InsertAppointmentParticipant = typeof appointmentParticipants.$infer
 export const metas = mysqlTable("metas", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   assessmentCompetenciaId: int("assessmentCompetenciaId").notNull(), // FK para assessment_competencias
   competenciaId: int("competenciaId").notNull(), // FK para competencias (desnormalizado para queries rápidas)
   assessmentPdiId: int("assessmentPdiId").notNull(), // FK para assessment_pdi
@@ -867,6 +966,7 @@ export type InsertDiscResposta = typeof discRespostas.$inferInsert;
 export const discResultados = mysqlTable("disc_resultados", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (ciclo por nível)
   ciclo: int("ciclo").default(1).notNull(), // Ciclo do assessment (1 = inicial, 2 = reassessment, etc.)
   scoreD: decimal("scoreD", { precision: 5, scale: 2 }).notNull(), // Score Dominância normalizado (0-100)
   scoreI: decimal("scoreI", { precision: 5, scale: 2 }).notNull(), // Score Influência normalizado (0-100)
@@ -896,6 +996,7 @@ export type InsertDiscResultado = typeof discResultados.$inferInsert;
 export const autopercepcoesCompetencias = mysqlTable("autopercepcoes_competencias", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (onboarding por nível)
   competenciaId: int("competenciaId").notNull(), // FK para competencias
   trilhaId: int("trilhaId").notNull(), // FK para trilhas (desnormalizado)
   nota: int("nota").notNull(), // Autoavaliação 1-5
@@ -1115,6 +1216,7 @@ export type InsertEmailAlertaLog = typeof emailAlertasLog.$inferInsert;
 export const onboardingJornada = mysqlTable("onboarding_jornada", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (onboarding por nível)
   ciclo: int("ciclo").default(1).notNull(), // Número do ciclo de onboarding (1 = primeiro, 2 = renovação, etc.)
   // Etapa 1 - Cadastro confirmado pelo aluno
   cadastroConfirmado: int("cadastroConfirmado").default(0).notNull(), // 1 = aluno revisou e confirmou seus dados
