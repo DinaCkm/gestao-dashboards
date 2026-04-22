@@ -93,13 +93,19 @@ export default function Performance() {
                 <p className="font-semibold">Ciclo Vigente</p>
               </div>
               <div>
-                <p className="text-[10px] text-blue-300 uppercase font-bold">Período</p>
+                <p className="text-[10px] text-blue-300 uppercase font-bold">Período do Contrato</p>
                 <p className="font-semibold text-sm">
-                  {nivelVigente?.dataInicio ? (
+                  {data?.aluno?.contratoInicio ? (
                     <>
-                      {new Date(nivelVigente.dataInicio).toLocaleDateString()} 
+                      {new Date(data.aluno.contratoInicio).toLocaleDateString('pt-BR')} 
                       <span className="mx-1">até</span>
-                      {nivelVigente?.dataFim ? new Date(nivelVigente.dataFim).toLocaleDateString() : 'Em aberto'}
+                      {data?.aluno?.contratoFim ? new Date(data.aluno.contratoFim).toLocaleDateString('pt-BR') : 'Em aberto'}
+                    </>
+                  ) : nivelVigente?.dataInicio ? (
+                    <>
+                      {new Date(nivelVigente.dataInicio).toLocaleDateString('pt-BR')} 
+                      <span className="mx-1">até</span>
+                      {nivelVigente?.dataFim ? new Date(nivelVigente.dataFim).toLocaleDateString('pt-BR') : 'Em aberto'}
                     </>
                   ) : (
                     <span className="text-blue-300/60 italic">Em definição</span>
