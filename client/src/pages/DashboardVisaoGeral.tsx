@@ -420,13 +420,13 @@ export default function DashboardVisaoGeral() {
                         {idx + 1}
                       </Badge>
                       <div>
-                        <p className="font-medium text-sm">{aluno.nome}</p>
+                        <p className="font-medium text-sm">{aluno.nomeAluno || aluno.nome}</p>
                         <p className="text-xs text-muted-foreground">{aluno.empresa}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-lg" style={{ color: '#2E7D32' }}>
-                        {(aluno.mediaEngajamento || 0).toFixed(0)}%
+                        {(aluno.notaFinal !== undefined ? (aluno.notaFinal * 10) : (aluno.performanceGeral || aluno.mediaEngajamento || 0)).toFixed(0)}%
                       </p>
                     </div>
                   </div>
@@ -452,13 +452,13 @@ export default function DashboardVisaoGeral() {
                     <div className="flex items-center gap-3">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                       <div>
-                        <p className="font-medium text-sm">{aluno.nome}</p>
+                        <p className="font-medium text-sm">{aluno.nomeAluno || aluno.nome}</p>
                         <p className="text-xs text-muted-foreground">{aluno.empresa}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-lg text-red-600">
-                        {(aluno.mediaEngajamento || 0).toFixed(0)}%
+                        {(aluno.notaFinal !== undefined ? (aluno.notaFinal * 10) : (aluno.performanceGeral || aluno.mediaEngajamento || 0)).toFixed(0)}%
                       </p>
                     </div>
                   </div>
