@@ -4,7 +4,6 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { 
   User, Target, Clock, Calendar, TrendingUp, 
   AlertCircle, CheckCircle2, XCircle, Info, Sparkles, Route, ChevronDown, ChevronUp
@@ -16,8 +15,6 @@ export default function Performance() {
   const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
   const { data: performanceNivelAtual } = trpc.indicadores.performanceNivelAtual.useQuery();
   
-  const [showDetails, setShowDetails] = useState(false);
-
   const {
     engajamentoVal,
     metasVal,
@@ -36,7 +33,6 @@ export default function Performance() {
     
     const v2 = (data as any).indicadoresV2?.consolidado;
     const eng = v2?.ind7_engajamentoFinal || 0;
-    // Metas reais vêm do resumo de metas pedagógicas, não do ind2 (avaliações)
     const met = (data as any).metas?.resumo?.percentual || 0;
     const apl = v2?.ind6_aplicabilidade || 0;
     
@@ -71,7 +67,7 @@ export default function Performance() {
     <AlunoLayout>
       <div className="max-w-5xl mx-auto space-y-6 pb-12">
         
-        {/* HEADER COMPACTO (Substitui o card azul gigante) */}
+        {/* HEADER COMPACTO */}
         <div className="bg-[#0A1E3E] text-white rounded-xl p-6 shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-10">
             <Target size={120} />
@@ -128,83 +124,51 @@ export default function Performance() {
           </p>
         </div>
 
-        {/* MACROINDICADORES (CENTRO DA TELA) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Engajamento */}
-          <Card className="border-t-4 border-t-blue-500">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-sm font-medium text-gray-500">Engajamento</CardTitle>
-                <TrendingUp className="h-4 w-4 text-blue-500" />
+        {/* MACROINDICADORES (GRÁFICOS CIRCULARES NO LUGAR DOS CARDS) */}
+        <Card className="bg-white shadow-sm border-gray-100">
+          <CardHeader className="pb-0">
+            <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-600" />
+              Seu Desempenho no Ciclo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <DualIndicators 
+              engajamento={engajamentoVal}
+              desenvolvimento={metasVal}
+              desenvolvimentoDetalhes={{
+                total: (data as any).metas?.resumo?.total || 0,
+                cumpridas: (data as any).metas?.resumo?.concluidas || 0
+              }}
+              aplicabilidade={{
+                percentual: aplicabilidadeVal,
+                totalAvaliacoes: (data as any).indicadoresV2?.consolidado?.detalhes?.tarefas?.total || 0,
+                microTarefaPercentual: (data as any).indicadoresV2?.consolidado?.ind4_tarefas || 0,
+                microCasePercentual: (data as any).indicadoresV2?.consolidado?.ind6_aplicabilidade || 0,
+                caseAplicavel: true
+              }}
+              compact={false}
+            />
+            <div className="mt-6 pt-6 border-t border-gray-50 flex flex-wrap justify-center gap-8 text-[11px] text-gray-400 italic">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                Engajamento: Webinars, Mentorias e Avaliações
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold mb-2">{Math.round(engajamentoVal)}%</div>
-              <Progress value={engajamentoVal} className="h-2 mb-2" />
-              <div className="flex justify-between text-[10px] font-medium">
-                <span className={engajamentoVal >= 80 ? "text-emerald-600" : "text-amber-600"}>
-                  {engajamentoVal >= 80 ? "Meta Atingida" : "Abaixo da Meta"}
-                </span>
-                <span className="text-gray-400">Meta: 80%</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                Metas: Conclusão de Desafios Pedagógicos
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Metas / Desafios */}
-          <Card className="border-t-4 border-t-indigo-500">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-sm font-medium text-gray-500">Metas / Desafios</CardTitle>
-                <Target className="h-4 w-4 text-indigo-500" />
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-teal-500" />
+                Aplicabilidade: Case de Sucesso e Prática
               </div>
-            </CardHeader>
-            <CardContent>
-              {(data as any).metas?.resumo?.total > 0 ? (
-                <>
-                  <div className="text-3xl font-bold mb-2">{Math.round(metasVal)}%</div>
-                  <Progress value={metasVal} className="h-2 mb-2" />
-                  <div className="flex justify-between text-[10px] font-medium">
-                    <span className={metasVal >= 80 ? "text-emerald-600" : "text-amber-600"}>
-                      {metasVal >= 80 ? "Meta Atingida" : "Abaixo da Meta"}
-                    </span>
-                    <span className="text-gray-400">Meta: 80%</span>
-                  </div>
-                </>
-              ) : (
-                <div className="py-4 flex flex-col items-center justify-center text-center">
-                  <Badge variant="outline" className="bg-gray-50 text-gray-400 border-gray-200 font-normal">
-                    Não aplicável neste ciclo
-                  </Badge>
-                  <p className="text-[10px] text-gray-400 mt-2">Sem metas cadastradas</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Aplicabilidade */}
-          <Card className="border-t-4 border-t-emerald-500">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-sm font-medium text-gray-500">Aplicabilidade</CardTitle>
-                <Sparkles className="h-4 w-4 text-emerald-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold mb-2">{Math.round(aplicabilidadeVal)}%</div>
-              <Progress value={aplicabilidadeVal} className="h-2 mb-2" />
-              <div className="flex justify-between text-[10px] font-medium">
-                <span className={aplicabilidadeVal >= 80 ? "text-emerald-600" : "text-amber-600"}>
-                  {aplicabilidadeVal >= 80 ? "Meta Atingida" : "Abaixo da Meta"}
-                </span>
-                <span className="text-gray-400">Meta: 80%</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* RESUMO DE PRONTIDÃO E O QUE FALTA */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="bg-white">
+          <Card className="bg-white shadow-sm border-gray-100">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Route className="h-5 w-5 text-blue-600" />
@@ -248,49 +212,16 @@ export default function Performance() {
             </CardContent>
           </Card>
 
-          {/* DETALHAMENTO TÉCNICO (OPCIONAL/SECUNDÁRIO) */}
-          <Card className="bg-white border-dashed">
-            <CardHeader className="cursor-pointer" onClick={() => setShowDetails(!showDetails)}>
-              <CardTitle className="text-lg flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-gray-400" />
-                  Detalhamento do Ciclo
-                </div>
-                {showDetails ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {showDetails ? (
-                <div className="space-y-4 animate-in fade-in duration-300">
-                  <DualIndicators 
-                    engajamento={engajamentoVal}
-                    desenvolvimento={metasVal}
-                    desenvolvimentoDetalhes={{
-                      total: (data as any).metas?.resumo?.total || 0,
-                      cumpridas: (data as any).metas?.resumo?.concluidas || 0
-                    }}
-                    aplicabilidade={{
-                      percentual: aplicabilidadeVal,
-                      totalAvaliacoes: (data as any).indicadoresV2?.consolidado?.detalhes?.tarefas?.total || 0,
-                      microTarefaPercentual: (data as any).indicadoresV2?.consolidado?.ind4_tarefas || 0,
-                      microCasePercentual: (data as any).indicadoresV2?.consolidado?.ind6_aplicabilidade || 0,
-                      caseAplicavel: true
-                    }}
-                    compact={true}
-                  />
-                  <p className="text-[10px] text-gray-400 text-center italic">
-                    Estes dados detalham a composição dos macroindicadores acima.
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                  <p className="text-sm">Clique para ver o detalhamento operacional</p>
-                </div>
-              )}
-            </CardContent>
+          <Card className="bg-white shadow-sm border-gray-100 border-dashed flex flex-col items-center justify-center p-8 text-center">
+            <div className="bg-blue-50 p-4 rounded-full mb-4">
+              <Sparkles className="h-8 w-8 text-blue-500" />
+            </div>
+            <h3 className="font-bold text-gray-900 mb-2">Continue sua Jornada!</h3>
+            <p className="text-sm text-gray-500 max-w-[280px]">
+              Mantenha o foco nos indicadores que faltam para garantir sua certificação e evolução para o próximo nível.
+            </p>
           </Card>
         </div>
-
       </div>
     </AlunoLayout>
   );
