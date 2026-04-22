@@ -193,18 +193,65 @@ export default function EvolucaoAluno() {
                               Perfil DISC no Ciclo
                             </h4>
                             {item.disc?.historico?.length > 0 ? (
-                              <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
-                                <p className="text-sm font-medium text-purple-900">
-                                  Perfil Predominante: <span className="font-bold">{item.disc.historico[0].perfilPredominante}</span>
-                                </p>
-                                <div className="flex gap-4 mt-2">
-                                  {Object.entries(item.disc.historico[0].scores).map(([key, val]: [string, any]) => (
-                                    <div key={key} className="text-center">
-                                      <div className="text-[10px] font-bold text-purple-400">{key}</div>
-                                      <div className="text-xs font-bold text-purple-700">{val}</div>
+                              <div className="space-y-4">
+                                {item.disc.historico.map((disc: any, dIdx: number) => (
+                                  <div key={dIdx} className="p-4 bg-white rounded-lg border border-purple-100 shadow-sm space-y-4">
+                                    <div className="flex items-center justify-between border-b border-purple-50 pb-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs" style={{ backgroundColor: disc.detalhes?.cor || '#8B5CF6' }}>
+                                          {disc.perfilPredominante?.[0]}
+                                        </div>
+                                        <div>
+                                          <p className="text-xs font-bold text-purple-900">{disc.detalhes?.titulo || disc.perfilPredominante}</p>
+                                          <p className="text-[10px] text-purple-400">{disc.perfilPredominante}</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-3">
+                                        {Object.entries(disc.scores).map(([key, val]: [string, any]) => (
+                                          <div key={key} className="text-center">
+                                            <div className="text-[9px] font-bold text-gray-400">{key}</div>
+                                            <div className="text-[10px] font-bold text-purple-700">{val}</div>
+                                          </div>
+                                        ))}
+                                      </div>
                                     </div>
-                                  ))}
-                                </div>
+                                    
+                                    {disc.detalhes && (
+                                      <div className="space-y-3">
+                                        <p className="text-xs text-gray-600 leading-relaxed italic">
+                                          "{disc.detalhes.descricao}"
+                                        </p>
+                                        
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                          <div className="space-y-1">
+                                            <p className="text-[10px] font-bold text-emerald-600 uppercase flex items-center gap-1">
+                                              <CheckCircle2 size={10} /> Pontos Fortes
+                                            </p>
+                                            <ul className="space-y-0.5">
+                                              {disc.detalhes.pontosFortes.slice(0, 3).map((p: string, i: number) => (
+                                                <li key={i} className="text-[10px] text-gray-500 flex items-start gap-1">
+                                                  <span className="text-emerald-400 mt-0.5">•</span> {p}
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                          <div className="space-y-1">
+                                            <p className="text-[10px] font-bold text-amber-600 uppercase flex items-center gap-1">
+                                              <Sparkles size={10} /> Áreas de Desenvolvimento
+                                            </p>
+                                            <ul className="space-y-0.5">
+                                              {disc.detalhes.areasDesenvolvimento.slice(0, 3).map((p: string, i: number) => (
+                                                <li key={i} className="text-[10px] text-gray-500 flex items-start gap-1">
+                                                  <span className="text-amber-400 mt-0.5">•</span> {p}
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
                             ) : (
                               <p className="text-xs text-gray-400 italic">Nenhum teste DISC realizado neste ciclo.</p>

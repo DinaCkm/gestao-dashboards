@@ -35,6 +35,7 @@ import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionType
 import { getDb } from "./db";
 import { buildLembreteEngajamentoEmail, sendEmail } from "./emailService";
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
+import { DISC_PERFIS } from "../shared/discData";
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -307,13 +308,24 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
 
     const discPorNivel = allDisc
       .filter((d: any) => d.contratoNivelId === nivel.id)
-      .map((d: any) => ({
-        id: d.id,
-        ciclo: d.ciclo,
-        completedAt: d.completedAt,
-        perfilPredominante: d.perfilPredominante,
-        scores: { D: Number(d.scoreD), I: Number(d.scoreI), S: Number(d.scoreS), C: Number(d.scoreC) },
-      }));
+      .map((d: any) => {
+        const perfil = DISC_PERFIS[d.perfilPredominante as keyof typeof DISC_PERFIS];
+        return {
+          id: d.id,
+          ciclo: d.ciclo,
+          completedAt: d.completedAt,
+          perfilPredominante: d.perfilPredominante,
+          scores: { D: Number(d.scoreD), I: Number(d.scoreI), S: Number(d.scoreS), C: Number(d.scoreC) },
+          detalhes: perfil ? {
+            titulo: perfil.titulo,
+            descricao: perfil.descricao,
+            pontosFortes: perfil.pontosFortes,
+            areasDesenvolvimento: perfil.areasDesenvolvimento,
+            comoSeRelaciona: perfil.comoSeRelaciona,
+            cor: perfil.cor
+          } : null
+        };
+      });
 
     const statusOperacional = (nivelOperacional as any)?.statusOperacional || nivel.status;
     const isEmAndamento = statusOperacional === "em_andamento" || statusOperacional === "fechamento" || statusOperacional === "ajustes";
