@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Bell } from "lucide-react";
+import DualIndicators from "@/components/DualIndicators";
 
 const turmaColors = ['#1E3A5F', '#F5A623', '#2E7D32', '#D32F2F', '#7B1FA2', '#00838F', '#FF6F00', '#0097A7'];
 
@@ -210,8 +211,8 @@ export default function DashboardVisaoGeral() {
           </Card>
         )}
 
-        {/* Cards de Resumo */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Cards de Resumo Principais */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -222,20 +223,6 @@ export default function DashboardVisaoGeral() {
             <CardContent>
               <div className="text-2xl font-bold">{visaoGeral.totalAlunos || 0}</div>
               <p className="text-xs text-muted-foreground">Alunos ativos no sistema</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Engajamento Final
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{(visaoGeral.mediaEngajamento || 0).toFixed(0)}%</div>
-              <Progress value={visaoGeral.mediaEngajamento || 0} className="h-2 mt-2" />
-              <p className="text-xs text-muted-foreground mt-1">Média dos 5 indicadores</p>
             </CardContent>
           </Card>
 
@@ -265,6 +252,36 @@ export default function DashboardVisaoGeral() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Indicadores de Destaque (Engajamento, Metas e Aplicabilidade) */}
+        <DualIndicators
+          engajamento={visaoGeral.mediaInd7 || visaoGeral.mediaEngajamento || 0}
+          desenvolvimento={visaoGeral.percentualMetas || 0}
+          engajamentoDetalhes={{
+            ind1_webinars: visaoGeral.mediaInd1,
+            ind2_avaliacoes: visaoGeral.mediaInd2,
+            ind3_competencias: visaoGeral.mediaInd3,
+            ind4_tarefas: visaoGeral.mediaInd4,
+            ind5_engajamento: visaoGeral.mediaInd5,
+          }}
+          desenvolvimentoDetalhes={{
+            total: visaoGeral.totalMetas || 0,
+            cumpridas: visaoGeral.metasCumpridas || 0,
+          }}
+          aplicabilidade={{
+            percentual: visaoGeral.mediaInd6 || 0,
+            provisoria: false,
+            totalAvaliacoes: visaoGeral.totalAvaliacoesAplicabilidade || 0,
+            microTarefaPercentual: visaoGeral.mediaInd6,
+            microCasePercentual: visaoGeral.mediaInd6,
+            caseAplicavel: true,
+            notaFinal: visaoGeral.mediaInd6,
+            mediaAluno: visaoGeral.mediaInd6,
+            mediaMentora: visaoGeral.mediaInd6,
+            avaliacoesAluno: 0,
+            avaliacoesMentora: 0
+          }}
+        />
 
 
 
