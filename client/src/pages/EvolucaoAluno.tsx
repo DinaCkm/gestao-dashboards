@@ -121,11 +121,14 @@ export default function EvolucaoAluno() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-gray-900">{item.nivel.nome}</h3>
+                          <h3 className="font-bold text-gray-900">
+                            {item.nivel.nome.length <= 3 ? `Liderança Nível ${item.nivel.nome}` : item.nivel.nome}
+                          </h3>
                           {item.nivel.emAndamento && <Badge className="bg-blue-100 text-blue-700 border-blue-200">Ciclo Atual</Badge>}
                         </div>
                         <p className="text-xs text-gray-500">
-                          Período: {new Date(item.nivel.dataInicio).toLocaleDateString()} - {item.nivel.dataFim ? new Date(item.nivel.dataFim).toLocaleDateString() : 'Presente'}
+                          Período: {item.nivel.dataInicio ? new Date(item.nivel.dataInicio).toLocaleDateString() : 'Em definição'} 
+                          {item.nivel.dataFim ? ` - ${new Date(item.nivel.dataFim).toLocaleDateString()}` : (item.nivel.emAndamento ? ' - Presente' : '')}
                         </p>
                       </div>
                       
@@ -161,7 +164,11 @@ export default function EvolucaoAluno() {
                       <div className="p-3 rounded-lg border border-gray-100 bg-white">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[10px] font-bold text-gray-400 uppercase">Metas / Desafios</span>
-                          <span className={`text-xs font-bold ${met >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>{Math.round(met)}%</span>
+                          {item.resultados?.metas?.total > 0 || (item.nivel.emAndamento && met > 0) ? (
+                            <span className={`text-xs font-bold ${met >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>{Math.round(met)}%</span>
+                          ) : (
+                            <span className="text-[10px] font-medium text-gray-400">N/A</span>
+                          )}
                         </div>
                         <Progress value={met} className="h-1.5" />
                       </div>

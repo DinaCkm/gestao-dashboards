@@ -99,9 +99,15 @@ export default function Performance() {
               <div>
                 <p className="text-[10px] text-blue-300 uppercase font-bold">Período</p>
                 <p className="font-semibold text-sm">
-                  {nivelVigente?.dataInicio ? new Date(nivelVigente.dataInicio).toLocaleDateString() : '--'} 
-                  <span className="mx-1">até</span>
-                  {nivelVigente?.dataFim ? new Date(nivelVigente.dataFim).toLocaleDateString() : '--'}
+                  {nivelVigente?.dataInicio ? (
+                    <>
+                      {new Date(nivelVigente.dataInicio).toLocaleDateString()} 
+                      <span className="mx-1">até</span>
+                      {nivelVigente?.dataFim ? new Date(nivelVigente.dataFim).toLocaleDateString() : 'Em aberto'}
+                    </>
+                  ) : (
+                    <span className="text-blue-300/60 italic">Em definição</span>
+                  )}
                 </p>
               </div>
               <div>
@@ -153,14 +159,25 @@ export default function Performance() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold mb-2">{Math.round(metasVal)}%</div>
-              <Progress value={metasVal} className="h-2 mb-2" />
-              <div className="flex justify-between text-[10px] font-medium">
-                <span className={metasVal >= 80 ? "text-emerald-600" : "text-amber-600"}>
-                  {metasVal >= 80 ? "Meta Atingida" : "Abaixo da Meta"}
-                </span>
-                <span className="text-gray-400">Meta: 80%</span>
-              </div>
+              {(data as any).metas?.resumo?.total > 0 ? (
+                <>
+                  <div className="text-3xl font-bold mb-2">{Math.round(metasVal)}%</div>
+                  <Progress value={metasVal} className="h-2 mb-2" />
+                  <div className="flex justify-between text-[10px] font-medium">
+                    <span className={metasVal >= 80 ? "text-emerald-600" : "text-amber-600"}>
+                      {metasVal >= 80 ? "Meta Atingida" : "Abaixo da Meta"}
+                    </span>
+                    <span className="text-gray-400">Meta: 80%</span>
+                  </div>
+                </>
+              ) : (
+                <div className="py-4 flex flex-col items-center justify-center text-center">
+                  <Badge variant="outline" className="bg-gray-50 text-gray-400 border-gray-200 font-normal">
+                    Não aplicável neste ciclo
+                  </Badge>
+                  <p className="text-[10px] text-gray-400 mt-2">Sem metas cadastradas</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
