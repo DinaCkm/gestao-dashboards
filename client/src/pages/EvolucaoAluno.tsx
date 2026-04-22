@@ -95,13 +95,23 @@ export default function EvolucaoAluno() {
               const isExpanded = expandedCiclo === item.nivel.id;
               
               // Usar os indicadores pedagógicos reais do snapshot do nível
-              const eng = item.resultados?.competencias?.percentualAprovacao || 0; 
-              const met = item.resultados?.metas?.percentualConclusao || 0;
-              const apl = item.obtido?.mediaProgressoPerformance || 0;
+              // Para o nível em andamento, tentamos buscar do resumo consolidado se o snapshot estiver zerado
+              let eng = item.resultados?.competencias?.percentualAprovacao || 0; 
+              let met = item.resultados?.metas?.percentualConclusao || 0;
+              let apl = item.obtido?.mediaProgressoPerformance || 0;
               
-              // Se for o nível em andamento, podemos tentar buscar do consolidado V2 se disponível
-              // Mas para Joseane, o snapshot já deve conter os dados. 
-              // O problema do 0% era o mapeamento incorreto.
+              // Sincronização forçada para o nível atual (onde os dados de performance costumam estar no consolidado)
+              if (item.nivel.emAndamento && data.resumo?.nivelAtual) {
+                // Se o snapshot do nível atual estiver zerado mas tivermos dados no consolidado, usamos eles
+                // Isso resolve o caso da Joseane onde a Performance mostra 85% mas a Evolução mostra 0%
+                const { data: perfData } = trpc.indicadores.meuDashboard.useQuery();
+                if (perfData?.found) {
+                  const v2 = (perfData as any).indicadoresV2?.consolidado;
+                  if (eng === 0) eng = v2?.ind7_engajamentoFinal || 0;
+                  if (met === 0) met = (perfData as any).metas?.resumo?.percentual || 0;
+                  if (apl === 0) apl = v2?.ind6_aplicabilidade || 0;
+                }
+              }
               
               const evoluiu = eng >= 80 && met >= 80 && apl >= 80;
 
