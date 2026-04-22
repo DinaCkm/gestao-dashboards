@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { formatDateSafe } from "@/lib/dateUtils";
-import { BookOpen, Calendar, CheckCircle2, Clock3, LineChart, Target, TrendingUp, User } from "lucide-react";
+import { ArrowRight, BookOpen, Calendar, CheckCircle2, Clock3, LineChart, Target, TrendingUp, User } from "lucide-react";
 import { toast } from "sonner";
 
 function statusBadgeClass(status: string) {
@@ -21,6 +21,15 @@ function statusBadgeClass(status: string) {
     default:
       return "bg-gray-100 text-gray-700 border-gray-300";
   }
+}
+
+function clampPercent(value: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Number(value.toFixed(1))));
+}
+
+function macroStatusClass(percentual: number) {
+  return percentual >= 80 ? "text-emerald-700" : "text-red-700";
 }
 
 export default function EvolucaoAluno() {
@@ -74,6 +83,20 @@ export default function EvolucaoAluno() {
               <Badge className="bg-white/20 text-white border-white/30"><Target className="h-3 w-3 mr-1" />Níveis totais: {data.resumo.totalNiveis}</Badge>
               <Badge className="bg-white/20 text-white border-white/30"><CheckCircle2 className="h-3 w-3 mr-1" />Concluídos: {data.resumo.niveisConcluidos}</Badge>
             </div>
+            <div className="rounded-lg border border-white/20 bg-white/10 p-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs space-y-1">
+                <p className="font-semibold text-white">Nível atual: {data.resumo.nivelAtual?.nivel?.nome || "Nenhum em andamento"}</p>
+                <p className="text-white/80">
+                  Status: {data.resumo.nivelAtual?.nivel?.statusFinal || "—"} •
+                  {" "}Período: {data.resumo.nivelAtual?.nivel ? `${formatDateSafe(data.resumo.nivelAtual.nivel.dataInicio)} — ${formatDateSafe(data.resumo.nivelAtual.nivel.dataFim)}` : "—"}
+                </p>
+              </div>
+              <Button asChild size="sm" variant="secondary" className="bg-white text-[#0A1E3E] hover:bg-white/90">
+                <a href="/performance">
+                  Ver Performance do Nível Atual <ArrowRight className="h-3 w-3 ml-1" />
+                </a>
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -102,6 +125,14 @@ export default function EvolucaoAluno() {
           {data.timeline.map((item: any, index: number) => {
             const certStatus = statusCert?.find((s: any) => s.contratoNivelId === item.nivel.id);
             const podeEmitir = !!certStatus?.elegivel && !certStatus?.certificadoEmitido;
+            const engajamentoFinal = item.obtido.eventosTotal > 0
+              ? clampPercent((item.obtido.eventosPresenca / item.obtido.eventosTotal) * 100)
+              : 0;
+            const desafiosFinal = clampPercent(item.resultados?.metas?.percentualConclusao ?? 0);
+            const aplicabilidadeFinal = clampPercent((Number(item.obtido?.mediaNotaPerformance ?? 0) / 10) * 100);
+            const evoluiuDeNivel = engajamentoFinal >= 80 && desafiosFinal >= 80 && aplicabilidadeFinal >= 80;
+            const discAtual = item.disc?.historico?.[item.disc.historico.length - 1] || null;
+            const discAnteriorNivel = index > 0 ? data.timeline[index - 1]?.disc?.historico?.[data.timeline[index - 1]?.disc?.historico?.length - 1] : null;
             return (
             <Card key={item.nivel.id} className="border border-slate-200">
               <CardHeader>
@@ -122,50 +153,73 @@ export default function EvolucaoAluno() {
               </CardHeader>
 
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="rounded-lg border bg-slate-50 p-3">
-                    <p className="text-xs text-muted-foreground">Assessment inicial / PDI</p>
-                    <p className="font-semibold text-sm">{item.assessmentInicial?.trilhaNome || "Sem trilha registrada"}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Assessments: {item.pdi.totalAssessments}</p>
+                    <p className="text-xs text-muted-foreground">Engajamento final do ciclo</p>
+                    <p className={`font-bold text-lg ${macroStatusClass(engajamentoFinal)}`}>{engajamentoFinal}%</p>
+                    <Progress className="h-2 mt-2" value={engajamentoFinal} />
+                    <p className="text-xs mt-1">Meta mínima: 80% • {engajamentoFinal >= 80 ? "Atingido" : "Não atingido"}</p>
                   </div>
                   <div className="rounded-lg border bg-slate-50 p-3">
-                    <p className="text-xs text-muted-foreground">Competências (proposto vs obtido)</p>
-                    <p className="font-semibold text-sm">{item.proposto.competenciasDefinidas} → {item.obtido.competenciasAprovadas}</p>
-                    <Progress className="h-2 mt-2" value={item.resultados.competencias.percentualAprovacao} />
+                    <p className="text-xs text-muted-foreground">Metas / desafios final do ciclo</p>
+                    <p className={`font-bold text-lg ${macroStatusClass(desafiosFinal)}`}>{desafiosFinal}%</p>
+                    <Progress className="h-2 mt-2" value={desafiosFinal} />
+                    <p className="text-xs mt-1">Meta mínima: 80% • {desafiosFinal >= 80 ? "Atingido" : "Não atingido"}</p>
                   </div>
                   <div className="rounded-lg border bg-slate-50 p-3">
-                    <p className="text-xs text-muted-foreground">Metas (proposto vs obtido)</p>
-                    <p className="font-semibold text-sm">{item.proposto.metasPrevistas} → {item.obtido.metasConcluidas}</p>
-                    <Progress className="h-2 mt-2" value={item.resultados.metas.percentualConclusao} />
-                  </div>
-                  <div className="rounded-lg border bg-slate-50 p-3">
-                    <p className="text-xs text-muted-foreground">Resultados principais</p>
-                    <p className="font-semibold text-sm">Performance: {item.resultados.performanceFinal}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Cases: {item.obtido.casesEntregues}/{item.obtido.casesTotal}</p>
+                    <p className="text-xs text-muted-foreground">Aplicabilidade final do ciclo</p>
+                    <p className={`font-bold text-lg ${macroStatusClass(aplicabilidadeFinal)}`}>{aplicabilidadeFinal}%</p>
+                    <Progress className="h-2 mt-2" value={aplicabilidadeFinal} />
+                    <p className="text-xs mt-1">Meta mínima: 80% • {aplicabilidadeFinal >= 80 ? "Atingido" : "Não atingido"}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div className={`rounded-lg border p-3 ${evoluiuDeNivel ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}>
+                  <p className={`font-semibold ${evoluiuDeNivel ? "text-emerald-800" : "text-rose-800"}`}>
+                    {evoluiuDeNivel ? "Evoluiu de nível" : "Não evoluiu de nível"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Conclusão baseada nos 3 macroindicadores do ciclo (Engajamento, Metas/Desafios e Aplicabilidade).
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                   <div className="rounded-md border p-3 bg-white">
-                    <p className="font-semibold mb-1">Execução do nível</p>
-                    <p>Mentorias: {item.obtido.mentoriasRealizadas} de {item.obtido.mentoriasTotal}</p>
-                    <p>Eventos: {item.obtido.eventosPresenca} de {item.obtido.eventosTotal}</p>
-                  </div>
-                  <div className="rounded-md border p-3 bg-white">
-                    <p className="font-semibold mb-1">DISC no nível</p>
-                    <p>Ciclos DISC no nível: {item.disc.totalNoNivel}</p>
-                    <p>Histórico DISC reutilizado: {item.disc.totalNoNivel > 0 ? "Sim" : "Sem registros"}</p>
-                  </div>
-                  <div className="rounded-md border p-3 bg-white">
-                    <p className="font-semibold mb-1">Certificação futura</p>
-                    <p className="inline-flex items-center gap-1"><TrendingUp className="h-3 w-3" />{item.elegibilidadeCertificacaoFutura}</p>
-                    {certStatus?.certificadoEmitido ? (
-                      <p className="text-emerald-700 mt-1">Certificado emitido em {formatDateSafe(certStatus?.certificado?.emitidoEm)}</p>
+                    <p className="font-semibold mb-1">DISC do ciclo</p>
+                    {discAtual ? (
+                      <>
+                        <p>Perfil predominante: <strong>{discAtual.perfilPredominante || "—"}</strong></p>
+                        <p className="mt-1">D {Number(discAtual.scores?.D ?? 0).toFixed(1)} • I {Number(discAtual.scores?.I ?? 0).toFixed(1)} • S {Number(discAtual.scores?.S ?? 0).toFixed(1)} • C {Number(discAtual.scores?.C ?? 0).toFixed(1)}</p>
+                        {discAnteriorNivel && (
+                          <p className="text-muted-foreground mt-1">
+                            Vs ciclo anterior: D {(Number(discAtual.scores?.D ?? 0) - Number(discAnteriorNivel.scores?.D ?? 0)).toFixed(1)} •
+                            {" "}I {(Number(discAtual.scores?.I ?? 0) - Number(discAnteriorNivel.scores?.I ?? 0)).toFixed(1)} •
+                            {" "}S {(Number(discAtual.scores?.S ?? 0) - Number(discAnteriorNivel.scores?.S ?? 0)).toFixed(1)} •
+                            {" "}C {(Number(discAtual.scores?.C ?? 0) - Number(discAnteriorNivel.scores?.C ?? 0)).toFixed(1)}
+                          </p>
+                        )}
+                      </>
                     ) : (
-                      <p className="text-muted-foreground mt-1">{certStatus?.motivo || "Certificação ainda não disponível."}</p>
+                      <p className="text-muted-foreground">Sem registro DISC neste ciclo.</p>
                     )}
                   </div>
+                  <div className="rounded-md border p-3 bg-white">
+                    <p className="font-semibold mb-1">Assessment (diagnóstico do ciclo)</p>
+                    <p>Trilha de entrada: {item.assessmentInicial?.trilhaNome || "Não registrada"}</p>
+                    <p>Assessments no ciclo: {item.pdi.totalAssessments}</p>
+                    <p className="text-muted-foreground mt-1">Uso diagnóstico, sem protagonismo na régua de evolução.</p>
+                  </div>
                 </div>
+
+                <details className="rounded-md border bg-white p-3 text-xs">
+                  <summary className="font-semibold cursor-pointer">Ver detalhes do ciclo</summary>
+                  <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-muted-foreground">
+                    <p>Mentorias: {item.obtido.mentoriasRealizadas} de {item.obtido.mentoriasTotal}</p>
+                    <p>Eventos: {item.obtido.eventosPresenca} de {item.obtido.eventosTotal}</p>
+                    <p>Cases: {item.obtido.casesEntregues} de {item.obtido.casesTotal}</p>
+                    <p>Competências aprovadas: {item.obtido.competenciasAprovadas} de {item.proposto.competenciasDefinidas}</p>
+                  </div>
+                </details>
 
                 <div className="flex items-center justify-between gap-3 rounded-lg border bg-slate-50 p-3">
                   <div className="text-xs">
@@ -173,6 +227,12 @@ export default function EvolucaoAluno() {
                     <p className="text-slate-600">
                       Emissão disponível somente para nível encerrado e elegível, com critérios mínimos validados no backend.
                     </p>
+                    <p className="inline-flex items-center gap-1 mt-1 text-slate-600"><TrendingUp className="h-3 w-3" />{item.elegibilidadeCertificacaoFutura}</p>
+                    {certStatus?.certificadoEmitido ? (
+                      <p className="text-emerald-700 mt-1">Certificado emitido em {formatDateSafe(certStatus?.certificado?.emitidoEm)}</p>
+                    ) : (
+                      <p className="text-muted-foreground mt-1">{certStatus?.motivo || "Certificação ainda não disponível."}</p>
+                    )}
                   </div>
                   {certStatus?.certificadoEmitido ? (
                     <Button variant="outline" disabled>Certificado já emitido</Button>
