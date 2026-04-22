@@ -4142,11 +4142,18 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }))
       .query(async ({ input }) => {
         const dayOfWeek = new Date(input.date + 'T12:00:00').getDay();
-        const availability = await db.getMentorAvailability(input.consultorId);
-        const daySlots = availability.filter(a => a.dayOfWeek === dayOfWeek && a.isActive === 1);
+        
+        // 1) Buscar disponibilidade recorrente (semanal)
+        const weeklyAvailability = await db.getMentorAvailability(input.consultorId);
+        const daySlots = weeklyAvailability.filter(a => a.dayOfWeek === dayOfWeek && a.isActive === 1);
 
-        // Gerar slots baseado na duração
-        const allSlots: { startTime: string; endTime: string; availabilityId: number; googleMeetLink: string | null }[] = [];
+        // 2) Buscar disponibilidade por data específica (exceções/liberações pontuais)
+        const specificAvailability = await db.getMentorDateAvailability(input.consultorId);
+        const specificDaySlots = specificAvailability.filter(a => a.specificDate === input.date && a.isActive === 1);
+
+        const allSlots: { startTime: string; endTime: string; availabilityId: number; googleMeetLink: string | null; isSpecific?: boolean }[] = [];
+
+        // Processar slots recorrentes
         for (const slot of daySlots) {
           const [sh, sm] = slot.startTime.split(':').map(Number);
           const [eh, em] = slot.endTime.split(':').map(Number);
@@ -4167,6 +4174,37 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             });
           }
         }
+
+        // Processar slots específicos (mesclar ou sobrescrever)
+        for (const slot of specificDaySlots) {
+          const [sh, sm] = slot.startTime.split(':').map(Number);
+          const [eh, em] = slot.endTime.split(':').map(Number);
+          const startMin = sh * 60 + sm;
+          const endMin = eh * 60 + em;
+          const duration = slot.slotDurationMinutes;
+
+          for (let t = startMin; t + duration <= endMin; t += duration) {
+            const sH = String(Math.floor(t / 60)).padStart(2, '0');
+            const sM = String(t % 60).padStart(2, '0');
+            const eH = String(Math.floor((t + duration) / 60)).padStart(2, '0');
+            const eM = String((t + duration) % 60).padStart(2, '0');
+            
+            const startTime = `${sH}:${sM}`;
+            // Se já existe um slot recorrente no mesmo horário, mantemos apenas um (o específico tem prioridade de metadados se necessário)
+            if (!allSlots.some(s => s.startTime === startTime)) {
+              allSlots.push({
+                startTime,
+                endTime: `${eH}:${eM}`,
+                availabilityId: slot.id,
+                googleMeetLink: slot.googleMeetLink,
+                isSpecific: true
+              });
+            }
+          }
+        }
+
+        // Ordenar slots por horário de início
+        allSlots.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
         // Remover slots já ocupados
         const appointments = await db.getAppointmentsForDate(input.consultorId, input.date);
