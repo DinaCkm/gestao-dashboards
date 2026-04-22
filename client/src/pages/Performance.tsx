@@ -36,7 +36,8 @@ export default function Performance() {
     
     const v2 = (data as any).indicadoresV2?.consolidado;
     const eng = v2?.ind7_engajamentoFinal || 0;
-    const met = v2?.ind2_avaliacoes || 0; // Usando avaliações como proxy de metas/desafios conforme lógica v2
+    // Metas reais vêm do resumo de metas pedagógicas, não do ind2 (avaliações)
+    const met = (data as any).metas?.resumo?.percentual || 0;
     const apl = v2?.ind6_aplicabilidade || 0;
     
     const atingidos = [eng >= 80, met >= 80, apl >= 80].filter(Boolean).length;
@@ -245,9 +246,14 @@ export default function Performance() {
               {showDetails ? (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <DualIndicators 
-                    engajamento={(data as any).indicadoresV2?.consolidado?.ind7_engajamentoFinal || 0}
+                    engajamento={engajamentoVal}
+                    desenvolvimento={metasVal}
+                    desenvolvimentoDetalhes={{
+                      total: (data as any).metas?.resumo?.total || 0,
+                      cumpridas: (data as any).metas?.resumo?.concluidas || 0
+                    }}
                     aplicabilidade={{
-                      percentual: (data as any).indicadoresV2?.consolidado?.ind6_aplicabilidade || 0,
+                      percentual: aplicabilidadeVal,
                       totalAvaliacoes: (data as any).indicadoresV2?.consolidado?.detalhes?.tarefas?.total || 0,
                       microTarefaPercentual: (data as any).indicadoresV2?.consolidado?.ind4_tarefas || 0,
                       microCasePercentual: (data as any).indicadoresV2?.consolidado?.ind6_aplicabilidade || 0,

@@ -93,9 +93,15 @@ export default function EvolucaoAluno() {
           <div className="space-y-6">
             {data.timeline.map((item: any, index: number) => {
               const isExpanded = expandedCiclo === item.nivel.id;
-              const eng = item.resultados?.competencias?.percentualAprovacao || 0; // Proxy para engajamento histórico
+              
+              // Usar os indicadores pedagógicos reais do snapshot do nível
+              const eng = item.resultados?.competencias?.percentualAprovacao || 0; 
               const met = item.resultados?.metas?.percentualConclusao || 0;
               const apl = item.obtido?.mediaProgressoPerformance || 0;
+              
+              // Se for o nível em andamento, podemos tentar buscar do consolidado V2 se disponível
+              // Mas para Joseane, o snapshot já deve conter os dados. 
+              // O problema do 0% era o mapeamento incorreto.
               
               const evoluiu = eng >= 80 && met >= 80 && apl >= 80;
 
