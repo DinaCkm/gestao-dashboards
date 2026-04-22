@@ -260,11 +260,55 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
   const programa = aluno.programId ? programas.find((p) => p.id === aluno.programId) : null;
   const turma = aluno.turmaId ? turmas.find((t) => t.id === aluno.turmaId) : null;
 
-  const niveis = [...niveisRaw].sort((a, b) => {
+  // Lógica de Fracionamento de Ciclos: 3 meses o primeiro, 6 meses os seguintes
+  const dataInicioContrato = (aluno as any).contratoInicio || (niveisRaw[0] as any)?.dataInicio || getFallbackDates(programa?.name, turma?.name).inicio;
+  const dataFimContrato = (aluno as any).contratoFim || (niveisRaw[niveisRaw.length - 1] as any)?.dataFim || getFallbackDates(programa?.name, turma?.name).fim;
+
+  let niveisProcessados = [...niveisRaw];
+
+  // Se houver apenas um nível mas o contrato for longo, vamos simular os ciclos para a visualização
+  if (niveisRaw.length === 1 && dataInicioContrato && dataFimContrato) {
+    const inicio = new Date(dataInicioContrato);
+    const fim = new Date(dataFimContrato);
+    const hoje = new Date();
+    
+    const ciclosSimulados = [];
+    let dataReferencia = new Date(inicio);
+    let contadorNivel = 1;
+
+    while (dataReferencia < fim && dataReferencia <= hoje) {
+      const duracaoMeses = contadorNivel === 1 ? 3 : 6;
+      const dataFimCiclo = new Date(dataReferencia);
+      dataFimCiclo.setMonth(dataFimCiclo.getMonth() + duracaoMeses);
+      
+      // Não ultrapassar o fim do contrato
+      const dataFimEfetiva = dataFimCiclo > fim ? fim : dataFimCiclo;
+
+      ciclosSimulados.push({
+        id: 999000 + contadorNivel, // IDs fictícios para ciclos simulados
+        nivel: `Nível ${contadorNivel}`,
+        dataInicio: dataReferencia.toISOString(),
+        dataFim: dataFimEfetiva.toISOString(),
+        status: dataFimEfetiva < hoje ? "encerrado" : "em_andamento",
+        isSimulado: true
+      });
+
+      dataReferencia = new Date(dataFimEfetiva);
+      contadorNivel++;
+      
+      // Trava de segurança para evitar loop infinito
+      if (contadorNivel > 10) break;
+    }
+    
+    if (ciclosSimulados.length > 0) {
+      niveisProcessados = ciclosSimulados as any;
+    }
+  }
+
+  const niveis = [...niveisProcessados].sort((a, b) => {
     const da = new Date(a.dataInicio as any).getTime();
     const dbb = new Date(b.dataInicio as any).getTime();
-    if (Number.isFinite(da) && Number.isFinite(dbb)) return da - dbb;
-    return a.id - b.id;
+    return dbb - da; // Ordem decrescente: mais recente no topo
   });
 
   const itens = await Promise.all(niveis.map(async (nivel) => {
