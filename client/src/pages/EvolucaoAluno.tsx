@@ -1,21 +1,22 @@
 import AlunoLayout from "@/components/AlunoLayout";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { formatDateSafe } from "@/lib/dateUtils";
-import { BookOpen, Calendar, CheckCircle2, Clock3, LineChart, Target, TrendingUp, User } from "lucide-react";
+import { 
+  BookOpen, Calendar, CheckCircle2, Clock3, LineChart, 
+  Target, TrendingUp, User, ChevronRight, Award, Sparkles, Info, ChevronDown, ChevronUp
+} from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { Link } from "wouter";
 
 function statusBadgeClass(status: string) {
   switch (status) {
+    case "finalizado":
     case "encerrado":
       return "bg-emerald-100 text-emerald-700 border-emerald-300";
-    case "ajustes":
-      return "bg-amber-100 text-amber-700 border-amber-300";
-    case "fechamento":
-      return "bg-orange-100 text-orange-700 border-orange-300";
     case "em_andamento":
       return "bg-blue-100 text-blue-700 border-blue-300";
     default:
@@ -27,12 +28,14 @@ export default function EvolucaoAluno() {
   const { data, isLoading } = trpc.evolucao.minha.useQuery();
   const { data: statusCert } = trpc.certificacao.statusPorNivel.useQuery();
   const utils = trpc.useUtils();
+  
+  const [expandedCiclo, setExpandedCiclo] = useState<number | null>(null);
+
   const emitirCert = trpc.certificacao.emitir.useMutation({
     onSuccess: () => {
       toast.success("Certificado emitido com sucesso.");
       utils.evolucao.minha.invalidate();
       utils.certificacao.statusPorNivel.invalidate();
-      utils.certificacao.minhas.invalidate();
     },
     onError: (err) => toast.error(err.message || "Falha ao emitir certificado."),
   });
@@ -47,148 +50,221 @@ export default function EvolucaoAluno() {
     );
   }
 
-  if (!data) {
-    return (
-      <AlunoLayout>
-        <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">Não foi possível carregar a evolução do aluno.</CardContent>
-        </Card>
-      </AlunoLayout>
-    );
-  }
+  if (!data) return null;
+
+  const nivelAtual = data.resumo?.nivelAtual;
 
   return (
     <AlunoLayout>
-      <div className="space-y-6">
-        <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white shadow-lg">
-          <CardContent className="p-6 space-y-3">
+      <div className="max-w-5xl mx-auto space-y-8 pb-12">
+        
+        {/* TOPO: DESTAQUE DO NÍVEL ATUAL */}
+        <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-blue-600 p-3 rounded-lg text-white">
+              <TrendingUp size={24} />
+            </div>
             <div>
-              <h1 className="text-2xl font-bold">Evolução do Aluno</h1>
-              <p className="text-sm text-white/80">
-                Memória histórica dos níveis: o que foi proposto e o que foi obtido em cada etapa da jornada.
-              </p>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Você está no</p>
+              <h1 className="text-2xl font-bold text-gray-900">{nivelAtual?.nivel?.nome || "Nível Vigente"}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge className={statusBadgeClass(nivelAtual?.nivel?.statusFinal || "em_andamento")}>
+                  {nivelAtual?.nivel?.statusFinal || "Em andamento"}
+                </Badge>
+                <span className="text-xs text-gray-400">•</span>
+                <span className="text-xs text-gray-500">Iniciado em {nivelAtual?.nivel?.dataInicio ? new Date(nivelAtual.nivel.dataInicio).toLocaleDateString() : '--'}</span>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge className="bg-white/20 text-white border-white/30"><User className="h-3 w-3 mr-1" />{data.aluno.nome}</Badge>
-              <Badge className="bg-white/20 text-white border-white/30"><BookOpen className="h-3 w-3 mr-1" />{data.aluno.programa}</Badge>
-              <Badge className="bg-white/20 text-white border-white/30"><Target className="h-3 w-3 mr-1" />Níveis totais: {data.resumo.totalNiveis}</Badge>
-              <Badge className="bg-white/20 text-white border-white/30"><CheckCircle2 className="h-3 w-3 mr-1" />Concluídos: {data.resumo.niveisConcluidos}</Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        {data.discComparativo && (
-          <Card className="border border-indigo-200 bg-indigo-50/40">
-            <CardHeader>
-              <CardTitle className="text-indigo-900 flex items-center gap-2"><LineChart className="h-5 w-5" />Comparativo DISC (histórico reaproveitado)</CardTitle>
-              <CardDescription>
-                Evolução do perfil DISC do ciclo inicial ({data.discComparativo.cicloInicial.ciclo}) para o ciclo atual ({data.discComparativo.cicloAtual.ciclo}).
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {Object.entries(data.discComparativo.evolucao).map(([chave, valor]) => (
-                <div key={chave} className="rounded-lg border bg-white p-3">
-                  <p className="text-xs text-muted-foreground">DISC {chave}</p>
-                  <p className={`text-lg font-bold ${Number(valor) >= 0 ? "text-emerald-700" : "text-red-700"}`}>
-                    {Number(valor) >= 0 ? "+" : ""}{Number(valor).toFixed(1)}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+          </div>
+          <Link href="/performance">
+            <Button className="bg-[#0A1E3E] hover:bg-[#152b4d] text-white gap-2">
+              Ver Performance do Nível Atual
+              <ChevronRight size={16} />
+            </Button>
+          </Link>
+        </div>
 
         <div className="space-y-4">
-          {data.timeline.map((item: any, index: number) => {
-            const certStatus = statusCert?.find((s: any) => s.contratoNivelId === item.nivel.id);
-            const podeEmitir = !!certStatus?.elegivel && !certStatus?.certificadoEmitido;
-            return (
-            <Card key={item.nivel.id} className="border border-slate-200">
-              <CardHeader>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
-                      {index + 1}
-                    </span>
-                    {item.nivel.nome}
-                  </CardTitle>
-                  <Badge className={statusBadgeClass(item.nivel.statusFinal)}>{item.nivel.statusFinal}</Badge>
-                </div>
-                <CardDescription className="flex flex-wrap gap-3 text-xs">
-                  <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDateSafe(item.nivel.dataInicio)} — {formatDateSafe(item.nivel.dataFim)}</span>
-                  <span className="inline-flex items-center gap-1"><User className="h-3 w-3" />Mentora: {item.mentora?.nome || "Não definida"}</span>
-                  <span className="inline-flex items-center gap-1"><Clock3 className="h-3 w-3" />{item.nivel.emAndamento ? "Nível em andamento" : "Nível encerrado (histórico fechado)"}</span>
-                </CardDescription>
-              </CardHeader>
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Clock3 className="h-5 w-5 text-blue-600" />
+            Histórico de Formação
+          </h2>
 
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div className="rounded-lg border bg-slate-50 p-3">
-                    <p className="text-xs text-muted-foreground">Assessment inicial / PDI</p>
-                    <p className="font-semibold text-sm">{item.assessmentInicial?.trilhaNome || "Sem trilha registrada"}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Assessments: {item.pdi.totalAssessments}</p>
-                  </div>
-                  <div className="rounded-lg border bg-slate-50 p-3">
-                    <p className="text-xs text-muted-foreground">Competências (proposto vs obtido)</p>
-                    <p className="font-semibold text-sm">{item.proposto.competenciasDefinidas} → {item.obtido.competenciasAprovadas}</p>
-                    <Progress className="h-2 mt-2" value={item.resultados.competencias.percentualAprovacao} />
-                  </div>
-                  <div className="rounded-lg border bg-slate-50 p-3">
-                    <p className="text-xs text-muted-foreground">Metas (proposto vs obtido)</p>
-                    <p className="font-semibold text-sm">{item.proposto.metasPrevistas} → {item.obtido.metasConcluidas}</p>
-                    <Progress className="h-2 mt-2" value={item.resultados.metas.percentualConclusao} />
-                  </div>
-                  <div className="rounded-lg border bg-slate-50 p-3">
-                    <p className="text-xs text-muted-foreground">Resultados principais</p>
-                    <p className="font-semibold text-sm">Performance: {item.resultados.performanceFinal}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Cases: {item.obtido.casesEntregues}/{item.obtido.casesTotal}</p>
-                  </div>
-                </div>
+          <div className="space-y-6">
+            {data.timeline.map((item: any, index: number) => {
+              const isExpanded = expandedCiclo === item.nivel.id;
+              const eng = item.resultados?.competencias?.percentualAprovacao || 0; // Proxy para engajamento histórico
+              const met = item.resultados?.metas?.percentualConclusao || 0;
+              const apl = item.obtido?.mediaProgressoPerformance || 0;
+              
+              const evoluiu = eng >= 80 && met >= 80 && apl >= 80;
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                  <div className="rounded-md border p-3 bg-white">
-                    <p className="font-semibold mb-1">Execução do nível</p>
-                    <p>Mentorias: {item.obtido.mentoriasRealizadas} de {item.obtido.mentoriasTotal}</p>
-                    <p>Eventos: {item.obtido.eventosPresenca} de {item.obtido.eventosTotal}</p>
-                  </div>
-                  <div className="rounded-md border p-3 bg-white">
-                    <p className="font-semibold mb-1">DISC no nível</p>
-                    <p>Ciclos DISC no nível: {item.disc.totalNoNivel}</p>
-                    <p>Histórico DISC reutilizado: {item.disc.totalNoNivel > 0 ? "Sim" : "Sem registros"}</p>
-                  </div>
-                  <div className="rounded-md border p-3 bg-white">
-                    <p className="font-semibold mb-1">Certificação futura</p>
-                    <p className="inline-flex items-center gap-1"><TrendingUp className="h-3 w-3" />{item.elegibilidadeCertificacaoFutura}</p>
-                    {certStatus?.certificadoEmitido ? (
-                      <p className="text-emerald-700 mt-1">Certificado emitido em {formatDateSafe(certStatus?.certificado?.emitidoEm)}</p>
-                    ) : (
-                      <p className="text-muted-foreground mt-1">{certStatus?.motivo || "Certificação ainda não disponível."}</p>
+              return (
+                <Card key={item.nivel.id} className={`overflow-hidden border-l-4 ${item.nivel.emAndamento ? 'border-l-blue-500' : 'border-l-gray-300'}`}>
+                  <CardHeader className="bg-gray-50/50 pb-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-gray-900">{item.nivel.nome}</h3>
+                          {item.nivel.emAndamento && <Badge className="bg-blue-100 text-blue-700 border-blue-200">Ciclo Atual</Badge>}
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Período: {new Date(item.nivel.dataInicio).toLocaleDateString()} - {item.nivel.dataFim ? new Date(item.nivel.dataFim).toLocaleDateString() : 'Presente'}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <div className="text-right hidden md:block">
+                          <p className="text-[10px] text-gray-400 uppercase font-bold">Resultado</p>
+                          <p className={`text-sm font-bold ${evoluiu ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {item.nivel.emAndamento ? 'Em progresso' : (evoluiu ? 'Evoluiu de Nível' : 'Não evoluiu')}
+                          </p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setExpandedCiclo(isExpanded ? null : item.nivel.id)}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="pt-6 space-y-6">
+                    {/* MACROINDICADORES DO CICLO */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-3 rounded-lg border border-gray-100 bg-white">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase">Engajamento</span>
+                          <span className={`text-xs font-bold ${eng >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>{Math.round(eng)}%</span>
+                        </div>
+                        <Progress value={eng} className="h-1.5" />
+                      </div>
+                      <div className="p-3 rounded-lg border border-gray-100 bg-white">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase">Metas / Desafios</span>
+                          <span className={`text-xs font-bold ${met >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>{Math.round(met)}%</span>
+                        </div>
+                        <Progress value={met} className="h-1.5" />
+                      </div>
+                      <div className="p-3 rounded-lg border border-gray-100 bg-white">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase">Aplicabilidade</span>
+                          <span className={`text-xs font-bold ${apl >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>{Math.round(apl)}%</span>
+                        </div>
+                        <Progress value={apl} className="h-1.5" />
+                      </div>
+                    </div>
+
+                    {/* CONTEÚDO EXPANSÍVEL (MICRODETALHES) */}
+                    {isExpanded && (
+                      <div className="pt-4 border-t border-gray-100 space-y-6 animate-in slide-in-from-top-2 duration-300">
+                        
+                        {/* DISC E ASSESSMENT */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                              <User className="h-4 w-4 text-purple-500" />
+                              Perfil DISC no Ciclo
+                            </h4>
+                            {item.disc?.historico?.length > 0 ? (
+                              <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
+                                <p className="text-sm font-medium text-purple-900">
+                                  Perfil Predominante: <span className="font-bold">{item.disc.historico[0].perfilPredominante}</span>
+                                </p>
+                                <div className="flex gap-4 mt-2">
+                                  {Object.entries(item.disc.historico[0].scores).map(([key, val]: [string, any]) => (
+                                    <div key={key} className="text-center">
+                                      <div className="text-[10px] font-bold text-purple-400">{key}</div>
+                                      <div className="text-xs font-bold text-purple-700">{val}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-gray-400 italic">Nenhum teste DISC realizado neste ciclo.</p>
+                            )}
+                          </div>
+
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                              <Info className="h-4 w-4 text-blue-500" />
+                              Diagnóstico de Entrada
+                            </h4>
+                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                              <p className="text-xs text-blue-800">
+                                <strong>Assessment:</strong> {item.assessmentInicial?.trilhaNome || 'Geral'}
+                              </p>
+                              <p className="text-[10px] text-blue-600 mt-1">
+                                Utilizado como referência diagnóstica para o desenvolvimento das competências do ciclo.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* CERTIFICAÇÃO */}
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                            <Award className="h-4 w-4 text-amber-500" />
+                            Certificação Formal
+                          </h4>
+                          <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-100">
+                            <div>
+                              <p className="text-sm font-medium text-amber-900">Status do Certificado</p>
+                              <p className="text-xs text-amber-700">
+                                {item.certificadoEmitido ? 'Certificado disponível para download' : (evoluiu ? 'Elegível para emissão' : 'Critérios de evolução não atingidos')}
+                              </p>
+                            </div>
+                            {item.certificadoEmitido ? (
+                              <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => window.open(item.certificadoEmitido.arquivoUrl, '_blank')}>
+                                Download PDF
+                              </Button>
+                            ) : (
+                              evoluiu && !item.nivel.emAndamento && (
+                                <Button 
+                                  size="sm" 
+                                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                                  onClick={() => emitirCert.mutate({ contratoNivelId: item.nivel.id })}
+                                  disabled={emitirCert.isPending}
+                                >
+                                  Emitir Certificado
+                                </Button>
+                              )
+                            )}
+                          </div>
+                        </div>
+
+                        {/* MICRODETALHES OPERACIONAIS */}
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-bold text-gray-700">Detalhamento Operacional</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="text-center p-2 bg-gray-50 rounded border border-gray-100">
+                              <p className="text-[10px] text-gray-400 uppercase">Mentorias</p>
+                              <p className="text-sm font-bold">{item.obtido.mentoriasRealizadas}/{item.obtido.mentoriasTotal}</p>
+                            </div>
+                            <div className="text-center p-2 bg-gray-50 rounded border border-gray-100">
+                              <p className="text-[10px] text-gray-400 uppercase">Eventos</p>
+                              <p className="text-sm font-bold">{item.obtido.eventosPresenca}/{item.obtido.eventosTotal}</p>
+                            </div>
+                            <div className="text-center p-2 bg-gray-50 rounded border border-gray-100">
+                              <p className="text-[10px] text-gray-400 uppercase">Cases</p>
+                              <p className="text-sm font-bold">{item.obtido.casesEntregues}/{item.obtido.casesTotal}</p>
+                            </div>
+                            <div className="text-center p-2 bg-gray-50 rounded border border-gray-100">
+                              <p className="text-[10px] text-gray-400 uppercase">Metas</p>
+                              <p className="text-sm font-bold">{item.obtido.metasConcluidas}/{item.proposto.metasPrevistas}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     )}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-3 rounded-lg border bg-slate-50 p-3">
-                  <div className="text-xs">
-                    <p className="font-semibold text-slate-800">Certificação formal do nível</p>
-                    <p className="text-slate-600">
-                      Emissão disponível somente para nível encerrado e elegível, com critérios mínimos validados no backend.
-                    </p>
-                  </div>
-                  {certStatus?.certificadoEmitido ? (
-                    <Button variant="outline" disabled>Certificado já emitido</Button>
-                  ) : (
-                    <Button
-                      disabled={!podeEmitir || emitirCert.isPending}
-                      onClick={() => emitirCert.mutate({ contratoNivelId: item.nivel.id })}
-                    >
-                      Emitir Certificação
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            );
-          })}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
     </AlunoLayout>
