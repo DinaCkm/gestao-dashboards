@@ -7747,10 +7747,12 @@ Responda APENAS em JSON com o formato:
         try {
           if (consultor?.email && aluno) {
             const { sendEmail } = await import('./emailService');
-            const adminEmail = process.env.SMTP_USER || '';
+            const adminEmail = 'relacionamento@ckmtalents.net';
+            const dinaEmail = 'dina@ckmtalents.net';
+            const ccList = [adminEmail, dinaEmail].join(', ');
             await sendEmail({
               to: consultor.email,
-              cc: adminEmail || undefined,
+              cc: ccList,
               subject: `Encontro Inicial agendado com ${aluno.name} - Prepare-se!`,
               html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -7798,8 +7800,12 @@ Responda APENAS em JSON com o formato:
         try {
           if (aluno?.email && consultor) {
             const { sendEmail } = await import('./emailService');
+            const adminEmail = 'relacionamento@ckmtalents.net';
+            const dinaEmail = 'dina@ckmtalents.net';
+            const ccList = [adminEmail, dinaEmail].join(', ');
             await sendEmail({
               to: aluno.email,
+              cc: ccList,
               subject: `Agendamento confirmado - Encontro Inicial com ${consultor.name}`,
               html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

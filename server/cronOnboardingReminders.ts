@@ -130,8 +130,12 @@ export async function verificarEEnviarLembretesOnboarding(options?: {
           loginUrl,
         });
 
+        const adminEmail = 'relacionamento@ckmtalents.net';
+        const dinaEmail = 'dina@ckmtalents.net';
+        const ccList = [adminEmail, dinaEmail].join(', ');
         const result = await sendEmail({
           to: student.email,
+          cc: ccList,
           subject: emailData.subject,
           html: emailData.html,
           text: emailData.text,
