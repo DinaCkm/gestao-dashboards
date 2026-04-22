@@ -451,6 +451,7 @@ export default function Performance() {
   const performanceGeral = Number(indicadores.performanceGeral ?? (indicadores.notaFinal * 10)) || 0;
   const ciclosFinalizados = indicadores.ciclosFinalizados || [];
   const ciclosEmAndamento = indicadores.ciclosEmAndamento || [];
+  const cicloAtualHeader = [...(v2?.ciclosEmAndamento || []), ...ciclosEmAndamento][0] || null;
   // v2 já declarado acima
   const engComp = indicadores.engajamentoComponentes || { presenca: indicadores.participacaoMentorias, atividades: indicadores.atividadesPraticas, notaMentora: indicadores.engajamento };
 
@@ -537,45 +538,60 @@ export default function Performance() {
   return (
     <AlunoLayout>
       <div className="space-y-6">
-        {/* Header com informações do aluno */}
+        {/* Header compacto de contexto (sem macroindicadores) */}
         <div className="flex flex-col lg:flex-row gap-6">
-          <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white flex-1 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h1 className="text-2xl font-bold">{aluno.name}</h1>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {nivelAtual && (
-                      <>
-                        <Badge className="bg-[#F5991F]/30 text-[#F5991F] border-[#F5991F]/40">
-                          <Target className="h-3 w-3 mr-1" />Nível vigente: {nivelAtual.nome}
-                        </Badge>
-                        <Badge className="bg-white/20 text-white border-white/30">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {formatDateSafe(nivelAtual.dataInicio)} — {formatDateSafe(nivelAtual.dataFim)}
-                        </Badge>
-                        <Badge className="bg-white/20 text-white border-white/30">
-                          <Activity className="h-3 w-3 mr-1" />Status: {nivelAtual.statusOperacional}
-                        </Badge>
-                      </>
-                    )}
-                    <Badge className="bg-white/20 text-white border-white/30">
-                      <GraduationCap className="h-3 w-3 mr-1" />{aluno.programa}
-                    </Badge>
-                    <Badge className="bg-white/20 text-white border-white/30">
-                      <Users className="h-3 w-3 mr-1" />{aluno.turma}
-                    </Badge>
-                    <Badge className="bg-white/20 text-white border-white/30">
-                      <User className="h-3 w-3 mr-1" />Mentora: {mentorNivelAtual}
-                    </Badge>
-                    {assessments && assessments.length > 0 && (
+          <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white flex-1 shadow-md">
+            <CardContent className="p-4">
+              <div className="space-y-2">
+                <h1 className="text-xl font-semibold leading-tight">{aluno.name}</h1>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-white/15 text-white border-white/25">
+                    <GraduationCap className="h-3 w-3 mr-1" />Empresa: {aluno.programa}
+                  </Badge>
+                  <Badge className="bg-white/15 text-white border-white/25">
+                    <User className="h-3 w-3 mr-1" />Mentora: {mentorNivelAtual}
+                  </Badge>
+                  {nivelAtual && (
+                    <>
                       <Badge className="bg-[#F5991F]/30 text-[#F5991F] border-[#F5991F]/40">
-                        <Route className="h-3 w-3 mr-1" />{assessments.length} trilha(s) • {assessments.filter((a: any) => a.status === 'ativo').length} ativa(s)
+                        <Target className="h-3 w-3 mr-1" />Nível atual: {nivelAtual.nome}
                       </Badge>
-                    )}
-                  </div>
-                  {/* Trilhas e Ciclos de Execução - Agrupados por Turma */}
-                  {assessments && assessments.length > 0 && (() => {
+                      <Badge className="bg-white/15 text-white border-white/25">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        Período: {formatDateSafe(nivelAtual.dataInicio)} — {formatDateSafe(nivelAtual.dataFim)}
+                      </Badge>
+                      <Badge className="bg-white/15 text-white border-white/25">
+                        <Activity className="h-3 w-3 mr-1" />Status: {nivelAtual.statusOperacional}
+                      </Badge>
+                    </>
+                  )}
+                  {cicloAtualHeader && (
+                    <>
+                      <Badge className="bg-white/15 text-white border-white/25">
+                        <Route className="h-3 w-3 mr-1" />Ciclo atual: {cicloAtualHeader.nomeCiclo || `Ciclo ${cicloAtualHeader.cicloId}`}
+                      </Badge>
+                      <Badge className="bg-white/15 text-white border-white/25">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        Período do ciclo: {formatDateSafe(cicloAtualHeader.dataInicio)} — {formatDateSafe(cicloAtualHeader.dataFim)}
+                      </Badge>
+                      <Badge className="bg-white/15 text-white border-white/25">
+                        <Activity className="h-3 w-3 mr-1" />Status do ciclo: {getCicloStatusLabel(cicloAtualHeader.status || "em_andamento")}
+                      </Badge>
+                    </>
+                  )}
+                  {cicloAtualHeader?.trilhaNome && (
+                    <Badge className="bg-white/10 text-white/80 border-white/20">
+                      Trilha: {cicloAtualHeader.trilhaNome}
+                    </Badge>
+                  )}
+                  {!cicloAtualHeader && assessments && assessments.length > 0 && (
+                    <Badge className="bg-white/10 text-white/80 border-white/20">
+                      <Route className="h-3 w-3 mr-1" />Trilhas: {assessments.length}
+                    </Badge>
+                  )}
+                </div>
+                {/* Trilhas e Ciclos (secundário) */}
+                {assessments && assessments.length > 0 && (() => {
                     const formatDateCard = (d: any) => {
                       if (!d) return '—';
                       if (d instanceof Date || (typeof d === 'object' && d.toISOString)) {
@@ -595,9 +611,9 @@ export default function Performance() {
                     });
                     const groups = Array.from(turmaGroups.entries());
                     return (
-                      <div className="mt-3">
+                      <div className="mt-2">
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-semibold text-white/60 uppercase tracking-wider flex items-center gap-1">
+                          <p className="text-[11px] font-medium text-white/55 uppercase tracking-wider flex items-center gap-1">
                             <Route className="h-3 w-3" /> Trilhas e Ciclos de Execução
                           </p>
                           <button
@@ -692,28 +708,7 @@ export default function Performance() {
                       </div>
                     );
                   })()}
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-white/70 mb-1 flex items-center gap-1 justify-end">
-                    Engajamento Final
-                    <InfoTooltip text={INDICADORES_INFO.ind7.explicacao} className="text-white/50 hover:text-white/80" />
-                  </p>
-                  <div className="text-4xl font-black text-[#F5991F]">
-                    {safeToFixed(v2Filtrado?.ind7_engajamentoFinal ?? performanceGeral, 0)}%
-                  </div>
-                  <Badge className={`mt-1 ${getClassificacaoBadge(v2Filtrado?.classificacao ?? indicadores.classificacao)}`}>
-                    {v2Filtrado?.classificacao ?? indicadores.classificacao}
-                  </Badge>
-                </div>
               </div>
-
-              {/* Explicação do Engajamento Final */}
-              {v2Filtrado && (
-                <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
-                  <p className="font-semibold mb-1 text-white/90">Ind. 7 — Engajamento Final:</p>
-                  <p>Média dos 5 indicadores: ({safeToFixed(v2Filtrado.ind1_webinars ?? 0, 0)} + {safeToFixed(v2Filtrado.ind2_avaliacoes ?? 0, 0)} + {safeToFixed(v2Filtrado.ind3_competencias ?? 0, 0)} + {safeToFixed(v2Filtrado.ind4_tarefas ?? 0, 0)} + {safeToFixed(v2Filtrado.ind5_engajamento ?? 0, 0)}) / 5 = <span className="text-[#F5991F] font-bold">{safeToFixed(v2Filtrado.ind7_engajamentoFinal ?? 0, 0)}%</span></p>
-                </div>
-              )}
             </CardContent>
           </Card>
 
