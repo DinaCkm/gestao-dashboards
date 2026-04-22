@@ -306,8 +306,9 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
       nivel: {
         id: nivel.id,
         nome: nivel.nivel,
-        dataInicio: nivel.dataInicio,
-        dataFim: nivel.dataFim,
+        // Priorizar datas do nível, mas usar datas do cadastro do aluno como fallback
+        dataInicio: nivel.dataInicio || (aluno as any).contratoInicio || null,
+        dataFim: nivel.dataFim || (aluno as any).contratoFim || null,
         statusFinal: statusOperacional,
         emAndamento: isEmAndamento,
       },
@@ -3168,8 +3169,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             ? {
                 id: nivelReferencia.id,
                 nome: nivelReferencia.nivel,
-                dataInicio: nivelReferencia.dataInicio,
-                dataFim: nivelReferencia.dataFim,
+                // Priorizar datas do nível, mas usar datas do cadastro do aluno como fallback
+                dataInicio: nivelReferencia.dataInicio || (aluno as any).contratoInicio || null,
+                dataFim: nivelReferencia.dataFim || (aluno as any).contratoFim || null,
                 statusOperacional: (nivelReferencia as any).statusOperacional || "encerrado",
                 isFallbackEncerrado: !nivelOperacional,
               }
