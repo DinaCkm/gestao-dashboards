@@ -321,6 +321,12 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
     const dataInicioReal = (aluno as any).contratoInicio || nivel.dataInicio || getFallbackDates(programa?.name, turma?.name).inicio;
     const dataFimReal = (aluno as any).contratoFim || nivel.dataFim || getFallbackDates(programa?.name, turma?.name).fim;
 
+    // Se o nível for simulado e for o mais recente (em andamento), vamos buscar os dados reais da performance consolidada
+    const isSimuladoMaisRecente = (nivel as any).isSimulado && (nivel as any).status === "em_andamento";
+    
+    // Se for o mais recente, vamos usar os dados consolidados que a página de Performance usa
+    const indicadoresConsolidados = isSimuladoMaisRecente ? await db.getIndicadoresConsolidadosV2(alunoId) : null;
+
     const assessments = pedagogia.assessments || [];
     const plano = pedagogia.planoIndividual || [];
     const metas = pedagogia.metas || [];
@@ -432,19 +438,24 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
         mediaNotaPerformance: Number.isFinite(avgNotaPerformance) ? Number(avgNotaPerformance.toFixed(2)) : 0,
         mediaProgressoPerformance: Number.isFinite(avgProgresso) ? Number(avgProgresso.toFixed(2)) : 0,
       },
-      resultados: {
-        competencias: {
-          total: obrigatorias.length,
-          aprovadas: obrigatoriasAprovadas,
-          percentualAprovacao: obrigatorias.length > 0 ? clampPercent((obrigatoriasAprovadas / obrigatorias.length) * 100) : 0,
+        resultados: {
+          competencias: {
+            total: isSimuladoMaisRecente ? 100 : obrigatorias.length,
+            aprovadas: isSimuladoMaisRecente ? (indicadoresConsolidados?.ind7_engajamentoFinal || 0) : obrigatoriasAprovadas,
+            percentualAprovacao: isSimuladoMaisRecente 
+              ? (indicadoresConsolidados?.ind7_engajamentoFinal || 0) 
+              : (obrigatorias.length > 0 ? clampPercent((obrigatoriasAprovadas / obrigatorias.length) * 100) : 0),
+          },
+          metas: {
+            total: isSimuladoMaisRecente ? 100 : metas.length,
+            concluidas: isSimuladoMaisRecente ? (indicadoresConsolidados?.ind2_avaliacoes || 0) : metasConcluidas,
+            percentualConclusao: isSimuladoMaisRecente 
+              ? (indicadoresConsolidados?.ind2_avaliacoes || 0) 
+              : (metas.length > 0 ? clampPercent((metasConcluidas / metas.length) * 100) : 0),
+          },
+          aplicabilidade: isSimuladoMaisRecente ? (indicadoresConsolidados?.ind6_aplicabilidade || 0) : null,
+          performanceFinal: isSimuladoMaisRecente ? classifyByPercent(indicadoresConsolidados?.ind7_engajamentoFinal || 0) : classifyByPercent(avgProgresso),
         },
-        metas: {
-          total: metas.length,
-          concluidas: metasConcluidas,
-          percentualConclusao: metas.length > 0 ? clampPercent((metasConcluidas / metas.length) * 100) : 0,
-        },
-        performanceFinal: classifyByPercent(avgProgresso),
-      },
       elegibilidadeCertificacaoFutura: elegibilidade,
       certificadoEmitido: certificado
         ? {

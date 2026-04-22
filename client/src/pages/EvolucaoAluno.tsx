@@ -72,7 +72,7 @@ export default function EvolucaoAluno() {
                   {nivelAtual?.nivel?.statusFinal || "Em andamento"}
                 </Badge>
                 <span className="text-xs text-gray-400">•</span>
-                <span className="text-xs text-gray-500">Iniciado em {nivelAtual?.nivel?.dataInicio ? new Date(nivelAtual.nivel.dataInicio).toLocaleDateString() : '--'}</span>
+                <span className="text-xs text-gray-500">Iniciado em {nivelAtual?.nivel?.dataInicio ? new Date(nivelAtual.nivel.dataInicio).toLocaleDateString('pt-BR') : '--'}</span>
               </div>
             </div>
           </div>
@@ -100,16 +100,11 @@ export default function EvolucaoAluno() {
               let met = item.resultados?.metas?.percentualConclusao || 0;
               let apl = item.obtido?.mediaProgressoPerformance || 0;
               
-              // Sincronização forçada para o nível atual (onde os dados de performance costumam estar no consolidado)
-              if (item.nivel.emAndamento && data.resumo?.nivelAtual) {
-                // Se o snapshot do nível atual estiver zerado mas tivermos dados no consolidado, usamos eles
-                // Isso resolve o caso da Joseane onde a Performance mostra 85% mas a Evolução mostra 0%
-                const { data: perfData } = trpc.indicadores.meuDashboard.useQuery();
-                if (perfData?.found) {
-                  const v2 = (perfData as any).indicadoresV2?.consolidado;
-                  if (eng === 0) eng = v2?.ind7_engajamentoFinal || 0;
-                  if (met === 0) met = (perfData as any).metas?.resumo?.percentual || 0;
-                  if (apl === 0) apl = v2?.ind6_aplicabilidade || 0;
+              // Sincronização forçada para o nível atual
+              if (item.nivel.emAndamento) {
+                // Se o nível for simulado ou estiver em andamento, usamos os dados do objeto resultados.aplicabilidade se disponível
+                if (item.resultados?.aplicabilidade !== null && item.resultados?.aplicabilidade !== undefined) {
+                  apl = item.resultados.aplicabilidade;
                 }
               }
               
