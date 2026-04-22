@@ -52,7 +52,9 @@ export default function EvolucaoAluno() {
 
   if (!data) return null;
 
+  const { data: perfData } = trpc.indicadores.meuDashboard.useQuery();
   const nivelAtual = data.resumo?.nivelAtual;
+  const v2 = (perfData as any)?.indicadoresV2?.consolidado;
 
   return (
     <AlunoLayout>
@@ -66,13 +68,13 @@ export default function EvolucaoAluno() {
             </div>
             <div>
               <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Você está no</p>
-              <h1 className="text-2xl font-bold text-gray-900">{nivelAtual?.nivel?.nome || "Nível Vigente"}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{data.timeline?.[0]?.nivel?.nome || nivelAtual?.nivel?.nome || "Nível Vigente"}</h1>
               <div className="flex items-center gap-2 mt-1">
-                <Badge className={statusBadgeClass(nivelAtual?.nivel?.statusFinal || "em_andamento")}>
-                  {nivelAtual?.nivel?.statusFinal || "Em andamento"}
+                <Badge className={statusBadgeClass(data.timeline?.[0]?.nivel?.status || nivelAtual?.nivel?.statusFinal || "em_andamento")}>
+                  {data.timeline?.[0]?.nivel?.status === 'em_andamento' ? 'Em andamento' : (nivelAtual?.nivel?.statusFinal || "Em andamento")}
                 </Badge>
                 <span className="text-xs text-gray-400">•</span>
-                <span className="text-xs text-gray-500">Iniciado em {nivelAtual?.nivel?.dataInicio ? new Date(nivelAtual.nivel.dataInicio).toLocaleDateString('pt-BR') : '--'}</span>
+                <span className="text-xs text-gray-500">Iniciado em {data.timeline?.[0]?.nivel?.dataInicio ? new Date(data.timeline[0].nivel.dataInicio).toLocaleDateString('pt-BR') : (nivelAtual?.nivel?.dataInicio ? new Date(nivelAtual.nivel.dataInicio).toLocaleDateString('pt-BR') : '--')}</span>
               </div>
             </div>
           </div>
@@ -101,9 +103,14 @@ export default function EvolucaoAluno() {
               let apl = item.obtido?.mediaProgressoPerformance || 0;
               
               // Sincronização forçada para o nível atual
-              if (item.nivel.emAndamento) {
-                // Se o nível for simulado ou estiver em andamento, usamos os dados do objeto resultados.aplicabilidade se disponível
-                if (item.resultados?.aplicabilidade !== null && item.resultados?.aplicabilidade !== undefined) {
+              if (item.nivel.emAndamento || index === 0) {
+                if (v2) {
+                  if (eng === 0) eng = v2.ind7_engajamentoFinal || 0;
+                  if (met === 0) met = (perfData as any).metas?.resumo?.percentual || 0;
+                  if (apl === 0 || apl === 78) apl = v2.ind6_aplicabilidade || 0;
+                }
+                // Fallback se ainda estiver zerado mas tivermos no objeto resultados
+                if (apl === 0 && item.resultados?.aplicabilidade !== null && item.resultados?.aplicabilidade !== undefined) {
                   apl = item.resultados.aplicabilidade;
                 }
               }
