@@ -3747,6 +3747,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           mentorEspecialidade: mentorAluno?.especialidade || null,
           mentorId: mentorAluno?.id || null,
           plataformaAulas: (aluno as any).plataformaAulas || 'sistema_interno',
+          contratoInicio: (aluno as any).contratoInicio || null,
+          contratoFim: (aluno as any).contratoFim || null,
         },
         indicadores: {
           // Usar V2 para notaFinal e performanceGeral (consistente com Dashboard Gestor)

@@ -95,11 +95,11 @@ export default function Performance() {
               <div>
                 <p className="text-[10px] text-blue-300 uppercase font-bold">Período do Contrato</p>
                 <p className="font-semibold text-sm">
-                  {data?.aluno?.contratoInicio ? (
+                  {data?.aluno && (data.aluno as any).contratoInicio ? (
                     <>
-                      {new Date(data.aluno.contratoInicio).toLocaleDateString('pt-BR')} 
+                      {new Date((data.aluno as any).contratoInicio).toLocaleDateString('pt-BR')} 
                       <span className="mx-1">até</span>
-                      {data?.aluno?.contratoFim ? new Date(data.aluno.contratoFim).toLocaleDateString('pt-BR') : 'Em aberto'}
+                      {(data.aluno as any).contratoFim ? new Date((data.aluno as any).contratoFim).toLocaleDateString('pt-BR') : 'Em aberto'}
                     </>
                   ) : nivelVigente?.dataInicio ? (
                     <>
