@@ -274,6 +274,9 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
       db.getNivelCertificateByAlunoNivel(alunoId, nivel.id),
     ]);
 
+    const dataInicioReal = (aluno as any).contratoInicio || nivel.dataInicio || getFallbackDates(programa?.name, turma?.name).inicio;
+    const dataFimReal = (aluno as any).contratoFim || nivel.dataFim || getFallbackDates(programa?.name, turma?.name).fim;
+
     const assessments = pedagogia.assessments || [];
     const plano = pedagogia.planoIndividual || [];
     const metas = pedagogia.metas || [];
@@ -306,8 +309,16 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
     const mentoraId = nivel.mentoraPrincipalId || mentorias.find((s: any) => s.consultorId)?.consultorId || null;
     const mentora = mentoraId ? await db.getConsultorById(mentoraId) : null;
 
+    // Busca global de DISC: se não houver DISC vinculado ao nível, busca por data dentro do período do nível
     const discPorNivel = allDisc
-      .filter((d: any) => d.contratoNivelId === nivel.id)
+      .filter((d: any) => {
+        if (d.contratoNivelId === nivel.id) return true;
+        if (!d.contratoNivelId && d.completedAt && dataInicioReal && dataFimReal) {
+          const dDate = new Date(d.completedAt).getTime();
+          return dDate >= new Date(dataInicioReal).getTime() && dDate <= new Date(dataFimReal).getTime();
+        }
+        return false;
+      })
       .map((d: any) => {
         const perfil = DISC_PERFIS[d.perfilPredominante as keyof typeof DISC_PERFIS];
         return {
@@ -340,10 +351,8 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
           nivel: {
             id: nivel.id,
             nome: nivel.nivel,
-            // PRIORIDADE ABSOLUTA: Cadastro do Aluno (Formulário)
-            // Depois: Datas do Nível, Depois: Regra por Empresa/Turma
-            dataInicio: (aluno as any).contratoInicio || nivel.dataInicio || fallback.inicio || null,
-            dataFim: (aluno as any).contratoFim || nivel.dataFim || fallback.fim || null,
+            dataInicio: dataInicioReal,
+            dataFim: dataFimReal,
             statusFinal: statusOperacional,
             emAndamento: isEmAndamento,
           },
