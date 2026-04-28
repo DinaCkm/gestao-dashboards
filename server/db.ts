@@ -5982,9 +5982,9 @@ export async function getJornadaCompleta(alunoId: number) {
     const codigo = compCodigoMap[cursoAtrib.competenciaId];
     // Só preencher se não há registro em student_performance
     if (codigo && perfMap[codigo]) continue;
-    // Contar atividades aprovadas e total do curso
+    // Contar atividades aprovadas e total do curso (apenas ativas)
     const [totalResult] = await db.select({ count: sql<number>`COUNT(*)` })
-      .from(atividadesCurso).where(eq(atividadesCurso.cursoId, cursoAtrib.cursoId));
+      .from(atividadesCurso).where(and(eq(atividadesCurso.cursoId, cursoAtrib.cursoId), eq(atividadesCurso.isActive, 1)));
     const [aprovResult] = await db.select({ count: sql<number>`COUNT(*)` })
       .from(alunoAtividadeProgresso)
       .where(and(
