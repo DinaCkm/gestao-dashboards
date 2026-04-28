@@ -788,66 +788,24 @@ export const jornadaRouter = router({
         const alunoIndicadores = todosIndicadores.find(a => a.idUsuario === alunoIdStr || a.idUsuario === String(input.alunoId));
         if (!alunoIndicadores) return [];
 
-        // Buscar PDIs do aluno para obter os macrociclos com trilhaNome
-        const { db } = await import('../db');
-        const { assessmentPdi, trilhas } = await import('../../drizzle/schema');
-        const { eq } = await import('drizzle-orm');
-        const pdisDoAluno = await db
-          .select({
-            macroInicio: assessmentPdi.macroInicio,
-            macroTermino: assessmentPdi.macroTermino,
-            trilhaNome: trilhas.nome,
-          })
-          .from(assessmentPdi)
-          .leftJoin(trilhas, eq(assessmentPdi.trilhaId, trilhas.id))
-          .where(eq(assessmentPdi.alunoId, input.alunoId))
-          .orderBy(assessmentPdi.macroInicio);
-
-        const todosCiclos = [...alunoIndicadores.ciclosFinalizados, ...alunoIndicadores.ciclosEmAndamento];
-
-        // Para cada PDI (macrociclo), encontrar os ciclos de indicadores correspondentes
-        const resultado = pdisDoAluno
-          .filter(pdi => pdi.macroInicio && pdi.macroTermino)
-          .map(pdi => {
-            const macroIni = pdi.macroInicio!.slice(0, 10);
-            const macroFim = pdi.macroTermino!.slice(0, 10);
-
-            const ciclosNoPeriodo = todosCiclos.filter(c =>
-              c.dataInicio >= macroIni && c.dataFim <= macroFim
-            );
-
-            let ind1 = 0, ind2 = 0, ind3 = 0, ind4 = 0, ind5 = 0, ind6 = 0, ind7 = 0;
-            if (ciclosNoPeriodo.length > 0) {
-              ind1 = ciclosNoPeriodo.reduce((s, c) => s + c.ind1_webinars, 0) / ciclosNoPeriodo.length;
-              ind2 = ciclosNoPeriodo.reduce((s, c) => s + c.ind2_avaliacoes, 0) / ciclosNoPeriodo.length;
-              ind3 = ciclosNoPeriodo.reduce((s, c) => s + c.ind3_competencias, 0) / ciclosNoPeriodo.length;
-              ind4 = ciclosNoPeriodo.reduce((s, c) => s + c.ind4_tarefas, 0) / ciclosNoPeriodo.length;
-              ind5 = ciclosNoPeriodo.reduce((s, c) => s + c.ind5_engajamento, 0) / ciclosNoPeriodo.length;
-              ind6 = ciclosNoPeriodo.reduce((s, c) => s + c.ind6_aplicabilidade, 0) / ciclosNoPeriodo.length;
-              ind7 = ciclosNoPeriodo.reduce((s, c) => s + c.ind7_engajamentoFinal, 0) / ciclosNoPeriodo.length;
-            }
-
-            const fmtPeriodo = (d: string) => {
-              const dt = new Date(d);
-              return dt.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
-            };
-
-            return {
-              nomeAluno: alunoTarget.name,
-              trilhaNome: pdi.trilhaNome || 'Trilha',
-              periodo: `${fmtPeriodo(macroIni)}–${fmtPeriodo(macroFim)}`,
-              macroInicio: macroIni,
-              macroTermino: macroFim,
-              ind1_webinars: Math.round(ind1),
-              ind2_avaliacoes: Math.round(ind2),
-              ind3_competencias: Math.round(ind3),
-              ind4_tarefas: Math.round(ind4),
-              ind5_engajamento: Math.round(ind5),
-              ind6_aplicabilidade: Math.round(ind6),
-              ind7_engajamentoFinal: Math.round(ind7),
-            };
-          });
-
+        // Usar ciclos diretamente de todosIndicadores (mesma fonte do performancePorCiclo)
+        const todosCiclos = [...alunoIndicadores.ciclosFinalizados, ...alunoIndicadores.ciclosEmAndamento]
+          .sort((a, b) => a.dataInicio.localeCompare(b.dataInicio));
+        const fmtDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
+        const resultado = todosCiclos.map(c => ({
+          nomeAluno: alunoTarget.name,
+          trilhaNome: c.trilhaNome || 'Ciclo',
+          periodo: `${fmtDate(c.dataInicio)} – ${fmtDate(c.dataFim)}`,
+          macroInicio: c.dataInicio,
+          macroTermino: c.dataFim,
+          ind1_webinars: Math.round(c.ind1_webinars),
+          ind2_avaliacoes: Math.round(c.ind2_avaliacoes),
+          ind3_competencias: Math.round(c.ind3_competencias),
+          ind4_tarefas: Math.round(c.ind4_tarefas),
+          ind5_engajamento: Math.round(c.ind5_engajamento),
+          ind6_aplicabilidade: Math.round(c.ind6_aplicabilidade),
+          ind7_engajamentoFinal: Math.round(c.ind7_engajamentoFinal),
+        }));
         return resultado;
       } catch (error) {
         console.error('[performancePorAluno] Erro:', error);
