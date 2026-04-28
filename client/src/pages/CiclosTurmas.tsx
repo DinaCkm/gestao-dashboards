@@ -168,7 +168,7 @@ export default function CiclosTurmas() {
           </Card>
         )}
 
-        {/* Tabela de Performance por Ciclo */}
+        {/* Tabela de Performance */}
         {!isLoading && Object.keys(jornadasPorEmpresa).length > 0 && (
           <PerformancePorCicloSection jornadasPorEmpresa={jornadasPorEmpresa} />
         )}
@@ -192,27 +192,36 @@ export default function CiclosTurmas() {
 
 function PerformancePorCicloSection({ jornadasPorEmpresa }: { jornadasPorEmpresa: Record<string, any[]> }) {
   const empresas = Object.keys(jornadasPorEmpresa);
+  const [modo, setModo] = useState<'ciclo' | 'aluno'>('ciclo');
   const [empresaSel, setEmpresaSel] = useState(empresas[0] || '');
   const jornadas = jornadasPorEmpresa[empresaSel] || [];
 
-  // Opções de ciclo: cada barra do Gantt é um ciclo
+  // Modo ciclo
   const cicloOpts = jornadas.map((j: any, idx: number) => ({
     label: `${j.trilhaNome || 'Trilha'} (${fmtDate(j.macroInicio)} – ${fmtDate(j.macroTermino)})`,
     macroInicio: toIso(j.macroInicio),
     macroTermino: toIso(j.macroTermino),
     idx,
   }));
-
   const [cicloIdx, setCicloIdx] = useState(0);
   const cicloSel = cicloOpts[cicloIdx];
 
-  const { data: performance = [], isLoading } = trpc.jornada.performancePorCiclo.useQuery(
-    {
-      empresa: empresaSel,
-      macroInicio: cicloSel?.macroInicio || '',
-      macroTermino: cicloSel?.macroTermino || '',
-    },
-    { enabled: !!empresaSel && !!cicloSel?.macroInicio }
+  const { data: perfCiclo = [], isLoading: loadCiclo } = trpc.jornada.performancePorCiclo.useQuery(
+    { empresa: empresaSel, macroInicio: cicloSel?.macroInicio || '', macroTermino: cicloSel?.macroTermino || '' },
+    { enabled: modo === 'ciclo' && !!empresaSel && !!cicloSel?.macroInicio }
+  );
+
+  // Modo aluno
+  const { data: alunos = [] } = trpc.jornada.alunosDaEmpresa.useQuery(
+    { empresa: empresaSel },
+    { enabled: modo === 'aluno' && !!empresaSel }
+  );
+  const [alunoId, setAlunoId] = useState<number | null>(null);
+  const alunoIdSel = alunoId ?? ((alunos as any[])[0]?.id ?? null);
+
+  const { data: perfAluno = [], isLoading: loadAluno } = trpc.jornada.performancePorAluno.useQuery(
+    { empresa: empresaSel, alunoId: alunoIdSel! },
+    { enabled: modo === 'aluno' && !!empresaSel && alunoIdSel != null }
   );
 
   const pct = (v: number) => `${Math.round(v)}%`;
@@ -224,72 +233,124 @@ function PerformancePorCicloSection({ jornadasPorEmpresa }: { jornadasPorEmpresa
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart2 className="h-5 w-5" />
-          Performance por Ciclo
-        </CardTitle>
-        <CardDescription>
-          Indicadores de engajamento dos alunos filtrados por macrociclo
-        </CardDescription>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <CardTitle className="flex items-center gap-2">
+            <BarChart2 className="h-5 w-5" />
+            Performance
+          </CardTitle>
+          <div className="flex rounded-md border overflow-hidden text-sm">
+            <button
+              className={`px-4 py-1.5 ${modo === 'ciclo' ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-muted'}`}
+              onClick={() => setModo('ciclo')}
+            >Por Ciclo</button>
+            <button
+              className={`px-4 py-1.5 ${modo === 'aluno' ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-muted'}`}
+              onClick={() => setModo('aluno')}
+            >Por Aluno</button>
+          </div>
+        </div>
         <div className="flex flex-wrap gap-3 pt-2">
           {empresas.length > 1 && (
-            <Select value={empresaSel} onValueChange={v => { setEmpresaSel(v); setCicloIdx(0); }}>
-              <SelectTrigger className="w-56">
-                <SelectValue placeholder="Empresa" />
-              </SelectTrigger>
+            <Select value={empresaSel} onValueChange={v => { setEmpresaSel(v); setCicloIdx(0); setAlunoId(null); }}>
+              <SelectTrigger className="w-56"><SelectValue placeholder="Empresa" /></SelectTrigger>
+              <SelectContent>{empresas.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
+            </Select>
+          )}
+          {modo === 'ciclo' && (
+            <Select value={String(cicloIdx)} onValueChange={v => setCicloIdx(Number(v))}>
+              <SelectTrigger className="w-80"><SelectValue placeholder="Selecione o ciclo" /></SelectTrigger>
               <SelectContent>
-                {empresas.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                {cicloOpts.map((c, i) => <SelectItem key={i} value={String(i)}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
           )}
-          <Select value={String(cicloIdx)} onValueChange={v => setCicloIdx(Number(v))}>
-            <SelectTrigger className="w-80">
-              <SelectValue placeholder="Selecione o ciclo" />
-            </SelectTrigger>
-            <SelectContent>
-              {cicloOpts.map((c, i) => (
-                <SelectItem key={i} value={String(i)}>{c.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {modo === 'aluno' && (
+            <Select value={String(alunoIdSel ?? '')} onValueChange={v => setAlunoId(Number(v))}>
+              <SelectTrigger className="w-80"><SelectValue placeholder="Selecione o aluno" /></SelectTrigger>
+              <SelectContent>
+                {(alunos as any[]).map(a => <SelectItem key={a.id} value={String(a.id)}>{a.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {(modo === 'ciclo' ? loadCiclo : loadAluno) ? (
           <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-8 w-full" />)}</div>
-        ) : (performance as any[]).length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">Nenhum dado encontrado para este ciclo.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="py-2 pr-4 font-medium">Aluno</th>
-                  <th className="py-2 px-2 text-center font-medium">Webinars</th>
-                  <th className="py-2 px-2 text-center font-medium">Avaliações</th>
-                  <th className="py-2 px-2 text-center font-medium">Competências</th>
-                  <th className="py-2 px-2 text-center font-medium">Tarefas</th>
-                  <th className="py-2 px-2 text-center font-medium">Aplicabilidade</th>
-                  <th className="py-2 px-2 text-center font-medium">Case</th>
-                  <th className="py-2 pl-2 text-center font-semibold">Engajamento</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(performance as any[]).map((a, i) => (
-                  <tr key={a.idUsuario} className={i % 2 === 0 ? 'bg-muted/20' : ''}>
-                    <td className="py-2 pr-4 font-medium">{a.nomeAluno}</td>
-                    <td className={`py-2 px-2 text-center ${cor(a.ind1_webinars)}`}>{pct(a.ind1_webinars)}</td>
-                    <td className={`py-2 px-2 text-center ${cor(a.ind2_avaliacoes)}`}>{pct(a.ind2_avaliacoes)}</td>
-                    <td className={`py-2 px-2 text-center ${cor(a.ind3_competencias)}`}>{pct(a.ind3_competencias)}</td>
-                    <td className={`py-2 px-2 text-center ${cor(a.ind4_tarefas)}`}>{pct(a.ind4_tarefas)}</td>
-                    <td className={`py-2 px-2 text-center ${cor(a.ind5_engajamento)}`}>{pct(a.ind5_engajamento)}</td>
-                    <td className={`py-2 px-2 text-center ${cor(a.ind6_aplicabilidade)}`}>{pct(a.ind6_aplicabilidade)}</td>
-                    <td className={`py-2 pl-2 text-center text-base font-bold ${cor(a.ind7_engajamentoFinal)}`}>{pct(a.ind7_engajamentoFinal)}</td>
+        ) : modo === 'ciclo' ? (
+          (perfCiclo as any[]).length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Nenhum dado encontrado para este ciclo.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left">
+                    <th className="py-2 pr-4 font-medium">Aluno</th>
+                    <th className="py-2 px-2 text-center font-medium">Webinars</th>
+                    <th className="py-2 px-2 text-center font-medium">Avaliações</th>
+                    <th className="py-2 px-2 text-center font-medium">Competências</th>
+                    <th className="py-2 px-2 text-center font-medium">Tarefas</th>
+                    <th className="py-2 px-2 text-center font-medium">Aplicabilidade</th>
+                    <th className="py-2 px-2 text-center font-medium">Case</th>
+                    <th className="py-2 pl-2 text-center font-semibold">Engajamento</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {(perfCiclo as any[]).map((a, i) => (
+                    <tr key={a.idUsuario} className={i % 2 === 0 ? 'bg-muted/20' : ''}>
+                      <td className="py-2 pr-4 font-medium">{a.nomeAluno}</td>
+                      <td className={`py-2 px-2 text-center ${cor(a.ind1_webinars)}`}>{pct(a.ind1_webinars)}</td>
+                      <td className={`py-2 px-2 text-center ${cor(a.ind2_avaliacoes)}`}>{pct(a.ind2_avaliacoes)}</td>
+                      <td className={`py-2 px-2 text-center ${cor(a.ind3_competencias)}`}>{pct(a.ind3_competencias)}</td>
+                      <td className={`py-2 px-2 text-center ${cor(a.ind4_tarefas)}`}>{pct(a.ind4_tarefas)}</td>
+                      <td className={`py-2 px-2 text-center ${cor(a.ind5_engajamento)}`}>{pct(a.ind5_engajamento)}</td>
+                      <td className={`py-2 px-2 text-center ${cor(a.ind6_aplicabilidade)}`}>{pct(a.ind6_aplicabilidade)}</td>
+                      <td className={`py-2 pl-2 text-center text-base font-bold ${cor(a.ind7_engajamentoFinal)}`}>{pct(a.ind7_engajamentoFinal)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : (
+          (perfAluno as any[]).length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Nenhum dado encontrado para este aluno.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left">
+                    <th className="py-2 pr-4 font-medium">Nome</th>
+                    <th className="py-2 pr-4 font-medium">Ciclo</th>
+                    <th className="py-2 pr-4 font-medium">Período</th>
+                    <th className="py-2 px-2 text-center font-medium">Webinars</th>
+                    <th className="py-2 px-2 text-center font-medium">Avaliações</th>
+                    <th className="py-2 px-2 text-center font-medium">Competências</th>
+                    <th className="py-2 px-2 text-center font-medium">Tarefas</th>
+                    <th className="py-2 px-2 text-center font-medium">Aplicabilidade</th>
+                    <th className="py-2 px-2 text-center font-medium">Case</th>
+                    <th className="py-2 pl-2 text-center font-semibold">Engajamento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(perfAluno as any[]).map((c, i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'bg-muted/20' : ''}>
+                      <td className="py-2 pr-4 font-medium">{c.nomeAluno}</td>
+                      <td className="py-2 pr-4">{c.trilhaNome}</td>
+                      <td className="py-2 pr-4 whitespace-nowrap text-xs text-muted-foreground">{fmtDate(c.macroInicio)} – {fmtDate(c.macroTermino)}</td>
+                      <td className={`py-2 px-2 text-center ${cor(c.ind1_webinars)}`}>{pct(c.ind1_webinars)}</td>
+                      <td className={`py-2 px-2 text-center ${cor(c.ind2_avaliacoes)}`}>{pct(c.ind2_avaliacoes)}</td>
+                      <td className={`py-2 px-2 text-center ${cor(c.ind3_competencias)}`}>{pct(c.ind3_competencias)}</td>
+                      <td className={`py-2 px-2 text-center ${cor(c.ind4_tarefas)}`}>{pct(c.ind4_tarefas)}</td>
+                      <td className={`py-2 px-2 text-center ${cor(c.ind5_engajamento)}`}>{pct(c.ind5_engajamento)}</td>
+                      <td className={`py-2 px-2 text-center ${cor(c.ind6_aplicabilidade)}`}>{pct(c.ind6_aplicabilidade)}</td>
+                      <td className={`py-2 pl-2 text-center text-base font-bold ${cor(c.ind7_engajamentoFinal)}`}>{pct(c.ind7_engajamentoFinal)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
         )}
       </CardContent>
     </Card>
