@@ -6776,7 +6776,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         trilhaNome: z.string(),
         titulo: z.string().min(1, 'T\u00edtulo \u00e9 obrigat\u00f3rio'),
         resumoPublico: z.string()
-          .min(20, 'Resumo público deve ter ao menos 20 caracteres')
+          .min(1, 'Resumo público é obrigatório')
           .max(500, 'Resumo público deve ter no máximo 500 caracteres'),
         descricao: z.string().optional(),
         // Campos estruturados do Relat\u00f3rio de Impacto
