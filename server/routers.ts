@@ -2925,7 +2925,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
 
       // Tentar encontrar o aluno: alunoId direto → email → externalId (openId)
+      console.log('[meuDashboard] ctx.user:', JSON.stringify({ id: ctx.user.id, openId: ctx.user.openId, email: ctx.user.email, alunoId: ctx.user.alunoId, role: ctx.user.role }));
       const aluno = await db.getAlunoFromCtx(ctx.user);
+      console.log('[meuDashboard] aluno encontrado:', aluno ? JSON.stringify({ id: aluno.id, name: aluno.name, email: aluno.email, externalId: aluno.externalId }) : 'null');
 
       if (!aluno) {
         return { found: false as const, message: 'Nenhum perfil de aluno vinculado a esta conta.' };
