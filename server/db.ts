@@ -7544,8 +7544,8 @@ export async function getJornadasPorTurma(empresa?: string) {
   const alunoMap = new Map(alunosList.map(a => [a.id, a]));
   const programMap = new Map(programsList.map(p => [p.id, p]));
   
-  // Agrupar por turma
-  const turmaGroups = new Map<number, {
+  // Agrupar por turma + trilha + macroInicio (para suportar turmas com múltiplas trilhas)
+  const turmaGroups = new Map<string, {
     turmaId: number;
     turmaNome: string;
     turmaCode: string; // BS1, BS2, BS3
@@ -7566,7 +7566,7 @@ export async function getJornadasPorTurma(empresa?: string) {
     const codeMatch = turma.name.match(/\[(BS\d+)\]/);
     const turmaCode = codeMatch ? codeMatch[1] : turma.name;
     
-    const key = pdi.turmaId!;
+    const key = `${pdi.turmaId}_${pdi.trilhaId}_${pdi.macroInicio}`;
     if (!turmaGroups.has(key)) {
       // Buscar micro ciclos para esta turma (pegar de qualquer aluno, são iguais)
       const pdiComps = allComps.filter(c => c.assessmentPdiId === pdi.id);
