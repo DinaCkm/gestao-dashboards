@@ -694,7 +694,6 @@ export const casesSucesso = mysqlTable("cases_sucesso", {
   notaAlunoAplicabilidade: int("notaAlunoAplicabilidade"), // Autoavaliação do aluno (0-10)
   notaMentoraAplicabilidade: int("notaMentoraAplicabilidade"), // Avaliação da mentora (0-10)
   aplicabilidadeAvaliadaEm: timestamp("aplicabilidadeAvaliadaEm"), // Data/hora que a mentora avaliou
-  visivelNoMural: int("visivelNoMural").default(1).notNull(), // 1 = visível no Mural, 0 = oculto pelo admin
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
