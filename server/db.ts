@@ -5969,6 +5969,58 @@ export async function getJornadaCompleta(alunoId: number) {
     }
   }
   
+  // 7. Fallback: para alunos da plataforma, buscar progresso real de aluno_atividade_progresso
+  // para competências que ainda não têm registro em student_performance
+  const cursosAtribuidosAluno = await db.select({
+    id: alunoCursoAtribuido.id,
+    cursoId: alunoCursoAtribuido.cursoId,
+    competenciaId: alunoCursoAtribuido.competenciaId,
+    status: alunoCursoAtribuido.status,
+  }).from(alunoCursoAtribuido).where(eq(alunoCursoAtribuido.alunoId, alunoId));
+
+  for (const cursoAtrib of cursosAtribuidosAluno) {
+    const codigo = compCodigoMap[cursoAtrib.competenciaId];
+    // Só preencher se não há registro em student_performance
+    if (codigo && perfMap[codigo]) continue;
+    // Contar atividades aprovadas e total do curso
+    const [totalResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(atividadesCurso).where(eq(atividadesCurso.cursoId, cursoAtrib.cursoId));
+    const [aprovResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(alunoAtividadeProgresso)
+      .where(and(
+        eq(alunoAtividadeProgresso.alunoId, alunoId),
+        eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtrib.id),
+        eq(alunoAtividadeProgresso.status, 'aprovada')
+      ));
+    const [andResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(alunoAtividadeProgresso)
+      .where(and(
+        eq(alunoAtividadeProgresso.alunoId, alunoId),
+        eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtrib.id),
+        eq(alunoAtividadeProgresso.status, 'em_andamento')
+      ));
+    const total = Number(totalResult?.count || 0);
+    const aprovadas = Number(aprovResult?.count || 0);
+    const emAndamento = Number(andResult?.count || 0);
+    if (total === 0) continue;
+    const progressoTotal = Math.round((aprovadas / total) * 100);
+    const key = codigo || String(cursoAtrib.competenciaId);
+    perfMap[key] = {
+      progressoTotal,
+      mediaRespondidas: 0,
+      mediaDisponiveis: 0,
+      totalAulas: total,
+      aulasDisponiveis: total,
+      aulasConcluidas: aprovadas,
+      aulasEmAndamento: emAndamento,
+      aulasNaoIniciadas: total - aprovadas - emAndamento,
+      avaliacoesRespondidas: 0,
+      avaliacoesDisponiveis: 0,
+    };
+    // Se não há codigo, também indexar pelo competenciaId como string
+    if (!codigo) perfMap[String(cursoAtrib.competenciaId)] = perfMap[key];
+  }
+
   // 7. Montar estrutura hierárquica — helper para enriquecer competência
   const buildMicroJornada = (comp: typeof allComps[0]) => {
     const codigo = compCodigoMap[comp.competenciaId];
