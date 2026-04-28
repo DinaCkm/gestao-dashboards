@@ -470,6 +470,10 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
 
   const handleCaseSubmit = async () => {
     if (!caseTrilhaId || !caseTitulo || !caseResumoPublico || !caseOQueAprendi || !caseOQueMudei || !caseResultadoMensuravel || !caseAntesVsDepois) return;
+    if (caseResumoPublico.length < 20) {
+      toast.error('O Resumo público do CASE deve ter ao menos 20 caracteres.');
+      return;
+    }
 
     const payload: any = {
       trilhaId: caseTrilhaId,
@@ -3265,8 +3269,18 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   value={caseResumoPublico}
                   onChange={e => setCaseResumoPublico(e.target.value.slice(0, 500))}
                   rows={3}
+                  className={caseResumoPublico.length > 0 && caseResumoPublico.length < 20 ? "border-red-400 focus-visible:ring-red-400" : ""}
                 />
-                <p className="text-[11px] text-gray-400">{caseResumoPublico.length}/500</p>
+                <div className="flex items-center justify-between">
+                  {caseResumoPublico.length > 0 && caseResumoPublico.length < 20 ? (
+                    <p className="text-[11px] text-red-500 font-medium">
+                      O resumo deve ter ao menos 20 caracteres ({20 - caseResumoPublico.length} restantes)
+                    </p>
+                  ) : (
+                    <span />
+                  )}
+                  <p className={`text-[11px] ${caseResumoPublico.length > 0 && caseResumoPublico.length < 20 ? 'text-red-400' : 'text-gray-400'}`}>{caseResumoPublico.length}/500</p>
+                </div>
               </div>
 
               {/* 1. O que aprendi */}
