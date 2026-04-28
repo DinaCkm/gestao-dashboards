@@ -7540,8 +7540,16 @@ export async function getJornadasPorTurma(empresa?: string) {
   
   // Buscar programs map para pegar nomes de empresas
   const programsList = await db.select().from(programs);
-  const alunosList = await db.select({ id: alunos.id, programId: alunos.programId }).from(alunos);
+  const alunosList = await db.select({ id: alunos.id, programId: alunos.programId, name: alunos.name }).from(alunos);
   const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+  
+  // Filtrar PDIs de alunos de teste
+  filteredPdis = filteredPdis.filter(pdi => {
+    const aluno = alunoMap.get(pdi.alunoId);
+    if (!aluno) return false;
+    const nameLower = (aluno.name || '').toLowerCase();
+    return !nameLower.includes('teste') && !nameLower.includes('test');
+  });
   const programMap = new Map(programsList.map(p => [p.id, p]));
   
   // Agrupar por turma + trilha + macroInicio (para suportar turmas com múltiplas trilhas)
