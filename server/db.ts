@@ -10457,16 +10457,19 @@ export async function syncStudentPerformanceFromPlatform(
           eq(alunoAtividadeProgresso.status, 'aprovada')
         )
       );
-    const aulasConcluidas = atividadesAprovadas.length;
-
-    // 5. Calcular nota média das atividades aprovadas (escala 0-10 -> 0-100, igual à planilha)
+     const aulasConcluidas = atividadesAprovadas.length;
+    // 5. Calcular nota média APENAS das atividades que têm avaliação (notaFinal != null)
+    // Atividades sem avaliação cadastrada não entram no cálculo — divisor = qtd com nota
     let mediaAvaliacoesRespondidas: string | null = null;
-    if (atividadesAprovadas.length > 0) {
-      const somaNotas = atividadesAprovadas.reduce(
-        (acc, n) => acc + parseFloat(String(n.notaFinal ?? 0)), 0
+    const atividadesComNota = atividadesAprovadas.filter(
+      (n) => n.notaFinal !== null && n.notaFinal !== undefined
+    );
+    if (atividadesComNota.length > 0) {
+      const somaNotas = atividadesComNota.reduce(
+        (acc, n) => acc + parseFloat(String(n.notaFinal)), 0
       );
-      const media010 = somaNotas / atividadesAprovadas.length;
-      mediaAvaliacoesRespondidas = (media010 * 10).toFixed(2); // 0-100
+      const media010 = somaNotas / atividadesComNota.length; // média só das que têm nota
+      mediaAvaliacoesRespondidas = (media010 * 10).toFixed(2); // escala 0-100
     }
 
     const progressoTotal = aulasDisponiveis > 0
@@ -10497,7 +10500,7 @@ export async function syncStudentPerformanceFromPlatform(
           aulasDisponiveis,
           totalAulas: aulasDisponiveis,
           progressoTotal,
-          avaliacoesRespondidas: atividadesAprovadas.length,
+          avaliacoesRespondidas: atividadesComNota.length,
           mediaAvaliacoesRespondidas: mediaAvaliacoesRespondidas as any,
           dataConclusao: dataConclusaoStr,
           updatedAt: new Date(),
@@ -10516,7 +10519,7 @@ export async function syncStudentPerformanceFromPlatform(
         aulasDisponiveis,
         totalAulas: aulasDisponiveis,
         progressoTotal,
-        avaliacoesRespondidas: atividadesAprovadas.length,
+        avaliacoesRespondidas: atividadesComNota.length,
         mediaAvaliacoesRespondidas: mediaAvaliacoesRespondidas as any,
         dataConclusao: dataConclusaoStr,
       });
