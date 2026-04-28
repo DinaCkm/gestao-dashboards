@@ -2924,18 +2924,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Usuário não autenticado' });
       }
 
-      // Tentar encontrar o aluno: primeiro pelo alunoId do user, depois email, depois openId
-      let aluno: Awaited<ReturnType<typeof db.getAlunoByEmail>> | undefined;
-      if (ctx.user.alunoId) {
-        const allAlunos = await db.getAlunos();
-        aluno = allAlunos.find(a => a.id === ctx.user!.alunoId) || undefined;
-      }
-      if (!aluno && ctx.user.email) {
-        aluno = await db.getAlunoFromCtx(ctx.user);
-      }
-      if (!aluno) {
-        aluno = await db.getAlunoByExternalId(ctx.user.openId);
-      }
+      // Tentar encontrar o aluno: alunoId direto → email → externalId (openId)
+      const aluno = await db.getAlunoFromCtx(ctx.user);
 
       if (!aluno) {
         return { found: false as const, message: 'Nenhum perfil de aluno vinculado a esta conta.' };
