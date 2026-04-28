@@ -33,7 +33,7 @@ import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateTyp
 import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
-import { buildLembreteEngajamentoEmail, sendEmail } from "./emailService";
+import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, sendEmail } from "./emailService";
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
 
 function parseCSVLine(line: string): string[] {
@@ -6942,6 +6942,43 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         } catch (notifError) {
           console.error('Erro ao enviar notifica\u00e7\u00f5es do Relat\u00f3rio de Impacto:', notifError);
           // N\u00e3o falhar o envio do relat\u00f3rio por causa de notifica\u00e7\u00e3o
+        }
+
+        // === E-MAIL PARA COLEGAS DA TURMA: novo case publicado ===
+        // Disparado de forma assíncrona (não bloqueia a resposta)
+        if (!updated && aluno.turmaId) {
+          (async () => {
+            try {
+              const colegas = await db.getAlunosByTurma(aluno!.turmaId!);
+              const muralUrl = 'https://ecolider.evoluirckm.com/mural';
+              // Buscar nome da empresa do aluno
+              const programasList = await db.getPrograms();
+              const empresaNome = aluno!.programId
+                ? (programasList.find(p => p.id === aluno!.programId)?.name || 'Empresa')
+                : 'Empresa';
+              const emailData = buildNovoCaseEmail({
+                alunoNome: aluno!.name || 'Aluno',
+                empresaNome,
+                caseTitulo: input.titulo,
+                caseResumoPublico: input.resumoPublico,
+                muralUrl,
+              });
+              const destinatarios = colegas
+                .filter(c => c.email && c.id !== aluno!.id)
+                .map(c => c.email as string);
+              for (const emailDest of destinatarios) {
+                await sendEmail({
+                  to: emailDest,
+                  subject: emailData.subject,
+                  html: emailData.html,
+                  text: emailData.text,
+                }).catch(e => console.warn('[NovoCaseEmail] Falha ao enviar para', emailDest, e));
+              }
+              console.log(`[NovoCaseEmail] E-mail de novo case enviado para ${destinatarios.length} colegas da turma ${aluno!.turmaId}`);
+            } catch (emailErr) {
+              console.warn('[NovoCaseEmail] Erro ao disparar e-mails de novo case:', emailErr);
+            }
+          })();
         }
 
         return { id: resultId, url: fileUrl, updated };

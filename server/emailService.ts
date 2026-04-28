@@ -1761,3 +1761,125 @@ Para efetivar a alteração, acesse Cadastros > Alunos e edite o campo da mentor
 
   return { subject, html, text };
 }
+
+// ============ NOVO CASE EMAIL ============
+
+export function buildNovoCaseEmail(data: {
+  alunoNome: string;
+  empresaNome: string;
+  caseTitulo: string;
+  caseResumoPublico: string;
+  muralUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Novo Case de Sucesso: ${data.caseTitulo}`;
+
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+          
+          <!-- Header com Logo -->
+          <tr>
+            <td style="background-color: #ffffff; padding: 30px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display: block; margin: 0 auto 12px;" />
+              <p style="color: #6b7280; margin: 4px 0 0; font-size: 13px;">
+                Programa de Desenvolvimento e Mentoria
+              </p>
+            </td>
+          </tr>
+          <!-- Divider -->
+          <tr>
+            <td style="padding: 0 40px;">
+              <hr style="border: none; border-top: 2px solid #e8a838; margin: 0;" />
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="color: #0f2b3c; margin: 0 0 20px; font-size: 20px;">
+                Hoje temos novidades!
+              </h2>
+              
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
+                <strong>${data.alunoNome}</strong> da Empresa <strong>${data.empresaNome}</strong> publicou um novo Case de Aplicabilidade Prática do seu aprendizado com o Título <strong>${data.caseTitulo}</strong>.
+              </p>
+
+              <!-- Info Box -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 25px;">
+                <tr>
+                  <td style="background-color: #f0f7fa; border: 1px solid #d1e5ed; border-radius: 8px; padding: 20px;">
+                    <p style="color: #0f2b3c; font-size: 14px; font-style: italic; margin: 0; line-height: 1.6;">
+                      "${data.caseResumoPublico}"
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 25px;">
+                Não deixe de interagir com ele(a) para saber como foi esta conquista. Sempre temos muito pra aprender com os nossos colegas de formação!!!
+              </p>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.muralUrl}" 
+                       style="display: inline-block; background: linear-gradient(135deg, #e8a838 0%, #d4922e 100%); color: #0f2b3c; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
+                      Ver no Mural de Cases
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <p style="color: #9ca3af; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
+                      Este e-mail foi enviado automaticamente pelo ECOSSISTEMA DO BEM.<br>
+                      &copy; ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Hoje temos novidades!
+
+${data.alunoNome} da Empresa ${data.empresaNome} publicou um novo Case de Aplicabilidade Prática do seu aprendizado com o Título "${data.caseTitulo}".
+
+Resumo:
+"${data.caseResumoPublico}"
+
+Não deixe de interagir com ele(a) para saber como foi esta conquista. Sempre temos muito pra aprender com os nossos colegas de formação!!!
+
+Acesse o Mural de Cases: ${data.muralUrl}
+
+Este e-mail foi enviado automaticamente pelo ECOSSISTEMA DO BEM.
+&copy; ${new Date().getFullYear()} CKM Talents`;
+
+  return { subject, html, text };
+}
