@@ -7509,13 +7509,15 @@ export async function getJornadasPorTurma(empresa?: string) {
   let filteredPdis = pdis;
   if (empresa) {
     const programsList = await db.select().from(programs);
-    const alunosList = await db.select({ id: alunos.id, programId: alunos.programId }).from(alunos);
+    const alunosList = await db.select({ id: alunos.id, programId: alunos.programId, name: alunos.name }).from(alunos);
     const alunoMap = new Map(alunosList.map(a => [a.id, a]));
     const programMap = new Map(programsList.map(p => [p.id, p]));
     
     filteredPdis = pdis.filter(pdi => {
       const aluno = alunoMap.get(pdi.alunoId);
       if (!aluno || !aluno.programId) return false;
+      const nameLower = (aluno.name || '').toLowerCase();
+      if (nameLower.includes('teste') || nameLower.includes('test')) return false;
       const program = programMap.get(aluno.programId);
       return program?.name === empresa;
     });
