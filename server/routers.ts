@@ -9852,7 +9852,6 @@ Responda APENAS em JSON com o formato especificado.`
         .query(async ({ input }) => {
           const database = await db.getDb();
           if (!database) return [];
-
           return await database
             .select({
               avaliacao: avaliacoesAtividade,
@@ -9868,8 +9867,23 @@ Responda APENAS em JSON com o formato especificado.`
             )
             .orderBy(desc(avaliacoesAtividade.createdAt));
         }),
+      // Sincroniza retroativamente student_performance para todos os cursos já concluídos pela plataforma
+      syncPlatformPerformance: adminProcedure
+        .mutation(async () => {
+          const database = await db.getDb();
+          if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          const cursosConcluidos = await database
+            .select({ id: alunoCursoAtribuido.id, alunoId: alunoCursoAtribuido.alunoId })
+            .from(alunoCursoAtribuido)
+            .where(eq(alunoCursoAtribuido.status, "concluido"));
+          let synced = 0;
+          for (const c of cursosConcluidos) {
+            await db.syncStudentPerformanceFromPlatform(c.alunoId, c.id);
+            synced++;
+          }
+          return { success: true, synced };
+        }),
     }),
-
     mentor: router({
       listarAlunos: protectedProcedure.query(async ({ ctx }) => {
         const consultorId = Number(ctx.user.consultorId ?? ctx.user.id);
@@ -10814,6 +10828,8 @@ Responda APENAS em JSON com o formato especificado.`
                   dataConclusao: new Date(),
                 })
                 .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+              // Sincronizar student_performance para refletir conclusão nos indicadores de Competências e Avaliações
+              await db.syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
             }
           }
 
@@ -11072,6 +11088,8 @@ Responda APENAS em JSON com o formato especificado.`
                 status: "concluido",
               })
               .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+            // Sincronizar student_performance para refletir conclusão nos indicadores de Competências e Avaliações
+            await db.syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
           }
 
           // === ENVIAR E-MAIL AO MENTOR (COM ADMIN EM CÓPIA) QUANDO BLOQUEADO NA 3a TENTATIVA ===

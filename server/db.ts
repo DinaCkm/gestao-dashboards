@@ -54,6 +54,7 @@ import {
   alunoModuloProgresso, InsertAlunoModuloProgresso, AlunoModuloProgresso,
   alunoModuloRelato, InsertAlunoModuloRelato, AlunoModuloRelato,
   alunoModuloAvaliacao, InsertAlunoModuloAvaliacao, AlunoModuloAvaliacao,
+  alunoAtividadeProgresso, InsertAlunoAtividadeProgresso, AlunoAtividadeProgresso,
   alunoCompetenciaProrrogacao, InsertAlunoCompetenciaProrrogacao, AlunoCompetenciaProrrogacao,
   cursosCompetencias, InsertCursoCompetencia, CursoCompetencia,
   atividadesCurso, InsertAtividadeCurso, AtividadeCurso,
@@ -10388,3 +10389,140 @@ export async function atualizarStatusCursoAtribuido(alunoId: number, cursoId: nu
  * @param moduloId ID do modulo/curso
  * @returns true se pode fazer avaliacao, false se esta bloqueado
  */
+
+/**
+ * Sincroniza student_performance para alunos que cursam pela plataforma.
+ * Chamada após conclusão de curso (submeterAvaliacao / concluirAtividade).
+ *
+ * Lógica:
+ *  - aulasConcluidas  = atividades com status "aprovada" no cursoAtribuído
+ *  - aulasDisponiveis = total de atividades do curso
+ *  - mediaAvaliacoesRespondidas = notaFinal do alunoCursoAtribuido (0-100)
+ *  - idCompetencia    = codigoIntegracao da competência (para o calculador casar)
+ *  - idUsuario        = externalId do aluno
+ */
+export async function syncStudentPerformanceFromPlatform(
+  alunoId: number,
+  cursoAtribuidoId: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  try {
+    // 1. Buscar o curso atribuído
+    const [cursoAtrib] = await db
+      .select()
+      .from(alunoCursoAtribuido)
+      .where(
+        and(
+          eq(alunoCursoAtribuido.id, cursoAtribuidoId),
+          eq(alunoCursoAtribuido.alunoId, alunoId)
+        )
+      )
+      .limit(1);
+
+    if (!cursoAtrib) return;
+
+    const { cursoId, competenciaId, notaFinal } = cursoAtrib;
+
+    // 2. Buscar dados do aluno (externalId, nome, email)
+    const [alunoData] = await db
+      .select({ externalId: alunos.externalId, name: alunos.name, email: alunos.email })
+      .from(alunos)
+      .where(eq(alunos.id, alunoId))
+      .limit(1);
+
+    if (!alunoData) return;
+
+    const externalUserId = alunoData.externalId || String(alunoId);
+
+    // 3. Buscar codigoIntegracao da competência
+    const [compData] = await db
+      .select({ codigoIntegracao: competencias.codigoIntegracao, nome: competencias.nome })
+      .from(competencias)
+      .where(eq(competencias.id, competenciaId))
+      .limit(1);
+
+    const externalCompetenciaId = compData?.codigoIntegracao || String(competenciaId);
+    const competenciaName = compData?.nome || '';
+
+    // 4. Contar atividades do curso (total e aprovadas)
+    const todasAtividades = await db
+      .select({ id: atividadesCurso.id })
+      .from(atividadesCurso)
+      .where(and(eq(atividadesCurso.cursoId, cursoId), eq(atividadesCurso.isActive, 1)));
+
+    const aulasDisponiveis = todasAtividades.length;
+
+    const atividadesAprovadas = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(alunoAtividadeProgresso)
+      .where(
+        and(
+          eq(alunoAtividadeProgresso.alunoId, alunoId),
+          eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtribuidoId),
+          eq(alunoAtividadeProgresso.status, 'aprovada')
+        )
+      );
+
+    const aulasConcluidas = Number(atividadesAprovadas[0]?.count || 0);
+
+    // 5. Calcular nota em escala 0-100
+    const notaNumerica = notaFinal ? parseFloat(String(notaFinal)) : 0;
+    // notaFinal está em 0-10 (ex: "8.0"), converter para 0-100
+    const mediaAvaliacoesRespondidas = notaNumerica > 0 ? (notaNumerica * 10).toFixed(2) : null;
+
+    // 6. Upsert no studentPerformance
+    // Verificar se já existe registro para este aluno + competência
+    const existing = await db
+      .select({ id: studentPerformance.id })
+      .from(studentPerformance)
+      .where(
+        and(
+          eq(studentPerformance.alunoId, alunoId),
+          eq(studentPerformance.competenciaId, competenciaId)
+        )
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Atualizar registro existente
+      await db
+        .update(studentPerformance)
+        .set({
+          aulasConcluidas,
+          aulasDisponiveis,
+          totalAulas: aulasDisponiveis,
+          progressoTotal: aulasDisponiveis > 0 ? Math.round((aulasConcluidas / aulasDisponiveis) * 100) : 0,
+          mediaAvaliacoesRespondidas: mediaAvaliacoesRespondidas as any,
+          dataConclusao: aulasConcluidas >= aulasDisponiveis && aulasDisponiveis > 0
+            ? new Date().toISOString().split('T')[0]
+            : null,
+          updatedAt: new Date(),
+        })
+        .where(eq(studentPerformance.id, existing[0].id));
+    } else {
+      // Inserir novo registro
+      await db.insert(studentPerformance).values({
+        alunoId,
+        externalUserId,
+        userName: alunoData.name || '',
+        userEmail: alunoData.email || null,
+        competenciaId,
+        externalCompetenciaId,
+        competenciaName,
+        aulasConcluidas,
+        aulasDisponiveis,
+        totalAulas: aulasDisponiveis,
+        progressoTotal: aulasDisponiveis > 0 ? Math.round((aulasConcluidas / aulasDisponiveis) * 100) : 0,
+        mediaAvaliacoesRespondidas: mediaAvaliacoesRespondidas as any,
+        dataConclusao: aulasConcluidas >= aulasDisponiveis && aulasDisponiveis > 0
+          ? new Date().toISOString().split('T')[0]
+          : null,
+      });
+    }
+  } catch (error) {
+    console.error('[syncStudentPerformanceFromPlatform] Error:', error);
+    // Não propagar erro para não interromper o fluxo principal
+  }
+}
