@@ -6245,7 +6245,8 @@ export async function getCasesVitrineMural(limit = 12) {
     .where(and(
       eq(casesSucesso.entregue, 1),
       isNotNull(casesSucesso.dataEntrega),
-      isNotNull(casesSucesso.titulo)
+      isNotNull(casesSucesso.titulo),
+      eq(casesSucesso.visivelNoMural, 1)
     ))
     .orderBy(desc(casesSucesso.dataEntrega), desc(casesSucesso.createdAt))
     .limit(limit);

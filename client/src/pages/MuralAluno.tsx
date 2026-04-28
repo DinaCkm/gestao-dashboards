@@ -17,7 +17,8 @@ import {
   Sparkles, GraduationCap, Zap, ChevronRight, ChevronDown, ChevronUp,
   Info, CalendarDays, Users, Star, Loader2,
   CheckCircle2, AlertTriangle, MessageSquareText, HandHeart,
-  ArrowLeft, Send, BookOpen, TrendingUp, Trophy, Building2, UserRound
+  ArrowLeft, Send, BookOpen, TrendingUp, Trophy, Building2, UserRound,
+  EyeOff, Eye
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -553,12 +554,20 @@ export default function MuralAluno() {
   const { data: activeCourses } = trpc.courses.listActive.useQuery();
   const { data: pendingAttendance, refetch: refetchPending } = trpc.attendance.pending.useQuery();
   const { data: myAttendance, refetch: refetchMyAttendance } = trpc.attendance.myAttendance.useQuery();
-  const { data: casesVitrine } = trpc.cases.vitrineMural.useQuery(
+  const { data: casesVitrine, refetch: refetchCasesVitrine } = trpc.cases.vitrineMural.useQuery(
     { limit: 200 },
     { enabled: !!user }
   );
   const VITRINE_INICIAL = 6;
   const [vitrineExpandida, setVitrineExpandida] = useState(false);
+  const isAdmin = user?.role === 'admin';
+  const toggleVisibilidadeMutation = trpc.cases.toggleVisibilidade.useMutation({
+    onSuccess: (data) => {
+      refetchCasesVitrine();
+      toast.success(data.visivelNoMural === 0 ? 'Case ocultado do Mural.' : 'Case exibido no Mural.');
+    },
+    onError: () => toast.error('Erro ao alterar visibilidade do case.'),
+  });
   const { data: notificationsData, refetch: refetchNotifications } = trpc.notifications.list.useQuery(
     { limit: 20 },
     { enabled: !!user }
@@ -864,12 +873,23 @@ E-mail: ${email}`;
                       <span className="text-[10px] text-gray-400">
                         {c.dataEntrega ? formatDate(c.dataEntrega) : "—"}
                       </span>
-                      <button
-                        className="text-[11px] font-medium text-[#0A1E3E] hover:text-amber-600 transition-colors flex items-center gap-0.5"
-                        onClick={() => { setSelectedCase(c); setCaseModalOpen(true); }}
-                      >
-                        Ver case <ChevronRight className="h-3 w-3" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {isAdmin && (
+                          <button
+                            title="Ocultar case do Mural"
+                            className="text-[10px] text-gray-400 hover:text-red-500 transition-colors flex items-center gap-0.5"
+                            onClick={(e) => { e.stopPropagation(); toggleVisibilidadeMutation.mutate({ id: c.caseId, visivel: 0 }); }}
+                          >
+                            <EyeOff className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        <button
+                          className="text-[11px] font-medium text-[#0A1E3E] hover:text-amber-600 transition-colors flex items-center gap-0.5"
+                          onClick={() => { setSelectedCase(c); setCaseModalOpen(true); }}
+                        >
+                          Ver case <ChevronRight className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

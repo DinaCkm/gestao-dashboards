@@ -6752,6 +6752,14 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return { success: true };
       }),
 
+    // Alternar visibilidade do case no Mural (admin)
+    toggleVisibilidade: adminProcedure
+      .input(z.object({ id: z.number(), visivel: z.number().min(0).max(1) }))
+      .mutation(async ({ input }) => {
+        await db.updateCaseSucesso(input.id, { visivelNoMural: input.visivel });
+        return { success: true, visivelNoMural: input.visivel };
+      }),
+
     // === PROCEDURES DO ALUNO (protectedProcedure, não admin) ===
 
     // Listar meus cases (aluno logado)
