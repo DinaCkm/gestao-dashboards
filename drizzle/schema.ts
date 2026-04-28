@@ -690,8 +690,6 @@ export const casesSucesso = mysqlTable("cases_sucesso", {
   evidenciaUrl: varchar("evidenciaUrl", { length: 1000 }), // URL da evidência (foto, print, documento) no S3
   evidenciaKey: varchar("evidenciaKey", { length: 500 }), // Chave da evidência no S3
   evidenciaFileName: varchar("evidenciaFileName", { length: 500 }), // Nome original do arquivo de evidência
-  // === Vídeo do case ===
-  videoLink: varchar("videoLink", { length: 1000 }), // Link de vídeo (YouTube não listado/confidencial ou Google Drive com permissão)
   // === Aplicabilidade Prática (Indicador 6) ===
   notaAlunoAplicabilidade: int("notaAlunoAplicabilidade"), // Autoavaliação do aluno (0-10)
   notaMentoraAplicabilidade: int("notaMentoraAplicabilidade"), // Avaliação da mentora (0-10)

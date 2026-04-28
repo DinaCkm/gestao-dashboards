@@ -436,7 +436,6 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
   const [caseFile, setCaseFile] = useState<File | null>(null);
   const [caseEvidencia, setCaseEvidencia] = useState<File | null>(null);
   const [caseNotaAplicabilidade, setCaseNotaAplicabilidade] = useState<number>(5);
-  const [caseVideoLink, setCaseVideoLink] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const evidenciaInputRef = useRef<HTMLInputElement>(null);
 
@@ -455,7 +454,6 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
       setCaseEvidencia(null);
       setCaseTrilhaId(null);
       setCaseNotaAplicabilidade(5);
-      setCaseVideoLink("");
     },
   });
 
@@ -482,7 +480,6 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
       resultadoMensuravel: caseResultadoMensuravel,
       antesVsDepois: caseAntesVsDepois,
       notaAlunoAplicabilidade: caseNotaAplicabilidade,
-      videoLink: caseVideoLink || undefined,
     };
 
     // Arquivo principal (opcional)
@@ -3169,7 +3166,6 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                 setCaseResultadoMensuravel(caseEntregue.resultadoMensuravel || '');
                                 setCaseAntesVsDepois(caseEntregue.antesVsDepois || '');
                                 setCaseNotaAplicabilidade(caseEntregue.notaAplicabilidade ?? 5);
-                                setCaseVideoLink(caseEntregue.videoLink || '');
                                 setCaseFile(null);
                                 setCaseDialogOpen(true);
                               }}
@@ -3374,31 +3370,6 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                     }
                   }}
                 />
-              </div>
-
-              {/* Link de vídeo (opcional) */}
-              <div className="space-y-2">
-                <Label htmlFor="case-video-link" className="flex items-center gap-1.5">
-                  <Video className="h-4 w-4 text-red-500" />
-                  Link de vídeo (opcional)
-                </Label>
-                <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-800 space-y-1.5">
-                  <p className="font-semibold">Se o seu relatório for em vídeo, você pode:</p>
-                  <p>▶ <strong>YouTube:</strong> publique o vídeo como <em>Não listado</em> ou <em>Privado</em> e cole o link abaixo. Vídeos privados precisam ser compartilhados com <strong>relacionamento@ckmtalents.net</strong>.</p>
-                  <p>▶ <strong>Google Drive:</strong> faça upload do arquivo e compartilhe com permissão de <em>Visualizar e baixar</em> para <strong>relacionamento@ckmtalents.net</strong>, depois cole o link abaixo.</p>
-                </div>
-                <Input
-                  id="case-video-link"
-                  type="url"
-                  placeholder="https://youtu.be/... ou https://drive.google.com/..."
-                  value={caseVideoLink}
-                  onChange={e => setCaseVideoLink(e.target.value)}
-                />
-                {caseVideoLink && (
-                  <a href={caseVideoLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
-                    <ExternalLink className="h-3 w-3" /> Verificar link
-                  </a>
-                )}
               </div>
 
               {/* Arquivo complementar (opcional) */}
