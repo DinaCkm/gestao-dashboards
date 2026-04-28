@@ -3338,6 +3338,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           resultadoMensuravel: c.resultadoMensuravel,
           antesVsDepois: c.antesVsDepois,
           notaAplicabilidade: c.notaAplicabilidade,
+          videoLink: c.videoLink,
           fileUrl: c.fileUrl,
           fileName: c.fileName,
           observacao: c.observacao,
@@ -6802,6 +6803,8 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         evidenciaMimeType: z.string().optional(),
         // Aplicabilidade prática
         notaAlunoAplicabilidade: z.number().min(0).max(10).optional(),
+        // Link de vídeo (YouTube ou Google Drive)
+        videoLink: z.string().url('URL inválida').optional().or(z.literal('')),
       }))
       .mutation(async ({ ctx, input }) => {
         if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -6859,6 +6862,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           evidenciaKey,
           evidenciaFileName: evidenciaFileNameSaved,
           notaAlunoAplicabilidade: input.notaAlunoAplicabilidade ?? null,
+          videoLink: input.videoLink || null,
         };
 
         // Verificar se j\u00e1 existe um case para esta trilha
