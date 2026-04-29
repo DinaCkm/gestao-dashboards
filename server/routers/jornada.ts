@@ -476,11 +476,31 @@ export const jornadaRouter = router({
     }))
     .query(async ({ input }) => {
       try {
-        const mentoringSessions = await getAllMentoringSessions();
-        const eventParticipations = await getAllEventParticipationWithDate();
-        const alunosList = await getAlunos();
-        const programsList = await getPrograms();
-        const allPlanoItems = await getAllPlanoIndividual();
+        const [
+          mentoringSessions,
+          eventParticipations,
+          alunosList,
+          programsList,
+          allPlanoItems,
+          studentPerfRecords_parallel,
+          ciclosPorAluno_parallel,
+          compIdToCodigoMap_parallel,
+          casesMap_parallel,
+          macrocicloPorAluno_parallel,
+          macroInicioMap_parallel,
+        ] = await Promise.all([
+          getAllMentoringSessions(),
+          getAllEventParticipationWithDate(),
+          getAlunos(),
+          getPrograms(),
+          getAllPlanoIndividual(),
+          getStudentPerformanceAsRecords(),
+          getAllCiclosForCalculatorV2(),
+          getCompIdToCodigoMap(),
+          getCasesForCalculator(),
+          getMacrocicloPorAluno(),
+          getAlunoMacroInicioMap(),
+        ]);
 
         const mentorias: MentoringRecord[] = [];
         const eventos: EventRecord[] = [];
@@ -527,10 +547,10 @@ export const jornadaRouter = router({
             epEvtIds.get(ep.alunoId)!.add(ep.eventId);
           }
           const evtsByProg = new Map<number, any[]>();
-          for (const prog of programsList) {
+          await Promise.all(programsList.map(async prog => {
             evtsByProg.set(prog.id, await getEventsByProgramOrGlobal(prog.id));
-          }
-          const macroInicioMap = await getAlunoMacroInicioMap();
+          }));
+          const macroInicioMap = macroInicioMap_parallel;
           for (const a of alunosList) {
             if (!a.programId) continue;
             const progEvts = evtsByProg.get(a.programId) || [];
@@ -572,7 +592,11 @@ export const jornadaRouter = router({
           }
         }
 
-        const studentPerfRecords = await getStudentPerformanceAsRecords();
+        const studentPerfRecords = studentPerfRecords_parallel;
+        const ciclosPorAluno = ciclosPorAluno_parallel;
+        const compIdToCodigoMap = compIdToCodigoMap_parallel;
+        const casesMap = casesMap_parallel;
+        const macrocicloPorAluno = macrocicloPorAluno_parallel;
         const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
         for (const spRec of studentPerfRecords) {
           const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
@@ -582,12 +606,8 @@ export const jornadaRouter = router({
           }
         }
 
-        const ciclosPorAluno = await getAllCiclosForCalculatorV2();
-        const compIdToCodigoMap = await getCompIdToCodigoMap();
-        const casesMap = await getCasesForCalculator();
         const casesData: CaseSucessoData[] = [];
         for (const [, cases] of Array.from(casesMap.entries())) { casesData.push(...cases); }
-        const macrocicloPorAluno = await getMacrocicloPorAluno();
 
         const todosIndicadores = calcularIndicadoresTodosAlunos(
           mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno
@@ -664,11 +684,31 @@ export const jornadaRouter = router({
     }))
     .query(async ({ input }) => {
       try {
-        const mentoringSessions = await getAllMentoringSessions();
-        const eventParticipations = await getAllEventParticipationWithDate();
-        const alunosList = await getAlunos();
-        const programsList = await getPrograms();
-        const allPlanoItems = await getAllPlanoIndividual();
+        const [
+          mentoringSessions,
+          eventParticipations,
+          alunosList,
+          programsList,
+          allPlanoItems,
+          studentPerfRecords_parallel,
+          ciclosPorAluno_parallel,
+          compIdToCodigoMap_parallel,
+          casesMap_parallel,
+          macrocicloPorAluno_parallel,
+          macroInicioMap_parallel,
+        ] = await Promise.all([
+          getAllMentoringSessions(),
+          getAllEventParticipationWithDate(),
+          getAlunos(),
+          getPrograms(),
+          getAllPlanoIndividual(),
+          getStudentPerformanceAsRecords(),
+          getAllCiclosForCalculatorV2(),
+          getCompIdToCodigoMap(),
+          getCasesForCalculator(),
+          getMacrocicloPorAluno(),
+          getAlunoMacroInicioMap(),
+        ]);
 
         const mentorias: MentoringRecord[] = [];
         const eventos: EventRecord[] = [];
@@ -714,10 +754,10 @@ export const jornadaRouter = router({
             epEvtIds.get(ep.alunoId)!.add(ep.eventId);
           }
           const evtsByProg = new Map<number, any[]>();
-          for (const prog of programsList) {
+          await Promise.all(programsList.map(async prog => {
             evtsByProg.set(prog.id, await getEventsByProgramOrGlobal(prog.id));
-          }
-          const macroInicioMap = await getAlunoMacroInicioMap();
+          }));
+          const macroInicioMap = macroInicioMap_parallel;
           for (const a of alunosList) {
             if (!a.programId) continue;
             const progEvts = evtsByProg.get(a.programId) || [];
@@ -759,7 +799,11 @@ export const jornadaRouter = router({
           }
         }
 
-        const studentPerfRecords = await getStudentPerformanceAsRecords();
+        const studentPerfRecords = studentPerfRecords_parallel;
+        const ciclosPorAluno = ciclosPorAluno_parallel;
+        const compIdToCodigoMap = compIdToCodigoMap_parallel;
+        const casesMap = casesMap_parallel;
+        const macrocicloPorAluno = macrocicloPorAluno_parallel;
         const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
         for (const spRec of studentPerfRecords) {
           const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
@@ -769,12 +813,8 @@ export const jornadaRouter = router({
           }
         }
 
-        const ciclosPorAluno = await getAllCiclosForCalculatorV2();
-        const compIdToCodigoMap = await getCompIdToCodigoMap();
-        const casesMap = await getCasesForCalculator();
         const casesData: CaseSucessoData[] = [];
         for (const [, cases] of Array.from(casesMap.entries())) { casesData.push(...cases); }
-        const macrocicloPorAluno = await getMacrocicloPorAluno();
 
         const todosIndicadores = calcularIndicadoresTodosAlunos(
           mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno
