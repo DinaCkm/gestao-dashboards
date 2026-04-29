@@ -788,65 +788,29 @@ export const jornadaRouter = router({
         const alunoIndicadores = todosIndicadores.find(a => a.idUsuario === alunoIdStr || a.idUsuario === String(input.alunoId));
         if (!alunoIndicadores) return [];
 
-        // Buscar PDIs do aluno para obter os macrociclos com trilhaNome
-        const { db } = await import('../db');
-        const { assessmentPdi, trilhas } = await import('../../drizzle/schema');
-        const { eq } = await import('drizzle-orm');
-        const pdisDoAluno = await db
-          .select({
-            macroInicio: assessmentPdi.macroInicio,
-            macroTermino: assessmentPdi.macroTermino,
-            trilhaNome: trilhas.nome,
-          })
-          .from(assessmentPdi)
-          .leftJoin(trilhas, eq(assessmentPdi.trilhaId, trilhas.id))
-          .where(eq(assessmentPdi.alunoId, input.alunoId))
-          .orderBy(assessmentPdi.macroInicio);
+        // Usar diretamente os ciclos calculados (mesma fonte do modo Por Ciclo)
+        const todosCiclos = [...alunoIndicadores.ciclosFinalizados, ...alunoIndicadores.ciclosEmAndamento]
+          .sort((a, b) => a.dataInicio.localeCompare(b.dataInicio));
 
-        const todosCiclos = [...alunoIndicadores.ciclosFinalizados, ...alunoIndicadores.ciclosEmAndamento];
+        const fmtPeriodo = (d: string) => {
+          const dt = new Date(d + 'T12:00:00');
+          return dt.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+        };
 
-        // Para cada PDI (macrociclo), encontrar os ciclos de indicadores correspondentes
-        const resultado = pdisDoAluno
-          .filter(pdi => pdi.macroInicio && pdi.macroTermino)
-          .map(pdi => {
-            const macroIni = pdi.macroInicio!.slice(0, 10);
-            const macroFim = pdi.macroTermino!.slice(0, 10);
-
-            const ciclosNoPeriodo = todosCiclos.filter(c =>
-              c.dataInicio >= macroIni && c.dataFim <= macroFim
-            );
-
-            let ind1 = 0, ind2 = 0, ind3 = 0, ind4 = 0, ind5 = 0, ind6 = 0, ind7 = 0;
-            if (ciclosNoPeriodo.length > 0) {
-              ind1 = ciclosNoPeriodo.reduce((s, c) => s + c.ind1_webinars, 0) / ciclosNoPeriodo.length;
-              ind2 = ciclosNoPeriodo.reduce((s, c) => s + c.ind2_avaliacoes, 0) / ciclosNoPeriodo.length;
-              ind3 = ciclosNoPeriodo.reduce((s, c) => s + c.ind3_competencias, 0) / ciclosNoPeriodo.length;
-              ind4 = ciclosNoPeriodo.reduce((s, c) => s + c.ind4_tarefas, 0) / ciclosNoPeriodo.length;
-              ind5 = ciclosNoPeriodo.reduce((s, c) => s + c.ind5_engajamento, 0) / ciclosNoPeriodo.length;
-              ind6 = ciclosNoPeriodo.reduce((s, c) => s + c.ind6_aplicabilidade, 0) / ciclosNoPeriodo.length;
-              ind7 = ciclosNoPeriodo.reduce((s, c) => s + c.ind7_engajamentoFinal, 0) / ciclosNoPeriodo.length;
-            }
-
-            const fmtPeriodo = (d: string) => {
-              const dt = new Date(d);
-              return dt.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
-            };
-
-            return {
-              nomeAluno: alunoTarget.name,
-              trilhaNome: pdi.trilhaNome || 'Trilha',
-              periodo: `${fmtPeriodo(macroIni)}–${fmtPeriodo(macroFim)}`,
-              macroInicio: macroIni,
-              macroTermino: macroFim,
-              ind1_webinars: Math.round(ind1),
-              ind2_avaliacoes: Math.round(ind2),
-              ind3_competencias: Math.round(ind3),
-              ind4_tarefas: Math.round(ind4),
-              ind5_engajamento: Math.round(ind5),
-              ind6_aplicabilidade: Math.round(ind6),
-              ind7_engajamentoFinal: Math.round(ind7),
-            };
-          });
+        const resultado = todosCiclos.map(ciclo => ({
+          nomeAluno: alunoTarget.name,
+          trilhaNome: ciclo.trilhaNome || ciclo.nomeCiclo || 'Ciclo',
+          periodo: `${fmtPeriodo(ciclo.dataInicio)}–${fmtPeriodo(ciclo.dataFim)}`,
+          macroInicio: ciclo.dataInicio,
+          macroTermino: ciclo.dataFim,
+          ind1_webinars: Math.round(ciclo.ind1_webinars),
+          ind2_avaliacoes: Math.round(ciclo.ind2_avaliacoes),
+          ind3_competencias: Math.round(ciclo.ind3_competencias),
+          ind4_tarefas: Math.round(ciclo.ind4_tarefas),
+          ind5_engajamento: Math.round(ciclo.ind5_engajamento),
+          ind6_aplicabilidade: Math.round(ciclo.ind6_aplicabilidade),
+          ind7_engajamentoFinal: Math.round(ciclo.ind7_engajamentoFinal),
+        }));
 
         return resultado;
       } catch (error) {
