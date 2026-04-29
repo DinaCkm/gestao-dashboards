@@ -26,6 +26,7 @@ import {
   getAlunoMacroInicioMap
 } from "../db";
 import { calcularIndicadoresTodosAlunos, CaseSucessoData } from '../indicatorsCalculatorV2';
+import { cacheOrFetch } from '../dataCache';
 import type { MentoringRecord, EventRecord, PerformanceRecord } from '../excelProcessor';
 import * as schema from '../../drizzle/schema';
 const { programs, ciclosExecucao } = schema;
@@ -489,17 +490,17 @@ export const jornadaRouter = router({
           macrocicloPorAluno_parallel,
           macroInicioMap_parallel,
         ] = await Promise.all([
-          getAllMentoringSessions(),
-          getAllEventParticipationWithDate(),
-          getAlunos(),
-          getPrograms(),
-          getAllPlanoIndividual(),
-          getStudentPerformanceAsRecords(),
-          getAllCiclosForCalculatorV2(),
-          getCompIdToCodigoMap(),
-          getCasesForCalculator(),
-          getMacrocicloPorAluno(),
-          getAlunoMacroInicioMap(),
+          cacheOrFetch('allSessions', () => getAllMentoringSessions()),
+          cacheOrFetch('allEventParticipations', () => getAllEventParticipationWithDate()),
+          cacheOrFetch('alunosList', () => getAlunos()),
+          cacheOrFetch('programsList', () => getPrograms()),
+          cacheOrFetch('allPlanoItems', () => getAllPlanoIndividual()),
+          cacheOrFetch('studentPerfRecords', () => getStudentPerformanceAsRecords()),
+          cacheOrFetch('ciclosPorAluno', () => getAllCiclosForCalculatorV2()),
+          cacheOrFetch('compIdToCodigoMap', () => getCompIdToCodigoMap()),
+          cacheOrFetch('casesMap', () => getCasesForCalculator()),
+          cacheOrFetch('macrocicloPorAluno', () => getMacrocicloPorAluno()),
+          cacheOrFetch('macroInicioMap', () => getAlunoMacroInicioMap()),
         ]);
 
         const mentorias: MentoringRecord[] = [];
@@ -697,17 +698,17 @@ export const jornadaRouter = router({
           macrocicloPorAluno_parallel,
           macroInicioMap_parallel,
         ] = await Promise.all([
-          getAllMentoringSessions(),
-          getAllEventParticipationWithDate(),
-          getAlunos(),
-          getPrograms(),
-          getAllPlanoIndividual(),
-          getStudentPerformanceAsRecords(),
-          getAllCiclosForCalculatorV2(),
-          getCompIdToCodigoMap(),
-          getCasesForCalculator(),
-          getMacrocicloPorAluno(),
-          getAlunoMacroInicioMap(),
+          cacheOrFetch('allSessions', () => getAllMentoringSessions()),
+          cacheOrFetch('allEventParticipations', () => getAllEventParticipationWithDate()),
+          cacheOrFetch('alunosList', () => getAlunos()),
+          cacheOrFetch('programsList', () => getPrograms()),
+          cacheOrFetch('allPlanoItems', () => getAllPlanoIndividual()),
+          cacheOrFetch('studentPerfRecords', () => getStudentPerformanceAsRecords()),
+          cacheOrFetch('ciclosPorAluno', () => getAllCiclosForCalculatorV2()),
+          cacheOrFetch('compIdToCodigoMap', () => getCompIdToCodigoMap()),
+          cacheOrFetch('casesMap', () => getCasesForCalculator()),
+          cacheOrFetch('macrocicloPorAluno', () => getMacrocicloPorAluno()),
+          cacheOrFetch('macroInicioMap', () => getAlunoMacroInicioMap()),
         ]);
 
         const mentorias: MentoringRecord[] = [];
