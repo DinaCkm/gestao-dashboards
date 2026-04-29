@@ -36,6 +36,171 @@ import { getDb } from "./db";
 import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, sendEmail } from "./emailService";
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
 
+// ============================================================
+// In-memory cache for meuDashboard ranking data (5-minute TTL)
+// The ranking requires computing indicators for ALL students, which is
+// expensive. We cache the result so repeated requests within the TTL
+// window skip the full recalculation.
+// ============================================================
+const RANKING_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+interface RankingCacheEntry {
+  mentorias: MentoringRecord[];
+  eventos: EventRecord[];
+  performance: PerformanceRecord[];
+  ciclosPorAluno: Awaited<ReturnType<typeof db.getAllCiclosForCalculatorV2>>;
+  compIdToCodigoMap: Map<number, string>;
+  casesDataAll: CaseSucessoData[];
+  macrocicloPorAluno: Map<string, { macroInicio: string; macroTermino: string }>;
+  cachedAt: number;
+}
+let rankingCache: RankingCacheEntry | null = null;
+
+async function getRankingData(): Promise<RankingCacheEntry> {
+  const now = Date.now();
+  if (rankingCache && now - rankingCache.cachedAt < RANKING_CACHE_TTL_MS) {
+    console.log('[meuDashboard] Using cached ranking data (age:', Math.round((now - rankingCache.cachedAt) / 1000), 's)');
+    return rankingCache;
+  }
+
+  console.log('[meuDashboard] Building fresh ranking data cache...');
+  const t0 = Date.now();
+
+  const [
+    allSessions,
+    allEventParticipations,
+    alunosList,
+    programsList,
+    turmasList,
+    ciclosPorAluno,
+    compIdToCodigoMap,
+    casesMap,
+    macrocicloPorAluno,
+    studentPerfRecords,
+  ] = await Promise.all([
+    db.getAllMentoringSessions(),
+    db.getAllEventParticipationWithDate(),
+    db.getAlunos(),
+    db.getPrograms(),
+    db.getTurmas(),
+    db.getAllCiclosForCalculatorV2(),
+    db.getCompIdToCodigoMap(),
+    db.getCasesForCalculator(),
+    db.getMacrocicloPorAluno(),
+    db.getStudentPerformanceAsRecords(),
+  ]);
+  const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+  const programMap = new Map(programsList.map(p => [p.id, p]));
+  const turmaMap = new Map(turmasList.map(t => [t.id, t]));
+
+  const mentorias: MentoringRecord[] = [];
+  const eventos: EventRecord[] = [];
+  const performance: PerformanceRecord[] = [];
+
+  for (const session of allSessions) {
+    const sessionAluno = alunoMap.get(session.alunoId);
+    if (!sessionAluno) continue;
+    const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
+    const turma = sessionAluno.turmaId ? turmaMap.get(sessionAluno.turmaId) : null;
+    mentorias.push({
+      idUsuario: sessionAluno.externalId || String(sessionAluno.id),
+      nomeAluno: sessionAluno.name,
+      empresa: program?.name || 'Desconhecida',
+      turma: turma?.name || '',
+      trilha: '',
+      ciclo: session.ciclo || '',
+      sessao: session.sessionNumber || 0,
+      dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
+      presenca: session.presence as 'presente' | 'ausente',
+      atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus || 'sem_tarefa') as 'entregue' | 'nao_entregue' | 'sem_tarefa'),
+      engajamento: session.engagementScore || undefined,
+      feedback: session.feedback || '',
+    });
+  }
+
+  for (const ep of allEventParticipations) {
+    const epAluno = alunoMap.get(ep.alunoId);
+    if (!epAluno) continue;
+    const program = epAluno.programId ? programMap.get(epAluno.programId) : null;
+    eventos.push({
+      idUsuario: epAluno.externalId || String(epAluno.id),
+      nomeAluno: epAluno.name,
+      empresa: program?.name || 'Desconhecida',
+      turma: '',
+      trilha: '',
+      tituloEvento: ep.eventTitle || 'Evento',
+      dataEvento: ep.eventDate ? new Date(ep.eventDate) : undefined,
+      presenca: ep.status as 'presente' | 'ausente',
+    });
+  }
+
+  // Add absent records for events the student didn't participate in
+  const eventParticipationEventIds = new Map<number, Set<number>>();
+  for (const ep of allEventParticipations) {
+    if (!eventParticipationEventIds.has(ep.alunoId)) {
+      eventParticipationEventIds.set(ep.alunoId, new Set());
+    }
+    eventParticipationEventIds.get(ep.alunoId)!.add(ep.eventId);
+  }
+  const eventsByProgram = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
+  for (const prog of programsList) {
+    eventsByProgram.set(prog.id, await db.getEventsByProgramOrGlobal(prog.id));
+  }
+  const macroInicioMap = await db.getAlunoMacroInicioMap();
+  for (const a of alunosList) {
+    if (!a.programId) continue;
+    const progEvents = eventsByProgram.get(a.programId) || [];
+    const alunoParticipatedEvents = eventParticipationEventIds.get(a.id) || new Set();
+    const alunoIdStr = a.externalId || String(a.id);
+    const program = programMap.get(a.programId);
+    const macroInicioAluno = macroInicioMap.get(a.id);
+    for (const evt of progEvents) {
+      if (!alunoParticipatedEvents.has(evt.id)) {
+        if (macroInicioAluno && evt.eventDate) {
+          const evtDate = new Date(evt.eventDate);
+          if (evtDate < macroInicioAluno) continue;
+        }
+        eventos.push({
+          idUsuario: alunoIdStr,
+          nomeAluno: a.name,
+          empresa: program?.name || 'Desconhecida',
+          turma: '',
+          trilha: '',
+          tituloEvento: evt.title || 'Evento',
+          dataEvento: evt.eventDate ? new Date(evt.eventDate) : undefined,
+          presenca: 'ausente' as const,
+        });
+      }
+    }
+  }
+
+  // Add student performance records
+  const existingPerfKeys = new Set<string>();
+  for (const spRec of studentPerfRecords) {
+    const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+    if (!existingPerfKeys.has(key)) {
+      performance.push(spRec);
+      existingPerfKeys.add(key);
+    }
+  }
+
+  const casesDataAll: CaseSucessoData[] = [];
+  for (const [, cases] of Array.from(casesMap.entries())) { casesDataAll.push(...cases); }
+
+  console.log('[meuDashboard] Ranking data built in', Date.now() - t0, 'ms');
+
+  rankingCache = {
+    mentorias,
+    eventos,
+    performance,
+    ciclosPorAluno,
+    compIdToCodigoMap,
+    casesDataAll,
+    macrocicloPorAluno,
+    cachedAt: Date.now(),
+  };
+  return rankingCache;
+}
+
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = "";
@@ -2925,6 +3090,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
 
       // Tentar encontrar o aluno: alunoId direto → email → externalId (openId)
+      const tStart = Date.now();
       console.log('[meuDashboard] ctx.user:', JSON.stringify({ id: ctx.user.id, openId: ctx.user.openId, email: ctx.user.email, alunoId: ctx.user.alunoId, role: ctx.user.role }));
       const aluno = await db.getAlunoFromCtx(ctx.user);
       console.log('[meuDashboard] aluno encontrado:', aluno ? JSON.stringify({ id: aluno.id, name: aluno.name, email: aluno.email, externalId: aluno.externalId }) : 'null');
@@ -2933,114 +3099,113 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { found: false as const, message: 'Nenhum perfil de aluno vinculado a esta conta.' };
       }
 
-      // Buscar competências obrigatórias do plano individual
-      const competenciasObrigatorias = await db.getCompetenciasObrigatoriasAluno(aluno.id);
+      const idUsuario = aluno.externalId || String(aluno.id);
 
-      // Buscar dados globais para cálculo de indicadores e ranking
-      const allSessions = await db.getAllMentoringSessions();
-      const allEventParticipations = await db.getAllEventParticipationWithDate();
-      const alunosList = await db.getAlunos();
-      const programsList = await db.getPrograms();
-      const turmasList = await db.getTurmas();
+      // ── Step 1: Fetch per-student data and shared lookup tables in parallel ──
+      // This replaces the previous approach of fetching ALL sessions/events/students
+      // and filtering down to the current user, eliminating N+1 queries.
+      const t1 = Date.now();
+      const [
+        competenciasObrigatorias,
+        alunoSessions,
+        alunoEventParticipations,
+        planoItems,
+        alunoStudentPerf,
+        ciclosAluno,
+        casesAluno,
+        programsList,
+        turmasList,
+        compIdToCodigoMap,
+      ] = await Promise.all([
+        db.getCompetenciasObrigatoriasAluno(aluno.id),
+        db.getMentoringSessionsByAluno(aluno.id),
+        db.getEventParticipationByAluno(aluno.id),
+        db.getPlanoIndividualByAluno(aluno.id),
+        db.getStudentPerformanceByAluno(aluno.id),
+        db.getCiclosForCalculator(aluno.id),
+        db.getCasesSucessoByAluno(aluno.id),
+        db.getPrograms(),
+        db.getTurmas(),
+        db.getCompIdToCodigoMap(),
+      ]);
+      console.log('[meuDashboard] Per-student data fetched in', Date.now() - t1, 'ms');
 
-      const mentorias: MentoringRecord[] = [];
-      const eventos: EventRecord[] = [];
-      const performance: PerformanceRecord[] = [];
-
-      const alunoMap = new Map(alunosList.map(a => [a.id, a]));
       const programMap = new Map(programsList.map(p => [p.id, p]));
       const turmaMap = new Map(turmasList.map(t => [t.id, t]));
+      const programa = aluno.programId ? programMap.get(aluno.programId) : null;
+      const turmaAluno = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
+      const empresaNome = programa?.name || 'Desconhecida';
 
-      for (const session of allSessions) {
-        const sessionAluno = alunoMap.get(session.alunoId);
-        if (!sessionAluno) continue;
-        const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
-        const turma = sessionAluno.turmaId ? turmaMap.get(sessionAluno.turmaId) : null;
-        mentorias.push({
-          idUsuario: sessionAluno.externalId || String(sessionAluno.id),
-          nomeAluno: sessionAluno.name,
-          empresa: program?.name || 'Desconhecida',
-          turma: turma?.name || '',
-          trilha: '',
-          ciclo: session.ciclo || '',
-          sessao: session.sessionNumber || 0,
-          dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
-          presenca: session.presence as 'presente' | 'ausente',
-          atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus || 'sem_tarefa') as 'entregue' | 'nao_entregue' | 'sem_tarefa'),
-          engajamento: session.engagementScore || undefined,
-          feedback: session.feedback || '',
-        });
-      }
+      // ── Step 2: Build MentoringRecord[] / EventRecord[] / PerformanceRecord[]
+      //    for THIS student only (used by indicator calculators) ──
+      const mentorias: MentoringRecord[] = alunoSessions.map(session => ({
+        idUsuario,
+        nomeAluno: aluno.name,
+        empresa: empresaNome,
+        turma: turmaAluno?.name || '',
+        trilha: '',
+        ciclo: session.ciclo || '',
+        sessao: session.sessionNumber || 0,
+        dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
+        presenca: session.presence as 'presente' | 'ausente',
+        atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus || 'sem_tarefa') as 'entregue' | 'nao_entregue' | 'sem_tarefa'),
+        engajamento: session.engagementScore || undefined,
+        feedback: session.feedback || '',
+      }));
 
-      for (const ep of allEventParticipations) {
-        const epAluno = alunoMap.get(ep.alunoId);
-        if (!epAluno) continue;
-        const program = epAluno.programId ? programMap.get(epAluno.programId) : null;
+      // Fetch all program events once — used for both indicator calculation and display.
+      const t2 = Date.now();
+      const allProgramEvents = aluno.programId ? await db.getEventsByProgramOrGlobal(aluno.programId) : [];
+      const macroInicioMapAluno = await db.getAlunoMacroInicioMap();
+      const macroInicioAluno = macroInicioMapAluno.get(aluno.id);
+      const progEventMap = new Map(allProgramEvents.map(e => [e.id, e]));
+      console.log('[meuDashboard] Program events fetched in', Date.now() - t2, 'ms');
+
+      // Build eventos: participations the student has + absent records for events they missed.
+      const eventos: EventRecord[] = [];
+      const participatedEventIds = new Set(alunoEventParticipations.map(ep => ep.eventId));
+
+      // Add participated events (with correct date/title from event table)
+      for (const ep of alunoEventParticipations) {
+        const evt = progEventMap.get(ep.eventId);
         eventos.push({
-          idUsuario: epAluno.externalId || String(epAluno.id),
-          nomeAluno: epAluno.name,
-          empresa: program?.name || 'Desconhecida',
+          idUsuario,
+          nomeAluno: aluno.name,
+          empresa: empresaNome,
           turma: '',
           trilha: '',
-          tituloEvento: ep.eventTitle || 'Evento',
-          dataEvento: ep.eventDate ? new Date(ep.eventDate) : undefined,
+          tituloEvento: evt?.title || 'Evento',
+          dataEvento: evt?.eventDate ? new Date(evt.eventDate) : undefined,
           presenca: ep.status as 'presente' | 'ausente',
         });
       }
 
-      // === UNIFICAÇÃO DE FONTE DE DADOS DE EVENTOS (filtrado por macroInicio) ===
-      // Para cada aluno, adicionar registros de 'ausente' para eventos do programa
-      // onde o aluno NÃO tem registro de participação.
-      // Só marca ausência em eventos cuja data seja >= macroInicio do aluno.
-      const eventParticipationEventIds = new Map<number, Set<number>>(); // alunoId -> Set<eventId>
-      for (const ep of allEventParticipations) {
-        if (!eventParticipationEventIds.has(ep.alunoId)) {
-          eventParticipationEventIds.set(ep.alunoId, new Set());
-        }
-        eventParticipationEventIds.get(ep.alunoId)!.add(ep.eventId);
-      }
-      // Buscar todos os eventos por programa
-      const eventsByProgram = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
-      for (const prog of programsList) {
-        const progEvents = await db.getEventsByProgramOrGlobal(prog.id);
-        eventsByProgram.set(prog.id, progEvents);
-      }
-      const macroInicioMapMeuDash = await db.getAlunoMacroInicioMap();
-      // Para cada aluno, adicionar eventos ausentes (sem registro de participação)
-      for (const a of alunosList) {
-        if (!a.programId) continue;
-        const progEvents = eventsByProgram.get(a.programId) || [];
-        const alunoParticipatedEvents = eventParticipationEventIds.get(a.id) || new Set();
-        const alunoIdStr = a.externalId || String(a.id);
-        const program = programMap.get(a.programId);
-        const macroInicioAluno = macroInicioMapMeuDash.get(a.id);
-        for (const evt of progEvents) {
-          if (!alunoParticipatedEvents.has(evt.id)) {
-            // Só marcar ausência se o evento é posterior ao macroInicio do aluno
-            if (macroInicioAluno && evt.eventDate) {
-              const evtDate = new Date(evt.eventDate);
-              if (evtDate < macroInicioAluno) continue;
-            }
-            eventos.push({
-              idUsuario: alunoIdStr,
-              nomeAluno: a.name,
-              empresa: program?.name || 'Desconhecida',
-              turma: '',
-              trilha: '',
-              tituloEvento: evt.title || 'Evento',
-              dataEvento: evt.eventDate ? new Date(evt.eventDate) : undefined,
-              presenca: 'ausente' as const,
-            });
+      // Add absent records for events the student didn't participate in
+      for (const evt of allProgramEvents) {
+        if (!participatedEventIds.has(evt.id)) {
+          if (macroInicioAluno && evt.eventDate) {
+            const evtDate = new Date(evt.eventDate);
+            if (evtDate < macroInicioAluno) continue;
           }
+          eventos.push({
+            idUsuario,
+            nomeAluno: aluno.name,
+            empresa: empresaNome,
+            turma: '',
+            trilha: '',
+            tituloEvento: evt.title || 'Evento',
+            dataEvento: evt.eventDate ? new Date(evt.eventDate) : undefined,
+            presenca: 'ausente' as const,
+          });
         }
       }
 
-      // Buscar performance de competências do plano individual
-      const planoItems = await db.getPlanoIndividualByAluno(aluno.id);
+      // Build performance records for this student only
+      const performance: PerformanceRecord[] = [];
       for (const item of planoItems) {
         if (item.notaAtual) {
           performance.push({
-            idUsuario: aluno.externalId || String(aluno.id),
+            idUsuario,
             nomeTurma: '',
             idCompetencia: String(item.competenciaId),
             nomeCompetencia: item.competenciaNome || '',
@@ -3049,19 +3214,59 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           });
         }
       }
-
-      // Adicionar dados de performance da tabela student_performance (CSV)
-      const studentPerfRecords = await db.getStudentPerformanceAsRecords();
+      // Merge student_performance records (filtered to this student by alunoId)
       const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
-      for (const spRec of studentPerfRecords) {
-        const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+      for (const spRec of alunoStudentPerf) {
+        const spIdCompetencia = (spRec as any).externalCompetenciaId || String((spRec as any).competenciaId || '');
+        const key = `${idUsuario}|${spIdCompetencia}`;
         if (!existingPerfKeys.has(key)) {
-          performance.push(spRec);
+          const mediaResp = (spRec as any).mediaAvaliacoesRespondidas ? parseFloat(String((spRec as any).mediaAvaliacoesRespondidas)) : 0;
+          const mediaDisp = (spRec as any).mediaAvaliacoesDisponiveis ? parseFloat(String((spRec as any).mediaAvaliacoesDisponiveis)) : 0;
+          const notaBase = mediaResp > 0 ? mediaResp : (mediaDisp > 0 ? mediaDisp : 0);
+          const nota010 = notaBase / 10;
+          const naoCursou = mediaResp === 0 && mediaDisp === 0;
+          const aulasConcluidas = (spRec as any).aulasConcluidas || 0;
+          const aulasDisponiveis = (spRec as any).aulasDisponiveis || 0;
+          const competenciaConcluida = aulasDisponiveis > 0 && aulasConcluidas >= aulasDisponiveis;
+          performance.push({
+            idUsuario,
+            nomeTurma: (spRec as any).turmaName || '',
+            idCompetencia: spIdCompetencia,
+            nomeCompetencia: (spRec as any).competenciaName || '',
+            notaAvaliacao: naoCursou ? -1 : nota010,
+            aprovado: competenciaConcluida && !naoCursou && nota010 >= 7,
+          });
           existingPerfKeys.add(key);
         }
       }
 
-      const idUsuario = aluno.externalId || String(aluno.id);
+      // Build studentPerfRecords in the shape expected by ciclosDetalhados
+      // (same format as getStudentPerformanceAsRecords but filtered to this student)
+      const studentPerfRecords = alunoStudentPerf.map(spRec => {
+        const mediaResp = (spRec as any).mediaAvaliacoesRespondidas ? parseFloat(String((spRec as any).mediaAvaliacoesRespondidas)) : 0;
+        const mediaDisp = (spRec as any).mediaAvaliacoesDisponiveis ? parseFloat(String((spRec as any).mediaAvaliacoesDisponiveis)) : 0;
+        const notaBase = mediaResp > 0 ? mediaResp : (mediaDisp > 0 ? mediaDisp : 0);
+        const nota010 = notaBase / 10;
+        const naoCursou = mediaResp === 0 && mediaDisp === 0;
+        const aulasConcluidas = (spRec as any).aulasConcluidas || 0;
+        const aulasDisponiveis = (spRec as any).aulasDisponiveis || 0;
+        const competenciaConcluida = aulasDisponiveis > 0 && aulasConcluidas >= aulasDisponiveis;
+        return {
+          idUsuario,
+          nomeTurma: (spRec as any).turmaName || '',
+          idCompetencia: (spRec as any).externalCompetenciaId || String((spRec as any).competenciaId || ''),
+          nomeCompetencia: (spRec as any).competenciaName || '',
+          progressoAulas: (spRec as any).progressoTotal || 0,
+          notaAvaliacao: naoCursou ? -1 : nota010,
+          aprovado: competenciaConcluida && !naoCursou && nota010 >= 7,
+          totalAulas: (spRec as any).totalAulas || 0,
+          aulasDisponiveis,
+          aulasConcluidas,
+          aulasEmAndamento: (spRec as any).aulasEmAndamento || 0,
+          competenciaConcluida,
+        };
+      });
+
       const compObrigatorias: CompetenciaObrigatoria[] = competenciasObrigatorias.map(c => ({
         competenciaId: c.competenciaId,
         codigoIntegracao: c.codigoIntegracao,
@@ -3070,43 +3275,37 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         status: c.status,
       }));
 
-      // Buscar ciclos de execução do aluno
-      const ciclosAluno = await db.getCiclosForCalculator(aluno.id);
-
+      // ── Step 3: Calculate indicators for THIS student only ──
+      const t3 = Date.now();
       const indicadores = calcularIndicadoresAlunoFiltrado(
         idUsuario, mentorias, eventos, performance, compObrigatorias, ciclosAluno
       );
 
-      // === V2: Calcular indicadores simplificados por ciclo ===
       const ciclosV2 = ciclosAluno.map(c => ({
         ...c,
         trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
       }));
-      const compIdToCodigoMap = await db.getCompIdToCodigoMap();
-      const casesAluno = await db.getCasesSucessoByAluno(aluno.id);
       const casesDataAluno: CaseSucessoData[] = casesAluno.map(c => ({
         alunoId: c.alunoId,
         trilhaId: c.trilhaId,
         trilhaNome: c.trilhaNome,
         entregue: c.entregue === 1,
       }));
-      // Buscar macrociclo do aluno
+
+      // Fetch macrociclo for this student only
       const macrocicloPorAlunoPortal = await db.getMacrocicloPorAluno();
       const macrocicloAlunoPortal = macrocicloPorAlunoPortal.get(idUsuario);
       const indicadoresV2 = calcularIndicadoresAlunoV2(
         idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAlunoPortal
       );
+      console.log('[meuDashboard] Indicator calculation done in', Date.now() - t3, 'ms');
 
-      // Buscar sessões individuais do aluno para histórico
-      const sessoesAluno = await db.getMentoringSessionsByAluno(aluno.id);
-
-      // Buscar participações em eventos do aluno com detalhes
-      const eventosAluno = await db.getEventParticipationByAluno(aluno.id);
-      // Buscar detalhes dos eventos
-      const allEvents = aluno.programId ? await db.getEventsByProgramOrGlobal(aluno.programId) : [];
-      const eventMap = new Map(allEvents.map(e => [e.id, e]));
+      // ── Step 4: Build session history and event details for display ──
+      // Re-use allProgramEvents (already fetched above) — no extra DB call needed.
+      const sessoesAluno = alunoSessions; // already fetched above
+      const eventosAluno = alunoEventParticipations;
       const eventosDetalhados = eventosAluno.map(ep => {
-        const evento = eventMap.get(ep.eventId);
+        const evento = progEventMap.get(ep.eventId);
         return {
           id: ep.id,
           eventId: ep.eventId,
@@ -3119,9 +3318,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         };
       });
 
-      // Buscar programa, turma e mentor do aluno
-      const programa = aluno.programId ? programMap.get(aluno.programId) : null;
-      const turmaAluno = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
       // Buscar mentor: primeiro pelo consultorId do aluno, senão pela sessão de mentoria mais recente
       let mentorAluno = aluno.consultorId ? await db.getConsultorById(aluno.consultorId) : null;
       if (!mentorAluno && sessoesAluno.length > 0) {
@@ -3132,20 +3328,25 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         }
       }
 
-      // Calcular ranking na empresa usando V2 (mesma lógica do Dashboard Gestor)
-      // Isso garante que o ranking aqui seja idêntico ao mostrado no Dashboard Gestor
-      const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
-      const compIdToCodigoMapAll = await db.getCompIdToCodigoMap();
-      const casesMapAll = await db.getCasesForCalculator();
-      const casesDataAll: CaseSucessoData[] = [];
-      for (const [, cases] of Array.from(casesMapAll.entries())) { casesDataAll.push(...cases); }
-      const macrocicloPorAlunoRanking = await db.getMacrocicloPorAluno();
-      const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll, undefined, macrocicloPorAlunoRanking);
+      // ── Step 5: Compute ranking using cached all-student data ──
+      // getRankingData() returns cached results (5-min TTL) so this is fast on
+      // repeated requests and avoids reprocessing thousands of records each time.
+      const t5 = Date.now();
+      const rankingData = await getRankingData();
+      const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(
+        rankingData.mentorias,
+        rankingData.eventos,
+        rankingData.performance,
+        rankingData.ciclosPorAluno,
+        rankingData.compIdToCodigoMap,
+        rankingData.casesDataAll,
+        undefined,
+        rankingData.macrocicloPorAluno,
+      );
+      console.log('[meuDashboard] Ranking computed in', Date.now() - t5, 'ms');
 
       let ranking = { posicao: 0, totalAlunos: 0 };
       if (aluno.programId) {
-        const programa = programMap.get(aluno.programId);
-        const empresaNome = programa?.name || '';
         // Filtrar alunos da mesma empresa (mesma lógica de gerarDashboardEmpresa)
         const alunosEmpresaV2 = todosIndicadoresV2
           .filter(i => i.empresa === empresaNome)
@@ -3154,10 +3355,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         ranking = { posicao, totalAlunos: alunosEmpresaV2.length };
       }
 
+
       // Usar indicadores V2 do aluno para notaFinal e performanceGeral consistentes
       const alunoIndicadoresV2Global = todosIndicadoresV2.find(i => i.idUsuario === idUsuario);
 
-      return {
+      const result = {
         found: true as const,
         aluno: {
           id: aluno.id,
@@ -3427,6 +3629,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             }));
         })(),
       };
+      console.log('[meuDashboard] Total query time:', Date.now() - tStart, 'ms for aluno', aluno.id);
+      return result;
     }),
   }),
 
