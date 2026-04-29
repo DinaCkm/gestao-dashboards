@@ -3124,7 +3124,17 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // Buscar detalhes dos eventos (com cache)
       const allEvents = aluno.programId ? await cacheOrFetch(`eventsByProgram_${aluno.programId}`, () => db.getEventsByProgramOrGlobal(aluno.programId!)) : [];
       const eventMap = new Map(allEvents.map(e => [e.id, e]));
-      const eventosDetalhados = eventosAluno.map(ep => {
+      // Eventos com registro de participação
+      const eventosDetalhados: Array<{
+        id: number;
+        eventId: number;
+        titulo: string;
+        tipo: string;
+        data: Date | null;
+        status: string;
+        reflexao: string | null;
+        selfReportedAt: Date | null;
+      }> = eventosAluno.map(ep => {
         const evento = eventMap.get(ep.eventId);
         return {
           id: ep.id,
@@ -3136,6 +3146,28 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           reflexao: ep.reflexao || null,
           selfReportedAt: ep.selfReportedAt || null,
         };
+      });
+      // Adicionar eventos do programa SEM registro de participação como 'ausente'
+      const eventosAlunoIds = new Set(eventosAluno.map(ep => ep.eventId));
+      for (const evt of allEvents) {
+        if (!eventosAlunoIds.has(evt.id)) {
+          eventosDetalhados.push({
+            id: -(evt.id), // id negativo indica que não tem registro real
+            eventId: evt.id,
+            titulo: evt.title || `Evento #${evt.id}`,
+            tipo: evt.eventType || 'webinar',
+            data: evt.eventDate || null,
+            status: 'ausente',
+            reflexao: null,
+            selfReportedAt: null,
+          });
+        }
+      }
+      // Ordenar por data decrescente
+      eventosDetalhados.sort((a, b) => {
+        const da = a.data ? new Date(a.data).getTime() : 0;
+        const db2 = b.data ? new Date(b.data).getTime() : 0;
+        return db2 - da;
       });
 
       // Buscar programa, turma e mentor do aluno
