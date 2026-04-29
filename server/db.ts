@@ -5456,7 +5456,10 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
 
   for (const evt of allEvents) {
     const core = extractCore(normalizeTitle(evt.title));
-    const dedupKey = core;
+    // CORREÇÃO: incluir data na chave para não colapsar eventos distintos do mesmo tema
+    // (ex: Aula 01, 02, 03, 04 de "Resiliência e Proatividade" têm o mesmo core mas datas diferentes)
+    const evtDateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
+    const dedupKey = `${core}|${evtDateStr}`;
     
     if (!coreToAllIds.has(dedupKey)) coreToAllIds.set(dedupKey, []);
     coreToAllIds.get(dedupKey)!.push(evt.id);
