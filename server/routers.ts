@@ -34,6 +34,7 @@ import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
 import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, sendEmail } from "./emailService";
+import { cacheOrFetch, cacheInvalidate } from './dataCache';
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
 
 function parseCSVLine(line: string): string[] {
@@ -2933,15 +2934,44 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { found: false as const, message: 'Nenhum perfil de aluno vinculado a esta conta.' };
       }
 
-      // Buscar competências obrigatórias do plano individual
-      const competenciasObrigatorias = await db.getCompetenciasObrigatoriasAluno(aluno.id);
-
-      // Buscar dados globais para cálculo de indicadores e ranking
-      const allSessions = await db.getAllMentoringSessions();
-      const allEventParticipations = await db.getAllEventParticipationWithDate();
-      const alunosList = await db.getAlunos();
-      const programsList = await db.getPrograms();
-      const turmasList = await db.getTurmas();
+      // Buscar dados do aluno e dados globais em paralelo (com cache de 5min para dados globais)
+      const [
+        competenciasObrigatorias,
+        allSessions,
+        allEventParticipations,
+        alunosList,
+        programsList,
+        turmasList,
+        studentPerfRecords,
+        ciclosPorAluno,
+        compIdToCodigoMapAll,
+        casesMapAll,
+        macrocicloPorAlunoGlobal,
+        macroInicioMapMeuDash,
+        ciclosAluno,
+        casesAluno,
+        planoItems,
+        sessoesAluno,
+        eventosAluno,
+      ] = await Promise.all([
+        db.getCompetenciasObrigatoriasAluno(aluno.id),
+        cacheOrFetch('allSessions', () => db.getAllMentoringSessions()),
+        cacheOrFetch('allEventParticipations', () => db.getAllEventParticipationWithDate()),
+        cacheOrFetch('alunosList', () => db.getAlunos()),
+        cacheOrFetch('programsList', () => db.getPrograms()),
+        cacheOrFetch('turmasList', () => db.getTurmas()),
+        cacheOrFetch('studentPerfRecords', () => db.getStudentPerformanceAsRecords()),
+        cacheOrFetch('ciclosPorAluno', () => db.getAllCiclosForCalculatorV2()),
+        cacheOrFetch('compIdToCodigoMap', () => db.getCompIdToCodigoMap()),
+        cacheOrFetch('casesMap', () => db.getCasesForCalculator()),
+        cacheOrFetch('macrocicloPorAluno', () => db.getMacrocicloPorAluno()),
+        cacheOrFetch('macroInicioMap', () => db.getAlunoMacroInicioMap()),
+        db.getCiclosForCalculator(aluno.id),
+        db.getCasesSucessoByAluno(aluno.id),
+        db.getPlanoIndividualByAluno(aluno.id),
+        db.getMentoringSessionsByAluno(aluno.id),
+        db.getEventParticipationByAluno(aluno.id),
+      ]);
 
       const mentorias: MentoringRecord[] = [];
       const eventos: EventRecord[] = [];
@@ -2999,13 +3029,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         }
         eventParticipationEventIds.get(ep.alunoId)!.add(ep.eventId);
       }
-      // Buscar todos os eventos por programa
+      // Buscar todos os eventos por programa em paralelo (com cache)
       const eventsByProgram = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
-      for (const prog of programsList) {
-        const progEvents = await db.getEventsByProgramOrGlobal(prog.id);
+      await Promise.all(programsList.map(async prog => {
+        const progEvents = await cacheOrFetch(`eventsByProgram_${prog.id}`, () => db.getEventsByProgramOrGlobal(prog.id));
         eventsByProgram.set(prog.id, progEvents);
-      }
-      const macroInicioMapMeuDash = await db.getAlunoMacroInicioMap();
+      }));
       // Para cada aluno, adicionar eventos ausentes (sem registro de participação)
       for (const a of alunosList) {
         if (!a.programId) continue;
@@ -3035,8 +3064,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         }
       }
 
-      // Buscar performance de competências do plano individual
-      const planoItems = await db.getPlanoIndividualByAluno(aluno.id);
+      // Usar planoItems já buscado em paralelo acima
       for (const item of planoItems) {
         if (item.notaAtual) {
           performance.push({
@@ -3050,8 +3078,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         }
       }
 
-      // Adicionar dados de performance da tabela student_performance (CSV)
-      const studentPerfRecords = await db.getStudentPerformanceAsRecords();
+      // Usar studentPerfRecords já buscado em paralelo acima (com cache)
       const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
       for (const spRec of studentPerfRecords) {
         const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
@@ -3070,8 +3097,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         status: c.status,
       }));
 
-      // Buscar ciclos de execução do aluno
-      const ciclosAluno = await db.getCiclosForCalculator(aluno.id);
+      // ciclosAluno já buscado em paralelo acima
 
       const indicadores = calcularIndicadoresAlunoFiltrado(
         idUsuario, mentorias, eventos, performance, compObrigatorias, ciclosAluno
@@ -3082,28 +3108,21 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         ...c,
         trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
       }));
-      const compIdToCodigoMap = await db.getCompIdToCodigoMap();
-      const casesAluno = await db.getCasesSucessoByAluno(aluno.id);
+      const compIdToCodigoMap = compIdToCodigoMapAll;
       const casesDataAluno: CaseSucessoData[] = casesAluno.map(c => ({
         alunoId: c.alunoId,
         trilhaId: c.trilhaId,
         trilhaNome: c.trilhaNome,
         entregue: c.entregue === 1,
       }));
-      // Buscar macrociclo do aluno
-      const macrocicloPorAlunoPortal = await db.getMacrocicloPorAluno();
-      const macrocicloAlunoPortal = macrocicloPorAlunoPortal.get(idUsuario);
+      const macrocicloAlunoPortal = macrocicloPorAlunoGlobal.get(idUsuario);
       const indicadoresV2 = calcularIndicadoresAlunoV2(
         idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAlunoPortal
       );
 
-      // Buscar sessões individuais do aluno para histórico
-      const sessoesAluno = await db.getMentoringSessionsByAluno(aluno.id);
-
-      // Buscar participações em eventos do aluno com detalhes
-      const eventosAluno = await db.getEventParticipationByAluno(aluno.id);
-      // Buscar detalhes dos eventos
-      const allEvents = aluno.programId ? await db.getEventsByProgramOrGlobal(aluno.programId) : [];
+      // sessoesAluno e eventosAluno já buscados em paralelo acima
+      // Buscar detalhes dos eventos (com cache)
+      const allEvents = aluno.programId ? await cacheOrFetch(`eventsByProgram_${aluno.programId}`, () => db.getEventsByProgramOrGlobal(aluno.programId!)) : [];
       const eventMap = new Map(allEvents.map(e => [e.id, e]));
       const eventosDetalhados = eventosAluno.map(ep => {
         const evento = eventMap.get(ep.eventId);
@@ -3122,24 +3141,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // Buscar programa, turma e mentor do aluno
       const programa = aluno.programId ? programMap.get(aluno.programId) : null;
       const turmaAluno = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
-      // Buscar mentor: primeiro pelo consultorId do aluno, senão pela sessão de mentoria mais recente
-      let mentorAluno = aluno.consultorId ? await db.getConsultorById(aluno.consultorId) : null;
-      if (!mentorAluno && sessoesAluno.length > 0) {
-        // Buscar o consultor da sessão mais recente
-        const sessaoComConsultor = [...sessoesAluno].reverse().find(s => s.consultorId);
-        if (sessaoComConsultor?.consultorId) {
-          mentorAluno = await db.getConsultorById(sessaoComConsultor.consultorId);
-        }
-      }
+      const sessaoComConsultor = !aluno.consultorId ? [...sessoesAluno].reverse().find(s => s.consultorId) : null;
+      const [mentorAluno] = await Promise.all([
+        aluno.consultorId
+          ? db.getConsultorById(aluno.consultorId)
+          : sessaoComConsultor?.consultorId
+            ? db.getConsultorById(sessaoComConsultor.consultorId)
+            : Promise.resolve(null),
+      ]);
 
-      // Calcular ranking na empresa usando V2 (mesma lógica do Dashboard Gestor)
-      // Isso garante que o ranking aqui seja idêntico ao mostrado no Dashboard Gestor
-      const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
-      const compIdToCodigoMapAll = await db.getCompIdToCodigoMap();
-      const casesMapAll = await db.getCasesForCalculator();
+      // Usar dados globais já buscados em paralelo com cache
       const casesDataAll: CaseSucessoData[] = [];
       for (const [, cases] of Array.from(casesMapAll.entries())) { casesDataAll.push(...cases); }
-      const macrocicloPorAlunoRanking = await db.getMacrocicloPorAluno();
+      const macrocicloPorAlunoRanking = macrocicloPorAlunoGlobal;
       const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll, undefined, macrocicloPorAlunoRanking);
 
       let ranking = { posicao: 0, totalAlunos: 0 };
