@@ -259,7 +259,10 @@ export default function DashboardMeuPerfil() {
     }
   }, [onboardingStatus, setLocation]);
 
-  const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
+  const { data, isLoading, isError, error, refetch } = trpc.indicadores.meuDashboard.useQuery(undefined, {
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
   // Filtro de indicadores: "consolidado" | "trilha:NomeTrilha" | "ciclo:CicloId"
@@ -644,8 +647,37 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
   if (isLoading) {
     return (
       <AlunoLayout>
-        <div className="flex items-center justify-center h-96">
+        <div className="flex flex-col items-center justify-center h-96 gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0A1E3E]"></div>
+          <p className="text-sm text-gray-500 text-center max-w-xs">
+            Carregando seu dashboard… Isso pode levar alguns segundos.
+          </p>
+        </div>
+      </AlunoLayout>
+    );
+  }
+
+  if (isError) {
+    const isTimeout = error?.message?.toLowerCase().includes('timeout') ||
+      error?.message?.toLowerCase().includes('tempo limite');
+    return (
+      <AlunoLayout>
+        <div className="flex flex-col items-center justify-center h-96 gap-4">
+          <AlertTriangle className="h-16 w-16 text-amber-400" />
+          <h2 className="text-xl font-semibold text-gray-700">
+            {isTimeout ? 'O carregamento demorou demais' : 'Erro ao carregar o dashboard'}
+          </h2>
+          <p className="text-gray-500 text-center max-w-md">
+            {isTimeout
+              ? 'O servidor está demorando mais do que o esperado para processar seus dados. Por favor, tente novamente em alguns instantes.'
+              : (error?.message || 'Ocorreu um erro inesperado. Por favor, tente novamente.')}
+          </p>
+          <Button
+            onClick={() => refetch()}
+            className="bg-[#0A1E3E] hover:bg-[#0d2a57] text-white"
+          >
+            Tentar novamente
+          </Button>
         </div>
       </AlunoLayout>
     );
@@ -664,6 +696,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
       </AlunoLayout>
     );
   }
+
 
   const { aluno, indicadores, ranking, sessoes, eventos, planoIndividual, assessments } = data;
   const performanceGeral = Number(indicadores.performanceGeral ?? (indicadores.notaFinal * 10)) || 0;

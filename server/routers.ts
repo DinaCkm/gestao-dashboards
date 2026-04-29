@@ -2924,6 +2924,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Usuário não autenticado' });
       }
 
+      const TIMEOUT_MS = 30_000;
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new TRPCError({ code: 'TIMEOUT', message: 'Tempo limite excedido ao carregar o dashboard. Tente novamente.' })),
+          TIMEOUT_MS
+        )
+      );
+
+      return Promise.race([timeoutPromise, (async () => {
+
       // Tentar encontrar o aluno: alunoId direto → email → externalId (openId)
       console.log('[meuDashboard] ctx.user:', JSON.stringify({ id: ctx.user.id, openId: ctx.user.openId, email: ctx.user.email, alunoId: ctx.user.alunoId, role: ctx.user.role }));
       const aluno = await db.getAlunoFromCtx(ctx.user);
@@ -3427,8 +3437,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             }));
         })(),
       };
+      })()])
     }),
-  }),
+
 
   // Mentor/Consultor routes
   mentor: router({
