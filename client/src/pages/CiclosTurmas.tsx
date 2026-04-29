@@ -12,12 +12,14 @@ const turmaColors = ['#1E3A5F', '#F5A623', '#2E7D32', '#D32F2F', '#7B1FA2', '#00
 
 const fmtDate = (d: string | Date | null) => {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('pt-BR');
+  const s = typeof d === 'string' ? d : d instanceof Date ? d.toISOString().slice(0, 10) : String(d);
+  return new Date(s + 'T12:00:00').toLocaleDateString('pt-BR');
 };
 
 const toIso = (d: string | Date | null) => {
   if (!d) return '';
-  return new Date(d).toISOString().slice(0, 10);
+  const s = typeof d === 'string' ? d : d instanceof Date ? d.toISOString().slice(0, 10) : String(d);
+  return new Date(s + 'T12:00:00').toISOString().slice(0, 10);
 };
 
 export default function CiclosTurmas() {

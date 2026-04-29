@@ -838,9 +838,12 @@ export const jornadaRouter = router({
           return dt.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
         };
 
-        const resultado = todosCiclos.map(ciclo => ({
+        const resultado = todosCiclos.map(ciclo => {
+          // Extrair nome da trilha do nomeCiclo (ex: "Basic - Comp1, Comp2" -> "Basic")
+          const trilhaExtraida = ciclo.nomeCiclo?.split(' - ')[0]?.trim() || ciclo.trilhaNome || 'Ciclo';
+          return {
           nomeAluno: alunoTarget.name,
-          trilhaNome: ciclo.trilhaNome || ciclo.nomeCiclo || 'Ciclo',
+          trilhaNome: trilhaExtraida,
           periodo: `${fmtPeriodo(ciclo.dataInicio)}–${fmtPeriodo(ciclo.dataFim)}`,
           macroInicio: ciclo.dataInicio,
           macroTermino: ciclo.dataFim,
@@ -851,7 +854,8 @@ export const jornadaRouter = router({
           ind5_engajamento: Math.round(ciclo.ind5_engajamento),
           ind6_aplicabilidade: Math.round(ciclo.ind6_aplicabilidade),
           ind7_engajamentoFinal: Math.round(ciclo.ind7_engajamentoFinal),
-        }));
+          };
+        });
 
         return resultado;
       } catch (error) {
