@@ -1998,10 +1998,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         // 5. Cursos atribuídos pelo mentor
         const [cursosRows] = await database.execute(
           `SELECT aca.id, aca.cursoId, aca.competenciaId, aca.dataPrazo, aca.status, aca.dataAtribuicao,
-                  cc.titulo as cursoTitulo, cc.descricao as cursoDescricao,
+                  co.titulo as cursoTitulo, co.descricao as cursoDescricao, co.tipo as cursoTipo,
                   c.nome as competenciaNome
            FROM aluno_curso_atribuido aca
-           LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId
+           LEFT JOIN courses co ON co.id = aca.cursoId
            LEFT JOIN competencias c ON c.id = aca.competenciaId
            WHERE aca.alunoId = ?
            ORDER BY aca.dataPrazo ASC, aca.dataAtribuicao ASC`,
@@ -2056,7 +2056,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         // 9. Tarefas das sessões de mentoria
         const [tarefasRows] = await database.execute(
           `SELECT ms.id as sessaoId, ms.sessionDate, ms.sessionNumber,
-                  ms.taskMode, ms.customTaskTitle, ms.taskStatus, ms.taskDeadline,
+                  ms.taskId, ms.taskMode, ms.customTaskTitle, ms.taskStatus, ms.taskDeadline,
                   ms.submittedAt, ms.validatedAt, ms.presence,
                   tl.nome as tarefaNome, tl.competencia as tarefaCompetencia
            FROM mentoring_sessions ms
@@ -2066,10 +2066,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           [input.alunoId]
         ) as any;
         const todasSessoes = tarefasRows as any[];
-        // Separar sessões com tarefa das sem tarefa
-        const sessoesComTarefa = todasSessoes.filter((s: any) =>
-          s.taskMode !== 'sem_tarefa' && (s.taskId || s.customTaskTitle || s.taskMode === 'personalizada' || s.taskMode === 'livre')
-        );
+        // Tarefas: sessões que têm tarefa associada (biblioteca, personalizada ou livre)
         const tarefas = todasSessoes.filter((s: any) =>
           s.taskMode && s.taskMode !== 'sem_tarefa' && (s.tarefaNome || s.customTaskTitle)
         );
