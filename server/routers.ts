@@ -1926,6 +1926,80 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.getCompetenciasObrigatoriasAluno(input.alunoId);
       }),
 
+    // Endpoint de diagnóstico temporário — retorna qual query falha
+    diagnosticoResumoPDI: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) return { erro: 'database null' };
+        const resultados: any = {};
+        // Query 1: aluno
+        try {
+          const [r] = await database.execute(
+            `SELECT a.id, a.name, t.name as trilhaNome, p.name as programaNome, tu.name as turmaNome, con.name as consultorNome
+             FROM alunos a
+             LEFT JOIN trilhas t ON t.id = a.trilhaId
+             LEFT JOIN programs p ON p.id = a.programId
+             LEFT JOIN turmas tu ON tu.id = a.turmaId
+             LEFT JOIN consultors con ON con.id = a.consultorId
+             WHERE a.id = ? LIMIT 1`, [input.alunoId]) as any;
+          resultados.q1_aluno = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q1_aluno = { ok: false, erro: e.message }; }
+        // Query 2: assessment
+        try {
+          const [r] = await database.execute(
+            `SELECT ap.id, t.name as trilhaNome FROM assessment_pdi ap
+             LEFT JOIN trilhas t ON t.id = ap.trilhaId
+             WHERE ap.alunoId = ? AND ap.status = 'ativo' ORDER BY ap.createdAt DESC LIMIT 1`, [input.alunoId]) as any;
+          resultados.q2_assessment = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q2_assessment = { ok: false, erro: e.message }; }
+        // Query 3: competencias assessment
+        try {
+          const [r] = await database.execute(
+            `SELECT ac.competenciaId, c.nome FROM assessment_competencias ac
+             JOIN competencias c ON c.id = ac.competenciaId
+             WHERE ac.assessmentPdiId IN (SELECT id FROM assessment_pdi WHERE alunoId = ?) LIMIT 5`, [input.alunoId]) as any;
+          resultados.q3_competencias_assessment = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q3_competencias_assessment = { ok: false, erro: e.message }; }
+        // Query 4: plano_individual
+        try {
+          const [r] = await database.execute(
+            `SELECT pi.id, c.nome FROM plano_individual pi JOIN competencias c ON c.id = pi.competenciaId WHERE pi.alunoId = ? LIMIT 5`, [input.alunoId]) as any;
+          resultados.q4_plano_individual = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q4_plano_individual = { ok: false, erro: e.message }; }
+        // Query 5: cursos atribuidos
+        try {
+          const [r] = await database.execute(
+            `SELECT aca.id, co.titulo FROM aluno_curso_atribuido aca LEFT JOIN courses co ON co.id = aca.cursoId WHERE aca.alunoId = ? LIMIT 5`, [input.alunoId]) as any;
+          resultados.q5_cursos = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q5_cursos = { ok: false, erro: e.message }; }
+        // Query 6: contratos
+        try {
+          const [r] = await database.execute(
+            `SELECT id FROM contratos_aluno WHERE alunoId = ? AND isActive = 1 LIMIT 1`, [input.alunoId]) as any;
+          resultados.q6_contrato = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q6_contrato = { ok: false, erro: e.message }; }
+        // Query 7: webinares
+        try {
+          const [r] = await database.execute(
+            `SELECT ep.id, e.title FROM event_participation ep LEFT JOIN events e ON e.id = ep.eventId WHERE ep.alunoId = ? LIMIT 5`, [input.alunoId]) as any;
+          resultados.q7_webinares = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q7_webinares = { ok: false, erro: e.message }; }
+        // Query 8: sessoes
+        try {
+          const [r] = await database.execute(
+            `SELECT ms.id, tl.nome FROM mentoring_sessions ms LEFT JOIN task_library tl ON tl.id = ms.taskId WHERE ms.alunoId = ? LIMIT 5`, [input.alunoId]) as any;
+          resultados.q8_sessoes = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q8_sessoes = { ok: false, erro: e.message }; }
+        // Query 9: metas
+        try {
+          const [r] = await database.execute(
+            `SELECT m.id, c.nome FROM metas m LEFT JOIN competencias c ON c.id = m.competenciaId WHERE m.alunoId = ? AND m.isActive = 1 LIMIT 5`, [input.alunoId]) as any;
+          resultados.q9_metas = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q9_metas = { ok: false, erro: e.message }; }
+        return resultados;
+      }),
+
     // Mapa estático do P.D.I. do aluno — tudo que ele DEVE fazer para se certificar
     resumoPlanoAluno: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
