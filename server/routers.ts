@@ -1930,6 +1930,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     resumoPlanoAluno: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
       .query(async ({ input }) => {
+        try {
         const database = await db.getDb();
         if (!database) return null;
 
@@ -1938,8 +1939,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
                   a.contratoInicio, a.contratoFim, a.programId, a.cargo, a.areaAtuacao,
                   t.nome as trilhaNome, t.codigo as trilhaCodigo,
-                  p.nome as programaNome,
-                  tu.nome as turmaNome,
+                  p.name as programaNome,
+                  tu.name as turmaNome,
                   con.name as consultorNome
            FROM alunos a
            LEFT JOIN trilhas t ON t.id = a.trilhaId
@@ -2105,6 +2106,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           todasSessoes,
           metasDesafio,
         };
+        } catch (err: any) {
+          console.error('[resumoPlanoAluno] Erro:', err?.message || err);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: err?.message || 'Erro ao carregar resumo do plano' });
+        }
       }),
 
     // Enviar P.D.I. por e-mail ao aluno (instrução 10b)
@@ -2118,8 +2123,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const [alunoRows] = await database.execute(
           `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
                   a.contratoInicio, a.contratoFim, a.cargo, a.areaAtuacao,
-                  t.nome as trilhaNome, p.nome as programaNome,
-                  tu.nome as turmaNome, con.name as consultorNome
+                  t.nome as trilhaNome, p.name as programaNome,
+                  tu.name as turmaNome, con.name as consultorNome
            FROM alunos a
            LEFT JOIN trilhas t ON t.id = a.trilhaId
            LEFT JOIN programs p ON p.id = a.programId
