@@ -2283,8 +2283,8 @@ export default function Performance() {
                               <Badge variant="outline" className={taskStatusConfig.className}>
                                 <span className="flex items-center gap-1">{taskStatusConfig.icon} {isAssessment ? 'Assessment' : taskStatusConfig.label}</span>
                               </Badge>
-                              {/* Botão de envio de link para sessões pendentes */}
-                              {!isAssessment && sessao.taskStatus === 'nao_entregue' && (
+                              {/* Botão de envio: aparece se não há evidência real e não está validada */}
+                              {!isAssessment && sessao.taskStatus !== 'validada' && sessao.taskStatus !== 'sem_tarefa' && !(sessao.evidenceLink || sessao.evidenceImageUrl || sessao.submittedAt) && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -2388,7 +2388,7 @@ export default function Performance() {
                               </p>
                             </div>
                             <div className="flex items-center gap-1">
-                              {task.taskStatus === 'nao_entregue' && (
+                              {task.taskStatus !== 'validada' && task.taskStatus !== 'sem_tarefa' && !(task.evidenceLink || task.evidenceImageUrl || task.submittedAt) && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -2465,7 +2465,7 @@ export default function Performance() {
                                 )}
 
                                 {/* Instrução de compartilhamento na nuvem */}
-                                {task.taskStatus === 'nao_entregue' && (
+                                {task.taskStatus !== 'validada' && task.taskStatus !== 'sem_tarefa' && !(task.evidenceLink || task.evidenceImageUrl || task.submittedAt) && (
                                   <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
                                     <p className="text-xs font-semibold text-blue-900 mb-1 flex items-center gap-2">
                                       <Cloud className="h-4 w-4" /> Lembre-se
@@ -2484,8 +2484,8 @@ export default function Performance() {
                                   </Badge>
                                 </div>
 
-                                {/* Se PENDENTE: formulário de envio */}
-                                {task.taskStatus === 'nao_entregue' && (
+                                {/* Formulário de envio: disponível enquanto não há evidência real e não está validada */}
+                                {task.taskStatus !== 'validada' && task.taskStatus !== 'sem_tarefa' && !(task.evidenceLink || task.evidenceImageUrl || task.submittedAt) && (
                                   <div className="space-y-3 p-4 rounded-lg bg-amber-50/50 border border-amber-200">
                                     <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                                       <Upload className="h-4 w-4 text-[#F5991F]" /> Enviar Evidência
