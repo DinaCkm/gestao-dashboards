@@ -1925,6 +1925,68 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .query(async ({ input }) => {
         return await db.getCompetenciasObrigatoriasAluno(input.alunoId);
       }),
+
+    // Resumo completo do plano do aluno para o mentor/admin
+    resumoPlanoAluno: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) return null;
+        // Dados do aluno
+        const [alunoRows] = await database.execute(
+          `SELECT a.id, a.name, a.tipoMentoria, a.totalSessoesContratadas, a.programId,
+                  ap.totalSessoesPrevistas, ap.macroInicio, ap.macroTermino
+           FROM alunos a
+           LEFT JOIN assessment_pdi ap ON ap.alunoId = a.id AND ap.status = 'ativo'
+           WHERE a.id = ? LIMIT 1`,
+          [input.alunoId]
+        ) as any;
+        const aluno = (alunoRows as any[])[0] ?? null;
+        if (!aluno) return null;
+        // Cursos atribuídos
+        const [cursosRows] = await database.execute(
+          `SELECT aca.id, aca.cursoId, aca.competenciaId, aca.dataPrazo, aca.status, aca.dataAtribuicao,
+                  cc.titulo as cursoTitulo, c.nome as competenciaNome
+           FROM aluno_curso_atribuido aca
+           LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId
+           LEFT JOIN competencias c ON c.id = aca.competenciaId
+           WHERE aca.alunoId = ?
+           ORDER BY aca.dataAtribuicao DESC`,
+          [input.alunoId]
+        ) as any;
+        const cursosAtribuidos = cursosRows as any[];
+        // Sessões de mentoria
+        const [sessoesRows] = await database.execute(
+          `SELECT COUNT(*) as total,
+                  SUM(CASE WHEN taskStatus != 'sem_tarefa' THEN 1 ELSE 0 END) as comTarefa,
+                  SUM(CASE WHEN taskStatus = 'entregue' OR taskStatus = 'validada' THEN 1 ELSE 0 END) as tarefasEntregues
+           FROM mentoring_sessions WHERE alunoId = ?`,
+          [input.alunoId]
+        ) as any;
+        const sessoes = (sessoesRows as any[])[0] ?? { total: 0, comTarefa: 0, tarefasEntregues: 0 };
+        // Webinars / eventos
+        const [webinarsRows] = await database.execute(
+          `SELECT COUNT(*) as total,
+                  SUM(CASE WHEN status = 'presente' THEN 1 ELSE 0 END) as presentes
+           FROM event_participation WHERE alunoId = ?`,
+          [input.alunoId]
+        ) as any;
+        const webinars = (webinarsRows as any[])[0] ?? { total: 0, presentes: 0 };
+        return {
+          aluno,
+          cursosAtribuidos,
+          sessoes: {
+            total: Number(sessoes.total),
+            comTarefa: Number(sessoes.comTarefa),
+            tarefasEntregues: Number(sessoes.tarefasEntregues),
+            previstas: aluno.totalSessoesPrevistas ? Number(aluno.totalSessoesPrevistas) : (aluno.totalSessoesContratadas ? Number(aluno.totalSessoesContratadas) : null),
+          },
+          webinars: {
+            total: Number(webinars.total),
+            presentes: Number(webinars.presentes),
+          },
+        };
+      }),
   }),
 
   // Alunos

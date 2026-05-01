@@ -212,6 +212,12 @@ function PlanoContent() {
     enabled: showAddMetaDialog
   });
 
+  // Resumo do plano do aluno (cursos, sessões, webinars)
+  const { data: resumoPlano } = trpc.planoIndividual.resumoPlanoAluno.useQuery(
+    { alunoId: selectedAluno! },
+    { enabled: !!selectedAluno }
+  );
+
   // DISC
   const { data: discResultado } = trpc.disc.resultado.useQuery(
     { alunoId: selectedAluno! },
@@ -1327,6 +1333,103 @@ function PlanoContent() {
                         </div>
                         <Progress value={performanceFiltrada.indicadoresV2?.consolidado?.ind7_engajamentoFinal ?? performanceFiltrada.indicadores.notaFinal} className="h-2.5" />
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ===== SEÇÃO 9: RESUMO DO PLANO (WEBINARS, TAREFAS, MENTORIAS) ===== */}
+              {resumoPlano && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-base">Resumo do Plano de Desenvolvimento</CardTitle>
+                    </div>
+                    <CardDescription>Webinars assistidos, tarefas e sessões de mentoria realizadas</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {/* Webinars */}
+                      <div className="p-4 bg-blue-50 rounded-lg text-center border border-blue-100">
+                        <Play className="w-5 h-5 text-blue-600 mx-auto mb-2" />
+                        <p className="text-2xl font-bold text-blue-700">{resumoPlano.webinars.presentes}</p>
+                        <p className="text-xs text-muted-foreground">Webinars Assistidos</p>
+                        <p className="text-xs text-blue-500 mt-1">de {resumoPlano.webinars.total} registrados</p>
+                      </div>
+                      {/* Tarefas */}
+                      <div className="p-4 bg-amber-50 rounded-lg text-center border border-amber-100">
+                        <ListChecks className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+                        <p className="text-2xl font-bold text-amber-700">{resumoPlano.sessoes.tarefasEntregues}</p>
+                        <p className="text-xs text-muted-foreground">Tarefas Entregues</p>
+                        <p className="text-xs text-amber-500 mt-1">de {resumoPlano.sessoes.comTarefa} atribuídas</p>
+                      </div>
+                      {/* Sessões de Mentoria */}
+                      <div className="p-4 bg-emerald-50 rounded-lg text-center border border-emerald-100">
+                        <Users className="w-5 h-5 text-emerald-600 mx-auto mb-2" />
+                        <p className="text-2xl font-bold text-emerald-700">{resumoPlano.sessoes.total}</p>
+                        <p className="text-xs text-muted-foreground">Sessões Realizadas</p>
+                        {resumoPlano.sessoes.previstas && (
+                          <p className="text-xs text-emerald-500 mt-1">de {resumoPlano.sessoes.previstas} previstas</p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ===== SEÇÃO 10: AULAS ATRIBUÍDAS ===== */}
+              {resumoPlano && resumoPlano.cursosAtribuidos.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-base">Aulas Atribuídas</CardTitle>
+                    </div>
+                    <CardDescription>Cursos e aulas atribuídos a este aluno pelo mentor</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {resumoPlano.cursosAtribuidos.map((curso: any) => (
+                        <div key={curso.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/30 transition-colors">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`p-2 rounded-md flex-shrink-0 ${
+                              curso.status === 'concluido' ? 'bg-emerald-100' :
+                              curso.status === 'em_progresso' ? 'bg-blue-100' :
+                              curso.status === 'prorrogado' ? 'bg-amber-100' : 'bg-gray-100'
+                            }`}>
+                              {curso.status === 'concluido' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> :
+                               curso.status === 'em_progresso' ? <Play className="w-4 h-4 text-blue-600" /> :
+                               curso.status === 'prorrogado' ? <Clock className="w-4 h-4 text-amber-600" /> :
+                               <Circle className="w-4 h-4 text-gray-400" />}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate">{curso.cursoTitulo || 'Curso sem título'}</p>
+                              {curso.competenciaNome && (
+                                <p className="text-xs text-muted-foreground truncate">Competência: {curso.competenciaNome}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                            {curso.dataPrazo && (
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground">Prazo</p>
+                                <p className="text-xs font-medium">{new Date(curso.dataPrazo).toLocaleDateString('pt-BR')}</p>
+                              </div>
+                            )}
+                            <Badge variant="outline" className={`text-xs ${
+                              curso.status === 'concluido' ? 'border-emerald-300 text-emerald-700 bg-emerald-50' :
+                              curso.status === 'em_progresso' ? 'border-blue-300 text-blue-700 bg-blue-50' :
+                              curso.status === 'prorrogado' ? 'border-amber-300 text-amber-700 bg-amber-50' :
+                              'border-gray-300 text-gray-600 bg-gray-50'
+                            }`}>
+                              {curso.status === 'concluido' ? 'Concluído' :
+                               curso.status === 'em_progresso' ? 'Em Progresso' :
+                               curso.status === 'prorrogado' ? 'Prorrogado' : 'Não Iniciado'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
