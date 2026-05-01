@@ -2004,15 +2004,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     resumoPlanoAluno: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
       .query(async ({ input }) => {
-        try {
         const database = await db.getDb();
-        if (!database) return null;
+        if (!database) return { aluno: null, assessment: null, competenciasAssessment: [], competenciasPlano: [], cursosAtribuidos: [], contrato: null, periodo: { inicio: null, fim: null }, metas: null, webinares: [], tarefas: [], todasSessoes: [], metasDesafio: [], _erros: ['database null'] };
+        const _erros: string[] = [];
+        try {
 
         // 1. Dados básicos do aluno + trilha + programa
         const [alunoRows] = await database.execute(
           `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
                   a.contratoInicio, a.contratoFim, a.programId, a.cargo, a.areaAtuacao,
-                  t.name as trilhaNome, t.codigo as trilhaCodigo,
+                  t.name as trilhaNome,
                   p.name as programaNome,
                   tu.name as turmaNome,
                   con.name as consultorNome
