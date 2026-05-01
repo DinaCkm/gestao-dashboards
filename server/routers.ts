@@ -2040,6 +2040,54 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
         const metas = calcularMetas(periodoInicio, periodoFim, sessoesContratadas ? Number(sessoesContratadas) : null);
 
+        // 8. Webinares confirmados pelo aluno
+        const [webRows] = await database.execute(
+          `SELECT ep.id, ep.eventId, ep.status, ep.selfReportedAt,
+                  e.title as eventoTitulo, e.eventDate
+           FROM event_participation ep
+           LEFT JOIN events e ON e.id = ep.eventId
+           WHERE ep.alunoId = ?
+           ORDER BY e.eventDate DESC`,
+          [input.alunoId]
+        ) as any;
+        const webinares = webRows as any[];
+
+        // 9. Tarefas das sessões de mentoria
+        const [tarefasRows] = await database.execute(
+          `SELECT ms.id as sessaoId, ms.sessionDate, ms.sessionNumber,
+                  ms.taskMode, ms.customTaskTitle, ms.taskStatus, ms.taskDeadline,
+                  ms.submittedAt, ms.validatedAt, ms.presence,
+                  tl.nome as tarefaNome, tl.competencia as tarefaCompetencia
+           FROM mentoring_sessions ms
+           LEFT JOIN task_library tl ON tl.id = ms.taskId
+           WHERE ms.alunoId = ?
+           ORDER BY ms.sessionDate ASC`,
+          [input.alunoId]
+        ) as any;
+        const todasSessoes = tarefasRows as any[];
+        // Separar sessões com tarefa das sem tarefa
+        const sessoesComTarefa = todasSessoes.filter((s: any) =>
+          s.taskMode !== 'sem_tarefa' && (s.taskId || s.customTaskTitle || s.taskMode === 'personalizada' || s.taskMode === 'livre')
+        );
+        const tarefas = todasSessoes.filter((s: any) =>
+          s.taskMode && s.taskMode !== 'sem_tarefa' && (s.tarefaNome || s.customTaskTitle)
+        );
+
+        // 10. Metas desafio do aluno
+        const [metasDesafioRows] = await database.execute(
+          `SELECT m.id, m.titulo, m.descricao, m.createdAt,
+                  c.nome as competenciaNome,
+                  (SELECT ma.status FROM meta_acompanhamento ma WHERE ma.metaId = m.id ORDER BY ma.ano DESC, ma.mes DESC LIMIT 1) as ultimoStatus,
+                  (SELECT ma.mes FROM meta_acompanhamento ma WHERE ma.metaId = m.id ORDER BY ma.ano DESC, ma.mes DESC LIMIT 1) as ultimoMes,
+                  (SELECT ma.ano FROM meta_acompanhamento ma WHERE ma.metaId = m.id ORDER BY ma.ano DESC, ma.mes DESC LIMIT 1) as ultimoAno
+           FROM metas m
+           LEFT JOIN competencias c ON c.id = m.competenciaId
+           WHERE m.alunoId = ? AND m.isActive = 1
+           ORDER BY c.nome, m.createdAt`,
+          [input.alunoId]
+        ) as any;
+        const metasDesafio = metasDesafioRows as any[];
+
         return {
           aluno,
           assessment,
@@ -2052,6 +2100,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             fim: periodoFim?.toISOString() ?? null,
           },
           metas,
+          webinares,
+          tarefas,
+          todasSessoes,
+          metasDesafio,
         };
       }),
 

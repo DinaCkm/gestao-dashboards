@@ -1517,7 +1517,220 @@ function PlanoContent() {
                 );
               })()}
 
-              {/* ===== SEÇÃO 12: OBSERVAÇÕES DO MENTOR ===== */}
+              {/* ===== SEÇÃO 12: WEBINARES DO ALUNO ===== */}
+              {resumoPlano?.webinares && resumoPlano.webinares.length > 0 && (() => {
+                const presentes = resumoPlano.webinares.filter((w: any) => w.status === 'presente');
+                const ausentes = resumoPlano.webinares.filter((w: any) => w.status !== 'presente');
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white">
+                      <h3 className="text-base font-bold flex items-center gap-2">
+                        <Play className="h-5 w-5" /> Webinares
+                      </h3>
+                      <p className="text-white/80 text-xs mt-1">
+                        {presentes.length} presença{presentes.length !== 1 ? 's' : ''} confirmada{presentes.length !== 1 ? 's' : ''} de {resumoPlano.webinares.length} evento{resumoPlano.webinares.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-4 mb-3 p-3 bg-blue-50 rounded-lg">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-blue-700">{presentes.length}</p>
+                          <p className="text-xs text-blue-600">Presenças</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-500">{ausentes.length}</p>
+                          <p className="text-xs text-gray-500">Ausências</p>
+                        </div>
+                        {resumoPlano.metas?.webinarsMinimos && (
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-emerald-700">
+                              {Math.round((presentes.length / resumoPlano.metas.webinarsMinimos) * 100)}%
+                            </p>
+                            <p className="text-xs text-emerald-600">da meta ({resumoPlano.metas.webinarsMinimos})</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                        {resumoPlano.webinares.map((w: any) => (
+                          <div key={w.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-gray-50/50">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {w.status === 'presente'
+                                ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                                : <XCircle className="h-4 w-4 text-red-400 shrink-0" />}
+                              <p className="text-sm truncate">{w.eventoTitulo || 'Evento sem título'}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 ml-2">
+                              {w.eventDate && <span className="text-xs text-muted-foreground">{new Date(w.eventDate).toLocaleDateString('pt-BR')}</span>}
+                              <Badge variant={w.status === 'presente' ? 'default' : 'secondary'} className="text-xs">
+                                {w.status === 'presente' ? 'Presente' : 'Ausente'}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* ===== SEÇÃO 13: TAREFAS DO ALUNO ===== */}
+              {resumoPlano?.todasSessoes && resumoPlano.todasSessoes.length > 0 && (() => {
+                const sessoesComTarefa = resumoPlano.todasSessoes.filter((s: any) =>
+                  s.taskMode && s.taskMode !== 'sem_tarefa' && (s.tarefaNome || s.customTaskTitle)
+                );
+                if (sessoesComTarefa.length === 0) return null;
+                const entregues = sessoesComTarefa.filter((s: any) => s.taskStatus === 'entregue' || s.taskStatus === 'validada');
+                const pendentes = sessoesComTarefa.filter((s: any) => s.taskStatus !== 'entregue' && s.taskStatus !== 'validada');
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 text-white">
+                      <h3 className="text-base font-bold flex items-center gap-2">
+                        <ListChecks className="h-5 w-5" /> Tarefas Práticas
+                      </h3>
+                      <p className="text-white/80 text-xs mt-1">
+                        {entregues.length} entregue{entregues.length !== 1 ? 's' : ''} de {sessoesComTarefa.length} tarefa{sessoesComTarefa.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-4 mb-3 p-3 bg-amber-50 rounded-lg">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-amber-700">{sessoesComTarefa.length}</p>
+                          <p className="text-xs text-amber-600">Total</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-emerald-700">{entregues.length}</p>
+                          <p className="text-xs text-emerald-600">Entregues</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-red-500">{pendentes.length}</p>
+                          <p className="text-xs text-red-500">Pendentes</p>
+                        </div>
+                        {resumoPlano.metas?.tarefasMinimas && (
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-blue-700">
+                              {Math.round((entregues.length / resumoPlano.metas.tarefasMinimas) * 100)}%
+                            </p>
+                            <p className="text-xs text-blue-600">da meta ({resumoPlano.metas.tarefasMinimas})</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                        {sessoesComTarefa.map((s: any) => {
+                          const nome = s.customTaskTitle || s.tarefaNome || 'Tarefa sem título';
+                          const isEntregue = s.taskStatus === 'entregue' || s.taskStatus === 'validada';
+                          return (
+                            <div key={s.sessaoId} className="flex items-center justify-between p-2.5 rounded-lg border bg-gray-50/50">
+                              <div className="flex items-center gap-2 min-w-0">
+                                {isEntregue
+                                  ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                                  : <Clock className="h-4 w-4 text-amber-500 shrink-0" />}
+                                <div className="min-w-0">
+                                  <p className="text-sm truncate">{nome}</p>
+                                  {s.tarefaCompetencia && <p className="text-xs text-muted-foreground">{s.tarefaCompetencia}</p>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0 ml-2">
+                                {s.sessionDate && <span className="text-xs text-muted-foreground">{new Date(s.sessionDate).toLocaleDateString('pt-BR')}</span>}
+                                <Badge variant={isEntregue ? 'default' : 'secondary'} className="text-xs">
+                                  {s.taskStatus === 'validada' ? 'Validada' : s.taskStatus === 'entregue' ? 'Entregue' : 'Pendente'}
+                                </Badge>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* ===== SEÇÃO 14: METAS DESAFIO ===== */}
+              {resumoPlano?.metasDesafio && resumoPlano.metasDesafio.length > 0 && (() => {
+                const cumpridas = resumoPlano.metasDesafio.filter((m: any) => m.ultimoStatus === 'cumprida');
+                const naoCumpridas = resumoPlano.metasDesafio.filter((m: any) => m.ultimoStatus === 'nao_cumprida');
+                const semStatus = resumoPlano.metasDesafio.filter((m: any) => !m.ultimoStatus);
+                // Agrupar por competencia
+                const porComp: Record<string, any[]> = {};
+                resumoPlano.metasDesafio.forEach((m: any) => {
+                  const k = m.competenciaNome || 'Sem competência';
+                  if (!porComp[k]) porComp[k] = [];
+                  porComp[k].push(m);
+                });
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-gradient-to-r from-rose-600 to-rose-700 p-4 text-white">
+                      <h3 className="text-base font-bold flex items-center gap-2">
+                        <Flag className="h-5 w-5" /> Metas Desafio
+                      </h3>
+                      <p className="text-white/80 text-xs mt-1">
+                        {cumpridas.length} cumprida{cumpridas.length !== 1 ? 's' : ''} de {resumoPlano.metasDesafio.length} meta{resumoPlano.metasDesafio.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-4 mb-3 p-3 bg-rose-50 rounded-lg">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-rose-700">{resumoPlano.metasDesafio.length}</p>
+                          <p className="text-xs text-rose-600">Total</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-emerald-700">{cumpridas.length}</p>
+                          <p className="text-xs text-emerald-600">Cumpridas</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-red-500">{naoCumpridas.length}</p>
+                          <p className="text-xs text-red-500">Não cumpridas</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-400">{semStatus.length}</p>
+                          <p className="text-xs text-gray-400">Sem status</p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        {Object.entries(porComp).map(([comp, metas]: [string, any[]]) => (
+                          <div key={comp}>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <Target className="h-3.5 w-3.5 text-rose-500" />
+                              <h4 className="font-semibold text-xs text-gray-700 uppercase tracking-wide">{comp}</h4>
+                              <Badge variant="outline" className="text-xs ml-auto">{metas.length}</Badge>
+                            </div>
+                            <div className="space-y-1.5 ml-5">
+                              {metas.map((m: any) => (
+                                <div key={m.id} className="flex items-start justify-between p-2.5 rounded-lg border bg-gray-50/50">
+                                  <div className="flex items-start gap-2 min-w-0">
+                                    {m.ultimoStatus === 'cumprida'
+                                      ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                                      : m.ultimoStatus === 'nao_cumprida'
+                                        ? <XCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+                                        : m.ultimoStatus === 'parcial'
+                                          ? <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                          : <Circle className="h-4 w-4 text-gray-300 shrink-0 mt-0.5" />}
+                                    <p className="text-sm">{m.titulo}</p>
+                                  </div>
+                                  {m.ultimoStatus && (
+                                    <Badge
+                                      className={`text-xs shrink-0 ml-2 ${
+                                        m.ultimoStatus === 'cumprida' ? 'bg-emerald-100 text-emerald-700'
+                                        : m.ultimoStatus === 'nao_cumprida' ? 'bg-red-100 text-red-700'
+                                        : 'bg-amber-100 text-amber-700'
+                                      }`}
+                                    >
+                                      {m.ultimoStatus === 'cumprida' ? 'Cumprida'
+                                        : m.ultimoStatus === 'nao_cumprida' ? 'Não cumprida'
+                                        : 'Parcial'}
+                                    </Badge>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* ===== SEÇÃO 15: OBSERVAÇÕES DO MENTOR ===== */}
               {resumoPlano?.assessment?.observacoes && (
                 <Card className="border-dashed">
                   <CardHeader className="pb-2">
