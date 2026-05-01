@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Calendar, CheckCircle2, Edit2, Trash2, Unlock, AlertTriangle } from "lucide-react";
+import { BookOpen, Calendar, CheckCircle2, Edit2, Trash2, Unlock, AlertTriangle, ArrowLeft } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -66,7 +66,7 @@ export default function MentorAtribuirCurso() {
   const [novoPrazo, setNovoPrazo] = useState("");
   const [novoStatus, setNovoStatus] = useState("");
 
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { user } = useAuth();
   const isAdmin = location.startsWith("/admin") || user?.role === "admin";
 
@@ -213,6 +213,14 @@ export default function MentorAtribuirCurso() {
   return (
     <div className="space-y-6 p-6">
       <div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(isAdmin ? "/admin" : "/mentor")}
+          className="mb-3 -ml-2 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+        </Button>
         <h1 className="text-3xl font-bold tracking-tight">{isAdmin ? "Administração" : "Mentor"} — Atribuir Curso</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Selecione um aluno, a competência do PDI, o curso e a data limite para iniciar o desenvolvimento.
