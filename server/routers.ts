@@ -1938,7 +1938,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const [alunoRows] = await database.execute(
           `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
                   a.contratoInicio, a.contratoFim, a.programId, a.cargo, a.areaAtuacao,
-                  t.nome as trilhaNome, t.codigo as trilhaCodigo,
+                  t.name as trilhaNome, t.codigo as trilhaCodigo,
                   p.name as programaNome,
                   tu.name as turmaNome,
                   con.name as consultorNome
@@ -1957,7 +1957,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const [apRows] = await database.execute(
           `SELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas,
                   ap.observacoes, ap.status as assessmentStatus,
-                  t.nome as trilhaNome
+                  t.name as trilhaNome
            FROM assessment_pdi ap
            LEFT JOIN trilhas t ON t.id = ap.trilhaId
            WHERE ap.alunoId = ? AND ap.status = 'ativo'
@@ -2120,7 +2120,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const [alunoRows] = await database.execute(
           `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
                   a.contratoInicio, a.contratoFim, a.cargo, a.areaAtuacao,
-                  t.nome as trilhaNome, p.name as programaNome,
+                  t.name as trilhaNome, p.name as programaNome,
                   tu.name as turmaNome, con.name as consultorNome
            FROM alunos a
            LEFT JOIN trilhas t ON t.id = a.trilhaId
@@ -2136,7 +2136,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         // Buscar assessment ativo
         const [apRows] = await database.execute(
           `SELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas, ap.observacoes,
-                  t.nome as trilhaNome
+                  t.name as trilhaNome
            FROM assessment_pdi ap LEFT JOIN trilhas t ON t.id = ap.trilhaId
            WHERE ap.alunoId = ? AND ap.status = 'ativo' ORDER BY ap.createdAt DESC LIMIT 1`,
           [input.alunoId]
