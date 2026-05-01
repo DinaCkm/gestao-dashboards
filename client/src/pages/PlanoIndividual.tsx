@@ -21,7 +21,7 @@ import {
   Search, Plus, Trash2, BookOpen, Target, CheckCircle2, Clock, AlertCircle,
   Users, Building2, TrendingUp, Award, BarChart3, Calendar, Edit2, ChevronRight,
   Circle, ChevronDown, Flag, User, Loader2, Library, Sparkles, Edit3,
-  MessageSquare, XCircle, FileText, Snowflake, Play, ArrowLeft, ListChecks, AlertTriangle
+  MessageSquare, XCircle, FileText, Snowflake, Play, ArrowLeft, ListChecks, AlertTriangle, Gauge, Mail
 } from "lucide-react";
 import DualIndicators from "@/components/DualIndicators";
 import EditAssessmentDialog from "@/components/EditAssessmentDialog";
@@ -224,6 +224,12 @@ function PlanoContent() {
     { enabled: !!selectedAluno }
   );
 
+  // Autopercepção de competências
+  const { data: autopercepcoesData = [] } = (trpc as any).autopercepção.porAluno.useQuery(
+    { alunoId: selectedAluno! },
+    { enabled: !!selectedAluno }
+  );
+
   // Mentores list
   const { data: mentores = [] } = trpc.mentor.list.useQuery();
 
@@ -293,6 +299,12 @@ function PlanoContent() {
   const sugerirIAMutation = trpc.metas.sugerirComIA.useMutation({
     onSuccess: () => { setMetaFromLibrary(false); toast.success("Sugestão gerada pela IA!"); },
     onError: (err) => toast.error("Erro ao gerar sugestão: " + err.message),
+  });
+
+  // Enviar P.D.I. por e-mail (instrução 10b)
+  const enviarPdiEmailMutation = trpc.planoIndividual.enviarPorEmail.useMutation({
+    onSuccess: (data: any) => toast.success(`P.D.I. enviado com sucesso para ${data.email}`),
+    onError: (err: any) => toast.error(`Erro ao enviar e-mail: ${err.message}`),
   });
 
   // Criar assessment mutation
@@ -780,7 +792,7 @@ function PlanoContent() {
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg font-bold">{selectedAlunoData?.name}</h2>
                       <p className="text-sm text-muted-foreground">
-                        ID: {selectedAlunoData?.externalId} | {selectedAlunoData?.competenciasObrigatorias} competências obrigatórias | {selectedAlunoData?.competenciasConcluidas} concluídas
+                        ID: {selectedAlunoData?.externalId} | {selectedAlunoData?.competenciasObrigatorias} competências obrigatórias
                       </p>
                       <div className="flex items-center gap-3 mt-1">
                         <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
@@ -807,103 +819,26 @@ function PlanoContent() {
                         })()}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => setSelectedAluno(null)}>Trocar aluno</Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* ===== SEÇÃO 1: CONTRATO ===== */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-base">Contrato</CardTitle>
-                    </div>
-                    {isAdmin && (
-                      <Button size="sm" variant="outline" onClick={() => { resetContratoForm(); setShowContratoDialog(true); }}>
-                        <Plus className="h-4 w-4 mr-1" /> Novo Contrato
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 border-blue-300 text-blue-700 hover:bg-blue-50"
+                        onClick={() => { if (selectedAluno) enviarPdiEmailMutation.mutate({ alunoId: selectedAluno }); }}
+                        disabled={enviarPdiEmailMutation.isPending || !selectedAluno}
+                        title="Envia o P.D.I. completo por e-mail ao aluno"
+                      >
+                        {enviarPdiEmailMutation.isPending
+                          ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+                          : <><Mail className="h-4 w-4" /> Enviar P.D.I. por e-mail</>}
                       </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {contratos.length === 0 ? (
-                    (() => {
-                      const cInicio = (selectedAlunoData as any)?.contratoInicio;
-                      const cFim = (selectedAlunoData as any)?.contratoFim;
-                      const sessoes = (selectedAlunoData as any)?.totalSessoesContratadas;
-                      const tipoM = (selectedAlunoData as any)?.tipoMentoria;
-                      const hasInlineData = cInicio || cFim || sessoes || tipoM;
-                      return hasInlineData ? (
-                        <div className="space-y-3">
-                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                            <p className="text-xs font-medium text-amber-700 mb-3">Dados do cadastro do aluno (nenhum contrato formal registrado)</p>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                              <div className="text-center">
-                                <p className="text-lg font-bold text-primary">{cInicio ? new Date(cInicio).toLocaleDateString('pt-BR') : '—'}</p>
-                                <p className="text-xs text-muted-foreground">Início</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-lg font-bold text-primary">{cFim ? new Date(cFim).toLocaleDateString('pt-BR') : '—'}</p>
-                                <p className="text-xs text-muted-foreground">Término</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-lg font-bold text-emerald-600">{sessoes || '—'}</p>
-                                <p className="text-xs text-muted-foreground">Sessões Contratadas</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-lg font-bold text-blue-600">{tipoM === 'grupo' ? 'Em Grupo' : tipoM === 'individual' ? 'Individual' : '—'}</p>
-                                <p className="text-xs text-muted-foreground">Tipo Mentoria</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">Nenhum contrato registrado</p>
-                      );
-                    })()
-                  ) : (
-                    <div className="space-y-3">
-                      {/* Saldo resumo */}
-                      {saldoSessoes && (
-                        <div className="grid grid-cols-3 gap-3 mb-3">
-                          <div className="p-3 bg-primary/5 rounded-lg text-center">
-                            <p className="text-xl font-bold text-primary">{saldoSessoes.totalContratadas}</p>
-                            <p className="text-xs text-muted-foreground">Contratadas</p>
-                          </div>
-                          <div className="p-3 bg-green-50 rounded-lg text-center">
-                            <p className="text-xl font-bold text-green-600">{saldoSessoes.sessoesRealizadas}</p>
-                            <p className="text-xs text-muted-foreground">Realizadas</p>
-                          </div>
-                          <div className="p-3 bg-secondary/10 rounded-lg text-center">
-                            <p className="text-xl font-bold text-secondary">{saldoSessoes.saldoRestante}</p>
-                            <p className="text-xs text-muted-foreground">Saldo</p>
-                          </div>
-                        </div>
-                      )}
-                      {contratos.map((c: any) => (
-                        <div key={c.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-medium">{formatDate(c.periodoInicio)} — {formatDate(c.periodoTermino)}</span>
-                              {c.totalSessoesContratadas && <Badge variant="outline" className="text-xs">{c.totalSessoesContratadas} sessões</Badge>}
-
-                            </div>
-                            {c.observacoes && <p className="text-xs text-muted-foreground mt-1">{c.observacoes}</p>}
-                          </div>
-                          {isAdmin && (
-                            <div className="flex gap-1 shrink-0">
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditContrato(c)}><Edit2 className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500" onClick={() => { if (confirm("Excluir este contrato?")) excluirContratoMutation.mutate({ id: c.id }); }}><Trash2 className="h-4 w-4" /></Button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                      <Button variant="outline" size="sm" onClick={() => setSelectedAluno(null)}>Trocar aluno</Button>
                     </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
+
+              {/* ===== SEÇÃO 1: CONTRATO — REMOVIDA (instrução 02) ===== */}
 
               {/* ===== SEÇÃO 2: JORNADA / ASSESSMENT PDI ===== */}
               <Card>
@@ -996,7 +931,8 @@ function PlanoContent() {
                 </CardContent>
               </Card>
 
-              {/* ===== SEÇÃO 3: COMPETÊNCIAS DO PLANO ===== */}
+              {/* ===== SEÇÃO 3: COMPETÊNCIAS DO PLANO — OCULTA (instrução 04) ===== */}
+              {false && (
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -1104,6 +1040,8 @@ function PlanoContent() {
                 </CardContent>
               </Card>
 
+              )}
+
               {/* ===== SEÇÃO 4: DISC ===== */}
               {discResultado && (
                 <Card className="border-secondary/30 bg-gradient-to-r from-secondary/5 to-transparent">
@@ -1138,21 +1076,90 @@ function PlanoContent() {
                 </Card>
               )}
 
-              {/* ===== SEÇÃO 6: INDICADORES DUAIS ===== */}
-              {metasResumo && (
-                <DualIndicators
-                  engajamento={performanceFiltrada?.indicadoresV2?.consolidado?.ind7_engajamentoFinal ?? performanceFiltrada?.indicadores?.performanceGeral ?? 0}
-                  desenvolvimento={metasResumo.percentual}
-                  engajamentoDetalhes={performanceFiltrada?.indicadoresV2?.consolidado ? {
-                    ind1_webinars: performanceFiltrada.indicadoresV2.consolidado.ind1_webinars,
-                    ind2_avaliacoes: performanceFiltrada.indicadoresV2.consolidado.ind2_avaliacoes,
-                    ind3_competencias: performanceFiltrada.indicadoresV2.consolidado.ind3_competencias,
-                    ind4_tarefas: performanceFiltrada.indicadoresV2.consolidado.ind4_tarefas,
-                    ind5_engajamento: performanceFiltrada.indicadoresV2.consolidado.ind5_engajamento,
-                  } : undefined}
-                  desenvolvimentoDetalhes={{ total: metasResumo.total, cumpridas: metasResumo.cumpridas }}
-                />
-              )}
+              {/* ===== SEÇÃO 6: INDICADORES DUAIS — OCULTA (instrução 06) ===== */}
+
+              {/* ===== SEÇÃO 5: AUTOPERCEPÇÃO DE COMPETÊNCIAS (instrução 08b) ===== */}
+              {autopercepcoesData.length > 0 && competencias && trilhas && (() => {
+                const TRILHAS_BASE = ["Basic", "Essential", "Master"];
+                const notaLabels: Record<number, string> = {
+                  1: "Preciso desenvolver muito",
+                  2: "Preciso desenvolver",
+                  3: "Razoável",
+                  4: "Bom domínio",
+                  5: "Domino com excelência",
+                };
+                const notaCores: Record<number, string> = {
+                  1: "bg-red-500", 2: "bg-orange-400", 3: "bg-yellow-400", 4: "bg-emerald-400", 5: "bg-emerald-600"
+                };
+                const trilhaCoresMap: Record<string, string> = {
+                  "Basic": "#3B82F6", "Essential": "#10B981", "Master": "#8B5CF6", "Visão de Futuro": "#F59E0B",
+                };
+                const trilhasComAuto = new Set((autopercepcoesData as any[]).map((a: any) => a.trilhaId));
+                const trilhasOrdenadas = [...(trilhas as any[])]
+                  .filter((t: any) => TRILHAS_BASE.includes(t.name) || trilhasComAuto.has(t.id))
+                  .sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0));
+                const porTrilha = trilhasOrdenadas.map((trilha: any) => {
+                  const comps = (competencias as any[]).filter((c: any) => c.trilhaId === trilha.id);
+                  const avaliacoes = comps.map((c: any) => {
+                    const av = (autopercepcoesData as any[]).find((a: any) => a.competenciaId === c.id);
+                    return { competencia: c, nota: av?.nota || 0 };
+                  }).filter((a: any) => a.nota > 0);
+                  const media = avaliacoes.length > 0
+                    ? avaliacoes.reduce((sum: number, a: any) => sum + a.nota, 0) / avaliacoes.length
+                    : 0;
+                  return { trilha, avaliacoes, media };
+                }).filter(t => t.avaliacoes.length > 0);
+
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 text-white">
+                      <h3 className="text-base font-bold flex items-center gap-2">
+                        <Gauge className="h-5 w-5" /> Autopercepção de Competências
+                      </h3>
+                      <p className="text-white/80 text-xs mt-1">Como o aluno se avalia em cada competência das trilhas de desenvolvimento</p>
+                    </div>
+                    <CardContent className="pt-5 space-y-5">
+                      {porTrilha.map(({ trilha, avaliacoes, media }: any) => (
+                        <div key={trilha.id} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: trilhaCoresMap[trilha.name] || "#6B7280" }} />
+                              <h4 className="font-semibold text-sm text-gray-800">{trilha.name}</h4>
+                            </div>
+                            <Badge variant="outline" className="text-xs">Média: {media.toFixed(1)}/5</Badge>
+                          </div>
+                          <div className="space-y-1.5">
+                            {avaliacoes.map(({ competencia, nota }: any) => (
+                              <div key={competencia.id} className="flex items-center gap-3">
+                                <span className="text-xs text-gray-600 w-44 shrink-0 truncate" title={competencia.nome}>{competencia.nome}</span>
+                                <div className="flex-1 flex items-center gap-0.5">
+                                  {[1, 2, 3, 4, 5].map((n) => (
+                                    <div key={n} className={`h-3.5 flex-1 rounded-sm ${
+                                      n <= nota ? notaCores[nota] : "bg-gray-200"
+                                    }`} />
+                                  ))}
+                                </div>
+                                <span className="text-xs font-medium text-gray-700 w-8 text-right">{nota}/5</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      <div className="border-t pt-3">
+                        <p className="text-xs text-muted-foreground font-medium mb-2">Legenda:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <div key={n} className="flex items-center gap-1">
+                              <div className={`w-3 h-3 rounded-sm ${notaCores[n]}`} />
+                              <span className="text-xs text-gray-600">{n} — {notaLabels[n]}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
 
               {/* ===== SEÇÃO 7: METAS DE DESENVOLVIMENTO ===== */}
               <Card>
@@ -1164,30 +1171,7 @@ function PlanoContent() {
                   <CardDescription>Metas por competência com acompanhamento mensal</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Resumo de metas */}
-                  {metasResumo && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                      <div className="p-3 bg-muted/30 rounded-lg text-center">
-                        <p className="text-xl font-bold">{metasResumo.total}</p>
-                        <p className="text-xs text-muted-foreground">Total</p>
-                      </div>
-                      <div className="p-3 bg-emerald-50 rounded-lg text-center">
-                        <p className="text-xl font-bold text-emerald-600">{metasResumo.cumpridas}</p>
-                        <p className="text-xs text-muted-foreground">Cumpridas</p>
-                      </div>
-                      <div className="p-3 bg-red-50 rounded-lg text-center">
-                        <p className="text-xl font-bold text-red-500">{metasResumo.total - metasResumo.cumpridas}</p>
-                        <p className="text-xs text-muted-foreground">Não Cumpridas</p>
-                      </div>
-                      <div className="p-3 bg-primary/5 rounded-lg text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <TrendingUp className="h-4 w-4 text-primary" />
-                          <p className="text-xl font-bold text-primary">{metasResumo.percentual}%</p>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Atingimento</p>
-                      </div>
-                    </div>
-                  )}
+                  {/* Resumo de metas — mini cards removidos (instrução 07) */}
 
                   {/* Competências e metas */}
                   {assessments.length === 0 ? (
@@ -1273,8 +1257,8 @@ function PlanoContent() {
                 </CardContent>
               </Card>
 
-              {/* ===== SEÇÃO 8: PERFORMANCE FILTRADA ===== */}
-              {performanceFiltrada && planoAluno && planoAluno.length > 0 && (
+              {/* ===== SEÇÃO 8: PERFORMANCE FILTRADA — OCULTA (instrução 08a) ===== */}
+              {false && performanceFiltrada && planoAluno && planoAluno.length > 0 && (
                 <Card>
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-2">
@@ -1338,99 +1322,212 @@ function PlanoContent() {
                 </Card>
               )}
 
-              {/* ===== SEÇÃO 9: RESUMO DO PLANO (WEBINARS, TAREFAS, MENTORIAS) ===== */}
+              {/* ===== SEÇÃO 9: MAPA RESUMO DO PLANO (instrução 09) ===== */}
               {resumoPlano && (
+                <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary to-primary/80 p-4 text-white">
+                    <h3 className="text-base font-bold flex items-center gap-2">
+                      <Target className="h-5 w-5" /> Mapa do Plano de Desenvolvimento
+                    </h3>
+                    <p className="text-white/80 text-xs mt-1">Visão geral de tudo que o aluno deve realizar durante a jornada</p>
+                  </div>
+                  <CardContent className="pt-5">
+                    {/* Linha 1: Trilha + Programa + Período */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <p className="text-xs text-muted-foreground mb-1">Trilha</p>
+                        <p className="text-sm font-bold text-primary">{resumoPlano.aluno?.trilhaNome || '—'}</p>
+                        {resumoPlano.aluno?.programaNome && <p className="text-xs text-muted-foreground mt-0.5">{resumoPlano.aluno.programaNome}</p>}
+                      </div>
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <p className="text-xs text-muted-foreground mb-1">Início</p>
+                        <p className="text-sm font-bold text-primary">
+                          {resumoPlano.periodo?.inicio ? new Date(resumoPlano.periodo.inicio).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : '—'}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <p className="text-xs text-muted-foreground mb-1">Término</p>
+                        <p className="text-sm font-bold text-amber-600">
+                          {resumoPlano.periodo?.fim ? new Date(resumoPlano.periodo.fim).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : '—'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Linha 2: Metas numéricas do contrato */}
+                    {resumoPlano.metas && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div className="p-3 bg-purple-50 rounded-xl text-center border border-purple-100">
+                          <Calendar className="w-4 h-4 text-purple-600 mx-auto mb-1" />
+                          <p className="text-2xl font-bold text-purple-700">{resumoPlano.metas.mesesContrato}</p>
+                          <p className="text-xs font-medium text-purple-800">Meses de Contrato</p>
+                        </div>
+                        <div className="p-3 bg-emerald-50 rounded-xl text-center border border-emerald-100">
+                          <Users className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
+                          <p className="text-2xl font-bold text-emerald-700">{resumoPlano.metas.sessoesMinimas}</p>
+                          <p className="text-xs font-medium text-emerald-800">Mentorias</p>
+                          <p className="text-xs text-muted-foreground">{resumoPlano.aluno?.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'}</p>
+                        </div>
+                        <div className="p-3 bg-amber-50 rounded-xl text-center border border-amber-100">
+                          <ListChecks className="w-4 h-4 text-amber-600 mx-auto mb-1" />
+                          <p className="text-2xl font-bold text-amber-700">{resumoPlano.metas.tarefasMinimas}</p>
+                          <p className="text-xs font-medium text-amber-800">Tarefas Mínimas</p>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-xl text-center border border-blue-100">
+                          <Play className="w-4 h-4 text-blue-600 mx-auto mb-1" />
+                          <p className="text-2xl font-bold text-blue-700">{resumoPlano.metas.webinarsMinimos}</p>
+                          <p className="text-xs font-medium text-blue-800">Webinars Mínimos</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Linha 3: Competências + Cursos + Metas */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <BookOpen className="w-4 h-4 text-primary mx-auto mb-1" />
+                        <p className="text-2xl font-bold text-primary">{resumoPlano.competenciasAssessment?.length ?? 0}</p>
+                        <p className="text-xs font-medium text-gray-700">Competências</p>
+                        <p className="text-xs text-muted-foreground">no plano</p>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <BarChart3 className="w-4 h-4 text-indigo-600 mx-auto mb-1" />
+                        <p className="text-2xl font-bold text-indigo-700">{resumoPlano.cursosAtribuidos?.length ?? 0}</p>
+                        <p className="text-xs font-medium text-gray-700">Cursos</p>
+                        <p className="text-xs text-muted-foreground">atribuídos</p>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <Flag className="w-4 h-4 text-rose-600 mx-auto mb-1" />
+                        <p className="text-2xl font-bold text-rose-700">{metasDetalhadas?.length ?? 0}</p>
+                        <p className="text-xs font-medium text-gray-700">Metas</p>
+                        <p className="text-xs text-muted-foreground">de desenvolvimento</p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground mt-4 text-center border-t pt-3">
+                      Regra: a cada 6 meses de contrato → 5 sessões de mentoria, 5 tarefas e 10 webinars mínimos
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ===== SEÇÃO 10: COMPETÊNCIAS COM MICROCICLOS (ASSESSMENT) ===== */}
+              {resumoPlano?.competenciasAssessment && resumoPlano.competenciasAssessment.length > 0 && (
                 <Card>
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-base">Resumo do Plano de Desenvolvimento</CardTitle>
+                      <Target className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-base">Competências — Microciclos Definidos</CardTitle>
                     </div>
-                    <CardDescription>Webinars assistidos, tarefas e sessões de mentoria realizadas</CardDescription>
+                    <CardDescription>
+                      Competências que o aluno deve desenvolver, com período e nota mínima exigida pelo mentor
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {/* Webinars */}
-                      <div className="p-4 bg-blue-50 rounded-lg text-center border border-blue-100">
-                        <Play className="w-5 h-5 text-blue-600 mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-blue-700">{resumoPlano.webinars.presentes}</p>
-                        <p className="text-xs text-muted-foreground">Webinars Assistidos</p>
-                        <p className="text-xs text-blue-500 mt-1">de {resumoPlano.webinars.total} registrados</p>
-                      </div>
-                      {/* Tarefas */}
-                      <div className="p-4 bg-amber-50 rounded-lg text-center border border-amber-100">
-                        <ListChecks className="w-5 h-5 text-amber-600 mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-amber-700">{resumoPlano.sessoes.tarefasEntregues}</p>
-                        <p className="text-xs text-muted-foreground">Tarefas Entregues</p>
-                        <p className="text-xs text-amber-500 mt-1">de {resumoPlano.sessoes.comTarefa} atribuídas</p>
-                      </div>
-                      {/* Sessões de Mentoria */}
-                      <div className="p-4 bg-emerald-50 rounded-lg text-center border border-emerald-100">
-                        <Users className="w-5 h-5 text-emerald-600 mx-auto mb-2" />
-                        <p className="text-2xl font-bold text-emerald-700">{resumoPlano.sessoes.total}</p>
-                        <p className="text-xs text-muted-foreground">Sessões Realizadas</p>
-                        {resumoPlano.sessoes.previstas && (
-                          <p className="text-xs text-emerald-500 mt-1">de {resumoPlano.sessoes.previstas} previstas</p>
-                        )}
-                      </div>
+                    <div className="space-y-2">
+                      {resumoPlano.competenciasAssessment.map((comp: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              <Target className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm">{comp.competenciaNome}</p>
+                              {comp.categoria && <p className="text-xs text-muted-foreground">{comp.categoria}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 shrink-0 ml-3 text-right">
+                            {(comp.microInicio || comp.microTermino) && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">Período</p>
+                                <p className="text-xs font-medium">
+                                  {comp.microInicio ? new Date(comp.microInicio).toLocaleDateString('pt-BR', {month:'short',year:'numeric'}) : '—'}
+                                  {' → '}
+                                  {comp.microTermino ? new Date(comp.microTermino).toLocaleDateString('pt-BR', {month:'short',year:'numeric'}) : '—'}
+                                </p>
+                              </div>
+                            )}
+                            {comp.notaCorte && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">Nota mín.</p>
+                                <p className="text-xs font-bold text-primary">{Number(comp.notaCorte).toFixed(1)}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {/* ===== SEÇÃO 10: AULAS ATRIBUÍDAS ===== */}
-              {resumoPlano && resumoPlano.cursosAtribuidos.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-base">Aulas Atribuídas</CardTitle>
+              {/* ===== SEÇÃO 11: CATÁLOGO DE CURSOS POR COMPETÊNCIA (instrução 10a) ===== */}
+              {resumoPlano?.cursosAtribuidos && resumoPlano.cursosAtribuidos.length > 0 && (() => {
+                // Agrupar cursos por competência
+                const cursosAgrupados: Record<string, { competenciaNome: string; cursos: any[] }> = {};
+                resumoPlano.cursosAtribuidos.forEach((curso: any) => {
+                  const chave = curso.competenciaNome || 'Sem competência vinculada';
+                  if (!cursosAgrupados[chave]) cursosAgrupados[chave] = { competenciaNome: chave, cursos: [] };
+                  cursosAgrupados[chave].cursos.push(curso);
+                });
+                const grupos = Object.values(cursosAgrupados);
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 p-4 text-white">
+                      <h3 className="text-base font-bold flex items-center gap-2">
+                        <BookOpen className="h-5 w-5" /> Catálogo de Cursos por Competência
+                      </h3>
+                      <p className="text-white/80 text-xs mt-1">
+                        {resumoPlano.cursosAtribuidos.length} curso{resumoPlano.cursosAtribuidos.length !== 1 ? 's' : ''} atribuído{resumoPlano.cursosAtribuidos.length !== 1 ? 's' : ''} em {grupos.length} competência{grupos.length !== 1 ? 's' : ''}
+                      </p>
                     </div>
-                    <CardDescription>Cursos e aulas atribuídos a este aluno pelo mentor</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {resumoPlano.cursosAtribuidos.map((curso: any) => (
-                        <div key={curso.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/30 transition-colors">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={`p-2 rounded-md flex-shrink-0 ${
-                              curso.status === 'concluido' ? 'bg-emerald-100' :
-                              curso.status === 'em_progresso' ? 'bg-blue-100' :
-                              curso.status === 'prorrogado' ? 'bg-amber-100' : 'bg-gray-100'
-                            }`}>
-                              {curso.status === 'concluido' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> :
-                               curso.status === 'em_progresso' ? <Play className="w-4 h-4 text-blue-600" /> :
-                               curso.status === 'prorrogado' ? <Clock className="w-4 h-4 text-amber-600" /> :
-                               <Circle className="w-4 h-4 text-gray-400" />}
+                    <CardContent className="pt-4 space-y-4">
+                      {grupos.map((grupo) => (
+                        <div key={grupo.competenciaNome}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="h-6 w-6 rounded-md bg-indigo-100 flex items-center justify-center shrink-0">
+                              <Target className="h-3.5 w-3.5 text-indigo-600" />
                             </div>
-                            <div className="min-w-0">
-                              <p className="font-medium text-sm truncate">{curso.cursoTitulo || 'Curso sem título'}</p>
-                              {curso.competenciaNome && (
-                                <p className="text-xs text-muted-foreground truncate">Competência: {curso.competenciaNome}</p>
-                              )}
-                            </div>
+                            <h4 className="font-semibold text-sm text-gray-800">{grupo.competenciaNome}</h4>
+                            <Badge variant="outline" className="text-xs ml-auto">{grupo.cursos.length} curso{grupo.cursos.length !== 1 ? 's' : ''}</Badge>
                           </div>
-                          <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-                            {curso.dataPrazo && (
-                              <div className="text-right">
-                                <p className="text-xs text-muted-foreground">Prazo</p>
-                                <p className="text-xs font-medium">{new Date(curso.dataPrazo).toLocaleDateString('pt-BR')}</p>
+                          <div className="space-y-1.5 ml-8">
+                            {grupo.cursos.map((curso: any) => (
+                              <div key={curso.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-gray-50/50">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className="h-6 w-6 rounded bg-blue-100 flex items-center justify-center shrink-0">
+                                    <BookOpen className="h-3 w-3 text-blue-600" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium truncate">{curso.cursoTitulo || 'Curso sem título'}</p>
+                                    {curso.cursoDescricao && <p className="text-xs text-muted-foreground truncate">{curso.cursoDescricao}</p>}
+                                  </div>
+                                </div>
+                                {curso.dataPrazo && (
+                                  <div className="text-right shrink-0 ml-3">
+                                    <p className="text-xs text-muted-foreground">Prazo</p>
+                                    <p className="text-xs font-medium">{new Date(curso.dataPrazo).toLocaleDateString('pt-BR')}</p>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                            <Badge variant="outline" className={`text-xs ${
-                              curso.status === 'concluido' ? 'border-emerald-300 text-emerald-700 bg-emerald-50' :
-                              curso.status === 'em_progresso' ? 'border-blue-300 text-blue-700 bg-blue-50' :
-                              curso.status === 'prorrogado' ? 'border-amber-300 text-amber-700 bg-amber-50' :
-                              'border-gray-300 text-gray-600 bg-gray-50'
-                            }`}>
-                              {curso.status === 'concluido' ? 'Concluído' :
-                               curso.status === 'em_progresso' ? 'Em Progresso' :
-                               curso.status === 'prorrogado' ? 'Prorrogado' : 'Não Iniciado'}
-                            </Badge>
+                            ))}
                           </div>
                         </div>
                       ))}
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* ===== SEÇÃO 12: OBSERVAÇÕES DO MENTOR ===== */}
+              {resumoPlano?.assessment?.observacoes && (
+                <Card className="border-dashed">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                      <CardTitle className="text-base text-muted-foreground">Observações do Mentor</CardTitle>
                     </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{resumoPlano.assessment.observacoes}</p>
                   </CardContent>
                 </Card>
               )}

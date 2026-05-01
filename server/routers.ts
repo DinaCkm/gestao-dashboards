@@ -1926,66 +1926,361 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.getCompetenciasObrigatoriasAluno(input.alunoId);
       }),
 
-    // Resumo completo do plano do aluno para o mentor/admin
+    // Mapa estático do P.D.I. do aluno — tudo que ele DEVE fazer para se certificar
     resumoPlanoAluno: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
       .query(async ({ input }) => {
         const database = await db.getDb();
         if (!database) return null;
-        // Dados do aluno
+
+        // 1. Dados básicos do aluno + trilha + programa
         const [alunoRows] = await database.execute(
-          `SELECT a.id, a.name, a.tipoMentoria, a.totalSessoesContratadas, a.programId,
-                  ap.totalSessoesPrevistas, ap.macroInicio, ap.macroTermino
+          `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
+                  a.contratoInicio, a.contratoFim, a.programId, a.cargo, a.areaAtuacao,
+                  t.nome as trilhaNome, t.codigo as trilhaCodigo,
+                  p.nome as programaNome,
+                  tu.nome as turmaNome,
+                  con.name as consultorNome
            FROM alunos a
-           LEFT JOIN assessment_pdi ap ON ap.alunoId = a.id AND ap.status = 'ativo'
+           LEFT JOIN trilhas t ON t.id = a.trilhaId
+           LEFT JOIN programs p ON p.id = a.programId
+           LEFT JOIN turmas tu ON tu.id = a.turmaId
+           LEFT JOIN consultors con ON con.id = a.consultorId
            WHERE a.id = ? LIMIT 1`,
           [input.alunoId]
         ) as any;
         const aluno = (alunoRows as any[])[0] ?? null;
         if (!aluno) return null;
-        // Cursos atribuídos
+
+        // 2. Assessment PDI (período macro definido pelo mentor)
+        const [apRows] = await database.execute(
+          `SELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas,
+                  ap.observacoes, ap.status as assessmentStatus,
+                  t.nome as trilhaNome
+           FROM assessment_pdi ap
+           LEFT JOIN trilhas t ON t.id = ap.trilhaId
+           WHERE ap.alunoId = ? AND ap.status = 'ativo'
+           ORDER BY ap.createdAt DESC LIMIT 1`,
+          [input.alunoId]
+        ) as any;
+        const assessment = (apRows as any[])[0] ?? null;
+
+        // 3. Competências do assessment com microciclos definidos pelo mentor
+        const assessmentId = assessment?.id;
+        let competenciasAssessment: any[] = [];
+        if (assessmentId) {
+          const [acRows] = await database.execute(
+            `SELECT ac.competenciaId, ac.notaCorte, ac.microInicio, ac.microTermino,
+                    ac.metaFinal, ac.metaCiclo1, ac.metaCiclo2, ac.justificativa,
+                    c.nome as competenciaNome, c.categoria
+             FROM assessment_competencias ac
+             JOIN competencias c ON c.id = ac.competenciaId
+             WHERE ac.assessmentPdiId = ?
+             ORDER BY ac.microInicio, c.nome`,
+            [assessmentId]
+          ) as any;
+          competenciasAssessment = acRows as any[];
+        }
+
+        // 4. Competências do plano individual (lista completa com obrigatórias)
+        const [piRows] = await database.execute(
+          `SELECT pi.id, pi.competenciaId, pi.isObrigatoria, pi.metaNota, pi.status,
+                  c.nome as competenciaNome, c.categoria
+           FROM plano_individual pi
+           JOIN competencias c ON c.id = pi.competenciaId
+           WHERE pi.alunoId = ?
+           ORDER BY pi.isObrigatoria DESC, c.nome`,
+          [input.alunoId]
+        ) as any;
+        const competenciasPlano = piRows as any[];
+
+        // 5. Cursos atribuídos pelo mentor
         const [cursosRows] = await database.execute(
           `SELECT aca.id, aca.cursoId, aca.competenciaId, aca.dataPrazo, aca.status, aca.dataAtribuicao,
-                  cc.titulo as cursoTitulo, c.nome as competenciaNome
+                  cc.titulo as cursoTitulo, cc.descricao as cursoDescricao,
+                  c.nome as competenciaNome
            FROM aluno_curso_atribuido aca
            LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId
            LEFT JOIN competencias c ON c.id = aca.competenciaId
            WHERE aca.alunoId = ?
-           ORDER BY aca.dataAtribuicao DESC`,
+           ORDER BY aca.dataPrazo ASC, aca.dataAtribuicao ASC`,
           [input.alunoId]
         ) as any;
         const cursosAtribuidos = cursosRows as any[];
-        // Sessões de mentoria
-        const [sessoesRows] = await database.execute(
-          `SELECT COUNT(*) as total,
-                  SUM(CASE WHEN taskStatus != 'sem_tarefa' THEN 1 ELSE 0 END) as comTarefa,
-                  SUM(CASE WHEN taskStatus = 'entregue' OR taskStatus = 'validada' THEN 1 ELSE 0 END) as tarefasEntregues
-           FROM mentoring_sessions WHERE alunoId = ?`,
+
+        // 6. Contrato formal (tabela contratos_aluno)
+        const [ctRows] = await database.execute(
+          `SELECT id, periodoInicio, periodoTermino, totalSessoesContratadas, observacoes
+           FROM contratos_aluno WHERE alunoId = ? AND isActive = 1
+           ORDER BY periodoInicio DESC LIMIT 1`,
           [input.alunoId]
         ) as any;
-        const sessoes = (sessoesRows as any[])[0] ?? { total: 0, comTarefa: 0, tarefasEntregues: 0 };
-        // Webinars / eventos
-        const [webinarsRows] = await database.execute(
-          `SELECT COUNT(*) as total,
-                  SUM(CASE WHEN status = 'presente' THEN 1 ELSE 0 END) as presentes
-           FROM event_participation WHERE alunoId = ?`,
-          [input.alunoId]
-        ) as any;
-        const webinars = (webinarsRows as any[])[0] ?? { total: 0, presentes: 0 };
+        const contrato = (ctRows as any[])[0] ?? null;
+
+        // 7. Calcular metas com base no período do contrato (regra: 6 meses = 5 mentorias, 5 tarefas, 10 webinars)
+        const calcularMetas = (inicio: Date | null, fim: Date | null, sessoesContratadas: number | null) => {
+          if (!inicio || !fim) return null;
+          const meses = Math.max(1, Math.round((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
+          const sessoesBase = sessoesContratadas ?? Math.max(1, Math.round(meses * (5/6)));
+          return {
+            mesesContrato: meses,
+            sessoesMinimas: sessoesBase,
+            tarefasMinimas: sessoesBase, // 1 tarefa por sessão
+            webinarsMinimos: Math.max(1, Math.round(meses * (10/6))),
+          };
+        };
+
+        const periodoInicio = contrato?.periodoInicio
+          ? new Date(contrato.periodoInicio)
+          : (assessment?.macroInicio ? new Date(assessment.macroInicio) : (aluno.contratoInicio ? new Date(aluno.contratoInicio) : null));
+        const periodoFim = contrato?.periodoTermino
+          ? new Date(contrato.periodoTermino)
+          : (assessment?.macroTermino ? new Date(assessment.macroTermino) : (aluno.contratoFim ? new Date(aluno.contratoFim) : null));
+        const sessoesContratadas = contrato?.totalSessoesContratadas ?? assessment?.totalSessoesPrevistas ?? aluno.totalSessoesContratadas;
+
+        const metas = calcularMetas(periodoInicio, periodoFim, sessoesContratadas ? Number(sessoesContratadas) : null);
+
         return {
           aluno,
+          assessment,
+          competenciasAssessment,
+          competenciasPlano,
           cursosAtribuidos,
-          sessoes: {
-            total: Number(sessoes.total),
-            comTarefa: Number(sessoes.comTarefa),
-            tarefasEntregues: Number(sessoes.tarefasEntregues),
-            previstas: aluno.totalSessoesPrevistas ? Number(aluno.totalSessoesPrevistas) : (aluno.totalSessoesContratadas ? Number(aluno.totalSessoesContratadas) : null),
+          contrato,
+          periodo: {
+            inicio: periodoInicio?.toISOString() ?? null,
+            fim: periodoFim?.toISOString() ?? null,
           },
-          webinars: {
-            total: Number(webinars.total),
-            presentes: Number(webinars.presentes),
-          },
+          metas,
         };
+      }),
+
+    // Enviar P.D.I. por e-mail ao aluno (instrução 10b)
+    enviarPorEmail: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
+
+        // Buscar dados completos do aluno
+        const [alunoRows] = await database.execute(
+          `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
+                  a.contratoInicio, a.contratoFim, a.cargo, a.areaAtuacao,
+                  t.nome as trilhaNome, p.nome as programaNome,
+                  tu.nome as turmaNome, con.name as consultorNome
+           FROM alunos a
+           LEFT JOIN trilhas t ON t.id = a.trilhaId
+           LEFT JOIN programs p ON p.id = a.programId
+           LEFT JOIN turmas tu ON tu.id = a.turmaId
+           LEFT JOIN consultors con ON con.id = a.consultorId
+           WHERE a.id = ? LIMIT 1`,
+          [input.alunoId]
+        ) as any;
+        const aluno = (alunoRows as any[])[0];
+        if (!aluno || !aluno.email) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado ou sem e-mail' });
+
+        // Buscar assessment ativo
+        const [apRows] = await database.execute(
+          `SELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas, ap.observacoes,
+                  t.nome as trilhaNome
+           FROM assessment_pdi ap LEFT JOIN trilhas t ON t.id = ap.trilhaId
+           WHERE ap.alunoId = ? AND ap.status = 'ativo' ORDER BY ap.createdAt DESC LIMIT 1`,
+          [input.alunoId]
+        ) as any;
+        const assessment = (apRows as any[])[0] ?? null;
+
+        // Buscar competencias do assessment
+        let competenciasAssessment: any[] = [];
+        if (assessment?.id) {
+          const [acRows] = await database.execute(
+            `SELECT ac.competenciaId, ac.notaCorte, ac.microInicio, ac.microTermino,
+                    c.nome as competenciaNome, c.categoria
+             FROM assessment_competencias ac JOIN competencias c ON c.id = ac.competenciaId
+             WHERE ac.assessmentPdiId = ? ORDER BY ac.microInicio, c.nome`,
+            [assessment.id]
+          ) as any;
+          competenciasAssessment = acRows as any[];
+        }
+
+        // Buscar cursos atribuídos
+        const [cursosRows] = await database.execute(
+          `SELECT aca.id, aca.dataPrazo, cc.titulo as cursoTitulo, c.nome as competenciaNome
+           FROM aluno_curso_atribuido aca
+           LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId
+           LEFT JOIN competencias c ON c.id = aca.competenciaId
+           WHERE aca.alunoId = ? ORDER BY aca.dataPrazo ASC`,
+          [input.alunoId]
+        ) as any;
+        const cursosAtribuidos = cursosRows as any[];
+
+        // Buscar contrato
+        const [ctRows] = await database.execute(
+          `SELECT periodoInicio, periodoTermino, totalSessoesContratadas
+           FROM contratos_aluno WHERE alunoId = ? AND isActive = 1 ORDER BY periodoInicio DESC LIMIT 1`,
+          [input.alunoId]
+        ) as any;
+        const contrato = (ctRows as any[])[0] ?? null;
+
+        // Calcular período e metas
+        const periodoInicio = contrato?.periodoInicio ? new Date(contrato.periodoInicio)
+          : (assessment?.macroInicio ? new Date(assessment.macroInicio) : (aluno.contratoInicio ? new Date(aluno.contratoInicio) : null));
+        const periodoFim = contrato?.periodoTermino ? new Date(contrato.periodoTermino)
+          : (assessment?.macroTermino ? new Date(assessment.macroTermino) : (aluno.contratoFim ? new Date(aluno.contratoFim) : null));
+        const sessoes = Number(contrato?.totalSessoesContratadas ?? assessment?.totalSessoesPrevistas ?? aluno.totalSessoesContratadas ?? 0);
+        let metas: any = null;
+        if (periodoInicio && periodoFim) {
+          const meses = Math.max(1, Math.round((periodoFim.getTime() - periodoInicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
+          const sessoesBase = sessoes || Math.max(1, Math.round(meses * (5/6)));
+          metas = { mesesContrato: meses, sessoesMinimas: sessoesBase, tarefasMinimas: sessoesBase, webinarsMinimos: Math.max(1, Math.round(meses * (10/6))) };
+        }
+
+        // Formatar data
+        const fmtDate = (d: any) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        const fmtMes = (d: any) => d ? new Date(d).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : '—';
+
+        // Agrupar cursos por competência
+        const cursosAgrupados: Record<string, any[]> = {};
+        cursosAtribuidos.forEach((c: any) => {
+          const k = c.competenciaNome || 'Sem competência vinculada';
+          if (!cursosAgrupados[k]) cursosAgrupados[k] = [];
+          cursosAgrupados[k].push(c);
+        });
+
+        // Gerar HTML do P.D.I.
+        const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P.D.I. — ${aluno.name}</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; color: #333; }
+  .container { max-width: 700px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+  .header { background: linear-gradient(135deg, #0A1E3E 0%, #1a3a6e 100%); color: white; padding: 32px; text-align: center; }
+  .header h1 { margin: 0 0 8px; font-size: 22px; }
+  .header p { margin: 0; opacity: 0.8; font-size: 14px; }
+  .section { padding: 24px; border-bottom: 1px solid #eee; }
+  .section:last-child { border-bottom: none; }
+  .section-title { font-size: 15px; font-weight: bold; color: #0A1E3E; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .card { background: #f8f9fa; border-radius: 8px; padding: 16px; text-align: center; border: 1px solid #e9ecef; }
+  .card .value { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
+  .card .label { font-size: 11px; color: #666; }
+  .card .sub { font-size: 10px; color: #999; margin-top: 2px; }
+  .comp-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 6px; background: #f8f9fa; margin-bottom: 6px; border: 1px solid #e9ecef; }
+  .comp-name { font-size: 13px; font-weight: 500; }
+  .comp-meta { font-size: 11px; color: #666; text-align: right; }
+  .curso-group { margin-bottom: 16px; }
+  .curso-group-title { font-size: 13px; font-weight: bold; color: #4338ca; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e7ff; }
+  .curso-item { padding: 8px 12px; background: #f8faff; border-radius: 6px; margin-bottom: 4px; border: 1px solid #e0e7ff; }
+  .curso-item p { margin: 0; font-size: 13px; }
+  .obs { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; font-size: 13px; color: #92400e; }
+  .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #999; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-purple { background: #ede9fe; color: #5b21b6; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📊 Plano de Desenvolvimento Individual</h1>
+    <p>${aluno.name}</p>
+    ${aluno.cargo ? `<p style="margin-top:4px;font-size:12px;opacity:0.7">${aluno.cargo}${aluno.areaAtuacao ? ' • ' + aluno.areaAtuacao : ''}</p>` : ''}
+  </div>
+
+  <!-- Informações do Plano -->
+  <div class="section">
+    <div class="section-title">📋 Informações do Plano</div>
+    <div class="grid">
+      <div class="card">
+        <div class="value" style="color:#0A1E3E;font-size:16px">${aluno.trilhaNome || '—'}</div>
+        <div class="label">Trilha</div>
+        ${aluno.programaNome ? `<div class="sub">${aluno.programaNome}</div>` : ''}
+      </div>
+      <div class="card">
+        <div class="value" style="color:#0A1E3E;font-size:16px">${fmtMes(periodoInicio)}</div>
+        <div class="label">Início</div>
+      </div>
+      <div class="card">
+        <div class="value" style="color:#d97706;font-size:16px">${fmtMes(periodoFim)}</div>
+        <div class="label">Término</div>
+      </div>
+      ${aluno.consultorNome ? `<div class="card"><div class="value" style="color:#0A1E3E;font-size:14px">${aluno.consultorNome}</div><div class="label">Mentor(a)</div></div>` : ''}
+    </div>
+  </div>
+
+  ${metas ? `
+  <!-- Metas do Programa -->
+  <div class="section">
+    <div class="section-title">🎯 Metas do Programa</div>
+    <div class="grid">
+      <div class="card"><div class="value" style="color:#7c3aed">${metas.mesesContrato}</div><div class="label">Meses de Contrato</div></div>
+      <div class="card"><div class="value" style="color:#059669">${metas.sessoesMinimas}</div><div class="label">Mentorias</div><div class="sub">${aluno.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'}</div></div>
+      <div class="card"><div class="value" style="color:#d97706">${metas.tarefasMinimas}</div><div class="label">Tarefas Mínimas</div></div>
+      <div class="card"><div class="value" style="color:#2563eb">${metas.webinarsMinimos}</div><div class="label">Webinars Mínimos</div></div>
+    </div>
+    <p style="font-size:11px;color:#999;margin-top:12px;text-align:center">Regra: a cada 6 meses de contrato → 5 sessões de mentoria, 5 tarefas e 10 webinars mínimos</p>
+  </div>` : ''}
+
+  ${competenciasAssessment.length > 0 ? `
+  <!-- Competências com Microciclos -->
+  <div class="section">
+    <div class="section-title">📚 Competências — Microciclos Definidos</div>
+    ${competenciasAssessment.map((c: any) => `
+      <div class="comp-item">
+        <div>
+          <div class="comp-name">${c.competenciaNome}</div>
+          ${c.categoria ? `<div style="font-size:11px;color:#999">${c.categoria}</div>` : ''}
+        </div>
+        <div class="comp-meta">
+          ${(c.microInicio || c.microTermino) ? `<div>${fmtMes(c.microInicio)} → ${fmtMes(c.microTermino)}</div>` : ''}
+          ${c.notaCorte ? `<div><span class="badge badge-blue">Nota mín. ${Number(c.notaCorte).toFixed(1)}</span></div>` : ''}
+        </div>
+      </div>`).join('')}
+  </div>` : ''}
+
+  ${cursosAtribuidos.length > 0 ? `
+  <!-- Catálogo de Cursos -->
+  <div class="section">
+    <div class="section-title">📖 Catálogo de Cursos por Competência</div>
+    ${Object.entries(cursosAgrupados).map(([comp, cursos]: [string, any[]]) => `
+      <div class="curso-group">
+        <div class="curso-group-title">${comp} <span style="font-weight:normal;font-size:11px">(${cursos.length} curso${cursos.length !== 1 ? 's' : ''})</span></div>
+        ${cursos.map((c: any) => `
+          <div class="curso-item">
+            <p>${c.cursoTitulo || 'Curso sem título'}</p>
+            ${c.dataPrazo ? `<p style="font-size:11px;color:#666;margin-top:2px">Prazo: ${fmtDate(c.dataPrazo)}</p>` : ''}
+          </div>`).join('')}
+      </div>`).join('')}
+  </div>` : ''}
+
+  ${assessment?.observacoes ? `
+  <!-- Observações do Mentor -->
+  <div class="section">
+    <div class="section-title">💬 Observações do Mentor</div>
+    <div class="obs">${assessment.observacoes.replace(/\n/g, '<br>')}</div>
+  </div>` : ''}
+
+  <div class="footer">
+    P.D.I. gerado em ${new Date().toLocaleDateString('pt-BR')} • Ecossistema do Bem • Este documento é de uso exclusivo do aluno e mentor
+  </div>
+</div>
+</body>
+</html>`;
+
+        const { sendEmail } = await import('./emailService');
+        const result = await sendEmail({
+          to: aluno.email,
+          subject: `Seu Plano de Desenvolvimento Individual (P.D.I.) — ${aluno.name}`,
+          html,
+          text: `Olá ${aluno.name}, segue em anexo seu Plano de Desenvolvimento Individual. Acesse o sistema para visualizar todos os detalhes.`,
+        });
+
+        if (!result.success) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.error || 'Falha ao enviar e-mail' });
+        return { success: true, email: aluno.email };
       }),
   }),
 
