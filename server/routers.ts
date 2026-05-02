@@ -1970,7 +1970,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         // Query 5: cursos atribuidos
         try {
           const [r] = await database.execute(
-            `SELECT aca.id, co.titulo FROM aluno_curso_atribuido aca LEFT JOIN courses co ON co.id = aca.cursoId WHERE aca.alunoId = ? LIMIT 5`, [input.alunoId]) as any;
+            `SELECT aca.id, cc.titulo FROM aluno_curso_atribuido aca LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId WHERE aca.alunoId = ? LIMIT 5`, [input.alunoId]) as any;
           resultados.q5_cursos = { ok: true, rows: (r as any[]).length };
         } catch(e: any) { resultados.q5_cursos = { ok: false, erro: e.message }; }
         // Query 6: contratos
@@ -2048,7 +2048,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           const [acRows] = await database.execute(
             `SELECT ac.competenciaId, ac.notaCorte, ac.microInicio, ac.microTermino,
                     ac.metaFinal, ac.metaCiclo1, ac.metaCiclo2, ac.justificativa,
-                    c.nome as competenciaNome, c.categoria
+                    c.nome as competenciaNome
              FROM assessment_competencias ac
              JOIN competencias c ON c.id = ac.competenciaId
              WHERE ac.assessmentPdiId = ?
@@ -2061,7 +2061,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         // 4. Competências do plano individual (lista completa com obrigatórias)
         const [piRows] = await database.execute(
           `SELECT pi.id, pi.competenciaId, pi.isObrigatoria, pi.metaNota, pi.status,
-                  c.nome as competenciaNome, c.categoria
+                  c.nome as competenciaNome
            FROM plano_individual pi
            JOIN competencias c ON c.id = pi.competenciaId
            WHERE pi.alunoId = ?
@@ -2073,10 +2073,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         // 5. Cursos atribuídos pelo mentor
         const [cursosRows] = await database.execute(
           `SELECT aca.id, aca.cursoId, aca.competenciaId, aca.dataPrazo, aca.status, aca.dataAtribuicao,
-                  co.titulo as cursoTitulo, co.descricao as cursoDescricao, co.tipo as cursoTipo,
+                  cc.titulo as cursoTitulo, cc.descricao as cursoDescricao,
                   c.nome as competenciaNome
            FROM aluno_curso_atribuido aca
-           LEFT JOIN courses co ON co.id = aca.cursoId
+           LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId
            LEFT JOIN competencias c ON c.id = aca.competenciaId
            WHERE aca.alunoId = ?
            ORDER BY aca.dataPrazo ASC, aca.dataAtribuicao ASC`,
@@ -2223,7 +2223,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (assessment?.id) {
           const [acRows] = await database.execute(
             `SELECT ac.competenciaId, ac.notaCorte, ac.microInicio, ac.microTermino,
-                    c.nome as competenciaNome, c.categoria
+                    c.nome as competenciaNome
              FROM assessment_competencias ac JOIN competencias c ON c.id = ac.competenciaId
              WHERE ac.assessmentPdiId = ? ORDER BY ac.microInicio, c.nome`,
             [assessment.id]
