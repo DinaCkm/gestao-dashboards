@@ -1932,85 +1932,86 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .query(async ({ input }) => {
         const database = await db.getDb();
         if (!database) return { erro: 'database null' };
+        const conn = (database as any).$client;
+        if (!conn) return { erro: '$client null' };
         const resultados: any = {};
         // Query 1: aluno
         try {
-          const [r] = await database.execute(
+          const [r] = await conn.execute(
             `SELECT a.id, a.name, t.name as trilhaNome, p.name as programaNome, tu.name as turmaNome, con.name as consultorNome
              FROM alunos a
              LEFT JOIN trilhas t ON t.id = a.trilhaId
              LEFT JOIN programs p ON p.id = a.programId
              LEFT JOIN turmas tu ON tu.id = a.turmaId
              LEFT JOIN consultors con ON con.id = a.consultorId
-             WHERE a.id = ? LIMIT 1`, [input.alunoId]) as any;
+             WHERE a.id = ? LIMIT 1`, [input.alunoId]);
           resultados.q1_aluno = { ok: true, rows: (r as any[]).length };
         } catch(e: any) { resultados.q1_aluno = { ok: false, erro: e.message }; }
         // Query 2: assessment
         try {
-          const [r] = await database.execute(
+          const [r] = await conn.execute(
             `SELECT ap.id, t.name as trilhaNome FROM assessment_pdi ap
              LEFT JOIN trilhas t ON t.id = ap.trilhaId
-             WHERE ap.alunoId = ? AND ap.status = 'ativo' ORDER BY ap.createdAt DESC LIMIT 1`, [input.alunoId]) as any;
+             WHERE ap.alunoId = ? AND ap.status = 'ativo' ORDER BY ap.createdAt DESC LIMIT 1`, [input.alunoId]);
           resultados.q2_assessment = { ok: true, rows: (r as any[]).length };
         } catch(e: any) { resultados.q2_assessment = { ok: false, erro: e.message }; }
         // Query 3: competencias assessment
         try {
-          const [r] = await database.execute(
+          const [r] = await conn.execute(
             `SELECT ac.competenciaId, c.nome FROM assessment_competencias ac
              JOIN competencias c ON c.id = ac.competenciaId
-             WHERE ac.assessmentPdiId IN (SELECT id FROM assessment_pdi WHERE alunoId = ?) LIMIT 5`, [input.alunoId]) as any;
+             WHERE ac.assessmentPdiId IN (SELECT id FROM assessment_pdi WHERE alunoId = ?) LIMIT 5`, [input.alunoId]);
           resultados.q3_competencias_assessment = { ok: true, rows: (r as any[]).length };
         } catch(e: any) { resultados.q3_competencias_assessment = { ok: false, erro: e.message }; }
         // Query 4: plano_individual
         try {
-          const [r] = await database.execute(
-            `SELECT pi.id, c.nome FROM plano_individual pi JOIN competencias c ON c.id = pi.competenciaId WHERE pi.alunoId = ? LIMIT 5`, [input.alunoId]) as any;
+          const [r] = await conn.execute(
+            `SELECT pi.id, c.nome FROM plano_individual pi JOIN competencias c ON c.id = pi.competenciaId WHERE pi.alunoId = ? LIMIT 5`, [input.alunoId]);
           resultados.q4_plano_individual = { ok: true, rows: (r as any[]).length };
         } catch(e: any) { resultados.q4_plano_individual = { ok: false, erro: e.message }; }
         // Query 5: cursos atribuidos
         try {
-          const [r] = await database.execute(
-            `SELECT aca.id, cc.titulo FROM aluno_curso_atribuido aca LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId WHERE aca.alunoId = ? LIMIT 5`, [input.alunoId]) as any;
+          const [r] = await conn.execute(
+            `SELECT aca.id, cc.titulo FROM aluno_curso_atribuido aca LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId WHERE aca.alunoId = ? LIMIT 5`, [input.alunoId]);
           resultados.q5_cursos = { ok: true, rows: (r as any[]).length };
         } catch(e: any) { resultados.q5_cursos = { ok: false, erro: e.message }; }
         // Query 6: contratos
         try {
-          const [r] = await database.execute(
-            `SELECT id FROM contratos_aluno WHERE alunoId = ? AND isActive = 1 LIMIT 1`, [input.alunoId]) as any;
+          const [r] = await conn.execute(
+            `SELECT id FROM contratos_aluno WHERE alunoId = ? AND isActive = 1 LIMIT 1`, [input.alunoId]);
           resultados.q6_contrato = { ok: true, rows: (r as any[]).length };
         } catch(e: any) { resultados.q6_contrato = { ok: false, erro: e.message }; }
         // Query 7: webinares
         try {
-          const [r] = await database.execute(
-            `SELECT ep.id, e.title FROM event_participation ep LEFT JOIN events e ON e.id = ep.eventId WHERE ep.alunoId = ? LIMIT 5`, [input.alunoId]) as any;
+          const [r] = await conn.execute(
+            `SELECT ep.id, e.title FROM event_participation ep LEFT JOIN events e ON e.id = ep.eventId WHERE ep.alunoId = ? LIMIT 5`, [input.alunoId]);
           resultados.q7_webinares = { ok: true, rows: (r as any[]).length };
         } catch(e: any) { resultados.q7_webinares = { ok: false, erro: e.message }; }
         // Query 8: sessoes
         try {
-          const [r] = await database.execute(
-            `SELECT ms.id, tl.nome FROM mentoring_sessions ms LEFT JOIN task_library tl ON tl.id = ms.taskId WHERE ms.alunoId = ? LIMIT 5`, [input.alunoId]) as any;
+          const [r] = await conn.execute(
+            `SELECT ms.id, tl.nome FROM mentoring_sessions ms LEFT JOIN task_library tl ON tl.id = ms.taskId WHERE ms.alunoId = ? LIMIT 5`, [input.alunoId]);
           resultados.q8_sessoes = { ok: true, rows: (r as any[]).length };
         } catch(e: any) { resultados.q8_sessoes = { ok: false, erro: e.message }; }
         // Query 9: metas
         try {
-          const [r] = await database.execute(
-            `SELECT m.id, c.nome FROM metas m LEFT JOIN competencias c ON c.id = m.competenciaId WHERE m.alunoId = ? AND m.isActive = 1 LIMIT 5`, [input.alunoId]) as any;
+          const [r] = await conn.execute(
+            `SELECT m.id, c.nome FROM metas m LEFT JOIN competencias c ON c.id = m.competenciaId WHERE m.alunoId = ? AND m.isActive = 1 LIMIT 5`, [input.alunoId]);
           resultados.q9_metas = { ok: true, rows: (r as any[]).length };
         } catch(e: any) { resultados.q9_metas = { ok: false, erro: e.message }; }
         return resultados;
       }),
-
     // Mapa estático do P.D.I. do aluno — tudo que ele DEVE fazer para se certificar
     resumoPlanoAluno: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
       .query(async ({ input }) => {
         const database = await db.getDb();
         if (!database) return { aluno: null, assessment: null, competenciasAssessment: [], competenciasPlano: [], cursosAtribuidos: [], contrato: null, periodo: { inicio: null, fim: null }, metas: null, webinares: [], tarefas: [], todasSessoes: [], metasDesafio: [], _erros: ['database null'] };
-        const _erros: string[] = [];
+        const conn = (database as any).$client;
+        if (!conn) return { aluno: null, assessment: null, competenciasAssessment: [], competenciasPlano: [], cursosAtribuidos: [], contrato: null, periodo: { inicio: null, fim: null }, metas: null, webinares: [], tarefas: [], todasSessoes: [], metasDesafio: [], _erros: ['$client null'] };
         try {
-
         // 1. Dados básicos do aluno + trilha + programa
-        const [alunoRows] = await database.execute(
+        const [alunoRows] = await conn.execute(
           `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
                   a.contratoInicio, a.contratoFim, a.programId, a.cargo, a.areaAtuacao,
                   t.name as trilhaNome,
@@ -2024,12 +2025,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
            LEFT JOIN consultors con ON con.id = a.consultorId
            WHERE a.id = ? LIMIT 1`,
           [input.alunoId]
-        ) as any;
+        );
         const aluno = (alunoRows as any[])[0] ?? null;
         if (!aluno) return null;
-
         // 2. Assessment PDI (período macro definido pelo mentor)
-        const [apRows] = await database.execute(
+        const [apRows] = await conn.execute(
           `SELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas,
                   ap.observacoes, ap.status as assessmentStatus,
                   t.name as trilhaNome
@@ -2038,14 +2038,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
            WHERE ap.alunoId = ? AND ap.status = 'ativo'
            ORDER BY ap.createdAt DESC LIMIT 1`,
           [input.alunoId]
-        ) as any;
+        );
         const assessment = (apRows as any[])[0] ?? null;
-
         // 3. Competências do assessment com microciclos definidos pelo mentor
         const assessmentId = assessment?.id;
         let competenciasAssessment: any[] = [];
         if (assessmentId) {
-          const [acRows] = await database.execute(
+          const [acRows] = await conn.execute(
             `SELECT ac.competenciaId, ac.notaCorte, ac.microInicio, ac.microTermino,
                     ac.metaFinal, ac.metaCiclo1, ac.metaCiclo2, ac.justificativa,
                     c.nome as competenciaNome
@@ -2054,12 +2053,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
              WHERE ac.assessmentPdiId = ?
              ORDER BY ac.microInicio, c.nome`,
             [assessmentId]
-          ) as any;
+          );
           competenciasAssessment = acRows as any[];
         }
-
         // 4. Competências do plano individual (lista completa com obrigatórias)
-        const [piRows] = await database.execute(
+        const [piRows] = await conn.execute(
           `SELECT pi.id, pi.competenciaId, pi.isObrigatoria, pi.metaNota, pi.status,
                   c.nome as competenciaNome
            FROM plano_individual pi
@@ -2067,11 +2065,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
            WHERE pi.alunoId = ?
            ORDER BY pi.isObrigatoria DESC, c.nome`,
           [input.alunoId]
-        ) as any;
+        );
         const competenciasPlano = piRows as any[];
-
         // 5. Cursos atribuídos pelo mentor
-        const [cursosRows] = await database.execute(
+        const [cursosRows] = await conn.execute(
           `SELECT aca.id, aca.cursoId, aca.competenciaId, aca.dataPrazo, aca.status, aca.dataAtribuicao,
                   cc.titulo as cursoTitulo, cc.descricao as cursoDescricao,
                   c.nome as competenciaNome
@@ -2081,18 +2078,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
            WHERE aca.alunoId = ?
            ORDER BY aca.dataPrazo ASC, aca.dataAtribuicao ASC`,
           [input.alunoId]
-        ) as any;
+        );
         const cursosAtribuidos = cursosRows as any[];
-
         // 6. Contrato formal (tabela contratos_aluno)
-        const [ctRows] = await database.execute(
+        const [ctRows] = await conn.execute(
           `SELECT id, periodoInicio, periodoTermino, totalSessoesContratadas, observacoes
            FROM contratos_aluno WHERE alunoId = ? AND isActive = 1
            ORDER BY periodoInicio DESC LIMIT 1`,
           [input.alunoId]
-        ) as any;
+        );
         const contrato = (ctRows as any[])[0] ?? null;
-
         // 7. Calcular metas com base no período do contrato (regra: 6 meses = 5 mentorias, 5 tarefas, 10 webinars)
         const calcularMetas = (inicio: Date | null, fim: Date | null, sessoesContratadas: number | null) => {
           if (!inicio || !fim) return null;
@@ -2105,7 +2100,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             webinarsMinimos: Math.max(1, Math.round(meses * (10/6))),
           };
         };
-
         const periodoInicio = contrato?.periodoInicio
           ? new Date(contrato.periodoInicio)
           : (assessment?.macroInicio ? new Date(assessment.macroInicio) : (aluno.contratoInicio ? new Date(aluno.contratoInicio) : null));
@@ -2113,11 +2107,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           ? new Date(contrato.periodoTermino)
           : (assessment?.macroTermino ? new Date(assessment.macroTermino) : (aluno.contratoFim ? new Date(aluno.contratoFim) : null));
         const sessoesContratadas = contrato?.totalSessoesContratadas ?? assessment?.totalSessoesPrevistas ?? aluno.totalSessoesContratadas;
-
         const metas = calcularMetas(periodoInicio, periodoFim, sessoesContratadas ? Number(sessoesContratadas) : null);
-
         // 8. Webinares confirmados pelo aluno
-        const [webRows] = await database.execute(
+        const [webRows] = await conn.execute(
           `SELECT ep.id, ep.eventId, ep.status, ep.selfReportedAt,
                   e.title as eventoTitulo, e.eventDate
            FROM event_participation ep
@@ -2125,11 +2117,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
            WHERE ep.alunoId = ?
            ORDER BY e.eventDate DESC`,
           [input.alunoId]
-        ) as any;
+        );
         const webinares = webRows as any[];
-
         // 9. Tarefas das sessões de mentoria
-        const [tarefasRows] = await database.execute(
+        const [tarefasRows] = await conn.execute(
           `SELECT ms.id as sessaoId, ms.sessionDate, ms.sessionNumber,
                   ms.taskId, ms.taskMode, ms.customTaskTitle, ms.taskStatus, ms.taskDeadline,
                   ms.submittedAt, ms.validatedAt, ms.presence,
@@ -2139,15 +2130,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
            WHERE ms.alunoId = ?
            ORDER BY ms.sessionDate ASC`,
           [input.alunoId]
-        ) as any;
+        );
         const todasSessoes = tarefasRows as any[];
         // Tarefas: sessões que têm tarefa associada (biblioteca, personalizada ou livre)
         const tarefas = todasSessoes.filter((s: any) =>
           s.taskMode && s.taskMode !== 'sem_tarefa' && (s.tarefaNome || s.customTaskTitle)
         );
-
         // 10. Metas desafio do aluno
-        const [metasDesafioRows] = await database.execute(
+        const [metasDesafioRows] = await conn.execute(
           `SELECT m.id, m.titulo, m.descricao, m.createdAt,
                   c.nome as competenciaNome,
                   (SELECT ma.status FROM meta_acompanhamento ma WHERE ma.metaId = m.id ORDER BY ma.ano DESC, ma.mes DESC LIMIT 1) as ultimoStatus,
@@ -2158,9 +2148,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
            WHERE m.alunoId = ? AND m.isActive = 1
            ORDER BY c.nome, m.createdAt`,
           [input.alunoId]
-        ) as any;
+        );
         const metasDesafio = metasDesafioRows as any[];
-
         return {
           aluno,
           assessment,
@@ -2183,16 +2172,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: err?.message || 'Erro ao carregar resumo do plano' });
         }
       }),
-
     // Enviar P.D.I. por e-mail ao aluno (instrução 10b)
     enviarPorEmail: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input, ctx }) => {
         const database = await db.getDb();
         if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
-
+        const conn = (database as any).$client;
+        if (!conn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: '$client indisponível' });
         // Buscar dados completos do aluno
-        const [alunoRows] = await database.execute(
+        const [alunoRows] = await conn.execute(
           `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
                   a.contratoInicio, a.contratoFim, a.cargo, a.areaAtuacao,
                   t.name as trilhaNome, p.name as programaNome,
@@ -2204,52 +2193,47 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
            LEFT JOIN consultors con ON con.id = a.consultorId
            WHERE a.id = ? LIMIT 1`,
           [input.alunoId]
-        ) as any;
+        );
         const aluno = (alunoRows as any[])[0];
         if (!aluno || !aluno.email) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado ou sem e-mail' });
-
         // Buscar assessment ativo
-        const [apRows] = await database.execute(
+        const [apRows] = await conn.execute(
           `SELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas, ap.observacoes,
                   t.name as trilhaNome
            FROM assessment_pdi ap LEFT JOIN trilhas t ON t.id = ap.trilhaId
            WHERE ap.alunoId = ? AND ap.status = 'ativo' ORDER BY ap.createdAt DESC LIMIT 1`,
           [input.alunoId]
-        ) as any;
+        );
         const assessment = (apRows as any[])[0] ?? null;
-
         // Buscar competencias do assessment
         let competenciasAssessment: any[] = [];
         if (assessment?.id) {
-          const [acRows] = await database.execute(
+          const [acRows] = await conn.execute(
             `SELECT ac.competenciaId, ac.notaCorte, ac.microInicio, ac.microTermino,
                     c.nome as competenciaNome
              FROM assessment_competencias ac JOIN competencias c ON c.id = ac.competenciaId
              WHERE ac.assessmentPdiId = ? ORDER BY ac.microInicio, c.nome`,
             [assessment.id]
-          ) as any;
+          );
           competenciasAssessment = acRows as any[];
         }
-
         // Buscar cursos atribuídos
-        const [cursosRows] = await database.execute(
+        const [cursosRows] = await conn.execute(
           `SELECT aca.id, aca.dataPrazo, cc.titulo as cursoTitulo, c.nome as competenciaNome
            FROM aluno_curso_atribuido aca
            LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId
            LEFT JOIN competencias c ON c.id = aca.competenciaId
            WHERE aca.alunoId = ? ORDER BY aca.dataPrazo ASC`,
           [input.alunoId]
-        ) as any;
+        );
         const cursosAtribuidos = cursosRows as any[];
-
         // Buscar contrato
-        const [ctRows] = await database.execute(
+        const [ctRows] = await conn.execute(
           `SELECT periodoInicio, periodoTermino, totalSessoesContratadas
            FROM contratos_aluno WHERE alunoId = ? AND isActive = 1 ORDER BY periodoInicio DESC LIMIT 1`,
           [input.alunoId]
-        ) as any;
+        );
         const contrato = (ctRows as any[])[0] ?? null;
-
         // Calcular período e metas
         const periodoInicio = contrato?.periodoInicio ? new Date(contrato.periodoInicio)
           : (assessment?.macroInicio ? new Date(assessment.macroInicio) : (aluno.contratoInicio ? new Date(aluno.contratoInicio) : null));
@@ -2262,11 +2246,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           const sessoesBase = sessoes || Math.max(1, Math.round(meses * (5/6)));
           metas = { mesesContrato: meses, sessoesMinimas: sessoesBase, tarefasMinimas: sessoesBase, webinarsMinimos: Math.max(1, Math.round(meses * (10/6))) };
         }
-
         // Formatar data
         const fmtDate = (d: any) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
         const fmtMes = (d: any) => d ? new Date(d).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : '—';
-
         // Agrupar cursos por competência
         const cursosAgrupados: Record<string, any[]> = {};
         cursosAtribuidos.forEach((c: any) => {
@@ -2274,7 +2256,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           if (!cursosAgrupados[k]) cursosAgrupados[k] = [];
           cursosAgrupados[k].push(c);
         });
-
         // Gerar HTML do P.D.I.
         const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -2283,16 +2264,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>P.D.I. — ${aluno.name}</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; color: #333; }
-  .container { max-width: 700px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
-  .header { background: linear-gradient(135deg, #0A1E3E 0%, #1a3a6e 100%); color: white; padding: 32px; text-align: center; }
-  .header h1 { margin: 0 0 8px; font-size: 22px; }
-  .header p { margin: 0; opacity: 0.8; font-size: 14px; }
-  .section { padding: 24px; border-bottom: 1px solid #eee; }
-  .section:last-child { border-bottom: none; }
-  .section-title { font-size: 15px; font-weight: bold; color: #0A1E3E; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
-  .card { background: #f8f9fa; border-radius: 8px; padding: 16px; text-align: center; border: 1px solid #e9ecef; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
+  .container { max-width: 680px; margin: 0 auto; background: white; }
+  .header { background: linear-gradient(135deg, #0A1E3E 0%, #1a3a6e 100%); color: white; padding: 32px 24px; text-align: center; }
+  .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .header p { font-size: 16px; opacity: 0.9; }
+  .section { padding: 20px 24px; border-bottom: 1px solid #f0f0f0; }
+  .section-title { font-size: 14px; font-weight: 700; color: #0A1E3E; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+  .card { border-radius: 8px; padding: 16px; text-align: center; border: 1px solid #e9ecef; }
   .card .value { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
   .card .label { font-size: 11px; color: #666; }
   .card .sub { font-size: 10px; color: #999; margin-top: 2px; }
@@ -2319,7 +2300,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     <p>${aluno.name}</p>
     ${aluno.cargo ? `<p style="margin-top:4px;font-size:12px;opacity:0.7">${aluno.cargo}${aluno.areaAtuacao ? ' • ' + aluno.areaAtuacao : ''}</p>` : ''}
   </div>
-
   <!-- Informações do Plano -->
   <div class="section">
     <div class="section-title">📋 Informações do Plano</div>
@@ -2340,7 +2320,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       ${aluno.consultorNome ? `<div class="card"><div class="value" style="color:#0A1E3E;font-size:14px">${aluno.consultorNome}</div><div class="label">Mentor(a)</div></div>` : ''}
     </div>
   </div>
-
   ${metas ? `
   <!-- Metas do Programa -->
   <div class="section">
@@ -2353,7 +2332,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     </div>
     <p style="font-size:11px;color:#999;margin-top:12px;text-align:center">Regra: a cada 6 meses de contrato → 5 sessões de mentoria, 5 tarefas e 10 webinars mínimos</p>
   </div>` : ''}
-
   ${competenciasAssessment.length > 0 ? `
   <!-- Competências com Microciclos -->
   <div class="section">
@@ -2362,7 +2340,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       <div class="comp-item">
         <div>
           <div class="comp-name">${c.competenciaNome}</div>
-          ${c.categoria ? `<div style="font-size:11px;color:#999">${c.categoria}</div>` : ''}
         </div>
         <div class="comp-meta">
           ${(c.microInicio || c.microTermino) ? `<div>${fmtMes(c.microInicio)} → ${fmtMes(c.microTermino)}</div>` : ''}
@@ -2370,7 +2347,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         </div>
       </div>`).join('')}
   </div>` : ''}
-
   ${cursosAtribuidos.length > 0 ? `
   <!-- Catálogo de Cursos -->
   <div class="section">
@@ -2385,21 +2361,18 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           </div>`).join('')}
       </div>`).join('')}
   </div>` : ''}
-
   ${assessment?.observacoes ? `
   <!-- Observações do Mentor -->
   <div class="section">
     <div class="section-title">💬 Observações do Mentor</div>
     <div class="obs">${assessment.observacoes.replace(/\n/g, '<br>')}</div>
   </div>` : ''}
-
   <div class="footer">
     P.D.I. gerado em ${new Date().toLocaleDateString('pt-BR')} • Ecossistema do Bem • Este documento é de uso exclusivo do aluno e mentor
   </div>
 </div>
 </body>
 </html>`;
-
         const { sendEmail } = await import('./emailService');
         const result = await sendEmail({
           to: aluno.email,
@@ -2407,7 +2380,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           html,
           text: `Olá ${aluno.name}, segue em anexo seu Plano de Desenvolvimento Individual. Acesse o sistema para visualizar todos os detalhes.`,
         });
-
         if (!result.success) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.error || 'Falha ao enviar e-mail' });
         return { success: true, email: aluno.email };
       }),
