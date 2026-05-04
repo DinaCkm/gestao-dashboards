@@ -385,6 +385,11 @@ export default function DualIndicators({
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                       Provisória
                     </span>
+                  ) : aplicabilidade.totalAvaliacoes === 0 ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      Em progresso
+                    </span>
                   ) : (
                     aplicabilidade.percentual >= 80 ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
