@@ -23387,7 +23387,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { defineConfig } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
-var PROJECT_ROOT = import.meta.dirname;
+var PROJECT_ROOT = new URL(".", import.meta.url).pathname.replace(/\/$/, "");
 var LOG_DIR = path.join(PROJECT_ROOT, ".manus-logs");
 var MAX_LOG_SIZE_BYTES = 1 * 1024 * 1024;
 var TRIM_TARGET_BYTES = Math.floor(MAX_LOG_SIZE_BYTES * 0.6);
@@ -23499,16 +23499,16 @@ var vite_config_default = defineConfig({
   plugins,
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets")
+      "@": path.resolve(new URL(".", import.meta.url).pathname.replace(/\/$/, ""), "client", "src"),
+      "@shared": path.resolve(new URL(".", import.meta.url).pathname.replace(/\/$/, ""), "shared"),
+      "@assets": path.resolve(new URL(".", import.meta.url).pathname.replace(/\/$/, ""), "attached_assets")
     }
   },
-  envDir: path.resolve(import.meta.dirname),
-  root: path.resolve(import.meta.dirname, "client"),
-  publicDir: path.resolve(import.meta.dirname, "client", "public"),
+  envDir: path.resolve(new URL(".", import.meta.url).pathname.replace(/\/$/, "")),
+  root: path.resolve(new URL(".", import.meta.url).pathname.replace(/\/$/, ""), "client"),
+  publicDir: path.resolve(new URL(".", import.meta.url).pathname.replace(/\/$/, ""), "client", "public"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(new URL(".", import.meta.url).pathname.replace(/\/$/, ""), "dist/public"),
     emptyOutDir: true
   },
   server: {
