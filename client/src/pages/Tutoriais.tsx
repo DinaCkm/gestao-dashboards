@@ -344,7 +344,6 @@ interface Tutorial {
 
 const TUTORIAIS: Tutorial[] = [
   // BLOCO 1 — Jornada de Onboarding
-  { id: 1, titulo: "Navegando pela Plataforma", descricao: "Conheça o menu principal, as abas e entenda como o macrociclo organiza sua jornada.", categoria: "Onboarding", bloco: 1, icon: Map, thumbnailColor: "from-blue-500 to-blue-700", ordem: 1 },
   { id: 2, titulo: "Assessment Comportamental", descricao: "Entenda os testes que você deve realizar e como a mentora usará os resultados no primeiro encontro.", categoria: "Onboarding", bloco: 1, icon: ClipboardCheck, thumbnailColor: "from-purple-500 to-purple-700", ordem: 2 },
   { id: 3, titulo: "Escolhendo sua Mentora", descricao: "Saiba como analisar os perfis e escolher a mentora ideal para o seu desenvolvimento.", categoria: "Onboarding", bloco: 1, icon: User, thumbnailColor: "from-pink-500 to-pink-700", ordem: 3 },
   { id: 4, titulo: "Agendando sua Primeira Sessão", descricao: "Como verificar disponibilidade, escolher horário e acessar o link do Google Meet.", categoria: "Onboarding", bloco: 1, icon: CalendarDays, thumbnailColor: "from-green-500 to-green-700", ordem: 4 },
