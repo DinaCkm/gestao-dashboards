@@ -6,10 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  BookOpen, Search, Clock, CheckCircle2,
+  BookOpen, Search, CheckCircle2,
   User, CalendarDays, ClipboardCheck, Users2, Video,
   Target, BarChart3, FileText, GraduationCap, Sparkles,
-  ChevronRight, BookMarked, X, PlayCircle
+  ChevronRight, BookMarked, X, PlayCircle, Map, TrendingUp, Award
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -18,49 +18,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 // ============================================================
 
 const CONTEUDO_TUTORIAIS: Record<number, string> = {
+  // ---- BLOCO 1: JORNADA DE ONBOARDING ----
   1: `
     <div class="space-y-5">
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
         <p class="text-blue-800 text-sm font-medium">🎯 Objetivo: Conhecer as seções da plataforma e entender como está organizada a sua jornada de desenvolvimento.</p>
       </div>
-
-      <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">📋 Passo a Passo</h3>
-
-      <div class="space-y-4">
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
-          <div>
-            <p class="font-semibold text-gray-800">Explore o Menu Principal</p>
-            <p class="text-sm text-gray-600 mt-1">Familiarize-se com as abas no topo da tela:</p>
-            <ul class="mt-2 space-y-1 text-sm text-gray-600">
-              <li>📌 <strong>Onboarding</strong> — sua trilha de entrada no programa</li>
-              <li>📌 <strong>Mural</strong> — comunicados e novidades do programa</li>
-              <li>📌 <strong>Portal do Aluno</strong> — seu hub central (tarefas, metas, sessões)</li>
-              <li>📌 <strong>Performance</strong> — seus indicadores e resultados</li>
-              <li>📌 <strong>Evolução</strong> — sua trilha de competências e ciclos</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
-          <div>
-            <p class="font-semibold text-gray-800">Entenda o Macrociclo</p>
-            <p class="text-sm text-gray-600 mt-1">O programa é estruturado em um <strong>macrociclo</strong> — o período total do seu contrato de mentoria. Dentro dele, existem <strong>ciclos menores</strong> (geralmente mensais), cada um focado em competências específicas. Toda a sua jornada de desenvolvimento acontece dentro desse macrociclo.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
-          <div>
-            <p class="font-semibold text-gray-800">Fique Atento às Notificações</p>
-            <p class="text-sm text-gray-600 mt-1">O sistema enviará e-mails automáticos para lembretes de sessões, tarefas pendentes e webinars. Mantenha seu e-mail atualizado no perfil.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-2">
-        <p class="text-amber-800 text-sm">💡 <strong>Dica:</strong> Comece pelo Onboarding assim que fizer login. Ele foi desenhado para te guiar passo a passo nas primeiras etapas do programa.</p>
+      <h3 class="text-base font-bold text-gray-800">📋 Menu Principal</h3>
+      <ul class="space-y-1 text-sm text-gray-600">
+        <li>📌 <strong>Onboarding</strong> — sua trilha de entrada no programa</li>
+        <li>📌 <strong>Mural</strong> — comunicados e novidades</li>
+        <li>📌 <strong>Portal do Aluno</strong> — hub central (tarefas, metas, sessões)</li>
+        <li>📌 <strong>Performance</strong> — seus indicadores e resultados</li>
+        <li>📌 <strong>Evolução</strong> — trilha de competências e ciclos</li>
+      </ul>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <p class="text-amber-800 text-sm">💡 O programa é estruturado em um <strong>macrociclo</strong> (período total do contrato) dividido em <strong>ciclos mensais</strong>, cada um com foco em competências específicas.</p>
       </div>
     </div>
   `,
@@ -68,51 +41,21 @@ const CONTEUDO_TUTORIAIS: Record<number, string> = {
   2: `
     <div class="space-y-5">
       <div class="bg-purple-50 border border-purple-200 rounded-xl p-4">
-        <p class="text-purple-800 text-sm font-medium">🎯 Objetivo: Entender o que é o Assessment comportamental, como ele acontece e qual é o seu papel nesse processo.</p>
+        <p class="text-purple-800 text-sm font-medium">🎯 Objetivo: Entender o que é o Assessment e qual é o seu papel nesse processo.</p>
       </div>
-
+      <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+        <p class="text-green-800 text-sm font-bold mb-1">✅ O que você precisa fazer agora:</p>
+        <ol class="text-sm text-green-700 space-y-1 list-decimal list-inside">
+          <li>Realize os testes disponíveis nesta etapa</li>
+          <li>Responda com sinceridade — não há resposta certa ou errada</li>
+        </ol>
+      </div>
+      <div class="bg-orange-50 border border-orange-200 rounded-xl p-4">
+        <p class="text-orange-800 text-sm font-bold">⚠️ Importante</p>
+        <p class="text-orange-700 text-sm mt-1">A <strong>análise dos resultados e a definição da trilha</strong> serão feitas pela sua mentora no primeiro encontro. Ela usará os dados dos testes para personalizar seu plano de desenvolvimento.</p>
+      </div>
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p class="text-blue-800 text-sm">ℹ️ <strong>Importante:</strong> O Assessment <strong>não é preenchido por você</strong> diretamente. Ele é conduzido pela sua mentora durante a primeira sessão de mentoria (Sessão 1 — Assessment). Sua participação é fundamental: você responde às perguntas com honestidade e a mentora registra o resultado no sistema.</p>
-      </div>
-
-      <h3 class="text-base font-bold text-gray-800">📋 Como acontece na prática</h3>
-
-      <div class="space-y-4">
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
-          <div>
-            <p class="font-semibold text-gray-800">Aguarde o Agendamento da Sessão 1</p>
-            <p class="text-sm text-gray-600 mt-1">Após concluir seu cadastro no Onboarding e escolher sua mentora, a primeira sessão será agendada. Você receberá o link do Google Meet por e-mail e também poderá acessá-lo diretamente pela aba <strong>Onboarding</strong>.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
-          <div>
-            <p class="font-semibold text-gray-800">Participe da Sessão com Presença e Abertura</p>
-            <p class="text-sm text-gray-600 mt-1">Durante a reunião, sua mentora conduzirá uma conversa estruturada para mapear seu perfil comportamental. Responda com <strong>sinceridade</strong> — não existe resposta certa ou errada. O objetivo é entender como você realmente age no ambiente profissional.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
-          <div>
-            <p class="font-semibold text-gray-800">Sua Mentora Registra o Resultado</p>
-            <p class="text-sm text-gray-600 mt-1">Após a sessão, sua mentora lança o resultado do Assessment na plataforma. Isso inclui seu <strong>perfil comportamental</strong>, as competências prioritárias identificadas e o relatório da sessão — que ficará disponível para você na aba Onboarding.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
-          <div>
-            <p class="font-semibold text-gray-800">Sua Trilha é Definida</p>
-            <p class="text-sm text-gray-600 mt-1">Com base no Assessment, sua mentora define a <strong>trilha de competências</strong> que você seguirá ao longo do macrociclo, as metas de desenvolvimento e o foco de cada ciclo mensal.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p class="text-amber-800 text-sm">💡 <strong>Por que isso importa?</strong> O Assessment é o ponto de partida de tudo. Ele define quais competências serão trabalhadas, quais metas serão lançadas e qual trilha de desenvolvimento você seguirá ao longo do programa. Quanto mais honesto você for na sessão, mais personalizado e eficaz será seu desenvolvimento.</p>
+        <p class="text-blue-700 text-xs">💡 Quanto mais honesto você for, mais personalizado e eficaz será seu desenvolvimento.</p>
       </div>
     </div>
   `,
@@ -122,45 +65,14 @@ const CONTEUDO_TUTORIAIS: Record<number, string> = {
       <div class="bg-pink-50 border border-pink-200 rounded-xl p-4">
         <p class="text-pink-800 text-sm font-medium">🎯 Objetivo: Escolher a mentora ideal para guiar seu desenvolvimento durante todo o macrociclo.</p>
       </div>
-
-      <h3 class="text-base font-bold text-gray-800">📋 Passo a Passo</h3>
-
-      <div class="space-y-4">
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
-          <div>
-            <p class="font-semibold text-gray-800">Acesse a Etapa de Escolha</p>
-            <p class="text-sm text-gray-600 mt-1">Após concluir o Assessment, a etapa de escolha da mentora será liberada no seu <strong>Onboarding</strong>. Clique nela para visualizar as mentoras disponíveis.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
-          <div>
-            <p class="font-semibold text-gray-800">Analise os Perfis com Calma</p>
-            <p class="text-sm text-gray-600 mt-1">Leia a minibiografia, as especialidades e a experiência de cada mentora. Observe em quais competências ela tem maior expertise — como <em>Liderança</em>, <em>Comunicação</em>, <em>Inteligência Emocional</em> ou <em>Visão Estratégica</em>.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
-          <div>
-            <p class="font-semibold text-gray-800">Busque Alinhamento com seu Perfil</p>
-            <p class="text-sm text-gray-600 mt-1">Considere as competências que o seu Assessment apontou como prioridade. Escolha uma mentora cuja trajetória e especialidades se conectem com as áreas que você precisa desenvolver.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
-          <div>
-            <p class="font-semibold text-gray-800">Confirme sua Escolha</p>
-            <p class="text-sm text-gray-600 mt-1">Clique em <strong>"Selecionar Mentora"</strong> e confirme. A partir desse momento, ela será sua guia durante todo o macrociclo — responsável por lançar suas metas, validar suas tarefas e acompanhar sua evolução.</p>
-          </div>
-        </div>
+      <div class="space-y-3 text-sm text-gray-700">
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">1</div><p>Após o Assessment, a etapa de escolha é liberada no Onboarding.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">2</div><p>Leia a minibiografia e especialidades de cada mentora.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">3</div><p>Escolha quem se alinha com as competências que você precisa desenvolver.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">4</div><p>Clique em <strong>"Selecionar Mentora"</strong> e confirme.</p></div>
       </div>
-
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p class="text-amber-800 text-sm">💡 <strong>Importante:</strong> A escolha da mentora é uma decisão importante. Ela será sua parceira de desenvolvimento por todo o macrociclo. Leve o tempo necessário para decidir com consciência.</p>
+        <p class="text-amber-800 text-sm">💡 A mentora escolhida será sua guia por todo o macrociclo — responsável por lançar metas, validar tarefas e acompanhar sua evolução.</p>
       </div>
     </div>
   `,
@@ -168,337 +80,248 @@ const CONTEUDO_TUTORIAIS: Record<number, string> = {
   4: `
     <div class="space-y-5">
       <div class="bg-green-50 border border-green-200 rounded-xl p-4">
-        <p class="text-green-800 text-sm font-medium">🎯 Objetivo: Agendar suas sessões quinzenais de mentoria e garantir que nenhum encontro seja perdido.</p>
+        <p class="text-green-800 text-sm font-medium">🎯 Objetivo: Agendar suas sessões quinzenais de mentoria.</p>
       </div>
-
-      <h3 class="text-base font-bold text-gray-800">📋 Passo a Passo</h3>
-
-      <div class="space-y-4">
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
-          <div>
-            <p class="font-semibold text-gray-800">Acesse o Card de Mentorias</p>
-            <p class="text-sm text-gray-600 mt-1">No <strong>Portal do Aluno</strong>, clique no card <strong>"Mentorias"</strong>. Você verá o histórico de sessões e o botão para agendar a próxima.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
-          <div>
-            <p class="font-semibold text-gray-800">Verifique a Disponibilidade</p>
-            <p class="text-sm text-gray-600 mt-1">Sua mentora disponibilizará horários na agenda. Escolha o dia e horário que melhor se encaixam na sua rotina profissional.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
-          <div>
-            <p class="font-semibold text-gray-800">Confirme o Agendamento</p>
-            <p class="text-sm text-gray-600 mt-1">Após confirmar, você receberá um <strong>e-mail com o link do Google Meet</strong>. O link também ficará visível no seu painel, na sessão correspondente.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
-          <div>
-            <p class="font-semibold text-gray-800">Respeite a Frequência Quinzenal</p>
-            <p class="text-sm text-gray-600 mt-1">O programa prevê sessões <strong>a cada 15 dias</strong>. A regularidade dos encontros é fundamental para manter o ritmo do desenvolvimento e garantir que você atinja a <strong>meta de 80% de engajamento</strong> necessária para a certificação.</p>
-          </div>
-        </div>
+      <div class="space-y-3 text-sm text-gray-700">
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">1</div><p>Acesse a etapa de Agendamento no Onboarding.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">2</div><p>Visualize os horários disponíveis da sua mentora e escolha o que melhor se encaixa na sua rotina.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">3</div><p>Confirme o agendamento. O link do Google Meet chegará por e-mail e ficará disponível na plataforma.</p></div>
       </div>
-
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p class="text-amber-800 text-sm">💡 <strong>Atenção:</strong> Sessões não realizadas impactam diretamente o seu indicador de Engajamento. Em caso de imprevisto, comunique sua mentora com antecedência para reagendar.</p>
+        <p class="text-amber-800 text-sm">💡 As sessões são quinzenais. Não perca nenhuma — elas são fundamentais para seu progresso e compõem o indicador de Engajamento.</p>
       </div>
     </div>
   `,
 
   5: `
     <div class="space-y-5">
-      <div class="bg-teal-50 border border-teal-200 rounded-xl p-4">
-        <p class="text-teal-800 text-sm font-medium">🎯 Objetivo: Aproveitar ao máximo cada sessão de mentoria para acelerar seu desenvolvimento.</p>
+      <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+        <p class="text-indigo-800 text-sm font-medium">🎯 Objetivo: Aproveitar ao máximo o primeiro encontro com sua mentora.</p>
       </div>
-
-      <h3 class="text-base font-bold text-gray-800">📋 Passo a Passo</h3>
-
-      <div class="space-y-4">
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
-          <div>
-            <p class="font-semibold text-gray-800">Prepare-se com Antecedência</p>
-            <p class="text-sm text-gray-600 mt-1">Antes da sessão, revise as tarefas combinadas na sessão anterior. Anote situações reais do seu dia a dia que deseja discutir, dúvidas sobre as metas e reflexões sobre seu desenvolvimento.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
-          <div>
-            <p class="font-semibold text-gray-800">Acesse o Link no Horário</p>
-            <p class="text-sm text-gray-600 mt-1">No horário marcado, acesse o <strong>Portal do Aluno</strong> e clique em <strong>"Acessar Sessão"</strong> para abrir o Google Meet. Garanta boa conexão de internet, câmera ligada e um ambiente silencioso.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
-          <div>
-            <p class="font-semibold text-gray-800">Seja Ativo e Aberto</p>
-            <p class="text-sm text-gray-600 mt-1">Compartilhe suas experiências com honestidade. Quanto mais você se abrir sobre desafios reais, mais direcionada e valiosa será a orientação da sua mentora. As sessões são um espaço seguro de desenvolvimento.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
-          <div>
-            <p class="font-semibold text-gray-800">Registre os Aprendizados e Novas Tarefas</p>
-            <p class="text-sm text-gray-600 mt-1">Ao final da sessão, sua mentora registrará no sistema as tarefas combinadas e sua nota de engajamento. Você também poderá registrar sua autoavaliação de <strong>aplicabilidade</strong> — o quanto está conseguindo aplicar o aprendizado na prática.</p>
-          </div>
-        </div>
+      <div class="space-y-3 text-sm text-gray-700">
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">1</div><p>Acesse o link do Google Meet no horário combinado.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">2</div><p>Participe com abertura — a mentora conduzirá o Assessment e definirá sua trilha.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">3</div><p>Após a sessão, o relatório e o perfil comportamental ficam disponíveis no Onboarding.</p></div>
       </div>
-
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p class="text-amber-800 text-sm">💡 <strong>Lembre-se:</strong> A nota de engajamento dada pela sua mentora em cada sessão compõe um dos 5 indicadores do seu painel de Performance. Sessões bem aproveitadas refletem diretamente nos seus resultados.</p>
+        <p class="text-amber-800 text-sm">💡 Prepare-se: pense em seus desafios profissionais atuais e no que você quer desenvolver. Isso enriquece muito a conversa.</p>
       </div>
     </div>
   `,
 
   6: `
     <div class="space-y-5">
-      <div class="bg-orange-50 border border-orange-200 rounded-xl p-4">
-        <p class="text-orange-800 text-sm font-medium">🎯 Objetivo: Entender como funciona sua trilha de competências, os ciclos de desenvolvimento e como acompanhar seu progresso.</p>
+      <div class="bg-teal-50 border border-teal-200 rounded-xl p-4">
+        <p class="text-teal-800 text-sm font-medium">🎯 Objetivo: Entender como sua jornada de desenvolvimento está estruturada ao longo do macrociclo.</p>
       </div>
-
-      <h3 class="text-base font-bold text-gray-800">📋 Passo a Passo</h3>
-
-      <div class="space-y-4">
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
-          <div>
-            <p class="font-semibold text-gray-800">Entenda o Macrociclo e os Ciclos</p>
-            <p class="text-sm text-gray-600 mt-1">Seu programa é organizado em um <strong>macrociclo</strong> (o período total do contrato). Dentro dele, existem <strong>ciclos menores</strong> (geralmente mensais), cada um focado em um conjunto de competências específicas definidas pela sua mentora com base no seu Assessment.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
-          <div>
-            <p class="font-semibold text-gray-800">Acesse a Aba Evolução</p>
-            <p class="text-sm text-gray-600 mt-1">Clique em <strong>Evolução</strong> no menu. Você verá sua trilha (ex: <em>Trilha Basic</em>, <em>Advanced</em>) e o gráfico de radar que mostra seu nível atual em cada competência versus a meta esperada.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
-          <div>
-            <p class="font-semibold text-gray-800">Acompanhe as Metas Macro e Micro</p>
-            <p class="text-sm text-gray-600 mt-1">Sua mentora lança uma <strong>Meta Macro</strong> (o objetivo principal do ciclo) e até 5 <strong>Micro Metas</strong> (ações concretas que levam ao atingimento da meta macro). Você pode acompanhar o progresso de cada uma no card <strong>"Metas"</strong> do Portal do Aluno.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
-          <div>
-            <p class="font-semibold text-gray-800">Cumpra as Metas para Evoluir</p>
-            <p class="text-sm text-gray-600 mt-1">Cada micro meta cumprida contribui para o indicador de <strong>Jornada de Superação</strong> no seu painel de Performance. Atingir <strong>80% ou mais</strong> das metas ao longo do macrociclo é um dos requisitos para a certificação.</p>
-          </div>
-        </div>
+      <div class="space-y-3 text-sm text-gray-700">
+        <p>Após o Assessment, sua mentora define sua <strong>Trilha de Competências</strong> — o conjunto de habilidades que você desenvolverá ao longo do programa.</p>
+        <ul class="space-y-1 list-disc list-inside">
+          <li>O macrociclo é dividido em <strong>ciclos mensais</strong></li>
+          <li>Cada ciclo tem competências e metas específicas</li>
+          <li>Você pode acompanhar tudo na aba <strong>Evolução</strong></li>
+        </ul>
       </div>
-
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p class="text-amber-800 text-sm">💡 <strong>Dica:</strong> Revise suas metas antes de cada sessão. Isso demonstra comprometimento para sua mentora e garante que o tempo da sessão seja usado para avançar, não apenas para revisar o que ficou pendente.</p>
+        <p class="text-amber-800 text-sm">💡 Sua trilha é personalizada com base no seu perfil comportamental. Siga-a com consistência para atingir os 80% necessários para a certificação.</p>
       </div>
     </div>
   `,
 
   7: `
     <div class="space-y-5">
-      <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
-        <p class="text-indigo-800 text-sm font-medium">🎯 Objetivo: Acessar e concluir os cursos e módulos da sua trilha de desenvolvimento.</p>
+      <div class="bg-orange-50 border border-orange-200 rounded-xl p-4">
+        <p class="text-orange-800 text-sm font-medium">🎯 Objetivo: Entender o que são o PDI e as metas do seu desenvolvimento.</p>
       </div>
-
-      <h3 class="text-base font-bold text-gray-800">📋 Passo a Passo</h3>
-
-      <div class="space-y-4">
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
-          <div>
-            <p class="font-semibold text-gray-800">Acesse o Card de Aulas</p>
-            <p class="text-sm text-gray-600 mt-1">No <strong>Portal do Aluno</strong>, clique no card <strong>"Aulas / Competências"</strong>. Você será direcionado para a plataforma de cursos da sua trilha.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
-          <div>
-            <p class="font-semibold text-gray-800">Siga a Ordem da Trilha</p>
-            <p class="text-sm text-gray-600 mt-1">Os módulos estão organizados em sequência lógica. Respeite a ordem para que o aprendizado seja progressivo e consistente com as competências trabalhadas em cada ciclo.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
-          <div>
-            <p class="font-semibold text-gray-800">Complete as Atividades</p>
-            <p class="text-sm text-gray-600 mt-1">Assista às videoaulas, leia os materiais complementares e realize os quizzes ou avaliações ao final de cada módulo. A nota obtida nas avaliações compõe o indicador de <strong>Avaliações</strong> no seu painel de Performance.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
-          <div>
-            <p class="font-semibold text-gray-800">Acompanhe seu Progresso</p>
-            <p class="text-sm text-gray-600 mt-1">O percentual de conclusão dos cursos é refletido no indicador de <strong>Competências</strong> do seu painel. Concluir os módulos do ciclo atual é essencial para atingir a <strong>meta de 80% de engajamento</strong> e avançar para a certificação.</p>
-          </div>
-        </div>
+      <div class="space-y-3 text-sm text-gray-700">
+        <p>O <strong>PDI (Plano de Desenvolvimento Individual)</strong> é criado pela sua mentora com base no Assessment. Ele define:</p>
+        <ul class="space-y-1 list-disc list-inside">
+          <li><strong>Metas Macro</strong> — objetivos grandes do macrociclo</li>
+          <li><strong>Metas Micro</strong> — ações práticas dentro de cada ciclo mensal</li>
+        </ul>
+        <p>Acesse seu PDI na aba <strong>Portal do Aluno → Metas</strong>.</p>
       </div>
-
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p class="text-amber-800 text-sm">💡 <strong>Dica:</strong> Conecte o conteúdo dos cursos com as situações reais do seu trabalho. Isso facilita a aplicação prática e enriquece as conversas nas sessões de mentoria.</p>
+        <p class="text-amber-800 text-sm">💡 Cumprir as micro metas é fundamental para o indicador <strong>Jornada de Superação</strong> — que exige 100% das metas concluídas para a certificação.</p>
       </div>
     </div>
   `,
 
   8: `
     <div class="space-y-5">
-      <div class="bg-red-50 border border-red-200 rounded-xl p-4">
-        <p class="text-red-800 text-sm font-medium">🎯 Objetivo: Participar dos webinars ao vivo e aproveitar as gravações para enriquecer seu desenvolvimento.</p>
+      <div class="bg-rose-50 border border-rose-200 rounded-xl p-4">
+        <p class="text-rose-800 text-sm font-medium">🎯 Objetivo: Confirmar seu comprometimento e iniciar oficialmente a jornada de desenvolvimento.</p>
       </div>
-
-      <h3 class="text-base font-bold text-gray-800">📋 Passo a Passo</h3>
-
-      <div class="space-y-4">
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
-          <div>
-            <p class="font-semibold text-gray-800">Verifique a Agenda de Webinars</p>
-            <p class="text-sm text-gray-600 mt-1">No <strong>Portal do Aluno</strong>, acesse o card <strong>"Eventos / Webinars"</strong>. Você verá os próximos eventos programados para o seu macrociclo — geralmente <strong>2 webinars quinzenais</strong> por período.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
-          <div>
-            <p class="font-semibold text-gray-800">Confirme sua Participação</p>
-            <p class="text-sm text-gray-600 mt-1">Clique no evento e confirme presença. Você receberá um lembrete por e-mail próximo à data.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
-          <div>
-            <p class="font-semibold text-gray-800">Participe ao Vivo</p>
-            <p class="text-sm text-gray-600 mt-1">A <strong>presença ao vivo é contabilizada</strong> no indicador de Webinars do seu painel de Performance. Participe ativamente: faça perguntas, interaja no chat e anote os principais aprendizados.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
-          <div>
-            <p class="font-semibold text-gray-800">Acesse as Gravações</p>
-            <p class="text-sm text-gray-600 mt-1">Não conseguiu participar ao vivo? As gravações ficam disponíveis na plataforma. Porém, lembre-se: <strong>apenas a presença ao vivo conta para o indicador de Engajamento</strong>. Assistir à gravação é um complemento, não um substituto.</p>
-          </div>
-        </div>
+      <div class="space-y-3 text-sm text-gray-700">
+        <p>A etapa de Aceite é a última do Onboarding. Nela você:</p>
+        <ul class="space-y-1 list-disc list-inside">
+          <li>Revisa o resumo do seu perfil e trilha</li>
+          <li>Confirma o compromisso com o programa</li>
+          <li>Libera o acesso completo à plataforma</li>
+        </ul>
       </div>
-
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p class="text-amber-800 text-sm">💡 <strong>Atenção:</strong> Os webinars são parte do cálculo do seu Engajamento. Para atingir a <strong>meta de 80%</strong> e se certificar, é essencial participar da maior parte dos eventos do seu macrociclo.</p>
+      <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+        <p class="text-green-800 text-sm">✅ Após o Aceite, o Onboarding está concluído e sua jornada de desenvolvimento começa oficialmente!</p>
       </div>
     </div>
   `,
 
+  // ---- BLOCO 2: USANDO A PLATAFORMA NO DIA A DIA ----
   9: `
     <div class="space-y-5">
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p class="text-amber-800 text-sm font-medium">🎯 Objetivo: Receber, executar e entregar as tarefas práticas atribuídas pela mentora, aplicando o conhecimento no seu dia a dia.</p>
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <p class="text-blue-800 text-sm font-medium">🎯 Objetivo: Navegar com facilidade pela plataforma no dia a dia.</p>
       </div>
-
-      <h3 class="text-base font-bold text-gray-800">📋 Passo a Passo</h3>
-
-      <div class="space-y-4">
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
-          <div>
-            <p class="font-semibold text-gray-800">Receba a Tarefa</p>
-            <p class="text-sm text-gray-600 mt-1">Após cada sessão de mentoria, sua mentora atribuirá uma <strong>tarefa prática</strong> no sistema. Você receberá uma notificação por e-mail. Acesse o card <strong>"Tarefas / Entregas"</strong> no Portal do Aluno para ver os detalhes e o prazo.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
-          <div>
-            <p class="font-semibold text-gray-800">Execute no Ambiente Real</p>
-            <p class="text-sm text-gray-600 mt-1">As tarefas são desenhadas para serem aplicadas no seu trabalho. Execute a atividade com atenção, observe os resultados e reflita sobre o que funcionou e o que pode ser melhorado.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
-          <div>
-            <p class="font-semibold text-gray-800">Envie sua Entrega</p>
-            <p class="text-sm text-gray-600 mt-1">Volte ao sistema, clique na tarefa e escreva um relato da sua experiência: o que fez, como foi, o que aprendeu. Você também pode anexar arquivos como evidência. Clique em <strong>"Enviar para Validação"</strong>.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
-          <div>
-            <p class="font-semibold text-gray-800">Aguarde a Validação e Avalie sua Aplicabilidade</p>
-            <p class="text-sm text-gray-600 mt-1">Sua mentora revisará a entrega e dará um feedback. Você também será convidado a registrar sua <strong>nota de aplicabilidade</strong> — o quanto conseguiu aplicar o aprendizado na prática. Essa nota compõe o indicador de <strong>Aplicabilidade Prática</strong> no seu painel.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p class="text-amber-800 text-sm">💡 <strong>Importante:</strong> As tarefas entregues compõem o indicador de <strong>Tarefas</strong> no seu Engajamento. Entregar todas as tarefas dentro do prazo é fundamental para atingir a meta de 80% e garantir sua certificação.</p>
+      <div class="space-y-3 text-sm text-gray-700">
+        <p><strong>Abas principais:</strong></p>
+        <ul class="space-y-1 list-disc list-inside">
+          <li><strong>Mural</strong> — comunicados, avisos e novidades do programa</li>
+          <li><strong>Portal do Aluno</strong> — suas tarefas, metas, sessões e evolução</li>
+          <li><strong>Performance</strong> — indicadores e progresso em tempo real</li>
+          <li><strong>Evolução</strong> — trilha de competências e ciclos</li>
+          <li><strong>Tutoriais</strong> — esta página, com guias de uso</li>
+        </ul>
+        <p>Fique atento aos <strong>e-mails automáticos</strong> do sistema — eles avisam sobre sessões, tarefas e webinars.</p>
       </div>
     </div>
   `,
 
   10: `
     <div class="space-y-5">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+        <p class="text-indigo-800 text-sm font-medium">🎯 Objetivo: Aproveitar ao máximo cada sessão quinzenal com sua mentora.</p>
+      </div>
+      <div class="space-y-3 text-sm text-gray-700">
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">1</div><p><strong>Acesse o link</strong> do Google Meet disponível no Portal do Aluno → Sessões.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">2</div><p><strong>Prepare-se</strong> — revise suas metas e tarefas antes de cada sessão.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">3</div><p><strong>Após a sessão</strong>, sua mentora registra o relatório e a nota de engajamento da sessão.</p></div>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <p class="text-amber-800 text-sm">💡 A <strong>Nota da Mentora</strong> por sessão compõe o indicador de Engajamento. Participe ativamente!</p>
+      </div>
+    </div>
+  `,
+
+  11: `
+    <div class="space-y-5">
+      <div class="bg-teal-50 border border-teal-200 rounded-xl p-4">
+        <p class="text-teal-800 text-sm font-medium">🎯 Objetivo: Acompanhar e avançar na sua trilha de competências.</p>
+      </div>
+      <div class="space-y-3 text-sm text-gray-700">
+        <p>Acesse <strong>Evolução</strong> para ver:</p>
+        <ul class="space-y-1 list-disc list-inside">
+          <li>As competências do ciclo atual</li>
+          <li>Os módulos e conteúdos associados</li>
+          <li>Seu percentual de conclusão por competência</li>
+        </ul>
+        <p>Cada competência tem módulos de estudo. Conclua-os para avançar no indicador de <strong>Competências</strong> dentro do Engajamento.</p>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <p class="text-amber-800 text-sm">💡 Sua trilha é definida pela mentora com base no Assessment. Siga-a com consistência ao longo de cada ciclo mensal.</p>
+      </div>
+    </div>
+  `,
+
+  12: `
+    <div class="space-y-5">
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <p class="text-amber-800 text-sm font-medium">🎯 Objetivo: Executar, entregar e ter suas tarefas práticas validadas pela mentora.</p>
+      </div>
+      <div class="space-y-3 text-sm text-gray-700">
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">1</div><p>Acesse <strong>Portal do Aluno → Tarefas</strong> para ver as tarefas atribuídas pela mentora.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">2</div><p>Execute a tarefa no mundo real e registre sua experiência na plataforma.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">3</div><p>Clique em <strong>"Enviar para Validação"</strong>. Sua mentora revisará e dará feedback.</p></div>
+        <div class="flex gap-3"><div class="w-6 h-6 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0">4</div><p>Registre sua <strong>nota de aplicabilidade</strong> — o quanto conseguiu aplicar o aprendizado na prática.</p></div>
+      </div>
+      <div class="bg-orange-50 border border-orange-200 rounded-xl p-4">
+        <p class="text-orange-800 text-sm">⚠️ As tarefas entregues compõem o indicador de <strong>Tarefas</strong> no Engajamento. Entregar todas dentro do prazo é essencial para atingir 80% e garantir a certificação.</p>
+      </div>
+    </div>
+  `,
+
+  13: `
+    <div class="space-y-5">
+      <div class="bg-violet-50 border border-violet-200 rounded-xl p-4">
+        <p class="text-violet-800 text-sm font-medium">🎯 Objetivo: Acompanhar e cumprir suas metas macro e micro ao longo do macrociclo.</p>
+      </div>
+      <div class="space-y-3 text-sm text-gray-700">
+        <p>Acesse <strong>Portal do Aluno → Metas</strong> para visualizar:</p>
+        <ul class="space-y-1 list-disc list-inside">
+          <li><strong>Metas Macro</strong> — objetivos grandes definidos pela mentora para o macrociclo</li>
+          <li><strong>Metas Micro</strong> — ações práticas dentro de cada ciclo mensal (até 5 por meta macro)</li>
+        </ul>
+        <p>Marque as micro metas como concluídas conforme as realiza. Isso alimenta o indicador <strong>Jornada de Superação</strong>.</p>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <p class="text-amber-800 text-sm">💡 O indicador <strong>Jornada de Superação</strong> exige <strong>100% das micro metas cumpridas</strong> para a certificação. Não deixe metas acumularem.</p>
+      </div>
+    </div>
+  `,
+
+  14: `
+    <div class="space-y-5">
+      <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+        <p class="text-red-800 text-sm font-medium">🎯 Objetivo: Participar dos webinars e cases para enriquecer seu desenvolvimento.</p>
+      </div>
+      <div class="space-y-3 text-sm text-gray-700">
+        <p>Os <strong>Webinars</strong> são eventos ao vivo com especialistas e líderes. Acesse o calendário no Portal do Aluno.</p>
+        <ul class="space-y-1 list-disc list-inside">
+          <li>Inscreva-se com antecedência</li>
+          <li>Participe ao vivo — a presença é registrada automaticamente</li>
+          <li>Cada webinar assistido conta para o indicador de <strong>Webinars</strong> no Engajamento</li>
+        </ul>
+        <p>Os <strong>Cases</strong> são estudos de caso reais. Ao final do macrociclo, você também entregará seu próprio Case de Sucesso — documentando um resultado real obtido com os aprendizados do programa.</p>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+        <p class="text-amber-800 text-sm">⚠️ O <strong>Case de Sucesso</strong> é requisito para a certificação. Comece a documentar seus resultados desde o início do programa.</p>
+      </div>
+    </div>
+  `,
+
+  15: `
+    <div class="space-y-5">
       <div class="bg-cyan-50 border border-cyan-200 rounded-xl p-4">
-        <p class="text-cyan-800 text-sm font-medium">🎯 Objetivo: Entender seus indicadores de performance, acompanhar sua evolução e saber o que é necessário para se certificar.</p>
+        <p class="text-cyan-800 text-sm font-medium">🎯 Objetivo: Entender os 3 gráficos da página de Performance e saber o que é necessário para se certificar.</p>
       </div>
 
-      <h3 class="text-base font-bold text-gray-800">📋 Os 3 Grandes Indicadores</h3>
+      <h3 class="text-base font-bold text-gray-800">📊 Os 3 Indicadores da Performance</h3>
 
-      <div class="space-y-4">
-        <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
-          <p class="font-semibold text-blue-800">📊 1. Engajamento (Meta: 80%)</p>
-          <p class="text-sm text-gray-600 mt-1">É a média dos 5 microindicadores:</p>
-          <ul class="mt-2 space-y-1 text-sm text-gray-600">
-            <li>• <strong>Webinars</strong> — presença nos eventos ao vivo</li>
-            <li>• <strong>Avaliações</strong> — média das notas nos quizzes e provas</li>
-            <li>• <strong>Competências</strong> — módulos concluídos na trilha</li>
-            <li>• <strong>Tarefas</strong> — tarefas práticas entregues</li>
-            <li>• <strong>Nota da Mentora</strong> — avaliação de engajamento por sessão</li>
-          </ul>
-          <p class="text-sm text-blue-700 mt-2 font-medium">Atingir 80% neste indicador é requisito para a certificação.</p>
-        </div>
+      <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+        <p class="font-semibold text-blue-800">1. Engajamento (Meta: ≥ 80%)</p>
+        <p class="text-sm text-gray-600 mt-1">Mede sua participação ativa no programa. É a média de 5 microindicadores:</p>
+        <ul class="mt-2 space-y-1 text-sm text-gray-600 list-disc list-inside">
+          <li><strong>Webinars</strong> — presença nos eventos ao vivo</li>
+          <li><strong>Avaliações</strong> — média das notas nos quizzes</li>
+          <li><strong>Competências</strong> — módulos concluídos na trilha</li>
+          <li><strong>Tarefas</strong> — tarefas práticas entregues</li>
+          <li><strong>Nota da Mentora</strong> — avaliação de engajamento por sessão</li>
+        </ul>
+      </div>
 
-        <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
-          <p class="font-semibold text-emerald-800">🏆 2. Jornada de Superação — Metas (Meta: 100%)</p>
-          <p class="text-sm text-gray-600 mt-1">Mostra o percentual de <strong>micro metas cumpridas</strong> em relação ao total lançado pela mentora. Cada meta macro tem até 5 micro metas associadas. Cumprir todas demonstra comprometimento com o desenvolvimento.</p>
-        </div>
+      <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
+        <p class="font-semibold text-emerald-800">2. Jornada de Superação — Metas (Meta: 100%)</p>
+        <p class="text-sm text-gray-600 mt-1">Mostra o percentual de <strong>micro metas cumpridas</strong> em relação ao total lançado pela mentora. Cumprir todas demonstra comprometimento com o desenvolvimento.</p>
+      </div>
 
-        <div class="bg-rose-50 rounded-xl p-4 border border-rose-100">
-          <p class="font-semibold text-rose-800">🎯 3. Aplicabilidade Prática (Meta: 80%)</p>
-          <p class="text-sm text-gray-600 mt-1">Calculado separadamente do Engajamento. Mede o quanto você está aplicando o aprendizado na prática, com base em:</p>
-          <ul class="mt-2 space-y-1 text-sm text-gray-600">
-            <li>• <strong>Micro Tarefas</strong> — sua autoavaliação e a nota da mentora por tarefa</li>
-            <li>• <strong>Case de Sucesso</strong> — ao final do macrociclo, você entrega um Case documentando um resultado real que obteve com os aprendizados do programa</li>
-          </ul>
-        </div>
+      <div class="bg-rose-50 rounded-xl p-4 border border-rose-100">
+        <p class="font-semibold text-rose-800">3. Aplicabilidade Prática (Meta: ≥ 80%)</p>
+        <p class="text-sm text-gray-600 mt-1">Mede o quanto você está aplicando o aprendizado na prática, com base em:</p>
+        <ul class="mt-2 space-y-1 text-sm text-gray-600 list-disc list-inside">
+          <li><strong>Micro Tarefas</strong> — sua autoavaliação e a nota da mentora por tarefa</li>
+          <li><strong>Case de Sucesso</strong> — entregue ao final do macrociclo</li>
+        </ul>
       </div>
 
       <div class="bg-[#0A1E3E] rounded-xl p-4 text-white">
         <p class="font-bold text-[#F5991F] text-sm mb-2">🏅 Requisitos para Certificação</p>
+        <p class="text-xs text-white/80 mb-2">Para ser certificado, você precisa atingir, <strong>dentro do macrociclo</strong>, 80% nos três indicadores:</p>
         <ul class="space-y-1 text-sm text-white/90">
           <li>✅ Engajamento ≥ 80%</li>
+          <li>✅ Jornada de Superação — 100% das metas cumpridas</li>
           <li>✅ Aplicabilidade Prática ≥ 80%</li>
           <li>✅ Case de Sucesso entregue e validado</li>
-          <li>✅ Todas as etapas do Onboarding concluídas</li>
         </ul>
-        <p class="text-xs text-white/70 mt-3">Acompanhe seu progresso em tempo real na aba <strong>Performance</strong>.</p>
+        <p class="text-xs text-white/60 mt-3">Acompanhe seu progresso em tempo real na aba <strong>Performance</strong>.</p>
       </div>
     </div>
   `,
@@ -513,146 +336,93 @@ interface Tutorial {
   titulo: string;
   descricao: string;
   categoria: string;
+  bloco: 1 | 2;
   icon: React.ElementType;
   thumbnailColor: string;
-  lido: boolean;
   ordem: number;
 }
 
 const TUTORIAIS: Tutorial[] = [
-  {
-    id: 1,
-    titulo: "Primeiros Passos na Plataforma",
-    descricao: "Aprenda a navegar pela plataforma, atualizar seu perfil e entender as principais funcionalidades disponíveis para você.",
-    categoria: "Início",
-    icon: User,
-    thumbnailColor: "from-blue-500 to-blue-700",
-    lido: false,
-    ordem: 1,
-  },
-  {
-    id: 2,
-    titulo: "Como Realizar o Assessment",
-    descricao: "Entenda o que é o assessment, como acessar a avaliação de perfil comportamental e o que esperar dos resultados.",
-    categoria: "Assessment",
-    icon: ClipboardCheck,
-    thumbnailColor: "from-purple-500 to-purple-700",
-    lido: false,
-    ordem: 2,
-  },
-  {
-    id: 3,
-    titulo: "Escolhendo sua Mentora",
-    descricao: "Saiba como visualizar os perfis das mentoras disponíveis, analisar especialidades e fazer a melhor escolha para seu desenvolvimento.",
-    categoria: "Mentoria",
-    icon: Users2,
-    thumbnailColor: "from-pink-500 to-pink-700",
-    lido: false,
-    ordem: 3,
-  },
-  {
-    id: 4,
-    titulo: "Agendando Sessões de Mentoria",
-    descricao: "Aprenda a verificar a disponibilidade da sua mentora, escolher horários e acessar o link do Google Meet para as sessões.",
-    categoria: "Mentoria",
-    icon: CalendarDays,
-    thumbnailColor: "from-green-500 to-green-700",
-    lido: false,
-    ordem: 4,
-  },
-  {
-    id: 5,
-    titulo: "Participando da Sessão de Mentoria",
-    descricao: "Dicas para aproveitar ao máximo suas sessões: como se preparar, o que levar e como interagir com sua mentora.",
-    categoria: "Mentoria",
-    icon: Video,
-    thumbnailColor: "from-teal-500 to-teal-700",
-    lido: false,
-    ordem: 5,
-  },
-  {
-    id: 6,
-    titulo: "Entendendo sua Trilha de Competências",
-    descricao: "Veja como funciona a trilha de desenvolvimento, os ciclos, as metas macro e micro, e como acompanhar seu progresso.",
-    categoria: "Trilha",
-    icon: Target,
-    thumbnailColor: "from-orange-500 to-orange-700",
-    lido: false,
-    ordem: 6,
-  },
-  {
-    id: 7,
-    titulo: "Acessando Cursos e Módulos",
-    descricao: "Como acessar a plataforma de cursos, acompanhar seu progresso nos módulos e completar as atividades obrigatórias.",
-    categoria: "Cursos",
-    icon: GraduationCap,
-    thumbnailColor: "from-indigo-500 to-indigo-700",
-    lido: false,
-    ordem: 7,
-  },
-  {
-    id: 8,
-    titulo: "Participando dos Webinars",
-    descricao: "Saiba como se inscrever nos webinars, participar ao vivo e entender como a presença impacta seu Engajamento.",
-    categoria: "Webinars",
-    icon: PlayCircle,
-    thumbnailColor: "from-red-500 to-red-700",
-    lido: false,
-    ordem: 8,
-  },
-  {
-    id: 9,
-    titulo: "Realizando Tarefas Práticas",
-    descricao: "Entenda como receber, executar, entregar e avaliar suas tarefas práticas atribuídas pela mentora.",
-    categoria: "Tarefas",
-    icon: FileText,
-    thumbnailColor: "from-amber-500 to-amber-700",
-    lido: false,
-    ordem: 9,
-  },
-  {
-    id: 10,
-    titulo: "Acompanhando sua Performance",
-    descricao: "Aprenda a ler seus indicadores, entender os requisitos de certificação e acompanhar sua evolução ao longo do macrociclo.",
-    categoria: "Performance",
-    icon: BarChart3,
-    thumbnailColor: "from-cyan-500 to-cyan-700",
-    lido: false,
-    ordem: 10,
-  },
+  // BLOCO 1 — Jornada de Onboarding
+  { id: 1, titulo: "Navegando pela Plataforma", descricao: "Conheça o menu principal, as abas e entenda como o macrociclo organiza sua jornada.", categoria: "Onboarding", bloco: 1, icon: Map, thumbnailColor: "from-blue-500 to-blue-700", ordem: 1 },
+  { id: 2, titulo: "Assessment Comportamental", descricao: "Entenda os testes que você deve realizar e como a mentora usará os resultados no primeiro encontro.", categoria: "Onboarding", bloco: 1, icon: ClipboardCheck, thumbnailColor: "from-purple-500 to-purple-700", ordem: 2 },
+  { id: 3, titulo: "Escolhendo sua Mentora", descricao: "Saiba como analisar os perfis e escolher a mentora ideal para o seu desenvolvimento.", categoria: "Onboarding", bloco: 1, icon: User, thumbnailColor: "from-pink-500 to-pink-700", ordem: 3 },
+  { id: 4, titulo: "Agendando sua Primeira Sessão", descricao: "Como verificar disponibilidade, escolher horário e acessar o link do Google Meet.", categoria: "Onboarding", bloco: 1, icon: CalendarDays, thumbnailColor: "from-green-500 to-green-700", ordem: 4 },
+  { id: 5, titulo: "Sessão Inicial com sua Mentora", descricao: "O que esperar do primeiro encontro: Assessment, definição da trilha e próximos passos.", categoria: "Onboarding", bloco: 1, icon: Users2, thumbnailColor: "from-indigo-500 to-indigo-700", ordem: 5 },
+  { id: 6, titulo: "Sua Jornada de Desenvolvimento", descricao: "Como funciona a trilha de competências, os ciclos mensais e o macrociclo.", categoria: "Onboarding", bloco: 1, icon: TrendingUp, thumbnailColor: "from-teal-500 to-teal-700", ordem: 6 },
+  { id: 7, titulo: "Meu PDI — Plano de Desenvolvimento", descricao: "Entenda as metas macro e micro do seu PDI e como acompanhá-las na plataforma.", categoria: "Onboarding", bloco: 1, icon: Target, thumbnailColor: "from-orange-500 to-orange-700", ordem: 7 },
+  { id: 8, titulo: "Aceite e Início da Jornada", descricao: "A última etapa do Onboarding: confirme seu compromisso e libere o acesso completo.", categoria: "Onboarding", bloco: 1, icon: Award, thumbnailColor: "from-rose-500 to-rose-700", ordem: 8 },
+  // BLOCO 2 — Usando a Plataforma no Dia a Dia
+  { id: 9, titulo: "Navegando pela Plataforma", descricao: "Explore as abas do dia a dia: Mural, Portal do Aluno, Performance e Evolução.", categoria: "Plataforma", bloco: 2, icon: BookOpen, thumbnailColor: "from-sky-500 to-sky-700", ordem: 9 },
+  { id: 10, titulo: "Sessões de Mentoria", descricao: "Como acessar, se preparar e aproveitar ao máximo cada sessão quinzenal.", categoria: "Mentoria", bloco: 2, icon: Video, thumbnailColor: "from-violet-500 to-violet-700", ordem: 10 },
+  { id: 11, titulo: "Trilha de Competências", descricao: "Como acompanhar e avançar nos módulos da sua trilha personalizada.", categoria: "Trilha", bloco: 2, icon: GraduationCap, thumbnailColor: "from-teal-500 to-teal-700", ordem: 11 },
+  { id: 12, titulo: "Tarefas Práticas", descricao: "Como receber, executar, entregar e ter suas tarefas validadas pela mentora.", categoria: "Tarefas", bloco: 2, icon: FileText, thumbnailColor: "from-amber-500 to-amber-700", ordem: 12 },
+  { id: 13, titulo: "Metas (Macro e Micro)", descricao: "Acompanhe e cumpra suas metas para alimentar o indicador Jornada de Superação.", categoria: "Metas", bloco: 2, icon: Target, thumbnailColor: "from-purple-500 to-purple-700", ordem: 13 },
+  { id: 14, titulo: "Webinars e Cases", descricao: "Participe dos webinars ao vivo e entenda como preparar seu Case de Sucesso.", categoria: "Webinars", bloco: 2, icon: PlayCircle, thumbnailColor: "from-red-500 to-red-700", ordem: 14 },
+  { id: 15, titulo: "Acompanhando sua Performance", descricao: "Os 3 gráficos da Performance explicados e os requisitos para a certificação.", categoria: "Performance", bloco: 2, icon: BarChart3, thumbnailColor: "from-cyan-500 to-cyan-700", ordem: 15 },
 ];
-
-const CATEGORIAS = ["Todos", "Início", "Assessment", "Mentoria", "Trilha", "Cursos", "Webinars", "Tarefas", "Performance"];
 
 // ============================================================
 // COMPONENTE PRINCIPAL
 // ============================================================
-
 export default function Tutoriais() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoriaAtiva, setCategoriaAtiva] = useState("Todos");
   const [tutoriaisLidos, setTutoriaisLidos] = useState<Set<number>>(new Set());
   const [tutorialAberto, setTutorialAberto] = useState<Tutorial | null>(null);
 
-  const tutoriaisFiltrados = TUTORIAIS.filter(t => {
-    const matchSearch = t.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.descricao.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchCategoria = categoriaAtiva === "Todos" || t.categoria === categoriaAtiva;
-    return matchSearch && matchCategoria;
-  });
+  const tutoriaisFiltrados = searchTerm
+    ? TUTORIAIS.filter(t =>
+        t.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.descricao.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : null;
+
+  const bloco1 = TUTORIAIS.filter(t => t.bloco === 1);
+  const bloco2 = TUTORIAIS.filter(t => t.bloco === 2);
 
   const totalLidos = tutoriaisLidos.size;
-  const totalTutoriais = TUTORIAIS.length;
-  const progressoPercent = Math.round((totalLidos / totalTutoriais) * 100);
+  const progressoPercent = Math.round((totalLidos / TUTORIAIS.length) * 100);
 
   const handleAbrir = (tutorial: Tutorial) => {
-    setTutoriaisLidos(prev => {
-      const next = new Set(prev);
-      next.add(tutorial.id);
-      return next;
-    });
+    setTutoriaisLidos(prev => { const next = new Set(prev); next.add(tutorial.id); return next; });
     setTutorialAberto(tutorial);
+  };
+
+  const renderCard = (tutorial: Tutorial) => {
+    const isLido = tutoriaisLidos.has(tutorial.id);
+    const Icon = tutorial.icon;
+    return (
+      <Card
+        key={tutorial.id}
+        className={`overflow-hidden transition-all hover:shadow-md cursor-pointer ${isLido ? "border-green-200 bg-green-50/30" : ""}`}
+        onClick={() => handleAbrir(tutorial)}
+      >
+        <div className="flex">
+          <div className={`w-24 shrink-0 bg-gradient-to-br ${tutorial.thumbnailColor} flex flex-col items-center justify-center text-white relative`}>
+            <Icon className="h-7 w-7 mb-1" />
+            <span className="text-[10px] font-bold">#{tutorial.ordem}</span>
+            {isLido && <div className="absolute top-1.5 right-1.5"><CheckCircle2 className="h-4 w-4 text-white drop-shadow" /></div>}
+          </div>
+          <div className="flex-1 p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{tutorial.categoria}</Badge>
+              {isLido && <Badge className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0">Lido</Badge>}
+            </div>
+            <h3 className="font-semibold text-sm text-gray-900 leading-tight">{tutorial.titulo}</h3>
+            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{tutorial.descricao}</p>
+            <Button
+              size="sm"
+              className={`mt-2 text-xs h-7 ${isLido ? "bg-green-600 hover:bg-green-700 text-white" : "bg-[#F5991F] hover:bg-[#d06a1e] text-white"}`}
+              onClick={(e) => { e.stopPropagation(); handleAbrir(tutorial); }}
+            >
+              <BookMarked className="h-3.5 w-3.5 mr-1" />
+              {isLido ? "Ler Novamente" : "Ler Guia"}
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
   };
 
   return (
@@ -666,169 +436,72 @@ export default function Tutoriais() {
                 <BookOpen className="h-7 w-7 text-[#F5991F]" />
                 Tutoriais da Plataforma
               </h1>
-              <p className="mt-1 text-white/80">
-                Aprenda a usar todas as funcionalidades do Ecossistema do BEM
-              </p>
+              <p className="mt-1 text-white/80">Aprenda a usar todas as funcionalidades do Ecossistema do BEM</p>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-[#F5991F]">{progressoPercent}%</div>
-              <div className="text-sm text-white/70">{totalLidos}/{totalTutoriais} lidos</div>
+              <div className="text-sm text-white/70">{totalLidos}/{TUTORIAIS.length} lidos</div>
             </div>
           </div>
           <div className="mt-4 h-2 rounded-full bg-white/20 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-[#F5991F] to-[#f59e0b] transition-all duration-500"
-              style={{ width: `${progressoPercent}%` }}
-            />
+            <div className="h-full rounded-full bg-gradient-to-r from-[#F5991F] to-[#f59e0b] transition-all duration-500" style={{ width: `${progressoPercent}%` }} />
           </div>
         </div>
 
-        {/* Busca e Filtros */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Buscar tutoriais..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {CATEGORIAS.map(cat => (
-              <Button
-                key={cat}
-                variant={categoriaAtiva === cat ? "default" : "outline"}
-                size="sm"
-                className={categoriaAtiva === cat
-                  ? "bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
-                  : "text-gray-600 hover:text-[#0A1E3E]"
-                }
-                onClick={() => setCategoriaAtiva(cat)}
-              >
-                {cat}
-              </Button>
-            ))}
-          </div>
+        {/* Busca */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Buscar tutoriais..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
 
-        {/* Jornada Recomendada */}
-        {categoriaAtiva === "Todos" && !searchTerm && (
-          <Card className="border-[#F5991F]/20 bg-gradient-to-r from-orange-50 to-amber-50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-[#F5991F]" />
-                Jornada Recomendada
-              </CardTitle>
-              <CardDescription>
-                Leia os tutoriais na ordem para aproveitar melhor a plataforma
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                {TUTORIAIS.slice(0, 5).map((t, i) => {
-                  const isLido = tutoriaisLidos.has(t.id);
-                  return (
-                    <div key={t.id} className="flex items-center gap-2">
-                      <div className={`
-                        flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap
-                        ${isLido ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}
-                      `}>
-                        {isLido ? (
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                        ) : (
-                          <span className="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center text-[10px]">
-                            {t.ordem}
-                          </span>
-                        )}
-                        {t.titulo.split(" ").slice(0, 3).join(" ")}
-                      </div>
-                      {i < 4 && <ChevronRight className="h-4 w-4 text-gray-300 shrink-0" />}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Resultados de busca */}
+        {tutoriaisFiltrados && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {tutoriaisFiltrados.length === 0 ? (
+              <div className="col-span-2 text-center py-10 text-gray-400">Nenhum tutorial encontrado.</div>
+            ) : tutoriaisFiltrados.map(renderCard)}
+          </div>
         )}
 
-        {/* Lista de Tutoriais */}
-        <div className="grid gap-4 md:grid-cols-2">
-          {tutoriaisFiltrados.map(tutorial => {
-            const isLido = tutoriaisLidos.has(tutorial.id);
-            const TutorialIcon = tutorial.icon;
-
-            return (
-              <Card
-                key={tutorial.id}
-                className={`overflow-hidden transition-all hover:shadow-md cursor-pointer ${
-                  isLido ? "border-green-200 bg-green-50/30" : ""
-                }`}
-                onClick={() => handleAbrir(tutorial)}
-              >
-                <div className="flex">
-                  {/* Thumbnail */}
-                  <div className={`
-                    w-28 shrink-0 bg-gradient-to-br ${tutorial.thumbnailColor}
-                    flex flex-col items-center justify-center text-white relative
-                  `}>
-                    <TutorialIcon className="h-8 w-8 mb-1" />
-                    <div className="flex items-center gap-1 text-xs">
-                      <BookMarked className="h-3 w-3" />
-                      <span>Guia</span>
-                    </div>
-                    {isLido && (
-                      <div className="absolute top-2 right-2">
-                        <CheckCircle2 className="h-5 w-5 text-white drop-shadow" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Conteúdo */}
-                  <div className="flex-1 p-4">
-                    <div className="flex items-start gap-2 mb-1">
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                        {tutorial.categoria}
-                      </Badge>
-                      <span className="text-[10px] text-gray-400">#{tutorial.ordem}</span>
-                      {isLido && (
-                        <Badge className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0">
-                          Lido
-                        </Badge>
-                      )}
-                    </div>
-                    <h3 className="font-semibold text-sm text-gray-900 leading-tight">
-                      {tutorial.titulo}
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                      {tutorial.descricao}
-                    </p>
-                    <div className="mt-3">
-                      <Button
-                        size="sm"
-                        className={isLido
-                          ? "bg-green-600 hover:bg-green-700 text-white text-xs h-7"
-                          : "bg-[#F5991F] hover:bg-[#d06a1e] text-white text-xs h-7"
-                        }
-                        onClick={(e) => { e.stopPropagation(); handleAbrir(tutorial); }}
-                      >
-                        <BookMarked className="h-3.5 w-3.5 mr-1" />
-                        {isLido ? "Ler Novamente" : "Ler Passo a Passo"}
-                      </Button>
-                    </div>
-                  </div>
+        {/* Bloco 1 */}
+        {!tutoriaisFiltrados && (
+          <>
+            <Card className="border-[#0A1E3E]/20 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-[#0A1E3E]" />
+                  Bloco 1 — Jornada de Onboarding
+                </CardTitle>
+                <CardDescription>8 guias para completar sua entrada no programa passo a passo</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {bloco1.map(renderCard)}
                 </div>
-              </Card>
-            );
-          })}
-        </div>
+              </CardContent>
+            </Card>
 
-        {tutoriaisFiltrados.length === 0 && (
-          <div className="text-center py-12">
-            <Search className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-lg font-medium text-gray-600">Nenhum tutorial encontrado</h3>
-            <p className="text-sm text-gray-400 mt-1">Tente buscar com outros termos ou altere o filtro</p>
-          </div>
+            {/* Bloco 2 */}
+            <Card className="border-[#F5991F]/20 bg-gradient-to-r from-orange-50 to-amber-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-[#F5991F]" />
+                  Bloco 2 — Usando a Plataforma no Dia a Dia
+                </CardTitle>
+                <CardDescription>7 guias para aproveitar ao máximo cada funcionalidade da plataforma</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {bloco2.map(renderCard)}
+                </div>
+              </CardContent>
+            </Card>
+          </>
         )}
 
         {/* Dica */}
@@ -838,19 +511,15 @@ export default function Tutoriais() {
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                 <Sparkles className="h-4 w-4 text-blue-600" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-blue-900">Dica</p>
-                <p className="text-xs text-blue-700 mt-0.5">
-                  Recomendamos ler os tutoriais na ordem da jornada para entender melhor cada etapa do programa.
-                  Em caso de dúvidas, entre em contato com sua mentora ou com o suporte do programa.
-                </p>
-              </div>
+              <p className="text-xs text-blue-700 mt-1">
+                Recomendamos ler os tutoriais na ordem da jornada. Em caso de dúvidas, entre em contato com sua mentora ou com o suporte do programa.
+              </p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Modal de Conteúdo */}
+      {/* Modal */}
       <Dialog open={!!tutorialAberto} onOpenChange={(open) => { if (!open) setTutorialAberto(null); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           {tutorialAberto && (
@@ -876,10 +545,7 @@ export default function Tutoriais() {
                 dangerouslySetInnerHTML={{ __html: CONTEUDO_TUTORIAIS[tutorialAberto.id] || "<p>Conteúdo em breve.</p>" }}
               />
               <div className="mt-4 flex justify-end">
-                <Button
-                  onClick={() => setTutorialAberto(null)}
-                  className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white"
-                >
+                <Button onClick={() => setTutorialAberto(null)} className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white">
                   <X className="h-4 w-4 mr-1" /> Fechar
                 </Button>
               </div>
