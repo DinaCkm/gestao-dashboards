@@ -172,21 +172,26 @@ const ONBOARDING_STEP_TUTORIALS: Record<number, { title: string; content: string
         <p class="text-sm font-semibold text-purple-800">🎯 Objetivo</p>
         <p class="text-sm text-purple-700 mt-1">Mapear seu perfil comportamental para definir as competências e metas do seu desenvolvimento.</p>
       </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">✅ O que você precisa fazer agora:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">1.</span><span><strong>Realize os testes disponíveis</strong> nesta etapa — eles fazem parte do processo de autoconhecimento e são importantes para a sua mentora.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">2.</span><span><strong>Responda com sinceridade</strong> — não existe resposta certa ou errada. Quanto mais honesto você for, mais preciso será o seu diagnóstico.</span></li>
+        </ol>
+      </div>
       <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
         <p class="text-sm font-bold text-orange-800">⚠️ Importante</p>
-        <p class="text-sm text-orange-700 mt-1">O Assessment <strong>não é preenchido por você</strong> na plataforma. Ele é conduzido pela sua mentora durante a Sessão 1.</p>
+        <p class="text-sm text-orange-700 mt-1">A <strong>análise dos resultados e a definição da trilha</strong> serão feitas pela sua mentora no primeiro encontro com você. Ela usará os dados dos testes para personalizar o seu plano de desenvolvimento.</p>
       </div>
       <div>
-        <p class="text-sm font-bold text-gray-800 mb-2">📋 Como acontece:</p>
+        <p class="text-sm font-bold text-gray-800 mb-2">📋 O que acontece depois:</p>
         <ol class="space-y-2 text-sm text-gray-700">
-          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">1.</span><span><strong>Aguarde o agendamento</strong> da Sessão 1 — após escolher sua mentora.</span></li>
-          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">2.</span><span><strong>Participe com abertura</strong> — sua mentora conduzirá uma conversa estruturada. Não existe resposta certa ou errada.</span></li>
-          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">3.</span><span><strong>Sua mentora registra o resultado</strong> — perfil comportamental, competências prioritárias e relatório da sessão.</span></li>
-          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">4.</span><span><strong>Sua trilha é definida</strong> — competências, metas e foco de cada ciclo mensal.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">1.</span><span><strong>Sua mentora analisa os resultados</strong> — perfil comportamental e competências prioritárias.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">2.</span><span><strong>Sua trilha é definida</strong> — competências, metas e foco de cada ciclo mensal.</span></li>
         </ol>
       </div>
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <p class="text-xs text-blue-700">💡 Quanto mais honesto você for, mais personalizado e eficaz será seu desenvolvimento.</p>
+        <p class="text-xs text-blue-700">💡 Quanto mais honesto você for nos testes, mais personalizado e eficaz será seu desenvolvimento.</p>
       </div>
     </div>`
   },
