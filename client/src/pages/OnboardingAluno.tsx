@@ -2493,7 +2493,7 @@ function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete
 
         <CardContent className="p-6">
           <div className="space-y-4">
-            {(videos || []).map((video: any) => {
+            {(videos || []).filter((video: any) => video.chave === 'boas_vindas').map((video: any) => {
               const config = VIDEO_ICONS[video.chave] || VIDEO_ICONS.boas_vindas;
               const Icon = config.icon;
               const isAssistido = assistidos[video.chave];
