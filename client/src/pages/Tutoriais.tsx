@@ -68,47 +68,51 @@ const CONTEUDO_TUTORIAIS: Record<number, string> = {
   2: `
     <div class="space-y-5">
       <div class="bg-purple-50 border border-purple-200 rounded-xl p-4">
-        <p class="text-purple-800 text-sm font-medium">🎯 Objetivo: Realizar o Assessment comportamental que será a base de toda a sua jornada de desenvolvimento.</p>
+        <p class="text-purple-800 text-sm font-medium">🎯 Objetivo: Entender o que é o Assessment comportamental, como ele acontece e qual é o seu papel nesse processo.</p>
       </div>
 
-      <h3 class="text-base font-bold text-gray-800">📋 Passo a Passo</h3>
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <p class="text-blue-800 text-sm">ℹ️ <strong>Importante:</strong> O Assessment <strong>não é preenchido por você</strong> diretamente. Ele é conduzido pela sua mentora durante a primeira sessão de mentoria (Sessão 1 — Assessment). Sua participação é fundamental: você responde às perguntas com honestidade e a mentora registra o resultado no sistema.</p>
+      </div>
+
+      <h3 class="text-base font-bold text-gray-800">📋 Como acontece na prática</h3>
 
       <div class="space-y-4">
         <div class="flex gap-3">
           <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
           <div>
-            <p class="font-semibold text-gray-800">Acesse o Onboarding</p>
-            <p class="text-sm text-gray-600 mt-1">Clique na aba <strong>Onboarding</strong> no menu superior. A etapa do Assessment estará disponível como uma das primeiras fases da sua trilha de entrada.</p>
+            <p class="font-semibold text-gray-800">Aguarde o Agendamento da Sessão 1</p>
+            <p class="text-sm text-gray-600 mt-1">Após concluir seu cadastro no Onboarding e escolher sua mentora, a primeira sessão será agendada. Você receberá o link do Google Meet por e-mail e também poderá acessá-lo diretamente pela aba <strong>Onboarding</strong>.</p>
           </div>
         </div>
 
         <div class="flex gap-3">
           <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
           <div>
-            <p class="font-semibold text-gray-800">Reserve Tempo e Atenção</p>
-            <p class="text-sm text-gray-600 mt-1">O Assessment leva aproximadamente <strong>15 a 20 minutos</strong>. Escolha um momento tranquilo, sem interrupções. Não existe resposta certa ou errada — o objetivo é mapear seu perfil comportamental real.</p>
+            <p class="font-semibold text-gray-800">Participe da Sessão com Presença e Abertura</p>
+            <p class="text-sm text-gray-600 mt-1">Durante a reunião, sua mentora conduzirá uma conversa estruturada para mapear seu perfil comportamental. Responda com <strong>sinceridade</strong> — não existe resposta certa ou errada. O objetivo é entender como você realmente age no ambiente profissional.</p>
           </div>
         </div>
 
         <div class="flex gap-3">
           <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</div>
           <div>
-            <p class="font-semibold text-gray-800">Responda com Sinceridade</p>
-            <p class="text-sm text-gray-600 mt-1">Escolha as opções que melhor descrevem <strong>como você realmente se comporta</strong> no ambiente de trabalho — não como você gostaria de ser ou como acha que deveria responder. A autenticidade garante um resultado preciso.</p>
+            <p class="font-semibold text-gray-800">Sua Mentora Registra o Resultado</p>
+            <p class="text-sm text-gray-600 mt-1">Após a sessão, sua mentora lança o resultado do Assessment na plataforma. Isso inclui seu <strong>perfil comportamental</strong>, as competências prioritárias identificadas e o relatório da sessão — que ficará disponível para você na aba Onboarding.</p>
           </div>
         </div>
 
         <div class="flex gap-3">
           <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</div>
           <div>
-            <p class="font-semibold text-gray-800">Aguarde o Resultado</p>
-            <p class="text-sm text-gray-600 mt-1">Após concluir, o sistema gerará seu <strong>perfil comportamental</strong> (estilo DISC ou similar). Esse resultado será analisado pela sua mentora para definir sua trilha de competências e o foco do seu desenvolvimento durante o macrociclo.</p>
+            <p class="font-semibold text-gray-800">Sua Trilha é Definida</p>
+            <p class="text-sm text-gray-600 mt-1">Com base no Assessment, sua mentora define a <strong>trilha de competências</strong> que você seguirá ao longo do macrociclo, as metas de desenvolvimento e o foco de cada ciclo mensal.</p>
           </div>
         </div>
       </div>
 
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-        <p class="text-amber-800 text-sm">💡 <strong>Por que isso importa?</strong> O Assessment é o ponto de partida de tudo. Ele define quais competências serão trabalhadas, quais metas serão lançadas e qual trilha de desenvolvimento você seguirá ao longo do programa.</p>
+        <p class="text-amber-800 text-sm">💡 <strong>Por que isso importa?</strong> O Assessment é o ponto de partida de tudo. Ele define quais competências serão trabalhadas, quais metas serão lançadas e qual trilha de desenvolvimento você seguirá ao longo do programa. Quanto mais honesto você for na sessão, mais personalizado e eficaz será seu desenvolvimento.</p>
       </div>
     </div>
   `,
