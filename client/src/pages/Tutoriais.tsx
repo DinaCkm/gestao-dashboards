@@ -21,7 +21,7 @@ const CONTEUDO_TUTORIAIS: Record<number, string> = {
   1: `
     <div class="space-y-5">
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p class="text-blue-800 text-sm font-medium">🎯 Objetivo: Aprender a navegar pela plataforma e configurar seu perfil para começar sua jornada de desenvolvimento.</p>
+        <p class="text-blue-800 text-sm font-medium">🎯 Objetivo: Conhecer as seções da plataforma e entender como está organizada a sua jornada de desenvolvimento.</p>
       </div>
 
       <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">📋 Passo a Passo</h3>
@@ -29,14 +29,6 @@ const CONTEUDO_TUTORIAIS: Record<number, string> = {
       <div class="space-y-4">
         <div class="flex gap-3">
           <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</div>
-          <div>
-            <p class="font-semibold text-gray-800">Atualize seu Perfil</p>
-            <p class="text-sm text-gray-600 mt-1">No canto superior direito, clique no seu nome e acesse <strong>"Meu Perfil"</strong>. Preencha seu cargo atual, empresa e objetivos de carreira. Quanto mais completo, melhor sua mentora poderá te orientar.</p>
-          </div>
-        </div>
-
-        <div class="flex gap-3">
-          <div class="w-7 h-7 rounded-full bg-[#0A1E3E] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</div>
           <div>
             <p class="font-semibold text-gray-800">Explore o Menu Principal</p>
             <p class="text-sm text-gray-600 mt-1">Familiarize-se com as abas no topo da tela:</p>
