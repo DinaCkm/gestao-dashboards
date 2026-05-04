@@ -97,7 +97,7 @@ export async function verificarEEnviarLembretesAplicabilidade(options?: {
   const lembretes: LembreteResult[] = [];
   let jaEnviadosIgnorados = 0;
   const smtpUser = process.env.SMTP_USER || '';
-  const loginUrl = 'https://ecolider.evoluirckm.com';
+  const loginUrl = 'https://ecolider.ecodobem.com';
 
   for (const appointment of upcomingAppointments) {
     const mentor = consultorMap.get(appointment.consultorId);

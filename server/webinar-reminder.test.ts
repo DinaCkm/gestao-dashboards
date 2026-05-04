@@ -46,7 +46,7 @@ describe('Webinar Reminder Email Template', () => {
       webinarTitle: 'Aula 04 - Resiliência',
       eventDate: '25/03/2026',
       eventTime: '11:00',
-      loginUrl: 'https://ecolider.evoluirckm.com',
+      loginUrl: 'https://ecolider.ecodobem.com',
     });
     expect(result.subject).toBe('Lembrete: Aula 04 - Resiliência - 25/03/2026 às 11:00');
   });
@@ -57,7 +57,7 @@ describe('Webinar Reminder Email Template', () => {
       webinarTitle: 'Workshop de Liderança',
       eventDate: '30/03/2026',
       eventTime: '14:00',
-      loginUrl: 'https://ecolider.evoluirckm.com',
+      loginUrl: 'https://ecolider.ecodobem.com',
     });
     expect(result.html).toContain('João Pereira');
     expect(result.text).toContain('João Pereira');

@@ -5342,7 +5342,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             alunoEmail: input.email,
             alunoId: input.externalId,
             empresaName,
-            loginUrl: 'https://ecolider.evoluirckm.com/',
+            loginUrl: 'https://ecolider.ecodobem.com/',
           });
           await sendEmail({
             to: input.email,
@@ -5519,7 +5519,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             alunoEmail: input.email,
             alunoId: input.cpf,
             empresaName: program?.name,
-            loginUrl: 'https://ecolider.evoluirckm.com/',
+            loginUrl: 'https://ecolider.ecodobem.com/',
           });
           await sendEmail({
             to: input.email,
@@ -6074,7 +6074,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               const inviteEmail = buildPdiPublishedInviteEmail({
                 alunoName: alunoForEmail.name || 'Aluno',
                 mentorName: mentorInfo?.name || 'seu(sua) mentor(a)',
-                loginUrl: 'https://ecolider.evoluirckm.com/onboarding',
+                loginUrl: 'https://ecolider.ecodobem.com/onboarding',
               });
               await sendEmailStep({ to: alunoForEmail.email, subject: inviteEmail.subject, html: inviteEmail.html, text: inviteEmail.text }).catch(() => {});
             }
@@ -6453,7 +6453,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           : 'Horário não definido';
         
         // Determine login URL
-        const loginUrl = 'https://ecolider.evoluirckm.com';
+        const loginUrl = 'https://ecolider.ecodobem.com';
         
         // === 1. CREATE IN-APP NOTIFICATIONS FOR STUDENTS ONLY (they have user accounts) ===
         const notificationMessage = `Evento: ${webinar.title}\nData: ${eventDateStr} às ${eventTimeStr} (horário de Brasília)${webinar.speaker ? `\nPalestrante: ${webinar.speaker}` : ''}${webinar.meetingLink ? `\nLink: ${webinar.meetingLink}` : ''}`;
@@ -7454,7 +7454,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           (async () => {
             try {
               const colegas = await db.getAlunosByTurma(aluno!.turmaId!);
-              const muralUrl = 'https://ecolider.evoluirckm.com/mural';
+              const muralUrl = 'https://ecolider.ecodobem.com/mural';
               // Buscar nome da empresa do aluno
               const programasList = await db.getPrograms();
               const empresaNome = aluno!.programId
@@ -8164,7 +8164,7 @@ Responda APENAS em JSON com o formato:
                     </div>
 
                     <div style="text-align: center; margin: 24px 0;">
-                      <a href="https://ecolider.evoluirckm.com/" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
+                      <a href="https://ecolider.ecodobem.com/" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
                     </div>
 
                     <p style="font-size: 14px; color: #6b7280; line-height: 1.5;">Em breve o aluno far\u00e1 o agendamento do primeiro encontro. Voc\u00ea receber\u00e1 uma notifica\u00e7\u00e3o com a data e hor\u00e1rio escolhidos.</p>
@@ -8363,7 +8363,7 @@ Responda APENAS em JSON com o formato:
                     </div>
 
                     <div style="text-align: center; margin: 24px 0;">
-                      <a href="https://ecolider.evoluirckm.com/" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
+                      <a href="https://ecolider.ecodobem.com/" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
                     </div>
                     
                     <p style="margin-top: 20px; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 16px;">Ecossistema do Bem - Programa de Mentoria</p>
@@ -8415,7 +8415,7 @@ Responda APENAS em JSON com o formato:
                     </div>
 
                     <div style="text-align: center; margin: 24px 0;">
-                      <a href="https://ecolider.evoluirckm.com/onboarding" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
+                      <a href="https://ecolider.ecodobem.com/onboarding" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
                     </div>
                     
                     <p style="margin-top: 20px; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 16px;">Ecossistema do Bem - Programa de Mentoria</p>
@@ -9457,7 +9457,7 @@ Responda APENAS em JSON com o formato especificado.`
             
             if (!dryRun && aluno.email) {
               try {
-                const loginUrl = 'https://ecolider.evoluirckm.com';
+                const loginUrl = 'https://ecolider.ecodobem.com';
                 const emailData = buildMentoringAlertEmail({
                   alunoName: aluno.name,
                   mentorName: mentor.name,
@@ -9594,7 +9594,7 @@ Responda APENAS em JSON com o formato especificado.`
         const program = aluno.programId ? allPrograms.find(p => p.id === aluno.programId) : null;
 
         // Build login URL
-        const loginUrl = 'https://ecolider.evoluirckm.com/';
+        const loginUrl = 'https://ecolider.ecodobem.com/';
 
         // Send invite email
         const { sendEmail, buildOnboardingInviteEmail } = await import('./emailService');

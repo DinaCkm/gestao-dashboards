@@ -74,7 +74,7 @@ describe("buildCycleDeadlineAlertEmail", () => {
       programaNome: "SEBRAE ACRE",
       macroTermino: "2026-04-18",
       diasRestantes: 30,
-      loginUrl: "https://ecolider.evoluirckm.com",
+      loginUrl: "https://ecolider.ecodobem.com",
     });
 
     expect(result.subject).toContain("AVISO");
@@ -97,7 +97,7 @@ describe("buildCycleDeadlineAlertEmail", () => {
       programaNome: "EMBRAPII",
       macroTermino: "2026-03-26",
       diasRestantes: 7,
-      loginUrl: "https://ecolider.evoluirckm.com",
+      loginUrl: "https://ecolider.ecodobem.com",
     });
 
     expect(result.subject).toContain("URGENTE");
@@ -113,7 +113,7 @@ describe("buildCycleDeadlineAlertEmail", () => {
       programaNome: "SEBRAE TO",
       macroTermino: "2026-04-03",
       diasRestantes: 15,
-      loginUrl: "https://ecolider.evoluirckm.com",
+      loginUrl: "https://ecolider.ecodobem.com",
     });
 
     expect(result.subject).toContain("ATENÇÃO");
@@ -122,7 +122,7 @@ describe("buildCycleDeadlineAlertEmail", () => {
 
   it("includes login URL in both html and text", async () => {
     const { buildCycleDeadlineAlertEmail } = await import("./emailService");
-    const loginUrl = "https://ecolider.evoluirckm.com";
+    const loginUrl = "https://ecolider.ecodobem.com";
     const result = buildCycleDeadlineAlertEmail({
       alunoName: "Test",
       mentorName: "Mentor",
