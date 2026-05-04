@@ -2431,7 +2431,7 @@ function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete
     }
   }, [progressoData?.jornada]);
 
-  const todosAssistidos = Object.values(assistidos).every(v => v);
+  const todosAssistidos = assistidos.boas_vindas === true;
   const totalAssistidos = Object.values(assistidos).filter(v => v).length;
 
   const VIDEO_ICONS: Record<string, any> = {
