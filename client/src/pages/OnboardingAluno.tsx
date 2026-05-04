@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  User, ClipboardCheck, Users2, CalendarDays, Video as VideoIcon,
+  User, ClipboardCheck, Users2, CalendarDays, Video as VideoIcon, Info,
   CheckCircle2, Circle, Lock, ChevronRight, ExternalLink, Camera, Briefcase,
   GraduationCap, Clock, Calendar, Target, Award,
   Play, ArrowRight, Sparkles, Heart, Eye, AlertCircle, CheckCircle,
@@ -143,6 +143,197 @@ function MentoraGuiaBanner({ etapa }: { etapa: number }) {
 // STEPPER DE ONBOARDING
 // ============================================================
 
+const ONBOARDING_STEP_TUTORIALS: Record<number, { title: string; content: string }> = {
+  1: {
+    title: "Cadastro — Seus Dados Pessoais e Profissionais",
+    content: `<div class="space-y-4">
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-blue-800">🎯 Objetivo</p>
+        <p class="text-sm text-blue-700 mt-1">Confirmar e completar seus dados para que sua mentora possa te conhecer melhor antes da primeira sessão.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">📝 O que você precisa preencher:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-blue-600 shrink-0">1.</span><span><strong>Dados Pessoais</strong> — Confirme nome completo, e-mail e telefone.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-blue-600 shrink-0">2.</span><span><strong>Dados Profissionais</strong> — Informe seu cargo atual e área de atuação.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-blue-600 shrink-0">3.</span><span><strong>Minicurrículo</strong> — Breve resumo da sua trajetória e principais experiências.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-blue-600 shrink-0">4.</span><span><strong>Quem é você?</strong> — Seus valores, o que te motiva e como você se vê como pessoa.</span></li>
+        </ol>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p class="text-xs text-amber-700">⚠️ Após concluir o Onboarding, esses dados ficam em modo de visualização. Para atualizar, entre em contato com sua mentora.</p>
+      </div>
+    </div>`
+  },
+  2: {
+    title: "Assessment — Avaliação de Perfil Comportamental",
+    content: `<div class="space-y-4">
+      <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-purple-800">🎯 Objetivo</p>
+        <p class="text-sm text-purple-700 mt-1">Mapear seu perfil comportamental para definir as competências e metas do seu desenvolvimento.</p>
+      </div>
+      <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
+        <p class="text-sm font-bold text-orange-800">⚠️ Importante</p>
+        <p class="text-sm text-orange-700 mt-1">O Assessment <strong>não é preenchido por você</strong> na plataforma. Ele é conduzido pela sua mentora durante a Sessão 1.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">📋 Como acontece:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">1.</span><span><strong>Aguarde o agendamento</strong> da Sessão 1 — após escolher sua mentora.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">2.</span><span><strong>Participe com abertura</strong> — sua mentora conduzirá uma conversa estruturada. Não existe resposta certa ou errada.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">3.</span><span><strong>Sua mentora registra o resultado</strong> — perfil comportamental, competências prioritárias e relatório da sessão.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">4.</span><span><strong>Sua trilha é definida</strong> — competências, metas e foco de cada ciclo mensal.</span></li>
+        </ol>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p class="text-xs text-blue-700">💡 Quanto mais honesto você for, mais personalizado e eficaz será seu desenvolvimento.</p>
+      </div>
+    </div>`
+  },
+  3: {
+    title: "Mentora — Escolhendo sua Guia de Desenvolvimento",
+    content: `<div class="space-y-4">
+      <div class="bg-pink-50 border border-pink-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-pink-800">🎯 Objetivo</p>
+        <p class="text-sm text-pink-700 mt-1">Escolher a mentora ideal para guiar seu desenvolvimento durante todo o macrociclo.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">🔍 O que observar ao escolher:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-pink-600 shrink-0">1.</span><span><strong>Leia a minibiografia</strong> — trajetória profissional, áreas de expertise e estilo de mentoria.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-pink-600 shrink-0">2.</span><span><strong>Analise as especialidades</strong> — Liderança, Comunicação, Inteligência Emocional, Visão Estratégica.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-pink-600 shrink-0">3.</span><span><strong>Busque alinhamento</strong> — pense nas áreas que mais precisa desenvolver.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-pink-600 shrink-0">4.</span><span><strong>Confirme a escolha</strong> — após confirmar, não é possível alterar sem contato com a administração.</span></li>
+        </ol>
+      </div>
+      <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+        <p class="text-xs text-green-700">✨ Não existe escolha errada. Todas as mentoras são preparadas para conduzir o programa. Confie na sua intuição.</p>
+      </div>
+    </div>`
+  },
+  4: {
+    title: "Agendamento — Sua Primeira Sessão",
+    content: `<div class="space-y-4">
+      <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-teal-800">🎯 Objetivo</p>
+        <p class="text-sm text-teal-700 mt-1">Agendar o seu primeiro encontro com a mentora escolhida.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">📅 Passo a passo:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-teal-600 shrink-0">1.</span><span><strong>Visualize os horários disponíveis</strong> na agenda da sua mentora.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-teal-600 shrink-0">2.</span><span><strong>Escolha data e horário</strong> que melhor se encaixam na sua rotina.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-teal-600 shrink-0">3.</span><span><strong>Confirme o agendamento</strong> — você receberá o link do Google Meet por e-mail e ele ficará disponível aqui no Onboarding.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-teal-600 shrink-0">4.</span><span><strong>Prepare-se</strong> — anote suas principais dificuldades profissionais e expectativas para o programa.</span></li>
+        </ol>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p class="text-xs text-amber-700">⏰ A pontualidade é um sinal de comprometimento. Acesse o link alguns minutos antes do horário marcado.</p>
+      </div>
+    </div>`
+  },
+  5: {
+    title: "1º Encontro — Sessão Inicial com sua Mentora",
+    content: `<div class="space-y-4">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-indigo-800">🎯 Objetivo</p>
+        <p class="text-sm text-indigo-700 mt-1">Participar da primeira sessão onde acontece o Assessment e o início do seu plano de desenvolvimento.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">🎙️ O que acontece nesta sessão:</p>
+        <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
+          <li>Condução do <strong>Assessment comportamental</strong></li>
+          <li>Conhecimento da sua trajetória e objetivos profissionais</li>
+          <li>Definição das primeiras diretrizes do seu PDI</li>
+        </ul>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">✅ Como se preparar:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-indigo-600 shrink-0">1.</span><span>Acesse o link do Google Meet disponível no Onboarding ou no e-mail recebido.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-indigo-600 shrink-0">2.</span><span>Chegue alguns minutos antes — teste áudio e câmera.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-indigo-600 shrink-0">3.</span><span>Esteja em um ambiente tranquilo, sem interrupções.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-indigo-600 shrink-0">4.</span><span>Seja honesto e aberto — quanto mais você compartilhar, mais personalizado será seu plano.</span></li>
+        </ol>
+      </div>
+    </div>`
+  },
+  6: {
+    title: "Sua Jornada — Visão Completa do seu Desenvolvimento",
+    content: `<div class="space-y-4">
+      <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-emerald-800">🎯 Objetivo</p>
+        <p class="text-sm text-emerald-700 mt-1">Conhecer seu plano e entender como está estruturada a sua jornada ao longo do macrociclo.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">🗺️ O que você verá:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-emerald-600 shrink-0">1.</span><span><strong>Linha do Tempo do Macrociclo</strong> — período total do programa com data de início, término e progresso atual.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-emerald-600 shrink-0">2.</span><span><strong>Trilhas de Competências</strong> — quais trilhas foram definidas e as competências de cada ciclo mensal.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-emerald-600 shrink-0">3.</span><span><strong>Metas Desafiadoras</strong> — macro metas e micro metas lançadas pela mentora.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-emerald-600 shrink-0">4.</span><span><strong>Cases Previstos</strong> — quantos cases de aplicabilidade você precisará entregar.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-emerald-600 shrink-0">5.</span><span><strong>Webinars</strong> — os webinars quinzenais programados para o seu período.</span></li>
+        </ol>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p class="text-xs text-blue-700">📌 <strong>Macrociclo:</strong> É o período total do seu contrato de mentoria. Dentro dele, existem ciclos menores (geralmente mensais), cada um focado em competências específicas.</p>
+      </div>
+    </div>`
+  },
+  7: {
+    title: "Meu PDI — Plano de Desenvolvimento Individual",
+    content: `<div class="space-y-4">
+      <div class="bg-violet-50 border border-violet-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-violet-800">🎯 Objetivo</p>
+        <p class="text-sm text-violet-700 mt-1">Conhecer em detalhes o mapa completo da sua jornada de crescimento.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">📋 O PDI define:</p>
+        <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
+          <li>As <strong>competências</strong> desenvolvidas em cada ciclo</li>
+          <li>As <strong>metas desafiadoras</strong> (macro metas e micro metas) que você deve cumprir</li>
+          <li>Os <strong>cases de aplicabilidade</strong> que comprovarão seu desenvolvimento na prática</li>
+          <li>A <strong>trilha de cursos e conteúdos</strong> alinhada ao seu perfil</li>
+        </ul>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">🔍 Como explorar:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-violet-600 shrink-0">1.</span><span>Use as abas de navegação (Visão Geral, Competências, Metas, Cases) para explorar cada seção.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-violet-600 shrink-0">2.</span><span>Após o Onboarding, acesse seu PDI completo em <strong>Portal do Aluno &gt; P.D.I.</strong></span></li>
+        </ol>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p class="text-xs text-amber-700">💡 O PDI é o seu guia de desenvolvimento. Mantenha-o sempre em mente durante as sessões e ao realizar as tarefas práticas.</p>
+      </div>
+    </div>`
+  },
+  8: {
+    title: "Aceite — Confirmação e Início da Jornada",
+    content: `<div class="space-y-4">
+      <div class="bg-rose-50 border border-rose-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-rose-800">🎯 Objetivo</p>
+        <p class="text-sm text-rose-700 mt-1">Confirmar seu compromisso com o programa e oficializar o início da sua jornada.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">🏆 Requisitos para Certificação (Líder Nível I):</p>
+        <ul class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2 bg-gray-50 rounded-lg p-2"><span>📊</span><span><strong>Engajamento mínimo de 80%</strong> — participação em webinars, mentorias, cursos e entrega de tarefas</span></li>
+          <li class="flex gap-2 bg-gray-50 rounded-lg p-2"><span>📝</span><span><strong>Cases de aplicabilidade</strong> — evidências reais de aplicação do aprendizado, confirmadas pela liderança ou mentora</span></li>
+          <li class="flex gap-2 bg-gray-50 rounded-lg p-2"><span>🎯</span><span><strong>Metas cumpridas em mínimo de 80%</strong> — as metas desafiadoras assumidas no início da jornada</span></li>
+        </ul>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">✍️ Assinatura Digital:</p>
+        <p class="text-sm text-gray-700">Digite seu nome completo e clique em <strong>"De Acordo"</strong> para confirmar. Após a assinatura, o Onboarding é concluído e você tem acesso completo à plataforma.</p>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p class="text-xs text-amber-700">⚠️ Caso tenha dúvidas sobre o plano antes de assinar, clique em <strong>"Gostaria de Rever"</strong> — sua mentora será notificada.</p>
+      </div>
+    </div>`
+  },
+};
+
 const ONBOARDING_STEPS = [
   { id: 1, label: "Cadastro", icon: User, description: "Atualize seus dados" },
   { id: 2, label: "Assessment", icon: ClipboardCheck, description: "Avaliação de perfil" },
@@ -155,9 +346,9 @@ const ONBOARDING_STEPS = [
 ];
 
 function OnboardingStepper({ currentStep, progressStep, onStepClick, readOnly = false }: { currentStep: number; progressStep?: number; onStepClick: (step: number) => void; readOnly?: boolean }) {
-  // Use progressStep (real progress) to determine which steps are completed
-  // This prevents the visual regression when navigating to a previous step
   const effectiveStep = progressStep && progressStep > currentStep ? progressStep : currentStep;
+  const [openTutorial, setOpenTutorial] = useState<number | null>(null);
+  const tutorialData = openTutorial ? ONBOARDING_STEP_TUTORIALS[openTutorial] : null;
   return (
     <div className="w-full mb-8">
       <div className="flex items-center justify-between relative">
@@ -177,23 +368,25 @@ function OnboardingStepper({ currentStep, progressStep, onStepClick, readOnly = 
           return (
             <div
               key={step.id}
-              className="flex flex-col items-center relative z-10 cursor-pointer group"
-              onClick={() => {
-                if (readOnly || isCompleted || isCurrent) onStepClick(step.id);
-                else if (isLocked) toast.info("Esta etapa ainda não está habilitada");
-                else toast.info("Complete as etapas anteriores primeiro");
-              }}
+              className="flex flex-col items-center relative z-10 group"
             >
-              <div className={`
-                w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2
-                ${isCompleted
-                  ? "bg-[#1E40AF] border-[#1E40AF] text-white shadow-lg shadow-blue-500/30"
-                  : isCurrent
-                    ? "bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/40 ring-4 ring-red-400/30 animate-pulse"
-                    : "bg-gray-100 border-red-300 text-red-400"
-                }
-                ${!isLocked ? "group-hover:scale-110" : ""}
-              `}>
+              <div
+                className={`
+                  w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2 cursor-pointer
+                  ${isCompleted
+                    ? "bg-[#1E40AF] border-[#1E40AF] text-white shadow-lg shadow-blue-500/30"
+                    : isCurrent
+                      ? "bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/40 ring-4 ring-red-400/30 animate-pulse"
+                      : "bg-gray-100 border-red-300 text-red-400"
+                  }
+                  ${!isLocked ? "group-hover:scale-110" : ""}
+                `}
+                onClick={() => {
+                  if (readOnly || isCompleted || isCurrent) onStepClick(step.id);
+                  else if (isLocked) toast.info("Esta etapa ainda não está habilitada");
+                  else toast.info("Complete as etapas anteriores primeiro");
+                }}
+              >
                 {isCompleted ? (
                   <CheckCircle2 className="h-6 w-6" />
                 ) : isLocked ? (
@@ -212,10 +405,28 @@ function OnboardingStepper({ currentStep, progressStep, onStepClick, readOnly = 
               }`}>
                 {step.description}
               </span>
+              <button
+                onClick={(e) => { e.stopPropagation(); setOpenTutorial(openTutorial === step.id ? null : step.id); }}
+                className="mt-1 flex items-center gap-0.5 text-[10px] text-gray-400 hover:text-blue-500 transition-colors"
+                title={`Saiba mais sobre ${step.label}`}
+              >
+                <Info className="h-3 w-3" />
+                <span>saiba mais</span>
+              </button>
             </div>
           );
         })}
       </div>
+      {tutorialData && (
+        <Dialog open={!!openTutorial} onOpenChange={(open) => { if (!open) setOpenTutorial(null); }}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold text-[#0A1E3E] leading-snug">{tutorialData.title}</DialogTitle>
+            </DialogHeader>
+            <div dangerouslySetInnerHTML={{ __html: tutorialData.content }} />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
