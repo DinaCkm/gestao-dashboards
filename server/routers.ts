@@ -3731,6 +3731,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           taskMode: s.taskMode,
           relatoAluno: s.relatoAluno,
           ciclo: s.ciclo,
+          isAssessment: s.isAssessment ? true : false,
         })),
         eventos: eventosDetalhados,
         planoIndividual: planoItems,

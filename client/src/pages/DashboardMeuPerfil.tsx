@@ -2677,7 +2677,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
           <TabsContent value="tarefas" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Cards de Resumo de Tarefas */}
             {(() => {
-              const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && s.sessionNumber !== 1);
+              const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && !s.isAssessment);
               const totalTarefas = sessoesComTarefa.length;
               const entregues = sessoesComTarefa.filter((s: any) => s.taskStatus === 'entregue').length;
               const validadas = sessoesComTarefa.filter((s: any) => s.taskStatus === 'validada').length;
@@ -2734,7 +2734,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                 </CardTitle>
                 <CardDescription className="text-gray-500">
                   {(() => {
-                    const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && s.sessionNumber !== 1);
+                    const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && !s.isAssessment);
                     const entregues = sessoesComTarefa.filter((s: any) => s.taskStatus === 'entregue' || s.taskStatus === 'validada');
                     return `${entregues.length} de ${sessoesComTarefa.length} atividades entregues`;
                   })()}
