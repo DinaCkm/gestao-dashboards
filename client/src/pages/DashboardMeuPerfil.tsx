@@ -409,15 +409,16 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
 
   const metasOrdenadas = useMemo(() => {
     const list = metasData?.metas ?? [];
+    // Ordenar crescente: a primeira meta criada é a macro meta desafiadora
     return [...list].sort((a: any, b: any) =>
-      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
     );
   }, [metasData?.metas]);
 
   const metaPrincipal = metasOrdenadas[0] ?? null;
 
   const microMetas = useMemo(() => {
-    if (metasOrdenadas.length <= 1) return metasOrdenadas;
+    if (metasOrdenadas.length <= 1) return [];
     return metasOrdenadas.slice(1);
   }, [metasOrdenadas]);
 
@@ -2534,7 +2535,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {microMetas.map((meta: any) => {
+                          {microMetas.map((meta: any, idx: number) => {
                             const metaStatus = getMetaStatusConfig(meta.ultimoStatus);
                             const tarefaVinculada = (myTasks || []).find((task: any) => Number(task.taskId) === Number(meta.taskLibraryId));
                             const possuiEnvio = !!tarefaVinculada && (tarefaVinculada.taskStatus === "entregue" || tarefaVinculada.taskStatus === "validada") && !!(tarefaVinculada.evidenceLink || tarefaVinculada.evidenceImageUrl || tarefaVinculada.submittedAt);
@@ -2545,7 +2546,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                 <div className="flex items-start justify-between gap-2 flex-wrap">
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                      <p className="text-sm font-semibold text-gray-900">{meta.titulo}</p>
+                                      <p className="text-sm font-semibold text-gray-900">{idx + 1}. {meta.titulo}</p>
                                       <Badge variant="outline" className={metaStatus.className}>
                                         <span className="flex items-center gap-1">{metaStatus.icon} {metaStatus.label}</span>
                                       </Badge>
