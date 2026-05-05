@@ -1561,6 +1561,7 @@ __export(db_exports, {
   deleteWebinar: () => deleteWebinar,
   descongelarAssessmentPdi: () => descongelarAssessmentPdi,
   determinePlataformaAulas: () => determinePlataformaAulas,
+  ensureBibliotecaPedagogicaTables: () => ensureBibliotecaPedagogicaTables,
   ensureEventForWebinar: () => ensureEventForWebinar,
   getAccessUsers: () => getAccessUsers,
   getActiveConsultors: () => getActiveConsultors,
@@ -8680,6 +8681,56 @@ async function syncStudentPerformanceFromPlatform(alunoId, cursoAtribuidoId) {
     }
   } catch (error) {
     console.error("[syncStudentPerformanceFromPlatform] Error:", error);
+  }
+}
+async function ensureBibliotecaPedagogicaTables() {
+  const db2 = await getDb();
+  if (!db2) return;
+  try {
+    await db2.execute(sql.raw(`
+      CREATE TABLE IF NOT EXISTS \`fichas_pedagogicas_competencias\` (
+        \`id\` int AUTO_INCREMENT PRIMARY KEY,
+        \`competenciaId\` int NOT NULL,
+        \`linhaDesenvolvimento\` text NOT NULL,
+        \`objetivoPedagogico\` text NOT NULL,
+        \`oQueEnsina\` text NOT NULL,
+        \`quandoIndicar\` text NOT NULL,
+        \`sinaisObservaveis\` text NOT NULL,
+        \`cuidadoIndicacao\` text,
+        \`resumoMentor\` text NOT NULL,
+        \`descricaoAluno\` text NOT NULL,
+        \`sugestaoDesenvolvimentoCompetencia\` text NOT NULL,
+        \`status\` enum('rascunho','publicada','inativa') NOT NULL DEFAULT 'rascunho',
+        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        \`createdBy\` varchar(255),
+        \`updatedBy\` varchar(255)
+      )
+    `));
+    await db2.execute(sql.raw(`
+      CREATE TABLE IF NOT EXISTS \`fichas_pedagogicas_conteudos\` (
+        \`id\` int AUTO_INCREMENT PRIMARY KEY,
+        \`competenciaId\` int NOT NULL,
+        \`conteudoId\` int NOT NULL,
+        \`tipoConteudo\` enum('intro','filme','video','tedtalk','podcast','livro','curso','outro') NOT NULL,
+        \`nomeConteudo\` varchar(255) NOT NULL,
+        \`linkConteudo\` varchar(1000),
+        \`papelPedagogico\` text NOT NULL,
+        \`oQueAlunoAprende\` text NOT NULL,
+        \`reflexaoEsperada\` text NOT NULL,
+        \`quandoUsar\` text,
+        \`orientacaoMentor\` text NOT NULL,
+        \`descricaoAluno\` text NOT NULL,
+        \`status\` enum('rascunho','publicada','inativa') NOT NULL DEFAULT 'rascunho',
+        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        \`createdBy\` varchar(255),
+        \`updatedBy\` varchar(255)
+      )
+    `));
+    console.log("[DB] Tabelas da Biblioteca Pedag\xF3gica verificadas/criadas com sucesso.");
+  } catch (error) {
+    console.error("[DB] Erro ao criar tabelas da Biblioteca Pedag\xF3gica:", error);
   }
 }
 var _db, _connection, onboardingRevisoesDb;
@@ -24856,6 +24907,7 @@ function iniciarCronLembreteAplicabilidade() {
 
 // server/_core/index.ts
 init_env();
+init_db();
 function isPortAvailable(port) {
   return new Promise((resolve) => {
     const server = net.createServer();
@@ -24874,6 +24926,7 @@ async function findAvailablePort(startPort = 3e3) {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 async function startServer() {
+  await ensureBibliotecaPedagogicaTables();
   const app = express2();
   const server = createServer(app);
   app.use(express2.json({ limit: "50mb" }));
