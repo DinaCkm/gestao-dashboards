@@ -813,7 +813,8 @@ export const fichasPedagogicasRouter = router({
           const comp = compNomeMap.get(nomeComp.toLowerCase());
           if (!comp) { erros++; continue; }
 
-          let status = String(row["status"] || "rascunho").trim().toLowerCase() as "rascunho" | "publicada" | "inativa";
+          // Upload sempre publica automaticamente
+          let status: "rascunho" | "publicada" | "inativa" = "publicada";
 
           const dados = {
             competenciaId: comp.id,
@@ -842,11 +843,6 @@ export const fichasPedagogicasRouter = router({
             compCriadas++;
           } else {
             const fichaAtual = existente[0];
-            // Se ficha publicada, criar rascunho novo em vez de sobrescrever
-            if (fichaAtual.status === "publicada" && status === "publicada") {
-              status = "rascunho";
-              rascunhos++;
-            }
             await db
               .update(fichasPedagogicasCompetencias)
               .set({ ...dados, status })
@@ -869,8 +865,8 @@ export const fichasPedagogicasRouter = router({
           const comp = compNomeMap.get(nomeComp.toLowerCase());
           if (!comp || !nomeCont) { erros++; continue; }
 
-          let status = String(row["status"] || "rascunho").trim().toLowerCase() as "rascunho" | "publicada" | "inativa";
-          if (!["rascunho", "publicada", "inativa"].includes(status)) status = "rascunho";
+          // Upload sempre publica automaticamente
+          let status: "rascunho" | "publicada" | "inativa" = "publicada";
 
           const tipoRaw = String(row["tipo_conteudo"] || "outro").trim().toLowerCase();
           const tiposValidos = ["intro", "filme", "video", "tedtalk", "podcast", "livro", "curso", "outro"];
@@ -938,10 +934,6 @@ export const fichasPedagogicasRouter = router({
             contCriadas++;
           } else {
             const fichaAtual = existente[0];
-            if (fichaAtual.status === "publicada" && status === "publicada") {
-              status = "rascunho";
-              rascunhos++;
-            }
             await db
               .update(fichasPedagogicasConteudos)
               .set({ ...dados, status })
