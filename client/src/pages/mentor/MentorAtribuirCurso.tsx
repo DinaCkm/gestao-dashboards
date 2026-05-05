@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Calendar, CheckCircle2, Edit2, Trash2, Unlock, AlertTriangle, ArrowLeft } from "lucide-react";
+import { BookOpen, Calendar, CheckCircle2, Edit2, Trash2, Unlock, AlertTriangle, ArrowLeft, Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -66,6 +66,10 @@ export default function MentorAtribuirCurso() {
   const [novoPrazo, setNovoPrazo] = useState("");
   const [novoStatus, setNovoStatus] = useState("");
 
+  // Filtros da tabela global
+  const [filtroAluno, setFiltroAluno] = useState("");
+  const [filtroCurso, setFiltroCurso] = useState("");
+
   const [location, navigate] = useLocation();
   const { user } = useAuth();
   const isAdmin = location.startsWith("/admin") || user?.role === "admin";
@@ -86,23 +90,24 @@ export default function MentorAtribuirCurso() {
     { enabled: Number(competenciaSelecionada) > 0 }
   );
 
-  // Query para listar cursos atribuídos ao aluno selecionado
+  // Query para listar cursos atribuídos ao aluno selecionado (seção do formulário)
   const cursosAtribuidosQuery = trpc.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.useQuery(
     { alunoId: Number(alunoSelecionado) },
     { enabled: Number(alunoSelecionado) > 0 }
   );
 
+  // Query para listar TODOS os cursos atribuídos (tabela global)
+  const todasAtribuicoesQuery = trpc.competenciasCompTec.mentor.listarTodasAtribuicoes.useQuery();
+
   const atribuirMutation = trpc.competenciasCompTec.mentor.atribuirCurso.useMutation({
     onSuccess: async () => {
-      // Limpar formulário
       setAlunoSelecionado("");
       setCompetenciaSelecionada("");
       setCursoSelecionado("");
       setPrazo("");
-      
-      // Invalidar queries para atualizar a lista
       await utils.competenciasCompTec.mentor.listarAlunos.invalidate();
       await utils.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.invalidate();
+      await utils.competenciasCompTec.mentor.listarTodasAtribuicoes.invalidate();
     },
   });
 
@@ -113,23 +118,26 @@ export default function MentorAtribuirCurso() {
       setNovoPrazo("");
       setNovoStatus("");
       await utils.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.invalidate();
+      await utils.competenciasCompTec.mentor.listarTodasAtribuicoes.invalidate();
     },
   });
 
   const removerMutation = trpc.competenciasCompTec.mentor.removerAtribuicao.useMutation({
     onSuccess: async () => {
       await utils.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.invalidate();
+      await utils.competenciasCompTec.mentor.listarTodasAtribuicoes.invalidate();
     },
   });
 
   const liberarTentativasMutation = trpc.competenciasCompTec.mentor.liberarTentativas.useMutation({
     onSuccess: async () => {
       await utils.competenciasCompTec.mentor.listarCursosAtribuidosAoAluno.invalidate();
+      await utils.competenciasCompTec.mentor.listarTodasAtribuicoes.invalidate();
     },
   });
 
   async function liberarTentativas(cursoAtribuidoId: number, alunoId: number, cursoNome: string) {
-    if (confirm(`Tem certeza que deseja liberar novas tentativas para o aluno no curso "${cursoNome}"? Isso vai resetar as tentativas e permitir que o aluno refa\u00e7a o curso e a prova.`)) {
+    if (confirm(`Tem certeza que deseja liberar novas tentativas para o aluno no curso "${cursoNome}"? Isso vai resetar as tentativas e permitir que o aluno refaça o curso e a prova.`)) {
       await liberarTentativasMutation.mutateAsync({ cursoAtribuidoId, alunoId });
     }
   }
@@ -159,7 +167,6 @@ export default function MentorAtribuirCurso() {
   const alunos = useMemo(
     () => {
       const dados = alunosQuery.data ?? [];
-      // Filtrar apenas alunos com plataforma sistema_interno (alunos scaffold cursam na plataforma externa)
       const filtrados = isAdmin
         ? dados.filter((item: any) => (item.plataformaAulas || 'sistema_interno') === 'sistema_interno')
         : dados;
@@ -179,27 +186,42 @@ export default function MentorAtribuirCurso() {
   );
 
   const cursosAtribuidos = useMemo(() => {
-    console.log('Dados recebidos:', cursosAtribuidosQuery.data);
-    return (cursosAtribuidosQuery.data ?? []).map((item: any) => {
-      console.log('Mapeando item:', item);
-      return {
-        id: item?.id ?? 0,
-        alunoId: item?.alunoId ?? 0,
-        cursoNome: item?.cursoTitulo ?? "Curso desconhecido",
-        competenciaNome: item?.competenciaNome ?? "Competência desconhecida",
-        dataPrazo: item?.dataPrazo ?? "",
-        status: item?.status ?? "nao_iniciado",
-        dataAtribuicao: item?.dataAtribuicao ?? "",
-        temAtividadeBloqueada: item?.temAtividadeBloqueada ?? false,
-        qtdAtividadesBloqueadas: item?.qtdAtividadesBloqueadas ?? 0,
-      };
-    });
+    return (cursosAtribuidosQuery.data ?? []).map((item: any) => ({
+      id: item?.id ?? 0,
+      alunoId: item?.alunoId ?? 0,
+      cursoNome: item?.cursoTitulo ?? "Curso desconhecido",
+      competenciaNome: item?.competenciaNome ?? "Competência desconhecida",
+      dataPrazo: item?.dataPrazo ?? "",
+      status: item?.status ?? "nao_iniciado",
+      dataAtribuicao: item?.dataAtribuicao ?? "",
+      temAtividadeBloqueada: item?.temAtividadeBloqueada ?? false,
+      qtdAtividadesBloqueadas: item?.qtdAtividadesBloqueadas ?? 0,
+    }));
   }, [cursosAtribuidosQuery.data]);
+
+  // Tabela global com filtros
+  const todasAtribuicoesFiltradas = useMemo(() => {
+    const dados = (todasAtribuicoesQuery.data ?? []).map((item: any) => ({
+      id: item?.id ?? 0,
+      alunoId: item?.alunoId ?? 0,
+      alunoNome: item?.alunoNome ?? "Aluno desconhecido",
+      cursoNome: item?.cursoTitulo ?? "Curso desconhecido",
+      competenciaNome: item?.competenciaNome ?? "—",
+      dataPrazo: item?.dataPrazo ?? "",
+      dataAtribuicao: item?.dataAtribuicao ?? "",
+      status: item?.status ?? "nao_iniciado",
+    }));
+
+    return dados.filter((item) => {
+      const matchAluno = filtroAluno === "" || item.alunoNome.toLowerCase().includes(filtroAluno.toLowerCase());
+      const matchCurso = filtroCurso === "" || item.cursoNome.toLowerCase().includes(filtroCurso.toLowerCase());
+      return matchAluno && matchCurso;
+    });
+  }, [todasAtribuicoesQuery.data, filtroAluno, filtroCurso]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!alunoSelecionado || !competenciaSelecionada || !cursoSelecionado || !prazo) return;
-
     await atribuirMutation.mutateAsync({
       alunoId: Number(alunoSelecionado),
       competenciaId: Number(competenciaSelecionada),
@@ -227,6 +249,7 @@ export default function MentorAtribuirCurso() {
         </p>
       </div>
 
+      {/* Formulário de nova atribuição */}
       <Card>
         <CardHeader>
           <CardTitle>Nova atribuição</CardTitle>
@@ -259,7 +282,7 @@ export default function MentorAtribuirCurso() {
                 <SelectContent>
                   {competencias.map((competencia) => (
                     <SelectItem key={competencia.id} value={String(competencia.id)}>
-                      {competencia.nome} (ID: {competencia.id})
+                      {competencia.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -268,8 +291,8 @@ export default function MentorAtribuirCurso() {
 
             <div className="space-y-2">
               <Label>Curso / Programa</Label>
-              <Select 
-                value={cursoSelecionado} 
+              <Select
+                value={cursoSelecionado}
                 onValueChange={setCursoSelecionado}
                 disabled={!competenciaSelecionada || Number(competenciaSelecionada) === 0}
               >
@@ -316,7 +339,7 @@ export default function MentorAtribuirCurso() {
         </CardContent>
       </Card>
 
-      {/* Seção de Cursos Atribuídos */}
+      {/* Cursos atribuídos ao aluno selecionado no formulário */}
       {alunoSelecionado && (
         <Card>
           <CardHeader>
@@ -353,17 +376,12 @@ export default function MentorAtribuirCurso() {
                           <p className="text-xs text-gray-500">
                             Competência: <span className="font-medium">{item.competenciaNome}</span>
                           </p>
-                          <p className="text-xs text-gray-500">
-                            Aluno: <span className="font-medium">{alunoNomeSelecionado}</span>
-                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
-                          <span>
-                            Prazo: {new Date(item.dataPrazo).toLocaleDateString('pt-BR')}
-                          </span>
+                          <span>Prazo: {item.dataPrazo ? new Date(item.dataPrazo).toLocaleDateString('pt-BR') : "—"}</span>
                         </div>
                       </div>
                       {item.temAtividadeBloqueada && (
@@ -384,7 +402,7 @@ export default function MentorAtribuirCurso() {
                           onClick={() => liberarTentativas(item.id, item.alunoId, item.cursoNome)}
                           disabled={liberarTentativasMutation.isPending}
                           className="h-9 px-3 flex items-center gap-1 hover:bg-amber-50 border-amber-300 text-amber-700"
-                          title="Liberar tentativas — resetar para o aluno refazer o curso e a prova"
+                          title="Liberar tentativas"
                         >
                           <Unlock className="h-4 w-4" />
                           <span className="text-xs">Liberar</span>
@@ -416,6 +434,95 @@ export default function MentorAtribuirCurso() {
           </CardContent>
         </Card>
       )}
+
+      {/* Tabela global de todas as atribuições */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-indigo-600" />
+                Todas as Atribuições
+              </CardTitle>
+              <CardDescription>Visão geral de todos os cursos atribuídos a alunos</CardDescription>
+            </div>
+            <Badge variant="outline">{todasAtribuicoesFiltradas.length} registro(s)</Badge>
+          </div>
+
+          {/* Filtros */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Filtrar por aluno..."
+                value={filtroAluno}
+                onChange={(e) => setFiltroAluno(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Filtrar por curso..."
+                value={filtroCurso}
+                onChange={(e) => setFiltroCurso(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {todasAtribuicoesQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando atribuições...</p>
+          ) : todasAtribuicoesFiltradas.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma atribuição encontrada.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-gray-50 text-left">
+                    <th className="px-4 py-3 font-semibold text-gray-700">Aluno</th>
+                    <th className="px-4 py-3 font-semibold text-gray-700">Curso</th>
+                    <th className="px-4 py-3 font-semibold text-gray-700">Competência</th>
+                    <th className="px-4 py-3 font-semibold text-gray-700">Prazo</th>
+                    <th className="px-4 py-3 font-semibold text-gray-700">Atribuído em</th>
+                    <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
+                    <th className="px-4 py-3 font-semibold text-gray-700 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {todasAtribuicoesFiltradas.map((item) => (
+                    <tr key={item.id} className="border-b hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-gray-900">{item.alunoNome}</td>
+                      <td className="px-4 py-3 text-gray-700">{item.cursoNome}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{item.competenciaNome}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {item.dataPrazo ? new Date(item.dataPrazo).toLocaleDateString('pt-BR') : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
+                        {item.dataAtribuicao ? new Date(item.dataAtribuicao).toLocaleDateString('pt-BR') : "—"}
+                      </td>
+                      <td className="px-4 py-3">{getStatusBadge(item.status)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => removerAtribuicao(item.id)}
+                          disabled={removerMutation.isPending}
+                          className="h-8 w-8 p-0 flex items-center justify-center hover:bg-red-50 ml-auto"
+                          title="Remover atribuição"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Diálogo de Edição */}
       <Dialog open={dialogEditarAberto} onOpenChange={setDialogEditarAberto}>

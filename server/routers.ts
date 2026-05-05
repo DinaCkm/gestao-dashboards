@@ -10594,6 +10594,32 @@ Responda APENAS em JSON com o formato especificado.`
             .orderBy(desc(alunoModuloProgresso.updatedAt));
         }),
 
+      listarTodasAtribuicoes: protectedProcedure
+        .query(async () => {
+          const database = await db.getDb();
+          if (!database) return [];
+          const { alunos: alunosTable } = await import('../drizzle/schema');
+          const cursos = await database
+            .select({
+              id: alunoCursoAtribuido.id,
+              alunoId: alunoCursoAtribuido.alunoId,
+              alunoNome: alunosTable.name,
+              competenciaId: alunoCursoAtribuido.competenciaId,
+              cursoId: alunoCursoAtribuido.cursoId,
+              dataPrazo: alunoCursoAtribuido.dataPrazo,
+              status: alunoCursoAtribuido.status,
+              dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
+              cursoTitulo: cursosCompetencias.titulo,
+              competenciaNome: competencias.nome,
+            })
+            .from(alunoCursoAtribuido)
+            .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+            .leftJoin(competencias, eq(alunoCursoAtribuido.competenciaId, competencias.id))
+            .leftJoin(alunosTable, eq(alunoCursoAtribuido.alunoId, alunosTable.id))
+            .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+          return cursos;
+        }),
+
        listarCursosAtribuidosAoAluno: protectedProcedure
         .input(z.object({ alunoId: z.number() }))
         .query(async ({ input }) => {
