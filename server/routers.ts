@@ -1296,11 +1296,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             
             const ciclosPorAlunoReport = await db.getAllCiclosForCalculatorV2();
             const compIdToCodigoMapReport = await db.getCompIdToCodigoMap();
+            const compIdToNomeMapReport = await db.getCompIdToNomeMap();
             const casesMapReport = await db.getCasesForCalculator();
             const casesDataReport: CaseSucessoData[] = [];
             for (const [, cases] of Array.from(casesMapReport.entries())) { casesDataReport.push(...cases); }
             const macrocicloPorAlunoReport = await db.getMacrocicloPorAluno();
-            const todosIndicadores = calcularIndicadoresTodosAlunos(mentoriasV2, eventosV2, performanceV2, ciclosPorAlunoReport, compIdToCodigoMapReport, casesDataReport, undefined, macrocicloPorAlunoReport);
+            const todosIndicadores = calcularIndicadoresTodosAlunos(mentoriasV2, eventosV2, performanceV2, ciclosPorAlunoReport, compIdToCodigoMapReport, casesDataReport, undefined, macrocicloPorAlunoReport, compIdToNomeMapReport);
             const indicadoresMap = new Map(todosIndicadores.map(i => [i.idUsuario, i]));
             
             // Sheet 0: Resumo do Mentor (apenas para relatório gerencial de mentor)
@@ -2535,6 +2536,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // Buscar ciclos de execução (V2)
       const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
       const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+      const compIdToNomeMap = await db.getCompIdToNomeMap();
       const casesMap = await db.getCasesForCalculator();
       const casesData: CaseSucessoData[] = [];
       for (const [, cases] of Array.from(casesMap.entries())) { casesData.push(...cases); }
@@ -2556,14 +2558,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           });
           
           // Calcular indicadores apenas com dados filtrados
-          const indicadores = calcularIndicadoresTodosAlunos(filteredMentorias, filteredEventos, filteredPerformance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno);
+          const indicadores = calcularIndicadoresTodosAlunos(filteredMentorias, filteredEventos, filteredPerformance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno, compIdToNomeMap);
           const dashboard = gerarDashboardGeral(indicadores);
           return dashboard;
         }
       }
       
       // Calcular indicadores (V2) - admin vê todos
-      const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno);
+      const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno, compIdToNomeMap);
       const dashboard = gerarDashboardGeral(indicadores);
       
       return dashboard;
@@ -2683,11 +2685,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         
         const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
         const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const compIdToNomeMapEmp = await db.getCompIdToNomeMap();
         const casesMapEmp = await db.getCasesForCalculator();
         const casesDataEmp: CaseSucessoData[] = [];
         for (const [, cases] of Array.from(casesMapEmp.entries())) { casesDataEmp.push(...cases); }
         const macrocicloPorAlunoEmp = await db.getMacrocicloPorAluno();
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataEmp, undefined, macrocicloPorAlunoEmp);
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataEmp, undefined, macrocicloPorAlunoEmp, compIdToNomeMapEmp);
         const dashboard = gerarDashboardEmpresa(indicadores, input.empresa);
         
         // Enriquecer alunos com turma, trilha, ciclo, competências
@@ -2888,11 +2891,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         
         const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
         const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const compIdToNomeMapTurma = await db.getCompIdToNomeMap();
         const casesMapTurma = await db.getCasesForCalculator();
         const casesDataTurma: CaseSucessoData[] = [];
         for (const [, cases] of Array.from(casesMapTurma.entries())) { casesDataTurma.push(...cases); }
         const macrocicloPorAlunoTurma = await db.getMacrocicloPorAluno();
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataTurma, undefined, macrocicloPorAlunoTurma);
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataTurma, undefined, macrocicloPorAlunoTurma, compIdToNomeMapTurma);
         const agregado = agregarIndicadores(indicadores, 'turma', String(input.turmaId));
         const alunos = indicadores.filter(i => i.turma === String(input.turmaId));
         
@@ -3014,11 +3018,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         
         const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
         const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const compIdToNomeMapInd = await db.getCompIdToNomeMap();
         const casesMapInd = await db.getCasesForCalculator();
         const casesDataInd: CaseSucessoData[] = [];
         for (const [, cases] of Array.from(casesMapInd.entries())) { casesDataInd.push(...cases); }
         const macrocicloPorAlunoInd = await db.getMacrocicloPorAluno();
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataInd, undefined, macrocicloPorAlunoInd);
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataInd, undefined, macrocicloPorAlunoInd, compIdToNomeMapInd);
         const alunoIndicadores = indicadores.find(i => i.idUsuario === input.alunoId);
         
         if (!alunoIndicadores) {
@@ -3340,6 +3345,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
         }));
         const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const compIdToNomeMapAluno = await db.getCompIdToNomeMap();
         const casesAluno = await db.getCasesSucessoByAluno(input.alunoId);
         const casesDataAluno: CaseSucessoData[] = casesAluno.map(c => ({
           alunoId: c.alunoId,
@@ -3351,7 +3357,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const macrocicloPorAlunoMap = await db.getMacrocicloPorAluno();
         const macrocicloAluno = macrocicloPorAlunoMap.get(idUsuario);
         const indicadoresV2 = calcularIndicadoresAlunoV2(
-          idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAluno
+          idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAluno, compIdToNomeMapAluno
         );
         
         return {
@@ -3403,6 +3409,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         studentPerfRecords,
         ciclosPorAluno,
         compIdToCodigoMapAll,
+        compIdToNomeMapAll,
         casesMapAll,
         macrocicloPorAlunoGlobal,
         macroInicioMapMeuDash,
@@ -3421,6 +3428,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         cacheOrFetch('studentPerfRecords', () => db.getStudentPerformanceAsRecords()),
         cacheOrFetch('ciclosPorAluno', () => db.getAllCiclosForCalculatorV2()),
         cacheOrFetch('compIdToCodigoMap', () => db.getCompIdToCodigoMap()),
+        cacheOrFetch('compIdToNomeMap', () => db.getCompIdToNomeMap()),
         cacheOrFetch('casesMap', () => db.getCasesForCalculator()),
         cacheOrFetch('macrocicloPorAluno', () => db.getMacrocicloPorAluno()),
         cacheOrFetch('macroInicioMap', () => db.getAlunoMacroInicioMap()),
@@ -3575,7 +3583,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }));
       const macrocicloAlunoPortal = macrocicloPorAlunoGlobal.get(idUsuario);
       const indicadoresV2 = calcularIndicadoresAlunoV2(
-        idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAlunoPortal
+        idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAlunoPortal, compIdToNomeMapAll
       );
 
       // sessoesAluno e eventosAluno já buscados em paralelo acima
@@ -3644,7 +3652,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const casesDataAll: CaseSucessoData[] = [];
       for (const [, cases] of Array.from(casesMapAll.entries())) { casesDataAll.push(...cases); }
       const macrocicloPorAlunoRanking = macrocicloPorAlunoGlobal;
-      const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll, undefined, macrocicloPorAlunoRanking);
+      const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll, undefined, macrocicloPorAlunoRanking, compIdToNomeMapAll);
 
       let ranking = { posicao: 0, totalAlunos: 0 };
       if (aluno.programId) {

@@ -3687,6 +3687,17 @@ export async function getCompIdToCodigoMap(): Promise<Map<number, string>> {
   return map;
 }
 
+export async function getCompIdToNomeMap(): Promise<Map<number, string>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  const allComps = await db.select({ id: competencias.id, nome: competencias.nome }).from(competencias);
+  const map = new Map<number, string>();
+  for (const comp of allComps) {
+    if (comp.nome) map.set(comp.id, comp.nome);
+  }
+  return map;
+}
+
 // ============ DETALHE COMPLETO DO ALUNO ============
 
 /**
