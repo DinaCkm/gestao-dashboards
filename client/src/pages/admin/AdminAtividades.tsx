@@ -68,6 +68,24 @@ export default function AdminAtividades() {
   // Mutations
   const uploadImagemMutation = trpc.competenciasCompTec.admin.uploadImagemAtividade.useMutation();
 
+  const excluirAtividadeMutation = trpc.competenciasCompTec.admin.deleteAtividade.useMutation({
+    onSuccess: async () => {
+      toast.success("Atividade excluída com sucesso!");
+      if (cursoId > 0) {
+        await utils.competenciasCompTec.admin.listarAtividades.invalidate({ cursoId });
+      }
+    },
+    onError: () => {
+      toast.error("Erro ao excluir atividade.");
+    },
+  });
+
+  const handleExcluirAtividade = (id: number, titulo: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir a atividade "${titulo}"?\nEsta ação não pode ser desfeita.`)) {
+      excluirAtividadeMutation.mutate({ id });
+    }
+  };
+
   const criarAtividadeMutation = trpc.competenciasCompTec.admin.criarAtividade.useMutation({
     onSuccess: async () => {
       toast.success("Atividade criada com sucesso!");
@@ -427,7 +445,7 @@ export default function AdminAtividades() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 w-8 p-0 flex-shrink-0"
+                        className="h-8 w-8 p-0"
                         onClick={() => {
                           setSelectedAtividade(atividade);
                           setModalOpen(true);
@@ -435,6 +453,16 @@ export default function AdminAtividades() {
                         title="Editar"
                       >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:border-red-300"
+                        onClick={() => handleExcluirAtividade(atividade.id, atividade.titulo)}
+                        title="Excluir"
+                        disabled={excluirAtividadeMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
