@@ -2484,9 +2484,9 @@ function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete
             <span className="text-sm">Progresso dos vídeos</span>
             <div className="flex items-center gap-2">
               <div className="w-32 h-2 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-[#F5991F] rounded-full transition-all duration-500" style={{ width: `${(totalAssistidos / 5) * 100}%` }} />
+                <div className="h-full bg-[#F5991F] rounded-full transition-all duration-500" style={{ width: `${assistidos.boas_vindas ? 100 : 0}%` }} />
               </div>
-              <span className="text-sm font-bold">{totalAssistidos}/5</span>
+              <span className="text-sm font-bold">{assistidos.boas_vindas ? 1 : 0}/1</span>
             </div>
           </div>
         </div>
@@ -2606,7 +2606,7 @@ function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete
               <div className="flex items-start gap-3">
                 <Sparkles className="h-6 w-6 text-[#F5991F] shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-bold text-[#0A1E3E] mb-1">Você está preparada!</h3>
+                  <h3 className="font-bold text-[#0A1E3E] mb-1">Agora sua Jornada está preparada!</h3>
                   <p className="text-sm text-gray-700 leading-relaxed">
                     Agora você conhece todos os recursos disponíveis para sua jornada. 
                     O próximo passo é o mais importante: assumir o compromisso com o seu desenvolvimento!
