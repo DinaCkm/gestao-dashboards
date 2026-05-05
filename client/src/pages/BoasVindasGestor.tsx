@@ -101,7 +101,7 @@ export default function BoasVindasGestor() {
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-foreground mb-6">Acesso rápido</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a href="/dashboard/minha-empresa" className="block p-6 bg-card rounded-lg border border-border hover:shadow-md transition-shadow">
+          <a href="/dashboard/gestor" className="block p-6 bg-card rounded-lg border border-border hover:shadow-md transition-shadow">
             <div className="text-2xl font-bold text-cyan-600 mb-2">📊</div>
             <h3 className="font-semibold text-foreground">Minha Empresa</h3>
             <p className="text-sm text-muted-foreground mt-1">Visualize dados da sua empresa</p>
