@@ -56,8 +56,9 @@ function linhaParaQuestao(linha: LinhaPlanilhaQuestao): QuestaoForm {
 }
 
 function validarQuestoesImportadas(questoes: QuestaoForm[]) {
-  if (questoes.length !== 30) {
-    throw new Error(`A planilha deve conter exatamente 30 questões. Encontrado: ${questoes.length}.`);
+  const qtdValidas = [10, 20, 30];
+  if (!qtdValidas.includes(questoes.length)) {
+    throw new Error(`A planilha deve conter 10, 20 ou 30 questões. Encontrado: ${questoes.length}.`);
   }
 
   questoes.forEach((questao, index) => {
@@ -134,7 +135,7 @@ export default function AdminAvaliacoes() {
   const [titulo, setTitulo] = useState("");
   const [notaMinima, setNotaMinima] = useState("8");
   const [questoes, setQuestoes] = useState<QuestaoForm[]>(
-    Array.from({ length: 30 }, () => novaQuestao())
+    Array.from({ length: 10 }, () => novaQuestao())
   );
 
   const inputArquivoRef = useRef<HTMLInputElement | null>(null);
@@ -197,7 +198,7 @@ export default function AdminAvaliacoes() {
     setTitulo("");
     setNotaMinima("8");
     setAtividadeSelecionada("");
-    setQuestoes(Array.from({ length: 30 }, () => novaQuestao()));
+    setQuestoes(Array.from({ length: 10 }, () => novaQuestao()));
   }
 
   function atualizarQuestao(
@@ -260,7 +261,7 @@ export default function AdminAvaliacoes() {
   }
 
   function handleBaixarModeloPlanilha() {
-    const linhasModelo = Array.from({ length: 30 }, (_, index) => ({
+    const linhasModelo = Array.from({ length: 10 }, (_, index) => ({
       pergunta: `Pergunta ${index + 1}`,
       alternativaA: "Alternativa A",
       alternativaB: "Alternativa B",
@@ -274,7 +275,7 @@ export default function AdminAvaliacoes() {
 
     XLSX.utils.book_append_sheet(workbook, worksheet, "Questoes");
 
-    XLSX.writeFile(workbook, "modelo_avaliacao_30_questoes.xlsx");
+    XLSX.writeFile(workbook, "modelo_avaliacao_questoes.xlsx");
   }
 
   async function handleCriarAvaliacao(e: React.FormEvent) {
@@ -318,7 +319,7 @@ export default function AdminAvaliacoes() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Administração de Avaliações</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Cadastre avaliações com 30 questões para as atividades dos cursos.
+          Cadastre avaliações com 10, 20 ou 30 questões para as atividades dos cursos.
         </p>
       </div>
 
@@ -472,7 +473,7 @@ export default function AdminAvaliacoes() {
               </div>
 
               <div className="rounded-md border p-4 text-sm text-muted-foreground">
-                A avaliação deve conter exatamente 30 questões.
+                A avaliação deve conter 10, 20 ou 30 questões. O sistema sorteia 10 aleatoriamente a cada tentativa.
               </div>
 
               <div className="max-h-[420px] space-y-4 overflow-y-auto pr-1">
