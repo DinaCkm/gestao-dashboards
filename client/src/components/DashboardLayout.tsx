@@ -155,6 +155,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
       { icon: BookOpen, label: "Atribuir Cursos", path: "/admin/atribuir-cursos" },
       { icon: Monitor, label: "Gerenciar Plataforma de Cursos", path: "/admin/plataforma-aulas" },
+      { icon: Library, label: "Biblioteca Pedagógica", path: "/admin/biblioteca-pedagogica" },
     ],
   },
   {
@@ -165,7 +166,6 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Video, label: "Vídeos de Onboarding", path: "/admin/onboarding-videos" },
       { icon: Bell, label: "Avisos e Comunicados", path: "/avisos" },
       { icon: Trophy, label: "Mural de Cases", path: "/mural" },
-      { icon: Library, label: "Biblioteca Pedagógica", path: "/admin/biblioteca-pedagogica" },
     ],
   },
   {
