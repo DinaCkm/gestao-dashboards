@@ -10363,10 +10363,11 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
           }
 
-          if (input.questoes.length !== 30) {
+          const qtdValidas = [10, 20, 30];
+          if (!qtdValidas.includes(input.questoes.length)) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: `Avaliação deve ter exatamente 30 questões. Recebido: ${input.questoes.length}`,
+              message: `Avaliação deve ter 10, 20 ou 30 questões. Recebido: ${input.questoes.length}`,
             });
           }
 
@@ -11052,8 +11053,32 @@ Responda APENAS em JSON com o formato especificado.`
           }
 
           const todasQuestoes = JSON.parse(avaliacao.questoes || "[]");
-          const questoesEmbaralhadas = [...todasQuestoes].sort(() => 0.5 - Math.random());
-          const questoesSelecionadas = questoesEmbaralhadas.slice(0, 10);
+          const totalQ = todasQuestoes.length;
+          const tentativaAtual = existente?.tentativas ?? 0;
+          let questoesSelecionadas: any[];
+          if (totalQ <= 10) {
+            // 10 ou menos questões: usa todas, só embaralha a ordem
+            questoesSelecionadas = [...todasQuestoes].sort(() => 0.5 - Math.random());
+          } else if (totalQ <= 20) {
+            // 11-20 questões: alterna grupos a cada tentativa
+            const metade = Math.ceil(totalQ / 2);
+            const grupoA = todasQuestoes.slice(0, metade);
+            const grupoB = todasQuestoes.slice(metade);
+            const ciclo = tentativaAtual % 3;
+            if (ciclo === 0) {
+              // 1ª tentativa: grupo A embaralhado
+              questoesSelecionadas = [...grupoA].sort(() => 0.5 - Math.random()).slice(0, 10);
+            } else if (ciclo === 1) {
+              // 2ª tentativa: grupo B embaralhado
+              questoesSelecionadas = [...grupoB].sort(() => 0.5 - Math.random()).slice(0, 10);
+            } else {
+              // 3ª tentativa em diante: mescla aleatória de todas
+              questoesSelecionadas = [...todasQuestoes].sort(() => 0.5 - Math.random()).slice(0, 10);
+            }
+          } else {
+            // 21-30 questões: sorteia 10 aleatórias (comportamento original)
+            questoesSelecionadas = [...todasQuestoes].sort(() => 0.5 - Math.random()).slice(0, 10);
+          }
 
           return {
             success: true,
