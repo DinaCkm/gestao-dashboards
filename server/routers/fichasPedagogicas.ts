@@ -706,6 +706,7 @@ export const fichasPedagogicasRouter = router({
       }
 
       // Processar aba de conteúdos
+      // REGRA: competência deve existir; conteúdo pode ser criado pelo upload
       const wsCont = wb.Sheets["Fichas dos Conteudos"];
       if (wsCont) {
         const rows = XLSX.utils.sheet_to_json<Record<string, string>>(wsCont, { defval: "" });
@@ -723,52 +724,37 @@ export const fichasPedagogicasRouter = router({
             resultado = "Erro: nome_competencia vazio";
             erro = true;
           } else if (!comp) {
-            resultado = `Erro: competência "${nomeComp}" não encontrada`;
+            resultado = `Erro: competência "${nomeComp}" não encontrada no sistema`;
             erro = true;
           } else if (!nomeCont) {
             resultado = "Erro: nome_conteudo vazio";
             erro = true;
+          } else if (!["rascunho", "publicada", "inativa"].includes(status)) {
+            resultado = `Erro: status "${status}" inválido (use rascunho, publicada ou inativa)`;
+            erro = true;
           } else {
-            const modulo = todosModulos.find(
+            // Verificar se o conteúdo já existe (apenas informativo — não bloqueia)
+            const moduloExistente = todosModulos.find(
               (m) =>
                 m.competenciaId === comp.id &&
                 m.titulo.toLowerCase().trim() === nomeCont.toLowerCase()
             );
-            if (!modulo) {
-              resultado = `Erro: conteúdo "${nomeCont}" não encontrado vinculado à competência "${nomeComp}"`;
-              erro = true;
-            } else if (!["rascunho", "publicada", "inativa"].includes(status)) {
-              resultado = `Erro: status "${status}" inválido`;
-              erro = true;
-            } else {
-              const camposObrig = [
-                "papel_pedagogico",
-                "o_que_aluno_aprende",
-                "reflexao_esperada",
-                "orientacao_mentor",
-                "descricao_aluno",
-              ];
-              const faltando = camposObrig.filter((c) => !row[c] || row[c].trim() === "");
-              if (faltando.length > 0 && status === "publicada") {
-                resultado = `Erro: campos obrigatórios vazios para publicar: ${faltando.join(", ")}`;
-                erro = true;
-              } else if (faltando.length > 0) {
-                resultado = `Alerta: campos incompletos — será salvo como rascunho`;
-              }
 
-              if (!erro) {
-                resultadosCont.push({
-                  linha: i + 2,
-                  tipo: "Conteúdo",
-                  competencia: nomeComp,
-                  conteudo: nomeCont,
-                  status,
-                  resultado,
-                  erro,
-                  dados: { ...row, competenciaId: String(comp.id), conteudoId: String(modulo.id) },
-                });
-                continue;
-              }
+            const camposObrig = [
+              "papel_pedagogico",
+              "o_que_aluno_aprende",
+              "reflexao_esperada",
+              "orientacao_mentor",
+              "descricao_aluno",
+            ];
+            const faltando = camposObrig.filter((c) => !row[c] || row[c].trim() === "");
+            if (faltando.length > 0 && status === "publicada") {
+              resultado = `Erro: campos obrigatórios vazios para publicar: ${faltando.join(", ")}`;
+              erro = true;
+            } else if (faltando.length > 0) {
+              resultado = `Alerta: campos incompletos — será salvo como rascunho`;
+            } else if (!moduloExistente) {
+              resultado = `Novo conteúdo — será criado e vinculado à competência`;
             }
           }
 
@@ -780,6 +766,7 @@ export const fichasPedagogicasRouter = router({
             status,
             resultado,
             erro,
+            dados: comp ? { ...row, competenciaId: String(comp.id) } : undefined,
           });
         }
       }
@@ -870,6 +857,9 @@ export const fichasPedagogicasRouter = router({
       }
 
       // Processar fichas de conteúdos
+      // REGRA: competência deve existir; conteúdo pode ser criado pelo upload
+      let modulosAtualizados = await db.select().from(competenciasModulos);
+
       const wsCont = wb.Sheets["Fichas dos Conteudos"];
       if (wsCont) {
         const rows = XLSX.utils.sheet_to_json<Record<string, string>>(wsCont, { defval: "" });
@@ -877,18 +867,44 @@ export const fichasPedagogicasRouter = router({
           const nomeComp = String(row["nome_competencia"] || "").trim();
           const nomeCont = String(row["nome_conteudo"] || "").trim();
           const comp = compNomeMap.get(nomeComp.toLowerCase());
-          if (!comp) { erros++; continue; }
-
-          const modulo = todosModulos.find(
-            (m) => m.competenciaId === comp.id && m.titulo.toLowerCase().trim() === nomeCont.toLowerCase()
-          );
-          if (!modulo) { erros++; continue; }
+          if (!comp || !nomeCont) { erros++; continue; }
 
           let status = String(row["status"] || "rascunho").trim().toLowerCase() as "rascunho" | "publicada" | "inativa";
+          if (!["rascunho", "publicada", "inativa"].includes(status)) status = "rascunho";
 
           const tipoRaw = String(row["tipo_conteudo"] || "outro").trim().toLowerCase();
           const tiposValidos = ["intro", "filme", "video", "tedtalk", "podcast", "livro", "curso", "outro"];
-          const tipoConteudo = tiposValidos.includes(tipoRaw) ? tipoRaw as "intro" | "filme" | "video" | "tedtalk" | "podcast" | "livro" | "curso" | "outro" : "outro";
+          const tipoConteudo = tiposValidos.includes(tipoRaw)
+            ? (tipoRaw as "intro" | "filme" | "video" | "tedtalk" | "podcast" | "livro" | "curso" | "outro")
+            : "outro";
+
+          // Buscar módulo existente pelo título
+          let modulo = modulosAtualizados.find(
+            (m) => m.competenciaId === comp.id && m.titulo.toLowerCase().trim() === nomeCont.toLowerCase()
+          );
+
+          // Se não existe, criar o módulo agora
+          if (!modulo) {
+            const tipoModuloValido = ["intro", "filme", "video", "tedtalk", "podcast", "livro"].includes(tipoConteudo)
+              ? (tipoConteudo as "intro" | "filme" | "video" | "tedtalk" | "podcast" | "livro")
+              : "intro";
+            await db.insert(competenciasModulos).values({
+              competenciaId: comp.id,
+              tipoModulo: tipoModuloValido,
+              titulo: nomeCont,
+              descricao: row["descricao_aluno"] || "",
+              urlGenially: row["link_conteudo"] || undefined,
+              ordem: 0,
+              ativo: 1,
+            });
+            // Recarregar para obter o ID gerado
+            modulosAtualizados = await db.select().from(competenciasModulos);
+            modulo = modulosAtualizados.find(
+              (m) => m.competenciaId === comp.id && m.titulo.toLowerCase().trim() === nomeCont.toLowerCase()
+            );
+          }
+
+          if (!modulo) { erros++; continue; }
 
           const dados = {
             competenciaId: comp.id,
