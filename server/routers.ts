@@ -29,6 +29,7 @@ import { calcularIndicadoresAlunoFiltrado, calcularPerformanceFiltrada, Competen
 import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno as calcularIndicadoresAlunoV2, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicatorsV2, CicloDataV2, CaseSucessoData, MacrocicloData } from './indicatorsCalculatorV2';
 import { notifyOwner } from "./_core/notification";
 import { jornadaRouter } from "./routers/jornada";
+import { fichasPedagogicasRouter } from "./routers/fichasPedagogicas";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
@@ -170,6 +171,7 @@ const managerProcedure = protectedProcedure.use(({ ctx, next }) => {
 export const appRouter = router({
   system: systemRouter,
   jornada: jornadaRouter,
+  fichasPedagogicas: fichasPedagogicasRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

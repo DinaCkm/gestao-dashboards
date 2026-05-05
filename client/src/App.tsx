@@ -80,6 +80,7 @@ import AlunoAvaliacao from "./pages/aluno/AlunoAvaliacao";
 import AlunoResultadoAvaliacao from "./pages/aluno/AlunoResultadoAvaliacao";
 import AlunoReflexaoFinal from "./pages/aluno/AlunoReflexaoFinal";
 import OnboardingVideos from "./pages/admin/OnboardingVideos";
+import BibliotecaPedagogica from "./pages/admin/BibliotecaPedagogica";
 
 function Router() {
   return (
@@ -160,6 +161,7 @@ function Router() {
       <Route path={"/aluno/competencias-comp-tec/resultado"} component={AlunoResultadoAvaliacao} />
       <Route path={"/aluno/competencias-comp-tec/reflexao"} component={AlunoReflexaoFinal} />
       <Route path={"/admin/onboarding-videos"} component={OnboardingVideos} />
+      <Route path={"/admin/biblioteca-pedagogica"} component={BibliotecaPedagogica} />
 
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />

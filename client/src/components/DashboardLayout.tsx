@@ -165,6 +165,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Video, label: "Vídeos de Onboarding", path: "/admin/onboarding-videos" },
       { icon: Bell, label: "Avisos e Comunicados", path: "/avisos" },
       { icon: Trophy, label: "Mural de Cases", path: "/mural" },
+      { icon: Library, label: "Biblioteca Pedagógica", path: "/admin/biblioteca-pedagogica" },
     ],
   },
   {

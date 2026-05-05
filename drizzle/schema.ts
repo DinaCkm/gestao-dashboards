@@ -1504,3 +1504,56 @@ export const sessoesEstudoAtividade = mysqlTable("sessoes_estudo_atividade", {
 
 export type SessaoEstudoAtividade = typeof sessoesEstudoAtividade.$inferSelect;
 export type InsertSessaoEstudoAtividade = typeof sessoesEstudoAtividade.$inferInsert;
+
+// ============ BIBLIOTECA PEDAGÓGICA ============
+/**
+ * Fichas Pedagógicas das Competências
+ * Uma competência pode ter no máximo uma ficha publicada.
+ */
+export const fichasPedagogicasCompetencias = mysqlTable("fichas_pedagogicas_competencias", {
+  id: int("id").autoincrement().primaryKey(),
+  competenciaId: int("competenciaId").notNull(),
+  linhaDesenvolvimento: text("linhaDesenvolvimento").notNull(),
+  objetivoPedagogico: text("objetivoPedagogico").notNull(),
+  oQueEnsina: text("oQueEnsina").notNull(),
+  quandoIndicar: text("quandoIndicar").notNull(),
+  sinaisObservaveis: text("sinaisObservaveis").notNull(),
+  cuidadoIndicacao: text("cuidadoIndicacao"),
+  resumoMentor: text("resumoMentor").notNull(),
+  descricaoAluno: text("descricaoAluno").notNull(),
+  sugestaoDesenvolvimentoCompetencia: text("sugestaoDesenvolvimentoCompetencia").notNull(),
+  status: mysqlEnum("status", ["rascunho", "publicada", "inativa"]).notNull().default("rascunho"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdBy: varchar("createdBy", { length: 255 }),
+  updatedBy: varchar("updatedBy", { length: 255 }),
+});
+export type FichaPedagogicaCompetencia = typeof fichasPedagogicasCompetencias.$inferSelect;
+export type InsertFichaPedagogicaCompetencia = typeof fichasPedagogicasCompetencias.$inferInsert;
+
+/**
+ * Fichas Pedagógicas dos Cursos/Conteúdos
+ * Um conteúdo pode ter no máximo uma ficha publicada por competência.
+ * conteudoId aponta para competencias_modulos.
+ */
+export const fichasPedagogicasConteudos = mysqlTable("fichas_pedagogicas_conteudos", {
+  id: int("id").autoincrement().primaryKey(),
+  competenciaId: int("competenciaId").notNull(),
+  conteudoId: int("conteudoId").notNull(),
+  tipoConteudo: mysqlEnum("tipoConteudo", ["intro", "filme", "video", "tedtalk", "podcast", "livro", "curso", "outro"]).notNull(),
+  nomeConteudo: varchar("nomeConteudo", { length: 255 }).notNull(),
+  linkConteudo: varchar("linkConteudo", { length: 1000 }),
+  papelPedagogico: text("papelPedagogico").notNull(),
+  oQueAlunoAprende: text("oQueAlunoAprende").notNull(),
+  reflexaoEsperada: text("reflexaoEsperada").notNull(),
+  quandoUsar: text("quandoUsar"),
+  orientacaoMentor: text("orientacaoMentor").notNull(),
+  descricaoAluno: text("descricaoAluno").notNull(),
+  status: mysqlEnum("status", ["rascunho", "publicada", "inativa"]).notNull().default("rascunho"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdBy: varchar("createdBy", { length: 255 }),
+  updatedBy: varchar("updatedBy", { length: 255 }),
+});
+export type FichaPedagogicaConteudo = typeof fichasPedagogicasConteudos.$inferSelect;
+export type InsertFichaPedagogicaConteudo = typeof fichasPedagogicasConteudos.$inferInsert;
