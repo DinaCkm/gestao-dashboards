@@ -10437,6 +10437,21 @@ Responda APENAS em JSON com o formato especificado.`
           }
           return { success: true, synced };
         }),
+
+      deleteAtividade: adminProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          }
+          // Inabilitar em vez de excluir para evitar problemas de FK
+          await database
+            .update(atividadesCurso)
+            .set({ isActive: 0, updatedAt: new Date() })
+            .where(eq(atividadesCurso.id, input.id));
+          return { success: true };
+        }),
     }),
     mentor: router({
       listarAlunos: protectedProcedure.query(async ({ ctx }) => {
