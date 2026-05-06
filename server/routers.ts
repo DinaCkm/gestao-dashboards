@@ -12100,6 +12100,19 @@ Responda APENAS em JSON com o formato especificado.`
 
           return { success: true };
         }),
+
+      deleteAtividade: adminProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          }
+          await database
+            .delete(atividadesCurso)
+            .where(eq(atividadesCurso.id, input.id));
+          return { success: true };
+        }),
     }),
   }),
 
