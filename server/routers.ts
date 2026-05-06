@@ -8125,6 +8125,147 @@ Responda APENAS em JSON com o formato:
         return result;
       }),
 
+    // Salvar perfil profissional complementar (etapa 1 expandida)
+    salvarPerfilProfissional: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        // Dados pessoais
+        dataNascimento: z.string().optional(),
+        estadoCivil: z.string().optional(),
+        temFilhos: z.boolean().optional(),
+        quantidadeFilhos: z.number().optional(),
+        // Expectativas
+        expectativaCurtoPrazo: z.string().optional(),
+        expectativaMedioPrazo: z.string().optional(),
+        expectativaLongoPrazo: z.string().optional(),
+        // Formação
+        formacaoSuperior: z.array(z.object({
+          area: z.string(),
+          curso: z.string(),
+          instituicao: z.string(),
+          ano: z.number().optional(),
+        })).optional(),
+        posGraduacoes: z.array(z.object({
+          tipo: z.string(),
+          area: z.string(),
+          nome: z.string(),
+          instituicao: z.string(),
+          ano: z.number().optional(),
+        })).optional(),
+        cursosExtracurriculares: z.array(z.object({
+          area: z.string(),
+          nome: z.string(),
+          instituicao: z.string(),
+          cargaHoraria: z.number(),
+          ano: z.number().optional(),
+        })).optional(),
+        // Experiências anteriores
+        experienciasAnteriores: z.array(z.object({
+          empresa: z.string(),
+          cargo: z.string(),
+          de: z.string().optional(),
+          ate: z.string().optional(),
+        })).optional(),
+        // Liderança
+        experienciaLideranca: z.boolean().optional(),
+        tipoEquipeGerenciada: z.array(z.string()).optional(),
+        gerenciouOutrosLideres: z.boolean().optional(),
+        // Redes sociais
+        linkedinUrl: z.string().optional(),
+        facebookUrl: z.string().optional(),
+        instagramUrl: z.string().optional(),
+        tiktokUrl: z.string().optional(),
+        outraRedeUrl: z.string().optional(),
+        // Currículo
+        curriculoUrl: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
+        const sets: string[] = [];
+        const vals: any[] = [];
+        const addField = (col: string, val: any) => {
+          if (val !== undefined) { sets.push(`\`${col}\` = ?`); vals.push(val); }
+        };
+        addField('dataNascimento', input.dataNascimento ?? null);
+        addField('estadoCivil', input.estadoCivil ?? null);
+        if (input.temFilhos !== undefined) addField('temFilhos', input.temFilhos ? 1 : 0);
+        if (input.quantidadeFilhos !== undefined) addField('quantidadeFilhos', input.quantidadeFilhos);
+        addField('expectativaCurtoPrazo', input.expectativaCurtoPrazo ?? null);
+        addField('expectativaMedioPrazo', input.expectativaMedioPrazo ?? null);
+        addField('expectativaLongoPrazo', input.expectativaLongoPrazo ?? null);
+        if (input.formacaoSuperior !== undefined) addField('formacaoSuperior', JSON.stringify(input.formacaoSuperior));
+        if (input.posGraduacoes !== undefined) addField('posGraduacoes', JSON.stringify(input.posGraduacoes));
+        if (input.cursosExtracurriculares !== undefined) addField('cursosExtracurriculares', JSON.stringify(input.cursosExtracurriculares));
+        if (input.experienciasAnteriores !== undefined) addField('experienciasAnteriores', JSON.stringify(input.experienciasAnteriores));
+        if (input.experienciaLideranca !== undefined) addField('experienciaLideranca', input.experienciaLideranca ? 1 : 0);
+        if (input.tipoEquipeGerenciada !== undefined) addField('tipoEquipeGerenciada', JSON.stringify(input.tipoEquipeGerenciada));
+        if (input.gerenciouOutrosLideres !== undefined) addField('gerenciouOutrosLideres', input.gerenciouOutrosLideres ? 1 : 0);
+        addField('linkedinUrl', input.linkedinUrl ?? null);
+        addField('facebookUrl', input.facebookUrl ?? null);
+        addField('instagramUrl', input.instagramUrl ?? null);
+        addField('tiktokUrl', input.tiktokUrl ?? null);
+        addField('outraRedeUrl', input.outraRedeUrl ?? null);
+        addField('curriculoUrl', input.curriculoUrl ?? null);
+        if (sets.length === 0) return { success: true };
+        vals.push(input.alunoId);
+        const rawConn = await db.getRawConnection();
+        if (rawConn) {
+          await (rawConn as any).execute(`UPDATE \`alunos\` SET ${sets.join(', ')} WHERE \`id\` = ?`, vals);
+        } else {
+          // fallback: usar drizzle execute
+          await database.execute(sql.raw(`UPDATE \`alunos\` SET ${sets.map((s, i) => s.replace('?', `'${String(vals[i]).replace(/'/g, "''")}'`)).join(', ')} WHERE \`id\` = ${input.alunoId}`));
+        }
+        return { success: true };
+      }),
+
+    // Buscar perfil profissional do aluno
+    buscarPerfilProfissional: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) return null;
+        const rawConn = await db.getRawConnection();
+        if (rawConn) {
+          const [rows] = await (rawConn as any).execute(
+            `SELECT dataNascimento, estadoCivil, temFilhos, quantidadeFilhos,
+             expectativaCurtoPrazo, expectativaMedioPrazo, expectativaLongoPrazo,
+             formacaoSuperior, posGraduacoes, cursosExtracurriculares, experienciasAnteriores,
+             experienciaLideranca, tipoEquipeGerenciada, gerenciouOutrosLideres,
+             linkedinUrl, facebookUrl, instagramUrl, tiktokUrl, outraRedeUrl, curriculoUrl
+             FROM \`alunos\` WHERE \`id\` = ? LIMIT 1`,
+            [input.alunoId]
+          );
+          const row = (rows as any[])[0];
+          if (!row) return null;
+          const parseJson = (v: any) => { try { return typeof v === 'string' ? JSON.parse(v) : v; } catch { return []; } };
+          return {
+            ...row,
+            formacaoSuperior: parseJson(row.formacaoSuperior) || [],
+            posGraduacoes: parseJson(row.posGraduacoes) || [],
+            cursosExtracurriculares: parseJson(row.cursosExtracurriculares) || [],
+            experienciasAnteriores: parseJson(row.experienciasAnteriores) || [],
+            tipoEquipeGerenciada: parseJson(row.tipoEquipeGerenciada) || [],
+          };
+        }
+        return null;
+      }),
+
+    // Upload de currículo do aluno
+    uploadCurriculo: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        nomeArquivo: z.string(),
+        tipoMime: z.string(),
+        dados: z.string(), // base64
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.dados, 'base64');
+        const fileKey = `curriculos/${input.alunoId}-${Date.now()}-${input.nomeArquivo}`;
+        const { url } = await storagePut(fileKey, buffer, input.tipoMime);
+        return { url, success: true };
+      }),
+
     // Escolher mentora (etapa 3)
     escolherMentora: protectedProcedure
       .input(z.object({

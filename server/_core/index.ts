@@ -12,7 +12,7 @@ import { iniciarCronOnboardingReminders } from "../cronOnboardingReminders";
 import { iniciarCronVencimentoCiclo } from "../cronVencimentoCiclo";
 import { iniciarCronLembreteAplicabilidade } from "../cronLembreteAplicabilidade";
 import { ENV } from "./env";
-import { ensureBibliotecaPedagogicaTables } from "../db";
+import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -36,6 +36,7 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   // Garantir que as tabelas da Biblioteca Pedagógica existam no banco
   await ensureBibliotecaPedagogicaTables();
+  await ensurePerfilProfissionalColumns();
 
   const app = express();
   const server = createServer(app);

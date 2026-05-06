@@ -1563,6 +1563,7 @@ __export(db_exports, {
   determinePlataformaAulas: () => determinePlataformaAulas,
   ensureBibliotecaPedagogicaTables: () => ensureBibliotecaPedagogicaTables,
   ensureEventForWebinar: () => ensureEventForWebinar,
+  ensurePerfilProfissionalColumns: () => ensurePerfilProfissionalColumns,
   getAccessUsers: () => getAccessUsers,
   getActiveConsultors: () => getActiveConsultors,
   getActiveCourses: () => getActiveCourses,
@@ -1857,7 +1858,7 @@ __export(db_exports, {
   upsertUser: () => upsertUser,
   verificarBloqueioAtividade: () => verificarBloqueioAtividade
 });
-import { eq, and, or, desc, asc, sql, not, gte, lt, lte, ne, inArray, isNotNull, isNull } from "drizzle-orm";
+import { eq, and, or, desc, asc, sql as sql2, not, gte, lt, lte, ne, inArray, isNotNull, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 async function getRawConnection() {
@@ -2187,14 +2188,14 @@ async function getSystemStats() {
     totalSessoes: 0,
     totalEmpresas: 0
   };
-  const [userCount] = await db2.select({ count: sql`count(*)` }).from(users);
-  const [deptCount] = await db2.select({ count: sql`count(*)` }).from(departments);
-  const [batchCount] = await db2.select({ count: sql`count(*)` }).from(uploadBatches);
-  const [reportCount] = await db2.select({ count: sql`count(*)` }).from(reports);
-  const [alunoCount] = await db2.select({ count: sql`count(*)` }).from(alunos);
-  const [mentorCount] = await db2.select({ count: sql`count(*)` }).from(consultors).where(and(eq(consultors.isActive, 1), eq(consultors.role, "mentor")));
-  const [sessionCount] = await db2.select({ count: sql`count(*)` }).from(mentoringSessions);
-  const [programCount] = await db2.select({ count: sql`count(*)` }).from(programs).where(eq(programs.isActive, 1));
+  const [userCount] = await db2.select({ count: sql2`count(*)` }).from(users);
+  const [deptCount] = await db2.select({ count: sql2`count(*)` }).from(departments);
+  const [batchCount] = await db2.select({ count: sql2`count(*)` }).from(uploadBatches);
+  const [reportCount] = await db2.select({ count: sql2`count(*)` }).from(reports);
+  const [alunoCount] = await db2.select({ count: sql2`count(*)` }).from(alunos);
+  const [mentorCount] = await db2.select({ count: sql2`count(*)` }).from(consultors).where(and(eq(consultors.isActive, 1), eq(consultors.role, "mentor")));
+  const [sessionCount] = await db2.select({ count: sql2`count(*)` }).from(mentoringSessions);
+  const [programCount] = await db2.select({ count: sql2`count(*)` }).from(programs).where(eq(programs.isActive, 1));
   return {
     totalUsers: userCount?.count || 0,
     totalDepartments: deptCount?.count || 0,
@@ -2251,7 +2252,7 @@ async function getTurmasWithDetails() {
   }).from(turmas).leftJoin(programs, eq(turmas.programId, programs.id)).where(eq(turmas.isActive, 1)).orderBy(programs.name, turmas.name);
   const turmasWithCount = await Promise.all(
     result.map(async (turma) => {
-      const alunosCount = await db2.select({ count: sql`count(*)` }).from(alunos).where(eq(alunos.turmaId, turma.id));
+      const alunosCount = await db2.select({ count: sql2`count(*)` }).from(alunos).where(eq(alunos.turmaId, turma.id));
       return {
         ...turma,
         programName: turma.programName || "Sem Empresa",
@@ -2652,7 +2653,7 @@ async function upsertConsultor(consultor) {
   if (!db2) return null;
   const existing = await db2.select().from(consultors).where(and(
     eq(consultors.name, consultor.name),
-    consultor.programId ? eq(consultors.programId, consultor.programId) : sql`1=1`
+    consultor.programId ? eq(consultors.programId, consultor.programId) : sql2`1=1`
   )).limit(1);
   if (existing[0]) {
     return existing[0].id;
@@ -2678,9 +2679,9 @@ async function getProgramStats() {
   const programList = await getPrograms();
   const stats = [];
   for (const program of programList) {
-    const [alunoCount] = await db2.select({ count: sql`count(*)` }).from(alunos).where(eq(alunos.programId, program.id));
-    const [turmaCount] = await db2.select({ count: sql`count(*)` }).from(turmas).where(eq(turmas.programId, program.id));
-    const [sessionCount] = await db2.select({ count: sql`count(*)` }).from(mentoringSessions).innerJoin(alunos, eq(mentoringSessions.alunoId, alunos.id)).where(eq(alunos.programId, program.id));
+    const [alunoCount] = await db2.select({ count: sql2`count(*)` }).from(alunos).where(eq(alunos.programId, program.id));
+    const [turmaCount] = await db2.select({ count: sql2`count(*)` }).from(turmas).where(eq(turmas.programId, program.id));
+    const [sessionCount] = await db2.select({ count: sql2`count(*)` }).from(mentoringSessions).innerJoin(alunos, eq(mentoringSessions.alunoId, alunos.id)).where(eq(alunos.programId, program.id));
     stats.push({
       programId: program.id,
       programName: program.name,
@@ -3150,7 +3151,7 @@ async function getAllAlunosForAdmin() {
   }).from(alunos).leftJoin(programs, eq(alunos.programId, programs.id)).leftJoin(consultors, eq(alunos.consultorId, consultors.id)).leftJoin(turmas, eq(alunos.turmaId, turmas.id)).orderBy(alunos.name);
   const pdiCounts = await db2.select({
     alunoId: assessmentPdi.alunoId,
-    count: sql`COUNT(*)`
+    count: sql2`COUNT(*)`
   }).from(assessmentPdi).groupBy(assessmentPdi.alunoId);
   const pdiMap = new Map(pdiCounts.map((p) => [p.alunoId, p.count]));
   return result.map((a) => ({
@@ -3908,7 +3909,7 @@ async function getCiclosDerivadosDoPdi(alunoId) {
     status: assessmentPdi.status,
     macroInicio: assessmentPdi.macroInicio,
     macroTermino: assessmentPdi.macroTermino
-  }).from(assessmentPdi).where(sql`${assessmentPdi.alunoId} = ${alunoId} AND ${assessmentPdi.status} = 'ativo'`);
+  }).from(assessmentPdi).where(sql2`${assessmentPdi.alunoId} = ${alunoId} AND ${assessmentPdi.status} = 'ativo'`);
   if (pdis.length === 0) return [];
   const pdiIds = pdis.map((p) => p.id);
   const allComps = await dbConn.select({
@@ -3918,7 +3919,7 @@ async function getCiclosDerivadosDoPdi(alunoId) {
     peso: assessmentCompetencias.peso,
     microInicio: assessmentCompetencias.microInicio,
     microTermino: assessmentCompetencias.microTermino
-  }).from(assessmentCompetencias).where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map((id) => sql`${id}`), sql`, `)})`);
+  }).from(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} IN (${sql2.join(pdiIds.map((id) => sql2`${id}`), sql2`, `)})`);
   const allTrilhas = await dbConn.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
   const trilhaMap = new Map(allTrilhas.map((t2) => [t2.id, t2.name]));
   const allCompetencias = await dbConn.select({ id: competencias.id, nome: competencias.nome, codigoIntegracao: competencias.codigoIntegracao, trilhaId: competencias.trilhaId }).from(competencias);
@@ -4045,7 +4046,7 @@ async function getCiclosForCalculator(alunoId) {
   const pdis = await dbConn.select({
     id: assessmentPdi.id,
     trilhaId: assessmentPdi.trilhaId
-  }).from(assessmentPdi).where(sql`${assessmentPdi.alunoId} = ${alunoId} AND ${assessmentPdi.status} = 'ativo'`);
+  }).from(assessmentPdi).where(sql2`${assessmentPdi.alunoId} = ${alunoId} AND ${assessmentPdi.status} = 'ativo'`);
   if (pdis.length === 0) return [];
   const pdiIds = pdis.map((p) => p.id);
   const allComps = await dbConn.select({
@@ -4055,7 +4056,7 @@ async function getCiclosForCalculator(alunoId) {
     peso: assessmentCompetencias.peso,
     microInicio: assessmentCompetencias.microInicio,
     microTermino: assessmentCompetencias.microTermino
-  }).from(assessmentCompetencias).where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map((id) => sql`${id}`), sql`, `)})`);
+  }).from(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} IN (${sql2.join(pdiIds.map((id) => sql2`${id}`), sql2`, `)})`);
   const allTrilhas = await dbConn.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
   const trilhaMap = new Map(allTrilhas.map((t2) => [t2.id, t2.name]));
   const allCompetencias = await dbConn.select({ id: competencias.id, nome: competencias.nome }).from(competencias);
@@ -4190,7 +4191,7 @@ async function getAlertasMicroCiclo(alunoId) {
   if (!db2) return [];
   const pdis = await db2.select({
     id: assessmentPdi.id
-  }).from(assessmentPdi).where(sql`${assessmentPdi.alunoId} = ${alunoId} AND ${assessmentPdi.status} = 'ativo'`);
+  }).from(assessmentPdi).where(sql2`${assessmentPdi.alunoId} = ${alunoId} AND ${assessmentPdi.status} = 'ativo'`);
   if (pdis.length === 0) return [];
   const pdiIds = pdis.map((p) => p.id);
   const allComps = await db2.select({
@@ -4200,21 +4201,21 @@ async function getAlertasMicroCiclo(alunoId) {
     peso: assessmentCompetencias.peso,
     microInicio: assessmentCompetencias.microInicio,
     microTermino: assessmentCompetencias.microTermino
-  }).from(assessmentCompetencias).where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map((id) => sql`${id}`), sql`, `)})`);
+  }).from(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} IN (${sql2.join(pdiIds.map((id) => sql2`${id}`), sql2`, `)})`);
   const compIds = Array.from(new Set(allComps.map((c) => c.competenciaId)));
   if (compIds.length === 0) return [];
   const allCompDetails = await db2.select({
     id: competencias.id,
     nome: competencias.nome,
     codigoIntegracao: competencias.codigoIntegracao
-  }).from(competencias).where(sql`${competencias.id} IN (${sql.join(compIds.map((id) => sql`${id}`), sql`, `)})`);
+  }).from(competencias).where(sql2`${competencias.id} IN (${sql2.join(compIds.map((id) => sql2`${id}`), sql2`, `)})`);
   const compMap = new Map(allCompDetails.map((c) => [c.id, c]));
   const perfData = await db2.select({
     externalCompetenciaId: studentPerformance.externalCompetenciaId,
     progressoTotal: studentPerformance.progressoTotal,
     aulasConcluidas: studentPerformance.aulasConcluidas,
     totalAulas: studentPerformance.totalAulas
-  }).from(studentPerformance).where(sql`${studentPerformance.alunoId} = ${alunoId}`);
+  }).from(studentPerformance).where(sql2`${studentPerformance.alunoId} = ${alunoId}`);
   const perfMap = new Map(perfData.map((p) => [p.externalCompetenciaId, p]));
   const today = /* @__PURE__ */ new Date();
   const todayStr = today.toISOString().split("T")[0];
@@ -4535,7 +4536,7 @@ async function getAssessmentsByAluno(alunoId) {
   const pdis = await db2.select().from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId)).orderBy(desc(assessmentPdi.createdAt));
   if (pdis.length === 0) return [];
   const pdiIds = pdis.map((p) => p.id);
-  const allComps = await db2.select().from(assessmentCompetencias).where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map((id) => sql`${id}`), sql`, `)})`);
+  const allComps = await db2.select().from(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} IN (${sql2.join(pdiIds.map((id) => sql2`${id}`), sql2`, `)})`);
   const allTrilhas = await db2.select().from(trilhas);
   const trilhaMap = new Map(allTrilhas.map((t2) => [t2.id, t2]));
   const allCompetencias = await db2.select().from(competencias);
@@ -4646,7 +4647,7 @@ async function getAssessmentsByProgram(programId) {
   const allTurmas = await db2.select().from(turmas);
   const turmaMap = new Map(allTurmas.map((t2) => [t2.id, t2]));
   const pdiIds = pdis.map((p) => p.id);
-  const allComps = await db2.select().from(assessmentCompetencias).where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map((id) => sql`${id}`), sql`, `)})`);
+  const allComps = await db2.select().from(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} IN (${sql2.join(pdiIds.map((id) => sql2`${id}`), sql2`, `)})`);
   const compsByPdi = /* @__PURE__ */ new Map();
   for (const c of allComps) {
     const arr = compsByPdi.get(c.assessmentPdiId) || [];
@@ -4798,7 +4799,7 @@ async function addCompetenciaToAssessment(assessmentPdiId, data) {
   if (data.microTermino && data.microTermino > macroTerminoStr) {
     throw new Error("Micro ciclo t\xE9rmino n\xE3o pode ser posterior ao macro ciclo t\xE9rmino");
   }
-  const existing = await db2.select().from(assessmentCompetencias).where(sql`${assessmentCompetencias.assessmentPdiId} = ${assessmentPdiId} AND ${assessmentCompetencias.competenciaId} = ${data.competenciaId}`).limit(1);
+  const existing = await db2.select().from(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} = ${assessmentPdiId} AND ${assessmentCompetencias.competenciaId} = ${data.competenciaId}`).limit(1);
   if (existing.length > 0) {
     throw new Error("Esta compet\xEAncia j\xE1 est\xE1 vinculada a este assessment");
   }
@@ -4821,11 +4822,11 @@ async function removeCompetenciaFromAssessment(assessmentCompetenciaId) {
   const db2 = await getDb();
   if (!db2) return;
   try {
-    await db2.execute(sql`DELETE FROM \`metas\` WHERE \`assessmentCompetenciaId\` = ${assessmentCompetenciaId}`);
+    await db2.execute(sql2`DELETE FROM \`metas\` WHERE \`assessmentCompetenciaId\` = ${assessmentCompetenciaId}`);
   } catch (e) {
   }
   try {
-    await db2.execute(sql`DELETE FROM \`historico_nivel\` WHERE \`assessmentCompetenciaId\` = ${assessmentCompetenciaId}`);
+    await db2.execute(sql2`DELETE FROM \`historico_nivel\` WHERE \`assessmentCompetenciaId\` = ${assessmentCompetenciaId}`);
   } catch (e) {
   }
   await db2.delete(assessmentCompetencias).where(eq(assessmentCompetencias.id, assessmentCompetenciaId));
@@ -4836,11 +4837,11 @@ async function deleteAssessmentPdi(pdiId) {
   const comps = await db2.select({ id: assessmentCompetencias.id }).from(assessmentCompetencias).where(eq(assessmentCompetencias.assessmentPdiId, pdiId));
   for (const comp of comps) {
     try {
-      await db2.execute(sql`DELETE FROM \`metas\` WHERE \`assessmentCompetenciaId\` = ${comp.id}`);
+      await db2.execute(sql2`DELETE FROM \`metas\` WHERE \`assessmentCompetenciaId\` = ${comp.id}`);
     } catch (e) {
     }
     try {
-      await db2.execute(sql`DELETE FROM \`historico_nivel\` WHERE \`assessmentCompetenciaId\` = ${comp.id}`);
+      await db2.execute(sql2`DELETE FROM \`historico_nivel\` WHERE \`assessmentCompetenciaId\` = ${comp.id}`);
     } catch (e) {
     }
   }
@@ -4899,7 +4900,7 @@ async function getAssessmentsByConsultor(consultorId) {
   const sessions = await db2.select({ alunoId: mentoringSessions.alunoId }).from(mentoringSessions).where(eq(mentoringSessions.consultorId, consultorId));
   const uniqueAlunoIds = Array.from(new Set(sessions.map((s) => s.alunoId)));
   if (uniqueAlunoIds.length === 0) return [];
-  const pdis = await db2.select().from(assessmentPdi).where(sql`${assessmentPdi.alunoId} IN (${sql.join(uniqueAlunoIds.map((id) => sql`${id}`), sql`, `)})`);
+  const pdis = await db2.select().from(assessmentPdi).where(sql2`${assessmentPdi.alunoId} IN (${sql2.join(uniqueAlunoIds.map((id) => sql2`${id}`), sql2`, `)})`);
   if (pdis.length === 0) return [];
   const allAlunos = await db2.select().from(alunos);
   const alunoMap = new Map(allAlunos.map((a) => [a.id, a]));
@@ -5113,10 +5114,10 @@ async function getStudentPerformanceByExternalUserId(externalUserId) {
 async function getStudentPerformanceSummary() {
   const db2 = await getDb();
   if (!db2) return { totalRecords: 0, uniqueStudents: 0, uniqueCompetencias: 0, uniqueTurmas: 0, lastUploadId: null };
-  const [countResult] = await db2.select({ count: sql`COUNT(*)` }).from(studentPerformance);
-  const [studentsResult] = await db2.select({ count: sql`COUNT(DISTINCT ${studentPerformance.externalUserId})` }).from(studentPerformance);
-  const [compResult] = await db2.select({ count: sql`COUNT(DISTINCT ${studentPerformance.externalCompetenciaId})` }).from(studentPerformance);
-  const [turmaResult] = await db2.select({ count: sql`COUNT(DISTINCT ${studentPerformance.externalTurmaId})` }).from(studentPerformance);
+  const [countResult] = await db2.select({ count: sql2`COUNT(*)` }).from(studentPerformance);
+  const [studentsResult] = await db2.select({ count: sql2`COUNT(DISTINCT ${studentPerformance.externalUserId})` }).from(studentPerformance);
+  const [compResult] = await db2.select({ count: sql2`COUNT(DISTINCT ${studentPerformance.externalCompetenciaId})` }).from(studentPerformance);
+  const [turmaResult] = await db2.select({ count: sql2`COUNT(DISTINCT ${studentPerformance.externalTurmaId})` }).from(studentPerformance);
   const [lastUpload] = await db2.select({ id: performanceUploads.id }).from(performanceUploads).orderBy(desc(performanceUploads.createdAt)).limit(1);
   return {
     totalRecords: Number(countResult?.count || 0),
@@ -5642,7 +5643,7 @@ async function getSaldoSessoes(alunoId) {
   const contratos = await db2.select().from(contratosAluno).where(and(eq(contratosAluno.alunoId, alunoId), eq(contratosAluno.isActive, 1))).orderBy(desc(contratosAluno.createdAt)).limit(1);
   if (contratos.length === 0) return null;
   const contrato = contratos[0];
-  const sessoes = await db2.select({ count: sql`COUNT(*)` }).from(mentoringSessions).where(and(
+  const sessoes = await db2.select({ count: sql2`COUNT(*)` }).from(mentoringSessions).where(and(
     eq(mentoringSessions.alunoId, alunoId),
     eq(mentoringSessions.isAssessment, 0),
     eq(mentoringSessions.presence, "presente")
@@ -5733,22 +5734,22 @@ async function getJornadaCompleta(alunoId) {
     return { contrato, macroJornadas: [], saldo: null };
   }
   const pdiIds = pdis.map((p) => p.id);
-  const allComps = await db2.select().from(assessmentCompetencias).where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map((id) => sql`${id}`), sql`, `)})`);
+  const allComps = await db2.select().from(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} IN (${sql2.join(pdiIds.map((id) => sql2`${id}`), sql2`, `)})`);
   const trilhaIds = Array.from(new Set(pdis.map((p) => p.trilhaId).filter(Boolean)));
   let trilhaMap = {};
   if (trilhaIds.length > 0) {
-    const trilhasList = await db2.select().from(trilhas).where(sql`${trilhas.id} IN (${sql.join(trilhaIds.map((id) => sql`${id}`), sql`, `)})`);
+    const trilhasList = await db2.select().from(trilhas).where(sql2`${trilhas.id} IN (${sql2.join(trilhaIds.map((id) => sql2`${id}`), sql2`, `)})`);
     trilhaMap = Object.fromEntries(trilhasList.map((t2) => [t2.id, t2.name]));
   }
   const compIds = Array.from(new Set(allComps.map((c) => c.competenciaId)));
   let compMap = {};
   if (compIds.length > 0) {
-    const compsList = await db2.select().from(competencias).where(sql`${competencias.id} IN (${sql.join(compIds.map((id) => sql`${id}`), sql`, `)})`);
+    const compsList = await db2.select().from(competencias).where(sql2`${competencias.id} IN (${sql2.join(compIds.map((id) => sql2`${id}`), sql2`, `)})`);
     compMap = Object.fromEntries(compsList.map((c) => [c.id, { nome: c.nome, trilhaId: c.trilhaId }]));
   }
   let saldo = null;
   if (contrato) {
-    const sessoes = await db2.select({ count: sql`COUNT(*)` }).from(mentoringSessions).where(and(
+    const sessoes = await db2.select({ count: sql2`COUNT(*)` }).from(mentoringSessions).where(and(
       eq(mentoringSessions.alunoId, alunoId),
       eq(mentoringSessions.isAssessment, 0),
       eq(mentoringSessions.presence, "presente")
@@ -5765,7 +5766,7 @@ async function getJornadaCompleta(alunoId) {
   const alunoExternalId = alunoData[0]?.externalId || null;
   let compCodigoMap = {};
   if (compIds.length > 0) {
-    const compsWithCodigo = await db2.select({ id: competencias.id, codigoIntegracao: competencias.codigoIntegracao }).from(competencias).where(sql`${competencias.id} IN (${sql.join(compIds.map((id) => sql`${id}`), sql`, `)})`);
+    const compsWithCodigo = await db2.select({ id: competencias.id, codigoIntegracao: competencias.codigoIntegracao }).from(competencias).where(sql2`${competencias.id} IN (${sql2.join(compIds.map((id) => sql2`${id}`), sql2`, `)})`);
     compCodigoMap = Object.fromEntries(compsWithCodigo.filter((c) => c.codigoIntegracao).map((c) => [c.id, c.codigoIntegracao]));
   }
   let perfMap = {};
@@ -5797,13 +5798,13 @@ async function getJornadaCompleta(alunoId) {
   for (const cursoAtrib of cursosAtribuidosAluno) {
     const codigo = compCodigoMap[cursoAtrib.competenciaId];
     if (codigo && perfMap[codigo]) continue;
-    const [totalResult] = await db2.select({ count: sql`COUNT(*)` }).from(atividadesCurso).where(and(eq(atividadesCurso.cursoId, cursoAtrib.cursoId), eq(atividadesCurso.isActive, 1)));
-    const [aprovResult] = await db2.select({ count: sql`COUNT(*)` }).from(alunoAtividadeProgresso).where(and(
+    const [totalResult] = await db2.select({ count: sql2`COUNT(*)` }).from(atividadesCurso).where(and(eq(atividadesCurso.cursoId, cursoAtrib.cursoId), eq(atividadesCurso.isActive, 1)));
+    const [aprovResult] = await db2.select({ count: sql2`COUNT(*)` }).from(alunoAtividadeProgresso).where(and(
       eq(alunoAtividadeProgresso.alunoId, alunoId),
       eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtrib.id),
       eq(alunoAtividadeProgresso.status, "aprovada")
     ));
-    const [andResult] = await db2.select({ count: sql`COUNT(*)` }).from(alunoAtividadeProgresso).where(and(
+    const [andResult] = await db2.select({ count: sql2`COUNT(*)` }).from(alunoAtividadeProgresso).where(and(
       eq(alunoAtividadeProgresso.alunoId, alunoId),
       eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtrib.id),
       eq(alunoAtividadeProgresso.status, "em_andamento")
@@ -5917,7 +5918,7 @@ async function updateAssessmentCompetenciaFields(assessmentCompetenciaId, update
   }).join(", ");
   if (setClauses) {
     await db2.execute(
-      sql.raw(`UPDATE \`assessment_competencias\` SET ${setClauses} WHERE \`id\` = ${assessmentCompetenciaId}`)
+      sql2.raw(`UPDATE \`assessment_competencias\` SET ${setClauses} WHERE \`id\` = ${assessmentCompetenciaId}`)
     );
   }
 }
@@ -5925,20 +5926,20 @@ async function checkReavaliacaoPendente(alunoId) {
   const db2 = await getDb();
   if (!db2) return null;
   const ultimaAtualizacao = await db2.select({
-    maxDate: sql`MAX(${historicoNivelCompetencia.createdAt})`
+    maxDate: sql2`MAX(${historicoNivelCompetencia.createdAt})`
   }).from(historicoNivelCompetencia).where(eq(historicoNivelCompetencia.alunoId, alunoId));
   const ultimaData = ultimaAtualizacao[0]?.maxDate ? new Date(ultimaAtualizacao[0].maxDate) : null;
   let sessoesDesdeUltimaAtualizacao;
   if (ultimaData) {
-    const result = await db2.select({ count: sql`COUNT(*)` }).from(mentoringSessions).where(and(
+    const result = await db2.select({ count: sql2`COUNT(*)` }).from(mentoringSessions).where(and(
       eq(mentoringSessions.alunoId, alunoId),
       eq(mentoringSessions.isAssessment, 0),
       eq(mentoringSessions.presence, "presente"),
-      sql`${mentoringSessions.sessionDate} > ${ultimaData.toISOString().slice(0, 10)}`
+      sql2`${mentoringSessions.sessionDate} > ${ultimaData.toISOString().slice(0, 10)}`
     ));
     sessoesDesdeUltimaAtualizacao = result[0]?.count || 0;
   } else {
-    const result = await db2.select({ count: sql`COUNT(*)` }).from(mentoringSessions).where(and(
+    const result = await db2.select({ count: sql2`COUNT(*)` }).from(mentoringSessions).where(and(
       eq(mentoringSessions.alunoId, alunoId),
       eq(mentoringSessions.isAssessment, 0),
       eq(mentoringSessions.presence, "presente")
@@ -6199,7 +6200,7 @@ async function liberarOnboardingAluno(alunoId) {
   if (!db2) return { success: false, message: "Erro de conex\xE3o com banco" };
   const [aluno] = await db2.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
   if (!aluno) return { success: false, message: "Aluno n\xE3o encontrado" };
-  const [pdiCount] = await db2.select({ count: sql`COUNT(*)` }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId));
+  const [pdiCount] = await db2.select({ count: sql2`COUNT(*)` }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId));
   if ((pdiCount?.count ?? 0) === 0) {
     return { success: false, message: "Aluno n\xE3o tem PDI. J\xE1 deve ir para onboarding automaticamente." };
   }
@@ -6287,9 +6288,9 @@ async function getAlunoOnboardingStatus(user) {
   const hasMentor = !!aluno.consultorId;
   const onboardingLiberado = aluno.onboardingLiberado === 1;
   const alunoCreatedAt = aluno.createdAt ? new Date(aluno.createdAt).toISOString() : null;
-  const [jornadaRow] = await db2.select({ aceiteRealizado: onboardingJornada.aceiteRealizado }).from(onboardingJornada).where(eq(onboardingJornada.alunoId, aluno.id)).orderBy(sql`${onboardingJornada.ciclo} DESC`).limit(1);
+  const [jornadaRow] = await db2.select({ aceiteRealizado: onboardingJornada.aceiteRealizado }).from(onboardingJornada).where(eq(onboardingJornada.alunoId, aluno.id)).orderBy(sql2`${onboardingJornada.ciclo} DESC`).limit(1);
   const aceiteRealizado = (jornadaRow?.aceiteRealizado ?? 0) === 1;
-  const [pdiCount] = await db2.select({ count: sql`COUNT(*)` }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, aluno.id));
+  const [pdiCount] = await db2.select({ count: sql2`COUNT(*)` }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, aluno.id));
   const hasPdi = (pdiCount?.count ?? 0) > 0;
   const ONBOARDING_CUTOFF = /* @__PURE__ */ new Date("2026-03-01T00:00:00Z");
   const isAlunoNovo = alunoCreatedAt ? new Date(alunoCreatedAt) >= ONBOARDING_CUTOFF : false;
@@ -6777,7 +6778,7 @@ async function getJornadasPorTurma(empresa) {
     macroInicio: assessmentPdi.macroInicio,
     macroTermino: assessmentPdi.macroTermino,
     status: assessmentPdi.status
-  }).from(assessmentPdi).where(sql`${assessmentPdi.status} IN ('ativo', 'congelado')`);
+  }).from(assessmentPdi).where(sql2`${assessmentPdi.status} IN ('ativo', 'congelado')`);
   if (pdis.length === 0) return [];
   const turmasList = await db2.select().from(turmas);
   const trilhasList = await db2.select().from(trilhas);
@@ -6806,7 +6807,7 @@ async function getJornadasPorTurma(empresa) {
     competenciaId: assessmentCompetencias.competenciaId,
     microInicio: assessmentCompetencias.microInicio,
     microTermino: assessmentCompetencias.microTermino
-  }).from(assessmentCompetencias).where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map((id) => sql`${id}`), sql`, `)})`);
+  }).from(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} IN (${sql2.join(pdiIds.map((id) => sql2`${id}`), sql2`, `)})`);
   const compMap = /* @__PURE__ */ new Map();
   const compsList = await db2.select({ id: competencias.id, nome: competencias.nome }).from(competencias);
   compsList.forEach((c) => compMap.set(c.id, c.nome));
@@ -7052,27 +7053,27 @@ async function getMetasResumoTodos() {
 async function getAlertaAtualizacaoMetas(alunoId) {
   const db2 = await getDb();
   if (!db2) return { precisaAtualizar: false, temMetas: false, sessoesDesdeUltimaAtualizacao: 0, mesesDesdeUltimaAtualizacao: 0, ultimaAtualizacao: null };
-  const ultimoAcompResult = await db2.select({ ultimaAtualizacao: sql`MAX(${metaAcompanhamento.createdAt})` }).from(metaAcompanhamento).where(eq(metaAcompanhamento.alunoId, alunoId));
+  const ultimoAcompResult = await db2.select({ ultimaAtualizacao: sql2`MAX(${metaAcompanhamento.createdAt})` }).from(metaAcompanhamento).where(eq(metaAcompanhamento.alunoId, alunoId));
   const rawUltimaAtualizacao = ultimoAcompResult[0]?.ultimaAtualizacao || null;
   const ultimaAtualizacao = rawUltimaAtualizacao ? new Date(rawUltimaAtualizacao) : null;
   let sessoesDesdeUltimaAtualizacao = 0;
   if (ultimaAtualizacao && !isNaN(ultimaAtualizacao.getTime())) {
-    const sessoesResult = await db2.select({ total: sql`COUNT(*)` }).from(mentoringSessions).where(and(
+    const sessoesResult = await db2.select({ total: sql2`COUNT(*)` }).from(mentoringSessions).where(and(
       eq(mentoringSessions.alunoId, alunoId),
-      sql`${mentoringSessions.sessionDate} > ${ultimaAtualizacao}`,
+      sql2`${mentoringSessions.sessionDate} > ${ultimaAtualizacao}`,
       eq(mentoringSessions.presence, "presente"),
       eq(mentoringSessions.isAssessment, 0)
     ));
     sessoesDesdeUltimaAtualizacao = Number(sessoesResult[0]?.total) || 0;
   } else {
-    const sessoesResult = await db2.select({ total: sql`COUNT(*)` }).from(mentoringSessions).where(and(
+    const sessoesResult = await db2.select({ total: sql2`COUNT(*)` }).from(mentoringSessions).where(and(
       eq(mentoringSessions.alunoId, alunoId),
       eq(mentoringSessions.presence, "presente"),
       eq(mentoringSessions.isAssessment, 0)
     ));
     sessoesDesdeUltimaAtualizacao = Number(sessoesResult[0]?.total) || 0;
   }
-  const metasCountResult = await db2.select({ total: sql`COUNT(*)` }).from(metas).where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1)));
+  const metasCountResult = await db2.select({ total: sql2`COUNT(*)` }).from(metas).where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1)));
   const temMetas = Number(metasCountResult[0]?.total) > 0;
   let mesesDesdeUltimaAtualizacao = 0;
   if (ultimaAtualizacao && !isNaN(ultimaAtualizacao.getTime())) {
@@ -7209,7 +7210,7 @@ async function getNotificationsByUser(userId, limit = 50) {
 async function getUnreadNotificationCount(userId) {
   const db2 = await getDb();
   if (!db2) return 0;
-  const result = await db2.select({ count: sql`COUNT(*)` }).from(inAppNotifications).where(and(
+  const result = await db2.select({ count: sql2`COUNT(*)` }).from(inAppNotifications).where(and(
     eq(inAppNotifications.userId, userId),
     eq(inAppNotifications.isRead, 0)
   ));
@@ -7432,7 +7433,7 @@ async function cancelRegistration(userId, activityId) {
 async function countRegistrations(activityId) {
   const db2 = await getDb();
   if (!db2) return 0;
-  const rows = await db2.select({ count: sql`COUNT(*)` }).from(activityRegistrations).where(and(eq(activityRegistrations.activityId, activityId), sql`${activityRegistrations.status} != 'cancelado'`));
+  const rows = await db2.select({ count: sql2`COUNT(*)` }).from(activityRegistrations).where(and(eq(activityRegistrations.activityId, activityId), sql2`${activityRegistrations.status} != 'cancelado'`));
   return Number(rows[0]?.count ?? 0);
 }
 async function getActivityTurmas(activityId) {
@@ -7569,14 +7570,14 @@ async function getAlunoMacroInicioMap() {
 async function getAlunoDependencies(alunoId) {
   const db2 = await getDb();
   if (!db2) return null;
-  const [pdis] = await db2.select({ count: sql`COUNT(*)` }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId));
-  const [sessions] = await db2.select({ count: sql`COUNT(*)` }).from(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
-  const [participations] = await db2.select({ count: sql`COUNT(*)` }).from(eventParticipation).where(eq(eventParticipation.alunoId, alunoId));
-  const [performance] = await db2.select({ count: sql`COUNT(*)` }).from(studentPerformance).where(eq(studentPerformance.alunoId, alunoId));
-  const [ciclos] = await db2.select({ count: sql`COUNT(*)` }).from(ciclosExecucao).where(eq(ciclosExecucao.alunoId, alunoId));
-  const [disc] = await db2.select({ count: sql`COUNT(*)` }).from(discResultados).where(eq(discResultados.alunoId, alunoId));
-  const [metasCount] = await db2.select({ count: sql`COUNT(*)` }).from(metas).where(eq(metas.alunoId, alunoId));
-  const [contratos] = await db2.select({ count: sql`COUNT(*)` }).from(contratosAluno).where(eq(contratosAluno.alunoId, alunoId));
+  const [pdis] = await db2.select({ count: sql2`COUNT(*)` }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId));
+  const [sessions] = await db2.select({ count: sql2`COUNT(*)` }).from(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
+  const [participations] = await db2.select({ count: sql2`COUNT(*)` }).from(eventParticipation).where(eq(eventParticipation.alunoId, alunoId));
+  const [performance] = await db2.select({ count: sql2`COUNT(*)` }).from(studentPerformance).where(eq(studentPerformance.alunoId, alunoId));
+  const [ciclos] = await db2.select({ count: sql2`COUNT(*)` }).from(ciclosExecucao).where(eq(ciclosExecucao.alunoId, alunoId));
+  const [disc] = await db2.select({ count: sql2`COUNT(*)` }).from(discResultados).where(eq(discResultados.alunoId, alunoId));
+  const [metasCount] = await db2.select({ count: sql2`COUNT(*)` }).from(metas).where(eq(metas.alunoId, alunoId));
+  const [contratos] = await db2.select({ count: sql2`COUNT(*)` }).from(contratosAluno).where(eq(contratosAluno.alunoId, alunoId));
   const totalRelated = pdis.count + sessions.count + participations.count + performance.count + ciclos.count + disc.count + metasCount.count + contratos.count;
   return {
     pdis: pdis.count,
@@ -7597,17 +7598,17 @@ async function deleteAluno(alunoId) {
     const metaIds = await db2.select({ id: metas.id }).from(metas).where(eq(metas.alunoId, alunoId));
     if (metaIds.length > 0) {
       const ids = metaIds.map((m) => m.id);
-      await db2.delete(metaAcompanhamento).where(sql`${metaAcompanhamento.metaId} IN (${sql.join(ids.map((id) => sql`${id}`), sql`, `)})`);
+      await db2.delete(metaAcompanhamento).where(sql2`${metaAcompanhamento.metaId} IN (${sql2.join(ids.map((id) => sql2`${id}`), sql2`, `)})`);
     }
     const pdiIds = await db2.select({ id: assessmentPdi.id }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId));
     if (pdiIds.length > 0) {
       const ids = pdiIds.map((p) => p.id);
-      await db2.delete(assessmentCompetencias).where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(ids.map((id) => sql`${id}`), sql`, `)})`);
+      await db2.delete(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} IN (${sql2.join(ids.map((id) => sql2`${id}`), sql2`, `)})`);
     }
     const cicloIds = await db2.select({ id: ciclosExecucao.id }).from(ciclosExecucao).where(eq(ciclosExecucao.alunoId, alunoId));
     if (cicloIds.length > 0) {
       const ids = cicloIds.map((c) => c.id);
-      await db2.delete(cicloCompetencias).where(sql`${cicloCompetencias.cicloId} IN (${sql.join(ids.map((id) => sql`${id}`), sql`, `)})`);
+      await db2.delete(cicloCompetencias).where(sql2`${cicloCompetencias.cicloId} IN (${sql2.join(ids.map((id) => sql2`${id}`), sql2`, `)})`);
     }
     await db2.delete(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId));
     await db2.delete(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
@@ -7747,7 +7748,7 @@ async function getOnboardingTrackingList(programId) {
       appointmentId: appointmentParticipants.appointmentId
     }).from(appointmentParticipants).innerJoin(mentorAppointments, eq(appointmentParticipants.appointmentId, mentorAppointments.id)).where(and(
       inArray(appointmentParticipants.alunoId, alunoIds),
-      sql`${mentorAppointments.status} != 'cancelado'`
+      sql2`${mentorAppointments.status} != 'cancelado'`
     )),
     // Assessment PDIs
     database.select({ alunoId: assessmentPdi.alunoId, createdAt: assessmentPdi.createdAt }).from(assessmentPdi).where(inArray(assessmentPdi.alunoId, alunoIds))
@@ -7911,23 +7912,23 @@ async function updateOnboardingRevisao(id, data) {
 async function countOnboardingRevisoesByAluno(alunoId) {
   const db2 = await getDb();
   if (!db2) return 0;
-  const result = await db2.select({ count: sql`count(*)` }).from(onboardingRevisoes).where(eq(onboardingRevisoes.alunoId, alunoId));
+  const result = await db2.select({ count: sql2`count(*)` }).from(onboardingRevisoes).where(eq(onboardingRevisoes.alunoId, alunoId));
   return result[0]?.count || 0;
 }
 async function getGestorTeamStats(programId) {
   const db2 = await getDb();
   if (!db2) return { totalColaboradores: 0, totalMentorias: 0, totalCompetencias: 0, principaisCompetencias: [] };
-  const [alunosCount] = await db2.select({ count: sql`COUNT(DISTINCT ${alunos.id})` }).from(alunos).where(eq(alunos.programId, programId));
-  const [mentoriasCount] = await db2.select({ count: sql`COUNT(*)` }).from(mentoringSessions).innerJoin(alunos, eq(mentoringSessions.alunoId, alunos.id)).where(eq(alunos.programId, programId));
-  const [compCount] = await db2.select({ count: sql`COUNT(DISTINCT ${assessmentCompetencias.competenciaId})` }).from(assessmentCompetencias).innerJoin(assessmentPdi, eq(assessmentCompetencias.assessmentPdiId, assessmentPdi.id)).innerJoin(alunos, eq(assessmentPdi.alunoId, alunos.id)).where(and(eq(alunos.programId, programId), eq(assessmentPdi.status, "ativo")));
+  const [alunosCount] = await db2.select({ count: sql2`COUNT(DISTINCT ${alunos.id})` }).from(alunos).where(eq(alunos.programId, programId));
+  const [mentoriasCount] = await db2.select({ count: sql2`COUNT(*)` }).from(mentoringSessions).innerJoin(alunos, eq(mentoringSessions.alunoId, alunos.id)).where(eq(alunos.programId, programId));
+  const [compCount] = await db2.select({ count: sql2`COUNT(DISTINCT ${assessmentCompetencias.competenciaId})` }).from(assessmentCompetencias).innerJoin(assessmentPdi, eq(assessmentCompetencias.assessmentPdiId, assessmentPdi.id)).innerJoin(alunos, eq(assessmentPdi.alunoId, alunos.id)).where(and(eq(alunos.programId, programId), eq(assessmentPdi.status, "ativo")));
   const topComps = await db2.select({
     competenciaId: assessmentCompetencias.competenciaId,
-    totalAlunos: sql`COUNT(DISTINCT ${assessmentPdi.alunoId})`
-  }).from(assessmentCompetencias).innerJoin(assessmentPdi, eq(assessmentCompetencias.assessmentPdiId, assessmentPdi.id)).innerJoin(alunos, eq(assessmentPdi.alunoId, alunos.id)).where(and(eq(alunos.programId, programId), eq(assessmentPdi.status, "ativo"))).groupBy(assessmentCompetencias.competenciaId).orderBy(sql`COUNT(DISTINCT ${assessmentPdi.alunoId}) DESC`).limit(5);
+    totalAlunos: sql2`COUNT(DISTINCT ${assessmentPdi.alunoId})`
+  }).from(assessmentCompetencias).innerJoin(assessmentPdi, eq(assessmentCompetencias.assessmentPdiId, assessmentPdi.id)).innerJoin(alunos, eq(assessmentPdi.alunoId, alunos.id)).where(and(eq(alunos.programId, programId), eq(assessmentPdi.status, "ativo"))).groupBy(assessmentCompetencias.competenciaId).orderBy(sql2`COUNT(DISTINCT ${assessmentPdi.alunoId}) DESC`).limit(5);
   const compIds = topComps.map((c) => c.competenciaId);
   let principaisCompetencias = [];
   if (compIds.length > 0) {
-    const compNames = await db2.select({ id: competencias.id, nome: competencias.nome }).from(competencias).where(sql`${competencias.id} IN (${sql.join(compIds.map((id) => sql`${id}`), sql`, `)})`);
+    const compNames = await db2.select({ id: competencias.id, nome: competencias.nome }).from(competencias).where(sql2`${competencias.id} IN (${sql2.join(compIds.map((id) => sql2`${id}`), sql2`, `)})`);
     const nameMap = new Map(compNames.map((c) => [c.id, c.nome]));
     principaisCompetencias = topComps.map((c) => ({
       nome: nameMap.get(c.competenciaId) || "Desconhecida",
@@ -7948,7 +7949,7 @@ async function getCourseCatalog(alunoId, microcicloId) {
     const competenciasComModulos = await db2.select({
       competenciaId: competencias.id,
       competenciaNome: competencias.nome,
-      modulos: sql`JSON_ARRAYAGG(
+      modulos: sql2`JSON_ARRAYAGG(
           JSON_OBJECT(
             'id', ${competenciasModulos.id},
             'tipo', ${competenciasModulos.tipoModulo},
@@ -8083,14 +8084,14 @@ async function submitAssessment(alunoId, moduloId, progressoId, competenciaId, m
       )
     );
     const mediaNotas = todasAvaliacoes.length > 0 ? todasAvaliacoes.reduce((sum, a) => sum + Number(a.nota), 0) / todasAvaliacoes.length : 0;
-    const modulosConcluidos = await db2.select({ count: sql`COUNT(*)` }).from(alunoModuloProgresso).where(
+    const modulosConcluidos = await db2.select({ count: sql2`COUNT(*)` }).from(alunoModuloProgresso).where(
       and(
         eq(alunoModuloProgresso.alunoId, alunoId),
         eq(alunoModuloProgresso.microcicloId, microcicloId),
         eq(alunoModuloProgresso.status, "concluido")
       )
     );
-    const modulosDisponiveis = await db2.select({ count: sql`COUNT(*)` }).from(alunoModuloProgresso).where(
+    const modulosDisponiveis = await db2.select({ count: sql2`COUNT(*)` }).from(alunoModuloProgresso).where(
       and(
         eq(alunoModuloProgresso.alunoId, alunoId),
         eq(alunoModuloProgresso.microcicloId, microcicloId)
@@ -8687,7 +8688,7 @@ async function ensureBibliotecaPedagogicaTables() {
   const db2 = await getDb();
   if (!db2) return;
   try {
-    await db2.execute(sql.raw(`
+    await db2.execute(sql2.raw(`
       CREATE TABLE IF NOT EXISTS \`fichas_pedagogicas_competencias\` (
         \`id\` int AUTO_INCREMENT PRIMARY KEY,
         \`competenciaId\` int NOT NULL,
@@ -8707,7 +8708,7 @@ async function ensureBibliotecaPedagogicaTables() {
         \`updatedBy\` varchar(255)
       )
     `));
-    await db2.execute(sql.raw(`
+    await db2.execute(sql2.raw(`
       CREATE TABLE IF NOT EXISTS \`fichas_pedagogicas_conteudos\` (
         \`id\` int AUTO_INCREMENT PRIMARY KEY,
         \`competenciaId\` int NOT NULL,
@@ -8732,6 +8733,42 @@ async function ensureBibliotecaPedagogicaTables() {
   } catch (error) {
     console.error("[DB] Erro ao criar tabelas da Biblioteca Pedag\xF3gica:", error);
   }
+}
+async function ensurePerfilProfissionalColumns() {
+  const db2 = await getDb();
+  if (!db2) return;
+  const columns = [
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `dataNascimento` date",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `estadoCivil` varchar(30)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `temFilhos` tinyint(1) DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `quantidadeFilhos` int DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `expectativaCurtoPrazo` text",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `expectativaMedioPrazo` text",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `expectativaLongoPrazo` text",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `formacaoSuperior` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `posGraduacoes` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `cursosExtracurriculares` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `experienciasAnteriores` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `experienciaLideranca` tinyint(1) DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `tipoEquipeGerenciada` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `gerenciouOutrosLideres` tinyint(1) DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `linkedinUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `facebookUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `instagramUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `tiktokUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `outraRedeUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `curriculoUrl` varchar(1000)"
+  ];
+  for (const col of columns) {
+    try {
+      await db2.execute(sql2.raw(col));
+    } catch (e) {
+      if (!e?.message?.includes("Duplicate column")) {
+        console.warn("[DB] ensurePerfilProfissionalColumns:", e?.message);
+      }
+    }
+  }
+  console.log("[DB] Colunas de perfil profissional verificadas/criadas com sucesso.");
 }
 var _db, _connection, onboardingRevisoesDb;
 var init_db = __esm({
@@ -14032,49 +14069,33 @@ var fichasPedagogicasRouter = router({
           resultado = "Erro: nome_competencia vazio";
           erro = true;
         } else if (!comp) {
-          resultado = `Erro: compet\xEAncia "${nomeComp}" n\xE3o encontrada`;
+          resultado = `Erro: compet\xEAncia "${nomeComp}" n\xE3o encontrada no sistema`;
           erro = true;
         } else if (!nomeCont) {
           resultado = "Erro: nome_conteudo vazio";
           erro = true;
+        } else if (!["rascunho", "publicada", "inativa"].includes(status)) {
+          resultado = `Erro: status "${status}" inv\xE1lido (use rascunho, publicada ou inativa)`;
+          erro = true;
         } else {
-          const modulo = todosModulos.find(
+          const moduloExistente = todosModulos.find(
             (m) => m.competenciaId === comp.id && m.titulo.toLowerCase().trim() === nomeCont.toLowerCase()
           );
-          if (!modulo) {
-            resultado = `Erro: conte\xFAdo "${nomeCont}" n\xE3o encontrado vinculado \xE0 compet\xEAncia "${nomeComp}"`;
+          const camposObrig = [
+            "papel_pedagogico",
+            "o_que_aluno_aprende",
+            "reflexao_esperada",
+            "orientacao_mentor",
+            "descricao_aluno"
+          ];
+          const faltando = camposObrig.filter((c) => !row[c] || row[c].trim() === "");
+          if (faltando.length > 0 && status === "publicada") {
+            resultado = `Erro: campos obrigat\xF3rios vazios para publicar: ${faltando.join(", ")}`;
             erro = true;
-          } else if (!["rascunho", "publicada", "inativa"].includes(status)) {
-            resultado = `Erro: status "${status}" inv\xE1lido`;
-            erro = true;
-          } else {
-            const camposObrig = [
-              "papel_pedagogico",
-              "o_que_aluno_aprende",
-              "reflexao_esperada",
-              "orientacao_mentor",
-              "descricao_aluno"
-            ];
-            const faltando = camposObrig.filter((c) => !row[c] || row[c].trim() === "");
-            if (faltando.length > 0 && status === "publicada") {
-              resultado = `Erro: campos obrigat\xF3rios vazios para publicar: ${faltando.join(", ")}`;
-              erro = true;
-            } else if (faltando.length > 0) {
-              resultado = `Alerta: campos incompletos \u2014 ser\xE1 salvo como rascunho`;
-            }
-            if (!erro) {
-              resultadosCont.push({
-                linha: i + 2,
-                tipo: "Conte\xFAdo",
-                competencia: nomeComp,
-                conteudo: nomeCont,
-                status,
-                resultado,
-                erro,
-                dados: { ...row, competenciaId: String(comp.id), conteudoId: String(modulo.id) }
-              });
-              continue;
-            }
+          } else if (faltando.length > 0) {
+            resultado = `Alerta: campos incompletos \u2014 ser\xE1 salvo como rascunho`;
+          } else if (!moduloExistente) {
+            resultado = `Novo conte\xFAdo \u2014 ser\xE1 criado e vinculado \xE0 compet\xEAncia`;
           }
         }
         resultadosCont.push({
@@ -14084,7 +14105,8 @@ var fichasPedagogicasRouter = router({
           conteudo: nomeCont,
           status,
           resultado,
-          erro
+          erro,
+          dados: comp ? { ...row, competenciaId: String(comp.id) } : void 0
         });
       }
     }
@@ -14122,7 +14144,7 @@ var fichasPedagogicasRouter = router({
           erros++;
           continue;
         }
-        let status = String(row["status"] || "rascunho").trim().toLowerCase();
+        let status = "publicada";
         const dados = {
           competenciaId: comp.id,
           linhaDesenvolvimento: row["linha_desenvolvimento"] || "",
@@ -14144,15 +14166,12 @@ var fichasPedagogicasRouter = router({
           compCriadas++;
         } else {
           const fichaAtual = existente[0];
-          if (fichaAtual.status === "publicada" && status === "publicada") {
-            status = "rascunho";
-            rascunhos++;
-          }
           await db2.update(fichasPedagogicasCompetencias).set({ ...dados, status }).where(eq3(fichasPedagogicasCompetencias.id, fichaAtual.id));
           compAtualizadas++;
         }
       }
     }
+    let modulosAtualizados = await db2.select().from(competenciasModulos);
     const wsCont = wb.Sheets["Fichas dos Conteudos"];
     if (wsCont) {
       const rows = XLSX2.utils.sheet_to_json(wsCont, { defval: "" });
@@ -14160,21 +14179,37 @@ var fichasPedagogicasRouter = router({
         const nomeComp = String(row["nome_competencia"] || "").trim();
         const nomeCont = String(row["nome_conteudo"] || "").trim();
         const comp = compNomeMap.get(nomeComp.toLowerCase());
-        if (!comp) {
+        if (!comp || !nomeCont) {
           erros++;
           continue;
         }
-        const modulo = todosModulos.find(
+        let status = "publicada";
+        const tipoRaw = String(row["tipo_conteudo"] || "outro").trim().toLowerCase();
+        const tiposValidos = ["intro", "filme", "video", "tedtalk", "podcast", "livro", "curso", "outro"];
+        const tipoConteudo = tiposValidos.includes(tipoRaw) ? tipoRaw : "outro";
+        let modulo = modulosAtualizados.find(
           (m) => m.competenciaId === comp.id && m.titulo.toLowerCase().trim() === nomeCont.toLowerCase()
         );
+        if (!modulo) {
+          const tipoModuloValido = ["intro", "filme", "video", "tedtalk", "podcast", "livro"].includes(tipoConteudo) ? tipoConteudo : "intro";
+          await db2.insert(competenciasModulos).values({
+            competenciaId: comp.id,
+            tipoModulo: tipoModuloValido,
+            titulo: nomeCont,
+            descricao: row["descricao_aluno"] || "",
+            urlGenially: row["link_conteudo"] || void 0,
+            ordem: 0,
+            ativo: 1
+          });
+          modulosAtualizados = await db2.select().from(competenciasModulos);
+          modulo = modulosAtualizados.find(
+            (m) => m.competenciaId === comp.id && m.titulo.toLowerCase().trim() === nomeCont.toLowerCase()
+          );
+        }
         if (!modulo) {
           erros++;
           continue;
         }
-        let status = String(row["status"] || "rascunho").trim().toLowerCase();
-        const tipoRaw = String(row["tipo_conteudo"] || "outro").trim().toLowerCase();
-        const tiposValidos = ["intro", "filme", "video", "tedtalk", "podcast", "livro", "curso", "outro"];
-        const tipoConteudo = tiposValidos.includes(tipoRaw) ? tipoRaw : "outro";
         const dados = {
           competenciaId: comp.id,
           conteudoId: modulo.id,
@@ -14202,10 +14237,6 @@ var fichasPedagogicasRouter = router({
           contCriadas++;
         } else {
           const fichaAtual = existente[0];
-          if (fichaAtual.status === "publicada" && status === "publicada") {
-            status = "rascunho";
-            rascunhos++;
-          }
           await db2.update(fichasPedagogicasConteudos).set({ ...dados, status }).where(eq3(fichasPedagogicasConteudos.id, fichaAtual.id));
           contAtualizadas++;
         }
@@ -19277,7 +19308,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const dbInstance = await (await Promise.resolve().then(() => (init_db(), db_exports))).getDb();
       if (!dbInstance) return { sessions: [], total: 0 };
       const { mentoringSessions: mentoringSessions2, alunos: alunosTable, consultors: consultorsTable, turmas: turmasTable, programs: programsTable, trilhas: trilhasTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eq10, and: and9, sql: sql2, desc: desc4, asc: asc3 } = await import("drizzle-orm");
+      const { eq: eq10, and: and9, sql: sql3, desc: desc4, asc: asc3 } = await import("drizzle-orm");
       const conditions = [];
       if (filters.alunoId) conditions.push(eq10(mentoringSessions2.alunoId, filters.alunoId));
       if (filters.consultorId) conditions.push(eq10(mentoringSessions2.consultorId, filters.consultorId));
@@ -19286,13 +19317,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const turmasForProgram = await dbInstance.select({ id: turmasTable.id }).from(turmasTable).where(eq10(turmasTable.programId, filters.programId));
         const turmaIds2 = turmasForProgram.map((t2) => t2.id);
         if (turmaIds2.length > 0) {
-          conditions.push(sql2`${mentoringSessions2.turmaId} IN (${sql2.raw(turmaIds2.join(","))})`);
+          conditions.push(sql3`${mentoringSessions2.turmaId} IN (${sql3.raw(turmaIds2.join(","))})`);
         } else {
           return { sessions: [], total: 0 };
         }
       }
       const whereClause = conditions.length > 0 ? and9(...conditions) : void 0;
-      const [countResult] = await dbInstance.select({ count: sql2`COUNT(*)` }).from(mentoringSessions2).where(whereClause);
+      const [countResult] = await dbInstance.select({ count: sql3`COUNT(*)` }).from(mentoringSessions2).where(whereClause);
       const total = Number(countResult?.count || 0);
       let query = dbInstance.select().from(mentoringSessions2).where(whereClause).orderBy(asc3(mentoringSessions2.sessionNumber), desc4(mentoringSessions2.sessionDate), desc4(mentoringSessions2.id)).limit(pageSize).offset(offset);
       const sessions = await query;
@@ -19300,10 +19331,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const consultorIds = Array.from(new Set(sessions.filter((s) => s.consultorId).map((s) => s.consultorId)));
       const turmaIds = Array.from(new Set(sessions.filter((s) => s.turmaId).map((s) => s.turmaId)));
       const trilhaIds = Array.from(new Set(sessions.filter((s) => s.trilhaId).map((s) => s.trilhaId)));
-      const alunosList = alunoIds.length > 0 ? await dbInstance.select({ id: alunosTable.id, name: alunosTable.name }).from(alunosTable).where(sql2`${alunosTable.id} IN (${sql2.raw(alunoIds.join(","))})`) : [];
-      const consultorsList = consultorIds.length > 0 ? await dbInstance.select({ id: consultorsTable.id, name: consultorsTable.name }).from(consultorsTable).where(sql2`${consultorsTable.id} IN (${sql2.raw(consultorIds.join(","))})`) : [];
-      const turmasList = turmaIds.length > 0 ? await dbInstance.select({ id: turmasTable.id, name: turmasTable.name }).from(turmasTable).where(sql2`${turmasTable.id} IN (${sql2.raw(turmaIds.join(","))})`) : [];
-      const trilhasList = trilhaIds.length > 0 ? await dbInstance.select({ id: trilhasTable.id, name: trilhasTable.name }).from(trilhasTable).where(sql2`${trilhasTable.id} IN (${sql2.raw(trilhaIds.join(","))})`) : [];
+      const alunosList = alunoIds.length > 0 ? await dbInstance.select({ id: alunosTable.id, name: alunosTable.name }).from(alunosTable).where(sql3`${alunosTable.id} IN (${sql3.raw(alunoIds.join(","))})`) : [];
+      const consultorsList = consultorIds.length > 0 ? await dbInstance.select({ id: consultorsTable.id, name: consultorsTable.name }).from(consultorsTable).where(sql3`${consultorsTable.id} IN (${sql3.raw(consultorIds.join(","))})`) : [];
+      const turmasList = turmaIds.length > 0 ? await dbInstance.select({ id: turmasTable.id, name: turmasTable.name }).from(turmasTable).where(sql3`${turmasTable.id} IN (${sql3.raw(turmaIds.join(","))})`) : [];
+      const trilhasList = trilhaIds.length > 0 ? await dbInstance.select({ id: trilhasTable.id, name: trilhasTable.name }).from(trilhasTable).where(sql3`${trilhasTable.id} IN (${sql3.raw(trilhaIds.join(","))})`) : [];
       const alunoMap = new Map(alunosList.map((a) => [a.id, a.name]));
       const consultorMap = new Map(consultorsList.map((c) => [c.id, c.name]));
       const turmaMap = new Map(turmasList.map((t2) => [t2.id, t2.name]));
@@ -21254,6 +21285,147 @@ Responda APENAS em JSON com o formato:
       }
       return result;
     }),
+    // Salvar perfil profissional complementar (etapa 1 expandida)
+    salvarPerfilProfissional: protectedProcedure.input(z4.object({
+      alunoId: z4.number(),
+      // Dados pessoais
+      dataNascimento: z4.string().optional(),
+      estadoCivil: z4.string().optional(),
+      temFilhos: z4.boolean().optional(),
+      quantidadeFilhos: z4.number().optional(),
+      // Expectativas
+      expectativaCurtoPrazo: z4.string().optional(),
+      expectativaMedioPrazo: z4.string().optional(),
+      expectativaLongoPrazo: z4.string().optional(),
+      // Formação
+      formacaoSuperior: z4.array(z4.object({
+        area: z4.string(),
+        curso: z4.string(),
+        instituicao: z4.string(),
+        ano: z4.number().optional()
+      })).optional(),
+      posGraduacoes: z4.array(z4.object({
+        tipo: z4.string(),
+        area: z4.string(),
+        nome: z4.string(),
+        instituicao: z4.string(),
+        ano: z4.number().optional()
+      })).optional(),
+      cursosExtracurriculares: z4.array(z4.object({
+        area: z4.string(),
+        nome: z4.string(),
+        instituicao: z4.string(),
+        cargaHoraria: z4.number(),
+        ano: z4.number().optional()
+      })).optional(),
+      // Experiências anteriores
+      experienciasAnteriores: z4.array(z4.object({
+        empresa: z4.string(),
+        cargo: z4.string(),
+        de: z4.string().optional(),
+        ate: z4.string().optional()
+      })).optional(),
+      // Liderança
+      experienciaLideranca: z4.boolean().optional(),
+      tipoEquipeGerenciada: z4.array(z4.string()).optional(),
+      gerenciouOutrosLideres: z4.boolean().optional(),
+      // Redes sociais
+      linkedinUrl: z4.string().optional(),
+      facebookUrl: z4.string().optional(),
+      instagramUrl: z4.string().optional(),
+      tiktokUrl: z4.string().optional(),
+      outraRedeUrl: z4.string().optional(),
+      // Currículo
+      curriculoUrl: z4.string().optional()
+    })).mutation(async ({ input, ctx }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError4({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+      const sets = [];
+      const vals = [];
+      const addField = (col, val) => {
+        if (val !== void 0) {
+          sets.push(`\`${col}\` = ?`);
+          vals.push(val);
+        }
+      };
+      addField("dataNascimento", input.dataNascimento ?? null);
+      addField("estadoCivil", input.estadoCivil ?? null);
+      if (input.temFilhos !== void 0) addField("temFilhos", input.temFilhos ? 1 : 0);
+      if (input.quantidadeFilhos !== void 0) addField("quantidadeFilhos", input.quantidadeFilhos);
+      addField("expectativaCurtoPrazo", input.expectativaCurtoPrazo ?? null);
+      addField("expectativaMedioPrazo", input.expectativaMedioPrazo ?? null);
+      addField("expectativaLongoPrazo", input.expectativaLongoPrazo ?? null);
+      if (input.formacaoSuperior !== void 0) addField("formacaoSuperior", JSON.stringify(input.formacaoSuperior));
+      if (input.posGraduacoes !== void 0) addField("posGraduacoes", JSON.stringify(input.posGraduacoes));
+      if (input.cursosExtracurriculares !== void 0) addField("cursosExtracurriculares", JSON.stringify(input.cursosExtracurriculares));
+      if (input.experienciasAnteriores !== void 0) addField("experienciasAnteriores", JSON.stringify(input.experienciasAnteriores));
+      if (input.experienciaLideranca !== void 0) addField("experienciaLideranca", input.experienciaLideranca ? 1 : 0);
+      if (input.tipoEquipeGerenciada !== void 0) addField("tipoEquipeGerenciada", JSON.stringify(input.tipoEquipeGerenciada));
+      if (input.gerenciouOutrosLideres !== void 0) addField("gerenciouOutrosLideres", input.gerenciouOutrosLideres ? 1 : 0);
+      addField("linkedinUrl", input.linkedinUrl ?? null);
+      addField("facebookUrl", input.facebookUrl ?? null);
+      addField("instagramUrl", input.instagramUrl ?? null);
+      addField("tiktokUrl", input.tiktokUrl ?? null);
+      addField("outraRedeUrl", input.outraRedeUrl ?? null);
+      addField("curriculoUrl", input.curriculoUrl ?? null);
+      if (sets.length === 0) return { success: true };
+      vals.push(input.alunoId);
+      const rawConn = await getRawConnection();
+      if (rawConn) {
+        await rawConn.execute(`UPDATE \`alunos\` SET ${sets.join(", ")} WHERE \`id\` = ?`, vals);
+      } else {
+        await database.execute(sql.raw(`UPDATE \`alunos\` SET ${sets.map((s, i) => s.replace("?", `'${String(vals[i]).replace(/'/g, "''")}'`)).join(", ")} WHERE \`id\` = ${input.alunoId}`));
+      }
+      return { success: true };
+    }),
+    // Buscar perfil profissional do aluno
+    buscarPerfilProfissional: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
+      const database = await getDb();
+      if (!database) return null;
+      const rawConn = await getRawConnection();
+      if (rawConn) {
+        const [rows] = await rawConn.execute(
+          `SELECT dataNascimento, estadoCivil, temFilhos, quantidadeFilhos,
+             expectativaCurtoPrazo, expectativaMedioPrazo, expectativaLongoPrazo,
+             formacaoSuperior, posGraduacoes, cursosExtracurriculares, experienciasAnteriores,
+             experienciaLideranca, tipoEquipeGerenciada, gerenciouOutrosLideres,
+             linkedinUrl, facebookUrl, instagramUrl, tiktokUrl, outraRedeUrl, curriculoUrl
+             FROM \`alunos\` WHERE \`id\` = ? LIMIT 1`,
+          [input.alunoId]
+        );
+        const row = rows[0];
+        if (!row) return null;
+        const parseJson = (v) => {
+          try {
+            return typeof v === "string" ? JSON.parse(v) : v;
+          } catch {
+            return [];
+          }
+        };
+        return {
+          ...row,
+          formacaoSuperior: parseJson(row.formacaoSuperior) || [],
+          posGraduacoes: parseJson(row.posGraduacoes) || [],
+          cursosExtracurriculares: parseJson(row.cursosExtracurriculares) || [],
+          experienciasAnteriores: parseJson(row.experienciasAnteriores) || [],
+          tipoEquipeGerenciada: parseJson(row.tipoEquipeGerenciada) || []
+        };
+      }
+      return null;
+    }),
+    // Upload de currículo do aluno
+    uploadCurriculo: protectedProcedure.input(z4.object({
+      alunoId: z4.number(),
+      nomeArquivo: z4.string(),
+      tipoMime: z4.string(),
+      dados: z4.string()
+      // base64
+    })).mutation(async ({ input }) => {
+      const buffer = Buffer.from(input.dados, "base64");
+      const fileKey = `curriculos/${input.alunoId}-${Date.now()}-${input.nomeArquivo}`;
+      const { url } = await storagePut(fileKey, buffer, input.tipoMime);
+      return { url, success: true };
+    }),
     // Escolher mentora (etapa 3)
     escolherMentora: protectedProcedure.input(z4.object({
       alunoId: z4.number(),
@@ -23053,6 +23225,14 @@ Responda APENAS em JSON com o formato especificado.`
           synced++;
         }
         return { success: true, synced };
+      }),
+      deleteAtividade: adminProcedure3.input(z4.object({ id: z4.number() })).mutation(async ({ input }) => {
+        const database = await getDb();
+        if (!database) {
+          throw new TRPCError4({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+        }
+        await database.update(atividadesCurso).set({ isActive: 0, updatedAt: /* @__PURE__ */ new Date() }).where(eq6(atividadesCurso.id, input.id));
+        return { success: true };
       })
     }),
     mentor: router({
@@ -24137,6 +24317,14 @@ Responda APENAS em JSON com o formato especificado.`
         }
         await database.update(atividadesCurso).set(updateData).where(eq6(atividadesCurso.id, input.id));
         return { success: true };
+      }),
+      deleteAtividade: adminProcedure3.input(z4.object({ id: z4.number() })).mutation(async ({ input }) => {
+        const database = await getDb();
+        if (!database) {
+          throw new TRPCError4({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+        }
+        await database.update(atividadesCurso).set({ isActive: 0, updatedAt: /* @__PURE__ */ new Date() }).where(eq6(atividadesCurso.id, input.id));
+        return { success: true };
       })
     })
   }),
@@ -24927,6 +25115,7 @@ async function findAvailablePort(startPort = 3e3) {
 }
 async function startServer() {
   await ensureBibliotecaPedagogicaTables();
+  await ensurePerfilProfissionalColumns();
   const app = express2();
   const server = createServer(app);
   app.use(express2.json({ limit: "50mb" }));

@@ -4,6 +4,8 @@ import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import EtapaAssessmentCompleta from "./TesteDiscOnboarding";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +17,8 @@ import {
   CheckCircle2, Circle, Lock, ChevronRight, ExternalLink, Camera, Briefcase,
   GraduationCap, Clock, Calendar, Target, Award,
   Play, ArrowRight, Sparkles, Heart, Eye, AlertCircle, CheckCircle,
-  BookOpen, TrendingUp, BarChart3, Layers, Star, Zap, Trophy, MapPin, Rocket, MessageCircle, Send, FileText, Video
+  BookOpen, TrendingUp, BarChart3, Layers, Star, Zap, Trophy, MapPin, Rocket, MessageCircle, Send, FileText, Video,
+  Plus, Trash2, Upload, Link2, Building2, Baby, Heart as HeartIcon, Linkedin, Instagram, Facebook
 } from "lucide-react";
 import confetti from "canvas-confetti";
 // Tipos locais (dados agora vêm do banco real)
@@ -440,17 +443,70 @@ function OnboardingStepper({ currentStep, progressStep, onStepClick, readOnly = 
 // ETAPA 1: CADASTRO / PERFIL
 // ============================================================
 
+// Listas de áreas padronizadas
+const AREAS_FORMACAO = [
+  "Administração e Gestão", "Ciências Contábeis", "Direito", "Economia",
+  "Educação e Pedagogia", "Engenharia", "Exatas e Tecnologia", "Humanas e Sociais",
+  "Marketing e Comunicação", "Medicina e Saúde", "Psicologia", "Recursos Humanos",
+  "Tecnologia da Informação", "Outras"
+];
+const TIPOS_POS = ["Especialização", "MBA", "Mestrado", "Doutorado", "Pós-graduação lato sensu"];
+const AREAS_CURSOS = [
+  "Liderança", "Gestão de Pessoas", "Gestão de Projetos", "Finanças",
+  "Marketing", "Comunicação", "Tecnologia", "Vendas", "Recursos Humanos",
+  "Empreendedorismo", "Inovação", "Outras"
+];
+
 function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
   const alunoReal = dashData?.found ? dashData.aluno : null;
   const salvarCadastro = trpc.onboarding.salvarCadastro.useMutation();
+  const salvarPerfil = trpc.onboarding.salvarPerfilProfissional.useMutation();
+  const uploadCurriculo = trpc.onboarding.uploadCurriculo.useMutation();
+  const { data: perfilProfData } = trpc.onboarding.buscarPerfilProfissional.useQuery(
+    { alunoId },
+    { enabled: alunoId > 0 }
+  );
   const utils = trpc.useUtils();
 
   const [perfil, setPerfil] = useState({
     nome: "", email: "", telefone: "", empresa: "", cargo: "",
     areaAtuacao: "", minicurriculo: "", quemEVoce: "", programa: "", turma: "", foto: null as string | null,
   });
+  // Dados pessoais complementares
+  const [dataNascimento, setDataNascimento] = useState("");
+  const [estadoCivil, setEstadoCivil] = useState("");
+  const [temFilhos, setTemFilhos] = useState(false);
+  const [quantidadeFilhos, setQuantidadeFilhos] = useState(0);
+  // Expectativas
+  const [expectCurto, setExpectCurto] = useState("");
+  const [expectMedio, setExpectMedio] = useState("");
+  const [expectLongo, setExpectLongo] = useState("");
+  // Formação superior
+  const [formacoes, setFormacoes] = useState<{area:string;curso:string;instituicao:string;ano:string}[]>([]);
+  // Pós-graduações
+  const [posGrads, setPosGrads] = useState<{tipo:string;area:string;nome:string;instituicao:string;ano:string}[]>([]);
+  // Cursos extracurriculares
+  const [cursos, setCursos] = useState<{area:string;nome:string;instituicao:string;cargaHoraria:string;ano:string}[]>([]);
+  // Experiências anteriores
+  const [exps, setExps] = useState<{empresa:string;cargo:string;de:string;ate:string}[]>([]);
+  // Liderança
+  const [expLideranca, setExpLideranca] = useState(false);
+  const [tiposEquipe, setTiposEquipe] = useState<string[]>([]);
+  const [gerenciouLideres, setGerenciouLideres] = useState(false);
+  // Redes sociais
+  const [linkedin, setLinkedin] = useState("");
+  const [facebook, setFacebook] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [tiktok, setTiktok] = useState("");
+  const [outraRede, setOutraRede] = useState("");
+  // Currículo
+  const [curriculoUrl, setCurriculoUrl] = useState("");
+  const [curriculoNome, setCurriculoNome] = useState("");
+  const [uploadingCurriculo, setUploadingCurriculo] = useState(false);
+
   const [initialized, setInitialized] = useState(false);
+  const [perfilInitialized, setPerfilInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
 
   if (alunoReal && !initialized) {
@@ -469,36 +525,104 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
     setInitialized(true);
   }
 
+  if (perfilProfData && !perfilInitialized) {
+    const p = perfilProfData as any;
+    if (p.dataNascimento) setDataNascimento(p.dataNascimento.toString().split('T')[0]);
+    if (p.estadoCivil) setEstadoCivil(p.estadoCivil);
+    if (p.temFilhos) setTemFilhos(!!p.temFilhos);
+    if (p.quantidadeFilhos) setQuantidadeFilhos(p.quantidadeFilhos);
+    if (p.expectativaCurtoPrazo) setExpectCurto(p.expectativaCurtoPrazo);
+    if (p.expectativaMedioPrazo) setExpectMedio(p.expectativaMedioPrazo);
+    if (p.expectativaLongoPrazo) setExpectLongo(p.expectativaLongoPrazo);
+    if (p.formacaoSuperior?.length) setFormacoes(p.formacaoSuperior.map((f: any) => ({...f, ano: f.ano?.toString() || ""})));
+    if (p.posGraduacoes?.length) setPosGrads(p.posGraduacoes.map((f: any) => ({...f, ano: f.ano?.toString() || ""})));
+    if (p.cursosExtracurriculares?.length) setCursos(p.cursosExtracurriculares.map((f: any) => ({...f, cargaHoraria: f.cargaHoraria?.toString() || "", ano: f.ano?.toString() || ""})));
+    if (p.experienciasAnteriores?.length) setExps(p.experienciasAnteriores);
+    if (p.experienciaLideranca) setExpLideranca(!!p.experienciaLideranca);
+    if (p.tipoEquipeGerenciada?.length) setTiposEquipe(p.tipoEquipeGerenciada);
+    if (p.gerenciouOutrosLideres) setGerenciouLideres(!!p.gerenciouOutrosLideres);
+    if (p.linkedinUrl) setLinkedin(p.linkedinUrl);
+    if (p.facebookUrl) setFacebook(p.facebookUrl);
+    if (p.instagramUrl) setInstagram(p.instagramUrl);
+    if (p.tiktokUrl) setTiktok(p.tiktokUrl);
+    if (p.outraRedeUrl) setOutraRede(p.outraRedeUrl);
+    if (p.curriculoUrl) { setCurriculoUrl(p.curriculoUrl); setCurriculoNome("Currículo enviado"); }
+    setPerfilInitialized(true);
+  }
+
+  const handleCurriculoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Arquivo muito grande. Máximo 5MB."); return; }
+    const allowed = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+    if (!allowed.includes(file.type)) { toast.error("Formato inválido. Use PDF ou DOC/DOCX."); return; }
+    setUploadingCurriculo(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = (ev.target?.result as string).split(',')[1];
+        const res = await uploadCurriculo.mutateAsync({ alunoId, nomeArquivo: file.name, tipoMime: file.type, dados: base64 });
+        setCurriculoUrl(res.url);
+        setCurriculoNome(file.name);
+        toast.success("Currículo enviado com sucesso!");
+        setUploadingCurriculo(false);
+      };
+      reader.readAsDataURL(file);
+    } catch { toast.error("Erro ao enviar currículo."); setUploadingCurriculo(false); }
+  };
+
+  const toggleTipoEquipe = (tipo: string) => {
+    setTiposEquipe(prev => prev.includes(tipo) ? prev.filter(t => t !== tipo) : [...prev, tipo]);
+  };
+
   const handleSalvar = async () => {
-    if (!alunoId || alunoId === 0) {
-      toast.error("Erro: aluno não identificado. Tente recarregar a página.");
-      return;
-    }
+    if (!alunoId || alunoId === 0) { toast.error("Erro: aluno não identificado."); return; }
     if (!perfil.minicurriculo || perfil.minicurriculo.trim().length < 10) {
-      toast.error("O campo Minicurrículo é obrigatório. Por favor, descreva brevemente sua formação e experiências (mínimo 10 caracteres).");
-      return;
+      toast.error("O campo Minicurrículo é obrigatório (mínimo 10 caracteres)."); return;
     }
     if (!perfil.quemEVoce || perfil.quemEVoce.trim().length < 10) {
-      toast.error("O campo 'Quem é você' é obrigatório. Por favor, conte um pouco sobre você (mínimo 10 caracteres).");
-      return;
+      toast.error("O campo 'Quem é você' é obrigatório (mínimo 10 caracteres)."); return;
     }
+    // Validar cursos extracurriculares: máx 3 e carga horária > 16h
+    const cursosInvalidos = cursos.filter(c => parseInt(c.cargaHoraria) <= 16);
+    if (cursosInvalidos.length > 0) { toast.error("Cursos extracurriculares devem ter carga horária acima de 16 horas."); return; }
+    if (cursos.length > 3) { toast.error("Informe no máximo 3 cursos extracurriculares."); return; }
     setSaving(true);
     try {
       await salvarCadastro.mutateAsync({
-        alunoId,
-        nome: perfil.nome || undefined,
-        email: perfil.email || undefined,
-        telefone: perfil.telefone || undefined,
-        cargo: perfil.cargo || undefined,
-        areaAtuacao: perfil.areaAtuacao || undefined,
-        minicurriculo: perfil.minicurriculo || undefined,
+        alunoId, nome: perfil.nome || undefined, email: perfil.email || undefined,
+        telefone: perfil.telefone || undefined, cargo: perfil.cargo || undefined,
+        areaAtuacao: perfil.areaAtuacao || undefined, minicurriculo: perfil.minicurriculo || undefined,
         quemEVoce: perfil.quemEVoce || undefined,
+      });
+      await salvarPerfil.mutateAsync({
+        alunoId,
+        dataNascimento: dataNascimento || undefined,
+        estadoCivil: estadoCivil || undefined,
+        temFilhos,
+        quantidadeFilhos: temFilhos ? quantidadeFilhos : 0,
+        expectativaCurtoPrazo: expectCurto || undefined,
+        expectativaMedioPrazo: expectMedio || undefined,
+        expectativaLongoPrazo: expectLongo || undefined,
+        formacaoSuperior: formacoes.filter(f => f.area && f.curso).map(f => ({...f, ano: f.ano ? parseInt(f.ano) : undefined})),
+        posGraduacoes: posGrads.filter(p => p.tipo && p.nome).map(p => ({...p, ano: p.ano ? parseInt(p.ano) : undefined})),
+        cursosExtracurriculares: cursos.filter(c => c.nome).map(c => ({...c, cargaHoraria: parseInt(c.cargaHoraria) || 0, ano: c.ano ? parseInt(c.ano) : undefined})),
+        experienciasAnteriores: exps.filter(e => e.empresa),
+        experienciaLideranca: expLideranca,
+        tipoEquipeGerenciada: tiposEquipe,
+        gerenciouOutrosLideres: gerenciouLideres,
+        linkedinUrl: linkedin || undefined,
+        facebookUrl: facebook || undefined,
+        instagramUrl: instagram || undefined,
+        tiktokUrl: tiktok || undefined,
+        outraRedeUrl: outraRede || undefined,
+        curriculoUrl: curriculoUrl || undefined,
       });
       utils.indicadores.meuDashboard.invalidate();
       toast.success("Cadastro salvo com sucesso!");
       onComplete();
     } catch (err: any) {
-      toast.error(err?.message || "Erro ao salvar cadastro. Tente novamente.");
+      toast.error(err?.message || "Erro ao salvar cadastro.");
     } finally {
       setSaving(false);
     }
@@ -531,9 +655,7 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
             <Badge className="mt-2 bg-[#0A1E3E]/10 text-[#0A1E3E] border-0">
               <GraduationCap className="h-3 w-3 mr-1" />{perfil.programa}
             </Badge>
-            <Badge variant="outline" className="mt-1 text-gray-500">
-              {perfil.turma}
-            </Badge>
+            <Badge variant="outline" className="mt-1 text-gray-500">{perfil.turma}</Badge>
           </CardContent>
         </Card>
 
@@ -541,28 +663,40 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4 text-[#0A1E3E]" />
-              Dados Pessoais
+              <User className="h-4 w-4 text-[#0A1E3E]" />Dados Pessoais
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Nome Completo</label>
-                <Input value={perfil.nome} onChange={(e) => setPerfil({...perfil, nome: e.target.value})} disabled={readOnly} />
+              <div><label className="text-sm font-medium text-gray-700">Nome Completo</label>
+                <Input value={perfil.nome} onChange={(e) => setPerfil({...perfil, nome: e.target.value})} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Email</label>
+                <Input value={perfil.email} onChange={(e) => setPerfil({...perfil, email: e.target.value})} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Telefone</label>
+                <Input value={perfil.telefone} onChange={(e) => setPerfil({...perfil, telefone: e.target.value})} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Empresa</label>
+                <Input value={perfil.empresa} onChange={(e) => setPerfil({...perfil, empresa: e.target.value})} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Data de Nascimento</label>
+                <Input type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Estado Civil</label>
+                <Select value={estadoCivil} onValueChange={setEstadoCivil} disabled={readOnly}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {["Solteiro(a)","Casado(a)","Divorciado(a)","Viúvo(a)","União estável"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select></div>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Checkbox id="temFilhos" checked={temFilhos} onCheckedChange={(v) => setTemFilhos(!!v)} disabled={readOnly} />
+                <label htmlFor="temFilhos" className="text-sm font-medium text-gray-700">Tem filhos?</label>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Email</label>
-                <Input value={perfil.email} onChange={(e) => setPerfil({...perfil, email: e.target.value})} disabled={readOnly} />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Telefone</label>
-                <Input value={perfil.telefone} onChange={(e) => setPerfil({...perfil, telefone: e.target.value})} disabled={readOnly} />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Empresa</label>
-                <Input value={perfil.empresa} onChange={(e) => setPerfil({...perfil, empresa: e.target.value})} disabled={readOnly} />
-              </div>
+              {temFilhos && (
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Quantos?</label>
+                  <Input type="number" min={1} max={20} value={quantidadeFilhos} onChange={(e) => setQuantidadeFilhos(parseInt(e.target.value)||0)} className="w-20" disabled={readOnly} />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -571,54 +705,271 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-[#F5991F]" />
-              Dados Profissionais
+              <Briefcase className="h-4 w-4 text-[#F5991F]" />Dados Profissionais
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Cargo</label>
-                <Input value={perfil.cargo} onChange={(e) => setPerfil({...perfil, cargo: e.target.value})} disabled={readOnly} />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Área de Atuação</label>
-                <Input value={perfil.areaAtuacao} onChange={(e) => setPerfil({...perfil, areaAtuacao: e.target.value})} disabled={readOnly} />
-              </div>
+              <div><label className="text-sm font-medium text-gray-700">Cargo</label>
+                <Input value={perfil.cargo} onChange={(e) => setPerfil({...perfil, cargo: e.target.value})} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Área de Atuação</label>
+                <Input value={perfil.areaAtuacao} onChange={(e) => setPerfil({...perfil, areaAtuacao: e.target.value})} disabled={readOnly} /></div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Minicurrículo <span className="text-red-500">*</span></label>
-              <Textarea
-                value={perfil.minicurriculo}
-                onChange={(e) => setPerfil({...perfil, minicurriculo: e.target.value})}
-                placeholder="Descreva brevemente sua formação, experiências e habilidades profissionais..."
-                rows={4}
-                className="resize-none overflow-y-auto"
-                disabled={readOnly}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Quem é você? Conte um pouco como você se define como pessoa. <span className="text-red-500">*</span></label>
-              <Textarea
-                value={perfil.quemEVoce}
-                onChange={(e) => setPerfil({...perfil, quemEVoce: e.target.value})}
-                placeholder="Conte sobre seus valores, interesses, o que te motiva e como você se vê como pessoa..."
-                rows={4}
-                className="resize-none overflow-y-auto"
-                disabled={readOnly}
-              />
-            </div>
+            <div><label className="text-sm font-medium text-gray-700">Minicurrículo <span className="text-red-500">*</span></label>
+              <Textarea value={perfil.minicurriculo} onChange={(e) => setPerfil({...perfil, minicurriculo: e.target.value})} placeholder="Descreva brevemente sua formação, experiências e habilidades profissionais..." rows={3} className="resize-none" disabled={readOnly} /></div>
+            <div><label className="text-sm font-medium text-gray-700">Quem é você? <span className="text-red-500">*</span></label>
+              <Textarea value={perfil.quemEVoce} onChange={(e) => setPerfil({...perfil, quemEVoce: e.target.value})} placeholder="Conte sobre seus valores, interesses, o que te motiva e como você se vê como pessoa..." rows={3} className="resize-none" disabled={readOnly} /></div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Expectativas Profissionais */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Target className="h-4 w-4 text-[#0A1E3E]" />Expectativas para o seu Futuro Profissional
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div><label className="text-sm font-medium text-gray-700">Curto prazo (até 1 ano)</label>
+            <Textarea value={expectCurto} onChange={(e) => setExpectCurto(e.target.value)} placeholder="O que você espera alcançar no curto prazo?" rows={2} className="resize-none" disabled={readOnly} /></div>
+          <div><label className="text-sm font-medium text-gray-700">Médio prazo (1 a 3 anos)</label>
+            <Textarea value={expectMedio} onChange={(e) => setExpectMedio(e.target.value)} placeholder="Quais são seus objetivos para os próximos 1 a 3 anos?" rows={2} className="resize-none" disabled={readOnly} /></div>
+          <div><label className="text-sm font-medium text-gray-700">Longo prazo (acima de 3 anos)</label>
+            <Textarea value={expectLongo} onChange={(e) => setExpectLongo(e.target.value)} placeholder="Qual é a sua visão de futuro profissional a longo prazo?" rows={2} className="resize-none" disabled={readOnly} /></div>
+        </CardContent>
+      </Card>
+
+      {/* Experiências Anteriores */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-[#F5991F]" />Últimas 3 Empresas em que Trabalhou
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {exps.map((exp, i) => (
+            <div key={i} className="grid grid-cols-4 gap-2 items-end border rounded-lg p-3 bg-gray-50">
+              <div><label className="text-xs font-medium text-gray-600">Empresa</label>
+                <Input value={exp.empresa} onChange={(e) => { const n=[...exps]; n[i]={...n[i],empresa:e.target.value}; setExps(n); }} disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">Cargo</label>
+                <Input value={exp.cargo} onChange={(e) => { const n=[...exps]; n[i]={...n[i],cargo:e.target.value}; setExps(n); }} disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">De (mês/ano)</label>
+                <Input placeholder="Ex: 01/2020" value={exp.de} onChange={(e) => { const n=[...exps]; n[i]={...n[i],de:e.target.value}; setExps(n); }} disabled={readOnly} /></div>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1"><label className="text-xs font-medium text-gray-600">Até (mês/ano)</label>
+                  <Input placeholder="Ex: 12/2022" value={exp.ate} onChange={(e) => { const n=[...exps]; n[i]={...n[i],ate:e.target.value}; setExps(n); }} disabled={readOnly} /></div>
+                {!readOnly && <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 shrink-0" onClick={() => setExps(exps.filter((_,j)=>j!==i))}><Trash2 className="h-4 w-4" /></Button>}
+              </div>
+            </div>
+          ))}
+          {!readOnly && exps.length < 3 && (
+            <Button variant="outline" size="sm" onClick={() => setExps([...exps, {empresa:"",cargo:"",de:"",ate:""}])}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar empresa
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Formação Superior */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-[#0A1E3E]" />Formação Superior
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {formacoes.map((f, i) => (
+            <div key={i} className="grid grid-cols-4 gap-2 items-end border rounded-lg p-3 bg-gray-50">
+              <div><label className="text-xs font-medium text-gray-600">Área</label>
+                <Select value={f.area} onValueChange={(v) => { const n=[...formacoes]; n[i]={...n[i],area:v}; setFormacoes(n); }} disabled={readOnly}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{AREAS_FORMACAO.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                </Select></div>
+              <div><label className="text-xs font-medium text-gray-600">Curso</label>
+                <Input value={f.curso} onChange={(e) => { const n=[...formacoes]; n[i]={...n[i],curso:e.target.value}; setFormacoes(n); }} placeholder="Nome do curso" disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">Instituição</label>
+                <Input value={f.instituicao} onChange={(e) => { const n=[...formacoes]; n[i]={...n[i],instituicao:e.target.value}; setFormacoes(n); }} disabled={readOnly} /></div>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1"><label className="text-xs font-medium text-gray-600">Ano</label>
+                  <Input type="number" min={1960} max={2030} value={f.ano} onChange={(e) => { const n=[...formacoes]; n[i]={...n[i],ano:e.target.value}; setFormacoes(n); }} disabled={readOnly} /></div>
+                {!readOnly && <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 shrink-0" onClick={() => setFormacoes(formacoes.filter((_,j)=>j!==i))}><Trash2 className="h-4 w-4" /></Button>}
+              </div>
+            </div>
+          ))}
+          {!readOnly && formacoes.length < 3 && (
+            <Button variant="outline" size="sm" onClick={() => setFormacoes([...formacoes, {area:"",curso:"",instituicao:"",ano:""}])}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar formação
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pós-graduações */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Award className="h-4 w-4 text-[#F5991F]" />Pós-graduações e MBA
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {posGrads.map((p, i) => (
+            <div key={i} className="grid grid-cols-5 gap-2 items-end border rounded-lg p-3 bg-gray-50">
+              <div><label className="text-xs font-medium text-gray-600">Tipo</label>
+                <Select value={p.tipo} onValueChange={(v) => { const n=[...posGrads]; n[i]={...n[i],tipo:v}; setPosGrads(n); }} disabled={readOnly}>
+                  <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+                  <SelectContent>{TIPOS_POS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select></div>
+              <div><label className="text-xs font-medium text-gray-600">Área</label>
+                <Select value={p.area} onValueChange={(v) => { const n=[...posGrads]; n[i]={...n[i],area:v}; setPosGrads(n); }} disabled={readOnly}>
+                  <SelectTrigger><SelectValue placeholder="Área" /></SelectTrigger>
+                  <SelectContent>{AREAS_FORMACAO.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                </Select></div>
+              <div><label className="text-xs font-medium text-gray-600">Nome do curso</label>
+                <Input value={p.nome} onChange={(e) => { const n=[...posGrads]; n[i]={...n[i],nome:e.target.value}; setPosGrads(n); }} disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">Instituição</label>
+                <Input value={p.instituicao} onChange={(e) => { const n=[...posGrads]; n[i]={...n[i],instituicao:e.target.value}; setPosGrads(n); }} disabled={readOnly} /></div>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1"><label className="text-xs font-medium text-gray-600">Ano</label>
+                  <Input type="number" min={1960} max={2030} value={p.ano} onChange={(e) => { const n=[...posGrads]; n[i]={...n[i],ano:e.target.value}; setPosGrads(n); }} disabled={readOnly} /></div>
+                {!readOnly && <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 shrink-0" onClick={() => setPosGrads(posGrads.filter((_,j)=>j!==i))}><Trash2 className="h-4 w-4" /></Button>}
+              </div>
+            </div>
+          ))}
+          {!readOnly && (
+            <Button variant="outline" size="sm" onClick={() => setPosGrads([...posGrads, {tipo:"",area:"",nome:"",instituicao:"",ano:""}])}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar pós-graduação
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Cursos Extracurriculares */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-[#0A1E3E]" />Cursos Extracurriculares
+          </CardTitle>
+          <p className="text-xs text-gray-500 mt-1">Informe os 3 últimos cursos com carga horária acima de 16 horas</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {cursos.map((c, i) => (
+            <div key={i} className="grid grid-cols-5 gap-2 items-end border rounded-lg p-3 bg-gray-50">
+              <div><label className="text-xs font-medium text-gray-600">Área</label>
+                <Select value={c.area} onValueChange={(v) => { const n=[...cursos]; n[i]={...n[i],area:v}; setCursos(n); }} disabled={readOnly}>
+                  <SelectTrigger><SelectValue placeholder="Área" /></SelectTrigger>
+                  <SelectContent>{AREAS_CURSOS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                </Select></div>
+              <div><label className="text-xs font-medium text-gray-600">Nome do curso</label>
+                <Input value={c.nome} onChange={(e) => { const n=[...cursos]; n[i]={...n[i],nome:e.target.value}; setCursos(n); }} disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">Instituição</label>
+                <Input value={c.instituicao} onChange={(e) => { const n=[...cursos]; n[i]={...n[i],instituicao:e.target.value}; setCursos(n); }} disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">Carga horária (h)</label>
+                <Input type="number" min={17} value={c.cargaHoraria} onChange={(e) => { const n=[...cursos]; n[i]={...n[i],cargaHoraria:e.target.value}; setCursos(n); }} disabled={readOnly} /></div>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1"><label className="text-xs font-medium text-gray-600">Ano</label>
+                  <Input type="number" min={1990} max={2030} value={c.ano} onChange={(e) => { const n=[...cursos]; n[i]={...n[i],ano:e.target.value}; setCursos(n); }} disabled={readOnly} /></div>
+                {!readOnly && <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 shrink-0" onClick={() => setCursos(cursos.filter((_,j)=>j!==i))}><Trash2 className="h-4 w-4" /></Button>}
+              </div>
+            </div>
+          ))}
+          {!readOnly && cursos.length < 3 && (
+            <Button variant="outline" size="sm" onClick={() => setCursos([...cursos, {area:"",nome:"",instituicao:"",cargaHoraria:"",ano:""}])}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar curso
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Experiência em Liderança */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Users2 className="h-4 w-4 text-[#F5991F]" />Experiência em Liderança
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Checkbox id="expLideranca" checked={expLideranca} onCheckedChange={(v) => setExpLideranca(!!v)} disabled={readOnly} />
+            <label htmlFor="expLideranca" className="text-sm font-medium text-gray-700">Tenho experiência em cargo/função de liderança</label>
+          </div>
+          {expLideranca && (
+            <div className="space-y-3 pl-6">
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Tipo de equipe gerenciada:</p>
+                <div className="flex flex-col gap-2">
+                  {["Pequeno porte (até 5 pessoas)","Médio porte (6 a 20 pessoas)","Grande porte (acima de 20 pessoas)"].map(tipo => (
+                    <div key={tipo} className="flex items-center gap-2">
+                      <Checkbox id={tipo} checked={tiposEquipe.includes(tipo)} onCheckedChange={() => toggleTipoEquipe(tipo)} disabled={readOnly} />
+                      <label htmlFor={tipo} className="text-sm text-gray-700">{tipo}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Checkbox id="gerenciouLideres" checked={gerenciouLideres} onCheckedChange={(v) => setGerenciouLideres(!!v)} disabled={readOnly} />
+                <label htmlFor="gerenciouLideres" className="text-sm font-medium text-gray-700">Já gerenciei outros líderes</label>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Redes Sociais */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Link2 className="h-4 w-4 text-[#0A1E3E]" />Redes Sociais
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="text-sm font-medium text-gray-700 flex items-center gap-1"><Linkedin className="h-3 w-3" /> LinkedIn</label>
+              <Input value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/..." disabled={readOnly} /></div>
+            <div><label className="text-sm font-medium text-gray-700 flex items-center gap-1"><Facebook className="h-3 w-3" /> Facebook</label>
+              <Input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="https://facebook.com/..." disabled={readOnly} /></div>
+            <div><label className="text-sm font-medium text-gray-700 flex items-center gap-1"><Instagram className="h-3 w-3" /> Instagram</label>
+              <Input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="https://instagram.com/..." disabled={readOnly} /></div>
+            <div><label className="text-sm font-medium text-gray-700">TikTok</label>
+              <Input value={tiktok} onChange={(e) => setTiktok(e.target.value)} placeholder="https://tiktok.com/@..." disabled={readOnly} /></div>
+            <div className="col-span-2"><label className="text-sm font-medium text-gray-700">Outra rede social</label>
+              <Input value={outraRede} onChange={(e) => setOutraRede(e.target.value)} placeholder="URL de outra rede social" disabled={readOnly} /></div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Currículo */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="h-4 w-4 text-[#F5991F]" />Currículo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {curriculoUrl ? (
+            <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <FileText className="h-5 w-5 text-green-600" />
+              <span className="text-sm text-green-700 flex-1">{curriculoNome}</span>
+              <a href={curriculoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline">Visualizar</a>
+              {!readOnly && <Button variant="ghost" size="sm" className="text-red-500" onClick={() => { setCurriculoUrl(""); setCurriculoNome(""); }}>Remover</Button>}
+            </div>
+          ) : (
+            !readOnly && (
+              <div>
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                  <Upload className="h-6 w-6 text-gray-400 mb-1" />
+                  <span className="text-sm text-gray-500">{uploadingCurriculo ? "Enviando..." : "Clique para enviar PDF ou DOC (máx. 5MB)"}</span>
+                  <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleCurriculoUpload} disabled={uploadingCurriculo} />
+                </label>
+              </div>
+            )
+          )}
+        </CardContent>
+      </Card>
+
       {!readOnly && (
         <div className="flex justify-end">
-          <Button
-            className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
-            onClick={handleSalvar}
-            disabled={saving}
-          >
+          <Button className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base" onClick={handleSalvar} disabled={saving}>
             {saving ? "Salvando..." : "Salvar e Continuar"} <ChevronRight className="h-5 w-5 ml-2" />
           </Button>
         </div>

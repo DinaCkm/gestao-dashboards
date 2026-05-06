@@ -10657,3 +10657,41 @@ export async function ensureBibliotecaPedagogicaTables(): Promise<void> {
     console.error("[DB] Erro ao criar tabelas da Biblioteca Pedagógica:", error);
   }
 }
+
+// ============ PERFIL PROFISSIONAL DO ALUNO ============
+export async function ensurePerfilProfissionalColumns(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const columns = [
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `dataNascimento` date",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `estadoCivil` varchar(30)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `temFilhos` tinyint(1) DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `quantidadeFilhos` int DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `expectativaCurtoPrazo` text",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `expectativaMedioPrazo` text",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `expectativaLongoPrazo` text",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `formacaoSuperior` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `posGraduacoes` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `cursosExtracurriculares` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `experienciasAnteriores` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `experienciaLideranca` tinyint(1) DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `tipoEquipeGerenciada` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `gerenciouOutrosLideres` tinyint(1) DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `linkedinUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `facebookUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `instagramUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `tiktokUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `outraRedeUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `curriculoUrl` varchar(1000)",
+  ];
+  for (const col of columns) {
+    try {
+      await db.execute(sql.raw(col));
+    } catch (e: any) {
+      if (!e?.message?.includes("Duplicate column")) {
+        console.warn("[DB] ensurePerfilProfissionalColumns:", e?.message);
+      }
+    }
+  }
+  console.log("[DB] Colunas de perfil profissional verificadas/criadas com sucesso.");
+}
