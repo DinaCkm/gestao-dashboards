@@ -1557,3 +1557,22 @@ export const fichasPedagogicasConteudos = mysqlTable("fichas_pedagogicas_conteud
 });
 export type FichaPedagogicaConteudo = typeof fichasPedagogicasConteudos.$inferSelect;
 export type InsertFichaPedagogicaConteudo = typeof fichasPedagogicasConteudos.$inferInsert;
+
+/**
+ * Histórico de Ciclos do Aluno - Registra cada ciclo de onboarding concluído
+ * Criado quando o admin libera novo ciclo de onboarding (arquiva DISC + PDI do ciclo anterior)
+ */
+export const historicoCiclosAluno = mysqlTable("historico_ciclos_aluno", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  numeroCiclo: int("numeroCiclo").notNull(), // 1 = primeiro ciclo, 2 = segundo, etc.
+  discResultadoId: int("discResultadoId"), // FK para disc_resultados (resultado DISC deste ciclo)
+  assessmentPdiId: int("assessmentPdiId"), // FK para assessment_pdi (PDI deste ciclo)
+  dataInicio: timestamp("dataInicio"), // Quando o ciclo começou (aceite do onboarding)
+  dataConclusao: timestamp("dataConclusao"), // Quando o ciclo foi arquivado (admin liberou novo ciclo)
+  observacoes: text("observacoes"), // Observações do admin ao arquivar
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type HistoricoCicloAluno = typeof historicoCiclosAluno.$inferSelect;
+export type InsertHistoricoCicloAluno = typeof historicoCiclosAluno.$inferInsert;

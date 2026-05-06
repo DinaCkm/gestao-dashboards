@@ -6599,25 +6599,23 @@ export async function createAlunoDireto(data: {
 export async function liberarOnboardingAluno(alunoId: number) {
   const db = await getDb();
   if (!db) return { success: false, message: 'Erro de conexão com banco' };
-
   // Verificar se o aluno existe e tem PDI
   const [aluno] = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
   if (!aluno) return { success: false, message: 'Aluno não encontrado' };
-
   const [pdiCount] = await db.select({ count: sql<number>`COUNT(*)` })
     .from(assessmentPdi)
     .where(eq(assessmentPdi.alunoId, alunoId));
   if ((pdiCount?.count ?? 0) === 0) {
     return { success: false, message: 'Aluno não tem PDI. Já deve ir para onboarding automaticamente.' };
   }
-
+  // Arquivar ciclo atual (DISC + PDI) antes de liberar novo ciclo
+  const { numeroCiclo } = await arquivarCicloAtual(alunoId);
   // Marcar onboarding como liberado
   await db.update(alunos).set({
     onboardingLiberado: 1,
     onboardingLiberadoEm: new Date(),
   }).where(eq(alunos.id, alunoId));
-
-  return { success: true, message: 'Onboarding liberado para novo ciclo' };
+  return { success: true, message: `Onboarding liberado para novo ciclo. Ciclo ${numeroCiclo} arquivado na página de Evolução.` };
 }
 
 export async function liberarOnboardingEmMassa(alunoIds: number[]) {
@@ -6660,6 +6658,14 @@ export async function liberarOnboardingEmMassa(alunoIds: number[]) {
   }
 
   if (idsParaLiberar.length > 0) {
+    // Arquivar ciclo atual de cada aluno antes de liberar
+    for (const id of idsParaLiberar) {
+      try {
+        await arquivarCicloAtual(id);
+      } catch (e) {
+        console.warn(`[DB] Erro ao arquivar ciclo do aluno ${id}:`, e);
+      }
+    }
     await db.update(alunos).set({
       onboardingLiberado: 1,
       onboardingLiberadoEm: new Date(),
@@ -10694,4 +10700,115 @@ export async function ensurePerfilProfissionalColumns(): Promise<void> {
     }
   }
   console.log("[DB] Colunas de perfil profissional verificadas/criadas com sucesso.");
+}
+
+// ============ HISTÓRICO DE CICLOS DO ALUNO ============
+export async function ensureHistoricoCiclosTable(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw(`
+      CREATE TABLE IF NOT EXISTS \`historico_ciclos_aluno\` (
+        \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`alunoId\` int NOT NULL,
+        \`numeroCiclo\` int NOT NULL DEFAULT 1,
+        \`discResultadoId\` int,
+        \`assessmentPdiId\` int,
+        \`dataInicio\` timestamp NULL,
+        \`dataConclusao\` timestamp NULL,
+        \`observacoes\` text,
+        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `));
+    console.log("[DB] Tabela historico_ciclos_aluno verificada/criada com sucesso.");
+  } catch (error) {
+    console.error("[DB] Erro ao criar tabela historico_ciclos_aluno:", error);
+  }
+}
+
+/**
+ * Arquiva o ciclo atual do aluno (DISC + PDI) antes de liberar novo ciclo de onboarding.
+ * Chamado por liberarOnboardingAluno antes de setar onboardingLiberado=1.
+ */
+export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo: number }> {
+  const db = await getDb();
+  if (!db) return { numeroCiclo: 1 };
+
+  // Buscar o último DISC do aluno (ciclo mais recente)
+  const [discRows] = await db.execute(sql.raw(
+    `SELECT id, ciclo FROM disc_resultados WHERE alunoId = ${alunoId} ORDER BY ciclo DESC, createdAt DESC LIMIT 1`
+  )) as any;
+  const discRow = Array.isArray(discRows) ? discRows[0] : null;
+
+  // Buscar o PDI ativo do aluno
+  const [pdiRows] = await db.execute(sql.raw(
+    `SELECT id FROM assessment_pdi WHERE alunoId = ${alunoId} ORDER BY createdAt DESC LIMIT 1`
+  )) as any;
+  const pdiRow = Array.isArray(pdiRows) ? pdiRows[0] : null;
+
+  // Buscar o aceite do onboarding para pegar dataInicio
+  const [jornadaRows] = await db.execute(sql.raw(
+    `SELECT aceiteRealizadoEm FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
+  )) as any;
+  const jornada = Array.isArray(jornadaRows) ? jornadaRows[0] : null;
+
+  // Determinar o número do próximo ciclo
+  const [maxCicloRows] = await db.execute(sql.raw(
+    `SELECT COALESCE(MAX(numeroCiclo), 0) as maxCiclo FROM historico_ciclos_aluno WHERE alunoId = ${alunoId}`
+  )) as any;
+  const maxCicloArr = Array.isArray(maxCicloRows) ? maxCicloRows : [];
+  const maxCiclo = maxCicloArr[0]?.maxCiclo ?? 0;
+  const numeroCiclo = (Number(maxCiclo) || 0) + 1;
+
+  // Montar valores para INSERT
+  const discId = discRow?.id ? String(discRow.id) : 'NULL';
+  const pdiId = pdiRow?.id ? String(pdiRow.id) : 'NULL';
+  const dataInicio = jornada?.aceiteRealizadoEm
+    ? `'${new Date(jornada.aceiteRealizadoEm).toISOString().slice(0, 19).replace('T', ' ')}'`
+    : 'NULL';
+
+  // Inserir registro de histórico
+  await db.execute(sql.raw(
+    `INSERT INTO historico_ciclos_aluno (alunoId, numeroCiclo, discResultadoId, assessmentPdiId, dataInicio, dataConclusao, createdAt, updatedAt)
+     VALUES (${alunoId}, ${numeroCiclo}, ${discId}, ${pdiId}, ${dataInicio}, NOW(), NOW(), NOW())`
+  ));
+
+  console.log(`[DB] Ciclo ${numeroCiclo} arquivado para aluno ${alunoId}. DISC: ${discRow?.id ?? 'N/A'}, PDI: ${pdiRow?.id ?? 'N/A'}`);
+  return { numeroCiclo };
+}
+
+/**
+ * Busca o histórico de ciclos de um aluno para a página de Evolução.
+ */
+export async function getHistoricoCiclosAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const [rows] = await db.execute(sql.raw(`
+    SELECT
+      h.id,
+      h.numeroCiclo,
+      h.discResultadoId,
+      h.assessmentPdiId,
+      h.dataInicio,
+      h.dataConclusao,
+      h.observacoes,
+      h.createdAt,
+      dr.perfilPredominante,
+      dr.perfilSecundario,
+      dr.scoreD,
+      dr.scoreI,
+      dr.scoreS,
+      dr.scoreC,
+      dr.completedAt as discCompletadoEm,
+      ap.macroInicio,
+      ap.macroTermino,
+      ap.status as pdiStatus
+    FROM historico_ciclos_aluno h
+    LEFT JOIN disc_resultados dr ON dr.id = h.discResultadoId
+    LEFT JOIN assessment_pdi ap ON ap.id = h.assessmentPdiId
+    WHERE h.alunoId = ${alunoId}
+    ORDER BY h.numeroCiclo ASC
+  `)) as any;
+  return Array.isArray(rows) ? rows : [];
 }

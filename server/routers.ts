@@ -8990,6 +8990,13 @@ Responda APENAS em JSON com o formato:
     videos: protectedProcedure.query(async () => {
       return await db.getOnboardingVideos();
     }),
+    // Buscar histórico de ciclos do aluno (para a página de Evolução)
+    historicoCiclos: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        if (!input.alunoId || input.alunoId === 0) return [];
+        return await db.getHistoricoCiclosAluno(input.alunoId);
+      }),
 
     // ============ REVISÕES DO PDI ============
     // Listar revisões com dados enriquecidos (admin/mentor)

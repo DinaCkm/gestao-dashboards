@@ -81,6 +81,7 @@ __export(schema_exports, {
   events: () => events,
   fichasPedagogicasCompetencias: () => fichasPedagogicasCompetencias,
   fichasPedagogicasConteudos: () => fichasPedagogicasConteudos,
+  historicoCiclosAluno: () => historicoCiclosAluno,
   historicoNivelCompetencia: () => historicoNivelCompetencia,
   inAppNotifications: () => inAppNotifications,
   mentorAppointments: () => mentorAppointments,
@@ -113,7 +114,7 @@ __export(schema_exports, {
   users: () => users
 });
 import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, date, boolean } from "drizzle-orm/mysql-core";
-var users, programs, consultors, turmas, trilhas, competencias, ciclosExecucao, cicloCompetencias, planoIndividual, alunos, mentoringSessions, events, eventParticipation, uploadBatches, uploadedFiles, dashboardMetrics, reports, assessmentPdi, assessmentCompetencias, performanceUploads, studentPerformance, departments, calculationFormulas, processedData, taskLibrary, scheduledWebinars, announcements, contratosAluno, historicoNivelCompetencia, casesSucesso, caseInteresses, practicalActivityComments, mentorAvailability, mentorAppointments, appointmentParticipants, metas, metaAcompanhamento, discRespostas, discResultados, autopercepcoesCompetencias, mentoraContribuicoes, inAppNotifications, courses, activities, activityRegistrations, activityTurmas, mentorSessionPricing, mentorSessionTypePricing, mentorDateAvailability, emailAlertasLog, onboardingJornada, onboardingVideos, onboardingRevisoes, competenciasModulos, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCompetenciaProrrogacao, cursosCompetencias, atividadesCurso, TIPOS_ATIVIDADE, avaliacoesAtividade, tentativasAvaliacao, alunoCursoAtribuido, alunoAtividadeProgresso, sessoesEstudoAtividade, fichasPedagogicasCompetencias, fichasPedagogicasConteudos;
+var users, programs, consultors, turmas, trilhas, competencias, ciclosExecucao, cicloCompetencias, planoIndividual, alunos, mentoringSessions, events, eventParticipation, uploadBatches, uploadedFiles, dashboardMetrics, reports, assessmentPdi, assessmentCompetencias, performanceUploads, studentPerformance, departments, calculationFormulas, processedData, taskLibrary, scheduledWebinars, announcements, contratosAluno, historicoNivelCompetencia, casesSucesso, caseInteresses, practicalActivityComments, mentorAvailability, mentorAppointments, appointmentParticipants, metas, metaAcompanhamento, discRespostas, discResultados, autopercepcoesCompetencias, mentoraContribuicoes, inAppNotifications, courses, activities, activityRegistrations, activityTurmas, mentorSessionPricing, mentorSessionTypePricing, mentorDateAvailability, emailAlertasLog, onboardingJornada, onboardingVideos, onboardingRevisoes, competenciasModulos, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCompetenciaProrrogacao, cursosCompetencias, atividadesCurso, TIPOS_ATIVIDADE, avaliacoesAtividade, tentativasAvaliacao, alunoCursoAtribuido, alunoAtividadeProgresso, sessoesEstudoAtividade, fichasPedagogicasCompetencias, fichasPedagogicasConteudos, historicoCiclosAluno;
 var init_schema = __esm({
   "drizzle/schema.ts"() {
     "use strict";
@@ -1435,6 +1436,25 @@ var init_schema = __esm({
       createdBy: varchar("createdBy", { length: 255 }),
       updatedBy: varchar("updatedBy", { length: 255 })
     });
+    historicoCiclosAluno = mysqlTable("historico_ciclos_aluno", {
+      id: int("id").autoincrement().primaryKey(),
+      alunoId: int("alunoId").notNull(),
+      // FK para alunos
+      numeroCiclo: int("numeroCiclo").notNull(),
+      // 1 = primeiro ciclo, 2 = segundo, etc.
+      discResultadoId: int("discResultadoId"),
+      // FK para disc_resultados (resultado DISC deste ciclo)
+      assessmentPdiId: int("assessmentPdiId"),
+      // FK para assessment_pdi (PDI deste ciclo)
+      dataInicio: timestamp("dataInicio"),
+      // Quando o ciclo começou (aceite do onboarding)
+      dataConclusao: timestamp("dataConclusao"),
+      // Quando o ciclo foi arquivado (admin liberou novo ciclo)
+      observacoes: text("observacoes"),
+      // Observações do admin ao arquivar
+      createdAt: timestamp("createdAt").defaultNow().notNull(),
+      updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+    });
   }
 });
 
@@ -1488,6 +1508,7 @@ __export(db_exports, {
   addCompetenciasToExistingAssessment: () => addCompetenciasToExistingAssessment,
   addCompetenciasToPlano: () => addCompetenciasToPlano,
   approveExtension: () => approveExtension,
+  arquivarCicloAtual: () => arquivarCicloAtual,
   atualizarIndicadores: () => atualizarIndicadores,
   atualizarStatusCursoAtribuido: () => atualizarStatusCursoAtribuido,
   authenticateAdmin: () => authenticateAdmin,
@@ -1563,6 +1584,7 @@ __export(db_exports, {
   determinePlataformaAulas: () => determinePlataformaAulas,
   ensureBibliotecaPedagogicaTables: () => ensureBibliotecaPedagogicaTables,
   ensureEventForWebinar: () => ensureEventForWebinar,
+  ensureHistoricoCiclosTable: () => ensureHistoricoCiclosTable,
   ensurePerfilProfissionalColumns: () => ensurePerfilProfissionalColumns,
   getAccessUsers: () => getAccessUsers,
   getActiveConsultors: () => getActiveConsultors,
@@ -1681,6 +1703,7 @@ __export(db_exports, {
   getGerentesEmpresa: () => getGerentesEmpresa,
   getGerentesWithAccess: () => getGerentesWithAccess,
   getGestorTeamStats: () => getGestorTeamStats,
+  getHistoricoCiclosAluno: () => getHistoricoCiclosAluno,
   getHistoricoNivel: () => getHistoricoNivel,
   getHistoricoNivelByAluno: () => getHistoricoNivelByAluno,
   getIndividualMetrics: () => getIndividualMetrics,
@@ -6204,11 +6227,12 @@ async function liberarOnboardingAluno(alunoId) {
   if ((pdiCount?.count ?? 0) === 0) {
     return { success: false, message: "Aluno n\xE3o tem PDI. J\xE1 deve ir para onboarding automaticamente." };
   }
+  const { numeroCiclo } = await arquivarCicloAtual(alunoId);
   await db2.update(alunos).set({
     onboardingLiberado: 1,
     onboardingLiberadoEm: /* @__PURE__ */ new Date()
   }).where(eq(alunos.id, alunoId));
-  return { success: true, message: "Onboarding liberado para novo ciclo" };
+  return { success: true, message: `Onboarding liberado para novo ciclo. Ciclo ${numeroCiclo} arquivado na p\xE1gina de Evolu\xE7\xE3o.` };
 }
 async function liberarOnboardingEmMassa(alunoIds) {
   const db2 = await getDb();
@@ -6238,6 +6262,13 @@ async function liberarOnboardingEmMassa(alunoIds) {
     idsParaLiberar.push(id);
   }
   if (idsParaLiberar.length > 0) {
+    for (const id of idsParaLiberar) {
+      try {
+        await arquivarCicloAtual(id);
+      } catch (e) {
+        console.warn(`[DB] Erro ao arquivar ciclo do aluno ${id}:`, e);
+      }
+    }
     await db2.update(alunos).set({
       onboardingLiberado: 1,
       onboardingLiberadoEm: /* @__PURE__ */ new Date()
@@ -8769,6 +8800,91 @@ async function ensurePerfilProfissionalColumns() {
     }
   }
   console.log("[DB] Colunas de perfil profissional verificadas/criadas com sucesso.");
+}
+async function ensureHistoricoCiclosTable() {
+  const db2 = await getDb();
+  if (!db2) return;
+  try {
+    await db2.execute(sql2.raw(`
+      CREATE TABLE IF NOT EXISTS \`historico_ciclos_aluno\` (
+        \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`alunoId\` int NOT NULL,
+        \`numeroCiclo\` int NOT NULL DEFAULT 1,
+        \`discResultadoId\` int,
+        \`assessmentPdiId\` int,
+        \`dataInicio\` timestamp NULL,
+        \`dataConclusao\` timestamp NULL,
+        \`observacoes\` text,
+        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `));
+    console.log("[DB] Tabela historico_ciclos_aluno verificada/criada com sucesso.");
+  } catch (error) {
+    console.error("[DB] Erro ao criar tabela historico_ciclos_aluno:", error);
+  }
+}
+async function arquivarCicloAtual(alunoId) {
+  const db2 = await getDb();
+  if (!db2) return { numeroCiclo: 1 };
+  const [discRows] = await db2.execute(sql2.raw(
+    `SELECT id, ciclo FROM disc_resultados WHERE alunoId = ${alunoId} ORDER BY ciclo DESC, createdAt DESC LIMIT 1`
+  ));
+  const discRow = Array.isArray(discRows) ? discRows[0] : null;
+  const [pdiRows] = await db2.execute(sql2.raw(
+    `SELECT id FROM assessment_pdi WHERE alunoId = ${alunoId} ORDER BY createdAt DESC LIMIT 1`
+  ));
+  const pdiRow = Array.isArray(pdiRows) ? pdiRows[0] : null;
+  const [jornadaRows] = await db2.execute(sql2.raw(
+    `SELECT aceiteRealizadoEm FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
+  ));
+  const jornada = Array.isArray(jornadaRows) ? jornadaRows[0] : null;
+  const [maxCicloRows] = await db2.execute(sql2.raw(
+    `SELECT COALESCE(MAX(numeroCiclo), 0) as maxCiclo FROM historico_ciclos_aluno WHERE alunoId = ${alunoId}`
+  ));
+  const maxCicloArr = Array.isArray(maxCicloRows) ? maxCicloRows : [];
+  const maxCiclo = maxCicloArr[0]?.maxCiclo ?? 0;
+  const numeroCiclo = (Number(maxCiclo) || 0) + 1;
+  const discId = discRow?.id ? String(discRow.id) : "NULL";
+  const pdiId = pdiRow?.id ? String(pdiRow.id) : "NULL";
+  const dataInicio = jornada?.aceiteRealizadoEm ? `'${new Date(jornada.aceiteRealizadoEm).toISOString().slice(0, 19).replace("T", " ")}'` : "NULL";
+  await db2.execute(sql2.raw(
+    `INSERT INTO historico_ciclos_aluno (alunoId, numeroCiclo, discResultadoId, assessmentPdiId, dataInicio, dataConclusao, createdAt, updatedAt)
+     VALUES (${alunoId}, ${numeroCiclo}, ${discId}, ${pdiId}, ${dataInicio}, NOW(), NOW(), NOW())`
+  ));
+  console.log(`[DB] Ciclo ${numeroCiclo} arquivado para aluno ${alunoId}. DISC: ${discRow?.id ?? "N/A"}, PDI: ${pdiRow?.id ?? "N/A"}`);
+  return { numeroCiclo };
+}
+async function getHistoricoCiclosAluno(alunoId) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  const [rows] = await db2.execute(sql2.raw(`
+    SELECT
+      h.id,
+      h.numeroCiclo,
+      h.discResultadoId,
+      h.assessmentPdiId,
+      h.dataInicio,
+      h.dataConclusao,
+      h.observacoes,
+      h.createdAt,
+      dr.perfilPredominante,
+      dr.perfilSecundario,
+      dr.scoreD,
+      dr.scoreI,
+      dr.scoreS,
+      dr.scoreC,
+      dr.completedAt as discCompletadoEm,
+      ap.macroInicio,
+      ap.macroTermino,
+      ap.status as pdiStatus
+    FROM historico_ciclos_aluno h
+    LEFT JOIN disc_resultados dr ON dr.id = h.discResultadoId
+    LEFT JOIN assessment_pdi ap ON ap.id = h.assessmentPdiId
+    WHERE h.alunoId = ${alunoId}
+    ORDER BY h.numeroCiclo ASC
+  `));
+  return Array.isArray(rows) ? rows : [];
 }
 var _db, _connection, onboardingRevisoesDb;
 var init_db = __esm({
@@ -22016,6 +22132,11 @@ Responda APENAS em JSON com o formato:
     videos: protectedProcedure.query(async () => {
       return await getOnboardingVideos();
     }),
+    // Buscar histórico de ciclos do aluno (para a página de Evolução)
+    historicoCiclos: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
+      if (!input.alunoId || input.alunoId === 0) return [];
+      return await getHistoricoCiclosAluno(input.alunoId);
+    }),
     // ============ REVISÕES DO PDI ============
     // Listar revisões com dados enriquecidos (admin/mentor)
     listarRevisoes: managerProcedure.input(z4.object({ status: z4.enum(["pendente", "em_analise", "resolvida", "cancelada"]).optional() }).optional()).query(async ({ ctx, input }) => {
@@ -25116,6 +25237,7 @@ async function findAvailablePort(startPort = 3e3) {
 async function startServer() {
   await ensureBibliotecaPedagogicaTables();
   await ensurePerfilProfissionalColumns();
+  await ensureHistoricoCiclosTable();
   const app = express2();
   const server = createServer(app);
   app.use(express2.json({ limit: "50mb" }));

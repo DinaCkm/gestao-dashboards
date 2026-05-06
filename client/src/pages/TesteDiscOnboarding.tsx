@@ -1372,9 +1372,9 @@ export default function EtapaAssessmentCompleta({
   const [perfilPredominante, setPerfilPredominante] = useState<DiscDimensao | null>(null);
   const [perfilSecundario, setPerfilSecundario] = useState<DiscDimensao | null>(null);
 
-  // Se já fez o teste, ir direto para o relatório
+  // Se readOnly ou já fez o teste, ir direto para o relatório
   useMemo(() => {
-    if (discResultado && autopercepcoesExistentes && autopercepcoesExistentes.length > 0) {
+    if (discResultado) {
       setDiscScores({
         D: Number(discResultado.scoreD),
         I: Number(discResultado.scoreI),
@@ -1383,19 +1383,16 @@ export default function EtapaAssessmentCompleta({
       });
       setPerfilPredominante(discResultado.perfilPredominante as DiscDimensao);
       setPerfilSecundario(discResultado.perfilSecundario as DiscDimensao);
-      setSubEtapa("relatorio");
-    } else if (discResultado && (!autopercepcoesExistentes || autopercepcoesExistentes.length === 0)) {
-      setDiscScores({
-        D: Number(discResultado.scoreD),
-        I: Number(discResultado.scoreI),
-        S: Number(discResultado.scoreS),
-        C: Number(discResultado.scoreC),
-      });
-      setPerfilPredominante(discResultado.perfilPredominante as DiscDimensao);
-      setPerfilSecundario(discResultado.perfilSecundario as DiscDimensao);
-      setSubEtapa("autopercepção");
+      if (readOnly) {
+        // Veterano: sempre vai direto para o relatório, sem poder refazer
+        setSubEtapa("relatorio");
+      } else if (autopercepcoesExistentes && autopercepcoesExistentes.length > 0) {
+        setSubEtapa("relatorio");
+      } else {
+        setSubEtapa("autopercepção");
+      }
     }
-  }, [discResultado, autopercepcoesExistentes]);
+  }, [discResultado, autopercepcoesExistentes, readOnly]);
 
   // Sub-stepper
   const subSteps = [
@@ -1444,26 +1441,8 @@ export default function EtapaAssessmentCompleta({
       </div>
 
       {/* Conteúdo da sub-etapa */}
-      {subEtapa === "disc" && (
-        <TesteDisc
-          alunoId={alunoId}
-          onComplete={(scores, predominante, secundario) => {
-            setDiscScores(scores);
-            setPerfilPredominante(predominante);
-            setPerfilSecundario(secundario);
-            setSubEtapa("autopercepção");
-          }}
-        />
-      )}
-
-      {subEtapa === "autopercepção" && (
-        <ReguaAutopercepção
-          alunoId={alunoId}
-          onComplete={() => setSubEtapa("relatorio")}
-        />
-      )}
-
-      {subEtapa === "relatorio" && (
+      {/* Veterano (readOnly): mostra apenas o relatório, sem poder refazer o teste */}
+      {readOnly ? (
         <RelatorioAutoconhecimento
           alunoId={alunoId}
           discScores={discScores}
@@ -1471,6 +1450,37 @@ export default function EtapaAssessmentCompleta({
           perfilSecundario={perfilSecundario}
           onComplete={onComplete}
         />
+      ) : (
+        <>
+          {subEtapa === "disc" && (
+            <TesteDisc
+              alunoId={alunoId}
+              onComplete={(scores, predominante, secundario) => {
+                setDiscScores(scores);
+                setPerfilPredominante(predominante);
+                setPerfilSecundario(secundario);
+                setSubEtapa("autopercepção");
+              }}
+            />
+          )}
+
+          {subEtapa === "autopercepção" && (
+            <ReguaAutopercepção
+              alunoId={alunoId}
+              onComplete={() => setSubEtapa("relatorio")}
+            />
+          )}
+
+          {subEtapa === "relatorio" && (
+            <RelatorioAutoconhecimento
+              alunoId={alunoId}
+              discScores={discScores}
+              perfilPredominante={perfilPredominante}
+              perfilSecundario={perfilSecundario}
+              onComplete={onComplete}
+            />
+          )}
+        </>
       )}
     </div>
   );
