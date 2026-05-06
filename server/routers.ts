@@ -12108,11 +12108,11 @@ Responda APENAS em JSON com o formato especificado.`
           if (!database) {
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
           }
-          // Excluir registros filhos antes para evitar FK constraint
-          await database.delete(sessoesEstudoAtividade).where(eq(sessoesEstudoAtividade.atividadeId, input.id));
-          await database.delete(alunoAtividadeProgresso).where(eq(alunoAtividadeProgresso.atividadeId, input.id));
-          await database.delete(avaliacoesAtividade).where(eq(avaliacoesAtividade.atividadeId, input.id));
-          await database.delete(atividadesCurso).where(eq(atividadesCurso.id, input.id));
+          // Inabilitar em vez de excluir para evitar problemas de FK
+          await database
+            .update(atividadesCurso)
+            .set({ isActive: 0, updatedAt: new Date() })
+            .where(eq(atividadesCurso.id, input.id));
           return { success: true };
         }),
     }),
