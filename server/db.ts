@@ -7133,9 +7133,10 @@ export async function liberarOnboardingAluno(alunoId: number) {
         VALUES (${alunoId}, ${novoCicloJornada}, 0, 0, NOW(), NOW())
       `));
     }
-  } catch (err) {
+  } catch (err: any) {
+    const errMsg = err?.message || String(err);
     console.error(`[DB] Erro em liberarOnboardingAluno para aluno ${alunoId}:`, err);
-    return { success: false, message: 'Erro interno ao liberar onboarding. Tente novamente.' };
+    return { success: false, message: `Erro: ${errMsg}` };
   }
 
   return { success: true, message: `Onboarding liberado para novo ciclo. Ciclo ${numeroCiclo} arquivado na página de Evolução.` };
