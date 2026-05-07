@@ -71,6 +71,7 @@ import {
   Home,
   Monitor,
   Trophy,
+  History,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -114,6 +115,7 @@ const adminMenuGroups: MenuGroup[] = [
     label: "Alunos",
     items: [
       { icon: Footprints, label: "Onboarding Tracking", path: "/onboarding-tracking" },
+      { icon: History, label: "Auditoria de Resets", path: "/admin/auditoria-resets" },
       { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes" },
       { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment" },
       { icon: Target, label: "Plano Individual", path: "/plano-individual" },

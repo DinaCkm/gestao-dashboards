@@ -1830,6 +1830,7 @@ __export(db_exports, {
   getAssessmentsByConsultor: () => getAssessmentsByConsultor,
   getAssessmentsByProgram: () => getAssessmentsByProgram,
   getAtividadesByCurso: () => getAtividadesByCurso,
+  getAuditoriaResets: () => getAuditoriaResets,
   getAutopercepcoes: () => getAutopercepcoes,
   getAutopercepcoesByNivel: () => getAutopercepcoesByNivel,
   getAvaliacaoByAtividade: () => getAvaliacaoByAtividade,
@@ -9710,13 +9711,22 @@ async function arquivarCicloAtual(alunoId) {
     metasTotal = Number(metaData?.total ?? 0);
     metasCumpridas = Number(metaData?.cumpridas ?? 0);
   }
+  const [pdiCountRows] = await db2.execute(sql2.raw(
+    `SELECT COUNT(*) as cnt FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'ativo'`
+  ));
+  const pdisCongeladosCount = Number(Array.isArray(pdiCountRows) ? pdiCountRows[0]?.cnt ?? 0 : 0);
   await db2.execute(sql2.raw(`
     UPDATE assessment_pdi
     SET status = 'congelado', congeladoEm = NOW(), motivoCongelamento = 'Ciclo encerrado pelo admin'
     WHERE alunoId = ${alunoId} AND status = 'ativo'
   `));
-  console.log(`[DB] PDIs ativos do aluno ${alunoId} congelados.`);
+  console.log(`[DB] PDIs ativos do aluno ${alunoId} congelados (${pdisCongeladosCount}).`);
+  let microciclosCongeladosCount = 0;
   try {
+    const [mcCountRows] = await db2.execute(sql2.raw(
+      `SELECT COUNT(*) as cnt FROM ciclos_execucao WHERE alunoId = ${alunoId} AND status != 'congelado'`
+    ));
+    microciclosCongeladosCount = Number(Array.isArray(mcCountRows) ? mcCountRows[0]?.cnt ?? 0 : 0);
     await db2.execute(sql2.raw(`
       UPDATE ciclos_execucao
       SET status = 'congelado'
@@ -9760,6 +9770,24 @@ async function arquivarCicloAtual(alunoId) {
       ));
     }
   }
+  try {
+    const [lastInsertForAudit] = await db2.execute(sql2.raw(
+      `SELECT id FROM historico_ciclos_aluno WHERE alunoId = ${alunoId} AND numeroCiclo = ${numeroCiclo} LIMIT 1`
+    ));
+    const historicoIdForAudit = Array.isArray(lastInsertForAudit) && lastInsertForAudit[0]?.id ? lastInsertForAudit[0].id : null;
+    const [alunoRows] = await db2.execute(sql2.raw(
+      `SELECT name FROM alunos WHERE id = ${alunoId} LIMIT 1`
+    ));
+    const alunoNome = Array.isArray(alunoRows) && alunoRows[0]?.name ? alunoRows[0].name : null;
+    await db2.execute(sql2.raw(`
+      INSERT INTO auditoria_resets_ciclo
+        (alunoId, alunoNome, numeroCicloArquivado, historicoId, pdisCongelados, microciclosCongelados, ind7Snapshot)
+      VALUES
+        (${alunoId}, ${alunoNome ? `'${alunoNome.replace(/'/g, "''")}'` : "NULL"}, ${numeroCiclo}, ${historicoIdForAudit ?? "NULL"}, ${pdisCongeladosCount}, ${microciclosCongeladosCount}, ${ind7EngajamentoFinal ?? "NULL"})
+    `));
+  } catch (auditErr) {
+    console.warn("[DB] Aviso: n\xE3o foi poss\xEDvel registrar auditoria de reset:", auditErr);
+  }
   console.log(`[DB] Ciclo ${numeroCiclo} arquivado para aluno ${alunoId}. DISC: ${discRow?.id ?? "N/A"}, PDI: ${pdiId ?? "N/A"}. Indicadores: Ind1=${ind1Webinars}%, Ind7=${ind7EngajamentoFinal}%`);
   return { numeroCiclo };
 }
@@ -9802,6 +9830,36 @@ async function getHistoricoCiclosAluno(alunoId) {
     ORDER BY h.numeroCiclo ASC
   `));
   return Array.isArray(rows) ? rows : [];
+}
+async function getAuditoriaResets(options) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  const whereClause = options?.alunoId ? `WHERE alunoId = ${options.alunoId}` : "";
+  const limitClause = `LIMIT ${options?.limit ?? 100}`;
+  try {
+    const [rows] = await db2.execute(sql2.raw(`
+      SELECT
+        id,
+        alunoId,
+        alunoNome,
+        adminId,
+        adminNome,
+        numeroCicloArquivado,
+        historicoId,
+        pdisCongelados,
+        microciclosCongelados,
+        ind7Snapshot,
+        observacoes,
+        criadoEm
+      FROM auditoria_resets_ciclo
+      ${whereClause}
+      ORDER BY criadoEm DESC
+      ${limitClause}
+    `));
+    return Array.isArray(rows) ? rows : [];
+  } catch (_) {
+    return [];
+  }
 }
 var _db, _connection, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO, CONTRATO_NIVEL_STATUS_ATIVOS, onboardingRevisoesDb;
 var init_db = __esm({
@@ -23781,6 +23839,10 @@ Responda APENAS em JSON com o formato:
     historicoCiclos: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
       if (!input.alunoId || input.alunoId === 0) return [];
       return await getHistoricoCiclosAluno(input.alunoId);
+    }),
+    // Log de auditoria de resets de ciclos (admin)
+    auditoriaResets: adminProcedure3.input(z4.object({ alunoId: z4.number().optional(), limit: z4.number().optional() }).optional()).query(async ({ input }) => {
+      return await getAuditoriaResets(input ?? {});
     }),
     // ============ REVISÕES DO PDI ============
     // Listar revisões com dados enriquecidos (admin/mentor)

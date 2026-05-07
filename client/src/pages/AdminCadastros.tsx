@@ -560,6 +560,20 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [massConfirmOpen, setMassConfirmOpen] = useState(false);
 
+  // Modal de pré-verificação individual de liberar onboarding
+  const [liberarModalOpen, setLiberarModalOpen] = useState(false);
+  const [liberarModalAluno, setLiberarModalAluno] = useState<any>(null);
+  const handleLiberarClick = (aluno: any) => {
+    setLiberarModalAluno(aluno);
+    setLiberarModalOpen(true);
+  };
+  const handleLiberarConfirm = () => {
+    if (!liberarModalAluno) return;
+    onLiberarOnboarding({ alunoId: liberarModalAluno.id });
+    setLiberarModalOpen(false);
+    setLiberarModalAluno(null);
+  };
+
   const toggleSelect = (id: number) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -1299,17 +1313,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                                 className="text-blue-600 hover:bg-blue-600 hover:text-white"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (confirm(
-                                    `⚠️ ATENÇÃO — Liberar Onboarding para ${aluno.name}?\n\n` +
-                                    `Esta ação irá:\n` +
-                                    `• RESETAR todo o progresso do onboarding anterior deste aluno\n` +
-                                    `• Abrir um NOVO ciclo de onboarding do zero\n` +
-                                    `• O aluno será redirecionado para a tela de onboarding no próximo acesso\n\n` +
-                                    `Use apenas em caso de renovação de contrato ou novo ciclo intencional.\n\n` +
-                                    `Tem certeza que deseja continuar?`
-                                  )) {
-                                    onLiberarOnboarding({ alunoId: aluno.id });
-                                  }
+                                  handleLiberarClick(aluno);
                                 }}
                                 disabled={isLiberandoOnboarding}
                                 title="Liberar onboarding para novo ciclo (renovação de contrato) — RESETA o onboarding anterior"
@@ -1374,7 +1378,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           ) : deleteDeps ? (
             <p className="text-sm text-muted-foreground">Este aluno não possui dados relacionados. A exclusão será simples.</p>
           ) : null}
-          <DialogFooter>
+           <DialogFooter>
             <Button variant="outline" onClick={() => { setDeleteOpen(false); setDeleteTarget(null); setDeleteDeps(null); }}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDeleteConfirm} disabled={depsQuery.isLoading || isDeleting}>
               {isDeleting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Excluindo...</> : "Excluir Permanentemente"}
@@ -1382,10 +1386,71 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de pré-verificação: Liberar Onboarding Individual */}
+      <Dialog open={liberarModalOpen} onOpenChange={(open) => { if (!open) { setLiberarModalOpen(false); setLiberarModalAluno(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <RotateCcw className="h-5 w-5" />
+              Liberar Novo Ciclo de Onboarding
+            </DialogTitle>
+            <DialogDescription>
+              Você está prestes a iniciar um novo ciclo para:
+            </DialogDescription>
+          </DialogHeader>
+          {liberarModalAluno && (
+            <div className="space-y-4 py-2">
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <p className="font-semibold text-gray-900">{liberarModalAluno.name}</p>
+                <p className="text-sm text-gray-500">{liberarModalAluno.email}</p>
+                {liberarModalAluno.programName && (
+                  <p className="text-xs text-gray-400 mt-0.5">{liberarModalAluno.programName} {liberarModalAluno.turmaName ? `• ${liberarModalAluno.turmaName}` : ''}</p>
+                )}
+              </div>
+              <div className="space-y-2.5">
+                <p className="text-sm font-semibold text-gray-700">O que acontece ao confirmar:</p>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">Ciclo atual arquivado com <strong>snapshot dos 7 indicadores</strong> na página de Evolução</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">PDI e microciclos ativos <strong>congelados</strong> (preservados para histórico)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">Aluno redirecionado para o <strong>onboarding</strong> no próximo acesso</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">Um <strong>novo PDI</strong> deverá ser criado após o onboarding</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-xs text-amber-800">
+                  <strong>Atenção:</strong> Esta ação é protegida contra duplicação. Se executada duas vezes, o segundo reset será ignorado automaticamente.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setLiberarModalOpen(false); setLiberarModalAluno(null); }}>Cancelar</Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleLiberarConfirm}
+              disabled={isLiberandoOnboarding}
+            >
+              {isLiberandoOnboarding ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Processando...</> : <><RotateCcw className="h-4 w-4 mr-2" /> Confirmar e Liberar</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
-
 // ============ EMPRESAS TAB ============
 function EmpresasTab({ empresas, loading, onCreate, isCreating, onUpdate, onToggleStatus }: {
   empresas: any[];

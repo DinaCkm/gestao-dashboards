@@ -11683,15 +11683,25 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   }
 
   // === 4. CONGELAR PDIs ATIVOS ===
+  // Contar PDIs ativos antes de congelar
+  const [pdiCountRows] = await db.execute(sql.raw(
+    `SELECT COUNT(*) as cnt FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'ativo'`
+  )) as any;
+  const pdisCongeladosCount = Number(Array.isArray(pdiCountRows) ? (pdiCountRows[0]?.cnt ?? 0) : 0);
   await db.execute(sql.raw(`
     UPDATE assessment_pdi
     SET status = 'congelado', congeladoEm = NOW(), motivoCongelamento = 'Ciclo encerrado pelo admin'
     WHERE alunoId = ${alunoId} AND status = 'ativo'
   `));
-  console.log(`[DB] PDIs ativos do aluno ${alunoId} congelados.`);
+  console.log(`[DB] PDIs ativos do aluno ${alunoId} congelados (${pdisCongeladosCount}).`);
 
   // === 5. CONGELAR MICROCICLOS DE EXECUÇÃO ===
+  let microciclosCongeladosCount = 0;
   try {
+    const [mcCountRows] = await db.execute(sql.raw(
+      `SELECT COUNT(*) as cnt FROM ciclos_execucao WHERE alunoId = ${alunoId} AND status != 'congelado'`
+    )) as any;
+    microciclosCongeladosCount = Number(Array.isArray(mcCountRows) ? (mcCountRows[0]?.cnt ?? 0) : 0);
     await db.execute(sql.raw(`
       UPDATE ciclos_execucao
       SET status = 'congelado'
@@ -11747,6 +11757,28 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
     }
   }
 
+  // === 9. REGISTRAR AUDITORIA ===
+  try {
+    const [lastInsertForAudit] = await db.execute(sql.raw(
+      `SELECT id FROM historico_ciclos_aluno WHERE alunoId = ${alunoId} AND numeroCiclo = ${numeroCiclo} LIMIT 1`
+    )) as any;
+    const historicoIdForAudit = Array.isArray(lastInsertForAudit) && lastInsertForAudit[0]?.id ? lastInsertForAudit[0].id : null;
+    // Buscar nome do aluno
+    const [alunoRows] = await db.execute(sql.raw(
+      `SELECT name FROM alunos WHERE id = ${alunoId} LIMIT 1`
+    )) as any;
+    const alunoNome = Array.isArray(alunoRows) && alunoRows[0]?.name ? alunoRows[0].name : null;
+    await db.execute(sql.raw(`
+      INSERT INTO auditoria_resets_ciclo
+        (alunoId, alunoNome, numeroCicloArquivado, historicoId, pdisCongelados, microciclosCongelados, ind7Snapshot)
+      VALUES
+        (${alunoId}, ${alunoNome ? `'${alunoNome.replace(/'/g, "''")}'` : 'NULL'}, ${numeroCiclo}, ${historicoIdForAudit ?? 'NULL'}, ${pdisCongeladosCount}, ${microciclosCongeladosCount}, ${ind7EngajamentoFinal ?? 'NULL'})
+    `));
+  } catch (auditErr) {
+    // Auditoria não deve bloquear o fluxo principal
+    console.warn('[DB] Aviso: não foi possível registrar auditoria de reset:', auditErr);
+  }
+
   console.log(`[DB] Ciclo ${numeroCiclo} arquivado para aluno ${alunoId}. DISC: ${discRow?.id ?? 'N/A'}, PDI: ${pdiId ?? 'N/A'}. Indicadores: Ind1=${ind1Webinars}%, Ind7=${ind7EngajamentoFinal}%`);
   return { numeroCiclo };
 }
@@ -11793,4 +11825,40 @@ export async function getHistoricoCiclosAluno(alunoId: number) {
     ORDER BY h.numeroCiclo ASC
   `)) as any;
   return Array.isArray(rows) ? rows : [];
+}
+
+/**
+ * Busca o log de auditoria de resets de ciclos para o admin.
+ * Retorna os últimos N registros, opcionalmente filtrados por alunoId.
+ */
+export async function getAuditoriaResets(options?: { alunoId?: number; limit?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  const whereClause = options?.alunoId ? `WHERE alunoId = ${options.alunoId}` : '';
+  const limitClause = `LIMIT ${options?.limit ?? 100}`;
+  try {
+    const [rows] = await db.execute(sql.raw(`
+      SELECT
+        id,
+        alunoId,
+        alunoNome,
+        adminId,
+        adminNome,
+        numeroCicloArquivado,
+        historicoId,
+        pdisCongelados,
+        microciclosCongelados,
+        ind7Snapshot,
+        observacoes,
+        criadoEm
+      FROM auditoria_resets_ciclo
+      ${whereClause}
+      ORDER BY criadoEm DESC
+      ${limitClause}
+    `)) as any;
+    return Array.isArray(rows) ? rows : [];
+  } catch (_) {
+    // Tabela pode não existir em ambientes antigos
+    return [];
+  }
 }

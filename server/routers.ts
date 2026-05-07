@@ -9867,6 +9867,13 @@ Responda APENAS em JSON com o formato:
         return await db.getHistoricoCiclosAluno(input.alunoId);
       }),
 
+    // Log de auditoria de resets de ciclos (admin)
+    auditoriaResets: adminProcedure
+      .input(z.object({ alunoId: z.number().optional(), limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getAuditoriaResets(input ?? {});
+      }),
+
     // ============ REVISÕES DO PDI ============
     // Listar revisões com dados enriquecidos (admin/mentor)
     listarRevisoes: managerProcedure

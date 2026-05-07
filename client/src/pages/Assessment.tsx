@@ -781,24 +781,69 @@ function AssessmentContent() {
                 </p>
               </CardContent>
             </Card>
-          ) : (
-            <div className="space-y-4">
-              {assessments.map((pdi: any) => (
-                <AssessmentCard
-                  key={pdi.id}
-                  pdi={pdi}
-                  isExpanded={expandedPdiId === pdi.id}
-                  onToggle={() => setExpandedPdiId(expandedPdiId === pdi.id ? null : pdi.id)}
-                  onCongelar={() => handleCongelarClick(pdi.id)}
-                  onDescongelar={() => handleDescongelar(pdi.id)}
-                  isDescongelando={descongelarMutation.isPending}
-                  formatDate={formatDate}
-                  refetch={refetchAssessments}
-                  onEdit={() => setEditPdi(pdi)}
-                />
-              ))}
-            </div>
-          )}
+          ) : (() => {
+            const pdisAtivos = assessments.filter((p: any) => p.status !== 'congelado');
+            const pdisCongelados = assessments.filter((p: any) => p.status === 'congelado');
+            return (
+              <div className="space-y-6">
+                {/* Ciclo Atual */}
+                {pdisAtivos.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
+                        Ciclo Atual
+                      </span>
+                    </div>
+                    <div className="space-y-4">
+                      {pdisAtivos.map((pdi: any) => (
+                        <AssessmentCard
+                          key={pdi.id}
+                          pdi={pdi}
+                          isExpanded={expandedPdiId === pdi.id}
+                          onToggle={() => setExpandedPdiId(expandedPdiId === pdi.id ? null : pdi.id)}
+                          onCongelar={() => handleCongelarClick(pdi.id)}
+                          onDescongelar={() => handleDescongelar(pdi.id)}
+                          isDescongelando={descongelarMutation.isPending}
+                          formatDate={formatDate}
+                          refetch={refetchAssessments}
+                          onEdit={() => setEditPdi(pdi)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Ciclos Anteriores (congelados) */}
+                {pdisCongelados.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200 rounded-full px-3 py-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-gray-400 inline-block" />
+                        Ciclos Anteriores
+                      </span>
+                      <span className="text-xs text-gray-400">{pdisCongelados.length} PDI{pdisCongelados.length !== 1 ? 's' : ''} congelado{pdisCongelados.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="space-y-4">
+                      {pdisCongelados.map((pdi: any) => (
+                        <AssessmentCard
+                          key={pdi.id}
+                          pdi={pdi}
+                          isExpanded={expandedPdiId === pdi.id}
+                          onToggle={() => setExpandedPdiId(expandedPdiId === pdi.id ? null : pdi.id)}
+                          onCongelar={() => handleCongelarClick(pdi.id)}
+                          onDescongelar={() => handleDescongelar(pdi.id)}
+                          isDescongelando={descongelarMutation.isPending}
+                          formatDate={formatDate}
+                          refetch={refetchAssessments}
+                          onEdit={() => setEditPdi(pdi)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </>
       )}
 
