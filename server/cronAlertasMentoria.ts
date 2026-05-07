@@ -152,7 +152,7 @@ export async function verificarEEnviarAlertasMentoria(options?: {
 
       if (!dryRun) {
         try {
-          const loginUrl = 'https://ecolider.evoluirckm.com';
+          const loginUrl = 'https://ecolider.ecodobem.com';
           const emailData = buildMentoringAlertEmail({
             alunoName: aluno.name,
             mentorName: mentor.name,

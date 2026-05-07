@@ -409,15 +409,16 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
 
   const metasOrdenadas = useMemo(() => {
     const list = metasData?.metas ?? [];
+    // Ordenar crescente: a primeira meta criada é a macro meta desafiadora
     return [...list].sort((a: any, b: any) =>
-      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
     );
   }, [metasData?.metas]);
 
   const metaPrincipal = metasOrdenadas[0] ?? null;
 
   const microMetas = useMemo(() => {
-    if (metasOrdenadas.length <= 1) return metasOrdenadas;
+    if (metasOrdenadas.length <= 1) return [];
     return metasOrdenadas.slice(1);
   }, [metasOrdenadas]);
 
@@ -436,6 +437,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
   const [caseFile, setCaseFile] = useState<File | null>(null);
   const [caseEvidencia, setCaseEvidencia] = useState<File | null>(null);
   const [caseNotaAplicabilidade, setCaseNotaAplicabilidade] = useState<number>(5);
+  const [caseVideoLink, setCaseVideoLink] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const evidenciaInputRef = useRef<HTMLInputElement>(null);
 
@@ -454,6 +456,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
       setCaseEvidencia(null);
       setCaseTrilhaId(null);
       setCaseNotaAplicabilidade(5);
+      setCaseVideoLink("");
     },
   });
 
@@ -468,6 +471,10 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
 
   const handleCaseSubmit = async () => {
     if (!caseTrilhaId || !caseTitulo || !caseResumoPublico || !caseOQueAprendi || !caseOQueMudei || !caseResultadoMensuravel || !caseAntesVsDepois) return;
+    if (caseResumoPublico.length < 20) {
+      toast.error('O Resumo público do CASE deve ter ao menos 20 caracteres.');
+      return;
+    }
 
     const payload: any = {
       trilhaId: caseTrilhaId,
@@ -2528,18 +2535,18 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {microMetas.map((meta: any) => {
+                          {microMetas.map((meta: any, idx: number) => {
                             const metaStatus = getMetaStatusConfig(meta.ultimoStatus);
                             const tarefaVinculada = (myTasks || []).find((task: any) => Number(task.taskId) === Number(meta.taskLibraryId));
-                            const possuiEnvio = !!tarefaVinculada && (tarefaVinculada.taskStatus === "entregue" || tarefaVinculada.taskStatus === "validada");
-                            const podeEnviar = !!tarefaVinculada && tarefaVinculada.taskStatus === "nao_entregue";
+                            const possuiEnvio = !!tarefaVinculada && (tarefaVinculada.taskStatus === "entregue" || tarefaVinculada.taskStatus === "validada") && !!(tarefaVinculada.evidenceLink || tarefaVinculada.evidenceImageUrl || tarefaVinculada.submittedAt);
+                            const podeEnviar = !!tarefaVinculada && tarefaVinculada.taskStatus !== 'validada' && !(tarefaVinculada.evidenceLink || tarefaVinculada.evidenceImageUrl || tarefaVinculada.submittedAt);
 
                             return (
                               <div key={meta.id} className="p-4 rounded-lg border bg-gray-50 border-gray-100">
                                 <div className="flex items-start justify-between gap-2 flex-wrap">
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                      <p className="text-sm font-semibold text-gray-900">{meta.titulo}</p>
+                                      <p className="text-sm font-semibold text-gray-900">{idx + 1}. {meta.titulo}</p>
                                       <Badge variant="outline" className={metaStatus.className}>
                                         <span className="flex items-center gap-1">{metaStatus.icon} {metaStatus.label}</span>
                                       </Badge>
@@ -2670,7 +2677,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
           <TabsContent value="tarefas" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Cards de Resumo de Tarefas */}
             {(() => {
-              const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && s.sessionNumber !== 1);
+              const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && !s.isAssessment);
               const totalTarefas = sessoesComTarefa.length;
               const entregues = sessoesComTarefa.filter((s: any) => s.taskStatus === 'entregue').length;
               const validadas = sessoesComTarefa.filter((s: any) => s.taskStatus === 'validada').length;
@@ -2727,7 +2734,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                 </CardTitle>
                 <CardDescription className="text-gray-500">
                   {(() => {
-                    const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && s.sessionNumber !== 1);
+                    const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && !s.isAssessment);
                     const entregues = sessoesComTarefa.filter((s: any) => s.taskStatus === 'entregue' || s.taskStatus === 'validada');
                     return `${entregues.length} de ${sessoesComTarefa.length} atividades entregues`;
                   })()}
@@ -2768,8 +2775,8 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                               <Badge variant="outline" className={taskStatusConfig.className}>
                                 <span className="flex items-center gap-1">{taskStatusConfig.icon} {isAssessment ? 'Assessment' : taskStatusConfig.label}</span>
                               </Badge>
-                              {/* Botão de envio de link para sessões pendentes */}
-                              {!isAssessment && sessao.taskStatus === 'nao_entregue' && (
+                              {/* Botão de envio: aparece se não há evidência real e não está validada */}
+                              {!isAssessment && sessao.taskStatus !== 'validada' && sessao.taskStatus !== 'sem_tarefa' && !(sessao.evidenceLink || sessao.evidenceImageUrl || sessao.submittedAt) && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -2873,7 +2880,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                               </p>
                             </div>
                             <div className="flex items-center gap-1">
-                              {task.taskStatus === 'nao_entregue' && (
+                              {task.taskStatus !== 'validada' && task.taskStatus !== 'sem_tarefa' && !(task.evidenceLink || task.evidenceImageUrl || task.submittedAt) && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -2950,7 +2957,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                 )}
 
                                 {/* Instrução de compartilhamento na nuvem */}
-                                {task.taskStatus === 'nao_entregue' && (
+                                {task.taskStatus !== 'validada' && task.taskStatus !== 'sem_tarefa' && !(task.evidenceLink || task.evidenceImageUrl || task.submittedAt) && (
                                   <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
                                     <p className="text-xs font-semibold text-blue-900 mb-1 flex items-center gap-2">
                                       <Cloud className="h-4 w-4" /> Lembre-se
@@ -2969,8 +2976,8 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                   </Badge>
                                 </div>
 
-                                {/* Se PENDENTE: formulário de envio */}
-                                {task.taskStatus === 'nao_entregue' && (
+                                {/* Formulário de envio: disponível enquanto não há evidência real e não está validada */}
+                                {task.taskStatus !== 'validada' && task.taskStatus !== 'sem_tarefa' && !(task.evidenceLink || task.evidenceImageUrl || task.submittedAt) && (
                                   <div className="space-y-3 p-4 rounded-lg bg-amber-50/50 border border-amber-200">
                                     <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                                       <Upload className="h-4 w-4 text-[#F5991F]" /> Enviar Evidência
@@ -3263,8 +3270,18 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   value={caseResumoPublico}
                   onChange={e => setCaseResumoPublico(e.target.value.slice(0, 500))}
                   rows={3}
+                  className={caseResumoPublico.length > 0 && caseResumoPublico.length < 20 ? "border-red-400 focus-visible:ring-red-400" : ""}
                 />
-                <p className="text-[11px] text-gray-400">{caseResumoPublico.length}/500</p>
+                <div className="flex items-center justify-between">
+                  {caseResumoPublico.length > 0 && caseResumoPublico.length < 20 ? (
+                    <p className="text-[11px] text-red-500 font-medium">
+                      O resumo deve ter ao menos 20 caracteres ({20 - caseResumoPublico.length} restantes)
+                    </p>
+                  ) : (
+                    <span />
+                  )}
+                  <p className={`text-[11px] ${caseResumoPublico.length > 0 && caseResumoPublico.length < 20 ? 'text-red-400' : 'text-gray-400'}`}>{caseResumoPublico.length}/500</p>
+                </div>
               </div>
 
               {/* 1. O que aprendi */}
@@ -3370,6 +3387,31 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                     }
                   }}
                 />
+              </div>
+
+              {/* Link de vídeo (opcional) — campo visual, valor salvo quando coluna existir no banco */}
+              <div className="space-y-2">
+                <Label htmlFor="case-video-link" className="flex items-center gap-1.5">
+                  <Video className="h-4 w-4 text-red-500" />
+                  Link de vídeo (opcional)
+                </Label>
+                <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-800 space-y-1.5">
+                  <p className="font-semibold">Se o seu relatório for em vídeo, você pode:</p>
+                  <p>▶ <strong>YouTube:</strong> publique o vídeo como <em>Não listado</em> ou <em>Privado</em> e cole o link abaixo. Vídeos privados precisam ser compartilhados com <strong>relacionamento@ckmtalents.net</strong>.</p>
+                  <p>▶ <strong>Google Drive:</strong> faça upload do arquivo e compartilhe com permissão de <em>Visualizar e baixar</em> para <strong>relacionamento@ckmtalents.net</strong>, depois cole o link abaixo.</p>
+                </div>
+                <Input
+                  id="case-video-link"
+                  type="url"
+                  placeholder="https://youtu.be/... ou https://drive.google.com/..."
+                  value={caseVideoLink}
+                  onChange={e => setCaseVideoLink(e.target.value)}
+                />
+                {caseVideoLink && (
+                  <a href={caseVideoLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                    <ExternalLink className="h-3 w-3" /> Verificar link
+                  </a>
+                )}
               </div>
 
               {/* Arquivo complementar (opcional) */}
@@ -3522,17 +3564,18 @@ function MentorProfileCard({ mentorId, mentorName }: { mentorId: number; mentorN
 
 function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId: number; consultorId: number; mentorName: string }) {
   const { data: availability } = trpc.mentor.getAvailability.useQuery({ consultorId });
+  const { data: dateAvailability } = trpc.mentor.getDateAvailability.useQuery({ consultorId });
   const { data: myAppointments } = trpc.mentor.getAppointments.useQuery({ consultorId });
   const bookMutation = trpc.mentor.bookAppointment.useMutation();
   const respondMutation = trpc.mentor.respondToInvite.useMutation();
   const utils = trpc.useUtils();
 
   const [showBooking, setShowBooking] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedSlot, setSelectedSlot] = useState<{ id?: number; startTime: string; endTime: string; googleMeetLink?: string | null } | null>(null);
+  const [selectedDateSlot, setSelectedDateSlot] = useState<{ date: string; startTime: string; endTime: string; duration: number; meetLink: string; source: 'date' | 'weekly'; availabilityId?: number } | null>(null);
   const [bookingNotes, setBookingNotes] = useState('');
 
   const DAYS_OF_WEEK = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
   // Filtrar convites de grupo pendentes para este aluno
   const pendingInvites = (myAppointments || []).filter(
@@ -3544,25 +3587,87 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
     a => a.participants.some((p: any) => p.alunoId === alunoId && (p.status === 'confirmado' || p.status === 'agendado'))
   );
 
+  // Verificar se um slot já está ocupado
+  const isSlotOccupied = (date: string, startTime: string) => {
+    if (!myAppointments) return false;
+    return myAppointments.some(appt =>
+      appt.scheduledDate === date && appt.startTime === startTime && appt.status !== 'cancelado'
+    );
+  };
+
+  // Slots de datas específicas (futuras e ativas)
+  const specificDateSlots = useMemo(() => {
+    if (!dateAvailability) return [];
+    const today = new Date().toISOString().slice(0, 10);
+    return dateAvailability
+      .filter((s: any) => s.isActive === 1 && s.specificDate >= today && !isSlotOccupied(s.specificDate, s.startTime))
+      .sort((a: any, b: any) => a.specificDate.localeCompare(b.specificDate) || a.startTime.localeCompare(b.startTime));
+  }, [dateAvailability, myAppointments]);
+
+  // Slots recorrentes (próximos 30 dias)
+  const weeklyGeneratedSlots = useMemo(() => {
+    if (!availability) return [];
+    const activeSlots = availability.filter((a: any) => a.isActive === 1);
+    if (activeSlots.length === 0) return [];
+    const slots: { date: string; startTime: string; endTime: string; duration: number; meetLink: string; source: 'weekly'; availabilityId: number }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 1; i <= 30; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const dayOfWeek = d.getDay();
+      const dateStr = d.toISOString().slice(0, 10);
+      const hasSpecificSlot = specificDateSlots.some((s: any) => s.specificDate === dateStr);
+      if (hasSpecificSlot) continue;
+      const matchingSlots = activeSlots.filter((s: any) => s.dayOfWeek === dayOfWeek);
+      for (const slot of matchingSlots) {
+        if (!isSlotOccupied(dateStr, slot.startTime)) {
+          slots.push({ date: dateStr, startTime: slot.startTime, endTime: slot.endTime, duration: slot.slotDurationMinutes, meetLink: slot.googleMeetLink || '', source: 'weekly', availabilityId: slot.id });
+        }
+      }
+    }
+    return slots;
+  }, [availability, myAppointments, specificDateSlots]);
+
+  // Combinar e ordenar todos os slots
+  const allSlots = useMemo(() => {
+    const combined: { date: string; startTime: string; endTime: string; duration: number; meetLink: string; source: 'date' | 'weekly'; availabilityId?: number }[] = [];
+    for (const s of specificDateSlots) {
+      combined.push({ date: (s as any).specificDate, startTime: (s as any).startTime, endTime: (s as any).endTime, duration: (s as any).slotDurationMinutes, meetLink: (s as any).googleMeetLink || '', source: 'date' });
+    }
+    for (const s of weeklyGeneratedSlots) {
+      combined.push({ date: s.date, startTime: s.startTime, endTime: s.endTime, duration: s.duration, meetLink: s.meetLink, source: 'weekly', availabilityId: s.availabilityId });
+    }
+    combined.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+    return combined;
+  }, [specificDateSlots, weeklyGeneratedSlots]);
+
+  const formatSlotDate = (dateStr: string) => {
+    try {
+      const [y, m, d] = dateStr.split('-');
+      const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
+      return `${DAYS_OF_WEEK[dateObj.getDay()]}, ${d} de ${MONTHS[Number(m) - 1]}`;
+    } catch { return dateStr; }
+  };
+
   const handleBook = async () => {
-    if (!selectedDate || !selectedSlot) {
+    if (!selectedDateSlot) {
       toast.error('Selecione uma data e horário');
       return;
     }
     try {
       await bookMutation.mutateAsync({
         consultorId,
-        availabilityId: selectedSlot.id || 0,
-        scheduledDate: selectedDate,
-        startTime: selectedSlot.startTime,
-        endTime: selectedSlot.endTime,
+        availabilityId: selectedDateSlot.availabilityId || 0,
+        scheduledDate: selectedDateSlot.date,
+        startTime: selectedDateSlot.startTime,
+        endTime: selectedDateSlot.endTime,
         notes: bookingNotes || undefined,
       });
       utils.mentor.getAppointments.invalidate();
       toast.success('Sessão agendada com sucesso!');
       setShowBooking(false);
-      setSelectedDate('');
-      setSelectedSlot(null);
+      setSelectedDateSlot(null);
       setBookingNotes('');
     } catch (e: any) {
       toast.error(e.message || 'Erro ao agendar sessão');
@@ -3578,9 +3683,6 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
       toast.error(e.message || 'Erro ao responder');
     }
   };
-
-  // Horários disponíveis do mentor agrupados por dia
-  const activeSlots = (availability || []).filter(a => a.isActive === 1);
 
   return (
     <div className="space-y-4 mb-4">
@@ -3700,71 +3802,58 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
         </CardHeader>
         {showBooking && (
           <CardContent className="space-y-4">
-            {activeSlots.length === 0 ? (
+            {allSlots.length === 0 ? (
               <div className="text-center py-6 text-gray-500">
                 <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
                 <p>O mentor ainda não configurou horários disponíveis.</p>
               </div>
             ) : (
               <>
-                {/* Horários disponíveis do mentor */}
+                {/* Datas e horários disponíveis */}
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Horários disponíveis do mentor:</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {DAYS_OF_WEEK.map((dayName, dayIdx) => {
-                      const daySlots = activeSlots.filter(a => a.dayOfWeek === dayIdx);
-                      if (daySlots.length === 0) return null;
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Selecione uma data e horário:</Label>
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {allSlots.map((slot, idx) => {
+                      const isSelected = selectedDateSlot?.date === slot.date && selectedDateSlot?.startTime === slot.startTime;
                       return (
-                        <div key={dayIdx} className="p-3 rounded-lg border border-gray-200 bg-gray-50">
-                          <p className="text-xs font-semibold text-gray-600 mb-1">{dayName}</p>
-                          {daySlots.map((slot, i) => (
-                            <button
-                              key={i}
-                              onClick={() => setSelectedSlot(slot)}
-                              className={`block w-full text-left text-sm p-2 rounded mt-1 transition-colors ${
-                                selectedSlot?.startTime === slot.startTime && selectedSlot?.endTime === slot.endTime
-                                  ? 'bg-blue-100 border border-blue-300 text-blue-800'
-                                  : 'bg-white border border-gray-200 hover:bg-blue-50 text-gray-700'
-                              }`}
-                            >
-                              {slot.startTime} — {slot.endTime}
-                              {slot.googleMeetLink && <Video className="h-3 w-3 inline ml-2 text-blue-500" />}
-                            </button>
-                          ))}
-                        </div>
+                        <button
+                          key={`${slot.date}-${slot.startTime}-${idx}`}
+                          onClick={() => setSelectedDateSlot(isSelected ? null : slot)}
+                          className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50 shadow-sm'
+                              : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">{formatSlotDate(slot.date)}</p>
+                              <p className="text-sm text-gray-600 flex items-center gap-1 mt-0.5">
+                                <Clock className="h-3 w-3" />
+                                {slot.startTime} — {slot.endTime}
+                                <span className="text-xs text-gray-400 ml-1">({slot.duration}min)</span>
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {slot.source === 'date' && (
+                                <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-300">Data Específica</Badge>
+                              )}
+                              {slot.meetLink && <Video className="h-4 w-4 text-blue-500" />}
+                              {isSelected && <CheckCircle2 className="h-4 w-4 text-blue-600" />}
+                            </div>
+                          </div>
+                        </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {selectedSlot && (
+                {selectedDateSlot && (
                   <>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Data da sessão:</Label>
-                      <Input
-                        type="date"
-                        value={selectedDate}
-                        onChange={e => {
-                          const val = e.target.value;
-                          setSelectedDate(val);
-                        }}
-                        min={new Date().toISOString().split('T')[0]}
-                        className="mt-1"
-                      />
-                      {/* A4 FIX: Validar dia da semana */}
-                      {selectedDate && (() => {
-                        const dateObj = new Date(selectedDate + 'T12:00:00');
-                        const dayOfWeek = dateObj.getDay();
-                        const slotDay = (activeSlots.find(s => s.startTime === selectedSlot.startTime && s.endTime === selectedSlot.endTime) as any)?.dayOfWeek;
-                        if (slotDay !== undefined && dayOfWeek !== slotDay) {
-                          return (
-                            <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                              <span>&#9888;</span> O horário selecionado é para <strong>{DAYS_OF_WEEK[slotDay]}</strong>, mas a data escolhida é <strong>{DAYS_OF_WEEK[dayOfWeek]}</strong>. Selecione uma data que caia em {DAYS_OF_WEEK[slotDay]}.
-                            </p>
-                          );
-                        }
-                        return null;
-                      })()}
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs font-semibold text-blue-700 mb-1">Sessão selecionada:</p>
+                      <p className="text-sm font-medium text-gray-900">{formatSlotDate(selectedDateSlot.date)}</p>
+                      <p className="text-sm text-gray-600">{selectedDateSlot.startTime} — {selectedDateSlot.endTime}</p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-gray-700">Observações (opcional):</Label>
@@ -3778,14 +3867,7 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
                     <div className="flex justify-end">
                       <Button
                         onClick={handleBook}
-                        disabled={bookMutation.isPending || !selectedDate || (() => {
-                          // A4 FIX: Desabilitar se dia da semana não corresponde ao slot
-                          if (!selectedDate) return true;
-                          const dateObj = new Date(selectedDate + 'T12:00:00');
-                          const dayOfWeek = dateObj.getDay();
-                          const slotDay = (activeSlots.find(s => s.startTime === selectedSlot.startTime && s.endTime === selectedSlot.endTime) as any)?.dayOfWeek;
-                          return slotDay !== undefined && dayOfWeek !== slotDay;
-                        })()}
+                        disabled={bookMutation.isPending}
                         className="bg-[#1E3A5F] hover:bg-[#2a4f7f]"
                       >
                         <Calendar className="h-4 w-4 mr-2" /> Confirmar Agendamento

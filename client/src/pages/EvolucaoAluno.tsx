@@ -1,343 +1,281 @@
 import AlunoLayout from "@/components/AlunoLayout";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import { 
-  BookOpen, Calendar, CheckCircle2, Clock3, LineChart, 
-  Target, TrendingUp, User, ChevronRight, Award, Sparkles, Info, ChevronDown, ChevronUp
+import {
+  Sparkles, Brain, Target, TrendingUp, Award, History,
+  ChevronDown, ChevronUp, BookOpen, CheckCircle2
 } from "lucide-react";
-import { toast } from "sonner";
 import { useState } from "react";
-import { Link } from "wouter";
 
-function statusBadgeClass(status: string) {
-  switch (status) {
-    case "finalizado":
-    case "encerrado":
-      return "bg-emerald-100 text-emerald-700 border-emerald-300";
-    case "em_andamento":
-      return "bg-blue-100 text-blue-700 border-blue-300";
-    default:
-      return "bg-gray-100 text-gray-700 border-gray-300";
-  }
+type DiscDimensao = "D" | "I" | "S" | "C";
+
+const DISC_CORES: Record<DiscDimensao, string> = {
+  D: "#DC2626", I: "#F59E0B", S: "#16A34A", C: "#2563EB",
+};
+const DISC_NOMES: Record<DiscDimensao, string> = {
+  D: "Dominância", I: "Influência", S: "Estabilidade", C: "Conformidade",
+};
+const DISC_TITULOS: Record<DiscDimensao, string> = {
+  D: "O Realizador", I: "O Influenciador", S: "O Estabilizador", C: "O Analítico",
+};
+
+function formatarData(data: string | null | undefined) {
+  if (!data) return null;
+  try {
+    return new Date(data).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  } catch { return null; }
+}
+
+function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
+  const [expandido, setExpandido] = useState(index === 0);
+  const perfilPredominante = ciclo.perfilPredominante as DiscDimensao | null;
+  const perfilSecundario = ciclo.perfilSecundario as DiscDimensao | null;
+  const corPredominante = perfilPredominante ? DISC_CORES[perfilPredominante] : "#6B7280";
+  const dataInicio = formatarData(ciclo.dataInicio);
+  const dataConclusao = formatarData(ciclo.dataConclusao);
+  const discData = formatarData(ciclo.discCompletadoEm);
+  const scores: Record<DiscDimensao, number> = {
+    D: Number(ciclo.scoreD) || 0, I: Number(ciclo.scoreI) || 0,
+    S: Number(ciclo.scoreS) || 0, C: Number(ciclo.scoreC) || 0,
+  };
+
+  return (
+    <Card className="overflow-hidden border-2 transition-all duration-300 hover:shadow-lg"
+      style={{ borderColor: expandido ? corPredominante + "40" : "transparent" }}>
+      <div className="p-5 cursor-pointer select-none"
+        style={{ background: `linear-gradient(135deg, ${corPredominante}15, ${corPredominante}08)` }}
+        onClick={() => setExpandido(!expandido)}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-md"
+              style={{ backgroundColor: corPredominante }}>{ciclo.numeroCiclo}</div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-[#0A1E3E] text-lg">Ciclo {ciclo.numeroCiclo}</h3>
+                <Badge className="text-white border-0 text-xs" style={{ backgroundColor: corPredominante }}>
+                  {perfilPredominante ? `Perfil ${perfilPredominante}` : "Sem DISC"}
+                </Badge>
+              </div>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {dataInicio && dataConclusao ? `${dataInicio} → ${dataConclusao}` : dataInicio ? `Iniciado em ${dataInicio}` : "Datas não registradas"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {perfilPredominante && (
+              <div className="hidden sm:flex items-center gap-1.5">
+                {(["D", "I", "S", "C"] as DiscDimensao[]).map((dim) => (
+                  <div key={dim} className="flex flex-col items-center">
+                    <div className="w-1.5 rounded-full"
+                      style={{ height: `${Math.max(8, (scores[dim] / 100) * 32)}px`, backgroundColor: DISC_CORES[dim], opacity: dim === perfilPredominante ? 1 : 0.4 }} />
+                    <span className="text-[9px] font-bold mt-0.5" style={{ color: DISC_CORES[dim] }}>{dim}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {expandido ? <ChevronUp className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}
+          </div>
+        </div>
+      </div>
+
+      {expandido && (
+        <CardContent className="p-6 space-y-6 border-t border-gray-100">
+          {perfilPredominante ? (
+            <div className="space-y-4">
+              <h4 className="font-bold text-[#0A1E3E] flex items-center gap-2">
+                <Brain className="h-4 w-4 text-purple-600" />
+                Perfil DISC
+                {discData && <span className="text-xs font-normal text-gray-400 ml-1">— realizado em {discData}</span>}
+              </h4>
+              <div className="space-y-2.5">
+                {(["D", "I", "S", "C"] as DiscDimensao[]).map((dim) => {
+                  const score = scores[dim];
+                  const isPredominante = dim === perfilPredominante;
+                  const isSecundario = dim === perfilSecundario;
+                  return (
+                    <div key={dim} className={`p-3 rounded-lg ${isPredominante ? "bg-gray-50 ring-1 ring-gray-200" : ""}`}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs"
+                            style={{ backgroundColor: DISC_CORES[dim] }}>{dim}</div>
+                          <span className="font-medium text-gray-700 text-sm">{DISC_NOMES[dim]}</span>
+                          {isPredominante && <Badge className="bg-[#F5991F] text-white border-0 text-[10px] px-1.5 py-0">PREDOMINANTE</Badge>}
+                          {isSecundario && !isPredominante && <Badge variant="outline" className="text-[10px] px-1.5 py-0">SECUNDÁRIO</Badge>}
+                        </div>
+                        <span className="font-bold text-base" style={{ color: DISC_CORES[dim] }}>{score}%</span>
+                      </div>
+                      <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${score}%`, backgroundColor: DISC_CORES[dim] }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="rounded-xl p-4 text-white" style={{ backgroundColor: corPredominante }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center font-black text-xl">{perfilPredominante}</div>
+                  <div>
+                    <p className="font-bold text-lg">{DISC_TITULOS[perfilPredominante]}</p>
+                    <p className="text-white/80 text-sm">{DISC_NOMES[perfilPredominante]}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-gray-400">
+              <Brain className="h-10 w-10 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">Teste DISC não realizado neste ciclo</p>
+            </div>
+          )}
+
+          {ciclo.assessmentPdiId ? (
+            <div className="space-y-3 border-t pt-4">
+              <h4 className="font-bold text-[#0A1E3E] flex items-center gap-2">
+                <Target className="h-4 w-4 text-blue-600" />
+                Plano de Desenvolvimento Individual (PDI)
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                {ciclo.macroInicio && (
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <p className="text-xs text-blue-500 font-medium mb-0.5">Início da Jornada</p>
+                    <p className="font-semibold text-blue-900 text-sm">{formatarData(ciclo.macroInicio)}</p>
+                  </div>
+                )}
+                {ciclo.macroTermino && (
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <p className="text-xs text-blue-500 font-medium mb-0.5">Término da Jornada</p>
+                    <p className="font-semibold text-blue-900 text-sm">{formatarData(ciclo.macroTermino)}</p>
+                  </div>
+                )}
+              </div>
+              {ciclo.pdiStatus && (
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span className="text-sm text-gray-600">Status: <span className="font-medium capitalize text-emerald-700">{ciclo.pdiStatus}</span></span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-gray-400 border-t pt-4">
+              <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">PDI não registrado neste ciclo</p>
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
 }
 
 export default function EvolucaoAluno() {
-  const { data, isLoading } = trpc.evolucao.minha.useQuery();
-  const { data: statusCert } = trpc.certificacao.statusPorNivel.useQuery();
-  const utils = trpc.useUtils();
-  
-  const [expandedCiclo, setExpandedCiclo] = useState<number | null>(null);
+  const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
+  const alunoId = dashData?.found ? dashData.aluno?.id || 0 : 0;
 
-  const emitirCert = trpc.certificacao.emitir.useMutation({
-    onSuccess: () => {
-      toast.success("Certificado emitido com sucesso.");
-      utils.evolucao.minha.invalidate();
-      utils.certificacao.statusPorNivel.invalidate();
-    },
-    onError: (err) => toast.error(err.message || "Falha ao emitir certificado."),
-  });
+  const { data: historico, isLoading } = trpc.onboarding.historicoCiclos.useQuery(
+    { alunoId }, { enabled: alunoId > 0 }
+  );
+  const { data: discAtual } = trpc.disc.resultado.useQuery(
+    { alunoId }, { enabled: alunoId > 0 }
+  );
 
-  if (isLoading) {
-    return (
-      <AlunoLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#0A1E3E]" />
-        </div>
-      </AlunoLayout>
-    );
-  }
-
-  if (!data) return null;
-
-  const { data: perfData } = trpc.indicadores.meuDashboard.useQuery();
-  const nivelAtual = data.resumo?.nivelAtual;
-  const v2 = (perfData as any)?.indicadoresV2?.consolidado;
+  const temHistorico = historico && historico.length > 0;
 
   return (
     <AlunoLayout>
-      <div className="max-w-5xl mx-auto space-y-8 pb-12">
-        
-        {/* TOPO: DESTAQUE DO NÍVEL ATUAL */}
-        <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="bg-blue-600 p-3 rounded-lg text-white">
-              <TrendingUp size={24} />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Você está no</p>
-              <h1 className="text-2xl font-bold text-gray-900">{data.timeline?.[0]?.nivel?.nome || nivelAtual?.nivel?.nome || "Nível Vigente"}</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge className={statusBadgeClass(data.timeline?.[0]?.nivel?.status || nivelAtual?.nivel?.statusFinal || "em_andamento")}>
-                  {data.timeline?.[0]?.nivel?.status === 'em_andamento' ? 'Em andamento' : (nivelAtual?.nivel?.statusFinal || "Em andamento")}
-                </Badge>
-                <span className="text-xs text-gray-400">•</span>
-                <span className="text-xs text-gray-500">Iniciado em {data.timeline?.[0]?.nivel?.dataInicio ? new Date(data.timeline[0].nivel.dataInicio).toLocaleDateString('pt-BR') : (nivelAtual?.nivel?.dataInicio ? new Date(nivelAtual.nivel.dataInicio).toLocaleDateString('pt-BR') : '--')}</span>
+      <div className="max-w-3xl mx-auto space-y-8 pb-12">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0A1E3E] to-[#2a5a8a] flex items-center justify-center">
+            <TrendingUp className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-[#0A1E3E]">Minha Evolução</h1>
+            <p className="text-sm text-gray-500">Histórico de ciclos de desenvolvimento</p>
+          </div>
+        </div>
+
+        {isLoading && (
+          <div className="flex items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F5991F]" />
+          </div>
+        )}
+
+        {!isLoading && !temHistorico && (
+          <Card className="border-none shadow-xl bg-gradient-to-br from-[#0A1E3E] to-[#1a3a6e] text-white overflow-hidden">
+            <CardContent className="p-8 text-center space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-full bg-white/10 flex items-center justify-center">
+                <History className="h-8 w-8 text-white/70" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold mb-2">Seu histórico está sendo construído</h2>
+                <p className="text-blue-100/80 text-sm leading-relaxed max-w-sm mx-auto">
+                  Quando você concluir seu primeiro ciclo de desenvolvimento e um novo ciclo for iniciado,
+                  o histórico aparecerá aqui com todos os seus resultados DISC e PDI.
+                </p>
+              </div>
+              {discAtual && (
+                <div className="mt-4 bg-white/10 rounded-xl p-4 text-left">
+                  <p className="text-xs text-white/60 uppercase tracking-wider font-medium mb-2">Ciclo Atual (em andamento)</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-black"
+                      style={{ backgroundColor: DISC_CORES[discAtual.perfilPredominante as DiscDimensao] || "#6B7280" }}>
+                      {discAtual.perfilPredominante}
+                    </div>
+                    <div>
+                      <p className="font-semibold">Perfil {discAtual.perfilPredominante} — {DISC_TITULOS[discAtual.perfilPredominante as DiscDimensao] || ""}</p>
+                      <p className="text-white/60 text-xs">{DISC_NOMES[discAtual.perfilPredominante as DiscDimensao] || ""}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {!isLoading && temHistorico && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <Award className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-900 text-sm">
+                  {historico.length} ciclo{historico.length > 1 ? "s" : ""} de desenvolvimento registrado{historico.length > 1 ? "s" : ""}
+                </p>
+                <p className="text-amber-700 text-xs mt-0.5">
+                  Cada ciclo representa uma jornada completa de onboarding com DISC e PDI.
+                </p>
               </div>
             </div>
+
+            {[...historico].reverse().map((ciclo: any, idx: number) => (
+              <CicloCard key={ciclo.id} ciclo={ciclo} index={idx} />
+            ))}
+
+            {discAtual && (
+              <div className="border-2 border-dashed border-[#F5991F]/40 rounded-xl p-5 bg-amber-50/50">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#F5991F] flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-[#0A1E3E] text-sm">Ciclo Atual (em andamento)</p>
+                    <p className="text-xs text-gray-500">Seu ciclo ativo de desenvolvimento</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-black text-sm"
+                    style={{ backgroundColor: DISC_CORES[discAtual.perfilPredominante as DiscDimensao] || "#6B7280" }}>
+                    {discAtual.perfilPredominante}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-[#0A1E3E]">{DISC_TITULOS[discAtual.perfilPredominante as DiscDimensao] || `Perfil ${discAtual.perfilPredominante}`}</p>
+                    <p className="text-xs text-gray-500">{DISC_NOMES[discAtual.perfilPredominante as DiscDimensao] || ""}</p>
+                  </div>
+                  <Badge className="ml-auto bg-[#F5991F] text-white border-0">Ativo</Badge>
+                </div>
+              </div>
+            )}
           </div>
-          <Link href="/performance">
-            <Button className="bg-[#0A1E3E] hover:bg-[#152b4d] text-white gap-2">
-              Ver Performance do Nível Atual
-              <ChevronRight size={16} />
-            </Button>
-          </Link>
-        </div>
-
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Clock3 className="h-5 w-5 text-blue-600" />
-            Histórico de Formação
-          </h2>
-
-          <div className="space-y-6">
-            {data.timeline.map((item: any, index: number) => {
-              const isExpanded = expandedCiclo === item.nivel.id;
-              
-              // Usar os indicadores pedagógicos reais do snapshot do nível
-              // Para o nível em andamento, tentamos buscar do resumo consolidado se o snapshot estiver zerado
-              let eng = item.resultados?.competencias?.percentualAprovacao || 0; 
-              let met = item.resultados?.metas?.percentualConclusao || 0;
-              let apl = item.obtido?.mediaProgressoPerformance || 0;
-              
-              // Sincronização forçada para o nível atual
-              if (item.nivel.emAndamento || index === 0) {
-                if (v2) {
-                  if (eng === 0) eng = v2.ind7_engajamentoFinal || 0;
-                  if (met === 0) met = (perfData as any).metas?.resumo?.percentual || 0;
-                  if (apl === 0 || apl === 78) apl = v2.ind6_aplicabilidade || 0;
-                }
-                // Fallback se ainda estiver zerado mas tivermos no objeto resultados
-                if (apl === 0 && item.resultados?.aplicabilidade !== null && item.resultados?.aplicabilidade !== undefined) {
-                  apl = item.resultados.aplicabilidade;
-                }
-              }
-              
-              const evoluiu = eng >= 80 && met >= 80 && apl >= 80;
-
-              return (
-                <Card key={item.nivel.id} className={`overflow-hidden border-l-4 ${item.nivel.emAndamento ? 'border-l-blue-500' : 'border-l-gray-300'}`}>
-                  <CardHeader className="bg-gray-50/50 pb-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-gray-900">
-                            {item.nivel.nome.length <= 3 ? `Liderança Nível ${item.nivel.nome}` : item.nivel.nome}
-                          </h3>
-                          {item.nivel.emAndamento && <Badge className="bg-blue-100 text-blue-700 border-blue-200">Ciclo Atual</Badge>}
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          Período: {item.nivel.dataInicio ? new Date(item.nivel.dataInicio).toLocaleDateString() : 'Em definição'} 
-                          {item.nivel.dataFim ? ` - ${new Date(item.nivel.dataFim).toLocaleDateString()}` : (item.nivel.emAndamento ? ' - Presente' : '')}
-                        </p>
-                      </div>
-                      
-                      <div className="flex items-center gap-3">
-                        <div className="text-right hidden md:block">
-                          <p className="text-[10px] text-gray-400 uppercase font-bold">Resultado</p>
-                          <p className={`text-sm font-bold ${evoluiu ? 'text-emerald-600' : 'text-amber-600'}`}>
-                            {item.nivel.emAndamento ? 'Em progresso' : (evoluiu ? 'Evoluiu de Nível' : 'Não evoluiu')}
-                          </p>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => setExpandedCiclo(isExpanded ? null : item.nivel.id)}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="pt-6 space-y-6">
-                    {/* MACROINDICADORES DO CICLO */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="p-3 rounded-lg border border-gray-100 bg-white">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase">Engajamento</span>
-                          <span className={`text-xs font-bold ${eng >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>{Math.round(eng)}%</span>
-                        </div>
-                        <Progress value={eng} className="h-1.5" />
-                      </div>
-                      <div className="p-3 rounded-lg border border-gray-100 bg-white">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase">Metas / Desafios</span>
-                          {item.resultados?.metas?.total > 0 || (item.nivel.emAndamento && met > 0) ? (
-                            <span className={`text-xs font-bold ${met >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>{Math.round(met)}%</span>
-                          ) : (
-                            <span className="text-[10px] font-medium text-gray-400">N/A</span>
-                          )}
-                        </div>
-                        <Progress value={met} className="h-1.5" />
-                      </div>
-                      <div className="p-3 rounded-lg border border-gray-100 bg-white">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase">Aplicabilidade</span>
-                          <span className={`text-xs font-bold ${apl >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>{Math.round(apl)}%</span>
-                        </div>
-                        <Progress value={apl} className="h-1.5" />
-                      </div>
-                    </div>
-
-                    {/* CONTEÚDO EXPANSÍVEL (MICRODETALHES) */}
-                    {isExpanded && (
-                      <div className="pt-4 border-t border-gray-100 space-y-6 animate-in slide-in-from-top-2 duration-300">
-                        
-                        {/* DISC E ASSESSMENT */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-3">
-                            <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                              <User className="h-4 w-4 text-purple-500" />
-                              Perfil DISC no Ciclo
-                            </h4>
-                            {item.disc?.historico?.length > 0 ? (
-                              <div className="space-y-4">
-                                {item.disc.historico.map((disc: any, dIdx: number) => (
-                                  <div key={dIdx} className="p-4 bg-white rounded-lg border border-purple-100 shadow-sm space-y-4">
-                                    <div className="flex items-center justify-between border-b border-purple-50 pb-2">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs" style={{ backgroundColor: disc.detalhes?.cor || '#8B5CF6' }}>
-                                          {disc.perfilPredominante?.[0]}
-                                        </div>
-                                        <div>
-                                          <p className="text-xs font-bold text-purple-900">{disc.detalhes?.titulo || disc.perfilPredominante}</p>
-                                          <p className="text-[10px] text-purple-400">{disc.perfilPredominante}</p>
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-3">
-                                        {Object.entries(disc.scores).map(([key, val]: [string, any]) => (
-                                          <div key={key} className="text-center">
-                                            <div className="text-[9px] font-bold text-gray-400">{key}</div>
-                                            <div className="text-[10px] font-bold text-purple-700">{val}</div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                    
-                                    {disc.detalhes && (
-                                      <div className="space-y-3">
-                                        <p className="text-xs text-gray-600 leading-relaxed italic">
-                                          "{disc.detalhes.descricao}"
-                                        </p>
-                                        
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                          <div className="space-y-1">
-                                            <p className="text-[10px] font-bold text-emerald-600 uppercase flex items-center gap-1">
-                                              <CheckCircle2 size={10} /> Pontos Fortes
-                                            </p>
-                                            <ul className="space-y-0.5">
-                                              {disc.detalhes.pontosFortes.slice(0, 3).map((p: string, i: number) => (
-                                                <li key={i} className="text-[10px] text-gray-500 flex items-start gap-1">
-                                                  <span className="text-emerald-400 mt-0.5">•</span> {p}
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                          <div className="space-y-1">
-                                            <p className="text-[10px] font-bold text-amber-600 uppercase flex items-center gap-1">
-                                              <Sparkles size={10} /> Áreas de Desenvolvimento
-                                            </p>
-                                            <ul className="space-y-0.5">
-                                              {disc.detalhes.areasDesenvolvimento.slice(0, 3).map((p: string, i: number) => (
-                                                <li key={i} className="text-[10px] text-gray-500 flex items-start gap-1">
-                                                  <span className="text-amber-400 mt-0.5">•</span> {p}
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-xs text-gray-400 italic">Nenhum teste DISC realizado neste ciclo.</p>
-                            )}
-                          </div>
-
-                          <div className="space-y-3">
-                            <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                              <Info className="h-4 w-4 text-blue-500" />
-                              Diagnóstico de Entrada
-                            </h4>
-                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                              <p className="text-xs text-blue-800">
-                                <strong>Assessment:</strong> {item.assessmentInicial?.trilhaNome || 'Geral'}
-                              </p>
-                              <p className="text-[10px] text-blue-600 mt-1">
-                                Utilizado como referência diagnóstica para o desenvolvimento das competências do ciclo.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* CERTIFICAÇÃO */}
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                            <Award className="h-4 w-4 text-amber-500" />
-                            Certificação Formal
-                          </h4>
-                          <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-100">
-                            <div>
-                              <p className="text-sm font-medium text-amber-900">Status do Certificado</p>
-                              <p className="text-xs text-amber-700">
-                                {item.certificadoEmitido ? 'Certificado disponível para download' : (evoluiu ? 'Elegível para emissão' : 'Critérios de evolução não atingidos')}
-                              </p>
-                            </div>
-                            {item.certificadoEmitido ? (
-                              <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => window.open(item.certificadoEmitido.arquivoUrl, '_blank')}>
-                                Download PDF
-                              </Button>
-                            ) : (
-                              evoluiu && !item.nivel.emAndamento && (
-                                <Button 
-                                  size="sm" 
-                                  className="bg-amber-600 hover:bg-amber-700 text-white"
-                                  onClick={() => emitirCert.mutate({ contratoNivelId: item.nivel.id })}
-                                  disabled={emitirCert.isPending}
-                                >
-                                  Emitir Certificado
-                                </Button>
-                              )
-                            )}
-                          </div>
-                        </div>
-
-                        {/* MICRODETALHES OPERACIONAIS */}
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-bold text-gray-700">Detalhamento Operacional</h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="text-center p-2 bg-gray-50 rounded border border-gray-100">
-                              <p className="text-[10px] text-gray-400 uppercase">Mentorias</p>
-                              <p className="text-sm font-bold">{item.obtido.mentoriasRealizadas}/{item.obtido.mentoriasTotal}</p>
-                            </div>
-                            <div className="text-center p-2 bg-gray-50 rounded border border-gray-100">
-                              <p className="text-[10px] text-gray-400 uppercase">Eventos</p>
-                              <p className="text-sm font-bold">{item.obtido.eventosPresenca}/{item.obtido.eventosTotal}</p>
-                            </div>
-                            <div className="text-center p-2 bg-gray-50 rounded border border-gray-100">
-                              <p className="text-[10px] text-gray-400 uppercase">Cases</p>
-                              <p className="text-sm font-bold">{item.obtido.casesEntregues}/{item.obtido.casesTotal}</p>
-                            </div>
-                            <div className="text-center p-2 bg-gray-50 rounded border border-gray-100">
-                              <p className="text-[10px] text-gray-400 uppercase">Metas</p>
-                              <p className="text-sm font-bold">{item.obtido.metasConcluidas}/{item.proposto.metasPrevistas}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
+        )}
       </div>
     </AlunoLayout>
   );

@@ -20,10 +20,20 @@ interface RingProps {
   bgColor?: string;    // background ring color
 }
 
-function ProgressRing({ value, target, size = 120, strokeWidth = 10, color, bgColor = "text-gray-200" }: RingProps) {
+interface RingProps {
+  value: number;       // 0-100
+  target: number;      // target percentage
+  size?: number;       // px
+  strokeWidth?: number;
+  color: string;       // tailwind color class for the ring (e.g. "text-blue-500")
+  bgColor?: string;    // background ring color
+  isNA?: boolean;      // Not Applicable state
+}
+
+function ProgressRing({ value, target, size = 120, strokeWidth = 10, color, bgColor = "text-gray-200", isNA = false }: RingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const clampedValue = Math.min(Math.max(value, 0), 100);
+  const clampedValue = isNA ? 0 : Math.min(Math.max(value, 0), 100);
   const offset = circumference - (clampedValue / 100) * circumference;
 
   // Target marker position
@@ -32,7 +42,7 @@ function ProgressRing({ value, target, size = 120, strokeWidth = 10, color, bgCo
   const targetX = size / 2 + radius * Math.cos(targetRad);
   const targetY = size / 2 + radius * Math.sin(targetRad);
 
-  const isAboveTarget = clampedValue >= target;
+  const isAboveTarget = !isNA && clampedValue >= target;
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -47,32 +57,36 @@ function ProgressRing({ value, target, size = 120, strokeWidth = 10, color, bgCo
           className={`stroke-current ${bgColor}`}
         />
         {/* Progress ring */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          className={`stroke-current ${color} transition-all duration-700 ease-out`}
-        />
+        {!isNA && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            className={`stroke-current ${color} transition-all duration-700 ease-out`}
+          />
+        )}
         {/* Target marker */}
-        <circle
-          cx={targetX}
-          cy={targetY}
-          r={4}
-          className="fill-current text-gray-500"
-        />
+        {!isNA && (
+          <circle
+            cx={targetX}
+            cy={targetY}
+            r={4}
+            className="fill-current text-gray-500"
+          />
+        )}
       </svg>
       {/* Center text */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`text-2xl font-bold ${isAboveTarget ? 'text-emerald-600' : 'text-gray-800'}`}>
-          {Math.round(clampedValue)}%
+        <span className={`text-2xl font-bold ${isNA ? 'text-gray-400' : isAboveTarget ? 'text-emerald-600' : 'text-gray-800'}`}>
+          {isNA ? 'N/A' : `${Math.round(clampedValue)}%`}
         </span>
         <span className="text-[10px] text-gray-400 font-medium">
-          Meta: {target}%
+          {isNA ? 'Sem metas' : `Meta: ${target}%`}
         </span>
       </div>
     </div>
@@ -82,7 +96,15 @@ function ProgressRing({ value, target, size = 120, strokeWidth = 10, color, bgCo
 // ============================================================
 // STATUS BADGE
 // ============================================================
-function StatusBadge({ value, target }: { value: number; target: number }) {
+function StatusBadge({ value, target, isNA = false }: { value: number; target: number; isNA?: boolean }) {
+  if (isNA) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+        <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+        Não atribuído
+      </span>
+    );
+  }
   if (value >= target) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
@@ -243,7 +265,9 @@ export default function DualIndicators({
         {/* ============================================================ */}
         {/* DESENVOLVIMENTO INDICATOR */}
         {/* ============================================================ */}
-        <Card className="border-2 border-emerald-100 bg-gradient-to-br from-emerald-50/80 to-white shadow-sm">
+        <Card className={`border-2 shadow-sm bg-gradient-to-br from-white to-white ${
+          desenvolvimentoDetalhes?.total === 0 ? 'border-gray-100' : 'border-emerald-100 from-emerald-50/80'
+        }`}>
           <CardContent className={compact ? "p-3" : "p-5"}>
             <div className="flex items-start gap-4">
               {/* Ring */}
@@ -255,12 +279,13 @@ export default function DualIndicators({
                   strokeWidth={ringStroke}
                   color="text-emerald-500"
                   bgColor="text-emerald-100"
+                  isNA={desenvolvimentoDetalhes?.total === 0}
                 />
               </div>
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <Target className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} text-emerald-600`} />
+                  <Target className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} ${desenvolvimentoDetalhes?.total === 0 ? 'text-gray-400' : 'text-emerald-600'}`} />
                   <h3 className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-gray-800`}>
                     Jornada de Superação: Meta Desafiadora
                   </h3>
@@ -280,19 +305,25 @@ export default function DualIndicators({
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <StatusBadge value={desenvolvimento} target={100} />
+                <StatusBadge value={desenvolvimento} target={100} isNA={desenvolvimentoDetalhes?.total === 0} />
                 {!compact && (
                   <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                    Metas de desenvolvimento lançadas pelo mentor para cada competência.
-                    O aluno deve cumprir todas as metas atribuídas para atingir 100%.
+                    {desenvolvimentoDetalhes?.total === 0 
+                      ? "Aguardando o mentor lançar as metas de desenvolvimento para este aluno."
+                      : "Metas de desenvolvimento lançadas pelo mentor para cada competência. O aluno deve cumprir todas as metas atribuídas para atingir 100%."}
                   </p>
                 )}
-                {desenvolvimentoDetalhes && !compact && (
+                {desenvolvimentoDetalhes && !compact && desenvolvimentoDetalhes.total > 0 && (
                   <div className="mt-2 text-xs text-gray-600">
                     <span className="font-medium text-emerald-600">{desenvolvimentoDetalhes.cumpridas}</span>
                     <span> de </span>
                     <span className="font-medium">{desenvolvimentoDetalhes.total}</span>
                     <span> metas cumpridas</span>
+                  </div>
+                )}
+                {desenvolvimentoDetalhes && !compact && desenvolvimentoDetalhes.total === 0 && (
+                  <div className="mt-2 text-xs text-gray-400 italic">
+                    Nenhuma meta atribuída
                   </div>
                 )}
               </div>
@@ -353,6 +384,11 @@ export default function DualIndicators({
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                       Provisória
+                    </span>
+                  ) : aplicabilidade.totalAvaliacoes === 0 ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                      Em progresso
                     </span>
                   ) : (
                     aplicabilidade.percentual >= 80 ? (

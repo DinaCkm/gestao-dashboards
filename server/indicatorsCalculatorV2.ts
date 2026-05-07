@@ -287,7 +287,8 @@ export function calcularIndicadoresCiclo(
   performance: PerformanceRecord[],
   compIdToCodigoMap: Map<number, string>,
   casesData: CaseSucessoData[],
-  hoje?: Date
+  hoje?: Date,
+  compIdToNomeMap?: Map<number, string>
 ): IndicadoresCiclo {
   const status = determinarStatusCiclo(ciclo.dataInicio, ciclo.dataFim, hoje);
   
@@ -400,7 +401,7 @@ export function calcularIndicadoresCiclo(
     
     competenciasDetalhe.push({
       competenciaId: compId,
-      nome: perfComp?.nomeCompetencia || codigo || `Comp ${compId}`,
+      nome: perfComp?.nomeCompetencia || compIdToNomeMap?.get(compId) || codigo || `Comp ${compId}`,
       aulasConcluidas,
       aulasDisponiveis,
       notaAvaliacao,
@@ -512,7 +513,8 @@ export function calcularIndicadoresAluno(
   compIdToCodigoMap: Map<number, string>,
   casesData: CaseSucessoData[],
   hoje?: Date,
-  macrociclo?: MacrocicloData
+  macrociclo?: MacrocicloData,
+  compIdToNomeMap?: Map<number, string>
 ): StudentIndicatorsV2 {
   // Filtrar registros do aluno
   const mentoriasAluno = mentorias.filter(m => m.idUsuario === idUsuario);
@@ -587,7 +589,7 @@ export function calcularIndicadoresAluno(
   
   for (const ciclo of ciclos) {
     const indicadoresCiclo = calcularIndicadoresCiclo(
-      idUsuario, ciclo, mentorias, eventos, performance, compIdToCodigoMap, casesData, hoje
+      idUsuario, ciclo, mentorias, eventos, performance, compIdToCodigoMap, casesData, hoje, compIdToNomeMap
     );
     
     if (indicadoresCiclo.status === 'futuro') continue; // Ignorar ciclos futuros
@@ -968,7 +970,8 @@ export function calcularIndicadoresTodosAlunos(
   compIdToCodigoMap: Map<number, string>,
   casesData: CaseSucessoData[],
   hoje?: Date,
-  macrocicloPorAluno?: Map<string, MacrocicloData>
+  macrocicloPorAluno?: Map<string, MacrocicloData>,
+  compIdToNomeMap?: Map<number, string>
 ): StudentIndicatorsV2[] {
   // Coletar todos os IDs únicos
   const idsUsuarios = new Set<string>();
@@ -984,7 +987,7 @@ export function calcularIndicadoresTodosAlunos(
     const macrocicloAluno = macrocicloPorAluno?.get(idUsuario);
     
     const indicadores = calcularIndicadoresAluno(
-      idUsuario, mentorias, eventos, performance, ciclosAluno, compIdToCodigoMap, casesAluno, hoje, macrocicloAluno
+      idUsuario, mentorias, eventos, performance, ciclosAluno, compIdToCodigoMap, casesAluno, hoje, macrocicloAluno, compIdToNomeMap
     );
     
     resultados.push(indicadores);

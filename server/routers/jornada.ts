@@ -1,4 +1,5 @@
 import { router, protectedProcedure } from "../_core/trpc";
+import { TRPCError } from '@trpc/server';
 import { z } from "zod";
 import { eq } from 'drizzle-orm';
 import { 
@@ -11,8 +12,22 @@ import {
   getAlunoByUserId,
   getDb,
   getStudentPerformanceByAluno,
-  getCompIdToCodigoMap
+  getCompIdToCodigoMap,
+  getAllMentoringSessions,
+  getAllEventParticipationWithDate,
+  getAlunos,
+  getPrograms,
+  getAllPlanoIndividual,
+  getAllCiclosForCalculatorV2,
+  getCasesForCalculator,
+  getMacrocicloPorAluno,
+  getStudentPerformanceAsRecords,
+  getEventsByProgramOrGlobal,
+  getAlunoMacroInicioMap
 } from "../db";
+import { calcularIndicadoresTodosAlunos, CaseSucessoData } from '../indicatorsCalculatorV2';
+import { cacheOrFetch } from '../dataCache';
+import type { MentoringRecord, EventRecord, PerformanceRecord } from '../excelProcessor';
 import * as schema from '../../drizzle/schema';
 const { programs, ciclosExecucao } = schema;
 
@@ -449,6 +464,402 @@ export const jornadaRouter = router({
         return await getJornadasPorTurma(programResults[0].name);
       } catch (error) {
         console.error('[porTurmaGeral] Erro:', error);
+        return [];
+      }
+    }),
+
+  // Performance dos alunos por ciclo (macrociclo) — tabela abaixo do Gantt
+  performancePorCiclo: protectedProcedure
+    .input(z.object({
+      empresa: z.string(),
+      macroInicio: z.string(), // YYYY-MM-DD
+      macroTermino: z.string(), // YYYY-MM-DD
+    }))
+    .query(async ({ input }) => {
+      try {
+        const [
+          mentoringSessions,
+          eventParticipations,
+          alunosList,
+          programsList,
+          allPlanoItems,
+          studentPerfRecords_parallel,
+          ciclosPorAluno_parallel,
+          compIdToCodigoMap_parallel,
+          casesMap_parallel,
+          macrocicloPorAluno_parallel,
+          macroInicioMap_parallel,
+        ] = await Promise.all([
+          cacheOrFetch('allSessions', () => getAllMentoringSessions()),
+          cacheOrFetch('allEventParticipations', () => getAllEventParticipationWithDate()),
+          cacheOrFetch('alunosList', () => getAlunos()),
+          cacheOrFetch('programsList', () => getPrograms()),
+          cacheOrFetch('allPlanoItems', () => getAllPlanoIndividual()),
+          cacheOrFetch('studentPerfRecords', () => getStudentPerformanceAsRecords()),
+          cacheOrFetch('ciclosPorAluno', () => getAllCiclosForCalculatorV2()),
+          cacheOrFetch('compIdToCodigoMap', () => getCompIdToCodigoMap()),
+          cacheOrFetch('casesMap', () => getCasesForCalculator()),
+          cacheOrFetch('macrocicloPorAluno', () => getMacrocicloPorAluno()),
+          cacheOrFetch('macroInicioMap', () => getAlunoMacroInicioMap()),
+        ]);
+
+        const mentorias: MentoringRecord[] = [];
+        const eventos: EventRecord[] = [];
+        const performance: PerformanceRecord[] = [];
+
+        const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+        const programMap = new Map(programsList.map(p => [p.id, p]));
+
+        for (const session of mentoringSessions) {
+          const aluno = alunoMap.get(session.alunoId);
+          if (!aluno) continue;
+          const program = aluno.programId ? programMap.get(aluno.programId) : null;
+          mentorias.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeAluno: aluno.name,
+            empresa: program?.name || 'Desconhecida',
+            turma: String(aluno.turmaId || ''),
+            dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
+            presenca: session.presence as 'presente' | 'ausente',
+            atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa'),
+            engajamento: session.engagementScore || undefined
+          });
+        }
+
+        for (const participation of eventParticipations) {
+          const aluno = alunoMap.get(participation.alunoId);
+          if (!aluno) continue;
+          const program = aluno.programId ? programMap.get(aluno.programId) : null;
+          eventos.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeAluno: aluno.name,
+            empresa: program?.name || 'Desconhecida',
+            tituloEvento: participation.eventTitle || 'Evento',
+            dataEvento: participation.eventDate ? new Date(participation.eventDate) : undefined,
+            presenca: participation.status as 'presente' | 'ausente'
+          });
+        }
+
+        // Adicionar eventos ausentes
+        {
+          const epEvtIds = new Map<number, Set<number>>();
+          for (const ep of eventParticipations) {
+            if (!epEvtIds.has(ep.alunoId)) epEvtIds.set(ep.alunoId, new Set());
+            epEvtIds.get(ep.alunoId)!.add(ep.eventId);
+          }
+          const evtsByProg = new Map<number, any[]>();
+          await Promise.all(programsList.map(async prog => {
+            evtsByProg.set(prog.id, await getEventsByProgramOrGlobal(prog.id));
+          }));
+          const macroInicioMap = macroInicioMap_parallel;
+          for (const a of alunosList) {
+            if (!a.programId) continue;
+            const progEvts = evtsByProg.get(a.programId) || [];
+            const participated = epEvtIds.get(a.id) || new Set();
+            const aIdStr = a.externalId || String(a.id);
+            const prog = programMap.get(a.programId);
+            const macroInicio = macroInicioMap.get(a.id);
+            for (const evt of progEvts) {
+              if (!participated.has(evt.id)) {
+                if (macroInicio && evt.eventDate) {
+                  const evtDate = new Date(evt.eventDate);
+                  if (evtDate < macroInicio) continue;
+                }
+                eventos.push({
+                  idUsuario: aIdStr,
+                  nomeAluno: a.name,
+                  empresa: prog?.name || 'Desconhecida',
+                  tituloEvento: evt.title || 'Evento',
+                  dataEvento: evt.eventDate ? new Date(evt.eventDate) : undefined,
+                  presenca: 'ausente' as const,
+                });
+              }
+            }
+          }
+        }
+
+        for (const item of allPlanoItems) {
+          if (item.notaAtual) {
+            const aluno = alunoMap.get(item.alunoId);
+            if (!aluno) continue;
+            performance.push({
+              idUsuario: aluno.externalId || String(aluno.id),
+              nomeTurma: '',
+              idCompetencia: String(item.competenciaId),
+              nomeCompetencia: item.competenciaNome || '',
+              notaAvaliacao: parseFloat(item.notaAtual),
+              aprovado: parseFloat(item.notaAtual) >= 7,
+            });
+          }
+        }
+
+        const studentPerfRecords = studentPerfRecords_parallel;
+        const ciclosPorAluno = ciclosPorAluno_parallel;
+        const compIdToCodigoMap = compIdToCodigoMap_parallel;
+        const casesMap = casesMap_parallel;
+        const macrocicloPorAluno = macrocicloPorAluno_parallel;
+        const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+        for (const spRec of studentPerfRecords) {
+          const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(spRec);
+            existingPerfKeys.add(key);
+          }
+        }
+
+        const casesData: CaseSucessoData[] = [];
+        for (const [, cases] of Array.from(casesMap.entries())) { casesData.push(...cases); }
+
+        const todosIndicadores = calcularIndicadoresTodosAlunos(
+          mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno
+        );
+
+        // Filtrar apenas alunos da empresa solicitada
+        const alunosDaEmpresa = todosIndicadores.filter(a => a.empresa === input.empresa);
+
+        // Para cada aluno, encontrar o ciclo que corresponde ao macrociclo selecionado
+        const resultado = alunosDaEmpresa.map(aluno => {
+          const todosCiclos = [...aluno.ciclosFinalizados, ...aluno.ciclosEmAndamento];
+          // Encontrar ciclos que se sobrepõem ao período do macrociclo selecionado
+          const ciclosNoPeriodo = todosCiclos.filter(c => {
+            return c.dataInicio >= input.macroInicio && c.dataFim <= input.macroTermino;
+          });
+
+          // Consolidar indicadores dos ciclos no período (média ponderada)
+          let ind1 = 0, ind2 = 0, ind3 = 0, ind4 = 0, ind5 = 0, ind6 = 0, ind7 = 0;
+          if (ciclosNoPeriodo.length > 0) {
+            ind1 = ciclosNoPeriodo.reduce((s, c) => s + c.ind1_webinars, 0) / ciclosNoPeriodo.length;
+            ind2 = ciclosNoPeriodo.reduce((s, c) => s + c.ind2_avaliacoes, 0) / ciclosNoPeriodo.length;
+            ind3 = ciclosNoPeriodo.reduce((s, c) => s + c.ind3_competencias, 0) / ciclosNoPeriodo.length;
+            ind4 = ciclosNoPeriodo.reduce((s, c) => s + c.ind4_tarefas, 0) / ciclosNoPeriodo.length;
+            ind5 = ciclosNoPeriodo.reduce((s, c) => s + c.ind5_engajamento, 0) / ciclosNoPeriodo.length;
+            ind6 = ciclosNoPeriodo.reduce((s, c) => s + c.ind6_aplicabilidade, 0) / ciclosNoPeriodo.length;
+            ind7 = ciclosNoPeriodo.reduce((s, c) => s + c.ind7_engajamentoFinal, 0) / ciclosNoPeriodo.length;
+          }
+
+          return {
+            idUsuario: aluno.idUsuario,
+            nomeAluno: aluno.nomeAluno,
+            empresa: aluno.empresa,
+            ind1_webinars: Math.round(ind1),
+            ind2_avaliacoes: Math.round(ind2),
+            ind3_competencias: Math.round(ind3),
+            ind4_tarefas: Math.round(ind4),
+            ind5_engajamento: Math.round(ind5),
+            ind6_aplicabilidade: Math.round(ind6),
+            ind7_engajamentoFinal: Math.round(ind7),
+            ciclosEncontrados: ciclosNoPeriodo.length,
+          };
+        });
+
+        return resultado.sort((a, b) => b.ind7_engajamentoFinal - a.ind7_engajamentoFinal);
+      } catch (error) {
+        console.error('[performancePorCiclo] Erro:', error);
+        return [];
+      }
+    }),
+
+  // Lista de alunos de uma empresa (para seletor no frontend)
+  alunosDaEmpresa: protectedProcedure
+    .input(z.object({ empresa: z.string() }))
+    .query(async ({ input }) => {
+      const alunosList = await getAlunos();
+      const programsList = await getPrograms();
+      const programMap = new Map(programsList.map(p => [p.id, p]));
+      return alunosList
+        .filter(a => {
+          if (!a.programId) return false;
+          const prog = programMap.get(a.programId);
+          return prog?.name === input.empresa;
+        })
+        .filter(a => !a.name?.toLowerCase().includes('teste') && !a.name?.toLowerCase().includes('test'))
+        .map(a => ({ id: a.id, nome: a.name }))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+    }),
+
+  // Performance de um aluno por todos os seus ciclos (macrociclos)
+  performancePorAluno: protectedProcedure
+    .input(z.object({
+      empresa: z.string(),
+      alunoId: z.number(),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const [
+          mentoringSessions,
+          eventParticipations,
+          alunosList,
+          programsList,
+          allPlanoItems,
+          studentPerfRecords_parallel,
+          ciclosPorAluno_parallel,
+          compIdToCodigoMap_parallel,
+          casesMap_parallel,
+          macrocicloPorAluno_parallel,
+          macroInicioMap_parallel,
+        ] = await Promise.all([
+          cacheOrFetch('allSessions', () => getAllMentoringSessions()),
+          cacheOrFetch('allEventParticipations', () => getAllEventParticipationWithDate()),
+          cacheOrFetch('alunosList', () => getAlunos()),
+          cacheOrFetch('programsList', () => getPrograms()),
+          cacheOrFetch('allPlanoItems', () => getAllPlanoIndividual()),
+          cacheOrFetch('studentPerfRecords', () => getStudentPerformanceAsRecords()),
+          cacheOrFetch('ciclosPorAluno', () => getAllCiclosForCalculatorV2()),
+          cacheOrFetch('compIdToCodigoMap', () => getCompIdToCodigoMap()),
+          cacheOrFetch('casesMap', () => getCasesForCalculator()),
+          cacheOrFetch('macrocicloPorAluno', () => getMacrocicloPorAluno()),
+          cacheOrFetch('macroInicioMap', () => getAlunoMacroInicioMap()),
+        ]);
+
+        const mentorias: MentoringRecord[] = [];
+        const eventos: EventRecord[] = [];
+        const performance: PerformanceRecord[] = [];
+
+        const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+        const programMap = new Map(programsList.map(p => [p.id, p]));
+
+        for (const session of mentoringSessions) {
+          const aluno = alunoMap.get(session.alunoId);
+          if (!aluno) continue;
+          const program = aluno.programId ? programMap.get(aluno.programId) : null;
+          mentorias.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeAluno: aluno.name,
+            empresa: program?.name || 'Desconhecida',
+            turma: String(aluno.turmaId || ''),
+            dataSessao: session.sessionDate ? new Date(session.sessionDate) : undefined,
+            presenca: session.presence as 'presente' | 'ausente',
+            atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus as 'entregue' | 'nao_entregue' | 'sem_tarefa') || 'sem_tarefa'),
+            engajamento: session.engagementScore || undefined
+          });
+        }
+
+        for (const participation of eventParticipations) {
+          const aluno = alunoMap.get(participation.alunoId);
+          if (!aluno) continue;
+          const program = aluno.programId ? programMap.get(aluno.programId) : null;
+          eventos.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeAluno: aluno.name,
+            empresa: program?.name || 'Desconhecida',
+            tituloEvento: participation.eventTitle || 'Evento',
+            dataEvento: participation.eventDate ? new Date(participation.eventDate) : undefined,
+            presenca: participation.status as 'presente' | 'ausente'
+          });
+        }
+
+        {
+          const epEvtIds = new Map<number, Set<number>>();
+          for (const ep of eventParticipations) {
+            if (!epEvtIds.has(ep.alunoId)) epEvtIds.set(ep.alunoId, new Set());
+            epEvtIds.get(ep.alunoId)!.add(ep.eventId);
+          }
+          const evtsByProg = new Map<number, any[]>();
+          await Promise.all(programsList.map(async prog => {
+            evtsByProg.set(prog.id, await getEventsByProgramOrGlobal(prog.id));
+          }));
+          const macroInicioMap = macroInicioMap_parallel;
+          for (const a of alunosList) {
+            if (!a.programId) continue;
+            const progEvts = evtsByProg.get(a.programId) || [];
+            const participated = epEvtIds.get(a.id) || new Set();
+            const aIdStr = a.externalId || String(a.id);
+            const prog = programMap.get(a.programId);
+            const macroInicio = macroInicioMap.get(a.id);
+            for (const evt of progEvts) {
+              if (!participated.has(evt.id)) {
+                if (macroInicio && evt.eventDate) {
+                  const evtDate = new Date(evt.eventDate);
+                  if (evtDate < macroInicio) continue;
+                }
+                eventos.push({
+                  idUsuario: aIdStr,
+                  nomeAluno: a.name,
+                  empresa: prog?.name || 'Desconhecida',
+                  tituloEvento: evt.title || 'Evento',
+                  dataEvento: evt.eventDate ? new Date(evt.eventDate) : undefined,
+                  presenca: 'ausente' as const,
+                });
+              }
+            }
+          }
+        }
+
+        for (const item of allPlanoItems) {
+          if (item.notaAtual) {
+            const aluno = alunoMap.get(item.alunoId);
+            if (!aluno) continue;
+            performance.push({
+              idUsuario: aluno.externalId || String(aluno.id),
+              nomeTurma: '',
+              idCompetencia: String(item.competenciaId),
+              nomeCompetencia: item.competenciaNome || '',
+              notaAvaliacao: parseFloat(item.notaAtual),
+              aprovado: parseFloat(item.notaAtual) >= 7,
+            });
+          }
+        }
+
+        const studentPerfRecords = studentPerfRecords_parallel;
+        const ciclosPorAluno = ciclosPorAluno_parallel;
+        const compIdToCodigoMap = compIdToCodigoMap_parallel;
+        const casesMap = casesMap_parallel;
+        const macrocicloPorAluno = macrocicloPorAluno_parallel;
+        const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+        for (const spRec of studentPerfRecords) {
+          const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(spRec);
+            existingPerfKeys.add(key);
+          }
+        }
+
+        const casesData: CaseSucessoData[] = [];
+        for (const [, cases] of Array.from(casesMap.entries())) { casesData.push(...cases); }
+
+        const todosIndicadores = calcularIndicadoresTodosAlunos(
+          mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno
+        );
+
+        // Encontrar o aluno solicitado
+        const alunoTarget = alunoMap.get(input.alunoId);
+        if (!alunoTarget) return [];
+        const alunoIdStr = alunoTarget.externalId || String(alunoTarget.id);
+
+        const alunoIndicadores = todosIndicadores.find(a => a.idUsuario === alunoIdStr || a.idUsuario === String(input.alunoId));
+        if (!alunoIndicadores) return [];
+
+        // Usar diretamente os ciclos calculados (mesma fonte do modo Por Ciclo)
+        const todosCiclos = [...alunoIndicadores.ciclosFinalizados, ...alunoIndicadores.ciclosEmAndamento]
+          .sort((a, b) => a.dataInicio.localeCompare(b.dataInicio));
+
+        const fmtPeriodo = (d: string) => {
+          const dt = new Date(d + 'T12:00:00');
+          return dt.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+        };
+
+        const resultado = todosCiclos.map(ciclo => {
+          // Extrair nome da trilha do nomeCiclo (ex: "Basic - Comp1, Comp2" -> "Basic")
+          const trilhaExtraida = ciclo.nomeCiclo?.split(' - ')[0]?.trim() || ciclo.trilhaNome || 'Ciclo';
+          return {
+          nomeAluno: alunoTarget.name,
+          trilhaNome: trilhaExtraida,
+          periodo: `${fmtPeriodo(ciclo.dataInicio)}–${fmtPeriodo(ciclo.dataFim)}`,
+          macroInicio: ciclo.dataInicio,
+          macroTermino: ciclo.dataFim,
+          ind1_webinars: Math.round(ciclo.ind1_webinars),
+          ind2_avaliacoes: Math.round(ciclo.ind2_avaliacoes),
+          ind3_competencias: Math.round(ciclo.ind3_competencias),
+          ind4_tarefas: Math.round(ciclo.ind4_tarefas),
+          ind5_engajamento: Math.round(ciclo.ind5_engajamento),
+          ind6_aplicabilidade: Math.round(ciclo.ind6_aplicabilidade),
+          ind7_engajamentoFinal: Math.round(ciclo.ind7_engajamentoFinal),
+          };
+        });
+
+        return resultado;
+      } catch (error) {
+        console.error('[performancePorAluno] Erro:', error);
         return [];
       }
     }),

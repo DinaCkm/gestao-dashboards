@@ -167,7 +167,7 @@ export async function verificarEEnviarAlertasVencimentoCiclo(options?: {
 
       if (!dryRun) {
         try {
-          const loginUrl = 'https://ecolider.evoluirckm.com';
+          const loginUrl = 'https://ecolider.ecodobem.com';
           const emailData = buildCycleDeadlineAlertEmail({
             alunoName: aluno.name,
             mentorName: mentor?.name || 'N/A',

@@ -4,6 +4,8 @@ import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import EtapaAssessmentCompleta from "./TesteDiscOnboarding";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,11 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  User, ClipboardCheck, Users2, CalendarDays, Video as VideoIcon,
+  User, ClipboardCheck, Users2, CalendarDays, Video as VideoIcon, Info,
   CheckCircle2, Circle, Lock, ChevronRight, ExternalLink, Camera, Briefcase,
   GraduationCap, Clock, Calendar, Target, Award,
   Play, ArrowRight, Sparkles, Heart, Eye, AlertCircle, CheckCircle,
-  BookOpen, TrendingUp, BarChart3, Layers, Star, Zap, Trophy, MapPin, Rocket, MessageCircle, Send, FileText, Video
+  BookOpen, TrendingUp, BarChart3, Layers, Star, Zap, Trophy, MapPin, Rocket, MessageCircle, Send, FileText, Video,
+  Plus, Trash2, Upload, Link2, Building2, Baby, Heart as HeartIcon, Linkedin, Instagram, Facebook
 } from "lucide-react";
 import confetti from "canvas-confetti";
 // Tipos locais (dados agora vêm do banco real)
@@ -143,6 +146,202 @@ function MentoraGuiaBanner({ etapa }: { etapa: number }) {
 // STEPPER DE ONBOARDING
 // ============================================================
 
+const ONBOARDING_STEP_TUTORIALS: Record<number, { title: string; content: string }> = {
+  1: {
+    title: "Cadastro — Seus Dados Pessoais e Profissionais",
+    content: `<div class="space-y-4">
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-blue-800">🎯 Objetivo</p>
+        <p class="text-sm text-blue-700 mt-1">Confirmar e completar seus dados para que sua mentora possa te conhecer melhor antes da primeira sessão.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">📝 O que você precisa preencher:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-blue-600 shrink-0">1.</span><span><strong>Dados Pessoais</strong> — Confirme nome completo, e-mail e telefone.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-blue-600 shrink-0">2.</span><span><strong>Dados Profissionais</strong> — Informe seu cargo atual e área de atuação.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-blue-600 shrink-0">3.</span><span><strong>Minicurrículo</strong> — Breve resumo da sua trajetória e principais experiências.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-blue-600 shrink-0">4.</span><span><strong>Quem é você?</strong> — Seus valores, o que te motiva e como você se vê como pessoa.</span></li>
+        </ol>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p class="text-xs text-amber-700">⚠️ Após concluir o Onboarding, esses dados ficam em modo de visualização. Para atualizar, entre em contato com sua mentora.</p>
+      </div>
+    </div>`
+  },
+  2: {
+    title: "Assessment — Avaliação de Perfil Comportamental",
+    content: `<div class="space-y-4">
+      <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-purple-800">🎯 Objetivo</p>
+        <p class="text-sm text-purple-700 mt-1">Mapear seu perfil comportamental para definir as competências e metas do seu desenvolvimento.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">✅ O que você precisa fazer agora:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">1.</span><span><strong>Realize os testes disponíveis</strong> nesta etapa — eles fazem parte do processo de autoconhecimento e são importantes para a sua mentora.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">2.</span><span><strong>Responda com sinceridade</strong> — não existe resposta certa ou errada. Quanto mais honesto você for, mais preciso será o seu diagnóstico.</span></li>
+        </ol>
+      </div>
+      <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
+        <p class="text-sm font-bold text-orange-800">⚠️ Importante</p>
+        <p class="text-sm text-orange-700 mt-1">A <strong>análise dos resultados e a definição da trilha</strong> serão feitas pela sua mentora no primeiro encontro com você. Ela usará os dados dos testes para personalizar o seu plano de desenvolvimento.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">📋 O que acontece depois:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">1.</span><span><strong>Sua mentora analisa os resultados</strong> — perfil comportamental e competências prioritárias.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-purple-600 shrink-0">2.</span><span><strong>Sua trilha é definida</strong> — competências, metas e foco de cada ciclo mensal.</span></li>
+        </ol>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p class="text-xs text-blue-700">💡 Quanto mais honesto você for nos testes, mais personalizado e eficaz será seu desenvolvimento.</p>
+      </div>
+    </div>`
+  },
+  3: {
+    title: "Mentora — Escolhendo sua Guia de Desenvolvimento",
+    content: `<div class="space-y-4">
+      <div class="bg-pink-50 border border-pink-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-pink-800">🎯 Objetivo</p>
+        <p class="text-sm text-pink-700 mt-1">Escolher a mentora ideal para guiar seu desenvolvimento durante todo o macrociclo.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">🔍 O que observar ao escolher:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-pink-600 shrink-0">1.</span><span><strong>Leia a minibiografia</strong> — trajetória profissional, áreas de expertise e estilo de mentoria.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-pink-600 shrink-0">2.</span><span><strong>Analise as especialidades</strong> — Liderança, Comunicação, Inteligência Emocional, Visão Estratégica.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-pink-600 shrink-0">3.</span><span><strong>Busque alinhamento</strong> — pense nas áreas que mais precisa desenvolver.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-pink-600 shrink-0">4.</span><span><strong>Confirme a escolha</strong> — após confirmar, não é possível alterar sem contato com a administração.</span></li>
+        </ol>
+      </div>
+      <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+        <p class="text-xs text-green-700">✨ Não existe escolha errada. Todas as mentoras são preparadas para conduzir o programa. Confie na sua intuição.</p>
+      </div>
+    </div>`
+  },
+  4: {
+    title: "Agendamento — Sua Primeira Sessão",
+    content: `<div class="space-y-4">
+      <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-teal-800">🎯 Objetivo</p>
+        <p class="text-sm text-teal-700 mt-1">Agendar o seu primeiro encontro com a mentora escolhida.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">📅 Passo a passo:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-teal-600 shrink-0">1.</span><span><strong>Visualize os horários disponíveis</strong> na agenda da sua mentora.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-teal-600 shrink-0">2.</span><span><strong>Escolha data e horário</strong> que melhor se encaixam na sua rotina.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-teal-600 shrink-0">3.</span><span><strong>Confirme o agendamento</strong> — você receberá o link do Google Meet por e-mail e ele ficará disponível aqui no Onboarding.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-teal-600 shrink-0">4.</span><span><strong>Prepare-se</strong> — anote suas principais dificuldades profissionais e expectativas para o programa.</span></li>
+        </ol>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p class="text-xs text-amber-700">⏰ A pontualidade é um sinal de comprometimento. Acesse o link alguns minutos antes do horário marcado.</p>
+      </div>
+    </div>`
+  },
+  5: {
+    title: "1º Encontro — Sessão Inicial com sua Mentora",
+    content: `<div class="space-y-4">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-indigo-800">🎯 Objetivo</p>
+        <p class="text-sm text-indigo-700 mt-1">Participar da primeira sessão onde acontece o Assessment e o início do seu plano de desenvolvimento.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">🎙️ O que acontece nesta sessão:</p>
+        <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
+          <li>Condução do <strong>Assessment comportamental</strong></li>
+          <li>Conhecimento da sua trajetória e objetivos profissionais</li>
+          <li>Definição das primeiras diretrizes do seu PDI</li>
+        </ul>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">✅ Como se preparar:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-indigo-600 shrink-0">1.</span><span>Acesse o link do Google Meet disponível no Onboarding ou no e-mail recebido.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-indigo-600 shrink-0">2.</span><span>Chegue alguns minutos antes — teste áudio e câmera.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-indigo-600 shrink-0">3.</span><span>Esteja em um ambiente tranquilo, sem interrupções.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-indigo-600 shrink-0">4.</span><span>Seja honesto e aberto — quanto mais você compartilhar, mais personalizado será seu plano.</span></li>
+        </ol>
+      </div>
+    </div>`
+  },
+  6: {
+    title: "Sua Jornada — Visão Completa do seu Desenvolvimento",
+    content: `<div class="space-y-4">
+      <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-emerald-800">🎯 Objetivo</p>
+        <p class="text-sm text-emerald-700 mt-1">Conhecer seu plano e entender como está estruturada a sua jornada ao longo do macrociclo.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">🗺️ O que você verá:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-emerald-600 shrink-0">1.</span><span><strong>Linha do Tempo do Macrociclo</strong> — período total do programa com data de início, término e progresso atual.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-emerald-600 shrink-0">2.</span><span><strong>Trilhas de Competências</strong> — quais trilhas foram definidas e as competências de cada ciclo mensal.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-emerald-600 shrink-0">3.</span><span><strong>Metas Desafiadoras</strong> — macro metas e micro metas lançadas pela mentora.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-emerald-600 shrink-0">4.</span><span><strong>Cases Previstos</strong> — quantos cases de aplicabilidade você precisará entregar.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-emerald-600 shrink-0">5.</span><span><strong>Webinars</strong> — os webinars quinzenais programados para o seu período.</span></li>
+        </ol>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p class="text-xs text-blue-700">📌 <strong>Macrociclo:</strong> É o período total do seu contrato de mentoria. Dentro dele, existem ciclos menores (geralmente mensais), cada um focado em competências específicas.</p>
+      </div>
+    </div>`
+  },
+  7: {
+    title: "Meu PDI — Plano de Desenvolvimento Individual",
+    content: `<div class="space-y-4">
+      <div class="bg-violet-50 border border-violet-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-violet-800">🎯 Objetivo</p>
+        <p class="text-sm text-violet-700 mt-1">Conhecer em detalhes o mapa completo da sua jornada de crescimento.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">📋 O PDI define:</p>
+        <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
+          <li>As <strong>competências</strong> desenvolvidas em cada ciclo</li>
+          <li>As <strong>metas desafiadoras</strong> (macro metas e micro metas) que você deve cumprir</li>
+          <li>Os <strong>cases de aplicabilidade</strong> que comprovarão seu desenvolvimento na prática</li>
+          <li>A <strong>trilha de cursos e conteúdos</strong> alinhada ao seu perfil</li>
+        </ul>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">🔍 Como explorar:</p>
+        <ol class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2"><span class="font-bold text-violet-600 shrink-0">1.</span><span>Use as abas de navegação (Visão Geral, Competências, Metas, Cases) para explorar cada seção.</span></li>
+          <li class="flex gap-2"><span class="font-bold text-violet-600 shrink-0">2.</span><span>Após o Onboarding, acesse seu PDI completo em <strong>Portal do Aluno &gt; P.D.I.</strong></span></li>
+        </ol>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p class="text-xs text-amber-700">💡 O PDI é o seu guia de desenvolvimento. Mantenha-o sempre em mente durante as sessões e ao realizar as tarefas práticas.</p>
+      </div>
+    </div>`
+  },
+  8: {
+    title: "Aceite — Confirmação e Início da Jornada",
+    content: `<div class="space-y-4">
+      <div class="bg-rose-50 border border-rose-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-rose-800">🎯 Objetivo</p>
+        <p class="text-sm text-rose-700 mt-1">Confirmar seu compromisso com o programa e oficializar o início da sua jornada.</p>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">🏆 Requisitos para Certificação (Líder Nível I):</p>
+        <ul class="space-y-2 text-sm text-gray-700">
+          <li class="flex gap-2 bg-gray-50 rounded-lg p-2"><span>📊</span><span><strong>Engajamento mínimo de 80%</strong> — participação em webinars, mentorias, cursos e entrega de tarefas</span></li>
+          <li class="flex gap-2 bg-gray-50 rounded-lg p-2"><span>📝</span><span><strong>Cases de aplicabilidade</strong> — evidências reais de aplicação do aprendizado, confirmadas pela liderança ou mentora</span></li>
+          <li class="flex gap-2 bg-gray-50 rounded-lg p-2"><span>🎯</span><span><strong>Metas cumpridas em mínimo de 80%</strong> — as metas desafiadoras assumidas no início da jornada</span></li>
+        </ul>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-gray-800 mb-2">✍️ Assinatura Digital:</p>
+        <p class="text-sm text-gray-700">Digite seu nome completo e clique em <strong>"De Acordo"</strong> para confirmar. Após a assinatura, o Onboarding é concluído e você tem acesso completo à plataforma.</p>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <p class="text-xs text-amber-700">⚠️ Caso tenha dúvidas sobre o plano antes de assinar, clique em <strong>"Gostaria de Rever"</strong> — sua mentora será notificada.</p>
+      </div>
+    </div>`
+  },
+};
+
 const ONBOARDING_STEPS = [
   { id: 1, label: "Cadastro", icon: User, description: "Atualize seus dados" },
   { id: 2, label: "Assessment", icon: ClipboardCheck, description: "Avaliação de perfil" },
@@ -155,9 +354,9 @@ const ONBOARDING_STEPS = [
 ];
 
 function OnboardingStepper({ currentStep, progressStep, onStepClick, readOnly = false }: { currentStep: number; progressStep?: number; onStepClick: (step: number) => void; readOnly?: boolean }) {
-  // Use progressStep (real progress) to determine which steps are completed
-  // This prevents the visual regression when navigating to a previous step
   const effectiveStep = progressStep && progressStep > currentStep ? progressStep : currentStep;
+  const [openTutorial, setOpenTutorial] = useState<number | null>(null);
+  const tutorialData = openTutorial ? ONBOARDING_STEP_TUTORIALS[openTutorial] : null;
   return (
     <div className="w-full mb-8">
       <div className="flex items-center justify-between relative">
@@ -177,23 +376,25 @@ function OnboardingStepper({ currentStep, progressStep, onStepClick, readOnly = 
           return (
             <div
               key={step.id}
-              className="flex flex-col items-center relative z-10 cursor-pointer group"
-              onClick={() => {
-                if (readOnly || isCompleted || isCurrent) onStepClick(step.id);
-                else if (isLocked) toast.info("Esta etapa ainda não está habilitada");
-                else toast.info("Complete as etapas anteriores primeiro");
-              }}
+              className="flex flex-col items-center relative z-10 group"
             >
-              <div className={`
-                w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2
-                ${isCompleted
-                  ? "bg-[#1E40AF] border-[#1E40AF] text-white shadow-lg shadow-blue-500/30"
-                  : isCurrent
-                    ? "bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/40 ring-4 ring-red-400/30 animate-pulse"
-                    : "bg-gray-100 border-red-300 text-red-400"
-                }
-                ${!isLocked ? "group-hover:scale-110" : ""}
-              `}>
+              <div
+                className={`
+                  w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2 cursor-pointer
+                  ${isCompleted
+                    ? "bg-[#1E40AF] border-[#1E40AF] text-white shadow-lg shadow-blue-500/30"
+                    : isCurrent
+                      ? "bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/40 ring-4 ring-red-400/30 animate-pulse"
+                      : "bg-gray-100 border-red-300 text-red-400"
+                  }
+                  ${!isLocked ? "group-hover:scale-110" : ""}
+                `}
+                onClick={() => {
+                  if (readOnly || isCompleted || isCurrent) onStepClick(step.id);
+                  else if (isLocked) toast.info("Esta etapa ainda não está habilitada");
+                  else toast.info("Complete as etapas anteriores primeiro");
+                }}
+              >
                 {isCompleted ? (
                   <CheckCircle2 className="h-6 w-6" />
                 ) : isLocked ? (
@@ -212,10 +413,28 @@ function OnboardingStepper({ currentStep, progressStep, onStepClick, readOnly = 
               }`}>
                 {step.description}
               </span>
+              <button
+                onClick={(e) => { e.stopPropagation(); setOpenTutorial(openTutorial === step.id ? null : step.id); }}
+                className="mt-1 flex items-center gap-0.5 text-[10px] text-gray-400 hover:text-blue-500 transition-colors"
+                title={`Saiba mais sobre ${step.label}`}
+              >
+                <Info className="h-3 w-3" />
+                <span>saiba mais</span>
+              </button>
             </div>
           );
         })}
       </div>
+      {tutorialData && (
+        <Dialog open={!!openTutorial} onOpenChange={(open) => { if (!open) setOpenTutorial(null); }}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold text-[#0A1E3E] leading-snug">{tutorialData.title}</DialogTitle>
+            </DialogHeader>
+            <div dangerouslySetInnerHTML={{ __html: tutorialData.content }} />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -224,17 +443,70 @@ function OnboardingStepper({ currentStep, progressStep, onStepClick, readOnly = 
 // ETAPA 1: CADASTRO / PERFIL
 // ============================================================
 
-function EtapaCadastro({ onComplete, alunoId, contratoNivelId, readOnly = false }: { onComplete: () => void; alunoId: number; contratoNivelId?: number; readOnly?: boolean }) {
+// Listas de áreas padronizadas
+const AREAS_FORMACAO = [
+  "Administração e Gestão", "Ciências Contábeis", "Direito", "Economia",
+  "Educação e Pedagogia", "Engenharia", "Exatas e Tecnologia", "Humanas e Sociais",
+  "Marketing e Comunicação", "Medicina e Saúde", "Psicologia", "Recursos Humanos",
+  "Tecnologia da Informação", "Outras"
+];
+const TIPOS_POS = ["Especialização", "MBA", "Mestrado", "Doutorado", "Pós-graduação lato sensu"];
+const AREAS_CURSOS = [
+  "Liderança", "Gestão de Pessoas", "Gestão de Projetos", "Finanças",
+  "Marketing", "Comunicação", "Tecnologia", "Vendas", "Recursos Humanos",
+  "Empreendedorismo", "Inovação", "Outras"
+];
+
+function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
   const alunoReal = dashData?.found ? dashData.aluno : null;
   const salvarCadastro = trpc.onboarding.salvarCadastro.useMutation();
+  const salvarPerfil = trpc.onboarding.salvarPerfilProfissional.useMutation();
+  const uploadCurriculo = trpc.onboarding.uploadCurriculo.useMutation();
+  const { data: perfilProfData } = trpc.onboarding.buscarPerfilProfissional.useQuery(
+    { alunoId },
+    { enabled: alunoId > 0 }
+  );
   const utils = trpc.useUtils();
 
   const [perfil, setPerfil] = useState({
     nome: "", email: "", telefone: "", empresa: "", cargo: "",
     areaAtuacao: "", minicurriculo: "", quemEVoce: "", programa: "", turma: "", foto: null as string | null,
   });
+  // Dados pessoais complementares
+  const [dataNascimento, setDataNascimento] = useState("");
+  const [estadoCivil, setEstadoCivil] = useState("");
+  const [temFilhos, setTemFilhos] = useState(false);
+  const [quantidadeFilhos, setQuantidadeFilhos] = useState(0);
+  // Expectativas
+  const [expectCurto, setExpectCurto] = useState("");
+  const [expectMedio, setExpectMedio] = useState("");
+  const [expectLongo, setExpectLongo] = useState("");
+  // Formação superior
+  const [formacoes, setFormacoes] = useState<{area:string;curso:string;instituicao:string;ano:string}[]>([]);
+  // Pós-graduações
+  const [posGrads, setPosGrads] = useState<{tipo:string;area:string;nome:string;instituicao:string;ano:string}[]>([]);
+  // Cursos extracurriculares
+  const [cursos, setCursos] = useState<{area:string;nome:string;instituicao:string;cargaHoraria:string;ano:string}[]>([]);
+  // Experiências anteriores
+  const [exps, setExps] = useState<{empresa:string;cargo:string;de:string;ate:string}[]>([]);
+  // Liderança
+  const [expLideranca, setExpLideranca] = useState(false);
+  const [tiposEquipe, setTiposEquipe] = useState<string[]>([]);
+  const [gerenciouLideres, setGerenciouLideres] = useState(false);
+  // Redes sociais
+  const [linkedin, setLinkedin] = useState("");
+  const [facebook, setFacebook] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [tiktok, setTiktok] = useState("");
+  const [outraRede, setOutraRede] = useState("");
+  // Currículo
+  const [curriculoUrl, setCurriculoUrl] = useState("");
+  const [curriculoNome, setCurriculoNome] = useState("");
+  const [uploadingCurriculo, setUploadingCurriculo] = useState(false);
+
   const [initialized, setInitialized] = useState(false);
+  const [perfilInitialized, setPerfilInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
 
   if (alunoReal && !initialized) {
@@ -253,37 +525,104 @@ function EtapaCadastro({ onComplete, alunoId, contratoNivelId, readOnly = false 
     setInitialized(true);
   }
 
+  if (perfilProfData && !perfilInitialized) {
+    const p = perfilProfData as any;
+    if (p.dataNascimento) setDataNascimento(p.dataNascimento.toString().split('T')[0]);
+    if (p.estadoCivil) setEstadoCivil(p.estadoCivil);
+    if (p.temFilhos) setTemFilhos(!!p.temFilhos);
+    if (p.quantidadeFilhos) setQuantidadeFilhos(p.quantidadeFilhos);
+    if (p.expectativaCurtoPrazo) setExpectCurto(p.expectativaCurtoPrazo);
+    if (p.expectativaMedioPrazo) setExpectMedio(p.expectativaMedioPrazo);
+    if (p.expectativaLongoPrazo) setExpectLongo(p.expectativaLongoPrazo);
+    if (p.formacaoSuperior?.length) setFormacoes(p.formacaoSuperior.map((f: any) => ({...f, ano: f.ano?.toString() || ""})));
+    if (p.posGraduacoes?.length) setPosGrads(p.posGraduacoes.map((f: any) => ({...f, ano: f.ano?.toString() || ""})));
+    if (p.cursosExtracurriculares?.length) setCursos(p.cursosExtracurriculares.map((f: any) => ({...f, cargaHoraria: f.cargaHoraria?.toString() || "", ano: f.ano?.toString() || ""})));
+    if (p.experienciasAnteriores?.length) setExps(p.experienciasAnteriores);
+    if (p.experienciaLideranca) setExpLideranca(!!p.experienciaLideranca);
+    if (p.tipoEquipeGerenciada?.length) setTiposEquipe(p.tipoEquipeGerenciada);
+    if (p.gerenciouOutrosLideres) setGerenciouLideres(!!p.gerenciouOutrosLideres);
+    if (p.linkedinUrl) setLinkedin(p.linkedinUrl);
+    if (p.facebookUrl) setFacebook(p.facebookUrl);
+    if (p.instagramUrl) setInstagram(p.instagramUrl);
+    if (p.tiktokUrl) setTiktok(p.tiktokUrl);
+    if (p.outraRedeUrl) setOutraRede(p.outraRedeUrl);
+    if (p.curriculoUrl) { setCurriculoUrl(p.curriculoUrl); setCurriculoNome("Currículo enviado"); }
+    setPerfilInitialized(true);
+  }
+
+  const handleCurriculoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Arquivo muito grande. Máximo 5MB."); return; }
+    const allowed = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+    if (!allowed.includes(file.type)) { toast.error("Formato inválido. Use PDF ou DOC/DOCX."); return; }
+    setUploadingCurriculo(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = (ev.target?.result as string).split(',')[1];
+        const res = await uploadCurriculo.mutateAsync({ alunoId, nomeArquivo: file.name, tipoMime: file.type, dados: base64 });
+        setCurriculoUrl(res.url);
+        setCurriculoNome(file.name);
+        toast.success("Currículo enviado com sucesso!");
+        setUploadingCurriculo(false);
+      };
+      reader.readAsDataURL(file);
+    } catch { toast.error("Erro ao enviar currículo."); setUploadingCurriculo(false); }
+  };
+
+  const toggleTipoEquipe = (tipo: string) => {
+    setTiposEquipe(prev => prev.includes(tipo) ? prev.filter(t => t !== tipo) : [...prev, tipo]);
+  };
+
   const handleSalvar = async () => {
-    if (!alunoId || alunoId === 0) {
-      toast.error("Erro: aluno não identificado. Tente recarregar a página.");
-      return;
-    }
+    if (!alunoId || alunoId === 0) { toast.error("Erro: aluno não identificado."); return; }
     if (!perfil.minicurriculo || perfil.minicurriculo.trim().length < 10) {
-      toast.error("O campo Minicurrículo é obrigatório. Por favor, descreva brevemente sua formação e experiências (mínimo 10 caracteres).");
-      return;
+      toast.error("O campo Minicurrículo é obrigatório (mínimo 10 caracteres)."); return;
     }
     if (!perfil.quemEVoce || perfil.quemEVoce.trim().length < 10) {
-      toast.error("O campo 'Quem é você' é obrigatório. Por favor, conte um pouco sobre você (mínimo 10 caracteres).");
-      return;
+      toast.error("O campo 'Quem é você' é obrigatório (mínimo 10 caracteres)."); return;
     }
+    // Validar cursos extracurriculares: máx 3 e carga horária > 16h
+    const cursosInvalidos = cursos.filter(c => parseInt(c.cargaHoraria) <= 16);
+    if (cursosInvalidos.length > 0) { toast.error("Cursos extracurriculares devem ter carga horária acima de 16 horas."); return; }
+    if (cursos.length > 3) { toast.error("Informe no máximo 3 cursos extracurriculares."); return; }
     setSaving(true);
     try {
       await salvarCadastro.mutateAsync({
-        alunoId,
-        contratoNivelId: contratoNivelId ?? null,
-        nome: perfil.nome || undefined,
-        email: perfil.email || undefined,
-        telefone: perfil.telefone || undefined,
-        cargo: perfil.cargo || undefined,
-        areaAtuacao: perfil.areaAtuacao || undefined,
-        minicurriculo: perfil.minicurriculo || undefined,
+        alunoId, nome: perfil.nome || undefined, email: perfil.email || undefined,
+        telefone: perfil.telefone || undefined, cargo: perfil.cargo || undefined,
+        areaAtuacao: perfil.areaAtuacao || undefined, minicurriculo: perfil.minicurriculo || undefined,
         quemEVoce: perfil.quemEVoce || undefined,
+      });
+      await salvarPerfil.mutateAsync({
+        alunoId,
+        dataNascimento: dataNascimento || undefined,
+        estadoCivil: estadoCivil || undefined,
+        temFilhos,
+        quantidadeFilhos: temFilhos ? quantidadeFilhos : 0,
+        expectativaCurtoPrazo: expectCurto || undefined,
+        expectativaMedioPrazo: expectMedio || undefined,
+        expectativaLongoPrazo: expectLongo || undefined,
+        formacaoSuperior: formacoes.filter(f => f.area && f.curso).map(f => ({...f, ano: f.ano ? parseInt(f.ano) : undefined})),
+        posGraduacoes: posGrads.filter(p => p.tipo && p.nome).map(p => ({...p, ano: p.ano ? parseInt(p.ano) : undefined})),
+        cursosExtracurriculares: cursos.filter(c => c.nome).map(c => ({...c, cargaHoraria: parseInt(c.cargaHoraria) || 0, ano: c.ano ? parseInt(c.ano) : undefined})),
+        experienciasAnteriores: exps.filter(e => e.empresa),
+        experienciaLideranca: expLideranca,
+        tipoEquipeGerenciada: tiposEquipe,
+        gerenciouOutrosLideres: gerenciouLideres,
+        linkedinUrl: linkedin || undefined,
+        facebookUrl: facebook || undefined,
+        instagramUrl: instagram || undefined,
+        tiktokUrl: tiktok || undefined,
+        outraRedeUrl: outraRede || undefined,
+        curriculoUrl: curriculoUrl || undefined,
       });
       utils.indicadores.meuDashboard.invalidate();
       toast.success("Cadastro salvo com sucesso!");
       onComplete();
     } catch (err: any) {
-      toast.error(err?.message || "Erro ao salvar cadastro. Tente novamente.");
+      toast.error(err?.message || "Erro ao salvar cadastro.");
     } finally {
       setSaving(false);
     }
@@ -316,9 +655,7 @@ function EtapaCadastro({ onComplete, alunoId, contratoNivelId, readOnly = false 
             <Badge className="mt-2 bg-[#0A1E3E]/10 text-[#0A1E3E] border-0">
               <GraduationCap className="h-3 w-3 mr-1" />{perfil.programa}
             </Badge>
-            <Badge variant="outline" className="mt-1 text-gray-500">
-              {perfil.turma}
-            </Badge>
+            <Badge variant="outline" className="mt-1 text-gray-500">{perfil.turma}</Badge>
           </CardContent>
         </Card>
 
@@ -326,28 +663,40 @@ function EtapaCadastro({ onComplete, alunoId, contratoNivelId, readOnly = false 
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4 text-[#0A1E3E]" />
-              Dados Pessoais
+              <User className="h-4 w-4 text-[#0A1E3E]" />Dados Pessoais
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Nome Completo</label>
-                <Input value={perfil.nome} onChange={(e) => setPerfil({...perfil, nome: e.target.value})} disabled={readOnly} />
+              <div><label className="text-sm font-medium text-gray-700">Nome Completo</label>
+                <Input value={perfil.nome} onChange={(e) => setPerfil({...perfil, nome: e.target.value})} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Email</label>
+                <Input value={perfil.email} onChange={(e) => setPerfil({...perfil, email: e.target.value})} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Telefone</label>
+                <Input value={perfil.telefone} onChange={(e) => setPerfil({...perfil, telefone: e.target.value})} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Empresa</label>
+                <Input value={perfil.empresa} onChange={(e) => setPerfil({...perfil, empresa: e.target.value})} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Data de Nascimento</label>
+                <Input type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Estado Civil</label>
+                <Select value={estadoCivil} onValueChange={setEstadoCivil} disabled={readOnly}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {["Solteiro(a)","Casado(a)","Divorciado(a)","Viúvo(a)","União estável"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select></div>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Checkbox id="temFilhos" checked={temFilhos} onCheckedChange={(v) => setTemFilhos(!!v)} disabled={readOnly} />
+                <label htmlFor="temFilhos" className="text-sm font-medium text-gray-700">Tem filhos?</label>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Email</label>
-                <Input value={perfil.email} onChange={(e) => setPerfil({...perfil, email: e.target.value})} disabled={readOnly} />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Telefone</label>
-                <Input value={perfil.telefone} onChange={(e) => setPerfil({...perfil, telefone: e.target.value})} disabled={readOnly} />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Empresa</label>
-                <Input value={perfil.empresa} onChange={(e) => setPerfil({...perfil, empresa: e.target.value})} disabled={readOnly} />
-              </div>
+              {temFilhos && (
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Quantos?</label>
+                  <Input type="number" min={1} max={20} value={quantidadeFilhos} onChange={(e) => setQuantidadeFilhos(parseInt(e.target.value)||0)} className="w-20" disabled={readOnly} />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -356,54 +705,271 @@ function EtapaCadastro({ onComplete, alunoId, contratoNivelId, readOnly = false 
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-[#F5991F]" />
-              Dados Profissionais
+              <Briefcase className="h-4 w-4 text-[#F5991F]" />Dados Profissionais
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Cargo</label>
-                <Input value={perfil.cargo} onChange={(e) => setPerfil({...perfil, cargo: e.target.value})} disabled={readOnly} />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Área de Atuação</label>
-                <Input value={perfil.areaAtuacao} onChange={(e) => setPerfil({...perfil, areaAtuacao: e.target.value})} disabled={readOnly} />
-              </div>
+              <div><label className="text-sm font-medium text-gray-700">Cargo</label>
+                <Input value={perfil.cargo} onChange={(e) => setPerfil({...perfil, cargo: e.target.value})} disabled={readOnly} /></div>
+              <div><label className="text-sm font-medium text-gray-700">Área de Atuação</label>
+                <Input value={perfil.areaAtuacao} onChange={(e) => setPerfil({...perfil, areaAtuacao: e.target.value})} disabled={readOnly} /></div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Minicurrículo <span className="text-red-500">*</span></label>
-              <Textarea
-                value={perfil.minicurriculo}
-                onChange={(e) => setPerfil({...perfil, minicurriculo: e.target.value})}
-                placeholder="Descreva brevemente sua formação, experiências e habilidades profissionais..."
-                rows={4}
-                className="resize-none overflow-y-auto"
-                disabled={readOnly}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Quem é você? Conte um pouco como você se define como pessoa. <span className="text-red-500">*</span></label>
-              <Textarea
-                value={perfil.quemEVoce}
-                onChange={(e) => setPerfil({...perfil, quemEVoce: e.target.value})}
-                placeholder="Conte sobre seus valores, interesses, o que te motiva e como você se vê como pessoa..."
-                rows={4}
-                className="resize-none overflow-y-auto"
-                disabled={readOnly}
-              />
-            </div>
+            <div><label className="text-sm font-medium text-gray-700">Minicurrículo <span className="text-red-500">*</span></label>
+              <Textarea value={perfil.minicurriculo} onChange={(e) => setPerfil({...perfil, minicurriculo: e.target.value})} placeholder="Descreva brevemente sua formação, experiências e habilidades profissionais..." rows={3} className="resize-none" disabled={readOnly} /></div>
+            <div><label className="text-sm font-medium text-gray-700">Quem é você? <span className="text-red-500">*</span></label>
+              <Textarea value={perfil.quemEVoce} onChange={(e) => setPerfil({...perfil, quemEVoce: e.target.value})} placeholder="Conte sobre seus valores, interesses, o que te motiva e como você se vê como pessoa..." rows={3} className="resize-none" disabled={readOnly} /></div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Expectativas Profissionais */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Target className="h-4 w-4 text-[#0A1E3E]" />Expectativas para o seu Futuro Profissional
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div><label className="text-sm font-medium text-gray-700">Curto prazo (até 1 ano)</label>
+            <Textarea value={expectCurto} onChange={(e) => setExpectCurto(e.target.value)} placeholder="O que você espera alcançar no curto prazo?" rows={2} className="resize-none" disabled={readOnly} /></div>
+          <div><label className="text-sm font-medium text-gray-700">Médio prazo (1 a 3 anos)</label>
+            <Textarea value={expectMedio} onChange={(e) => setExpectMedio(e.target.value)} placeholder="Quais são seus objetivos para os próximos 1 a 3 anos?" rows={2} className="resize-none" disabled={readOnly} /></div>
+          <div><label className="text-sm font-medium text-gray-700">Longo prazo (acima de 3 anos)</label>
+            <Textarea value={expectLongo} onChange={(e) => setExpectLongo(e.target.value)} placeholder="Qual é a sua visão de futuro profissional a longo prazo?" rows={2} className="resize-none" disabled={readOnly} /></div>
+        </CardContent>
+      </Card>
+
+      {/* Experiências Anteriores */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-[#F5991F]" />Últimas 3 Empresas em que Trabalhou
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {exps.map((exp, i) => (
+            <div key={i} className="grid grid-cols-4 gap-2 items-end border rounded-lg p-3 bg-gray-50">
+              <div><label className="text-xs font-medium text-gray-600">Empresa</label>
+                <Input value={exp.empresa} onChange={(e) => { const n=[...exps]; n[i]={...n[i],empresa:e.target.value}; setExps(n); }} disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">Cargo</label>
+                <Input value={exp.cargo} onChange={(e) => { const n=[...exps]; n[i]={...n[i],cargo:e.target.value}; setExps(n); }} disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">De (mês/ano)</label>
+                <Input placeholder="Ex: 01/2020" value={exp.de} onChange={(e) => { const n=[...exps]; n[i]={...n[i],de:e.target.value}; setExps(n); }} disabled={readOnly} /></div>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1"><label className="text-xs font-medium text-gray-600">Até (mês/ano)</label>
+                  <Input placeholder="Ex: 12/2022" value={exp.ate} onChange={(e) => { const n=[...exps]; n[i]={...n[i],ate:e.target.value}; setExps(n); }} disabled={readOnly} /></div>
+                {!readOnly && <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 shrink-0" onClick={() => setExps(exps.filter((_,j)=>j!==i))}><Trash2 className="h-4 w-4" /></Button>}
+              </div>
+            </div>
+          ))}
+          {!readOnly && exps.length < 3 && (
+            <Button variant="outline" size="sm" onClick={() => setExps([...exps, {empresa:"",cargo:"",de:"",ate:""}])}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar empresa
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Formação Superior */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-[#0A1E3E]" />Formação Superior
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {formacoes.map((f, i) => (
+            <div key={i} className="grid grid-cols-4 gap-2 items-end border rounded-lg p-3 bg-gray-50">
+              <div><label className="text-xs font-medium text-gray-600">Área</label>
+                <Select value={f.area} onValueChange={(v) => { const n=[...formacoes]; n[i]={...n[i],area:v}; setFormacoes(n); }} disabled={readOnly}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{AREAS_FORMACAO.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                </Select></div>
+              <div><label className="text-xs font-medium text-gray-600">Curso</label>
+                <Input value={f.curso} onChange={(e) => { const n=[...formacoes]; n[i]={...n[i],curso:e.target.value}; setFormacoes(n); }} placeholder="Nome do curso" disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">Instituição</label>
+                <Input value={f.instituicao} onChange={(e) => { const n=[...formacoes]; n[i]={...n[i],instituicao:e.target.value}; setFormacoes(n); }} disabled={readOnly} /></div>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1"><label className="text-xs font-medium text-gray-600">Ano</label>
+                  <Input type="number" min={1960} max={2030} value={f.ano} onChange={(e) => { const n=[...formacoes]; n[i]={...n[i],ano:e.target.value}; setFormacoes(n); }} disabled={readOnly} /></div>
+                {!readOnly && <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 shrink-0" onClick={() => setFormacoes(formacoes.filter((_,j)=>j!==i))}><Trash2 className="h-4 w-4" /></Button>}
+              </div>
+            </div>
+          ))}
+          {!readOnly && formacoes.length < 3 && (
+            <Button variant="outline" size="sm" onClick={() => setFormacoes([...formacoes, {area:"",curso:"",instituicao:"",ano:""}])}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar formação
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Pós-graduações */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Award className="h-4 w-4 text-[#F5991F]" />Pós-graduações e MBA
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {posGrads.map((p, i) => (
+            <div key={i} className="grid grid-cols-5 gap-2 items-end border rounded-lg p-3 bg-gray-50">
+              <div><label className="text-xs font-medium text-gray-600">Tipo</label>
+                <Select value={p.tipo} onValueChange={(v) => { const n=[...posGrads]; n[i]={...n[i],tipo:v}; setPosGrads(n); }} disabled={readOnly}>
+                  <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+                  <SelectContent>{TIPOS_POS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select></div>
+              <div><label className="text-xs font-medium text-gray-600">Área</label>
+                <Select value={p.area} onValueChange={(v) => { const n=[...posGrads]; n[i]={...n[i],area:v}; setPosGrads(n); }} disabled={readOnly}>
+                  <SelectTrigger><SelectValue placeholder="Área" /></SelectTrigger>
+                  <SelectContent>{AREAS_FORMACAO.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                </Select></div>
+              <div><label className="text-xs font-medium text-gray-600">Nome do curso</label>
+                <Input value={p.nome} onChange={(e) => { const n=[...posGrads]; n[i]={...n[i],nome:e.target.value}; setPosGrads(n); }} disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">Instituição</label>
+                <Input value={p.instituicao} onChange={(e) => { const n=[...posGrads]; n[i]={...n[i],instituicao:e.target.value}; setPosGrads(n); }} disabled={readOnly} /></div>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1"><label className="text-xs font-medium text-gray-600">Ano</label>
+                  <Input type="number" min={1960} max={2030} value={p.ano} onChange={(e) => { const n=[...posGrads]; n[i]={...n[i],ano:e.target.value}; setPosGrads(n); }} disabled={readOnly} /></div>
+                {!readOnly && <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 shrink-0" onClick={() => setPosGrads(posGrads.filter((_,j)=>j!==i))}><Trash2 className="h-4 w-4" /></Button>}
+              </div>
+            </div>
+          ))}
+          {!readOnly && (
+            <Button variant="outline" size="sm" onClick={() => setPosGrads([...posGrads, {tipo:"",area:"",nome:"",instituicao:"",ano:""}])}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar pós-graduação
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Cursos Extracurriculares */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-[#0A1E3E]" />Cursos Extracurriculares
+          </CardTitle>
+          <p className="text-xs text-gray-500 mt-1">Informe os 3 últimos cursos com carga horária acima de 16 horas</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {cursos.map((c, i) => (
+            <div key={i} className="grid grid-cols-5 gap-2 items-end border rounded-lg p-3 bg-gray-50">
+              <div><label className="text-xs font-medium text-gray-600">Área</label>
+                <Select value={c.area} onValueChange={(v) => { const n=[...cursos]; n[i]={...n[i],area:v}; setCursos(n); }} disabled={readOnly}>
+                  <SelectTrigger><SelectValue placeholder="Área" /></SelectTrigger>
+                  <SelectContent>{AREAS_CURSOS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                </Select></div>
+              <div><label className="text-xs font-medium text-gray-600">Nome do curso</label>
+                <Input value={c.nome} onChange={(e) => { const n=[...cursos]; n[i]={...n[i],nome:e.target.value}; setCursos(n); }} disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">Instituição</label>
+                <Input value={c.instituicao} onChange={(e) => { const n=[...cursos]; n[i]={...n[i],instituicao:e.target.value}; setCursos(n); }} disabled={readOnly} /></div>
+              <div><label className="text-xs font-medium text-gray-600">Carga horária (h)</label>
+                <Input type="number" min={17} value={c.cargaHoraria} onChange={(e) => { const n=[...cursos]; n[i]={...n[i],cargaHoraria:e.target.value}; setCursos(n); }} disabled={readOnly} /></div>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1"><label className="text-xs font-medium text-gray-600">Ano</label>
+                  <Input type="number" min={1990} max={2030} value={c.ano} onChange={(e) => { const n=[...cursos]; n[i]={...n[i],ano:e.target.value}; setCursos(n); }} disabled={readOnly} /></div>
+                {!readOnly && <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 shrink-0" onClick={() => setCursos(cursos.filter((_,j)=>j!==i))}><Trash2 className="h-4 w-4" /></Button>}
+              </div>
+            </div>
+          ))}
+          {!readOnly && cursos.length < 3 && (
+            <Button variant="outline" size="sm" onClick={() => setCursos([...cursos, {area:"",nome:"",instituicao:"",cargaHoraria:"",ano:""}])}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar curso
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Experiência em Liderança */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Users2 className="h-4 w-4 text-[#F5991F]" />Experiência em Liderança
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Checkbox id="expLideranca" checked={expLideranca} onCheckedChange={(v) => setExpLideranca(!!v)} disabled={readOnly} />
+            <label htmlFor="expLideranca" className="text-sm font-medium text-gray-700">Tenho experiência em cargo/função de liderança</label>
+          </div>
+          {expLideranca && (
+            <div className="space-y-3 pl-6">
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Tipo de equipe gerenciada:</p>
+                <div className="flex flex-col gap-2">
+                  {["Pequeno porte (até 5 pessoas)","Médio porte (6 a 20 pessoas)","Grande porte (acima de 20 pessoas)"].map(tipo => (
+                    <div key={tipo} className="flex items-center gap-2">
+                      <Checkbox id={tipo} checked={tiposEquipe.includes(tipo)} onCheckedChange={() => toggleTipoEquipe(tipo)} disabled={readOnly} />
+                      <label htmlFor={tipo} className="text-sm text-gray-700">{tipo}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Checkbox id="gerenciouLideres" checked={gerenciouLideres} onCheckedChange={(v) => setGerenciouLideres(!!v)} disabled={readOnly} />
+                <label htmlFor="gerenciouLideres" className="text-sm font-medium text-gray-700">Já gerenciei outros líderes</label>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Redes Sociais */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Link2 className="h-4 w-4 text-[#0A1E3E]" />Redes Sociais
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="text-sm font-medium text-gray-700 flex items-center gap-1"><Linkedin className="h-3 w-3" /> LinkedIn</label>
+              <Input value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/..." disabled={readOnly} /></div>
+            <div><label className="text-sm font-medium text-gray-700 flex items-center gap-1"><Facebook className="h-3 w-3" /> Facebook</label>
+              <Input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="https://facebook.com/..." disabled={readOnly} /></div>
+            <div><label className="text-sm font-medium text-gray-700 flex items-center gap-1"><Instagram className="h-3 w-3" /> Instagram</label>
+              <Input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="https://instagram.com/..." disabled={readOnly} /></div>
+            <div><label className="text-sm font-medium text-gray-700">TikTok</label>
+              <Input value={tiktok} onChange={(e) => setTiktok(e.target.value)} placeholder="https://tiktok.com/@..." disabled={readOnly} /></div>
+            <div className="col-span-2"><label className="text-sm font-medium text-gray-700">Outra rede social</label>
+              <Input value={outraRede} onChange={(e) => setOutraRede(e.target.value)} placeholder="URL de outra rede social" disabled={readOnly} /></div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Currículo */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="h-4 w-4 text-[#F5991F]" />Currículo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {curriculoUrl ? (
+            <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <FileText className="h-5 w-5 text-green-600" />
+              <span className="text-sm text-green-700 flex-1">{curriculoNome}</span>
+              <a href={curriculoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline">Visualizar</a>
+              {!readOnly && <Button variant="ghost" size="sm" className="text-red-500" onClick={() => { setCurriculoUrl(""); setCurriculoNome(""); }}>Remover</Button>}
+            </div>
+          ) : (
+            !readOnly && (
+              <div>
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                  <Upload className="h-6 w-6 text-gray-400 mb-1" />
+                  <span className="text-sm text-gray-500">{uploadingCurriculo ? "Enviando..." : "Clique para enviar PDF ou DOC (máx. 5MB)"}</span>
+                  <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleCurriculoUpload} disabled={uploadingCurriculo} />
+                </label>
+              </div>
+            )
+          )}
+        </CardContent>
+      </Card>
+
       {!readOnly && (
         <div className="flex justify-end">
-          <Button
-            className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base"
-            onClick={handleSalvar}
-            disabled={saving}
-          >
+          <Button className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base" onClick={handleSalvar} disabled={saving}>
             {saving ? "Salvando..." : "Salvar e Continuar"} <ChevronRight className="h-5 w-5 ml-2" />
           </Button>
         </div>
@@ -1346,7 +1912,7 @@ function EtapaPrimeiroEncontro({ mentora, onComplete, progressoData, readOnly = 
 // ETAPA 6: MEU PDI — Visualização Completa do Plano de Desenvolvimento
 // ============================================================
 
-function EtapaMeuPDI({ onComplete, alunoId, contratoNivelId, readOnly = false }: { onComplete: () => void; alunoId: number; contratoNivelId?: number; readOnly?: boolean }) {
+function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const { data: metasData } = trpc.metas.minhas.useQuery();
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
@@ -1420,7 +1986,7 @@ function EtapaMeuPDI({ onComplete, alunoId, contratoNivelId, readOnly = false }:
   const handleVisualizar = async () => {
     if (readOnly) return;
     try {
-      await marcarPdi.mutateAsync({ alunoId, contratoNivelId: contratoNivelId ?? null });
+      await marcarPdi.mutateAsync({ alunoId });
       setVisualizado(true);
       utils.onboarding.progresso.invalidate();
       onComplete();
@@ -2191,9 +2757,9 @@ function EtapaMeuPDI({ onComplete, alunoId, contratoNivelId, readOnly = false }:
 // ETAPA 7: SUA JORNADA — Vídeos de Apresentação
 // ============================================================
 
-function EtapaSuaJornada({ onComplete, alunoId, contratoNivelId, readOnly = false }: { onComplete: () => void; alunoId: number; contratoNivelId?: number; readOnly?: boolean }) {
+function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
   const { data: videos } = trpc.onboarding.videos.useQuery();
-  const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId, contratoNivelId: contratoNivelId ?? null }, { enabled: alunoId > 0 });
+  const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId }, { enabled: alunoId > 0 });
   const marcarVideo = trpc.onboarding.marcarVideoAssistido.useMutation();
   const utils = trpc.useUtils();
 
@@ -2216,7 +2782,7 @@ function EtapaSuaJornada({ onComplete, alunoId, contratoNivelId, readOnly = fals
     }
   }, [progressoData?.jornada]);
 
-  const todosAssistidos = Object.values(assistidos).every(v => v);
+  const todosAssistidos = assistidos.boas_vindas === true;
   const totalAssistidos = Object.values(assistidos).filter(v => v).length;
 
   const VIDEO_ICONS: Record<string, any> = {
@@ -2230,7 +2796,7 @@ function EtapaSuaJornada({ onComplete, alunoId, contratoNivelId, readOnly = fals
   const handleMarcarAssistido = async (chave: string) => {
     if (readOnly || assistidos[chave]) return;
     try {
-      const result = await marcarVideo.mutateAsync({ alunoId, contratoNivelId: contratoNivelId ?? null, chave: chave as any });
+      const result = await marcarVideo.mutateAsync({ alunoId, chave: chave as any });
       setAssistidos(prev => ({ ...prev, [chave]: true }));
       utils.onboarding.progresso.invalidate();
       if (result.todosAssistidos) {
@@ -2269,16 +2835,16 @@ function EtapaSuaJornada({ onComplete, alunoId, contratoNivelId, readOnly = fals
             <span className="text-sm">Progresso dos vídeos</span>
             <div className="flex items-center gap-2">
               <div className="w-32 h-2 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-[#F5991F] rounded-full transition-all duration-500" style={{ width: `${(totalAssistidos / 5) * 100}%` }} />
+                <div className="h-full bg-[#F5991F] rounded-full transition-all duration-500" style={{ width: `${assistidos.boas_vindas ? 100 : 0}%` }} />
               </div>
-              <span className="text-sm font-bold">{totalAssistidos}/5</span>
+              <span className="text-sm font-bold">{assistidos.boas_vindas ? 1 : 0}/1</span>
             </div>
           </div>
         </div>
 
         <CardContent className="p-6">
           <div className="space-y-4">
-            {(videos || []).map((video: any) => {
+            {(videos || []).filter((video: any) => video.chave === 'boas_vindas').map((video: any) => {
               const config = VIDEO_ICONS[video.chave] || VIDEO_ICONS.boas_vindas;
               const Icon = config.icon;
               const isAssistido = assistidos[video.chave];
@@ -2391,7 +2957,7 @@ function EtapaSuaJornada({ onComplete, alunoId, contratoNivelId, readOnly = fals
               <div className="flex items-start gap-3">
                 <Sparkles className="h-6 w-6 text-[#F5991F] shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-bold text-[#0A1E3E] mb-1">Você está preparada!</h3>
+                  <h3 className="font-bold text-[#0A1E3E] mb-1">Agora sua Jornada está preparada!</h3>
                   <p className="text-sm text-gray-700 leading-relaxed">
                     Agora você conhece todos os recursos disponíveis para sua jornada. 
                     O próximo passo é o mais importante: assumir o compromisso com o seu desenvolvimento!
@@ -2423,11 +2989,11 @@ function EtapaSuaJornada({ onComplete, alunoId, contratoNivelId, readOnly = fals
 // ETAPA 8: ACEITE E INÍCIO — Compromisso Formal
 // ============================================================
 
-function EtapaAceite({ onComplete, alunoId, contratoNivelId, readOnly = false }: { onComplete: () => void; alunoId: number; contratoNivelId?: number; readOnly?: boolean }) {
+function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
   const [, setLocation] = useLocation();
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
-  const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId, contratoNivelId: contratoNivelId ?? null }, { enabled: alunoId > 0 });
+  const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId }, { enabled: alunoId > 0 });
   const realizarAceite = trpc.onboarding.realizarAceite.useMutation();
   const solicitarRevisao = trpc.onboarding.solicitarRevisaoAceite.useMutation();
   const utils = trpc.useUtils();
@@ -2525,7 +3091,7 @@ function EtapaAceite({ onComplete, alunoId, contratoNivelId, readOnly = false }:
   const handleDeAcordo = async () => {
     if (readOnly || !assinaturaPreenchida) return;
     try {
-      await realizarAceite.mutateAsync({ alunoId, contratoNivelId: contratoNivelId ?? null, nomeAceite: nomeAceite.trim() });
+      await realizarAceite.mutateAsync({ alunoId, nomeAceite: nomeAceite.trim() });
       setAceitou(true);
       utils.onboarding.progresso.invalidate();
       utils.aluno.onboardingStatus.invalidate();
@@ -2856,25 +3422,10 @@ export default function OnboardingAluno() {
   const [stepInitialized, setStepInitialized] = useState(false);
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
-  const queryNivel = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    const raw = new URLSearchParams(window.location.search).get("nivelId");
-    const parsed = raw ? Number(raw) : NaN;
-    return Number.isFinite(parsed) ? parsed : null;
-  }, []);
 
   const alunoId = dashData?.found ? dashData.aluno?.id || 0 : 0;
-  const { data: contextoNivel } = trpc.onboarding.contextoNivel.useQuery(
-    { alunoId, contratoNivelId: queryNivel ?? undefined },
-    { enabled: alunoId > 0 }
-  );
-  const contratoNivelId = contextoNivel?.visualizandoNivelId ?? queryNivel ?? undefined;
-  const { data: nivelStatus } = trpc.contratoNiveis.statusOperacional.useQuery(
-    { alunoId, contratoNivelId: contratoNivelId ?? null },
-    { enabled: alunoId > 0 }
-  );
   const { data: progressoData } = trpc.onboarding.progresso.useQuery(
-    { alunoId, contratoNivelId: contratoNivelId ?? null },
+    { alunoId },
     { enabled: alunoId > 0 }
   );
 
@@ -2920,8 +3471,7 @@ export default function OnboardingAluno() {
   // - Aluno COM onboardingCompleto = readOnly (completou o fluxo)
   // - Aluno SEM PDI ou COM onboarding liberado = pode editar (aluno novo ou novo ciclo)
   const globalReadOnly = !!(progressoData?.onboardingCompleto) || 
-    !!(onboardingStatus?.hasPdi && !onboardingStatus?.needsOnboarding) ||
-    !!contextoNivel?.isHistorico;
+    !!(onboardingStatus?.hasPdi && !onboardingStatus?.needsOnboarding);
   
   // Etapas anteriores ao progresso real ficam em readOnly (para não refazer)
   const isViewingPreviousStep = !globalReadOnly && currentStep < progressStep;
@@ -2972,26 +3522,6 @@ export default function OnboardingAluno() {
             </Button>
           </div>
         </div>
-
-        {contextoNivel?.vigente && (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700">
-            <span className="font-semibold">Nível vigente:</span> {contextoNivel.vigente.nivel}
-            {nivelStatus?.nivel?.statusOperacional && (
-              <span className="ml-2">• <span className="font-semibold">Status:</span> {nivelStatus.nivel.statusOperacional}</span>
-            )}
-            {contextoNivel.isHistorico && <span className="ml-2 text-amber-700 font-semibold">• Visualizando onboarding histórico (somente leitura)</span>}
-          </div>
-        )}
-
-        {nivelStatus?.bloqueadoNovasAtribuicoes && (
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-orange-600 shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-orange-800">Nível em fechamento operacional</p>
-              <p className="text-xs text-orange-700">Novas atribuições pedagógicas estão bloqueadas neste nível. Apenas regularização de pendências já abertas é permitida.</p>
-            </div>
-          </div>
-        )}
 
         {/* Stepper */}
         <OnboardingStepper currentStep={currentStep} progressStep={progressStep} onStepClick={(step) => {
@@ -3047,13 +3577,12 @@ export default function OnboardingAluno() {
         )}
 
         {/* Etapas */}
-        {currentStep === 1 && <EtapaCadastro onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} contratoNivelId={contratoNivelId} readOnly={readOnly} />}
+        {currentStep === 1 && <EtapaCadastro onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
         {currentStep === 2 && (
           <EtapaAssessmentCompleta
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
-            contratoNivelId={contratoNivelId}
             onComplete={handleStepComplete}
-            readOnly={(readOnly && !reassessmentElegivel) || !!nivelStatus?.bloqueadoNovasAtribuicoes}
+            readOnly={readOnly && !reassessmentElegivel}
           />
         )}
         {currentStep === 3 && (
@@ -3069,9 +3598,9 @@ export default function OnboardingAluno() {
         )}
         {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
         {currentStep === 5 && <EtapaPrimeiroEncontro mentora={selectedMentora} onComplete={handleStepComplete} progressoData={progressoData ?? undefined} readOnly={readOnly} />}
-        {currentStep === 6 && <EtapaSuaJornada onComplete={handleStepComplete} alunoId={alunoId} contratoNivelId={contratoNivelId} readOnly={readOnly} />}
-        {currentStep === 7 && <EtapaMeuPDI onComplete={handleStepComplete} alunoId={alunoId} contratoNivelId={contratoNivelId} readOnly={readOnly} />}
-        {currentStep === 8 && <EtapaAceite onComplete={handleStepComplete} alunoId={alunoId} contratoNivelId={contratoNivelId} readOnly={readOnly} />}
+        {currentStep === 6 && <EtapaSuaJornada onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
+        {currentStep === 7 && <EtapaMeuPDI onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
+        {currentStep === 8 && <EtapaAceite onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
       </div>
     </AlunoLayout>
   );

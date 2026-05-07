@@ -59,6 +59,7 @@ import {
   alunoModuloProgresso, InsertAlunoModuloProgresso, AlunoModuloProgresso,
   alunoModuloRelato, InsertAlunoModuloRelato, AlunoModuloRelato,
   alunoModuloAvaliacao, InsertAlunoModuloAvaliacao, AlunoModuloAvaliacao,
+  alunoAtividadeProgresso, InsertAlunoAtividadeProgresso, AlunoAtividadeProgresso,
   alunoCompetenciaProrrogacao, InsertAlunoCompetenciaProrrogacao, AlunoCompetenciaProrrogacao,
   cursosCompetencias, InsertCursoCompetencia, CursoCompetencia,
   atividadesCurso, InsertAtividadeCurso, AtividadeCurso,
@@ -3772,6 +3773,17 @@ export async function getCompIdToCodigoMap(): Promise<Map<number, string>> {
   return map;
 }
 
+export async function getCompIdToNomeMap(): Promise<Map<number, string>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  const allComps = await db.select({ id: competencias.id, nome: competencias.nome }).from(competencias);
+  const map = new Map<number, string>();
+  for (const comp of allComps) {
+    if (comp.nome) map.set(comp.id, comp.nome);
+  }
+  return map;
+}
+
 // ============ DETALHE COMPLETO DO ALUNO ============
 
 /**
@@ -5619,7 +5631,10 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
 
   for (const evt of allEvents) {
     const core = extractCore(normalizeTitle(evt.title));
-    const dedupKey = core;
+    // CORREÇÃO: incluir data na chave para não colapsar eventos distintos do mesmo tema
+    // (ex: Aula 01, 02, 03, 04 de "Resiliência e Proatividade" têm o mesmo core mas datas diferentes)
+    const evtDateStr = evt.eventDate ? new Date(evt.eventDate).toISOString().split('T')[0] : 'nodate';
+    const dedupKey = `${core}|${evtDateStr}`;
     
     if (!coreToAllIds.has(dedupKey)) coreToAllIds.set(dedupKey, []);
     coreToAllIds.get(dedupKey)!.push(evt.id);
@@ -6439,6 +6454,58 @@ export async function getJornadaCompleta(alunoId: number) {
     }
   }
   
+  // 7. Fallback: para alunos da plataforma, buscar progresso real de aluno_atividade_progresso
+  // para competências que ainda não têm registro em student_performance
+  const cursosAtribuidosAluno = await db.select({
+    id: alunoCursoAtribuido.id,
+    cursoId: alunoCursoAtribuido.cursoId,
+    competenciaId: alunoCursoAtribuido.competenciaId,
+    status: alunoCursoAtribuido.status,
+  }).from(alunoCursoAtribuido).where(eq(alunoCursoAtribuido.alunoId, alunoId));
+
+  for (const cursoAtrib of cursosAtribuidosAluno) {
+    const codigo = compCodigoMap[cursoAtrib.competenciaId];
+    // Só preencher se não há registro em student_performance
+    if (codigo && perfMap[codigo]) continue;
+    // Contar atividades aprovadas e total do curso (apenas ativas)
+    const [totalResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(atividadesCurso).where(and(eq(atividadesCurso.cursoId, cursoAtrib.cursoId), eq(atividadesCurso.isActive, 1)));
+    const [aprovResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(alunoAtividadeProgresso)
+      .where(and(
+        eq(alunoAtividadeProgresso.alunoId, alunoId),
+        eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtrib.id),
+        eq(alunoAtividadeProgresso.status, 'aprovada')
+      ));
+    const [andResult] = await db.select({ count: sql<number>`COUNT(*)` })
+      .from(alunoAtividadeProgresso)
+      .where(and(
+        eq(alunoAtividadeProgresso.alunoId, alunoId),
+        eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtrib.id),
+        eq(alunoAtividadeProgresso.status, 'em_andamento')
+      ));
+    const total = Number(totalResult?.count || 0);
+    const aprovadas = Number(aprovResult?.count || 0);
+    const emAndamento = Number(andResult?.count || 0);
+    if (total === 0) continue;
+    const progressoTotal = Math.round((aprovadas / total) * 100);
+    const key = codigo || String(cursoAtrib.competenciaId);
+    perfMap[key] = {
+      progressoTotal,
+      mediaRespondidas: 0,
+      mediaDisponiveis: 0,
+      totalAulas: total,
+      aulasDisponiveis: total,
+      aulasConcluidas: aprovadas,
+      aulasEmAndamento: emAndamento,
+      aulasNaoIniciadas: total - aprovadas - emAndamento,
+      avaliacoesRespondidas: 0,
+      avaliacoesDisponiveis: 0,
+    };
+    // Se não há codigo, também indexar pelo competenciaId como string
+    if (!codigo) perfMap[String(cursoAtrib.competenciaId)] = perfMap[key];
+  }
+
   // 7. Montar estrutura hierárquica — helper para enriquecer competência
   const buildMicroJornada = (comp: typeof allComps[0]) => {
     const codigo = compCodigoMap[comp.competenciaId];
@@ -7015,25 +7082,23 @@ export async function createAlunoDireto(data: {
 export async function liberarOnboardingAluno(alunoId: number) {
   const db = await getDb();
   if (!db) return { success: false, message: 'Erro de conexão com banco' };
-
   // Verificar se o aluno existe e tem PDI
   const [aluno] = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
   if (!aluno) return { success: false, message: 'Aluno não encontrado' };
-
   const [pdiCount] = await db.select({ count: sql<number>`COUNT(*)` })
     .from(assessmentPdi)
     .where(eq(assessmentPdi.alunoId, alunoId));
   if ((pdiCount?.count ?? 0) === 0) {
     return { success: false, message: 'Aluno não tem PDI. Já deve ir para onboarding automaticamente.' };
   }
-
+  // Arquivar ciclo atual (DISC + PDI) antes de liberar novo ciclo
+  const { numeroCiclo } = await arquivarCicloAtual(alunoId);
   // Marcar onboarding como liberado
   await db.update(alunos).set({
     onboardingLiberado: 1,
     onboardingLiberadoEm: new Date(),
   }).where(eq(alunos.id, alunoId));
-
-  return { success: true, message: 'Onboarding liberado para novo ciclo' };
+  return { success: true, message: `Onboarding liberado para novo ciclo. Ciclo ${numeroCiclo} arquivado na página de Evolução.` };
 }
 
 export async function liberarOnboardingEmMassa(alunoIds: number[]) {
@@ -7076,6 +7141,14 @@ export async function liberarOnboardingEmMassa(alunoIds: number[]) {
   }
 
   if (idsParaLiberar.length > 0) {
+    // Arquivar ciclo atual de cada aluno antes de liberar
+    for (const id of idsParaLiberar) {
+      try {
+        await arquivarCicloAtual(id);
+      } catch (e) {
+        console.warn(`[DB] Erro ao arquivar ciclo do aluno ${id}:`, e);
+      }
+    }
     await db.update(alunos).set({
       onboardingLiberado: 1,
       onboardingLiberadoEm: new Date(),
@@ -7939,13 +8012,15 @@ export async function getJornadasPorTurma(empresa?: string) {
   let filteredPdis = pdis;
   if (empresa) {
     const programsList = await db.select().from(programs);
-    const alunosList = await db.select({ id: alunos.id, programId: alunos.programId }).from(alunos);
+    const alunosList = await db.select({ id: alunos.id, programId: alunos.programId, name: alunos.name }).from(alunos);
     const alunoMap = new Map(alunosList.map(a => [a.id, a]));
     const programMap = new Map(programsList.map(p => [p.id, p]));
     
     filteredPdis = pdis.filter(pdi => {
       const aluno = alunoMap.get(pdi.alunoId);
       if (!aluno || !aluno.programId) return false;
+      const nameLower = (aluno.name || '').toLowerCase();
+      if (nameLower.includes('teste') || nameLower.includes('test')) return false;
       const program = programMap.get(aluno.programId);
       return program?.name === empresa;
     });
@@ -7970,12 +8045,20 @@ export async function getJornadasPorTurma(empresa?: string) {
   
   // Buscar programs map para pegar nomes de empresas
   const programsList = await db.select().from(programs);
-  const alunosList = await db.select({ id: alunos.id, programId: alunos.programId }).from(alunos);
+  const alunosList = await db.select({ id: alunos.id, programId: alunos.programId, name: alunos.name }).from(alunos);
   const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+  
+  // Filtrar PDIs de alunos de teste
+  filteredPdis = filteredPdis.filter(pdi => {
+    const aluno = alunoMap.get(pdi.alunoId);
+    if (!aluno) return false;
+    const nameLower = (aluno.name || '').toLowerCase();
+    return !nameLower.includes('teste') && !nameLower.includes('test');
+  });
   const programMap = new Map(programsList.map(p => [p.id, p]));
   
-  // Agrupar por turma
-  const turmaGroups = new Map<number, {
+  // Agrupar por turma + trilha + macroInicio (para suportar turmas com múltiplas trilhas)
+  const turmaGroups = new Map<string, {
     turmaId: number;
     turmaNome: string;
     turmaCode: string; // BS1, BS2, BS3
@@ -7996,7 +8079,7 @@ export async function getJornadasPorTurma(empresa?: string) {
     const codeMatch = turma.name.match(/\[(BS\d+)\]/);
     const turmaCode = codeMatch ? codeMatch[1] : turma.name;
     
-    const key = pdi.turmaId!;
+    const key = `${pdi.turmaId}_${pdi.trilhaId}_${pdi.macroInicio}`;
     if (!turmaGroups.has(key)) {
       // Buscar micro ciclos para esta turma (pegar de qualquer aluno, são iguais)
       const pdiComps = allComps.filter(c => c.assessmentPdiId === pdi.id);
@@ -10991,7 +11074,7 @@ export async function atualizarStatusCursoAtribuido(alunoId: number, cursoId: nu
  * @returns true se pode fazer avaliacao, false se esta bloqueado
  */
 
-// ============ CERTIFICAÇÃO DE NÍVEL (FASE 7) ============
+// ============ CERTIFICAÇÃO DE NÍVEL (FASE 7) =====
 
 export async function getCertificationTemplates(nivel?: "I" | "II" | "III" | "IV"): Promise<CertificationTemplate[]> {
   const db = await getDb();
@@ -11138,4 +11221,344 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
     motivo: motivos.join(" "),
     nivel,
   };
+=======
+/**
+ * Sincroniza student_performance para alunos que cursam pela plataforma.
+ * Chamada após conclusão de curso (submeterAvaliacao / concluirAtividade).
+ *
+ * Lógica:
+ *  - aulasConcluidas  = atividades com status "aprovada" no cursoAtribuído
+ *  - aulasDisponiveis = total de atividades do curso
+ *  - mediaAvaliacoesRespondidas = notaFinal do alunoCursoAtribuido (0-100)
+ *  - idCompetencia    = codigoIntegracao da competência (para o calculador casar)
+ *  - idUsuario        = externalId do aluno
+ */
+export async function syncStudentPerformanceFromPlatform(
+  alunoId: number,
+  cursoAtribuidoId: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    // 1. Buscar o curso atribuído
+    const [cursoAtrib] = await db
+      .select()
+      .from(alunoCursoAtribuido)
+      .where(
+        and(
+          eq(alunoCursoAtribuido.id, cursoAtribuidoId),
+          eq(alunoCursoAtribuido.alunoId, alunoId)
+        )
+      )
+      .limit(1);
+    if (!cursoAtrib) return;
+    const { cursoId, competenciaId } = cursoAtrib;
+
+    // 2. Buscar dados do aluno
+    const [alunoData] = await db
+      .select({ externalId: alunos.externalId, name: alunos.name, email: alunos.email })
+      .from(alunos)
+      .where(eq(alunos.id, alunoId))
+      .limit(1);
+    if (!alunoData) return;
+    const externalUserId = alunoData.externalId || String(alunoId);
+
+    // 3. Buscar codigoIntegracao da competência
+    const [compData] = await db
+      .select({ codigoIntegracao: competencias.codigoIntegracao, nome: competencias.nome })
+      .from(competencias)
+      .where(eq(competencias.id, competenciaId))
+      .limit(1);
+    const externalCompetenciaId = compData?.codigoIntegracao || String(competenciaId);
+    const competenciaName = compData?.nome || '';
+
+    // 4. Contar atividades do curso (total e aprovadas)
+    const todasAtividades = await db
+      .select({ id: atividadesCurso.id })
+      .from(atividadesCurso)
+      .where(and(eq(atividadesCurso.cursoId, cursoId), eq(atividadesCurso.isActive, 1)));
+    const aulasDisponiveis = todasAtividades.length;
+
+    const atividadesAprovadas = await db
+      .select({ notaFinal: alunoAtividadeProgresso.notaFinal })
+      .from(alunoAtividadeProgresso)
+      .where(
+        and(
+          eq(alunoAtividadeProgresso.alunoId, alunoId),
+          eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtribuidoId),
+          eq(alunoAtividadeProgresso.status, 'aprovada')
+        )
+      );
+     const aulasConcluidas = atividadesAprovadas.length;
+    // 5. Calcular nota média APENAS das atividades que têm avaliação (notaFinal != null)
+    // Atividades sem avaliação cadastrada não entram no cálculo — divisor = qtd com nota
+    let mediaAvaliacoesRespondidas: string | null = null;
+    const atividadesComNota = atividadesAprovadas.filter(
+      (n) => n.notaFinal !== null && n.notaFinal !== undefined
+    );
+    if (atividadesComNota.length > 0) {
+      const somaNotas = atividadesComNota.reduce(
+        (acc, n) => acc + parseFloat(String(n.notaFinal)), 0
+      );
+      const media010 = somaNotas / atividadesComNota.length; // média só das que têm nota
+      mediaAvaliacoesRespondidas = (media010 * 10).toFixed(2); // escala 0-100
+    }
+
+    const progressoTotal = aulasDisponiveis > 0
+      ? Math.round((aulasConcluidas / aulasDisponiveis) * 100)
+      : 0;
+    const dataConclusaoStr = aulasConcluidas >= aulasDisponiveis && aulasDisponiveis > 0
+      ? new Date().toISOString().split('T')[0]
+      : null;
+
+    // 6. Upsert no studentPerformance (mesmo formato da planilha)
+    const existing = await db
+      .select({ id: studentPerformance.id })
+      .from(studentPerformance)
+      .where(
+        and(
+          eq(studentPerformance.alunoId, alunoId),
+          eq(studentPerformance.competenciaId, competenciaId)
+        )
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      await db
+        .update(studentPerformance)
+        .set({
+          externalUserId,
+          aulasConcluidas,
+          aulasDisponiveis,
+          totalAulas: aulasDisponiveis,
+          progressoTotal,
+          avaliacoesRespondidas: atividadesComNota.length,
+          mediaAvaliacoesRespondidas: mediaAvaliacoesRespondidas as any,
+          dataConclusao: dataConclusaoStr,
+          updatedAt: new Date(),
+        })
+        .where(eq(studentPerformance.id, existing[0].id));
+    } else {
+      await db.insert(studentPerformance).values({
+        alunoId,
+        externalUserId,
+        userName: alunoData.name || '',
+        userEmail: alunoData.email || null,
+        competenciaId,
+        externalCompetenciaId,
+        competenciaName,
+        aulasConcluidas,
+        aulasDisponiveis,
+        totalAulas: aulasDisponiveis,
+        progressoTotal,
+        avaliacoesRespondidas: atividadesComNota.length,
+        mediaAvaliacoesRespondidas: mediaAvaliacoesRespondidas as any,
+        dataConclusao: dataConclusaoStr,
+      });
+    }
+  } catch (error) {
+    console.error('[syncStudentPerformanceFromPlatform] Error:', error);
+    // Não propagar erro para não interromper o fluxo principal
+  }
+}
+
+// ============ BIBLIOTECA PEDAGÓGICA - CRIAÇÃO AUTOMÁTICA DE TABELAS ============
+export async function ensureBibliotecaPedagogicaTables(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw(`
+      CREATE TABLE IF NOT EXISTS \`fichas_pedagogicas_competencias\` (
+        \`id\` int AUTO_INCREMENT PRIMARY KEY,
+        \`competenciaId\` int NOT NULL,
+        \`linhaDesenvolvimento\` text NOT NULL,
+        \`objetivoPedagogico\` text NOT NULL,
+        \`oQueEnsina\` text NOT NULL,
+        \`quandoIndicar\` text NOT NULL,
+        \`sinaisObservaveis\` text NOT NULL,
+        \`cuidadoIndicacao\` text,
+        \`resumoMentor\` text NOT NULL,
+        \`descricaoAluno\` text NOT NULL,
+        \`sugestaoDesenvolvimentoCompetencia\` text NOT NULL,
+        \`status\` enum('rascunho','publicada','inativa') NOT NULL DEFAULT 'rascunho',
+        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        \`createdBy\` varchar(255),
+        \`updatedBy\` varchar(255)
+      )
+    `));
+    await db.execute(sql.raw(`
+      CREATE TABLE IF NOT EXISTS \`fichas_pedagogicas_conteudos\` (
+        \`id\` int AUTO_INCREMENT PRIMARY KEY,
+        \`competenciaId\` int NOT NULL,
+        \`conteudoId\` int NOT NULL,
+        \`tipoConteudo\` enum('intro','filme','video','tedtalk','podcast','livro','curso','outro') NOT NULL,
+        \`nomeConteudo\` varchar(255) NOT NULL,
+        \`linkConteudo\` varchar(1000),
+        \`papelPedagogico\` text NOT NULL,
+        \`oQueAlunoAprende\` text NOT NULL,
+        \`reflexaoEsperada\` text NOT NULL,
+        \`quandoUsar\` text,
+        \`orientacaoMentor\` text NOT NULL,
+        \`descricaoAluno\` text NOT NULL,
+        \`status\` enum('rascunho','publicada','inativa') NOT NULL DEFAULT 'rascunho',
+        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        \`createdBy\` varchar(255),
+        \`updatedBy\` varchar(255)
+      )
+    `));
+    console.log("[DB] Tabelas da Biblioteca Pedagógica verificadas/criadas com sucesso.");
+  } catch (error) {
+    console.error("[DB] Erro ao criar tabelas da Biblioteca Pedagógica:", error);
+  }
+}
+
+// ============ PERFIL PROFISSIONAL DO ALUNO ============
+export async function ensurePerfilProfissionalColumns(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const columns = [
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `dataNascimento` date",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `estadoCivil` varchar(30)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `temFilhos` tinyint(1) DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `quantidadeFilhos` int DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `expectativaCurtoPrazo` text",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `expectativaMedioPrazo` text",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `expectativaLongoPrazo` text",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `formacaoSuperior` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `posGraduacoes` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `cursosExtracurriculares` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `experienciasAnteriores` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `experienciaLideranca` tinyint(1) DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `tipoEquipeGerenciada` json",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `gerenciouOutrosLideres` tinyint(1) DEFAULT 0",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `linkedinUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `facebookUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `instagramUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `tiktokUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `outraRedeUrl` varchar(500)",
+    "ALTER TABLE `alunos` ADD COLUMN IF NOT EXISTS `curriculoUrl` varchar(1000)",
+  ];
+  for (const col of columns) {
+    try {
+      await db.execute(sql.raw(col));
+    } catch (e: any) {
+      if (!e?.message?.includes("Duplicate column")) {
+        console.warn("[DB] ensurePerfilProfissionalColumns:", e?.message);
+      }
+    }
+  }
+  console.log("[DB] Colunas de perfil profissional verificadas/criadas com sucesso.");
+}
+
+// ============ HISTÓRICO DE CICLOS DO ALUNO ============
+export async function ensureHistoricoCiclosTable(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw(`
+      CREATE TABLE IF NOT EXISTS \`historico_ciclos_aluno\` (
+        \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`alunoId\` int NOT NULL,
+        \`numeroCiclo\` int NOT NULL DEFAULT 1,
+        \`discResultadoId\` int,
+        \`assessmentPdiId\` int,
+        \`dataInicio\` timestamp NULL,
+        \`dataConclusao\` timestamp NULL,
+        \`observacoes\` text,
+        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `));
+    console.log("[DB] Tabela historico_ciclos_aluno verificada/criada com sucesso.");
+  } catch (error) {
+    console.error("[DB] Erro ao criar tabela historico_ciclos_aluno:", error);
+  }
+}
+
+/**
+ * Arquiva o ciclo atual do aluno (DISC + PDI) antes de liberar novo ciclo de onboarding.
+ * Chamado por liberarOnboardingAluno antes de setar onboardingLiberado=1.
+ */
+export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo: number }> {
+  const db = await getDb();
+  if (!db) return { numeroCiclo: 1 };
+
+  // Buscar o último DISC do aluno (ciclo mais recente)
+  const [discRows] = await db.execute(sql.raw(
+    `SELECT id, ciclo FROM disc_resultados WHERE alunoId = ${alunoId} ORDER BY ciclo DESC, createdAt DESC LIMIT 1`
+  )) as any;
+  const discRow = Array.isArray(discRows) ? discRows[0] : null;
+
+  // Buscar o PDI ativo do aluno
+  const [pdiRows] = await db.execute(sql.raw(
+    `SELECT id FROM assessment_pdi WHERE alunoId = ${alunoId} ORDER BY createdAt DESC LIMIT 1`
+  )) as any;
+  const pdiRow = Array.isArray(pdiRows) ? pdiRows[0] : null;
+
+  // Buscar o aceite do onboarding para pegar dataInicio
+  const [jornadaRows] = await db.execute(sql.raw(
+    `SELECT aceiteRealizadoEm FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
+  )) as any;
+  const jornada = Array.isArray(jornadaRows) ? jornadaRows[0] : null;
+
+  // Determinar o número do próximo ciclo
+  const [maxCicloRows] = await db.execute(sql.raw(
+    `SELECT COALESCE(MAX(numeroCiclo), 0) as maxCiclo FROM historico_ciclos_aluno WHERE alunoId = ${alunoId}`
+  )) as any;
+  const maxCicloArr = Array.isArray(maxCicloRows) ? maxCicloRows : [];
+  const maxCiclo = maxCicloArr[0]?.maxCiclo ?? 0;
+  const numeroCiclo = (Number(maxCiclo) || 0) + 1;
+
+  // Montar valores para INSERT
+  const discId = discRow?.id ? String(discRow.id) : 'NULL';
+  const pdiId = pdiRow?.id ? String(pdiRow.id) : 'NULL';
+  const dataInicio = jornada?.aceiteRealizadoEm
+    ? `'${new Date(jornada.aceiteRealizadoEm).toISOString().slice(0, 19).replace('T', ' ')}'`
+    : 'NULL';
+
+  // Inserir registro de histórico
+  await db.execute(sql.raw(
+    `INSERT INTO historico_ciclos_aluno (alunoId, numeroCiclo, discResultadoId, assessmentPdiId, dataInicio, dataConclusao, createdAt, updatedAt)
+     VALUES (${alunoId}, ${numeroCiclo}, ${discId}, ${pdiId}, ${dataInicio}, NOW(), NOW(), NOW())`
+  ));
+
+  console.log(`[DB] Ciclo ${numeroCiclo} arquivado para aluno ${alunoId}. DISC: ${discRow?.id ?? 'N/A'}, PDI: ${pdiRow?.id ?? 'N/A'}`);
+  return { numeroCiclo };
+}
+
+/**
+ * Busca o histórico de ciclos de um aluno para a página de Evolução.
+ */
+export async function getHistoricoCiclosAluno(alunoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const [rows] = await db.execute(sql.raw(`
+    SELECT
+      h.id,
+      h.numeroCiclo,
+      h.discResultadoId,
+      h.assessmentPdiId,
+      h.dataInicio,
+      h.dataConclusao,
+      h.observacoes,
+      h.createdAt,
+      dr.perfilPredominante,
+      dr.perfilSecundario,
+      dr.scoreD,
+      dr.scoreI,
+      dr.scoreS,
+      dr.scoreC,
+      dr.completedAt as discCompletadoEm,
+      ap.macroInicio,
+      ap.macroTermino,
+      ap.status as pdiStatus
+    FROM historico_ciclos_aluno h
+    LEFT JOIN disc_resultados dr ON dr.id = h.discResultadoId
+    LEFT JOIN assessment_pdi ap ON ap.id = h.assessmentPdiId
+    WHERE h.alunoId = ${alunoId}
+    ORDER BY h.numeroCiclo ASC
+  `)) as any;
+  return Array.isArray(rows) ? rows : [];
 }

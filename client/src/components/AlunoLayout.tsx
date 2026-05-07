@@ -6,7 +6,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
-import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp, Sparkles } from "lucide-react";
+import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp, Sparkles, MessageCircle } from "lucide-react";
 import RoleSwitcher from "@/components/RoleSwitcher";
 
 /** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
@@ -256,6 +256,17 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
           </p>
         </div>
       </footer>
+
+      {/* Botão Fixo Fale Conosco */}
+      <div className="fixed bottom-6 right-6 z-[100]">
+        <a
+          href="https://ckmtalents.com.br/fale-conosco/"
+          className="flex items-center gap-2 bg-[#F5991F] hover:bg-[#e08a1a] text-white px-5 py-3 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 font-bold text-sm group"
+        >
+          <MessageCircle className="h-5 w-5 transition-transform group-hover:rotate-12" />
+          <span>FALE CONOSCO</span>
+        </a>
+      </div>
     </div>
   );
 }

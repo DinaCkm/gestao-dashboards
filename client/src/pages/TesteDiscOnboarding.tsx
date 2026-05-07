@@ -250,11 +250,9 @@ const COMPETENCIA_DESCRICOES: Record<string, { oQueE: string; impacto: string }>
 
 function TesteDisc({
   alunoId,
-  contratoNivelId,
   onComplete,
 }: {
   alunoId: number;
-  contratoNivelId?: number;
   onComplete: (scores: DiscScores, predominante: DiscDimensao, secundario: DiscDimensao) => void;
 }) {
   const { data: perguntasData } = trpc.disc.perguntas.useQuery();
@@ -356,7 +354,6 @@ function TesteDisc({
 
       const resultado = await salvarMutation.mutateAsync({
         alunoId,
-        contratoNivelId: contratoNivelId ?? null,
         respostas: respostasArray,
       });
 
@@ -709,11 +706,9 @@ function TesteDisc({
 
 function ReguaAutopercepção({
   alunoId,
-  contratoNivelId,
   onComplete,
 }: {
   alunoId: number;
-  contratoNivelId?: number;
   onComplete: () => void;
 }) {
   const { data: competenciasData } = trpc.competencias.listWithTrilha.useQuery();
@@ -789,7 +784,7 @@ function ReguaAutopercepção({
         };
       });
 
-      await salvarMutation.mutateAsync({ alunoId, contratoNivelId: contratoNivelId ?? null, avaliacoes });
+      await salvarMutation.mutateAsync({ alunoId, avaliacoes });
       toast.success("Autopercepção salva com sucesso!");
       onComplete();
     } catch {
@@ -994,21 +989,19 @@ function ReguaAutopercepção({
 
 function RelatorioAutoconhecimento({
   alunoId,
-  contratoNivelId,
   discScores,
   perfilPredominante,
   perfilSecundario,
   onComplete,
 }: {
   alunoId: number;
-  contratoNivelId?: number;
   discScores: DiscScores | null;
   perfilPredominante: DiscDimensao | null;
   perfilSecundario: DiscDimensao | null;
   onComplete: () => void;
 }) {
   const { data: perfisData } = trpc.disc.perfis.useQuery();
-  const { data: autopercepcoesData } = trpc.autopercepção.porAluno.useQuery({ alunoId, contratoNivelId: contratoNivelId ?? null });
+  const { data: autopercepcoesData } = trpc.autopercepção.porAluno.useQuery({ alunoId });
   const { data: competenciasData } = trpc.competencias.listWithTrilha.useQuery();
   const { data: trilhasData } = trpc.trilhas.list.useQuery();
   const { data: contribuicoesData } = trpc.contribuicoesMentora.porAluno.useQuery({ alunoId });
@@ -1363,27 +1356,25 @@ function RelatorioAutoconhecimento({
 
 export default function EtapaAssessmentCompleta({
   alunoId,
-  contratoNivelId,
   onComplete,
   readOnly = false,
 }: {
   alunoId: number;
-  contratoNivelId?: number;
   onComplete: () => void;
   readOnly?: boolean;
 }) {
   // Verificar se já fez o teste
-  const { data: discResultado } = trpc.disc.resultado.useQuery({ alunoId, contratoNivelId: contratoNivelId ?? null }, { enabled: !!alunoId });
-  const { data: autopercepcoesExistentes } = trpc.autopercepção.porAluno.useQuery({ alunoId, contratoNivelId: contratoNivelId ?? null }, { enabled: !!alunoId });
+  const { data: discResultado } = trpc.disc.resultado.useQuery({ alunoId }, { enabled: !!alunoId });
+  const { data: autopercepcoesExistentes } = trpc.autopercepção.porAluno.useQuery({ alunoId }, { enabled: !!alunoId });
 
   const [subEtapa, setSubEtapa] = useState<SubEtapa>("disc");
   const [discScores, setDiscScores] = useState<DiscScores | null>(null);
   const [perfilPredominante, setPerfilPredominante] = useState<DiscDimensao | null>(null);
   const [perfilSecundario, setPerfilSecundario] = useState<DiscDimensao | null>(null);
 
-  // Se já fez o teste, ir direto para o relatório
+  // Se readOnly ou já fez o teste, ir direto para o relatório
   useMemo(() => {
-    if (discResultado && autopercepcoesExistentes && autopercepcoesExistentes.length > 0) {
+    if (discResultado) {
       setDiscScores({
         D: Number(discResultado.scoreD),
         I: Number(discResultado.scoreI),
@@ -1392,19 +1383,16 @@ export default function EtapaAssessmentCompleta({
       });
       setPerfilPredominante(discResultado.perfilPredominante as DiscDimensao);
       setPerfilSecundario(discResultado.perfilSecundario as DiscDimensao);
-      setSubEtapa("relatorio");
-    } else if (discResultado && (!autopercepcoesExistentes || autopercepcoesExistentes.length === 0)) {
-      setDiscScores({
-        D: Number(discResultado.scoreD),
-        I: Number(discResultado.scoreI),
-        S: Number(discResultado.scoreS),
-        C: Number(discResultado.scoreC),
-      });
-      setPerfilPredominante(discResultado.perfilPredominante as DiscDimensao);
-      setPerfilSecundario(discResultado.perfilSecundario as DiscDimensao);
-      setSubEtapa("autopercepção");
+      if (readOnly) {
+        // Veterano: sempre vai direto para o relatório, sem poder refazer
+        setSubEtapa("relatorio");
+      } else if (autopercepcoesExistentes && autopercepcoesExistentes.length > 0) {
+        setSubEtapa("relatorio");
+      } else {
+        setSubEtapa("autopercepção");
+      }
     }
-  }, [discResultado, autopercepcoesExistentes]);
+  }, [discResultado, autopercepcoesExistentes, readOnly]);
 
   // Sub-stepper
   const subSteps = [
@@ -1453,36 +1441,46 @@ export default function EtapaAssessmentCompleta({
       </div>
 
       {/* Conteúdo da sub-etapa */}
-      {subEtapa === "disc" && (
-        <TesteDisc
-          alunoId={alunoId}
-          contratoNivelId={contratoNivelId}
-          onComplete={(scores, predominante, secundario) => {
-            setDiscScores(scores);
-            setPerfilPredominante(predominante);
-            setPerfilSecundario(secundario);
-            setSubEtapa("autopercepção");
-          }}
-        />
-      )}
-
-      {subEtapa === "autopercepção" && (
-        <ReguaAutopercepção
-          alunoId={alunoId}
-          contratoNivelId={contratoNivelId}
-          onComplete={() => setSubEtapa("relatorio")}
-        />
-      )}
-
-      {subEtapa === "relatorio" && (
+      {/* Veterano (readOnly): mostra apenas o relatório, sem poder refazer o teste */}
+      {readOnly ? (
         <RelatorioAutoconhecimento
           alunoId={alunoId}
-          contratoNivelId={contratoNivelId}
           discScores={discScores}
           perfilPredominante={perfilPredominante}
           perfilSecundario={perfilSecundario}
           onComplete={onComplete}
         />
+      ) : (
+        <>
+          {subEtapa === "disc" && (
+            <TesteDisc
+              alunoId={alunoId}
+              onComplete={(scores, predominante, secundario) => {
+                setDiscScores(scores);
+                setPerfilPredominante(predominante);
+                setPerfilSecundario(secundario);
+                setSubEtapa("autopercepção");
+              }}
+            />
+          )}
+
+          {subEtapa === "autopercepção" && (
+            <ReguaAutopercepção
+              alunoId={alunoId}
+              onComplete={() => setSubEtapa("relatorio")}
+            />
+          )}
+
+          {subEtapa === "relatorio" && (
+            <RelatorioAutoconhecimento
+              alunoId={alunoId}
+              discScores={discScores}
+              perfilPredominante={perfilPredominante}
+              perfilSecundario={perfilSecundario}
+              onComplete={onComplete}
+            />
+          )}
+        </>
       )}
     </div>
   );

@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 import {
   Target, CheckCircle2, XCircle, Clock, TrendingUp,
   ChevronDown, ChevronRight, AlertCircle, Flag, Calendar,
-  MessageSquare, Loader2, BookOpen, Trophy
+  MessageSquare, Loader2, BookOpen, Trophy, CircleDot
 } from "lucide-react";
 import DualIndicators from "@/components/DualIndicators";
 import {
@@ -34,7 +34,7 @@ function getStatusColor(status: string) {
     case "cumprida": return "bg-emerald-100 text-emerald-700 border-emerald-200";
     case "nao_cumprida": return "bg-red-100 text-red-700 border-red-200";
     case "parcial": return "bg-amber-100 text-amber-700 border-amber-200";
-    default: return "bg-gray-100 text-gray-500 border-gray-200";
+    default: return "bg-blue-50 text-blue-600 border-blue-200";
   }
 }
 
@@ -43,7 +43,7 @@ function getStatusLabel(status: string) {
     case "cumprida": return "Cumprida";
     case "nao_cumprida": return "Não cumprida";
     case "parcial": return "Parcial";
-    default: return "Pendente";
+    default: return "Em andamento";
   }
 }
 
@@ -52,7 +52,7 @@ function getStatusIcon(status: string) {
     case "cumprida": return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
     case "nao_cumprida": return <XCircle className="h-4 w-4 text-red-500" />;
     case "parcial": return <Clock className="h-4 w-4 text-amber-500" />;
-    default: return <AlertCircle className="h-4 w-4 text-gray-400" />;
+    default: return <CircleDot className="h-4 w-4 text-blue-500" />;
   }
 }
 
@@ -61,8 +61,7 @@ function getStatusIcon(status: string) {
 // ============================================================
 export default function MinhasMetasAluno() {
   const { data, isLoading, isError } = trpc.metas.minhas.useQuery();
-  const [expandedCompetencias, setExpandedCompetencias] = useState<Set<string>>(new Set());
-  const [expandedMetas, setExpandedMetas] = useState<Set<number>>(new Set());
+  const [expandedMicroMetas, setExpandedMicroMetas] = useState<Set<number>>(new Set());
 
   // Alerta de atualização de metas
   const alunoId = data?.alunoId;
@@ -74,61 +73,32 @@ export default function MinhasMetasAluno() {
   // Indicadores V2 do aluno (para Engajamento)
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
 
-  // Agrupar metas por competência
-  const metasPorCompetencia = useMemo(() => {
+  // Separar macro meta (primeira criada) e micro metas (demais)
+  const { macroMeta, microMetas } = useMemo(() => {
     const metasList = data?.metas;
-    if (!metasList || metasList.length === 0) return [];
-    const map = new Map<string, { competenciaNome: string; competenciaId: number; metas: typeof metasList }>();
-    for (const meta of metasList) {
-      const key = meta.competenciaNome;
-      if (!map.has(key)) {
-        map.set(key, { competenciaNome: key, competenciaId: meta.competenciaId, metas: [] as unknown as typeof metasList });
-      }
-      (map.get(key)!.metas as any[]).push(meta);
-    }
-    return Array.from(map.values());
+    if (!metasList || metasList.length === 0) return { macroMeta: null, microMetas: [] };
+    const ordenadas = [...metasList].sort(
+      (a: any, b: any) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+    );
+    return {
+      macroMeta: ordenadas[0] ?? null,
+      microMetas: ordenadas.slice(1),
+    };
   }, [data?.metas]);
 
-  // Dados para o gráfico de barras por competência
-  const chartData = useMemo(() => {
-    if (!data?.resumo?.porCompetencia || data.resumo.porCompetencia.length === 0) return [];
-    return metasPorCompetencia.map(group => ({
-      name: group.competenciaNome.length > 20
-        ? group.competenciaNome.substring(0, 18) + "..."
-        : group.competenciaNome,
-      fullName: group.competenciaNome,
-      percentual: (() => {
-        const comp = data.resumo.porCompetencia.find(
-          (c: any) => c.competenciaId === group.competenciaId
-        );
-        return comp?.percentual ?? 0;
-      })(),
-      cumpridas: (() => {
-        const comp = data.resumo.porCompetencia.find(
-          (c: any) => c.competenciaId === group.competenciaId
-        );
-        return comp?.cumpridas ?? 0;
-      })(),
-      total: (() => {
-        const comp = data.resumo.porCompetencia.find(
-          (c: any) => c.competenciaId === group.competenciaId
-        );
-        return comp?.total ?? 0;
-      })(),
-    }));
-  }, [data?.resumo?.porCompetencia, metasPorCompetencia]);
+  // Calcular progresso das micro metas
+  const progressoMicroMetas = useMemo(() => {
+    if (microMetas.length === 0) return 0;
+    const cumpridas = microMetas.filter((m: any) => m.ultimoStatus === "cumprida").length;
+    return Math.round((cumpridas / microMetas.length) * 100);
+  }, [microMetas]);
 
-  const toggleCompetencia = (nome: string) => {
-    setExpandedCompetencias(prev => {
-      const next = new Set(prev);
-      if (next.has(nome)) next.delete(nome);
-      else next.add(nome);
-      return next;
-    });
-  };
+  // Dados para o gráfico de barras por competência (mantido para visão geral)
+  const resumo = data?.resumo || { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
+  const naoCumpridas = resumo.total - resumo.cumpridas;
 
-  const toggleMeta = (id: number) => {
-    setExpandedMetas(prev => {
+  const toggleMicroMeta = (id: number) => {
+    setExpandedMicroMetas(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -161,12 +131,9 @@ export default function MinhasMetasAluno() {
     );
   }
 
-  const resumo = data?.resumo || { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
-  const naoCumpridas = resumo.total - resumo.cumpridas;
-
   return (
     <AlunoLayout>
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
           <div className="bg-[#0A1E3E] p-3 rounded-xl">
@@ -271,56 +238,8 @@ export default function MinhasMetasAluno() {
           </Card>
         </div>
 
-        {/* Gráfico de Evolução por Competência */}
-        {chartData.length > 0 && (
-          <Card className="border border-gray-200 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-[#E87B2F]" />
-                Evolução por Competência
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 60)}>
-                <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 30, top: 5, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={160}
-                    tick={{ fontSize: 12, fill: "#374151" }}
-                  />
-                  <Tooltip
-                    formatter={(value: number, _name: string, props: any) => [
-                      `${value}% (${props.payload.cumpridas}/${props.payload.total} metas)`,
-                      "Atingimento"
-                    ]}
-                    labelFormatter={(label: string, payload: any[]) =>
-                      payload?.[0]?.payload?.fullName || label
-                    }
-                  />
-                  <Bar dataKey="percentual" radius={[0, 6, 6, 0]} barSize={28}>
-                    {chartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={
-                          entry.percentual >= 80 ? "#059669" :
-                          entry.percentual >= 50 ? "#E87B2F" :
-                          entry.percentual >= 25 ? "#d97706" :
-                          "#dc2626"
-                        }
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Estado vazio */}
-        {metasPorCompetencia.length === 0 && (
+        {!macroMeta && (
           <Card className="border border-dashed border-gray-300">
             <CardContent className="p-12 text-center">
               <Target className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -333,118 +252,157 @@ export default function MinhasMetasAluno() {
           </Card>
         )}
 
-        {/* Lista de Competências com Metas */}
-        {metasPorCompetencia.map(group => {
-          const isExpanded = expandedCompetencias.has(group.competenciaNome);
-          const compResumo = resumo.porCompetencia.find(
-            (c: any) => c.competenciaId === group.competenciaId
-          );
-          const compPercentual = compResumo?.percentual ?? 0;
-          const compCumpridas = compResumo?.cumpridas ?? 0;
+        {/* ====== MACRO META + MICRO METAS (CARD UNIFICADO) ====== */}
+        {macroMeta && (
+          <Card className="border border-gray-200 shadow-sm overflow-hidden">
+            {/* ---- MACRO META ---- */}
+            <div className="border-b border-gray-100">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
+                  <Flag className="h-5 w-5 text-[#0A1E3E]" />
+                  Meta Desafiadora Principal
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 pb-5 space-y-4">
+                {/* Título e descrição */}
+                <div>
+                  <p className="text-lg font-bold text-gray-900">{(macroMeta as any).titulo}</p>
+                  {(macroMeta as any).descricao && (
+                    <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                      {(macroMeta as any).descricao}
+                    </p>
+                  )}
+                </div>
 
-          return (
-            <Card key={group.competenciaNome} className="border border-gray-200 shadow-sm overflow-hidden">
-              {/* Competência Header */}
-              <button
-                onClick={() => toggleCompetencia(group.competenciaNome)}
-                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  {isExpanded
-                    ? <ChevronDown className="h-5 w-5 text-gray-400" />
-                    : <ChevronRight className="h-5 w-5 text-gray-400" />
-                  }
-                  <BookOpen className="h-5 w-5 text-[#0A1E3E]" />
-                  <div className="text-left">
-                    <h3 className="font-semibold text-gray-800">{group.competenciaNome}</h3>
-                    <p className="text-xs text-gray-500">
-                      {group.metas.length} meta{group.metas.length !== 1 ? "s" : ""} &middot; {compCumpridas} cumprida{compCumpridas !== 1 ? "s" : ""}
+                {/* Competência vinculada */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg border border-gray-100 bg-gray-50">
+                    <p className="text-xs text-gray-400 mb-1">Competência vinculada</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {(macroMeta as any).competenciaNome || "—"}
                     </p>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right mr-2">
-                    <span className={`text-sm font-bold ${
-                      compPercentual >= 80 ? "text-emerald-600" :
-                      compPercentual >= 50 ? "text-[#E87B2F]" :
-                      "text-red-500"
-                    }`}>
-                      {compPercentual}%
-                    </span>
-                  </div>
-                  <div className="w-24">
-                    <Progress value={compPercentual} className="h-2" />
+                  <div className="p-3 rounded-lg border border-gray-100 bg-gray-50">
+                    <p className="text-xs text-gray-400 mb-1">Status atual</p>
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon((macroMeta as any).ultimoStatus || "")}
+                      <span className="text-sm font-semibold text-gray-800">
+                        {getStatusLabel((macroMeta as any).ultimoStatus || "")}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </button>
 
-              {/* Metas da Competência */}
-              {isExpanded && (
-                <div className="border-t border-gray-100">
-                  {group.metas.map(meta => {
-                    const isMetaExpanded = expandedMetas.has(meta.id);
-                    const historico = (meta as any).historicoAcompanhamento || [];
+                {/* Progresso consolidado das micro metas */}
+                {microMetas.length > 0 && (
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>Progresso consolidado (micro metas)</span>
+                      <span className="font-semibold text-gray-700">{progressoMicroMetas}%</span>
+                    </div>
+                    <Progress value={progressoMicroMetas} className="h-2" />
+                  </div>
+                )}
+
+                {/* Data e prazo */}
+                <div className="flex items-center gap-4 text-xs text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    Criada em {formatDate((macroMeta as any).createdAt)}
+                  </span>
+                  {(macroMeta as any).ultimoMes && (macroMeta as any).ultimoAno && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Último registro: {meses[((macroMeta as any).ultimoMes as number) - 1]} {(macroMeta as any).ultimoAno}
+                    </span>
+                  )}
+                </div>
+              </CardContent>
+            </div>
+
+            {/* ---- MICRO METAS ---- */}
+            {microMetas.length > 0 && (
+              <div className="bg-gray-50/50">
+                <div className="px-6 py-3 border-b border-gray-100 flex items-center gap-2">
+                  <CircleDot className="h-4 w-4 text-[#E87B2F]" />
+                  <span className="text-sm font-semibold text-gray-700">
+                    Micro Metas
+                  </span>
+                  <span className="ml-auto text-xs text-gray-400">
+                    {microMetas.filter((m: any) => m.ultimoStatus === "cumprida").length}/{microMetas.length} cumpridas
+                  </span>
+                </div>
+
+                <div className="divide-y divide-gray-100">
+                  {microMetas.map((micro: any, idx: number) => {
+                    const isExpanded = expandedMicroMetas.has(micro.id);
+                    const historico = micro.historicoAcompanhamento || [];
+                    const contribuicao = microMetas.length > 0 ? Math.round(100 / microMetas.length) : 0;
 
                     return (
-                      <div key={meta.id} className="border-b border-gray-50 last:border-b-0">
-                        {/* Meta Header */}
+                      <div key={micro.id}>
+                        {/* Micro Meta Header */}
                         <button
-                          onClick={() => toggleMeta(meta.id)}
-                          className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50/50 transition-colors"
+                          onClick={() => toggleMicroMeta(micro.id)}
+                          className="w-full flex items-start justify-between px-6 py-4 hover:bg-white/70 transition-colors text-left"
                         >
-                          <div className="flex items-center gap-3">
-                            {getStatusIcon(meta.ultimoStatus || "")}
-                            <div className="text-left">
-                              <p className="text-sm font-medium text-gray-800">{meta.titulo}</p>
-                              {meta.descricao && (
-                                <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{meta.descricao}</p>
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <span className="text-sm font-bold text-gray-400 mt-0.5 shrink-0">
+                              {idx + 1}.
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-800 leading-snug">
+                                {micro.titulo}
+                              </p>
+                              {micro.descricao && (
+                                <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
+                                  {micro.descricao}
+                                </p>
                               )}
+                              <p className="text-xs text-gray-400 mt-1">
+                                Criada em {formatDate(micro.createdAt)}
+                                {micro.ultimoMes && micro.ultimoAno && (
+                                  <> • Prazo: —</>
+                                )}
+                              </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={`text-xs ${getStatusColor(meta.ultimoStatus || "")}`}>
-                              {getStatusLabel(meta.ultimoStatus || "")}
+                          <div className="flex items-center gap-2 shrink-0 ml-3">
+                            <Badge
+                              variant="outline"
+                              className={`text-xs whitespace-nowrap ${getStatusColor(micro.ultimoStatus || "")}`}
+                            >
+                              {getStatusLabel(micro.ultimoStatus || "")}
                             </Badge>
-                            {isMetaExpanded
-                              ? <ChevronDown className="h-4 w-4 text-gray-400" />
-                              : <ChevronRight className="h-4 w-4 text-gray-400" />
+                            <span className="text-xs text-gray-400 whitespace-nowrap hidden sm:inline">
+                              Contribuição: {contribuicao}%
+                            </span>
+                            {isExpanded
+                              ? <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+                              : <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
                             }
                           </div>
                         </button>
 
-                        {/* Detalhes da Meta (expandido) */}
-                        {isMetaExpanded && (
-                          <div className="px-6 pb-4 bg-gray-50/30">
-                            {/* Info da Meta */}
-                            <div className="flex flex-wrap gap-4 mb-3 text-xs text-gray-500">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                Criada em {formatDate(meta.createdAt)}
-                              </span>
-                              {meta.ultimoMes && meta.ultimoAno && (
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  Último registro: {meses[(meta.ultimoMes as number) - 1]} {meta.ultimoAno}
-                                </span>
-                              )}
-                            </div>
-
-                            {meta.descricao && (
-                              <p className="text-sm text-gray-600 mb-3 bg-white p-3 rounded-lg border border-gray-100">
-                                {meta.descricao}
+                        {/* Micro Meta Detalhes (expandido) */}
+                        {isExpanded && (
+                          <div className="px-6 pb-4 bg-white border-t border-gray-50">
+                            {micro.descricao && (
+                              <p className="text-sm text-gray-600 mt-3 mb-3 p-3 bg-gray-50 rounded-lg border border-gray-100 leading-relaxed">
+                                {micro.descricao}
                               </p>
                             )}
 
                             {/* Histórico de Acompanhamento */}
                             {historico.length > 0 ? (
                               <div>
-                                <h4 className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-1">
+                                <h4 className="text-xs font-semibold text-gray-500 mb-2 flex items-center gap-1">
                                   <MessageSquare className="h-3 w-3" />
                                   Histórico de Acompanhamento
                                 </h4>
                                 <div className="space-y-2">
-                                  {historico.map((acomp: any, idx: number) => (
-                                    <div key={idx} className="flex items-start gap-3 bg-white p-3 rounded-lg border border-gray-100">
+                                  {historico.map((acomp: any, hidx: number) => (
+                                    <div key={hidx} className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                       <div className="mt-0.5">
                                         {getStatusIcon(acomp.status)}
                                       </div>
@@ -477,10 +435,19 @@ export default function MinhasMetasAluno() {
                     );
                   })}
                 </div>
-              )}
-            </Card>
-          );
-        })}
+              </div>
+            )}
+
+            {/* Estado: macro meta sem micro metas */}
+            {microMetas.length === 0 && (
+              <div className="px-6 py-5 bg-gray-50/50 text-center">
+                <CircleDot className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">Sem micro metas cadastradas.</p>
+                <p className="text-xs text-gray-300 mt-1">Sua mentora adicionará as micro metas em breve.</p>
+              </div>
+            )}
+          </Card>
+        )}
       </div>
     </AlunoLayout>
   );

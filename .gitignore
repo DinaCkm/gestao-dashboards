@@ -3,7 +3,7 @@
 .pnpm-store/
 
 # Build outputs
-dist/
+# dist/ -- removido para permitir deploy Railway via build commitado
 build/
 *.dist
 

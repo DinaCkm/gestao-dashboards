@@ -70,6 +70,7 @@ import {
   Footprints,
   Home,
   Monitor,
+  Trophy,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -154,6 +155,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
       { icon: BookOpen, label: "Atribuir Cursos", path: "/admin/atribuir-cursos" },
       { icon: Monitor, label: "Gerenciar Plataforma de Cursos", path: "/admin/plataforma-aulas" },
+      { icon: Library, label: "Biblioteca Pedagógica", path: "/admin/biblioteca-pedagogica" },
     ],
   },
   {
@@ -163,6 +165,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Video, label: "Webinars", path: "/webinars" },
       { icon: Video, label: "Vídeos de Onboarding", path: "/admin/onboarding-videos" },
       { icon: Bell, label: "Avisos e Comunicados", path: "/avisos" },
+      { icon: Trophy, label: "Mural de Cases", path: "/mural" },
     ],
   },
   {
@@ -200,6 +203,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: CalendarDays, label: "Perfil / Agenda", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: BookOpen, label: "Atribuir Cursos", path: "/mentor/atribuir-cursos", roles: ["manager"], requireConsultorRole: 'mentor' },
 
   
   // === GERENTE DE EMPRESA ===

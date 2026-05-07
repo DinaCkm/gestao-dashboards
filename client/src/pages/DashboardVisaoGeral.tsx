@@ -6,7 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
-import { Users, Building2, TrendingUp, Award, Target, Calendar, BookOpen, Zap, GraduationCap, PartyPopper, ChevronDown, ChevronUp, Info, AlertTriangle, Clock, Trophy } from "lucide-react";
+import { Users, Building2, TrendingUp, Award, Target, Calendar, BookOpen, Zap, GraduationCap, PartyPopper, ChevronDown, ChevronUp, Info, AlertTriangle, Clock, Trophy, Video, ClipboardCheck, Star } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Bell } from "lucide-react";
+import DualIndicators from "@/components/DualIndicators";
 
 const turmaColors = ['#1E3A5F', '#F5A623', '#2E7D32', '#D32F2F', '#7B1FA2', '#00838F', '#FF6F00', '#0097A7'];
 
@@ -210,8 +211,8 @@ export default function DashboardVisaoGeral() {
           </Card>
         )}
 
-        {/* Cards de Resumo */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Cards de Resumo Principais */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -222,20 +223,6 @@ export default function DashboardVisaoGeral() {
             <CardContent>
               <div className="text-2xl font-bold">{visaoGeral.totalAlunos || 0}</div>
               <p className="text-xs text-muted-foreground">Alunos ativos no sistema</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Engajamento Final
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{(visaoGeral.mediaEngajamento || 0).toFixed(0)}%</div>
-              <Progress value={visaoGeral.mediaEngajamento || 0} className="h-2 mt-2" />
-              <p className="text-xs text-muted-foreground mt-1">Média dos 5 indicadores</p>
             </CardContent>
           </Card>
 
@@ -266,90 +253,124 @@ export default function DashboardVisaoGeral() {
           </Card>
         </div>
 
+        {/* Indicadores de Destaque (Engajamento, Metas e Aplicabilidade) */}
+        <DualIndicators
+          engajamento={visaoGeral.mediaInd7 || visaoGeral.mediaEngajamento || 0}
+          desenvolvimento={visaoGeral.percentualMetas || 0}
+          engajamentoDetalhes={{
+            ind1_webinars: visaoGeral.mediaInd1,
+            ind2_avaliacoes: visaoGeral.mediaInd2,
+            ind3_competencias: visaoGeral.mediaInd3,
+            ind4_tarefas: visaoGeral.mediaInd4,
+            ind5_engajamento: visaoGeral.mediaInd5,
+          }}
+          desenvolvimentoDetalhes={{
+            total: visaoGeral.totalMetas || 0,
+            cumpridas: visaoGeral.metasCumpridas || 0,
+          }}
+          aplicabilidade={{
+            percentual: visaoGeral.mediaInd6 || 0,
+            provisoria: false,
+            totalAvaliacoes: visaoGeral.totalAvaliacoesAplicabilidade || 0,
+            microTarefaPercentual: visaoGeral.mediaInd6,
+            microCasePercentual: visaoGeral.mediaInd6,
+            caseAplicavel: true,
+            notaFinal: visaoGeral.mediaInd6,
+            mediaAluno: visaoGeral.mediaInd6,
+            mediaMentora: visaoGeral.mediaInd6,
+            avaliacoesAluno: 0,
+            avaliacoesMentora: 0
+          }}
+        />
+
 
 
         {/* Indicadores Detalhados */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Indicadores Detalhados</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <IndicadorCard
               numero={1}
-              titulo="Mentorias"
-              valor={visaoGeral.mediaInd1 || visaoGeral.mediaParticipacaoMentorias}
-              icone={<UserCheck className="h-4 w-4" />}
+              titulo="Webinars"
+              valor={visaoGeral.mediaInd1 || 0}
+              icone={<Video className="h-4 w-4" />}
               cor="#1976D2"
-              descricao="Presença nas sessões de mentoria"
+              descricao="Presença em webinários e eventos coletivos"
               regras={[
-                "Fórmula: (Sessões presentes / Total de sessões) × 100",
-                "Somente ciclos finalizados entram no cálculo",
-                "Ausências justificadas contam como presença"
+                "Fórmula: (Eventos presentes / Total de eventos) × 100",
+                "Cada evento é avaliado de forma binária: Presente=100, Ausente=0"
               ]}
             />
             <IndicadorCard
               numero={2}
-              titulo="Mentorias"
-              valor={visaoGeral.mediaInd2 || visaoGeral.mediaParticipacaoMentorias}
-              icone={<Clock className="h-4 w-4" />}
-              cor="#00838F"
-              descricao="Participação ativa nas mentorias"
+              titulo="Avaliações"
+              valor={visaoGeral.mediaInd2 || 0}
+              icone={<GraduationCap className="h-4 w-4" />}
+              cor="#D32F2F"
+              descricao="Performance nas avaliações de conteúdo"
               regras={[
-                "Fórmula: (Mentorias com participação / Total de mentorias) × 100",
-                "Avaliação qualitativa da mentora",
-                "Escala: 0 (não participou) a 10 (participação excelente)"
+                "Fórmula: (Soma das notas das provas / Total de provas realizadas) × 100",
+                "Apenas provas de ciclos finalizados entram no cálculo"
               ]}
             />
             <IndicadorCard
               numero={3}
-              titulo="Atividades"
-              valor={visaoGeral.mediaInd3 || visaoGeral.mediaEngajamento}
-              icone={<Zap className="h-4 w-4" />}
+              titulo="Competências"
+              valor={visaoGeral.mediaInd3 || 0}
+              icone={<BookOpen className="h-4 w-4" />}
               cor="#2E7D32"
-              descricao="% de conteúdos concluídos por competência"
+              descricao="Progresso de conclusão das aulas"
               regras={[
-                "Fórmula: (Conteúdos concluídos / Total de conteúdos) × 100",
-                "Somente ciclos finalizados entram no cálculo",
-                "Competências não liberadas são ignoradas"
+                "Fórmula: (Aulas concluídas / Total de aulas da competência) × 100",
+                "Média dos percentuais de todas as competências de ciclos finalizados"
               ]}
             />
             <IndicadorCard
               numero={4}
               titulo="Tarefas"
-              valor={visaoGeral.mediaInd4 || visaoGeral.mediaPerformanceCompetencias}
-              icone={<Award className="h-4 w-4" />}
+              valor={visaoGeral.mediaInd4 || 0}
+              icone={<ClipboardCheck className="h-4 w-4" />}
               cor="#7B1FA2"
-              descricao="Entrega de atividades práticas"
+              descricao="Entrega de atividades práticas das mentorias"
               regras={[
-                "Fórmula: (Atividades entregues / Total de atividades) × 100",
-                "1ª mentoria (Assessment) é excluída do cálculo",
-                "Sessões sem tarefa não contam no total"
+                "Fórmula: (Atividades entregues / Total de atividades previstas) × 100",
+                "A 1ª sessão (Assessment) é excluída do cálculo"
               ]}
             />
             <IndicadorCard
               numero={5}
               titulo="Engajamento"
-              valor={visaoGeral.mediaInd5 || visaoGeral.mediaPerformanceAprendizado || 0}
-              icone={<GraduationCap className="h-4 w-4" />}
-              cor="#D32F2F"
-              descricao="Evolução e engajamento geral"
+              valor={visaoGeral.mediaInd5 || 0}
+              icone={<Star className="h-4 w-4" />}
+              cor="#F5A623"
+              descricao="Nota de evolução atribuída pela mentora"
               regras={[
-                "Média de 3 componentes, todos convertidos para base 100:",
-                "1) Presença nas Mentorias: presente=100, ausente=0",
-                "2) Entrega de Tarefas: entregue=100, não entregue=0",
-                "3) Nota de Evolução da Mentora (0-10, convertida para base 100)",
-                "Fórmula: (Comp.1 + Comp.2 + Comp.3) / 3"
+                "Média das notas (0-10) convertidas para base 100",
+                "Avaliação qualitativa do envolvimento ativo do participante"
               ]}
             />
             <IndicadorCard
               numero={6}
               titulo="Aplicabilidade"
-              valor={visaoGeral.mediaInd6 || visaoGeral.mediaParticipacaoEventos}
-              icone={<PartyPopper className="h-4 w-4" />}
-              cor="#1976D2"
-              descricao="Aplicabilidade (Tarefa + Case, separada do Engajamento)"
+              valor={visaoGeral.mediaInd6 || 0}
+              icone={<Target className="h-4 w-4" />}
+              cor="#00838F"
+              descricao="Aplicabilidade prática (Tarefa + Case)"
               regras={[
-                "Case compõe o microindicador de Aplicabilidade",
-                "Não entra na média dos 5 indicadores",
-                "Não altera o cálculo de Engajamento"
+                "Indicador separado que mede a aplicação real do aprendizado",
+                "Não compõe a média do Engajamento Final (Ind. 7)"
+              ]}
+            />
+            <IndicadorCard
+              numero={7}
+              titulo="Engajamento Final"
+              valor={visaoGeral.mediaInd7 || visaoGeral.mediaEngajamento || 0}
+              icone={<TrendingUp className="h-4 w-4" />}
+              cor="#1E3A5F"
+              descricao="Média consolidada dos indicadores 1 a 5"
+              regras={[
+                "Fórmula: (Ind.1 + Ind.2 + Ind.3 + Ind.4 + Ind.5) / 5",
+                "Representa a performance global do aluno no programa"
               ]}
             />
           </div>
@@ -399,13 +420,13 @@ export default function DashboardVisaoGeral() {
                         {idx + 1}
                       </Badge>
                       <div>
-                        <p className="font-medium text-sm">{aluno.nome}</p>
+                        <p className="font-medium text-sm">{aluno.nomeAluno || aluno.nome}</p>
                         <p className="text-xs text-muted-foreground">{aluno.empresa}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-lg" style={{ color: '#2E7D32' }}>
-                        {(aluno.mediaEngajamento || 0).toFixed(0)}%
+                        {(aluno.notaFinal !== undefined ? (aluno.notaFinal * 10) : (aluno.performanceGeral || aluno.mediaEngajamento || 0)).toFixed(0)}%
                       </p>
                     </div>
                   </div>
@@ -431,13 +452,13 @@ export default function DashboardVisaoGeral() {
                     <div className="flex items-center gap-3">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                       <div>
-                        <p className="font-medium text-sm">{aluno.nome}</p>
+                        <p className="font-medium text-sm">{aluno.nomeAluno || aluno.nome}</p>
                         <p className="text-xs text-muted-foreground">{aluno.empresa}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-lg text-red-600">
-                        {(aluno.mediaEngajamento || 0).toFixed(0)}%
+                        {(aluno.notaFinal !== undefined ? (aluno.notaFinal * 10) : (aluno.performanceGeral || aluno.mediaEngajamento || 0)).toFixed(0)}%
                       </p>
                     </div>
                   </div>
