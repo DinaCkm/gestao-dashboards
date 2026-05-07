@@ -11627,25 +11627,35 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
     : String(alunoId);
   const externalIdSafe = externalId.replace(/'/g, "''");
 
-  const [avalRows] = await db.execute(sql.raw(`
-    SELECT AVG(sp.mediaAvaliacoesRespondidas) as mediaAval
-    FROM student_performance sp
-    WHERE sp.idUsuario = '${externalIdSafe}' AND sp.mediaAvaliacoesRespondidas IS NOT NULL
-  `)) as any;
-  const avalData = Array.isArray(avalRows) ? avalRows[0] : null;
-  const ind2Avaliacoes = avalData?.mediaAval != null ? Math.round(Number(avalData.mediaAval)) : 0;
+  let ind2Avaliacoes = 0;
+  try {
+    const [avalRows] = await db.execute(sql.raw(`
+      SELECT AVG(sp.mediaAvaliacoesRespondidas) as mediaAval
+      FROM student_performance sp
+      WHERE sp.idUsuario = '${externalIdSafe}' AND sp.mediaAvaliacoesRespondidas IS NOT NULL
+    `)) as any;
+    const avalData = Array.isArray(avalRows) ? avalRows[0] : null;
+    ind2Avaliacoes = avalData?.mediaAval != null ? Math.round(Number(avalData.mediaAval)) : 0;
+  } catch (_e2) {
+    // coluna pode não existir no banco de staging — retorna 0
+  }
 
-  const [compRows] = await db.execute(sql.raw(`
-    SELECT
-      COUNT(*) as total,
-      SUM(CASE WHEN sp.progressoTotal >= 100 THEN 1 ELSE 0 END) as concluidas
-    FROM student_performance sp
-    WHERE sp.idUsuario = '${externalIdSafe}'
-  `)) as any;
-  const compData = Array.isArray(compRows) ? compRows[0] : null;
-  const ind3Competencias = compData?.total > 0
-    ? Math.round((Number(compData.concluidas) / Number(compData.total)) * 100)
-    : 0;
+  let ind3Competencias = 0;
+  try {
+    const [compRows] = await db.execute(sql.raw(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN sp.progressoTotal >= 100 THEN 1 ELSE 0 END) as concluidas
+      FROM student_performance sp
+      WHERE sp.idUsuario = '${externalIdSafe}'
+    `)) as any;
+    const compData = Array.isArray(compRows) ? compRows[0] : null;
+    ind3Competencias = compData?.total > 0
+      ? Math.round((Number(compData.concluidas) / Number(compData.total)) * 100)
+      : 0;
+  } catch (_e3) {
+    // tabela pode não existir no banco de staging — retorna 0
+  }
 
   // Ind.4: Tarefas (% de tarefas entregues)
   const [tarefaRows] = await db.execute(sql.raw(`
