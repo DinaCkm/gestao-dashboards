@@ -11221,7 +11221,7 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
     motivo: motivos.join(" "),
     nivel,
   };
-=======
+}
 /**
  * Sincroniza student_performance para alunos que cursam pela plataforma.
  * Chamada após conclusão de curso (submeterAvaliacao / concluirAtividade).
