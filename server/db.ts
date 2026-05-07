@@ -7112,6 +7112,43 @@ export async function liberarOnboardingAluno(alunoId: number) {
     // Arquivar ciclo atual (DISC + PDI) — idempotênte
     const resultado = await arquivarCicloAtual(alunoId);
     numeroCiclo = resultado.numeroCiclo;
+
+    // === LIMPAR DADOS DO CICLO ANTERIOR PARA O NOVO CICLO ===
+    // 1. Deletar respostas e resultados DISC (aluno refará o teste)
+    await db.execute(sql.raw(`DELETE FROM disc_respostas WHERE alunoId = ${alunoId}`));
+    await db.execute(sql.raw(`DELETE FROM disc_resultados WHERE alunoId = ${alunoId}`));
+
+    // 2. Deletar autopercepções de competências (aluno refará a autoavaliação)
+    await db.execute(sql.raw(`DELETE FROM autopercepcoes_competencias WHERE alunoId = ${alunoId}`));
+
+    // 3. Resetar jornada de onboarding: incrementar ciclo e zerar progresso
+    const [jornadaRows] = await db.execute(sql.raw(
+      `SELECT id, ciclo FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
+    )) as any;
+    const jornadaAtual = Array.isArray(jornadaRows) ? jornadaRows[0] : null;
+    const novoCicloJornada = (Number(jornadaAtual?.ciclo) || 0) + 1;
+    if (jornadaAtual?.id) {
+      // Atualizar o registro existente: incrementar ciclo e zerar todos os campos de progresso
+      await db.execute(sql.raw(`
+        UPDATE onboarding_jornada SET
+          ciclo = ${novoCicloJornada},
+          cadastroConfirmado = 0, cadastroConfirmadoEm = NULL,
+          pdiVisualizado = 0, pdiVisualizadoEm = NULL,
+          pdiLiberadoPelaMentora = 0, pdiLiberadoEm = NULL,
+          videoBoasVindas = 0, videoCompetencias = 0, videoWebinars = 0,
+          videoTarefas = 0, videoMetas = 0, todosVideosEm = NULL,
+          aceiteRealizado = 0, aceiteRealizadoEm = NULL, nomeAceite = NULL,
+          updatedAt = NOW()
+        WHERE alunoId = ${alunoId}
+      `));
+    } else {
+      // Criar novo registro de jornada para o ciclo
+      await db.execute(sql.raw(`
+        INSERT INTO onboarding_jornada (alunoId, ciclo, cadastroConfirmado, aceiteRealizado, createdAt, updatedAt)
+        VALUES (${alunoId}, ${novoCicloJornada}, 0, 0, NOW(), NOW())
+      `));
+    }
+
     // Marcar onboarding como liberado
     await db.execute(sql.raw(
       `UPDATE alunos SET onboardingLiberado = 1, onboardingLiberadoEm = NOW() WHERE id = ${alunoId}`

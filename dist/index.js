@@ -6825,6 +6825,33 @@ async function liberarOnboardingAluno(alunoId) {
     }
     const resultado = await arquivarCicloAtual(alunoId);
     numeroCiclo = resultado.numeroCiclo;
+    await db2.execute(sql2.raw(`DELETE FROM disc_respostas WHERE alunoId = ${alunoId}`));
+    await db2.execute(sql2.raw(`DELETE FROM disc_resultados WHERE alunoId = ${alunoId}`));
+    await db2.execute(sql2.raw(`DELETE FROM autopercepcoes_competencias WHERE alunoId = ${alunoId}`));
+    const [jornadaRows] = await db2.execute(sql2.raw(
+      `SELECT id, ciclo FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
+    ));
+    const jornadaAtual = Array.isArray(jornadaRows) ? jornadaRows[0] : null;
+    const novoCicloJornada = (Number(jornadaAtual?.ciclo) || 0) + 1;
+    if (jornadaAtual?.id) {
+      await db2.execute(sql2.raw(`
+        UPDATE onboarding_jornada SET
+          ciclo = ${novoCicloJornada},
+          cadastroConfirmado = 0, cadastroConfirmadoEm = NULL,
+          pdiVisualizado = 0, pdiVisualizadoEm = NULL,
+          pdiLiberadoPelaMentora = 0, pdiLiberadoEm = NULL,
+          videoBoasVindas = 0, videoCompetencias = 0, videoWebinars = 0,
+          videoTarefas = 0, videoMetas = 0, todosVideosEm = NULL,
+          aceiteRealizado = 0, aceiteRealizadoEm = NULL, nomeAceite = NULL,
+          updatedAt = NOW()
+        WHERE alunoId = ${alunoId}
+      `));
+    } else {
+      await db2.execute(sql2.raw(`
+        INSERT INTO onboarding_jornada (alunoId, ciclo, cadastroConfirmado, aceiteRealizado, createdAt, updatedAt)
+        VALUES (${alunoId}, ${novoCicloJornada}, 0, 0, NOW(), NOW())
+      `));
+    }
     await db2.execute(sql2.raw(
       `UPDATE alunos SET onboardingLiberado = 1, onboardingLiberadoEm = NOW() WHERE id = ${alunoId}`
     ));
