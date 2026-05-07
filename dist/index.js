@@ -6882,9 +6882,7 @@ async function getAlunoOnboardingStatus(user) {
   const ONBOARDING_CUTOFF = /* @__PURE__ */ new Date("2026-03-01T00:00:00Z");
   const isAlunoNovo = alunoCreatedAt ? new Date(alunoCreatedAt) >= ONBOARDING_CUTOFF : false;
   let needsOnboarding = false;
-  if (onboardingLiberado) {
-    needsOnboarding = true;
-  } else if (isAlunoNovo && !aceiteRealizado) {
+  if (isAlunoNovo && !aceiteRealizado && !onboardingLiberado) {
     needsOnboarding = true;
   }
   return {

@@ -4,8 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Sparkles, Brain, Target, TrendingUp, Award, History,
-  ChevronDown, ChevronUp, BookOpen, CheckCircle2,
-  BarChart3, Zap, Users, FileCheck, Star, Activity,
+  ChevronDown, ChevronUp, BookOpen, CheckCircle2
 } from "lucide-react";
 import { useState } from "react";
 
@@ -28,84 +27,6 @@ function formatarData(data: string | null | undefined) {
   } catch { return null; }
 }
 
-function IndicadorBar({ label, valor, cor, icone: Icone }: {
-  label: string; valor: number | null | undefined; cor: string; icone: React.ElementType;
-}) {
-  const v = valor ?? 0;
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <Icone className="h-3.5 w-3.5" style={{ color: cor }} />
-          <span className="text-xs font-medium text-gray-600">{label}</span>
-        </div>
-        <span className="text-xs font-bold" style={{ color: cor }}>{v}%</span>
-      </div>
-      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${Math.min(100, Math.max(0, v))}%`, backgroundColor: cor }} />
-      </div>
-    </div>
-  );
-}
-
-function SnapshotIndicadores({ ciclo }: { ciclo: any }) {
-  const temSnapshot = ciclo.ind7EngajamentoFinal != null || ciclo.ind1Webinars != null;
-  if (!temSnapshot) return null;
-
-  const ind7 = Number(ciclo.ind7EngajamentoFinal ?? 0);
-  const corGeral = ind7 >= 70 ? "#16A34A" : ind7 >= 50 ? "#F59E0B" : "#DC2626";
-  const classificacao = ind7 >= 90 ? "Excelência" : ind7 >= 70 ? "Avançado" : ind7 >= 50 ? "Intermediário" : ind7 >= 30 ? "Básico" : "Inicial";
-
-  return (
-    <div className="space-y-4 border-t pt-4">
-      <h4 className="font-bold text-[#0A1E3E] flex items-center gap-2">
-        <BarChart3 className="h-4 w-4 text-indigo-600" />
-        Indicadores do Ciclo (snapshot)
-      </h4>
-
-      {/* Card de nota geral */}
-      <div className="rounded-xl p-4 text-white flex items-center justify-between"
-        style={{ background: `linear-gradient(135deg, ${corGeral}, ${corGeral}cc)` }}>
-        <div>
-          <p className="text-white/80 text-xs font-medium uppercase tracking-wider">Engajamento Final</p>
-          <p className="text-3xl font-black mt-0.5">{ind7}%</p>
-          <Badge className="mt-1 bg-white/20 text-white border-0 text-xs">{classificacao}</Badge>
-        </div>
-        <Activity className="h-12 w-12 text-white/30" />
-      </div>
-
-      {/* 6 indicadores individuais */}
-      <div className="space-y-2.5 bg-gray-50 rounded-xl p-4">
-        <IndicadorBar label="Webinars / Eventos" valor={ciclo.ind1Webinars} cor="#2563EB" icone={Users} />
-        <IndicadorBar label="Avaliações" valor={ciclo.ind2Avaliacoes} cor="#7C3AED" icone={Star} />
-        <IndicadorBar label="Competências" valor={ciclo.ind3Competencias} cor="#0891B2" icone={BookOpen} />
-        <IndicadorBar label="Tarefas" valor={ciclo.ind4Tarefas} cor="#F59E0B" icone={FileCheck} />
-        <IndicadorBar label="Engajamento (Mentoria)" valor={ciclo.ind5Engajamento} cor="#16A34A" icone={Zap} />
-        <IndicadorBar label="Aplicabilidade" valor={ciclo.ind6Aplicabilidade} cor="#DC2626" icone={Target} />
-      </div>
-
-      {/* Metas */}
-      {(ciclo.metasTotal > 0) && (
-        <div className="flex items-center gap-3 bg-emerald-50 rounded-lg p-3">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-          <div>
-            <p className="text-xs font-medium text-emerald-800">Metas do PDI</p>
-            <p className="text-sm font-bold text-emerald-900">
-              {ciclo.metasCumpridas} de {ciclo.metasTotal} concluídas
-              {ciclo.metasTotal > 0 && (
-                <span className="font-normal text-emerald-700 ml-1">
-                  ({Math.round((ciclo.metasCumpridas / ciclo.metasTotal) * 100)}%)
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
   const [expandido, setExpandido] = useState(index === 0);
   const perfilPredominante = ciclo.perfilPredominante as DiscDimensao | null;
@@ -118,8 +39,6 @@ function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
     D: Number(ciclo.scoreD) || 0, I: Number(ciclo.scoreI) || 0,
     S: Number(ciclo.scoreS) || 0, C: Number(ciclo.scoreC) || 0,
   };
-  const ind7 = Number(ciclo.ind7EngajamentoFinal ?? null);
-  const temIndicadores = ciclo.ind7EngajamentoFinal != null;
 
   return (
     <Card className="overflow-hidden border-2 transition-all duration-300 hover:shadow-lg"
@@ -132,17 +51,11 @@ function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
             <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-md"
               style={{ backgroundColor: corPredominante }}>{ciclo.numeroCiclo}</div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
                 <h3 className="font-bold text-[#0A1E3E] text-lg">Ciclo {ciclo.numeroCiclo}</h3>
                 <Badge className="text-white border-0 text-xs" style={{ backgroundColor: corPredominante }}>
                   {perfilPredominante ? `Perfil ${perfilPredominante}` : "Sem DISC"}
                 </Badge>
-                {temIndicadores && (
-                  <Badge className="border-0 text-xs text-white"
-                    style={{ backgroundColor: ind7 >= 70 ? "#16A34A" : ind7 >= 50 ? "#F59E0B" : "#DC2626" }}>
-                    {ind7}% Engaj.
-                  </Badge>
-                )}
               </div>
               <p className="text-sm text-gray-500 mt-0.5">
                 {dataInicio && dataConclusao ? `${dataInicio} → ${dataConclusao}` : dataInicio ? `Iniciado em ${dataInicio}` : "Datas não registradas"}
@@ -168,8 +81,6 @@ function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
 
       {expandido && (
         <CardContent className="p-6 space-y-6 border-t border-gray-100">
-
-          {/* DISC completo */}
           {perfilPredominante ? (
             <div className="space-y-4">
               <h4 className="font-bold text-[#0A1E3E] flex items-center gap-2">
@@ -218,7 +129,6 @@ function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
             </div>
           )}
 
-          {/* PDI */}
           {ciclo.assessmentPdiId ? (
             <div className="space-y-3 border-t pt-4">
               <h4 className="font-bold text-[#0A1E3E] flex items-center gap-2">
@@ -252,10 +162,37 @@ function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
               <p className="text-sm">PDI não registrado neste ciclo</p>
             </div>
           )}
-
-          {/* Snapshot dos 7 indicadores */}
-          <SnapshotIndicadores ciclo={ciclo} />
-
+          {/* Snapshot de Indicadores do Ciclo */}
+          {ciclo.ind7EngajamentoFinal != null && (
+            <div className="border-t pt-4 space-y-3">
+              <h4 className="font-bold text-[#0A1E3E] flex items-center gap-2 text-sm">
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+                Indicadores do Ciclo
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: 'Engajamento Final', value: ciclo.ind7EngajamentoFinal, cor: '#2563EB' },
+                  { label: 'Webinars / Eventos', value: ciclo.ind1Webinars, cor: '#7C3AED' },
+                  { label: 'Avaliações', value: ciclo.ind2Avaliacoes, cor: '#F59E0B' },
+                  { label: 'Competências', value: ciclo.ind3Competencias, cor: '#16A34A' },
+                  { label: 'Tarefas', value: ciclo.ind4Tarefas, cor: '#F97316' },
+                  { label: 'Mentoria', value: ciclo.ind5Engajamento, cor: '#0EA5E9' },
+                  { label: 'Aplicabilidade', value: ciclo.ind6Aplicabilidade, cor: '#DC2626' },
+                ].map(({ label, value, cor }) => (
+                  <div key={label} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                    <span className="text-xs text-gray-600">{label}</span>
+                    <span className="text-xs font-bold" style={{ color: cor }}>{value ?? 0}%</span>
+                  </div>
+                ))}
+                {ciclo.metasTotal > 0 && (
+                  <div className="flex items-center justify-between bg-amber-50 rounded-lg px-3 py-2 col-span-2">
+                    <span className="text-xs text-amber-700">Metas cumpridas</span>
+                    <span className="text-xs font-bold text-amber-700">{ciclo.metasCumpridas ?? 0} / {ciclo.metasTotal}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       )}
     </Card>
@@ -304,7 +241,7 @@ export default function EvolucaoAluno() {
                 <h2 className="text-xl font-bold mb-2">Seu histórico está sendo construído</h2>
                 <p className="text-blue-100/80 text-sm leading-relaxed max-w-sm mx-auto">
                   Quando você concluir seu primeiro ciclo de desenvolvimento e um novo ciclo for iniciado,
-                  o histórico aparecerá aqui com todos os seus resultados DISC, PDI e indicadores de desempenho.
+                  o histórico aparecerá aqui com todos os seus resultados DISC e PDI.
                 </p>
               </div>
               {discAtual && (
@@ -335,7 +272,7 @@ export default function EvolucaoAluno() {
                   {historico.length} ciclo{historico.length > 1 ? "s" : ""} de desenvolvimento registrado{historico.length > 1 ? "s" : ""}
                 </p>
                 <p className="text-amber-700 text-xs mt-0.5">
-                  Cada ciclo inclui DISC, PDI e snapshot dos indicadores de desempenho no momento do encerramento.
+                  Cada ciclo representa uma jornada completa de onboarding com DISC e PDI.
                 </p>
               </div>
             </div>

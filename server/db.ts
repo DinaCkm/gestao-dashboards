@@ -7292,12 +7292,11 @@ export async function getAlunoOnboardingStatus(user: {
   // - Aluno VETERANO (antes de 01/03/2026): NÃO precisa de onboarding (acesso direto ao portal)
   // - Aluno NOVO (a partir de 01/03/2026) SEM aceite: precisa completar onboarding
   // - Aluno NOVO COM aceite: onboarding concluído, portal liberado
-  // - Qualquer aluno COM onboardingLiberado: admin liberou novo ciclo → precisa de onboarding
+  // - onboardingLiberado = 1: admin liberou novo ciclo → NÃO bloqueia o portal,
+  //   apenas exibe aviso nas páginas de Assessment e Performance
   let needsOnboarding = false;
-  if (onboardingLiberado) {
-    needsOnboarding = true; // Admin liberou novo ciclo
-  } else if (isAlunoNovo && !aceiteRealizado) {
-    needsOnboarding = true; // Aluno novo que ainda não deu aceite
+  if (isAlunoNovo && !aceiteRealizado && !onboardingLiberado) {
+    needsOnboarding = true; // Aluno novo que ainda não deu aceite no primeiro ciclo
   }
 
   return {
