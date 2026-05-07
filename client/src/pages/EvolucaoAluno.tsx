@@ -162,35 +162,110 @@ function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
               <p className="text-sm">PDI não registrado neste ciclo</p>
             </div>
           )}
-          {/* Snapshot de Indicadores do Ciclo */}
-          {ciclo.ind7EngajamentoFinal != null && (
+          {/* 3 Macroindicadores congelados do ciclo */}
+          {ciclo.snapshotEngajamento != null && (
             <div className="border-t pt-4 space-y-3">
               <h4 className="font-bold text-[#0A1E3E] flex items-center gap-2 text-sm">
                 <TrendingUp className="h-4 w-4 text-blue-600" />
-                Indicadores do Ciclo
+                Resultado do Ciclo
+                <span className="text-xs font-normal text-gray-400 ml-1">(congelado no encerramento)</span>
               </h4>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: 'Engajamento Final', value: ciclo.ind7EngajamentoFinal, cor: '#2563EB' },
-                  { label: 'Webinars / Eventos', value: ciclo.ind1Webinars, cor: '#7C3AED' },
-                  { label: 'Avaliações', value: ciclo.ind2Avaliacoes, cor: '#F59E0B' },
-                  { label: 'Competências', value: ciclo.ind3Competencias, cor: '#16A34A' },
-                  { label: 'Tarefas', value: ciclo.ind4Tarefas, cor: '#F97316' },
-                  { label: 'Mentoria', value: ciclo.ind5Engajamento, cor: '#0EA5E9' },
-                  { label: 'Aplicabilidade', value: ciclo.ind6Aplicabilidade, cor: '#DC2626' },
-                ].map(({ label, value, cor }) => (
-                  <div key={label} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                    <span className="text-xs text-gray-600">{label}</span>
-                    <span className="text-xs font-bold" style={{ color: cor }}>{value ?? 0}%</span>
-                  </div>
-                ))}
-                {ciclo.metasTotal > 0 && (
-                  <div className="flex items-center justify-between bg-amber-50 rounded-lg px-3 py-2 col-span-2">
-                    <span className="text-xs text-amber-700">Metas cumpridas</span>
-                    <span className="text-xs font-bold text-amber-700">{ciclo.metasCumpridas ?? 0} / {ciclo.metasTotal}</span>
-                  </div>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Card 1: Engajamento */}
+                {(() => {
+                  const val = Number(ciclo.snapshotEngajamento ?? 0);
+                  const atingiu = val >= 80;
+                  return (
+                    <div className={`rounded-xl p-4 border-2 ${atingiu ? 'border-blue-200 bg-blue-50' : 'border-red-200 bg-red-50'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-gray-600">Engajamento</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${atingiu ? 'bg-blue-200 text-blue-800' : 'bg-red-200 text-red-800'}`}>
+                          {atingiu ? '✓ Meta atingida' : '✗ Abaixo da meta'}
+                        </span>
+                      </div>
+                      <div className={`text-3xl font-black ${atingiu ? 'text-blue-600' : 'text-red-600'}`}>{val}%</div>
+                      <div className="text-xs text-gray-400 mt-1">Meta: 80%</div>
+                      <div className="mt-2 space-y-1">
+                        {[
+                          { label: 'Webinars', v: ciclo.snapshotInd1 ?? ciclo.ind1Webinars },
+                          { label: 'Avaliações', v: ciclo.snapshotInd2 ?? ciclo.ind2Avaliacoes },
+                          { label: 'Competências', v: ciclo.snapshotInd3 ?? ciclo.ind3Competencias },
+                          { label: 'Tarefas', v: ciclo.snapshotInd4 ?? ciclo.ind4Tarefas },
+                          { label: 'Nota Mentora', v: ciclo.snapshotInd5 ?? ciclo.ind5Engajamento },
+                        ].map(({ label, v }) => (
+                          <div key={label} className="flex justify-between text-xs text-gray-500">
+                            <span>{label}</span>
+                            <span className="font-medium">{v ?? 0}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+                {/* Card 2: Jornada de Superação (Metas) */}
+                {(() => {
+                  const val = Number(ciclo.snapshotMetasPercentual ?? 0);
+                  const total = Number(ciclo.snapshotMetasTotal ?? ciclo.metasTotal ?? 0);
+                  const cumpridas = Number(ciclo.snapshotMetasCumpridas ?? ciclo.metasCumpridas ?? 0);
+                  const semMetas = total === 0;
+                  const atingiu = !semMetas && val >= 80;
+                  return (
+                    <div className={`rounded-xl p-4 border-2 ${semMetas ? 'border-gray-200 bg-gray-50' : atingiu ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-gray-600">Jornada de Superação</span>
+                        {!semMetas && (
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${atingiu ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>
+                            {atingiu ? '✓ Meta atingida' : '✗ Abaixo da meta'}
+                          </span>
+                        )}
+                      </div>
+                      <div className={`text-3xl font-black ${semMetas ? 'text-gray-400' : atingiu ? 'text-green-600' : 'text-red-600'}`}>
+                        {semMetas ? 'N/A' : `${val}%`}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {semMetas ? 'Sem metas atribuídas' : `Meta: 80% • ${cumpridas}/${total} metas`}
+                      </div>
+                    </div>
+                  );
+                })()}
+                {/* Card 3: Aplicabilidade Prática */}
+                {(() => {
+                  const val = Number(ciclo.snapshotAplicabilidade ?? 0);
+                  const atingiu = val >= 80;
+                  return (
+                    <div className={`rounded-xl p-4 border-2 ${atingiu ? 'border-orange-200 bg-orange-50' : 'border-red-200 bg-red-50'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-gray-600">Aplicabilidade Prática</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${atingiu ? 'bg-orange-200 text-orange-800' : 'bg-red-200 text-red-800'}`}>
+                          {atingiu ? '✓ Meta atingida' : '✗ Abaixo da meta'}
+                        </span>
+                      </div>
+                      <div className={`text-3xl font-black ${atingiu ? 'text-orange-500' : 'text-red-600'}`}>{val}%</div>
+                      <div className="text-xs text-gray-400 mt-1">Meta: 80%</div>
+                    </div>
+                  );
+                })()}
               </div>
+              {/* Resumo: quantos macroindicadores atingiram 80% */}
+              {(() => {
+                const eng = Number(ciclo.snapshotEngajamento ?? 0);
+                const metasPct = Number(ciclo.snapshotMetasPercentual ?? 0);
+                const aplic = Number(ciclo.snapshotAplicabilidade ?? 0);
+                const total = ciclo.snapshotMetasTotal ?? ciclo.metasTotal ?? 0;
+                const semMetas = Number(total) === 0;
+                const atingidos = [eng >= 80, !semMetas && metasPct >= 80, aplic >= 80].filter(Boolean).length;
+                const total3 = semMetas ? 2 : 3;
+                return (
+                  <div className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold ${
+                    atingidos === total3 ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    <Award className="h-4 w-4" />
+                    {atingidos === total3
+                      ? `Todos os ${total3} macroindicadores atingiram 80% — Ciclo aprovado!`
+                      : `${atingidos} de ${total3} macroindicadores atingiram 80%`}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </CardContent>

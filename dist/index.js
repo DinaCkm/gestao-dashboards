@@ -1603,6 +1603,53 @@ var init_env = __esm({
   }
 });
 
+// server/aplicabilidadeCalculator.ts
+function round(value) {
+  return Math.round(value * 100) / 100;
+}
+function toPercentFrom0to10(score) {
+  return round(Math.max(0, Math.min(10, score)) * 10);
+}
+function calcularMicroTarefaAplicabilidade(tarefas) {
+  const tarefasValidas = tarefas.filter(
+    (t2) => t2.notaAlunoAplicabilidade != null || t2.notaMentoraAplicabilidade != null
+  );
+  if (tarefasValidas.length === 0) {
+    return { percentual: null, provisoria: false, total: 0 };
+  }
+  const notasFinais = tarefasValidas.map(
+    (t2) => t2.notaMentoraAplicabilidade != null ? Number(t2.notaMentoraAplicabilidade) : Number(t2.notaAlunoAplicabilidade)
+  );
+  const provisoria = tarefasValidas.some(
+    (t2) => t2.notaMentoraAplicabilidade == null && t2.notaAlunoAplicabilidade != null
+  );
+  const media = notasFinais.reduce((acc, n) => acc + n, 0) / notasFinais.length;
+  return {
+    percentual: toPercentFrom0to10(media),
+    provisoria,
+    total: tarefasValidas.length
+  };
+}
+function calcularAplicabilidadeFinal(params) {
+  const validos = [];
+  if (params.microTarefaPercentual != null) validos.push(params.microTarefaPercentual);
+  if (params.caseAplicavel && params.microCasePercentual != null) validos.push(params.microCasePercentual);
+  return {
+    percentualFinal: validos.length ? round(validos.reduce((a, b) => a + b, 0) / validos.length) : null,
+    microTarefaPercentual: params.microTarefaPercentual,
+    microCasePercentual: params.microCasePercentual,
+    caseAplicavel: params.caseAplicavel,
+    provisoria: params.provisoria,
+    totalTarefasComAplicabilidade: params.totalTarefasComAplicabilidade,
+    totalCasesConsiderados: params.totalCasesConsiderados
+  };
+}
+var init_aplicabilidadeCalculator = __esm({
+  "server/aplicabilidadeCalculator.ts"() {
+    "use strict";
+  }
+});
+
 // server/contrato-niveis.service.ts
 function normalizeDateOnly(value) {
   if (value instanceof Date) {
@@ -9709,6 +9756,52 @@ async function arquivarCicloAtual(alunoId) {
     metasTotal = Number(metaData?.total ?? 0);
     metasCumpridas = Number(metaData?.cumpridas ?? 0);
   }
+  const snapshotEngajamento = ind7EngajamentoFinal;
+  const snapshotMetasPercentual = metasTotal > 0 ? Math.round(metasCumpridas / metasTotal * 100) : 0;
+  let snapshotAplicabilidade = 0;
+  try {
+    const CUTOFF_DATE = /* @__PURE__ */ new Date("2026-04-01");
+    const [sessAplic] = await db2.execute(sql2.raw(`
+      SELECT notaAlunoAplicabilidade, notaMentoraAplicabilidade
+      FROM mentoring_sessions
+      WHERE alunoId = ${alunoId}
+        AND sessionDate >= '2026-04-01'
+        AND (notaAlunoAplicabilidade IS NOT NULL OR notaMentoraAplicabilidade IS NOT NULL)
+    `));
+    const sessoesComAplic = Array.isArray(sessAplic) ? sessAplic : [];
+    const [casesAplic] = await db2.execute(sql2.raw(`
+      SELECT notaAlunoAplicabilidade, notaMentoraAplicabilidade, entregue
+      FROM cases_sucesso
+      WHERE alunoId = ${alunoId} AND entregue = 1
+        AND dataEntrega >= '2026-04-01'
+        AND (notaAlunoAplicabilidade IS NOT NULL OR notaMentoraAplicabilidade IS NOT NULL)
+    `));
+    const casesComAplic = Array.isArray(casesAplic) ? casesAplic : [];
+    const [casesAll] = await db2.execute(sql2.raw(
+      `SELECT entregue FROM cases_sucesso WHERE alunoId = ${alunoId}`
+    ));
+    const todosOsCases = Array.isArray(casesAll) ? casesAll : [];
+    const microTarefa = calcularMicroTarefaAplicabilidade(
+      sessoesComAplic.map((s) => ({
+        notaAlunoAplicabilidade: s.notaAlunoAplicabilidade,
+        notaMentoraAplicabilidade: s.notaMentoraAplicabilidade
+      }))
+    );
+    const caseAplicavel = todosOsCases.length > 0;
+    const anyCaseEntregue = todosOsCases.some((c) => c.entregue === 1);
+    const microCasePercentual = caseAplicavel ? anyCaseEntregue ? 100 : 0 : null;
+    const aplicResult = calcularAplicabilidadeFinal({
+      microTarefaPercentual: microTarefa.percentual,
+      microCasePercentual,
+      caseAplicavel,
+      provisoria: microTarefa.provisoria,
+      totalTarefasComAplicabilidade: microTarefa.total,
+      totalCasesConsiderados: caseAplicavel ? 1 : 0
+    });
+    snapshotAplicabilidade = Math.round(aplicResult.percentualFinal ?? 0);
+  } catch (e) {
+    console.warn(`[DB] Aviso: erro ao calcular snapshot de aplicabilidade para aluno ${alunoId}:`, e);
+  }
   const [pdiCountRows] = await db2.execute(sql2.raw(
     `SELECT COUNT(*) as cnt FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'ativo'`
   ));
@@ -9747,6 +9840,9 @@ async function arquivarCicloAtual(alunoId) {
       ind1Webinars, ind2Avaliacoes, ind3Competencias, ind4Tarefas,
       ind5Engajamento, ind6Aplicabilidade, ind7EngajamentoFinal,
       metasTotal, metasCumpridas,
+      snapshotEngajamento, snapshotMetasPercentual, snapshotAplicabilidade,
+      snapshotMetasTotal, snapshotMetasCumpridas,
+      snapshotInd1, snapshotInd2, snapshotInd3, snapshotInd4, snapshotInd5,
       createdAt, updatedAt
     ) VALUES (
       ${alunoId}, ${numeroCiclo}, ${discIdStr}, ${pdiIdStr === "NULL" ? "NULL" : pdiIdStr},
@@ -9754,6 +9850,9 @@ async function arquivarCicloAtual(alunoId) {
       ${ind1Webinars}, ${ind2Avaliacoes}, ${ind3Competencias}, ${ind4Tarefas},
       ${ind5Engajamento}, ${ind6Aplicabilidade}, ${ind7EngajamentoFinal},
       ${metasTotal}, ${metasCumpridas},
+      ${snapshotEngajamento}, ${snapshotMetasPercentual}, ${snapshotAplicabilidade},
+      ${metasTotal}, ${metasCumpridas},
+      ${ind1Webinars}, ${ind2Avaliacoes}, ${ind3Competencias}, ${ind4Tarefas}, ${ind5Engajamento},
       NOW(), NOW()
     )
   `));
@@ -9811,6 +9910,16 @@ async function getHistoricoCiclosAluno(alunoId) {
       h.ind7EngajamentoFinal,
       h.metasTotal,
       h.metasCumpridas,
+      h.snapshotEngajamento,
+      h.snapshotMetasPercentual,
+      h.snapshotAplicabilidade,
+      h.snapshotMetasTotal,
+      h.snapshotMetasCumpridas,
+      h.snapshotInd1,
+      h.snapshotInd2,
+      h.snapshotInd3,
+      h.snapshotInd4,
+      h.snapshotInd5,
       dr.perfilPredominante,
       dr.perfilSecundario,
       dr.scoreD,
@@ -9865,6 +9974,7 @@ var init_db = __esm({
     "use strict";
     init_schema();
     init_env();
+    init_aplicabilidadeCalculator();
     init_schema();
     init_contrato_niveis_service();
     init_schema();
@@ -15767,50 +15877,7 @@ async function deleteSessionTypePricingRule(db2, id) {
 // server/routers.ts
 init_db();
 init_emailService();
-
-// server/aplicabilidadeCalculator.ts
-function round(value) {
-  return Math.round(value * 100) / 100;
-}
-function toPercentFrom0to10(score) {
-  return round(Math.max(0, Math.min(10, score)) * 10);
-}
-function calcularMicroTarefaAplicabilidade(tarefas) {
-  const tarefasValidas = tarefas.filter(
-    (t2) => t2.notaAlunoAplicabilidade != null || t2.notaMentoraAplicabilidade != null
-  );
-  if (tarefasValidas.length === 0) {
-    return { percentual: null, provisoria: false, total: 0 };
-  }
-  const notasFinais = tarefasValidas.map(
-    (t2) => t2.notaMentoraAplicabilidade != null ? Number(t2.notaMentoraAplicabilidade) : Number(t2.notaAlunoAplicabilidade)
-  );
-  const provisoria = tarefasValidas.some(
-    (t2) => t2.notaMentoraAplicabilidade == null && t2.notaAlunoAplicabilidade != null
-  );
-  const media = notasFinais.reduce((acc, n) => acc + n, 0) / notasFinais.length;
-  return {
-    percentual: toPercentFrom0to10(media),
-    provisoria,
-    total: tarefasValidas.length
-  };
-}
-function calcularAplicabilidadeFinal(params) {
-  const validos = [];
-  if (params.microTarefaPercentual != null) validos.push(params.microTarefaPercentual);
-  if (params.caseAplicavel && params.microCasePercentual != null) validos.push(params.microCasePercentual);
-  return {
-    percentualFinal: validos.length ? round(validos.reduce((a, b) => a + b, 0) / validos.length) : null,
-    microTarefaPercentual: params.microTarefaPercentual,
-    microCasePercentual: params.microCasePercentual,
-    caseAplicavel: params.caseAplicavel,
-    provisoria: params.provisoria,
-    totalTarefasComAplicabilidade: params.totalTarefasComAplicabilidade,
-    totalCasesConsiderados: params.totalCasesConsiderados
-  };
-}
-
-// server/routers.ts
+init_aplicabilidadeCalculator();
 init_discData();
 function parseCSVLine(line) {
   const result = [];

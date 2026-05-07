@@ -69,6 +69,7 @@ import {
   assessmentPdi, AssessmentPdi, InsertAssessmentPdi,
   assessmentCompetencias,} from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from './aplicabilidadeCalculator';
 import * as schema from "../drizzle/schema";
 import {
   createContratoNivelRepo,
@@ -11681,6 +11682,65 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
     metasCumpridas = Number(metaData?.cumpridas ?? 0);
   }
 
+  // === MACROINDICADORES: Calcular os 3 valores que aparecem na página de Performance ===
+  // Macro 1: Engajamento = ind7EngajamentoFinal (já calculado acima)
+  const snapshotEngajamento = ind7EngajamentoFinal;
+
+  // Macro 2: Metas (Jornada de Superação) = percentual de metas cumpridas
+  const snapshotMetasPercentual = metasTotal > 0
+    ? Math.round((metasCumpridas / metasTotal) * 100)
+    : 0;
+
+  // Macro 3: Aplicabilidade Prática = calculado igual ao endpoint meuDashboard
+  let snapshotAplicabilidade = 0;
+  try {
+    const CUTOFF_DATE = new Date('2026-04-01');
+    const [sessAplic] = await db.execute(sql.raw(`
+      SELECT notaAlunoAplicabilidade, notaMentoraAplicabilidade
+      FROM mentoring_sessions
+      WHERE alunoId = ${alunoId}
+        AND sessionDate >= '2026-04-01'
+        AND (notaAlunoAplicabilidade IS NOT NULL OR notaMentoraAplicabilidade IS NOT NULL)
+    `)) as any;
+    const sessoesComAplic = Array.isArray(sessAplic) ? sessAplic : [];
+
+    const [casesAplic] = await db.execute(sql.raw(`
+      SELECT notaAlunoAplicabilidade, notaMentoraAplicabilidade, entregue
+      FROM cases_sucesso
+      WHERE alunoId = ${alunoId} AND entregue = 1
+        AND dataEntrega >= '2026-04-01'
+        AND (notaAlunoAplicabilidade IS NOT NULL OR notaMentoraAplicabilidade IS NOT NULL)
+    `)) as any;
+    const casesComAplic = Array.isArray(casesAplic) ? casesAplic : [];
+
+    const [casesAll] = await db.execute(sql.raw(
+      `SELECT entregue FROM cases_sucesso WHERE alunoId = ${alunoId}`
+    )) as any;
+    const todosOsCases = Array.isArray(casesAll) ? casesAll : [];
+
+    const microTarefa = calcularMicroTarefaAplicabilidade(
+      sessoesComAplic.map((s: any) => ({
+        notaAlunoAplicabilidade: s.notaAlunoAplicabilidade,
+        notaMentoraAplicabilidade: s.notaMentoraAplicabilidade,
+      }))
+    );
+    const caseAplicavel = todosOsCases.length > 0;
+    const anyCaseEntregue = todosOsCases.some((c: any) => c.entregue === 1);
+    const microCasePercentual = caseAplicavel ? (anyCaseEntregue ? 100 : 0) : null;
+
+    const aplicResult = calcularAplicabilidadeFinal({
+      microTarefaPercentual: microTarefa.percentual,
+      microCasePercentual,
+      caseAplicavel,
+      provisoria: microTarefa.provisoria,
+      totalTarefasComAplicabilidade: microTarefa.total,
+      totalCasesConsiderados: caseAplicavel ? 1 : 0,
+    });
+    snapshotAplicabilidade = Math.round(aplicResult.percentualFinal ?? 0);
+  } catch (e) {
+    console.warn(`[DB] Aviso: erro ao calcular snapshot de aplicabilidade para aluno ${alunoId}:`, e);
+  }
+
   // === 4. CONGELAR PDIs ATIVOS ===
   // Contar PDIs ativos antes de congelar
   const [pdiCountRows] = await db.execute(sql.raw(
@@ -11731,6 +11791,9 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
       ind1Webinars, ind2Avaliacoes, ind3Competencias, ind4Tarefas,
       ind5Engajamento, ind6Aplicabilidade, ind7EngajamentoFinal,
       metasTotal, metasCumpridas,
+      snapshotEngajamento, snapshotMetasPercentual, snapshotAplicabilidade,
+      snapshotMetasTotal, snapshotMetasCumpridas,
+      snapshotInd1, snapshotInd2, snapshotInd3, snapshotInd4, snapshotInd5,
       createdAt, updatedAt
     ) VALUES (
       ${alunoId}, ${numeroCiclo}, ${discIdStr}, ${pdiIdStr === 'NULL' ? 'NULL' : pdiIdStr},
@@ -11738,6 +11801,9 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
       ${ind1Webinars}, ${ind2Avaliacoes}, ${ind3Competencias}, ${ind4Tarefas},
       ${ind5Engajamento}, ${ind6Aplicabilidade}, ${ind7EngajamentoFinal},
       ${metasTotal}, ${metasCumpridas},
+      ${snapshotEngajamento}, ${snapshotMetasPercentual}, ${snapshotAplicabilidade},
+      ${metasTotal}, ${metasCumpridas},
+      ${ind1Webinars}, ${ind2Avaliacoes}, ${ind3Competencias}, ${ind4Tarefas}, ${ind5Engajamento},
       NOW(), NOW()
     )
   `));
@@ -11807,6 +11873,16 @@ export async function getHistoricoCiclosAluno(alunoId: number) {
       h.ind7EngajamentoFinal,
       h.metasTotal,
       h.metasCumpridas,
+      h.snapshotEngajamento,
+      h.snapshotMetasPercentual,
+      h.snapshotAplicabilidade,
+      h.snapshotMetasTotal,
+      h.snapshotMetasCumpridas,
+      h.snapshotInd1,
+      h.snapshotInd2,
+      h.snapshotInd3,
+      h.snapshotInd4,
+      h.snapshotInd5,
       dr.perfilPredominante,
       dr.perfilSecundario,
       dr.scoreD,
