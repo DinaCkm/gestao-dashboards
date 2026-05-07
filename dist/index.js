@@ -9768,15 +9768,26 @@ async function arquivarCicloAtual(alunoId) {
   let metasCumpridas = 0;
   if (pdiId) {
     const [metaRows] = await db2.execute(sql2.raw(`
-      SELECT
-        COUNT(*) as total,
-        SUM(CASE WHEN m.status = 'concluida' THEN 1 ELSE 0 END) as cumpridas
-      FROM metas m
+      SELECT COUNT(*) as total FROM metas m
       WHERE m.alunoId = ${alunoId} AND m.assessmentPdiId = ${pdiId} AND m.isActive = 1
     `));
-    const metaData = Array.isArray(metaRows) ? metaRows[0] : null;
-    metasTotal = Number(metaData?.total ?? 0);
-    metasCumpridas = Number(metaData?.cumpridas ?? 0);
+    metasTotal = Number(Array.isArray(metaRows) && metaRows[0] ? metaRows[0].total : 0);
+    if (metasTotal > 0) {
+      const [cumpridasRows] = await db2.execute(sql2.raw(`
+        SELECT COUNT(DISTINCT m.id) as cumpridas
+        FROM metas m
+        INNER JOIN meta_acompanhamento ma ON ma.metaId = m.id AND ma.alunoId = m.alunoId
+        WHERE m.alunoId = ${alunoId} AND m.assessmentPdiId = ${pdiId} AND m.isActive = 1
+          AND ma.status = 'cumprida'
+          AND ma.id = (
+            SELECT id FROM meta_acompanhamento ma2
+            WHERE ma2.metaId = m.id AND ma2.alunoId = m.alunoId
+            ORDER BY ma2.ano DESC, ma2.mes DESC, ma2.id DESC
+            LIMIT 1
+          )
+      `));
+      metasCumpridas = Number(Array.isArray(cumpridasRows) && cumpridasRows[0] ? cumpridasRows[0].cumpridas : 0);
+    }
   }
   const snapshotEngajamento = ind7EngajamentoFinal;
   const snapshotMetasPercentual = metasTotal > 0 ? Math.round(metasCumpridas / metasTotal * 100) : 0;

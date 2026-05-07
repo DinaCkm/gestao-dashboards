@@ -11699,19 +11699,33 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   );
 
   // Metas: total e cumpridas do PDI ativo
+  // A tabela `metas` não tem coluna `status` — o status vem de `meta_acompanhamento` (ultimo registro por meta)
   let metasTotal = 0;
   let metasCumpridas = 0;
   if (pdiId) {
     const [metaRows] = await db.execute(sql.raw(`
-      SELECT
-        COUNT(*) as total,
-        SUM(CASE WHEN m.status = 'concluida' THEN 1 ELSE 0 END) as cumpridas
-      FROM metas m
+      SELECT COUNT(*) as total FROM metas m
       WHERE m.alunoId = ${alunoId} AND m.assessmentPdiId = ${pdiId} AND m.isActive = 1
     `)) as any;
-    const metaData = Array.isArray(metaRows) ? metaRows[0] : null;
-    metasTotal = Number(metaData?.total ?? 0);
-    metasCumpridas = Number(metaData?.cumpridas ?? 0);
+    metasTotal = Number(Array.isArray(metaRows) && metaRows[0] ? metaRows[0].total : 0);
+
+    if (metasTotal > 0) {
+      // Para cada meta, pega o último acompanhamento e verifica se é 'cumprida'
+      const [cumpridasRows] = await db.execute(sql.raw(`
+        SELECT COUNT(DISTINCT m.id) as cumpridas
+        FROM metas m
+        INNER JOIN meta_acompanhamento ma ON ma.metaId = m.id AND ma.alunoId = m.alunoId
+        WHERE m.alunoId = ${alunoId} AND m.assessmentPdiId = ${pdiId} AND m.isActive = 1
+          AND ma.status = 'cumprida'
+          AND ma.id = (
+            SELECT id FROM meta_acompanhamento ma2
+            WHERE ma2.metaId = m.id AND ma2.alunoId = m.alunoId
+            ORDER BY ma2.ano DESC, ma2.mes DESC, ma2.id DESC
+            LIMIT 1
+          )
+      `)) as any;
+      metasCumpridas = Number(Array.isArray(cumpridasRows) && cumpridasRows[0] ? cumpridasRows[0].cumpridas : 0);
+    }
   }
 
   // === MACROINDICADORES: Calcular os 3 valores que aparecem na página de Performance ===
