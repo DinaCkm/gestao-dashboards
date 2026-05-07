@@ -3470,8 +3470,12 @@ export default function OnboardingAluno() {
   // - Aluno COM PDI e SEM onboarding liberado = readOnly (veterano visualizando)
   // - Aluno COM onboardingCompleto = readOnly (completou o fluxo)
   // - Aluno SEM PDI ou COM onboarding liberado = pode editar (aluno novo ou novo ciclo)
-  const globalReadOnly = !!(progressoData?.onboardingCompleto) || 
-    !!(onboardingStatus?.hasPdi && !onboardingStatus?.needsOnboarding);
+  // IMPORTANTE: onboardingLiberado=1 significa novo ciclo — aluno deve poder editar
+  const emNovoCiclo = !!(onboardingStatus?.onboardingLiberado);
+  const globalReadOnly = !emNovoCiclo && (
+    !!(progressoData?.onboardingCompleto) || 
+    !!(onboardingStatus?.hasPdi && !onboardingStatus?.needsOnboarding)
+  );
   
   // Etapas anteriores ao progresso real ficam em readOnly (para não refazer)
   const isViewingPreviousStep = !globalReadOnly && currentStep < progressStep;

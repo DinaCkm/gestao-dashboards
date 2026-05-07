@@ -4116,7 +4116,11 @@ export async function getAssessmentsByAluno(alunoId: number) {
   if (!db) return [];
   
   const pdis = await db.select().from(assessmentPdi)
-    .where(eq(assessmentPdi.alunoId, alunoId))
+    .where(and(
+      eq(assessmentPdi.alunoId, alunoId),
+      // Ignorar PDIs congelados — eles pertencem ao ciclo anterior e aparecem na Evolução
+      sql`${assessmentPdi.status} != 'congelado'`,
+    ))
     .orderBy(desc(assessmentPdi.createdAt));
   
   if (pdis.length === 0) return [];
@@ -4278,6 +4282,8 @@ export async function getAssessmentsByAlunoAndNivel(alunoId: number, contratoNiv
     .where(and(
       eq(assessmentPdi.alunoId, alunoId),
       eq(assessmentPdi.contratoNivelId, contratoNivelId),
+      // Ignorar PDIs congelados — eles pertencem ao ciclo anterior e aparecem na Evolução
+      sql`${assessmentPdi.status} != 'congelado'`,
     ))
     .orderBy(desc(assessmentPdi.createdAt));
 
@@ -7731,14 +7737,30 @@ export async function getAlunoAppointments(alunoId: number) {
   const db = await getDb();
   if (!db) return [];
 
+  // Se o aluno está em novo ciclo (onboardingLiberado=1), filtrar apenas agendamentos
+  // criados após a data de liberação do novo ciclo para não confundir com o ciclo anterior
+  const [alunoRow] = await db.select({
+    onboardingLiberado: alunos.onboardingLiberado,
+    onboardingLiberadoEm: alunos.onboardingLiberadoEm,
+  }).from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+
   const participations = await db.select().from(appointmentParticipants)
     .where(eq(appointmentParticipants.alunoId, alunoId));
+
+  // Data de corte para novo ciclo: ignorar agendamentos anteriores à liberação
+  const novoCicloLiberadoEm = alunoRow?.onboardingLiberado === 1 && alunoRow?.onboardingLiberadoEm
+    ? new Date(alunoRow.onboardingLiberadoEm)
+    : null;
 
   const result = [];
   for (const p of participations) {
     const [appt] = await db.select().from(mentorAppointments)
       .where(eq(mentorAppointments.id, p.appointmentId));
     if (appt && appt.status !== 'cancelado') {
+      // Se em novo ciclo, ignorar agendamentos criados antes da liberação do ciclo
+      if (novoCicloLiberadoEm && appt.createdAt && new Date(appt.createdAt) < novoCicloLiberadoEm) {
+        continue;
+      }
       const consultorsList = await getConsultors();
       const mentor = consultorsList.find(c => c.id === appt.consultorId);
 

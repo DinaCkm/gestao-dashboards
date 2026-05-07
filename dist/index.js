@@ -4853,7 +4853,11 @@ async function getAlunosResumo(programId) {
 async function getAssessmentsByAluno(alunoId) {
   const db2 = await getDb();
   if (!db2) return [];
-  const pdis = await db2.select().from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId)).orderBy(desc(assessmentPdi.createdAt));
+  const pdis = await db2.select().from(assessmentPdi).where(and(
+    eq(assessmentPdi.alunoId, alunoId),
+    // Ignorar PDIs congelados — eles pertencem ao ciclo anterior e aparecem na Evolução
+    sql2`${assessmentPdi.status} != 'congelado'`
+  )).orderBy(desc(assessmentPdi.createdAt));
   if (pdis.length === 0) return [];
   const pdiIds = pdis.map((p) => p.id);
   const allComps = await db2.select().from(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} IN (${sql2.join(pdiIds.map((id) => sql2`${id}`), sql2`, `)})`);
@@ -4963,7 +4967,9 @@ async function getAssessmentsByAlunoAndNivel(alunoId, contratoNivelId) {
   if (!db2) return [];
   const pdis = await db2.select().from(assessmentPdi).where(and(
     eq(assessmentPdi.alunoId, alunoId),
-    eq(assessmentPdi.contratoNivelId, contratoNivelId)
+    eq(assessmentPdi.contratoNivelId, contratoNivelId),
+    // Ignorar PDIs congelados — eles pertencem ao ciclo anterior e aparecem na Evolução
+    sql2`${assessmentPdi.status} != 'congelado'`
   )).orderBy(desc(assessmentPdi.createdAt));
   if (pdis.length === 0) return [];
   const pdiIds = pdis.map((p) => p.id);
@@ -7224,11 +7230,19 @@ async function getAlunoInvites(alunoId) {
 async function getAlunoAppointments(alunoId) {
   const db2 = await getDb();
   if (!db2) return [];
+  const [alunoRow] = await db2.select({
+    onboardingLiberado: alunos.onboardingLiberado,
+    onboardingLiberadoEm: alunos.onboardingLiberadoEm
+  }).from(alunos).where(eq(alunos.id, alunoId)).limit(1);
   const participations = await db2.select().from(appointmentParticipants).where(eq(appointmentParticipants.alunoId, alunoId));
+  const novoCicloLiberadoEm = alunoRow?.onboardingLiberado === 1 && alunoRow?.onboardingLiberadoEm ? new Date(alunoRow.onboardingLiberadoEm) : null;
   const result = [];
   for (const p of participations) {
     const [appt] = await db2.select().from(mentorAppointments).where(eq(mentorAppointments.id, p.appointmentId));
     if (appt && appt.status !== "cancelado") {
+      if (novoCicloLiberadoEm && appt.createdAt && new Date(appt.createdAt) < novoCicloLiberadoEm) {
+        continue;
+      }
       const consultorsList = await getConsultors();
       const mentor = consultorsList.find((c) => c.id === appt.consultorId);
       let participants = [];
@@ -23162,7 +23176,7 @@ Responda APENAS em JSON com o formato:
     })).mutation(async ({ input, ctx }) => {
       const { alunoId, nome, email, telefone, cargo, areaAtuacao, minicurriculo, quemEVoce } = input;
       const onbStatus = await getAlunoOnboardingStatus(ctx.user);
-      if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+      if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
         throw new TRPCError4({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
       }
       const result = await updateAluno(alunoId, {
@@ -23346,7 +23360,7 @@ Responda APENAS em JSON com o formato:
     })).mutation(async ({ input, ctx }) => {
       const { alunoId, consultorId } = input;
       const onbStatus = await getAlunoOnboardingStatus(ctx.user);
-      if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+      if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
         throw new TRPCError4({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
       }
       const result = await updateAluno(alunoId, { consultorId });
@@ -23488,7 +23502,7 @@ Responda APENAS em JSON com o formato:
     })).mutation(async ({ input, ctx }) => {
       const { alunoId, consultorId, scheduledDate, startTime, endTime, googleMeetLink, notes } = input;
       const onbStatus = await getAlunoOnboardingStatus(ctx.user);
-      if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+      if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
         throw new TRPCError4({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       const result = await createGroupAppointment({
@@ -23742,7 +23756,7 @@ Responda APENAS em JSON com o formato:
     // Marcar PDI como visualizado (etapa 6)
     marcarPdiVisualizado: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().nullable().optional() })).mutation(async ({ input, ctx }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx.user);
-      if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+      if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
         throw new TRPCError4({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       await upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
@@ -23758,7 +23772,7 @@ Responda APENAS em JSON com o formato:
       chave: z4.enum(["boas_vindas", "competencias", "webinars", "tarefas", "metas"])
     })).mutation(async ({ input, ctx }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx.user);
-      if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+      if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
         throw new TRPCError4({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       const fieldMap = {
@@ -23793,7 +23807,7 @@ Responda APENAS em JSON com o formato:
       nomeAceite: z4.string().min(2)
     })).mutation(async ({ input, ctx }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx.user);
-      if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+      if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
         throw new TRPCError4({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       await upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
@@ -23846,7 +23860,7 @@ Responda APENAS em JSON com o formato:
       justificativa: z4.string().min(5, "Por favor, explique o que gostaria de rever.")
     })).mutation(async ({ input, ctx }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx.user);
-      if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+      if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
         throw new TRPCError4({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       const totalRevisoes = await onboardingRevisoesDb.countByAluno(input.alunoId);

@@ -8951,7 +8951,7 @@ Responda APENAS em JSON com o formato:
         const { alunoId, nome, email, telefone, cargo, areaAtuacao, minicurriculo, quemEVoce } = input;
         // Proteção: verificar se o aluno pode editar o onboarding
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura. Aluno já possui PDI.' });
         }
         const result = await db.updateAluno(alunoId, {
@@ -9141,7 +9141,7 @@ Responda APENAS em JSON com o formato:
         const { alunoId, consultorId } = input;
         // Proteção: verificar se o aluno pode editar o onboarding
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura. Aluno já possui PDI.' });
         }
         const result = await db.updateAluno(alunoId, { consultorId });
@@ -9310,7 +9310,7 @@ Responda APENAS em JSON com o formato:
         const { alunoId, consultorId, scheduledDate, startTime, endTime, googleMeetLink, notes } = input;
         // Proteção: verificar se o aluno pode editar o onboarding
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
         // Criar o agendamento na tabela mentor_appointments
@@ -9628,7 +9628,7 @@ Responda APENAS em JSON com o formato:
       .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .mutation(async ({ input, ctx }) => {
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
         await db.upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
@@ -9647,7 +9647,7 @@ Responda APENAS em JSON com o formato:
       }))
       .mutation(async ({ input, ctx }) => {
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
         const fieldMap: Record<string, string> = {
@@ -9688,7 +9688,7 @@ Responda APENAS em JSON com o formato:
       }))
       .mutation(async ({ input, ctx }) => {
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
         await db.upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
@@ -9755,7 +9755,7 @@ Responda APENAS em JSON com o formato:
       }))
       .mutation(async ({ input, ctx }) => {
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
 
