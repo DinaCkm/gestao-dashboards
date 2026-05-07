@@ -993,12 +993,14 @@ function RelatorioAutoconhecimento({
   perfilPredominante,
   perfilSecundario,
   onComplete,
+  labelContinuar = "Continuar para Escolha da Mentora",
 }: {
   alunoId: number;
   discScores: DiscScores | null;
   perfilPredominante: DiscDimensao | null;
   perfilSecundario: DiscDimensao | null;
   onComplete: () => void;
+  labelContinuar?: string;
 }) {
   const { data: perfisData } = trpc.disc.perfis.useQuery();
   const { data: autopercepcoesData } = trpc.autopercepção.porAluno.useQuery({ alunoId });
@@ -1343,7 +1345,7 @@ function RelatorioAutoconhecimento({
           className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base gap-2"
           onClick={onComplete}
         >
-          Continuar para Escolha da Mentora <ChevronRight className="h-5 w-5" />
+          {labelContinuar} <ChevronRight className="h-5 w-5" />
         </Button>
       </div>
     </div>
@@ -1358,10 +1360,12 @@ export default function EtapaAssessmentCompleta({
   alunoId,
   onComplete,
   readOnly = false,
+  labelContinuar = "Continuar para Escolha da Mentora",
 }: {
   alunoId: number;
   onComplete: () => void;
   readOnly?: boolean;
+  labelContinuar?: string;
 }) {
   // Verificar se já fez o teste
   const { data: discResultado } = trpc.disc.resultado.useQuery({ alunoId }, { enabled: !!alunoId });
@@ -1373,7 +1377,7 @@ export default function EtapaAssessmentCompleta({
   const [perfilSecundario, setPerfilSecundario] = useState<DiscDimensao | null>(null);
 
   // Se readOnly ou já fez o teste, ir direto para o relatório
-  useMemo(() => {
+  useEffect(() => {
     if (discResultado) {
       setDiscScores({
         D: Number(discResultado.scoreD),
@@ -1420,13 +1424,19 @@ export default function EtapaAssessmentCompleta({
             const isCompleted = idx < currentSubIndex;
             const isCurrent = idx === currentSubIndex;
             const StepIcon = step.icon;
+            // Permite navegar para etapas já concluídas clicando na bolinha
+            const canNavigate = isCompleted || (idx === 2 && discResultado && autopercepcoesExistentes && autopercepcoesExistentes.length > 0);
             return (
-              <div key={step.id} className="flex flex-col items-center relative z-10">
+              <div
+                key={step.id}
+                className={`flex flex-col items-center relative z-10 ${canNavigate ? 'cursor-pointer' : ''}`}
+                onClick={() => { if (canNavigate) setSubEtapa(step.id); }}
+              >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
                   isCompleted ? "bg-emerald-500 text-white" :
                   isCurrent ? "bg-[#0A1E3E] text-white shadow-lg" :
                   "bg-gray-200 text-gray-400"
-                }`}>
+                } ${canNavigate ? 'hover:opacity-80' : ''}`}>
                   {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
                 </div>
                 <span className={`text-xs mt-2 font-medium ${
@@ -1449,6 +1459,7 @@ export default function EtapaAssessmentCompleta({
           perfilPredominante={perfilPredominante}
           perfilSecundario={perfilSecundario}
           onComplete={onComplete}
+          labelContinuar={labelContinuar}
         />
       ) : (
         <>
@@ -1478,6 +1489,7 @@ export default function EtapaAssessmentCompleta({
               perfilPredominante={perfilPredominante}
               perfilSecundario={perfilSecundario}
               onComplete={onComplete}
+              labelContinuar={labelContinuar}
             />
           )}
         </>

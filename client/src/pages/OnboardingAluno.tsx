@@ -3495,7 +3495,13 @@ export default function OnboardingAluno() {
 
   const handleStepComplete = () => {
     if (currentStep < 8) {
-      setCurrentStep(currentStep + 1);
+      // No novo ciclo, pular etapas de mentora (3), agendamento (4) e 1º encontro (5)
+      // O fluxo é: Cadastro (1) → Assessment (2) → Meu PDI (7) → Aceite (8)
+      let nextStep = currentStep + 1;
+      if (emNovoCiclo && (nextStep === 3 || nextStep === 4 || nextStep === 5 || nextStep === 6)) {
+        nextStep = 7; // Pular direto para Meu PDI
+      }
+      setCurrentStep(nextStep);
     } else {
       // Onboarding completo, redirecionar para o Portal do Aluno
       toast.success("🌟 Parabéns! Sua jornada de desenvolvimento começa agora!");
@@ -3588,6 +3594,7 @@ export default function OnboardingAluno() {
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
             onComplete={handleStepComplete}
             readOnly={readOnly && !reassessmentElegivel}
+            labelContinuar={emNovoCiclo ? "Continuar para Meu PDI" : "Continuar para Escolha da Mentora"}
           />
         )}
         {currentStep === 3 && (
