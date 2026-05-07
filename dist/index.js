@@ -6804,70 +6804,46 @@ async function liberarOnboardingAluno(alunoId) {
   if (!db2) return { success: false, message: "Erro de conex\xE3o com banco" };
   const [aluno] = await db2.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
   if (!aluno) return { success: false, message: "Aluno n\xE3o encontrado" };
+  if (aluno.onboardingLiberado === 1) return { success: false, message: "Onboarding j\xE1 est\xE1 liberado para este aluno" };
   const [pdiCount] = await db2.select({ count: sql2`COUNT(*)` }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId));
   if ((pdiCount?.count ?? 0) === 0) {
     return { success: false, message: "Aluno n\xE3o tem PDI. J\xE1 deve ir para onboarding automaticamente." };
   }
   let numeroCiclo = 1;
   try {
-    await db2.execute(sql2.raw("START TRANSACTION"));
-    const [lockRows] = await db2.execute(sql2.raw(
-      `SELECT id, onboardingLiberado FROM alunos WHERE id = ${alunoId} FOR UPDATE`
-    ));
-    const alunoLocked = Array.isArray(lockRows) ? lockRows[0] : null;
-    if (!alunoLocked) {
-      await db2.execute(sql2.raw("ROLLBACK"));
-      return { success: false, message: "Aluno n\xE3o encontrado (lock)" };
-    }
-    if (alunoLocked.onboardingLiberado === 1) {
-      await db2.execute(sql2.raw("ROLLBACK"));
-      return { success: false, message: "Onboarding j\xE1 est\xE1 liberado para este aluno" };
-    }
     const resultado = await arquivarCicloAtual(alunoId);
     numeroCiclo = resultado.numeroCiclo;
-    await db2.execute(sql2.raw(
-      `UPDATE alunos SET onboardingLiberado = 1, onboardingLiberadoEm = NOW() WHERE id = ${alunoId}`
+    await db2.update(alunos).set({ onboardingLiberado: 1, onboardingLiberadoEm: /* @__PURE__ */ new Date() }).where(eq(alunos.id, alunoId));
+    await db2.execute(sql2.raw(`DELETE FROM disc_respostas WHERE alunoId = ${alunoId}`));
+    await db2.execute(sql2.raw(`DELETE FROM disc_resultados WHERE alunoId = ${alunoId}`));
+    await db2.execute(sql2.raw(`DELETE FROM autopercepcoes_competencias WHERE alunoId = ${alunoId}`));
+    const [jornadaRows] = await db2.execute(sql2.raw(
+      `SELECT id, ciclo FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
     ));
-    await db2.execute(sql2.raw("COMMIT"));
-  } catch (err) {
-    await db2.execute(sql2.raw("ROLLBACK")).catch(() => {
-    });
-    console.error(`[DB] Erro na transa\xE7\xE3o liberarOnboardingAluno para aluno ${alunoId}:`, err);
-    return { success: false, message: "Erro interno ao liberar onboarding. Tente novamente." };
-  }
-  try {
-    const dbClean = await getDb();
-    if (dbClean) {
-      await dbClean.execute(sql2.raw(`DELETE FROM disc_respostas WHERE alunoId = ${alunoId}`));
-      await dbClean.execute(sql2.raw(`DELETE FROM disc_resultados WHERE alunoId = ${alunoId}`));
-      await dbClean.execute(sql2.raw(`DELETE FROM autopercepcoes_competencias WHERE alunoId = ${alunoId}`));
-      const [jornadaRows] = await dbClean.execute(sql2.raw(
-        `SELECT id, ciclo FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
-      ));
-      const jornadaAtual = Array.isArray(jornadaRows) ? jornadaRows[0] : null;
-      const novoCicloJornada = (Number(jornadaAtual?.ciclo) || 0) + 1;
-      if (jornadaAtual?.id) {
-        await dbClean.execute(sql2.raw(`
-          UPDATE onboarding_jornada SET
-            ciclo = ${novoCicloJornada},
-            cadastroConfirmado = 0, cadastroConfirmadoEm = NULL,
-            pdiVisualizado = 0, pdiVisualizadoEm = NULL,
-            pdiLiberadoPelaMentora = 0, pdiLiberadoEm = NULL,
-            videoBoasVindas = 0, videoCompetencias = 0, videoWebinars = 0,
-            videoTarefas = 0, videoMetas = 0, todosVideosEm = NULL,
-            aceiteRealizado = 0, aceiteRealizadoEm = NULL, nomeAceite = NULL,
-            updatedAt = NOW()
-          WHERE alunoId = ${alunoId}
-        `));
-      } else {
-        await dbClean.execute(sql2.raw(`
-          INSERT INTO onboarding_jornada (alunoId, ciclo, cadastroConfirmado, aceiteRealizado, createdAt, updatedAt)
-          VALUES (${alunoId}, ${novoCicloJornada}, 0, 0, NOW(), NOW())
-        `));
-      }
+    const jornadaAtual = Array.isArray(jornadaRows) ? jornadaRows[0] : null;
+    const novoCicloJornada = (Number(jornadaAtual?.ciclo) || 0) + 1;
+    if (jornadaAtual?.id) {
+      await db2.execute(sql2.raw(`
+        UPDATE onboarding_jornada SET
+          ciclo = ${novoCicloJornada},
+          cadastroConfirmado = 0, cadastroConfirmadoEm = NULL,
+          pdiVisualizado = 0, pdiVisualizadoEm = NULL,
+          pdiLiberadoPelaMentora = 0, pdiLiberadoEm = NULL,
+          videoBoasVindas = 0, videoCompetencias = 0, videoWebinars = 0,
+          videoTarefas = 0, videoMetas = 0, todosVideosEm = NULL,
+          aceiteRealizado = 0, aceiteRealizadoEm = NULL, nomeAceite = NULL,
+          updatedAt = NOW()
+        WHERE alunoId = ${alunoId}
+      `));
+    } else {
+      await db2.execute(sql2.raw(`
+        INSERT INTO onboarding_jornada (alunoId, ciclo, cadastroConfirmado, aceiteRealizado, createdAt, updatedAt)
+        VALUES (${alunoId}, ${novoCicloJornada}, 0, 0, NOW(), NOW())
+      `));
     }
-  } catch (cleanErr) {
-    console.error(`[DB] Aviso: erro ao limpar dados do ciclo anterior para aluno ${alunoId}:`, cleanErr);
+  } catch (err) {
+    console.error(`[DB] Erro em liberarOnboardingAluno para aluno ${alunoId}:`, err);
+    return { success: false, message: "Erro interno ao liberar onboarding. Tente novamente." };
   }
   return { success: true, message: `Onboarding liberado para novo ciclo. Ciclo ${numeroCiclo} arquivado na p\xE1gina de Evolu\xE7\xE3o.` };
 }

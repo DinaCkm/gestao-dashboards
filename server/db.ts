@@ -7081,9 +7081,10 @@ export async function liberarOnboardingAluno(alunoId: number) {
   const db = await getDb();
   if (!db) return { success: false, message: 'Erro de conexão com banco' };
 
-  // Verificar se o aluno existe e tem PDI (fora da transação, apenas validação)
+  // Validações básicas
   const [aluno] = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
   if (!aluno) return { success: false, message: 'Aluno não encontrado' };
+  if (aluno.onboardingLiberado === 1) return { success: false, message: 'Onboarding já está liberado para este aluno' };
   const [pdiCount] = await db.select({ count: sql<number>`COUNT(*)` })
     .from(assessmentPdi)
     .where(eq(assessmentPdi.alunoId, alunoId));
@@ -7091,82 +7092,50 @@ export async function liberarOnboardingAluno(alunoId: number) {
     return { success: false, message: 'Aluno não tem PDI. Já deve ir para onboarding automaticamente.' };
   }
 
-  // === TRANSAÇÃO ATÔMICA com lock por alunoId ===
-  // Usa SELECT ... FOR UPDATE para evitar duplo reset concorrente
   let numeroCiclo = 1;
   try {
-    await db.execute(sql.raw('START TRANSACTION'));
-    // Lock na linha do aluno para evitar concorrência
-    const [lockRows] = await db.execute(sql.raw(
-      `SELECT id, onboardingLiberado FROM alunos WHERE id = ${alunoId} FOR UPDATE`
-    )) as any;
-    const alunoLocked = Array.isArray(lockRows) ? lockRows[0] : null;
-    if (!alunoLocked) {
-      await db.execute(sql.raw('ROLLBACK'));
-      return { success: false, message: 'Aluno não encontrado (lock)' };
-    }
-    if (alunoLocked.onboardingLiberado === 1) {
-      await db.execute(sql.raw('ROLLBACK'));
-      return { success: false, message: 'Onboarding já está liberado para este aluno' };
-    }
-    // Arquivar ciclo atual (DISC + PDI) — idempotênte
-    // NOTA: arquivarCicloAtual usa sua própria conexão do pool (getDb() interno)
-    // Por isso apenas o lock e o UPDATE de onboardingLiberado ficam nesta transação
+    // 1. Arquivar ciclo atual (snapshot + congelamento)
     const resultado = await arquivarCicloAtual(alunoId);
     numeroCiclo = resultado.numeroCiclo;
-    // Marcar onboarding como liberado (dentro da transação para atomicidade com o lock)
-    await db.execute(sql.raw(
-      `UPDATE alunos SET onboardingLiberado = 1, onboardingLiberadoEm = NOW() WHERE id = ${alunoId}`
-    ));
-     await db.execute(sql.raw('COMMIT'));
-  } catch (err) {
-    await db.execute(sql.raw('ROLLBACK')).catch(() => {});
-    console.error(`[DB] Erro na transação liberarOnboardingAluno para aluno ${alunoId}:`, err);
-    return { success: false, message: 'Erro interno ao liberar onboarding. Tente novamente.' };
-  }
 
-  // === LIMPAR DADOS DO CICLO ANTERIOR (após COMMIT, fora da transação) ===
-  // arquivarCicloAtual usa sua própria conexão do pool, por isso estas operações
-  // são executadas separadamente após o commit do lock
-  try {
-    const dbClean = await getDb();
-    if (dbClean) {
-      // 1. Deletar respostas e resultados DISC (aluno refará o teste)
-      await dbClean.execute(sql.raw(`DELETE FROM disc_respostas WHERE alunoId = ${alunoId}`));
-      await dbClean.execute(sql.raw(`DELETE FROM disc_resultados WHERE alunoId = ${alunoId}`));
+    // 2. Marcar onboarding como liberado
+    await db.update(alunos)
+      .set({ onboardingLiberado: 1, onboardingLiberadoEm: new Date() })
+      .where(eq(alunos.id, alunoId));
 
-      // 2. Deletar autopercepções de competências (aluno refará a autoavaliação)
-      await dbClean.execute(sql.raw(`DELETE FROM autopercepcoes_competencias WHERE alunoId = ${alunoId}`));
+    // 3. Limpar dados do ciclo anterior para o novo ciclo
+    await db.execute(sql.raw(`DELETE FROM disc_respostas WHERE alunoId = ${alunoId}`));
+    await db.execute(sql.raw(`DELETE FROM disc_resultados WHERE alunoId = ${alunoId}`));
+    await db.execute(sql.raw(`DELETE FROM autopercepcoes_competencias WHERE alunoId = ${alunoId}`));
 
-      // 3. Resetar jornada de onboarding: incrementar ciclo e zerar progresso
-      const [jornadaRows] = await dbClean.execute(sql.raw(
-        `SELECT id, ciclo FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
-      )) as any;
-      const jornadaAtual = Array.isArray(jornadaRows) ? jornadaRows[0] : null;
-      const novoCicloJornada = (Number(jornadaAtual?.ciclo) || 0) + 1;
-      if (jornadaAtual?.id) {
-        await dbClean.execute(sql.raw(`
-          UPDATE onboarding_jornada SET
-            ciclo = ${novoCicloJornada},
-            cadastroConfirmado = 0, cadastroConfirmadoEm = NULL,
-            pdiVisualizado = 0, pdiVisualizadoEm = NULL,
-            pdiLiberadoPelaMentora = 0, pdiLiberadoEm = NULL,
-            videoBoasVindas = 0, videoCompetencias = 0, videoWebinars = 0,
-            videoTarefas = 0, videoMetas = 0, todosVideosEm = NULL,
-            aceiteRealizado = 0, aceiteRealizadoEm = NULL, nomeAceite = NULL,
-            updatedAt = NOW()
-          WHERE alunoId = ${alunoId}
-        `));
-      } else {
-        await dbClean.execute(sql.raw(`
-          INSERT INTO onboarding_jornada (alunoId, ciclo, cadastroConfirmado, aceiteRealizado, createdAt, updatedAt)
-          VALUES (${alunoId}, ${novoCicloJornada}, 0, 0, NOW(), NOW())
-        `));
-      }
+    // 4. Resetar jornada de onboarding
+    const [jornadaRows] = await db.execute(sql.raw(
+      `SELECT id, ciclo FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
+    )) as any;
+    const jornadaAtual = Array.isArray(jornadaRows) ? jornadaRows[0] : null;
+    const novoCicloJornada = (Number(jornadaAtual?.ciclo) || 0) + 1;
+    if (jornadaAtual?.id) {
+      await db.execute(sql.raw(`
+        UPDATE onboarding_jornada SET
+          ciclo = ${novoCicloJornada},
+          cadastroConfirmado = 0, cadastroConfirmadoEm = NULL,
+          pdiVisualizado = 0, pdiVisualizadoEm = NULL,
+          pdiLiberadoPelaMentora = 0, pdiLiberadoEm = NULL,
+          videoBoasVindas = 0, videoCompetencias = 0, videoWebinars = 0,
+          videoTarefas = 0, videoMetas = 0, todosVideosEm = NULL,
+          aceiteRealizado = 0, aceiteRealizadoEm = NULL, nomeAceite = NULL,
+          updatedAt = NOW()
+        WHERE alunoId = ${alunoId}
+      `));
+    } else {
+      await db.execute(sql.raw(`
+        INSERT INTO onboarding_jornada (alunoId, ciclo, cadastroConfirmado, aceiteRealizado, createdAt, updatedAt)
+        VALUES (${alunoId}, ${novoCicloJornada}, 0, 0, NOW(), NOW())
+      `));
     }
-  } catch (cleanErr) {
-    // Não falhar o fluxo principal se a limpeza der erro — logar apenas
-    console.error(`[DB] Aviso: erro ao limpar dados do ciclo anterior para aluno ${alunoId}:`, cleanErr);
+  } catch (err) {
+    console.error(`[DB] Erro em liberarOnboardingAluno para aluno ${alunoId}:`, err);
+    return { success: false, message: 'Erro interno ao liberar onboarding. Tente novamente.' };
   }
 
   return { success: true, message: `Onboarding liberado para novo ciclo. Ciclo ${numeroCiclo} arquivado na página de Evolução.` };
