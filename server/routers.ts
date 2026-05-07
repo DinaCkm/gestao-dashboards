@@ -9074,12 +9074,26 @@ Responda APENAS em JSON com o formato:
         addField('curriculoUrl', input.curriculoUrl ?? null);
         if (sets.length === 0) return { success: true };
         vals.push(input.alunoId);
+        // Usar sempre SQL puro via rawConn ou mysql2 direto — nunca Drizzle ORM para colunas fora do schema
         const rawConn = await db.getRawConnection();
         if (rawConn) {
           await (rawConn as any).execute(`UPDATE \`alunos\` SET ${sets.join(', ')} WHERE \`id\` = ?`, vals);
         } else {
-          // fallback: usar drizzle execute
-          await database.execute(sql.raw(`UPDATE \`alunos\` SET ${sets.map((s, i) => s.replace('?', `'${String(vals[i]).replace(/'/g, "''")}'`)).join(', ')} WHERE \`id\` = ${input.alunoId}`));
+          // fallback: criar conexão mysql2 direta
+          const mysql2 = await import('mysql2/promise');
+          const dbUrl = new URL(process.env.DATABASE_URL || '');
+          const conn = await mysql2.createConnection({
+            host: dbUrl.hostname,
+            user: dbUrl.username,
+            password: dbUrl.password,
+            database: dbUrl.pathname.slice(1),
+            port: dbUrl.port ? parseInt(dbUrl.port) : 3306,
+          });
+          try {
+            await conn.execute(`UPDATE \`alunos\` SET ${sets.join(', ')} WHERE \`id\` = ?`, vals);
+          } finally {
+            await conn.end();
+          }
         }
         return { success: true };
       }),
