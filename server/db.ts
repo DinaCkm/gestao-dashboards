@@ -11617,24 +11617,30 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
     ? Math.round((Number(webinarData.presentes) / Number(webinarData.total)) * 100)
     : 0;
 
-  // Ind.2: Avaliações (média das notas de avaliação das competências)
+  // Ind.2: Avaliações e Ind.3: Competências (via student_performance)
+  // Buscar externalId do aluno primeiro para evitar OR/CAST que falha no MySQL
+  const [alunoExtRows] = await db.execute(sql.raw(
+    `SELECT externalId FROM alunos WHERE id = ${alunoId} LIMIT 1`
+  )) as any;
+  const externalId = Array.isArray(alunoExtRows) && alunoExtRows[0]?.externalId
+    ? alunoExtRows[0].externalId
+    : String(alunoId);
+  const externalIdSafe = externalId.replace(/'/g, "''");
+
   const [avalRows] = await db.execute(sql.raw(`
     SELECT AVG(sp.mediaAvaliacoesRespondidas) as mediaAval
     FROM student_performance sp
-    INNER JOIN alunos a ON (a.externalId = sp.idUsuario OR CAST(a.id AS CHAR) = sp.idUsuario)
-    WHERE a.id = ${alunoId} AND sp.mediaAvaliacoesRespondidas IS NOT NULL
+    WHERE sp.idUsuario = '${externalIdSafe}' AND sp.mediaAvaliacoesRespondidas IS NOT NULL
   `)) as any;
   const avalData = Array.isArray(avalRows) ? avalRows[0] : null;
   const ind2Avaliacoes = avalData?.mediaAval != null ? Math.round(Number(avalData.mediaAval)) : 0;
 
-  // Ind.3: Competências (% de cursos/competências concluídas)
   const [compRows] = await db.execute(sql.raw(`
     SELECT
       COUNT(*) as total,
       SUM(CASE WHEN sp.progressoTotal >= 100 THEN 1 ELSE 0 END) as concluidas
     FROM student_performance sp
-    INNER JOIN alunos a ON (a.externalId = sp.idUsuario OR CAST(a.id AS CHAR) = sp.idUsuario)
-    WHERE a.id = ${alunoId}
+    WHERE sp.idUsuario = '${externalIdSafe}'
   `)) as any;
   const compData = Array.isArray(compRows) ? compRows[0] : null;
   const ind3Competencias = compData?.total > 0

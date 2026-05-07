@@ -9706,11 +9706,15 @@ async function arquivarCicloAtual(alunoId) {
   `));
   const webinarData = Array.isArray(webinarRows) ? webinarRows[0] : null;
   const ind1Webinars = webinarData?.total > 0 ? Math.round(Number(webinarData.presentes) / Number(webinarData.total) * 100) : 0;
+  const [alunoExtRows] = await db2.execute(sql2.raw(
+    `SELECT externalId FROM alunos WHERE id = ${alunoId} LIMIT 1`
+  ));
+  const externalId = Array.isArray(alunoExtRows) && alunoExtRows[0]?.externalId ? alunoExtRows[0].externalId : String(alunoId);
+  const externalIdSafe = externalId.replace(/'/g, "''");
   const [avalRows] = await db2.execute(sql2.raw(`
     SELECT AVG(sp.mediaAvaliacoesRespondidas) as mediaAval
     FROM student_performance sp
-    INNER JOIN alunos a ON (a.externalId = sp.idUsuario OR CAST(a.id AS CHAR) = sp.idUsuario)
-    WHERE a.id = ${alunoId} AND sp.mediaAvaliacoesRespondidas IS NOT NULL
+    WHERE sp.idUsuario = '${externalIdSafe}' AND sp.mediaAvaliacoesRespondidas IS NOT NULL
   `));
   const avalData = Array.isArray(avalRows) ? avalRows[0] : null;
   const ind2Avaliacoes = avalData?.mediaAval != null ? Math.round(Number(avalData.mediaAval)) : 0;
@@ -9719,8 +9723,7 @@ async function arquivarCicloAtual(alunoId) {
       COUNT(*) as total,
       SUM(CASE WHEN sp.progressoTotal >= 100 THEN 1 ELSE 0 END) as concluidas
     FROM student_performance sp
-    INNER JOIN alunos a ON (a.externalId = sp.idUsuario OR CAST(a.id AS CHAR) = sp.idUsuario)
-    WHERE a.id = ${alunoId}
+    WHERE sp.idUsuario = '${externalIdSafe}'
   `));
   const compData = Array.isArray(compRows) ? compRows[0] : null;
   const ind3Competencias = compData?.total > 0 ? Math.round(Number(compData.concluidas) / Number(compData.total) * 100) : 0;
