@@ -3478,7 +3478,8 @@ export default function OnboardingAluno() {
   );
   
   // Etapas anteriores ao progresso real ficam em readOnly (para não refazer)
-  const isViewingPreviousStep = !globalReadOnly && currentStep < progressStep;
+  // No novo ciclo (emNovoCiclo), nunca bloquear como "etapa anterior" — o aluno deve poder editar livremente
+  const isViewingPreviousStep = !globalReadOnly && !emNovoCiclo && currentStep < progressStep;
   const readOnly = globalReadOnly || isViewingPreviousStep;
   const reassessmentElegivel = !!(progressoData?.reassessmentElegivel);
   // Aguardar carregamento do status de onboarding para evitar flash de conteúdo incorreto
@@ -3529,9 +3530,9 @@ export default function OnboardingAluno() {
 
         {/* Stepper */}
         <OnboardingStepper currentStep={currentStep} progressStep={progressStep} onStepClick={(step) => {
-          // Permitir navegação para qualquer etapa já concluída (step <= progressStep)
-          // Essas etapas abrirão em modo readOnly automaticamente (isViewingPreviousStep)
-          if (step <= progressStep || globalReadOnly) {
+          // No novo ciclo, permitir navegação livre entre todas as etapas
+          // Fora do novo ciclo, só permite navegar para etapas já concluídas
+          if (emNovoCiclo || step <= progressStep || globalReadOnly) {
             setCurrentStep(step);
           } else {
             toast.info("Esta etapa ainda não está habilitada.");
