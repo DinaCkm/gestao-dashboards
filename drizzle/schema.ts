@@ -1668,6 +1668,16 @@ export const historicoCiclosAluno = mysqlTable("historico_ciclos_aluno", {
   dataInicio: timestamp("dataInicio"), // Quando o ciclo começou (aceite do onboarding)
   dataConclusao: timestamp("dataConclusao"), // Quando o ciclo foi arquivado (admin liberou novo ciclo)
   observacoes: text("observacoes"), // Observações do admin ao arquivar
+  // Snapshot dos 7 indicadores no momento do encerramento do ciclo
+  ind1Webinars: int("ind1Webinars"), // % de webinars assistidos
+  ind2Avaliacoes: int("ind2Avaliacoes"), // % de avaliações aprovadas
+  ind3Competencias: int("ind3Competencias"), // % de competências concluídas
+  ind4Tarefas: int("ind4Tarefas"), // % de tarefas entregues
+  ind5Engajamento: int("ind5Engajamento"), // nota da mentora (0-100)
+  ind6Aplicabilidade: int("ind6Aplicabilidade"), // % de cases entregues
+  ind7EngajamentoFinal: int("ind7EngajamentoFinal"), // engajamento final calculado
+  metasTotal: int("metasTotal"), // total de metas no PDI
+  metasCumpridas: int("metasCumpridas"), // metas com status concluida
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

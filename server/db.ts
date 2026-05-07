@@ -6845,11 +6845,12 @@ export async function getAllCiclosForCalculatorV2(): Promise<Map<string, { id: n
   const trilhaMap = new Map(allTrilhas.map(t => [t.id, t.name]));
   
   // Get assessment PDIs to map trilha names
+  // Usar apenas PDIs ativos para mapear trilhaNome (ignorar congelados)
   const allPdis = await db.select({
     id: assessmentPdi.id,
     alunoId: assessmentPdi.alunoId,
     trilhaId: assessmentPdi.trilhaId,
-  }).from(assessmentPdi);
+  }).from(assessmentPdi).where(eq(assessmentPdi.status, 'ativo'));
   
   const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
   const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId]));
@@ -6889,33 +6890,29 @@ export async function getMacrocicloPorAluno(): Promise<Map<string, { macroInicio
   const db = await getDb();
   if (!db) return new Map();
   
-  const pdis = await db.select({
-    alunoId: assessmentPdi.alunoId,
-    macroInicio: assessmentPdi.macroInicio,
-    macroTermino: assessmentPdi.macroTermino,
-  }).from(assessmentPdi)
-    .where(and(
-      isNotNull(assessmentPdi.macroInicio),
-      isNotNull(assessmentPdi.macroTermino),
-    ));
+  // Usar apenas o PDI ativo mais recente por aluno (evitar expandir range com PDIs congelados/antigos)
+  const pdis = await db.execute(sql.raw(`
+    SELECT ap.alunoId, ap.macroInicio, ap.macroTermino
+    FROM assessment_pdi ap
+    INNER JOIN (
+      SELECT alunoId, MAX(createdAt) as maxCreatedAt
+      FROM assessment_pdi
+      WHERE status = 'ativo' AND macroInicio IS NOT NULL AND macroTermino IS NOT NULL
+      GROUP BY alunoId
+    ) latest ON ap.alunoId = latest.alunoId AND ap.createdAt = latest.maxCreatedAt
+    WHERE ap.status = 'ativo'
+  `)) as any;
+  const pdiList = Array.isArray(pdis[0]) ? pdis[0] : [];
   
   const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
   const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId || String(a.id)]));
   
   const result = new Map<string, { macroInicio: string; macroTermino: string }>();
   
-  for (const pdi of pdis) {
+  for (const pdi of pdiList) {
     const alunoKey = alunoMap.get(pdi.alunoId) || String(pdi.alunoId);
-    // If student has multiple PDIs, use the one with the widest range
-    const existing = result.get(alunoKey);
-    const macroInicioStr = String(pdi.macroInicio);
-    const macroTerminoStr = String(pdi.macroTermino);
-    if (!existing) {
-      result.set(alunoKey, { macroInicio: macroInicioStr, macroTermino: macroTerminoStr });
-    } else {
-      // Expand range to cover all PDIs
-      if (macroInicioStr < existing.macroInicio) existing.macroInicio = macroInicioStr;
-      if (macroTerminoStr > existing.macroTermino) existing.macroTermino = macroTerminoStr;
+    if (!result.has(alunoKey) && pdi.macroInicio && pdi.macroTermino) {
+      result.set(alunoKey, { macroInicio: String(pdi.macroInicio), macroTermino: String(pdi.macroTermino) });
     }
   }
   
@@ -7082,7 +7079,8 @@ export async function createAlunoDireto(data: {
 export async function liberarOnboardingAluno(alunoId: number) {
   const db = await getDb();
   if (!db) return { success: false, message: 'Erro de conexão com banco' };
-  // Verificar se o aluno existe e tem PDI
+
+  // Verificar se o aluno existe e tem PDI (fora da transação, apenas validação)
   const [aluno] = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
   if (!aluno) return { success: false, message: 'Aluno não encontrado' };
   const [pdiCount] = await db.select({ count: sql<number>`COUNT(*)` })
@@ -7091,13 +7089,39 @@ export async function liberarOnboardingAluno(alunoId: number) {
   if ((pdiCount?.count ?? 0) === 0) {
     return { success: false, message: 'Aluno não tem PDI. Já deve ir para onboarding automaticamente.' };
   }
-  // Arquivar ciclo atual (DISC + PDI) antes de liberar novo ciclo
-  const { numeroCiclo } = await arquivarCicloAtual(alunoId);
-  // Marcar onboarding como liberado
-  await db.update(alunos).set({
-    onboardingLiberado: 1,
-    onboardingLiberadoEm: new Date(),
-  }).where(eq(alunos.id, alunoId));
+
+  // === TRANSAÇÃO ATÔMICA com lock por alunoId ===
+  // Usa SELECT ... FOR UPDATE para evitar duplo reset concorrente
+  let numeroCiclo = 1;
+  try {
+    await db.execute(sql.raw('START TRANSACTION'));
+    // Lock na linha do aluno para evitar concorrência
+    const [lockRows] = await db.execute(sql.raw(
+      `SELECT id, onboardingLiberado FROM alunos WHERE id = ${alunoId} FOR UPDATE`
+    )) as any;
+    const alunoLocked = Array.isArray(lockRows) ? lockRows[0] : null;
+    if (!alunoLocked) {
+      await db.execute(sql.raw('ROLLBACK'));
+      return { success: false, message: 'Aluno não encontrado (lock)' };
+    }
+    if (alunoLocked.onboardingLiberado === 1) {
+      await db.execute(sql.raw('ROLLBACK'));
+      return { success: false, message: 'Onboarding já está liberado para este aluno' };
+    }
+    // Arquivar ciclo atual (DISC + PDI) — idempotênte
+    const resultado = await arquivarCicloAtual(alunoId);
+    numeroCiclo = resultado.numeroCiclo;
+    // Marcar onboarding como liberado
+    await db.execute(sql.raw(
+      `UPDATE alunos SET onboardingLiberado = 1, onboardingLiberadoEm = NOW() WHERE id = ${alunoId}`
+    ));
+    await db.execute(sql.raw('COMMIT'));
+  } catch (err) {
+    await db.execute(sql.raw('ROLLBACK')).catch(() => {});
+    console.error(`[DB] Erro na transação liberarOnboardingAluno para aluno ${alunoId}:`, err);
+    return { success: false, message: 'Erro interno ao liberar onboarding. Tente novamente.' };
+  }
+
   return { success: true, message: `Onboarding liberado para novo ciclo. Ciclo ${numeroCiclo} arquivado na página de Evolução.` };
 }
 
@@ -11467,10 +11491,34 @@ export async function ensureHistoricoCiclosTable(): Promise<void> {
         \`dataInicio\` timestamp NULL,
         \`dataConclusao\` timestamp NULL,
         \`observacoes\` text,
+        \`ind1Webinars\` int NULL,
+        \`ind2Avaliacoes\` int NULL,
+        \`ind3Competencias\` int NULL,
+        \`ind4Tarefas\` int NULL,
+        \`ind5Engajamento\` int NULL,
+        \`ind6Aplicabilidade\` int NULL,
+        \`ind7EngajamentoFinal\` int NULL,
+        \`metasTotal\` int NULL,
+        \`metasCumpridas\` int NULL,
         \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `));
+    // Adicionar colunas de snapshot se ainda não existirem (para tabelas já criadas)
+    // Adicionar cicloOnboardingId no assessment_pdi se não existir
+    try {
+      await db.execute(sql.raw(`ALTER TABLE \`assessment_pdi\` ADD COLUMN \`cicloOnboardingId\` int NULL COMMENT 'FK para historico_ciclos_aluno'`));
+    } catch (_) { /* coluna já existe */ }
+    const snapshotCols = [
+      "ind1Webinars", "ind2Avaliacoes", "ind3Competencias", "ind4Tarefas",
+      "ind5Engajamento", "ind6Aplicabilidade", "ind7EngajamentoFinal",
+      "metasTotal", "metasCumpridas"
+    ];
+    for (const col of snapshotCols) {
+      try {
+        await db.execute(sql.raw(`ALTER TABLE \`historico_ciclos_aluno\` ADD COLUMN \`${col}\` int NULL`));
+      } catch (_) { /* coluna já existe */ }
+    }
     console.log("[DB] Tabela historico_ciclos_aluno verificada/criada com sucesso.");
   } catch (error) {
     console.error("[DB] Erro ao criar tabela historico_ciclos_aluno:", error);
@@ -11480,10 +11528,17 @@ export async function ensureHistoricoCiclosTable(): Promise<void> {
 /**
  * Arquiva o ciclo atual do aluno (DISC + PDI) antes de liberar novo ciclo de onboarding.
  * Chamado por liberarOnboardingAluno antes de setar onboardingLiberado=1.
+ *
+ * Implementa:
+ * - Idempotência: não duplica histórico se já existe registro para o ciclo atual
+ * - Snapshot dos 7 indicadores no momento do encerramento
+ * - Congelamento dos PDIs ativos e microciclos de execução
  */
 export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo: number }> {
   const db = await getDb();
   if (!db) return { numeroCiclo: 1 };
+
+  // === 1. BUSCAR DADOS DO CICLO ATUAL ===
 
   // Buscar o último DISC do aluno (ciclo mais recente)
   const [discRows] = await db.execute(sql.raw(
@@ -11491,11 +11546,19 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   )) as any;
   const discRow = Array.isArray(discRows) ? discRows[0] : null;
 
-  // Buscar o PDI ativo do aluno
-  const [pdiRows] = await db.execute(sql.raw(
-    `SELECT id FROM assessment_pdi WHERE alunoId = ${alunoId} ORDER BY createdAt DESC LIMIT 1`
+  // Buscar o PDI ativo mais recente do aluno
+  const [pdiActiveRows] = await db.execute(sql.raw(
+    `SELECT id FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'ativo' ORDER BY createdAt DESC LIMIT 1`
   )) as any;
-  const pdiRow = Array.isArray(pdiRows) ? pdiRows[0] : null;
+  const pdiActiveRow = Array.isArray(pdiActiveRows) ? pdiActiveRows[0] : null;
+  // Fallback: qualquer PDI mais recente
+  let pdiId: number | null = pdiActiveRow?.id || null;
+  if (!pdiId) {
+    const [pdiAnyRows] = await db.execute(sql.raw(
+      `SELECT id FROM assessment_pdi WHERE alunoId = ${alunoId} ORDER BY createdAt DESC LIMIT 1`
+    )) as any;
+    pdiId = Array.isArray(pdiAnyRows) && pdiAnyRows[0]?.id ? pdiAnyRows[0].id : null;
+  }
 
   // Buscar o aceite do onboarding para pegar dataInicio
   const [jornadaRows] = await db.execute(sql.raw(
@@ -11503,7 +11566,143 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   )) as any;
   const jornada = Array.isArray(jornadaRows) ? jornadaRows[0] : null;
 
-  // Determinar o número do próximo ciclo
+  // === 2. IDEMPOTÊNCIA: verificar se já existe registro para este ciclo ===
+  const discIdStr = discRow?.id ? String(discRow.id) : 'NULL';
+  const pdiIdStr = pdiId ? String(pdiId) : 'NULL';
+  if (discRow?.id || pdiId) {
+    const checkCond = discRow?.id && pdiId
+      ? `discResultadoId = ${discRow.id} AND assessmentPdiId = ${pdiId}`
+      : discRow?.id
+        ? `discResultadoId = ${discRow.id}`
+        : `assessmentPdiId = ${pdiId}`;
+    const [existRows] = await db.execute(sql.raw(
+      `SELECT id, numeroCiclo FROM historico_ciclos_aluno WHERE alunoId = ${alunoId} AND ${checkCond} LIMIT 1`
+    )) as any;
+    const existRow = Array.isArray(existRows) ? existRows[0] : null;
+    if (existRow) {
+      console.log(`[DB] Ciclo já arquivado para aluno ${alunoId} (id=${existRow.id}, ciclo=${existRow.numeroCiclo}). Idempotência ativada.`);
+      return { numeroCiclo: existRow.numeroCiclo };
+    }
+  }
+
+  // === 3. CALCULAR SNAPSHOT DOS INDICADORES ===
+  // Cálculo direto via SQL para evitar dependência circular com indicatorsCalculatorV2
+
+  // Ind.1: Webinars (% de presenças em eventos)
+  const [webinarRows] = await db.execute(sql.raw(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN ep.status = 'presente' THEN 1 ELSE 0 END) as presentes
+    FROM event_participation ep
+    WHERE ep.alunoId = ${alunoId}
+  `)) as any;
+  const webinarData = Array.isArray(webinarRows) ? webinarRows[0] : null;
+  const ind1Webinars = webinarData?.total > 0
+    ? Math.round((Number(webinarData.presentes) / Number(webinarData.total)) * 100)
+    : 0;
+
+  // Ind.2: Avaliações (média das notas de avaliação das competências)
+  const [avalRows] = await db.execute(sql.raw(`
+    SELECT AVG(sp.mediaAvaliacoesRespondidas) as mediaAval
+    FROM student_performance sp
+    INNER JOIN alunos a ON (a.externalId = sp.idUsuario OR CAST(a.id AS CHAR) = sp.idUsuario)
+    WHERE a.id = ${alunoId} AND sp.mediaAvaliacoesRespondidas IS NOT NULL
+  `)) as any;
+  const avalData = Array.isArray(avalRows) ? avalRows[0] : null;
+  const ind2Avaliacoes = avalData?.mediaAval != null ? Math.round(Number(avalData.mediaAval)) : 0;
+
+  // Ind.3: Competências (% de cursos/competências concluídas)
+  const [compRows] = await db.execute(sql.raw(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN sp.progressoTotal >= 100 THEN 1 ELSE 0 END) as concluidas
+    FROM student_performance sp
+    INNER JOIN alunos a ON (a.externalId = sp.idUsuario OR CAST(a.id AS CHAR) = sp.idUsuario)
+    WHERE a.id = ${alunoId}
+  `)) as any;
+  const compData = Array.isArray(compRows) ? compRows[0] : null;
+  const ind3Competencias = compData?.total > 0
+    ? Math.round((Number(compData.concluidas) / Number(compData.total)) * 100)
+    : 0;
+
+  // Ind.4: Tarefas (% de tarefas entregues)
+  const [tarefaRows] = await db.execute(sql.raw(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN ms.taskStatus = 'entregue' THEN 1 ELSE 0 END) as entregues
+    FROM mentoring_sessions ms
+    WHERE ms.alunoId = ${alunoId} AND ms.taskStatus IN ('entregue', 'nao_entregue')
+  `)) as any;
+  const tarefaData = Array.isArray(tarefaRows) ? tarefaRows[0] : null;
+  const ind4Tarefas = tarefaData?.total > 0
+    ? Math.round((Number(tarefaData.entregues) / Number(tarefaData.total)) * 100)
+    : 0;
+
+  // Ind.5: Engajamento (média das notas da mentora, convertida de 0-10 para 0-100)
+  const [engRows] = await db.execute(sql.raw(`
+    SELECT AVG(ms.engagementScore) as mediaEng
+    FROM mentoring_sessions ms
+    WHERE ms.alunoId = ${alunoId} AND ms.engagementScore IS NOT NULL
+  `)) as any;
+  const engData = Array.isArray(engRows) ? engRows[0] : null;
+  const mediaEngRaw = engData?.mediaEng != null ? Number(engData.mediaEng) : 0;
+  const ind5Engajamento = Math.round(Math.min(100, Math.max(0, mediaEngRaw * 10)));
+
+  // Ind.6: Aplicabilidade (% de cases entregues)
+  const [caseRows] = await db.execute(sql.raw(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN cs.entregue = 1 THEN 1 ELSE 0 END) as entregues
+    FROM cases_sucesso cs
+    WHERE cs.alunoId = ${alunoId}
+  `)) as any;
+  const caseData = Array.isArray(caseRows) ? caseRows[0] : null;
+  const ind6Aplicabilidade = caseData?.total > 0
+    ? Math.round((Number(caseData.entregues) / Number(caseData.total)) * 100)
+    : 0;
+
+  // Ind.7: Engajamento Final (média dos 5 indicadores principais)
+  const ind7EngajamentoFinal = Math.round(
+    (ind1Webinars + ind2Avaliacoes + ind3Competencias + ind4Tarefas + ind5Engajamento) / 5
+  );
+
+  // Metas: total e cumpridas do PDI ativo
+  let metasTotal = 0;
+  let metasCumpridas = 0;
+  if (pdiId) {
+    const [metaRows] = await db.execute(sql.raw(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN m.status = 'concluida' THEN 1 ELSE 0 END) as cumpridas
+      FROM metas m
+      WHERE m.alunoId = ${alunoId} AND m.assessmentPdiId = ${pdiId} AND m.isActive = 1
+    `)) as any;
+    const metaData = Array.isArray(metaRows) ? metaRows[0] : null;
+    metasTotal = Number(metaData?.total ?? 0);
+    metasCumpridas = Number(metaData?.cumpridas ?? 0);
+  }
+
+  // === 4. CONGELAR PDIs ATIVOS ===
+  await db.execute(sql.raw(`
+    UPDATE assessment_pdi
+    SET status = 'congelado', congeladoEm = NOW(), motivoCongelamento = 'Ciclo encerrado pelo admin'
+    WHERE alunoId = ${alunoId} AND status = 'ativo'
+  `));
+  console.log(`[DB] PDIs ativos do aluno ${alunoId} congelados.`);
+
+  // === 5. CONGELAR MICROCICLOS DE EXECUÇÃO ===
+  try {
+    await db.execute(sql.raw(`
+      UPDATE ciclos_execucao
+      SET status = 'congelado'
+      WHERE alunoId = ${alunoId} AND status != 'congelado'
+    `));
+  } catch (_) {
+    // Tabela pode não existir em todos os ambientes
+    console.warn(`[DB] Aviso: ciclos_execucao não encontrada para aluno ${alunoId}`);
+  }
+
+  // === 6. DETERMINAR NÚMERO DO CICLO ===
   const [maxCicloRows] = await db.execute(sql.raw(
     `SELECT COALESCE(MAX(numeroCiclo), 0) as maxCiclo FROM historico_ciclos_aluno WHERE alunoId = ${alunoId}`
   )) as any;
@@ -11511,20 +11710,44 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   const maxCiclo = maxCicloArr[0]?.maxCiclo ?? 0;
   const numeroCiclo = (Number(maxCiclo) || 0) + 1;
 
-  // Montar valores para INSERT
-  const discId = discRow?.id ? String(discRow.id) : 'NULL';
-  const pdiId = pdiRow?.id ? String(pdiRow.id) : 'NULL';
+  // === 7. INSERIR REGISTRO DE HISTÓRICO COM SNAPSHOT ===
   const dataInicio = jornada?.aceiteRealizadoEm
     ? `'${new Date(jornada.aceiteRealizadoEm).toISOString().slice(0, 19).replace('T', ' ')}'`
     : 'NULL';
 
-  // Inserir registro de histórico
-  await db.execute(sql.raw(
-    `INSERT INTO historico_ciclos_aluno (alunoId, numeroCiclo, discResultadoId, assessmentPdiId, dataInicio, dataConclusao, createdAt, updatedAt)
-     VALUES (${alunoId}, ${numeroCiclo}, ${discId}, ${pdiId}, ${dataInicio}, NOW(), NOW(), NOW())`
-  ));
+  await db.execute(sql.raw(`
+    INSERT INTO historico_ciclos_aluno (
+      alunoId, numeroCiclo, discResultadoId, assessmentPdiId,
+      dataInicio, dataConclusao,
+      ind1Webinars, ind2Avaliacoes, ind3Competencias, ind4Tarefas,
+      ind5Engajamento, ind6Aplicabilidade, ind7EngajamentoFinal,
+      metasTotal, metasCumpridas,
+      createdAt, updatedAt
+    ) VALUES (
+      ${alunoId}, ${numeroCiclo}, ${discIdStr}, ${pdiIdStr === 'NULL' ? 'NULL' : pdiIdStr},
+      ${dataInicio}, NOW(),
+      ${ind1Webinars}, ${ind2Avaliacoes}, ${ind3Competencias}, ${ind4Tarefas},
+      ${ind5Engajamento}, ${ind6Aplicabilidade}, ${ind7EngajamentoFinal},
+      ${metasTotal}, ${metasCumpridas},
+      NOW(), NOW()
+    )
+  `));
 
-  console.log(`[DB] Ciclo ${numeroCiclo} arquivado para aluno ${alunoId}. DISC: ${discRow?.id ?? 'N/A'}, PDI: ${pdiRow?.id ?? 'N/A'}`);
+  // === 8. VINCULAR PDI AO CICLO HISTÓRICO (FK cicloOnboardingId) ===
+  if (pdiId) {
+    // Buscar o id do registro recém-inserido
+    const [lastInsertRows] = await db.execute(sql.raw(
+      `SELECT id FROM historico_ciclos_aluno WHERE alunoId = ${alunoId} AND numeroCiclo = ${numeroCiclo} LIMIT 1`
+    )) as any;
+    const historicoId = Array.isArray(lastInsertRows) && lastInsertRows[0]?.id ? lastInsertRows[0].id : null;
+    if (historicoId) {
+      await db.execute(sql.raw(
+        `UPDATE assessment_pdi SET cicloOnboardingId = ${historicoId} WHERE id = ${pdiId}`
+      ));
+    }
+  }
+
+  console.log(`[DB] Ciclo ${numeroCiclo} arquivado para aluno ${alunoId}. DISC: ${discRow?.id ?? 'N/A'}, PDI: ${pdiId ?? 'N/A'}. Indicadores: Ind1=${ind1Webinars}%, Ind7=${ind7EngajamentoFinal}%`);
   return { numeroCiclo };
 }
 
@@ -11544,6 +11767,15 @@ export async function getHistoricoCiclosAluno(alunoId: number) {
       h.dataConclusao,
       h.observacoes,
       h.createdAt,
+      h.ind1Webinars,
+      h.ind2Avaliacoes,
+      h.ind3Competencias,
+      h.ind4Tarefas,
+      h.ind5Engajamento,
+      h.ind6Aplicabilidade,
+      h.ind7EngajamentoFinal,
+      h.metasTotal,
+      h.metasCumpridas,
       dr.perfilPredominante,
       dr.perfilSecundario,
       dr.scoreD,

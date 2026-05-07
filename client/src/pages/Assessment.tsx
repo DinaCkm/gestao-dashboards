@@ -302,6 +302,20 @@ function AssessmentContent() {
         </CardContent>
       </Card>
 
+      {/* Aviso: novo ciclo liberado, aguardando PDI */}
+      {selectedAlunoId && (selectedAluno as any)?.onboardingLiberado === 1 && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">
+          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-amber-900 text-sm">Novo ciclo liberado — aguardando PDI</p>
+            <p className="text-amber-700 text-xs mt-0.5">
+              O onboarding deste aluno foi reiniciado. O ciclo anterior foi arquivado na página de Evolução.
+              Crie um novo PDI para iniciar o próximo ciclo de desenvolvimento.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Resumo de Metas de Desenvolvimento */}
       {selectedAlunoId && metasResumo && metasResumo.total > 0 && (
         <Card className="border-[#0A1E3E]/20 bg-gradient-to-r from-[#0A1E3E]/5 to-transparent border-2">

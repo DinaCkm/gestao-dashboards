@@ -530,6 +530,20 @@ export default function Performance() {
   return (
     <AlunoLayout>
       <div className="space-y-6">
+        {/* Aviso: novo ciclo liberado */}
+        {onboardingStatus?.onboardingLiberado && (
+          <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-900 text-sm">Novo ciclo de desenvolvimento iniciado</p>
+              <p className="text-amber-700 text-xs mt-0.5">
+                Seu ciclo anterior foi arquivado. Os indicadores abaixo refletem o ciclo atual (em andamento).
+                Acesse a página <strong>Evolução</strong> para ver o histórico completo dos ciclos anteriores.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Header com informações do aluno */}
         <div className="flex flex-col lg:flex-row gap-6">
           <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white flex-1 shadow-lg">

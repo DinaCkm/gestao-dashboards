@@ -64,11 +64,14 @@ __export(schema_exports, {
   calculationFormulas: () => calculationFormulas,
   caseInteresses: () => caseInteresses,
   casesSucesso: () => casesSucesso,
+  certificationSignatures: () => certificationSignatures,
+  certificationTemplates: () => certificationTemplates,
   cicloCompetencias: () => cicloCompetencias,
   ciclosExecucao: () => ciclosExecucao,
   competencias: () => competencias,
   competenciasModulos: () => competenciasModulos,
   consultors: () => consultors,
+  contratoNiveis: () => contratoNiveis,
   contratosAluno: () => contratosAluno,
   courses: () => courses,
   cursosCompetencias: () => cursosCompetencias,
@@ -93,6 +96,8 @@ __export(schema_exports, {
   mentoringSessions: () => mentoringSessions,
   metaAcompanhamento: () => metaAcompanhamento,
   metas: () => metas,
+  nivelCertificateMentoras: () => nivelCertificateMentoras,
+  nivelCertificates: () => nivelCertificates,
   onboardingJornada: () => onboardingJornada,
   onboardingRevisoes: () => onboardingRevisoes,
   onboardingVideos: () => onboardingVideos,
@@ -114,7 +119,7 @@ __export(schema_exports, {
   users: () => users
 });
 import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, date, boolean } from "drizzle-orm/mysql-core";
-var users, programs, consultors, turmas, trilhas, competencias, ciclosExecucao, cicloCompetencias, planoIndividual, alunos, mentoringSessions, events, eventParticipation, uploadBatches, uploadedFiles, dashboardMetrics, reports, assessmentPdi, assessmentCompetencias, performanceUploads, studentPerformance, departments, calculationFormulas, processedData, taskLibrary, scheduledWebinars, announcements, contratosAluno, historicoNivelCompetencia, casesSucesso, caseInteresses, practicalActivityComments, mentorAvailability, mentorAppointments, appointmentParticipants, metas, metaAcompanhamento, discRespostas, discResultados, autopercepcoesCompetencias, mentoraContribuicoes, inAppNotifications, courses, activities, activityRegistrations, activityTurmas, mentorSessionPricing, mentorSessionTypePricing, mentorDateAvailability, emailAlertasLog, onboardingJornada, onboardingVideos, onboardingRevisoes, competenciasModulos, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCompetenciaProrrogacao, cursosCompetencias, atividadesCurso, TIPOS_ATIVIDADE, avaliacoesAtividade, tentativasAvaliacao, alunoCursoAtribuido, alunoAtividadeProgresso, sessoesEstudoAtividade, fichasPedagogicasCompetencias, fichasPedagogicasConteudos, historicoCiclosAluno;
+var users, programs, consultors, turmas, trilhas, competencias, ciclosExecucao, cicloCompetencias, planoIndividual, alunos, mentoringSessions, events, eventParticipation, uploadBatches, uploadedFiles, dashboardMetrics, reports, assessmentPdi, assessmentCompetencias, performanceUploads, studentPerformance, departments, calculationFormulas, processedData, taskLibrary, scheduledWebinars, announcements, contratosAluno, contratoNiveis, certificationTemplates, certificationSignatures, nivelCertificates, nivelCertificateMentoras, historicoNivelCompetencia, casesSucesso, caseInteresses, practicalActivityComments, mentorAvailability, mentorAppointments, appointmentParticipants, metas, metaAcompanhamento, discRespostas, discResultados, autopercepcoesCompetencias, mentoraContribuicoes, inAppNotifications, courses, activities, activityRegistrations, activityTurmas, mentorSessionPricing, mentorSessionTypePricing, mentorDateAvailability, emailAlertasLog, onboardingJornada, onboardingVideos, onboardingRevisoes, competenciasModulos, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCompetenciaProrrogacao, cursosCompetencias, atividadesCurso, TIPOS_ATIVIDADE, avaliacoesAtividade, tentativasAvaliacao, alunoCursoAtribuido, alunoAtividadeProgresso, sessoesEstudoAtividade, fichasPedagogicasCompetencias, fichasPedagogicasConteudos, historicoCiclosAluno;
 var init_schema = __esm({
   "drizzle/schema.ts"() {
     "use strict";
@@ -242,6 +247,8 @@ var init_schema = __esm({
       id: int("id").autoincrement().primaryKey(),
       alunoId: int("alunoId").notNull(),
       // FK para alunos
+      contratoNivelId: int("contratoNivelId"),
+      // FK opcional para contrato_niveis
       competenciaId: int("competenciaId").notNull(),
       // FK para competencias
       isObrigatoria: int("isObrigatoria").default(1).notNull(),
@@ -301,6 +308,8 @@ var init_schema = __esm({
     mentoringSessions = mysqlTable("mentoring_sessions", {
       id: int("id").autoincrement().primaryKey(),
       alunoId: int("alunoId").notNull(),
+      contratoNivelId: int("contratoNivelId"),
+      // FK opcional para contrato_niveis
       consultorId: int("consultorId").notNull(),
       turmaId: int("turmaId"),
       trilhaId: int("trilhaId"),
@@ -372,6 +381,8 @@ var init_schema = __esm({
       id: int("id").autoincrement().primaryKey(),
       eventId: int("eventId").notNull(),
       alunoId: int("alunoId").notNull(),
+      contratoNivelId: int("contratoNivelId"),
+      // FK opcional para contrato_niveis
       status: mysqlEnum("status", ["presente", "ausente"]).notNull(),
       reflexao: text("reflexao"),
       // Reflexão do aluno após assistir o webinar
@@ -438,6 +449,8 @@ var init_schema = __esm({
       id: int("id").autoincrement().primaryKey(),
       alunoId: int("alunoId").notNull(),
       // FK para alunos
+      contratoNivelId: int("contratoNivelId"),
+      // FK opcional para contrato_niveis (onboarding por nível)
       trilhaId: int("trilhaId").notNull(),
       // FK para trilhas (Básica, Essencial, Master, Visão de Futuro)
       turmaId: int("turmaId"),
@@ -705,6 +718,68 @@ var init_schema = __esm({
       createdAt: timestamp("createdAt").defaultNow().notNull(),
       updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
     });
+    contratoNiveis = mysqlTable("contrato_niveis", {
+      id: int("id").autoincrement().primaryKey(),
+      contratoId: int("contratoId").notNull(),
+      // FK para contratos_aluno (fonte única das datas)
+      alunoId: int("alunoId").notNull(),
+      // FK para alunos (desnormalizado para consultas rápidas)
+      nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+      // dataInicio e dataFim removidos — lidos de contratos_aluno.periodoInicio / periodoTermino via JOIN
+      status: mysqlEnum("status", ["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]).default("planejado").notNull(),
+      assessmentPdiId: int("assessmentPdiId"),
+      // FK opcional para assessment_pdi (fase futura)
+      mentoraPrincipalId: int("mentoraPrincipalId"),
+      // FK opcional para consultors
+      createdAt: timestamp("createdAt").defaultNow().notNull(),
+      updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+    });
+    certificationTemplates = mysqlTable("certification_templates", {
+      id: int("id").autoincrement().primaryKey(),
+      nome: varchar("nome", { length: 255 }).notNull(),
+      nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+      ativo: int("ativo").default(1).notNull(),
+      arquivoModelo: text("arquivoModelo"),
+      // URL/chave do modelo
+      camposMapeados: json("camposMapeados"),
+      // mapeamento dinâmico de campos
+      createdBy: int("createdBy"),
+      createdAt: timestamp("createdAt").defaultNow().notNull(),
+      updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+    });
+    certificationSignatures = mysqlTable("certification_signatures", {
+      id: int("id").autoincrement().primaryKey(),
+      userId: int("userId"),
+      // pode apontar para users/consultors conforme contexto
+      tipo: mysqlEnum("tipo", ["gerente", "mentora", "gestor_master"]).notNull(),
+      nomeExibicao: varchar("nomeExibicao", { length: 255 }).notNull(),
+      cargo: varchar("cargo", { length: 255 }),
+      imagemAssinaturaUrl: text("imagemAssinaturaUrl"),
+      ativo: int("ativo").default(1).notNull(),
+      createdAt: timestamp("createdAt").defaultNow().notNull(),
+      updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+    });
+    nivelCertificates = mysqlTable("nivel_certificates", {
+      id: int("id").autoincrement().primaryKey(),
+      alunoId: int("alunoId").notNull(),
+      contratoNivelId: int("contratoNivelId").notNull(),
+      nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+      templateId: int("templateId").notNull(),
+      status: mysqlEnum("status", ["emitido", "revogado"]).default("emitido").notNull(),
+      arquivoUrl: text("arquivoUrl"),
+      emitidoEm: timestamp("emitidoEm").defaultNow().notNull(),
+      emitidoPor: int("emitidoPor"),
+      hashDocumento: varchar("hashDocumento", { length: 128 }).notNull(),
+      createdAt: timestamp("createdAt").defaultNow().notNull(),
+      updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+    });
+    nivelCertificateMentoras = mysqlTable("nivel_certificate_mentoras", {
+      id: int("id").autoincrement().primaryKey(),
+      certificateId: int("certificateId").notNull(),
+      consultorId: int("consultorId").notNull(),
+      nomeMentora: varchar("nomeMentora", { length: 255 }).notNull(),
+      createdAt: timestamp("createdAt").defaultNow().notNull()
+    });
     historicoNivelCompetencia = mysqlTable("historico_nivel_competencia", {
       id: int("id").autoincrement().primaryKey(),
       assessmentCompetenciaId: int("assessmentCompetenciaId").notNull(),
@@ -727,6 +802,8 @@ var init_schema = __esm({
       id: int("id").autoincrement().primaryKey(),
       alunoId: int("alunoId").notNull(),
       // FK para alunos
+      contratoNivelId: int("contratoNivelId"),
+      // FK opcional para contrato_niveis
       trilhaId: int("trilhaId"),
       // FK para trilhas (macrociclo: Básicas, Essenciais, etc.)
       trilhaNome: varchar("trilhaNome", { length: 255 }),
@@ -863,6 +940,8 @@ var init_schema = __esm({
       id: int("id").autoincrement().primaryKey(),
       alunoId: int("alunoId").notNull(),
       // FK para alunos
+      contratoNivelId: int("contratoNivelId"),
+      // FK opcional para contrato_niveis
       assessmentCompetenciaId: int("assessmentCompetenciaId").notNull(),
       // FK para assessment_competencias
       competenciaId: int("competenciaId").notNull(),
@@ -922,6 +1001,8 @@ var init_schema = __esm({
       id: int("id").autoincrement().primaryKey(),
       alunoId: int("alunoId").notNull(),
       // FK para alunos
+      contratoNivelId: int("contratoNivelId"),
+      // FK opcional para contrato_niveis (ciclo por nível)
       ciclo: int("ciclo").default(1).notNull(),
       // Ciclo do assessment (1 = inicial, 2 = reassessment, etc.)
       scoreD: decimal("scoreD", { precision: 5, scale: 2 }).notNull(),
@@ -956,6 +1037,8 @@ var init_schema = __esm({
       id: int("id").autoincrement().primaryKey(),
       alunoId: int("alunoId").notNull(),
       // FK para alunos
+      contratoNivelId: int("contratoNivelId"),
+      // FK opcional para contrato_niveis (onboarding por nível)
       competenciaId: int("competenciaId").notNull(),
       // FK para competencias
       trilhaId: int("trilhaId").notNull(),
@@ -1133,6 +1216,8 @@ var init_schema = __esm({
     onboardingJornada = mysqlTable("onboarding_jornada", {
       id: int("id").autoincrement().primaryKey(),
       alunoId: int("alunoId").notNull(),
+      contratoNivelId: int("contratoNivelId"),
+      // FK opcional para contrato_niveis (onboarding por nível)
       ciclo: int("ciclo").default(1).notNull(),
       // Número do ciclo de onboarding (1 = primeiro, 2 = renovação, etc.)
       // Etapa 1 - Cadastro confirmado pelo aluno
@@ -1452,6 +1537,25 @@ var init_schema = __esm({
       // Quando o ciclo foi arquivado (admin liberou novo ciclo)
       observacoes: text("observacoes"),
       // Observações do admin ao arquivar
+      // Snapshot dos 7 indicadores no momento do encerramento do ciclo
+      ind1Webinars: int("ind1Webinars"),
+      // % de webinars assistidos
+      ind2Avaliacoes: int("ind2Avaliacoes"),
+      // % de avaliações aprovadas
+      ind3Competencias: int("ind3Competencias"),
+      // % de competências concluídas
+      ind4Tarefas: int("ind4Tarefas"),
+      // % de tarefas entregues
+      ind5Engajamento: int("ind5Engajamento"),
+      // nota da mentora (0-100)
+      ind6Aplicabilidade: int("ind6Aplicabilidade"),
+      // % de cases entregues
+      ind7EngajamentoFinal: int("ind7EngajamentoFinal"),
+      // engajamento final calculado
+      metasTotal: int("metasTotal"),
+      // total de metas no PDI
+      metasCumpridas: int("metasCumpridas"),
+      // metas com status concluida
       createdAt: timestamp("createdAt").defaultNow().notNull(),
       updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
     });
@@ -1499,6 +1603,65 @@ var init_env = __esm({
   }
 });
 
+// server/contrato-niveis.service.ts
+function normalizeDateOnly(value) {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new Error("Data inv\xE1lida");
+    }
+    return value.toISOString().split("T")[0];
+  }
+  return value;
+}
+async function validarNivelEmAndamentoUnicoRepo(repo, contratoId, alunoId, ignoreNivelId) {
+  const existing = await repo.findEmAndamento(contratoId, alunoId, ignoreNivelId);
+  return existing.length === 0;
+}
+async function createContratoNivelRepo(repo, data) {
+  if (data.status === STATUS_EM_ANDAMENTO) {
+    const canCreate = await validarNivelEmAndamentoUnicoRepo(repo, data.contratoId, data.alunoId);
+    if (!canCreate) {
+      throw new Error("J\xE1 existe um n\xEDvel em andamento para este aluno neste contrato");
+    }
+  }
+  return repo.insertNivel(data);
+}
+function calcularDataFechamentoOperacional(dataFim) {
+  const fim = new Date(normalizeDateOnly(dataFim));
+  if (Number.isNaN(fim.getTime())) {
+    throw new Error("Data final do n\xEDvel inv\xE1lida");
+  }
+  const fechamento = new Date(fim.getTime() - 15 * DAY_MS);
+  return fechamento.toISOString().split("T")[0];
+}
+function getContratoNivelOperationalStatus(nivel, referenceDate = /* @__PURE__ */ new Date()) {
+  const hoje = new Date(referenceDate.toISOString().split("T")[0]);
+  const dataFim = new Date(normalizeDateOnly(nivel.dataFim));
+  const dataFechamento = new Date(calcularDataFechamentoOperacional(nivel.dataFim));
+  if (!Number.isNaN(dataFim.getTime()) && hoje >= dataFim) {
+    return "encerrado";
+  }
+  if (!Number.isNaN(dataFechamento.getTime()) && hoje >= dataFechamento) {
+    if (nivel.status === "ajustes") return "ajustes";
+    return "fechamento";
+  }
+  return "em_andamento";
+}
+function isContratoNivelBloqueadoParaNovasAtribuicoes(status) {
+  return status === "fechamento" || status === "ajustes" || status === "encerrado";
+}
+function isContratoNivelEncerrado(status) {
+  return status === "encerrado";
+}
+var STATUS_EM_ANDAMENTO, DAY_MS;
+var init_contrato_niveis_service = __esm({
+  "server/contrato-niveis.service.ts"() {
+    "use strict";
+    STATUS_EM_ANDAMENTO = "em_andamento";
+    DAY_MS = 24 * 60 * 60 * 1e3;
+  }
+});
+
 // server/db.ts
 var db_exports = {};
 __export(db_exports, {
@@ -1509,6 +1672,7 @@ __export(db_exports, {
   addCompetenciasToPlano: () => addCompetenciasToPlano,
   approveExtension: () => approveExtension,
   arquivarCicloAtual: () => arquivarCicloAtual,
+  assertNivelPermiteNovasAtribuicoes: () => assertNivelPermiteNovasAtribuicoes,
   atualizarIndicadores: () => atualizarIndicadores,
   atualizarStatusCursoAtribuido: () => atualizarStatusCursoAtribuido,
   authenticateAdmin: () => authenticateAdmin,
@@ -1516,6 +1680,7 @@ __export(db_exports, {
   authenticateByEmailCpf: () => authenticateByEmailCpf,
   authenticateGerente: () => authenticateGerente,
   authenticateMentor: () => authenticateMentor,
+  avaliarElegibilidadeCertificacao: () => avaliarElegibilidadeCertificacao,
   calcularNota: () => calcularNota,
   cancelAppointment: () => cancelAppointment,
   cancelRegistration: () => cancelRegistration,
@@ -1533,9 +1698,12 @@ __export(db_exports, {
   createAssessmentPdi: () => createAssessmentPdi,
   createCaseInteresse: () => createCaseInteresse,
   createCaseSucesso: () => createCaseSucesso,
+  createCertificationSignature: () => createCertificationSignature,
+  createCertificationTemplate: () => createCertificationTemplate,
   createCicloExecucao: () => createCicloExecucao,
   createCompetencia: () => createCompetencia,
   createContrato: () => createContrato,
+  createContratoNivel: () => createContratoNivel,
   createCourse: () => createCourse,
   createDepartment: () => createDepartment,
   createFormula: () => createFormula,
@@ -1548,6 +1716,7 @@ __export(db_exports, {
   createMentorAccess: () => createMentorAccess,
   createMentoringSession: () => createMentoringSession,
   createMeta: () => createMeta,
+  createNivelCertificate: () => createNivelCertificate,
   createNotification: () => createNotification,
   createNotifications: () => createNotifications,
   createPerformanceUpload: () => createPerformanceUpload,
@@ -1587,6 +1756,7 @@ __export(db_exports, {
   ensureHistoricoCiclosTable: () => ensureHistoricoCiclosTable,
   ensurePerfilProfissionalColumns: () => ensurePerfilProfissionalColumns,
   getAccessUsers: () => getAccessUsers,
+  getActiveCertificationTemplateByNivel: () => getActiveCertificationTemplateByNivel,
   getActiveConsultors: () => getActiveConsultors,
   getActiveCourses: () => getActiveCourses,
   getActiveFormulas: () => getActiveFormulas,
@@ -1656,16 +1826,22 @@ __export(db_exports, {
   getAssessmentCompetenciasByPdi: () => getAssessmentCompetenciasByPdi,
   getAssessmentPdiByAluno: () => getAssessmentPdiByAluno,
   getAssessmentsByAluno: () => getAssessmentsByAluno,
+  getAssessmentsByAlunoAndNivel: () => getAssessmentsByAlunoAndNivel,
   getAssessmentsByConsultor: () => getAssessmentsByConsultor,
   getAssessmentsByProgram: () => getAssessmentsByProgram,
   getAtividadesByCurso: () => getAtividadesByCurso,
   getAutopercepcoes: () => getAutopercepcoes,
+  getAutopercepcoesByNivel: () => getAutopercepcoesByNivel,
   getAvaliacaoByAtividade: () => getAvaliacaoByAtividade,
   getCaseInteressesByAutor: () => getCaseInteressesByAutor,
   getCaseSucessoById: () => getCaseSucessoById,
   getCasesForCalculator: () => getCasesForCalculator,
   getCasesSucessoByAluno: () => getCasesSucessoByAluno,
+  getCasesSucessoByAlunoAndNivel: () => getCasesSucessoByAlunoAndNivel,
   getCasesVitrineMural: () => getCasesVitrineMural,
+  getCertificateMentoras: () => getCertificateMentoras,
+  getCertificationSignatures: () => getCertificationSignatures,
+  getCertificationTemplates: () => getCertificationTemplates,
   getCiclosByAluno: () => getCiclosByAluno,
   getCiclosDerivadosDoPdi: () => getCiclosDerivadosDoPdi,
   getCiclosForCalculator: () => getCiclosForCalculator,
@@ -1683,6 +1859,10 @@ __export(db_exports, {
   getConsultors: () => getConsultors,
   getContratoById: () => getContratoById,
   getContratoMentoriaByAluno: () => getContratoMentoriaByAluno,
+  getContratoNiveisByAluno: () => getContratoNiveisByAluno,
+  getContratoNiveisByContrato: () => getContratoNiveisByContrato,
+  getContratoNivelComStatusOperacional: () => getContratoNivelComStatusOperacional,
+  getContratoNivelVigenteByAluno: () => getContratoNivelVigenteByAluno,
   getContratosByAluno: () => getContratosByAluno,
   getContribuicoesMentora: () => getContribuicoesMentora,
   getCourseById: () => getCourseById,
@@ -1693,8 +1873,10 @@ __export(db_exports, {
   getDepartmentById: () => getDepartmentById,
   getDiscRespostas: () => getDiscRespostas,
   getDiscResultado: () => getDiscResultado,
+  getDiscResultadoByNivel: () => getDiscResultadoByNivel,
   getEventById: () => getEventById,
   getEventParticipationByAluno: () => getEventParticipationByAluno,
+  getEventParticipationByAlunoAndNivel: () => getEventParticipationByAlunoAndNivel,
   getEventParticipationByBatch: () => getEventParticipationByBatch,
   getEventsByProgram: () => getEventsByProgram,
   getEventsByProgramOrGlobal: () => getEventsByProgramOrGlobal,
@@ -1719,6 +1901,7 @@ __export(db_exports, {
   getMentorSessionPricing: () => getMentorSessionPricing,
   getMentoringSessionById: () => getMentoringSessionById,
   getMentoringSessionsByAluno: () => getMentoringSessionsByAluno,
+  getMentoringSessionsByAlunoAndNivel: () => getMentoringSessionsByAlunoAndNivel,
   getMentoringSessionsByBatch: () => getMentoringSessionsByBatch,
   getMentoringSessionsByConsultor: () => getMentoringSessionsByConsultor,
   getMentorsWithAccess: () => getMentorsWithAccess,
@@ -1726,18 +1909,24 @@ __export(db_exports, {
   getMetasByAluno: () => getMetasByAluno,
   getMetasByCompetencia: () => getMetasByCompetencia,
   getMetasDetalhadas: () => getMetasDetalhadas,
+  getMetasDetalhadasByNivel: () => getMetasDetalhadasByNivel,
   getMetasResumo: () => getMetasResumo,
   getMetasResumoTodos: () => getMetasResumoTodos,
   getMetricsHistory: () => getMetricsHistory,
   getModuleContent: () => getModuleContent,
+  getNivelCertificateByAlunoNivel: () => getNivelCertificateByAlunoNivel,
+  getNivelCertificatesByAluno: () => getNivelCertificatesByAluno,
   getNotificationsByUser: () => getNotificationsByUser,
   getOldFilesToCleanup: () => getOldFilesToCleanup,
   getOnboardingJornada: () => getOnboardingJornada,
+  getOnboardingJornadaByNivel: () => getOnboardingJornadaByNivel,
   getOnboardingTrackingList: () => getOnboardingTrackingList,
   getOnboardingVideos: () => getOnboardingVideos,
+  getPedagogiaByNivel: () => getPedagogiaByNivel,
   getPerformanceUploadById: () => getPerformanceUploadById,
   getPerformanceUploads: () => getPerformanceUploads,
   getPlanoIndividualByAluno: () => getPlanoIndividualByAluno,
+  getPlanoIndividualByAlunoAndNivel: () => getPlanoIndividualByAlunoAndNivel,
   getProcessedDataByBatch: () => getProcessedDataByBatch,
   getProcessedDataByDepartment: () => getProcessedDataByDepartment,
   getProcessedDataByUser: () => getProcessedDataByUser,
@@ -1756,6 +1945,7 @@ __export(db_exports, {
   getStudentEmailsByProgram: () => getStudentEmailsByProgram,
   getStudentPerformanceAsRecords: () => getStudentPerformanceAsRecords,
   getStudentPerformanceByAluno: () => getStudentPerformanceByAluno,
+  getStudentPerformanceByAlunoAndNivel: () => getStudentPerformanceByAlunoAndNivel,
   getStudentPerformanceByExternalUserId: () => getStudentPerformanceByExternalUserId,
   getStudentPerformanceSummary: () => getStudentPerformanceSummary,
   getSystemStats: () => getSystemStats,
@@ -1781,6 +1971,8 @@ __export(db_exports, {
   insertMentoringSessions: () => insertMentoringSessions,
   insertProcessedData: () => insertProcessedData,
   insertStudentPerformanceBatch: () => insertStudentPerformanceBatch,
+  isContratoNivelBloqueado: () => isContratoNivelBloqueado,
+  isContratoNivelEncerradoDb: () => isContratoNivelEncerradoDb,
   liberarOnboardingAluno: () => liberarOnboardingAluno,
   liberarOnboardingEmMassa: () => liberarOnboardingEmMassa,
   listActiveAnnouncementsForStudent: () => listActiveAnnouncementsForStudent,
@@ -1816,6 +2008,7 @@ __export(db_exports, {
   saveMentorDateAvailability: () => saveMentorDateAvailability,
   selecionarQuestoes: () => selecionarQuestoes,
   setActivityTurmas: () => setActivityTurmas,
+  setCertificationTemplateActive: () => setCertificationTemplateActive,
   setMentorSessionPricing: () => setMentorSessionPricing,
   setMetaFinalCompetencia: () => setMetaFinalCompetencia,
   startModule: () => startModule,
@@ -1875,10 +2068,12 @@ __export(db_exports, {
   upsertConsultor: () => upsertConsultor,
   upsertMetaAcompanhamento: () => upsertMetaAcompanhamento,
   upsertOnboardingJornada: () => upsertOnboardingJornada,
+  upsertOnboardingJornadaByNivel: () => upsertOnboardingJornadaByNivel,
   upsertProgram: () => upsertProgram,
   upsertTrilha: () => upsertTrilha,
   upsertTurma: () => upsertTurma,
   upsertUser: () => upsertUser,
+  validarNivelEmAndamentoUnico: () => validarNivelEmAndamentoUnico,
   verificarBloqueioAtividade: () => verificarBloqueioAtividade
 });
 import { eq, and, or, desc, asc, sql as sql2, not, gte, lt, lte, ne, inArray, isNotNull, isNull } from "drizzle-orm";
@@ -1917,6 +2112,11 @@ async function getDb() {
     }
   }
   return _db;
+}
+async function resolveContratoNivelId(alunoId, contratoNivelId) {
+  if (contratoNivelId) return contratoNivelId;
+  const vigente = await getContratoNivelVigenteByAluno(alunoId);
+  return vigente?.id ?? null;
 }
 async function upsertUser(user) {
   if (!user.openId) {
@@ -2411,6 +2611,15 @@ async function getMentoringSessionsByAluno(alunoId) {
   if (!db2) return [];
   return await db2.select().from(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
 }
+async function getMentoringSessionsByAlunoAndNivel(alunoId, contratoNivelId) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  if (!contratoNivelId) return getMentoringSessionsByAluno(alunoId);
+  return await db2.select().from(mentoringSessions).where(and(
+    eq(mentoringSessions.alunoId, alunoId),
+    eq(mentoringSessions.contratoNivelId, contratoNivelId)
+  ));
+}
 async function updateMentoringSession(sessionId, data) {
   const db2 = await getDb();
   if (!db2) return false;
@@ -2453,8 +2662,11 @@ async function deleteMentoringSession(sessionId) {
 async function createMentoringSession(data) {
   const db2 = await getDb();
   if (!db2) throw new Error("Database not available");
+  await assertNivelPermiteNovasAtribuicoes(data.alunoId, data.contratoNivelId, "mentoringSessions.create");
+  const contratoNivelIdResolved = await resolveContratoNivelId(data.alunoId, data.contratoNivelId);
   const result = await db2.insert(mentoringSessions).values({
     alunoId: data.alunoId,
+    contratoNivelId: contratoNivelIdResolved,
     consultorId: data.consultorId,
     turmaId: data.turmaId ?? null,
     trilhaId: data.trilhaId ?? null,
@@ -2648,6 +2860,15 @@ async function getEventParticipationByAluno(alunoId) {
   const db2 = await getDb();
   if (!db2) return [];
   return await db2.select().from(eventParticipation).where(eq(eventParticipation.alunoId, alunoId));
+}
+async function getEventParticipationByAlunoAndNivel(alunoId, contratoNivelId) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  if (!contratoNivelId) return getEventParticipationByAluno(alunoId);
+  return await db2.select().from(eventParticipation).where(and(
+    eq(eventParticipation.alunoId, alunoId),
+    eq(eventParticipation.contratoNivelId, contratoNivelId)
+  ));
 }
 async function getAllEventParticipation() {
   const db2 = await getDb();
@@ -3746,11 +3967,36 @@ async function getPlanoIndividualByAluno(alunoId) {
   }).from(planoIndividual).leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id)).leftJoin(trilhas, eq(competencias.trilhaId, trilhas.id)).where(eq(planoIndividual.alunoId, alunoId)).orderBy(trilhas.ordem, competencias.ordem);
   return result;
 }
+async function getPlanoIndividualByAlunoAndNivel(alunoId, contratoNivelId) {
+  if (!contratoNivelId) return getPlanoIndividualByAluno(alunoId);
+  const db2 = await getDb();
+  if (!db2) return [];
+  return db2.select({
+    id: planoIndividual.id,
+    alunoId: planoIndividual.alunoId,
+    contratoNivelId: planoIndividual.contratoNivelId,
+    competenciaId: planoIndividual.competenciaId,
+    isObrigatoria: planoIndividual.isObrigatoria,
+    notaAtual: planoIndividual.notaAtual,
+    metaNota: planoIndividual.metaNota,
+    status: planoIndividual.status,
+    competenciaNome: competencias.nome,
+    competenciaCodigo: competencias.codigoIntegracao,
+    trilhaId: competencias.trilhaId,
+    trilhaNome: trilhas.name
+  }).from(planoIndividual).leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id)).leftJoin(trilhas, eq(competencias.trilhaId, trilhas.id)).where(and(
+    eq(planoIndividual.alunoId, alunoId),
+    eq(planoIndividual.contratoNivelId, contratoNivelId)
+  )).orderBy(trilhas.ordem, competencias.ordem);
+}
 async function addCompetenciaToPlano(data) {
   const db2 = await getDb();
   if (!db2) return null;
+  await assertNivelPermiteNovasAtribuicoes(data.alunoId, data.contratoNivelId, "planoIndividual.addCompetencia");
+  const contratoNivelIdResolved = await resolveContratoNivelId(data.alunoId, data.contratoNivelId);
   const [result] = await db2.insert(planoIndividual).values({
     alunoId: data.alunoId,
+    contratoNivelId: contratoNivelIdResolved,
     competenciaId: data.competenciaId,
     isObrigatoria: data.isObrigatoria ?? 1,
     metaNota: data.metaNota ?? "7.00",
@@ -3758,11 +4004,14 @@ async function addCompetenciaToPlano(data) {
   });
   return result.insertId;
 }
-async function addCompetenciasToPlano(alunoId, competenciaIds) {
+async function addCompetenciasToPlano(alunoId, competenciaIds, contratoNivelId) {
   const db2 = await getDb();
   if (!db2) return false;
+  await assertNivelPermiteNovasAtribuicoes(alunoId, contratoNivelId, "planoIndividual.addMultiple");
+  const contratoNivelIdResolved = await resolveContratoNivelId(alunoId, contratoNivelId);
   const values = competenciaIds.map((competenciaId) => ({
     alunoId,
+    contratoNivelId: contratoNivelIdResolved,
     competenciaId,
     isObrigatoria: 1,
     metaNota: "7.00",
@@ -4658,6 +4907,24 @@ async function getAssessmentsByAluno(alunoId) {
     };
   });
 }
+async function getAssessmentsByAlunoAndNivel(alunoId, contratoNivelId) {
+  if (!contratoNivelId) {
+    return getAssessmentsByAluno(alunoId);
+  }
+  const db2 = await getDb();
+  if (!db2) return [];
+  const pdis = await db2.select().from(assessmentPdi).where(and(
+    eq(assessmentPdi.alunoId, alunoId),
+    eq(assessmentPdi.contratoNivelId, contratoNivelId)
+  )).orderBy(desc(assessmentPdi.createdAt));
+  if (pdis.length === 0) return [];
+  const pdiIds = pdis.map((p) => p.id);
+  const allComps = await db2.select().from(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} IN (${sql2.join(pdiIds.map((id) => sql2`${id}`), sql2`, `)})`);
+  return pdis.map((pdi) => ({
+    ...pdi,
+    competencias: allComps.filter((c) => c.assessmentPdiId === pdi.id)
+  }));
+}
 async function getAssessmentsByProgram(programId) {
   const db2 = await getDb();
   if (!db2) return [];
@@ -4718,6 +4985,10 @@ async function getExistingActivePdiByTrilha(alunoId, trilhaId) {
 async function addCompetenciasToExistingAssessment(assessmentPdiId, competenciasData) {
   const db2 = await getDb();
   if (!db2) return 0;
+  const [pdiContext] = await db2.select({ alunoId: assessmentPdi.alunoId, contratoNivelId: assessmentPdi.contratoNivelId }).from(assessmentPdi).where(eq(assessmentPdi.id, assessmentPdiId)).limit(1);
+  if (pdiContext?.alunoId) {
+    await assertNivelPermiteNovasAtribuicoes(pdiContext.alunoId, pdiContext.contratoNivelId, "assessment.addCompetencias");
+  }
   const existingComps = await db2.select({ competenciaId: assessmentCompetencias.competenciaId }).from(assessmentCompetencias).where(eq(assessmentCompetencias.assessmentPdiId, assessmentPdiId));
   const existingIds = new Set(existingComps.map((c) => c.competenciaId));
   const newComps = competenciasData.filter((c) => !existingIds.has(c.competenciaId));
@@ -4754,6 +5025,7 @@ async function addCompetenciasToExistingAssessment(assessmentPdiId, competencias
 async function createAssessmentPdi(pdiData, competenciasData) {
   const db2 = await getDb();
   if (!db2) return null;
+  await assertNivelPermiteNovasAtribuicoes(pdiData.alunoId, pdiData.contratoNivelId, "assessment.create");
   const macroInicio = pdiData.macroInicio;
   const macroTermino = pdiData.macroTermino;
   for (const comp of competenciasData) {
@@ -4766,6 +5038,7 @@ async function createAssessmentPdi(pdiData, competenciasData) {
   }
   const result = await db2.insert(assessmentPdi).values({
     alunoId: pdiData.alunoId,
+    contratoNivelId: pdiData.contratoNivelId || null,
     trilhaId: pdiData.trilhaId,
     turmaId: pdiData.turmaId || null,
     consultorId: pdiData.consultorId || null,
@@ -4812,6 +5085,10 @@ async function updateAssessmentPdi(pdiId, data) {
 async function addCompetenciaToAssessment(assessmentPdiId, data) {
   const db2 = await getDb();
   if (!db2) return null;
+  const [pdiCtx] = await db2.select({ alunoId: assessmentPdi.alunoId, contratoNivelId: assessmentPdi.contratoNivelId }).from(assessmentPdi).where(eq(assessmentPdi.id, assessmentPdiId)).limit(1);
+  if (pdiCtx?.alunoId) {
+    await assertNivelPermiteNovasAtribuicoes(pdiCtx.alunoId, pdiCtx.contratoNivelId, "assessment.addCompetencia");
+  }
   const [pdi] = await db2.select().from(assessmentPdi).where(eq(assessmentPdi.id, assessmentPdiId)).limit(1);
   if (!pdi) throw new Error("Assessment PDI n\xE3o encontrado");
   const macroInicioStr = String(pdi.macroInicio);
@@ -5129,6 +5406,28 @@ async function getStudentPerformanceByAluno(alunoId) {
   if (!db2) return [];
   return await db2.select().from(studentPerformance).where(eq(studentPerformance.alunoId, alunoId));
 }
+async function getStudentPerformanceByAlunoAndNivel(alunoId, contratoNivelId) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  if (!contratoNivelId) {
+    return getStudentPerformanceByAluno(alunoId);
+  }
+  const pdis = await db2.select({ id: assessmentPdi.id }).from(assessmentPdi).where(and(
+    eq(assessmentPdi.alunoId, alunoId),
+    eq(assessmentPdi.contratoNivelId, contratoNivelId)
+  ));
+  if (pdis.length === 0) return [];
+  const pdiIds = pdis.map((p) => p.id);
+  const comps = await db2.select({
+    competenciaId: assessmentCompetencias.competenciaId
+  }).from(assessmentCompetencias).where(sql2`${assessmentCompetencias.assessmentPdiId} IN (${sql2.join(pdiIds.map((id) => sql2`${id}`), sql2`, `)})`);
+  const compIds = comps.map((c) => c.competenciaId).filter((v) => !!v);
+  if (compIds.length === 0) return [];
+  return await db2.select().from(studentPerformance).where(and(
+    eq(studentPerformance.alunoId, alunoId),
+    inArray(studentPerformance.competenciaId, compIds)
+  ));
+}
 async function getStudentPerformanceByExternalUserId(externalUserId) {
   const db2 = await getDb();
   if (!db2) return [];
@@ -5357,9 +5656,10 @@ async function getActiveManagersWithIds() {
   ));
   return results.map((r) => ({ ...r, group: "gerente" }));
 }
-async function markWebinarAttendance(alunoId, eventId, reflexao) {
+async function markWebinarAttendance(alunoId, eventId, reflexao, contratoNivelId) {
   const db2 = await getDb();
   if (!db2) return { updated: false, created: false };
+  const contratoNivelIdResolved = await resolveContratoNivelId(alunoId, contratoNivelId);
   const existing = await db2.select().from(eventParticipation).where(and(
     eq(eventParticipation.alunoId, alunoId),
     eq(eventParticipation.eventId, eventId)
@@ -5368,12 +5668,14 @@ async function markWebinarAttendance(alunoId, eventId, reflexao) {
     await db2.update(eventParticipation).set({
       status: "presente",
       reflexao,
-      selfReportedAt: /* @__PURE__ */ new Date()
+      selfReportedAt: /* @__PURE__ */ new Date(),
+      contratoNivelId: existing[0].contratoNivelId ?? contratoNivelIdResolved
     }).where(eq(eventParticipation.id, existing[0].id));
     return { updated: true, created: false };
   } else {
     await db2.insert(eventParticipation).values({
       alunoId,
+      contratoNivelId: contratoNivelIdResolved,
       eventId,
       status: "presente",
       reflexao,
@@ -5659,6 +5961,228 @@ async function deleteContrato(contratoId) {
   const db2 = await getDb();
   if (!db2) throw new Error("Database not available");
   await db2.update(contratosAluno).set({ isActive: 0 }).where(eq(contratosAluno.id, contratoId));
+}
+async function validarNivelEmAndamentoUnico(contratoId, alunoId, ignoreNivelId) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return validarNivelEmAndamentoUnicoRepo({
+    async findEmAndamento(repoContratoId, repoAlunoId, repoIgnoreNivelId) {
+      const conditions = [
+        eq(contratoNiveis.contratoId, repoContratoId),
+        eq(contratoNiveis.alunoId, repoAlunoId),
+        eq(contratoNiveis.status, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO)
+      ];
+      if (repoIgnoreNivelId) {
+        conditions.push(ne(contratoNiveis.id, repoIgnoreNivelId));
+      }
+      return db2.select({ id: contratoNiveis.id }).from(contratoNiveis).where(and(...conditions)).limit(1);
+    },
+    async insertNivel() {
+      throw new Error("Not implemented");
+    },
+    async listByAluno() {
+      return [];
+    },
+    async listByContrato() {
+      return [];
+    },
+    async findVigenteByAluno() {
+      return null;
+    }
+  }, contratoId, alunoId, ignoreNivelId);
+}
+async function createContratoNivel(data) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  return createContratoNivelRepo({
+    async findEmAndamento(repoContratoId, repoAlunoId) {
+      return db2.select({ id: contratoNiveis.id }).from(contratoNiveis).where(and(
+        eq(contratoNiveis.contratoId, repoContratoId),
+        eq(contratoNiveis.alunoId, repoAlunoId),
+        eq(contratoNiveis.status, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO)
+      )).limit(1);
+    },
+    async insertNivel(insertData) {
+      const [result] = await db2.insert(contratoNiveis).values(insertData);
+      return result.insertId;
+    },
+    async listByAluno() {
+      return [];
+    },
+    async listByContrato() {
+      return [];
+    },
+    async findVigenteByAluno() {
+      return null;
+    }
+  }, data);
+}
+async function getContratoNiveisByAluno(alunoId) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  const rows = await db2.select({
+    id: contratoNiveis.id,
+    contratoId: contratoNiveis.contratoId,
+    alunoId: contratoNiveis.alunoId,
+    nivel: contratoNiveis.nivel,
+    status: contratoNiveis.status,
+    assessmentPdiId: contratoNiveis.assessmentPdiId,
+    mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
+    createdAt: contratoNiveis.createdAt,
+    updatedAt: contratoNiveis.updatedAt,
+    dataInicio: contratosAluno.periodoInicio,
+    dataFim: contratosAluno.periodoTermino
+  }).from(contratoNiveis).leftJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id)).where(eq(contratoNiveis.alunoId, alunoId)).orderBy(desc(contratoNiveis.createdAt));
+  const result = [];
+  for (const row of rows) {
+    if (row.dataInicio && row.dataFim) {
+      result.push(row);
+    } else {
+      const assessments = await db2.select({ macroInicio: assessmentPdi.macroInicio, macroTermino: assessmentPdi.macroTermino }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId)).orderBy(desc(assessmentPdi.createdAt)).limit(1);
+      const ap = assessments[0];
+      result.push({
+        ...row,
+        dataInicio: ap?.macroInicio ?? null,
+        dataFim: ap?.macroTermino ?? null
+      });
+    }
+  }
+  return result;
+}
+async function getContratoNiveisByContrato(contratoId) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  const rows = await db2.select({
+    id: contratoNiveis.id,
+    contratoId: contratoNiveis.contratoId,
+    alunoId: contratoNiveis.alunoId,
+    nivel: contratoNiveis.nivel,
+    status: contratoNiveis.status,
+    assessmentPdiId: contratoNiveis.assessmentPdiId,
+    mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
+    createdAt: contratoNiveis.createdAt,
+    updatedAt: contratoNiveis.updatedAt,
+    dataInicio: contratosAluno.periodoInicio,
+    dataFim: contratosAluno.periodoTermino
+  }).from(contratoNiveis).innerJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id)).where(eq(contratoNiveis.contratoId, contratoId)).orderBy(asc(contratosAluno.periodoInicio), asc(contratoNiveis.id));
+  return rows;
+}
+async function getContratoNivelVigenteByAluno(alunoId) {
+  const db2 = await getDb();
+  if (!db2) return null;
+  const [nivelVigente] = await db2.select({
+    id: contratoNiveis.id,
+    contratoId: contratoNiveis.contratoId,
+    alunoId: contratoNiveis.alunoId,
+    nivel: contratoNiveis.nivel,
+    status: contratoNiveis.status,
+    assessmentPdiId: contratoNiveis.assessmentPdiId,
+    mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
+    createdAt: contratoNiveis.createdAt,
+    updatedAt: contratoNiveis.updatedAt,
+    dataInicio: contratosAluno.periodoInicio,
+    dataFim: contratosAluno.periodoTermino
+  }).from(contratoNiveis).leftJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id)).where(and(
+    eq(contratoNiveis.alunoId, alunoId),
+    inArray(contratoNiveis.status, [...CONTRATO_NIVEL_STATUS_ATIVOS])
+  )).orderBy(desc(contratoNiveis.id)).limit(1);
+  if (!nivelVigente) return null;
+  if (!nivelVigente.dataInicio || !nivelVigente.dataFim) {
+    const [ap] = await db2.select({ macroInicio: assessmentPdi.macroInicio, macroTermino: assessmentPdi.macroTermino }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId)).orderBy(desc(assessmentPdi.createdAt)).limit(1);
+    return {
+      ...nivelVigente,
+      dataInicio: ap?.macroInicio ?? null,
+      dataFim: ap?.macroTermino ?? null
+    };
+  }
+  return nivelVigente;
+}
+async function getContratoNivelComStatusOperacional(alunoId, contratoNivelId) {
+  const db2 = await getDb();
+  if (!db2) return null;
+  let nivel = null;
+  if (contratoNivelId) {
+    const [row] = await db2.select({
+      id: contratoNiveis.id,
+      contratoId: contratoNiveis.contratoId,
+      alunoId: contratoNiveis.alunoId,
+      nivel: contratoNiveis.nivel,
+      status: contratoNiveis.status,
+      assessmentPdiId: contratoNiveis.assessmentPdiId,
+      mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
+      createdAt: contratoNiveis.createdAt,
+      updatedAt: contratoNiveis.updatedAt,
+      dataInicio: contratosAluno.periodoInicio,
+      dataFim: contratosAluno.periodoTermino
+    }).from(contratoNiveis).leftJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id)).where(eq(contratoNiveis.id, contratoNivelId)).limit(1);
+    if (row) {
+      if (!row.dataInicio || !row.dataFim) {
+        const [ap] = await db2.select({ macroInicio: assessmentPdi.macroInicio, macroTermino: assessmentPdi.macroTermino }).from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId)).orderBy(desc(assessmentPdi.createdAt)).limit(1);
+        nivel = {
+          ...row,
+          dataInicio: ap?.macroInicio ?? null,
+          dataFim: ap?.macroTermino ?? null
+        };
+      } else {
+        nivel = row;
+      }
+    }
+  } else {
+    nivel = await getContratoNivelVigenteByAluno(alunoId);
+  }
+  if (!nivel) return null;
+  const statusOperacional = getContratoNivelOperationalStatus(nivel);
+  if (nivel.status !== statusOperacional) {
+    await db2.update(contratoNiveis).set({ status: statusOperacional }).where(eq(contratoNiveis.id, nivel.id));
+  }
+  return {
+    ...nivel,
+    status: statusOperacional,
+    statusOperacional
+  };
+}
+async function isContratoNivelBloqueado(alunoId, contratoNivelId) {
+  const nivel = await getContratoNivelComStatusOperacional(alunoId, contratoNivelId);
+  if (!nivel) return false;
+  return isContratoNivelBloqueadoParaNovasAtribuicoes(nivel.statusOperacional);
+}
+async function isContratoNivelEncerradoDb(alunoId, contratoNivelId) {
+  const nivel = await getContratoNivelComStatusOperacional(alunoId, contratoNivelId);
+  if (!nivel) return false;
+  return isContratoNivelEncerrado(nivel.statusOperacional);
+}
+async function assertNivelPermiteNovasAtribuicoes(alunoId, contratoNivelId, operacao) {
+  const nivel = await getContratoNivelComStatusOperacional(alunoId, contratoNivelId);
+  if (!nivel) return;
+  if (isContratoNivelBloqueadoParaNovasAtribuicoes(nivel.statusOperacional)) {
+    throw new Error(
+      `Opera\xE7\xE3o bloqueada (${operacao}): n\xEDvel ${nivel.nivel} em status ${nivel.statusOperacional}.`
+    );
+  }
+}
+async function getPedagogiaByNivel(alunoId, contratoNivelId) {
+  const nivelVigente = contratoNivelId ? null : await getContratoNivelVigenteByAluno(alunoId);
+  const nivelId = contratoNivelId ?? nivelVigente?.id ?? null;
+  const [assessments, plano, metasNivel, mentorias, participacoes, cases, performance] = await Promise.all([
+    getAssessmentsByAlunoAndNivel(alunoId, nivelId),
+    getPlanoIndividualByAlunoAndNivel(alunoId, nivelId),
+    getMetasDetalhadasByNivel(alunoId, nivelId),
+    getMentoringSessionsByAlunoAndNivel(alunoId, nivelId),
+    getEventParticipationByAlunoAndNivel(alunoId, nivelId),
+    getCasesSucessoByAlunoAndNivel(alunoId, nivelId),
+    getStudentPerformanceByAlunoAndNivel(alunoId, nivelId)
+  ]);
+  return {
+    contratoNivelId: nivelId,
+    assessments,
+    competencias: assessments.flatMap((a) => a.competencias || []),
+    planoIndividual: plano,
+    metas: metasNivel,
+    mentoringSessions: mentorias,
+    eventParticipation: participacoes,
+    casesSucesso: cases,
+    studentPerformance: performance
+  };
 }
 async function getSaldoSessoes(alunoId) {
   const db2 = await getDb();
@@ -6029,8 +6553,19 @@ async function markCaseInteresseAsRead(id, autorAlunoId) {
 async function createCaseSucesso(data) {
   const db2 = await getDb();
   if (!db2) return null;
-  const [result] = await db2.insert(casesSucesso).values(data);
+  await assertNivelPermiteNovasAtribuicoes(data.alunoId, data.contratoNivelId, "cases.create");
+  const contratoNivelIdResolved = await resolveContratoNivelId(data.alunoId, data.contratoNivelId);
+  const [result] = await db2.insert(casesSucesso).values({ ...data, contratoNivelId: contratoNivelIdResolved });
   return result.insertId;
+}
+async function getCasesSucessoByAlunoAndNivel(alunoId, contratoNivelId) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  if (!contratoNivelId) return getCasesSucessoByAluno(alunoId);
+  return db2.select().from(casesSucesso).where(and(
+    eq(casesSucesso.alunoId, alunoId),
+    eq(casesSucesso.contratoNivelId, contratoNivelId)
+  ));
 }
 async function updateCaseSucesso(id, data) {
   const db2 = await getDb();
@@ -6070,7 +6605,7 @@ async function getAllCiclosForCalculatorV2() {
     id: assessmentPdi.id,
     alunoId: assessmentPdi.alunoId,
     trilhaId: assessmentPdi.trilhaId
-  }).from(assessmentPdi);
+  }).from(assessmentPdi).where(eq(assessmentPdi.status, "ativo"));
   const alunosList = await db2.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
   const alunoMap = new Map(alunosList.map((a) => [a.id, a.externalId]));
   const alunoTrilhaMap = /* @__PURE__ */ new Map();
@@ -6097,27 +6632,25 @@ async function getAllCiclosForCalculatorV2() {
 async function getMacrocicloPorAluno() {
   const db2 = await getDb();
   if (!db2) return /* @__PURE__ */ new Map();
-  const pdis = await db2.select({
-    alunoId: assessmentPdi.alunoId,
-    macroInicio: assessmentPdi.macroInicio,
-    macroTermino: assessmentPdi.macroTermino
-  }).from(assessmentPdi).where(and(
-    isNotNull(assessmentPdi.macroInicio),
-    isNotNull(assessmentPdi.macroTermino)
-  ));
+  const pdis = await db2.execute(sql2.raw(`
+    SELECT ap.alunoId, ap.macroInicio, ap.macroTermino
+    FROM assessment_pdi ap
+    INNER JOIN (
+      SELECT alunoId, MAX(createdAt) as maxCreatedAt
+      FROM assessment_pdi
+      WHERE status = 'ativo' AND macroInicio IS NOT NULL AND macroTermino IS NOT NULL
+      GROUP BY alunoId
+    ) latest ON ap.alunoId = latest.alunoId AND ap.createdAt = latest.maxCreatedAt
+    WHERE ap.status = 'ativo'
+  `));
+  const pdiList = Array.isArray(pdis[0]) ? pdis[0] : [];
   const alunosList = await db2.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
   const alunoMap = new Map(alunosList.map((a) => [a.id, a.externalId || String(a.id)]));
   const result = /* @__PURE__ */ new Map();
-  for (const pdi of pdis) {
+  for (const pdi of pdiList) {
     const alunoKey = alunoMap.get(pdi.alunoId) || String(pdi.alunoId);
-    const existing = result.get(alunoKey);
-    const macroInicioStr = String(pdi.macroInicio);
-    const macroTerminoStr = String(pdi.macroTermino);
-    if (!existing) {
-      result.set(alunoKey, { macroInicio: macroInicioStr, macroTermino: macroTerminoStr });
-    } else {
-      if (macroInicioStr < existing.macroInicio) existing.macroInicio = macroInicioStr;
-      if (macroTerminoStr > existing.macroTermino) existing.macroTermino = macroTerminoStr;
+    if (!result.has(alunoKey) && pdi.macroInicio && pdi.macroTermino) {
+      result.set(alunoKey, { macroInicio: String(pdi.macroInicio), macroTermino: String(pdi.macroTermino) });
     }
   }
   return result;
@@ -6227,11 +6760,33 @@ async function liberarOnboardingAluno(alunoId) {
   if ((pdiCount?.count ?? 0) === 0) {
     return { success: false, message: "Aluno n\xE3o tem PDI. J\xE1 deve ir para onboarding automaticamente." };
   }
-  const { numeroCiclo } = await arquivarCicloAtual(alunoId);
-  await db2.update(alunos).set({
-    onboardingLiberado: 1,
-    onboardingLiberadoEm: /* @__PURE__ */ new Date()
-  }).where(eq(alunos.id, alunoId));
+  let numeroCiclo = 1;
+  try {
+    await db2.execute(sql2.raw("START TRANSACTION"));
+    const [lockRows] = await db2.execute(sql2.raw(
+      `SELECT id, onboardingLiberado FROM alunos WHERE id = ${alunoId} FOR UPDATE`
+    ));
+    const alunoLocked = Array.isArray(lockRows) ? lockRows[0] : null;
+    if (!alunoLocked) {
+      await db2.execute(sql2.raw("ROLLBACK"));
+      return { success: false, message: "Aluno n\xE3o encontrado (lock)" };
+    }
+    if (alunoLocked.onboardingLiberado === 1) {
+      await db2.execute(sql2.raw("ROLLBACK"));
+      return { success: false, message: "Onboarding j\xE1 est\xE1 liberado para este aluno" };
+    }
+    const resultado = await arquivarCicloAtual(alunoId);
+    numeroCiclo = resultado.numeroCiclo;
+    await db2.execute(sql2.raw(
+      `UPDATE alunos SET onboardingLiberado = 1, onboardingLiberadoEm = NOW() WHERE id = ${alunoId}`
+    ));
+    await db2.execute(sql2.raw("COMMIT"));
+  } catch (err) {
+    await db2.execute(sql2.raw("ROLLBACK")).catch(() => {
+    });
+    console.error(`[DB] Erro na transa\xE7\xE3o liberarOnboardingAluno para aluno ${alunoId}:`, err);
+    return { success: false, message: "Erro interno ao liberar onboarding. Tente novamente." };
+  }
   return { success: true, message: `Onboarding liberado para novo ciclo. Ciclo ${numeroCiclo} arquivado na p\xE1gina de Evolu\xE7\xE3o.` };
 }
 async function liberarOnboardingEmMassa(alunoIds) {
@@ -6925,13 +7480,23 @@ async function getAllAssessmentPdis() {
   if (!db2) return [];
   return await db2.select().from(assessmentPdi);
 }
-async function getMetasByAluno(alunoId, assessmentPdiId) {
+async function getMetasByAluno(alunoId, assessmentPdiId, contratoNivelId) {
   const db2 = await getDb();
   if (!db2) return [];
+  if (assessmentPdiId && contratoNivelId) {
+    return await db2.select().from(metas).where(and(
+      eq(metas.alunoId, alunoId),
+      eq(metas.assessmentPdiId, assessmentPdiId),
+      eq(metas.contratoNivelId, contratoNivelId),
+      eq(metas.isActive, 1)
+    )).orderBy(metas.competenciaId, metas.createdAt);
+  }
   if (assessmentPdiId) {
     return await db2.select().from(metas).where(and(eq(metas.alunoId, alunoId), eq(metas.assessmentPdiId, assessmentPdiId), eq(metas.isActive, 1))).orderBy(metas.competenciaId, metas.createdAt);
   }
-  return await db2.select().from(metas).where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1))).orderBy(metas.competenciaId, metas.createdAt);
+  const conditions = [eq(metas.alunoId, alunoId), eq(metas.isActive, 1)];
+  if (contratoNivelId) conditions.push(eq(metas.contratoNivelId, contratoNivelId));
+  return await db2.select().from(metas).where(and(...conditions)).orderBy(metas.competenciaId, metas.createdAt);
 }
 async function getMetasByCompetencia(alunoId, assessmentCompetenciaId) {
   const db2 = await getDb();
@@ -6945,8 +7510,29 @@ async function getMetasByCompetencia(alunoId, assessmentCompetenciaId) {
 async function createMeta(data) {
   const db2 = await getDb();
   if (!db2) throw new Error("Database not available");
-  const result = await db2.insert(metas).values(data);
+  await assertNivelPermiteNovasAtribuicoes(data.alunoId, data.contratoNivelId, "metas.create");
+  let contratoNivelId = data.contratoNivelId ?? null;
+  if (!contratoNivelId && data.assessmentPdiId) {
+    const [pdi] = await db2.select({ contratoNivelId: assessmentPdi.contratoNivelId }).from(assessmentPdi).where(eq(assessmentPdi.id, data.assessmentPdiId)).limit(1);
+    contratoNivelId = pdi?.contratoNivelId ?? null;
+  }
+  if (!contratoNivelId) {
+    contratoNivelId = await resolveContratoNivelId(data.alunoId, null);
+  }
+  const result = await db2.insert(metas).values({ ...data, contratoNivelId });
   return { id: Number(result[0].insertId) };
+}
+async function getMetasDetalhadasByNivel(alunoId, contratoNivelId) {
+  if (!contratoNivelId) {
+    return getMetasDetalhadas(alunoId);
+  }
+  const db2 = await getDb();
+  if (!db2) return [];
+  return db2.select().from(metas).where(and(
+    eq(metas.alunoId, alunoId),
+    eq(metas.contratoNivelId, contratoNivelId),
+    eq(metas.isActive, 1)
+  )).orderBy(metas.createdAt);
 }
 async function updateMeta(id, data) {
   const db2 = await getDb();
@@ -7148,7 +7734,8 @@ async function getDiscRespostas(alunoId) {
 async function saveDiscResultado(data) {
   const dbConn = await getDb();
   if (!dbConn) throw new Error("Database not available");
-  const existing = await dbConn.select({ ciclo: discResultados.ciclo }).from(discResultados).where(eq(discResultados.alunoId, data.alunoId)).orderBy(desc(discResultados.ciclo)).limit(1);
+  const whereClause = data.contratoNivelId ? and(eq(discResultados.alunoId, data.alunoId), eq(discResultados.contratoNivelId, data.contratoNivelId)) : eq(discResultados.alunoId, data.alunoId);
+  const existing = await dbConn.select({ ciclo: discResultados.ciclo }).from(discResultados).where(whereClause).orderBy(desc(discResultados.ciclo)).limit(1);
   const nextCiclo = existing.length > 0 ? existing[0].ciclo + 1 : 1;
   await dbConn.insert(discResultados).values({
     ...data,
@@ -7164,23 +7751,50 @@ async function getDiscResultado(alunoId) {
   const result = await dbConn.select().from(discResultados).where(eq(discResultados.alunoId, alunoId)).orderBy(desc(discResultados.ciclo)).limit(1);
   return result[0] || null;
 }
+async function getDiscResultadoByNivel(alunoId, contratoNivelId) {
+  if (!contratoNivelId) {
+    return getDiscResultado(alunoId);
+  }
+  const dbConn = await getDb();
+  if (!dbConn) return null;
+  const result = await dbConn.select().from(discResultados).where(and(
+    eq(discResultados.alunoId, alunoId),
+    eq(discResultados.contratoNivelId, contratoNivelId)
+  )).orderBy(desc(discResultados.ciclo)).limit(1);
+  return result[0] || null;
+}
 async function getAllDiscResultadosByAluno(alunoId) {
   const dbConn = await getDb();
   if (!dbConn) return [];
   return await dbConn.select().from(discResultados).where(eq(discResultados.alunoId, alunoId)).orderBy(discResultados.ciclo);
 }
-async function saveAutopercepcoes(alunoId, avaliacoes) {
+async function saveAutopercepcoes(alunoId, avaliacoes, contratoNivelId) {
   const dbConn = await getDb();
   if (!dbConn) throw new Error("Database not available");
-  await dbConn.delete(autopercepcoesCompetencias).where(eq(autopercepcoesCompetencias.alunoId, alunoId));
+  await dbConn.delete(autopercepcoesCompetencias).where(
+    contratoNivelId ? and(eq(autopercepcoesCompetencias.alunoId, alunoId), eq(autopercepcoesCompetencias.contratoNivelId, contratoNivelId)) : eq(autopercepcoesCompetencias.alunoId, alunoId)
+  );
   if (avaliacoes.length > 0) {
-    await dbConn.insert(autopercepcoesCompetencias).values(avaliacoes);
+    await dbConn.insert(autopercepcoesCompetencias).values(
+      avaliacoes.map((a) => ({ ...a, contratoNivelId: contratoNivelId ?? null }))
+    );
   }
 }
 async function getAutopercepcoes(alunoId) {
   const dbConn = await getDb();
   if (!dbConn) return [];
   return dbConn.select().from(autopercepcoesCompetencias).where(eq(autopercepcoesCompetencias.alunoId, alunoId));
+}
+async function getAutopercepcoesByNivel(alunoId, contratoNivelId) {
+  if (!contratoNivelId) {
+    return getAutopercepcoes(alunoId);
+  }
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+  return dbConn.select().from(autopercepcoesCompetencias).where(and(
+    eq(autopercepcoesCompetencias.alunoId, alunoId),
+    eq(autopercepcoesCompetencias.contratoNivelId, contratoNivelId)
+  ));
 }
 async function saveContribuicaoMentora(data) {
   const dbConn = await getDb();
@@ -7737,6 +8351,18 @@ async function getOnboardingJornada(alunoId) {
   const rows = await db2.select().from(onboardingJornada).where(eq(onboardingJornada.alunoId, alunoId)).limit(1);
   return rows[0] || null;
 }
+async function getOnboardingJornadaByNivel(alunoId, contratoNivelId) {
+  if (!contratoNivelId) {
+    return getOnboardingJornada(alunoId);
+  }
+  const db2 = await getDb();
+  if (!db2) return null;
+  const rows = await db2.select().from(onboardingJornada).where(and(
+    eq(onboardingJornada.alunoId, alunoId),
+    eq(onboardingJornada.contratoNivelId, contratoNivelId)
+  )).limit(1);
+  return rows[0] || null;
+}
 async function upsertOnboardingJornada(alunoId, data) {
   const db2 = await getDb();
   if (!db2) return;
@@ -7745,6 +8371,20 @@ async function upsertOnboardingJornada(alunoId, data) {
     await db2.update(onboardingJornada).set(data).where(eq(onboardingJornada.alunoId, alunoId));
   } else {
     await db2.insert(onboardingJornada).values({ alunoId, ...data });
+  }
+}
+async function upsertOnboardingJornadaByNivel(alunoId, contratoNivelId, data) {
+  if (!contratoNivelId) {
+    await upsertOnboardingJornada(alunoId, data);
+    return;
+  }
+  const db2 = await getDb();
+  if (!db2) return;
+  const existing = await getOnboardingJornadaByNivel(alunoId, contratoNivelId);
+  if (existing) {
+    await db2.update(onboardingJornada).set(data).where(eq(onboardingJornada.id, existing.id));
+  } else {
+    await db2.insert(onboardingJornada).values({ alunoId, contratoNivelId, ...data });
   }
 }
 async function getOnboardingVideos() {
@@ -8633,6 +9273,117 @@ async function atualizarStatusCursoAtribuido(alunoId, cursoId, aprovado) {
     return false;
   }
 }
+async function getCertificationTemplates(nivel) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  if (nivel) {
+    return await db2.select().from(certificationTemplates).where(eq(certificationTemplates.nivel, nivel)).orderBy(desc(certificationTemplates.updatedAt));
+  }
+  return await db2.select().from(certificationTemplates).orderBy(desc(certificationTemplates.updatedAt));
+}
+async function getActiveCertificationTemplateByNivel(nivel) {
+  const db2 = await getDb();
+  if (!db2) return null;
+  const [tpl] = await db2.select().from(certificationTemplates).where(and(eq(certificationTemplates.nivel, nivel), eq(certificationTemplates.ativo, 1))).orderBy(desc(certificationTemplates.updatedAt)).limit(1);
+  return tpl || null;
+}
+async function createCertificationTemplate(data) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const [result] = await db2.insert(certificationTemplates).values(data);
+  return result.insertId;
+}
+async function setCertificationTemplateActive(templateId, nivel) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  await db2.update(certificationTemplates).set({ ativo: 0 }).where(eq(certificationTemplates.nivel, nivel));
+  await db2.update(certificationTemplates).set({ ativo: 1 }).where(eq(certificationTemplates.id, templateId));
+}
+async function getCertificationSignatures(tipo) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  const cond = tipo ? and(eq(certificationSignatures.ativo, 1), eq(certificationSignatures.tipo, tipo)) : eq(certificationSignatures.ativo, 1);
+  return await db2.select().from(certificationSignatures).where(cond).orderBy(asc(certificationSignatures.tipo), asc(certificationSignatures.nomeExibicao));
+}
+async function createCertificationSignature(data) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const [result] = await db2.insert(certificationSignatures).values(data);
+  return result.insertId;
+}
+async function getNivelCertificatesByAluno(alunoId) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  return await db2.select().from(nivelCertificates).where(eq(nivelCertificates.alunoId, alunoId)).orderBy(desc(nivelCertificates.emitidoEm));
+}
+async function getNivelCertificateByAlunoNivel(alunoId, contratoNivelId) {
+  const db2 = await getDb();
+  if (!db2) return null;
+  const [cert] = await db2.select().from(nivelCertificates).where(and(
+    eq(nivelCertificates.alunoId, alunoId),
+    eq(nivelCertificates.contratoNivelId, contratoNivelId),
+    eq(nivelCertificates.status, "emitido")
+  )).orderBy(desc(nivelCertificates.emitidoEm)).limit(1);
+  return cert || null;
+}
+async function createNivelCertificate(data, mentoras) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const [result] = await db2.insert(nivelCertificates).values(data);
+  const certificateId = result.insertId;
+  if (mentoras.length > 0) {
+    await db2.insert(nivelCertificateMentoras).values(
+      mentoras.map((m) => ({ certificateId, consultorId: m.consultorId, nomeMentora: m.nomeMentora }))
+    );
+  }
+  return certificateId;
+}
+async function getCertificateMentoras(certificateId) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  return await db2.select().from(nivelCertificateMentoras).where(eq(nivelCertificateMentoras.certificateId, certificateId));
+}
+async function avaliarElegibilidadeCertificacao(alunoId, contratoNivelId) {
+  const nivel = await getContratoNivelComStatusOperacional(alunoId, contratoNivelId);
+  if (!nivel) {
+    return { elegivel: false, motivo: "N\xEDvel n\xE3o encontrado." };
+  }
+  const pedagogia = await getPedagogiaByNivel(alunoId, contratoNivelId);
+  const assessments = pedagogia.assessments || [];
+  const metasNivel = pedagogia.metas || [];
+  const eventos = pedagogia.eventParticipation || [];
+  const cases = pedagogia.casesSucesso || [];
+  const nivelEncerrado = nivel.statusOperacional === "encerrado";
+  const resultadoFinalFechado = assessments.some((a) => ["finalizado", "concluido"].includes(String(a.status)));
+  const engajamento = eventos.length > 0 ? eventos.filter((e) => e.status === "presente").length / eventos.length * 100 : 0;
+  const desafios = metasNivel.length > 0 ? metasNivel.filter((m) => String(m.status || "").toLowerCase() === "concluida").length / metasNivel.length * 100 : 0;
+  const evidencias = cases.filter((c) => c.entregue === 1).length;
+  const criterios = {
+    nivelEncerrado,
+    resultadoFinalFechado,
+    engajamentoMin80: engajamento >= 80,
+    desafiosMin80: desafios >= 80,
+    evidenciasMinimas: evidencias > 0
+  };
+  const elegivel = criterios.nivelEncerrado && criterios.resultadoFinalFechado && criterios.engajamentoMin80 && criterios.desafiosMin80 && criterios.evidenciasMinimas;
+  const motivos = [];
+  if (!criterios.nivelEncerrado) motivos.push("N\xEDvel n\xE3o est\xE1 encerrado.");
+  if (!criterios.resultadoFinalFechado) motivos.push("Resultado final do n\xEDvel n\xE3o est\xE1 fechado.");
+  if (!criterios.engajamentoMin80) motivos.push("Engajamento final abaixo de 80%.");
+  if (!criterios.desafiosMin80) motivos.push("Desafios conclu\xEDdos abaixo de 80%.");
+  if (!criterios.evidenciasMinimas) motivos.push("Sem evid\xEAncias/cases entregues no n\xEDvel.");
+  return {
+    elegivel,
+    criterios,
+    metricas: {
+      engajamento: Number(engajamento.toFixed(2)),
+      desafios: Number(desafios.toFixed(2)),
+      evidencias
+    },
+    motivo: motivos.join(" "),
+    nivel
+  };
+}
 async function syncStudentPerformanceFromPlatform(alunoId, cursoAtribuidoId) {
   const db2 = await getDb();
   if (!db2) return;
@@ -8815,10 +9566,40 @@ async function ensureHistoricoCiclosTable() {
         \`dataInicio\` timestamp NULL,
         \`dataConclusao\` timestamp NULL,
         \`observacoes\` text,
+        \`ind1Webinars\` int NULL,
+        \`ind2Avaliacoes\` int NULL,
+        \`ind3Competencias\` int NULL,
+        \`ind4Tarefas\` int NULL,
+        \`ind5Engajamento\` int NULL,
+        \`ind6Aplicabilidade\` int NULL,
+        \`ind7EngajamentoFinal\` int NULL,
+        \`metasTotal\` int NULL,
+        \`metasCumpridas\` int NULL,
         \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `));
+    try {
+      await db2.execute(sql2.raw(`ALTER TABLE \`assessment_pdi\` ADD COLUMN \`cicloOnboardingId\` int NULL COMMENT 'FK para historico_ciclos_aluno'`));
+    } catch (_) {
+    }
+    const snapshotCols = [
+      "ind1Webinars",
+      "ind2Avaliacoes",
+      "ind3Competencias",
+      "ind4Tarefas",
+      "ind5Engajamento",
+      "ind6Aplicabilidade",
+      "ind7EngajamentoFinal",
+      "metasTotal",
+      "metasCumpridas"
+    ];
+    for (const col of snapshotCols) {
+      try {
+        await db2.execute(sql2.raw(`ALTER TABLE \`historico_ciclos_aluno\` ADD COLUMN \`${col}\` int NULL`));
+      } catch (_) {
+      }
+    }
     console.log("[DB] Tabela historico_ciclos_aluno verificada/criada com sucesso.");
   } catch (error) {
     console.error("[DB] Erro ao criar tabela historico_ciclos_aluno:", error);
@@ -8831,28 +9612,155 @@ async function arquivarCicloAtual(alunoId) {
     `SELECT id, ciclo FROM disc_resultados WHERE alunoId = ${alunoId} ORDER BY ciclo DESC, createdAt DESC LIMIT 1`
   ));
   const discRow = Array.isArray(discRows) ? discRows[0] : null;
-  const [pdiRows] = await db2.execute(sql2.raw(
-    `SELECT id FROM assessment_pdi WHERE alunoId = ${alunoId} ORDER BY createdAt DESC LIMIT 1`
+  const [pdiActiveRows] = await db2.execute(sql2.raw(
+    `SELECT id FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'ativo' ORDER BY createdAt DESC LIMIT 1`
   ));
-  const pdiRow = Array.isArray(pdiRows) ? pdiRows[0] : null;
+  const pdiActiveRow = Array.isArray(pdiActiveRows) ? pdiActiveRows[0] : null;
+  let pdiId = pdiActiveRow?.id || null;
+  if (!pdiId) {
+    const [pdiAnyRows] = await db2.execute(sql2.raw(
+      `SELECT id FROM assessment_pdi WHERE alunoId = ${alunoId} ORDER BY createdAt DESC LIMIT 1`
+    ));
+    pdiId = Array.isArray(pdiAnyRows) && pdiAnyRows[0]?.id ? pdiAnyRows[0].id : null;
+  }
   const [jornadaRows] = await db2.execute(sql2.raw(
     `SELECT aceiteRealizadoEm FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
   ));
   const jornada = Array.isArray(jornadaRows) ? jornadaRows[0] : null;
+  const discIdStr = discRow?.id ? String(discRow.id) : "NULL";
+  const pdiIdStr = pdiId ? String(pdiId) : "NULL";
+  if (discRow?.id || pdiId) {
+    const checkCond = discRow?.id && pdiId ? `discResultadoId = ${discRow.id} AND assessmentPdiId = ${pdiId}` : discRow?.id ? `discResultadoId = ${discRow.id}` : `assessmentPdiId = ${pdiId}`;
+    const [existRows] = await db2.execute(sql2.raw(
+      `SELECT id, numeroCiclo FROM historico_ciclos_aluno WHERE alunoId = ${alunoId} AND ${checkCond} LIMIT 1`
+    ));
+    const existRow = Array.isArray(existRows) ? existRows[0] : null;
+    if (existRow) {
+      console.log(`[DB] Ciclo j\xE1 arquivado para aluno ${alunoId} (id=${existRow.id}, ciclo=${existRow.numeroCiclo}). Idempot\xEAncia ativada.`);
+      return { numeroCiclo: existRow.numeroCiclo };
+    }
+  }
+  const [webinarRows] = await db2.execute(sql2.raw(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN ep.status = 'presente' THEN 1 ELSE 0 END) as presentes
+    FROM event_participation ep
+    WHERE ep.alunoId = ${alunoId}
+  `));
+  const webinarData = Array.isArray(webinarRows) ? webinarRows[0] : null;
+  const ind1Webinars = webinarData?.total > 0 ? Math.round(Number(webinarData.presentes) / Number(webinarData.total) * 100) : 0;
+  const [avalRows] = await db2.execute(sql2.raw(`
+    SELECT AVG(sp.mediaAvaliacoesRespondidas) as mediaAval
+    FROM student_performance sp
+    INNER JOIN alunos a ON (a.externalId = sp.idUsuario OR CAST(a.id AS CHAR) = sp.idUsuario)
+    WHERE a.id = ${alunoId} AND sp.mediaAvaliacoesRespondidas IS NOT NULL
+  `));
+  const avalData = Array.isArray(avalRows) ? avalRows[0] : null;
+  const ind2Avaliacoes = avalData?.mediaAval != null ? Math.round(Number(avalData.mediaAval)) : 0;
+  const [compRows] = await db2.execute(sql2.raw(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN sp.progressoTotal >= 100 THEN 1 ELSE 0 END) as concluidas
+    FROM student_performance sp
+    INNER JOIN alunos a ON (a.externalId = sp.idUsuario OR CAST(a.id AS CHAR) = sp.idUsuario)
+    WHERE a.id = ${alunoId}
+  `));
+  const compData = Array.isArray(compRows) ? compRows[0] : null;
+  const ind3Competencias = compData?.total > 0 ? Math.round(Number(compData.concluidas) / Number(compData.total) * 100) : 0;
+  const [tarefaRows] = await db2.execute(sql2.raw(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN ms.taskStatus = 'entregue' THEN 1 ELSE 0 END) as entregues
+    FROM mentoring_sessions ms
+    WHERE ms.alunoId = ${alunoId} AND ms.taskStatus IN ('entregue', 'nao_entregue')
+  `));
+  const tarefaData = Array.isArray(tarefaRows) ? tarefaRows[0] : null;
+  const ind4Tarefas = tarefaData?.total > 0 ? Math.round(Number(tarefaData.entregues) / Number(tarefaData.total) * 100) : 0;
+  const [engRows] = await db2.execute(sql2.raw(`
+    SELECT AVG(ms.engagementScore) as mediaEng
+    FROM mentoring_sessions ms
+    WHERE ms.alunoId = ${alunoId} AND ms.engagementScore IS NOT NULL
+  `));
+  const engData = Array.isArray(engRows) ? engRows[0] : null;
+  const mediaEngRaw = engData?.mediaEng != null ? Number(engData.mediaEng) : 0;
+  const ind5Engajamento = Math.round(Math.min(100, Math.max(0, mediaEngRaw * 10)));
+  const [caseRows] = await db2.execute(sql2.raw(`
+    SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN cs.entregue = 1 THEN 1 ELSE 0 END) as entregues
+    FROM cases_sucesso cs
+    WHERE cs.alunoId = ${alunoId}
+  `));
+  const caseData = Array.isArray(caseRows) ? caseRows[0] : null;
+  const ind6Aplicabilidade = caseData?.total > 0 ? Math.round(Number(caseData.entregues) / Number(caseData.total) * 100) : 0;
+  const ind7EngajamentoFinal = Math.round(
+    (ind1Webinars + ind2Avaliacoes + ind3Competencias + ind4Tarefas + ind5Engajamento) / 5
+  );
+  let metasTotal = 0;
+  let metasCumpridas = 0;
+  if (pdiId) {
+    const [metaRows] = await db2.execute(sql2.raw(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN m.status = 'concluida' THEN 1 ELSE 0 END) as cumpridas
+      FROM metas m
+      WHERE m.alunoId = ${alunoId} AND m.assessmentPdiId = ${pdiId} AND m.isActive = 1
+    `));
+    const metaData = Array.isArray(metaRows) ? metaRows[0] : null;
+    metasTotal = Number(metaData?.total ?? 0);
+    metasCumpridas = Number(metaData?.cumpridas ?? 0);
+  }
+  await db2.execute(sql2.raw(`
+    UPDATE assessment_pdi
+    SET status = 'congelado', congeladoEm = NOW(), motivoCongelamento = 'Ciclo encerrado pelo admin'
+    WHERE alunoId = ${alunoId} AND status = 'ativo'
+  `));
+  console.log(`[DB] PDIs ativos do aluno ${alunoId} congelados.`);
+  try {
+    await db2.execute(sql2.raw(`
+      UPDATE ciclos_execucao
+      SET status = 'congelado'
+      WHERE alunoId = ${alunoId} AND status != 'congelado'
+    `));
+  } catch (_) {
+    console.warn(`[DB] Aviso: ciclos_execucao n\xE3o encontrada para aluno ${alunoId}`);
+  }
   const [maxCicloRows] = await db2.execute(sql2.raw(
     `SELECT COALESCE(MAX(numeroCiclo), 0) as maxCiclo FROM historico_ciclos_aluno WHERE alunoId = ${alunoId}`
   ));
   const maxCicloArr = Array.isArray(maxCicloRows) ? maxCicloRows : [];
   const maxCiclo = maxCicloArr[0]?.maxCiclo ?? 0;
   const numeroCiclo = (Number(maxCiclo) || 0) + 1;
-  const discId = discRow?.id ? String(discRow.id) : "NULL";
-  const pdiId = pdiRow?.id ? String(pdiRow.id) : "NULL";
   const dataInicio = jornada?.aceiteRealizadoEm ? `'${new Date(jornada.aceiteRealizadoEm).toISOString().slice(0, 19).replace("T", " ")}'` : "NULL";
-  await db2.execute(sql2.raw(
-    `INSERT INTO historico_ciclos_aluno (alunoId, numeroCiclo, discResultadoId, assessmentPdiId, dataInicio, dataConclusao, createdAt, updatedAt)
-     VALUES (${alunoId}, ${numeroCiclo}, ${discId}, ${pdiId}, ${dataInicio}, NOW(), NOW(), NOW())`
-  ));
-  console.log(`[DB] Ciclo ${numeroCiclo} arquivado para aluno ${alunoId}. DISC: ${discRow?.id ?? "N/A"}, PDI: ${pdiRow?.id ?? "N/A"}`);
+  await db2.execute(sql2.raw(`
+    INSERT INTO historico_ciclos_aluno (
+      alunoId, numeroCiclo, discResultadoId, assessmentPdiId,
+      dataInicio, dataConclusao,
+      ind1Webinars, ind2Avaliacoes, ind3Competencias, ind4Tarefas,
+      ind5Engajamento, ind6Aplicabilidade, ind7EngajamentoFinal,
+      metasTotal, metasCumpridas,
+      createdAt, updatedAt
+    ) VALUES (
+      ${alunoId}, ${numeroCiclo}, ${discIdStr}, ${pdiIdStr === "NULL" ? "NULL" : pdiIdStr},
+      ${dataInicio}, NOW(),
+      ${ind1Webinars}, ${ind2Avaliacoes}, ${ind3Competencias}, ${ind4Tarefas},
+      ${ind5Engajamento}, ${ind6Aplicabilidade}, ${ind7EngajamentoFinal},
+      ${metasTotal}, ${metasCumpridas},
+      NOW(), NOW()
+    )
+  `));
+  if (pdiId) {
+    const [lastInsertRows] = await db2.execute(sql2.raw(
+      `SELECT id FROM historico_ciclos_aluno WHERE alunoId = ${alunoId} AND numeroCiclo = ${numeroCiclo} LIMIT 1`
+    ));
+    const historicoId = Array.isArray(lastInsertRows) && lastInsertRows[0]?.id ? lastInsertRows[0].id : null;
+    if (historicoId) {
+      await db2.execute(sql2.raw(
+        `UPDATE assessment_pdi SET cicloOnboardingId = ${historicoId} WHERE id = ${pdiId}`
+      ));
+    }
+  }
+  console.log(`[DB] Ciclo ${numeroCiclo} arquivado para aluno ${alunoId}. DISC: ${discRow?.id ?? "N/A"}, PDI: ${pdiId ?? "N/A"}. Indicadores: Ind1=${ind1Webinars}%, Ind7=${ind7EngajamentoFinal}%`);
   return { numeroCiclo };
 }
 async function getHistoricoCiclosAluno(alunoId) {
@@ -8868,6 +9776,15 @@ async function getHistoricoCiclosAluno(alunoId) {
       h.dataConclusao,
       h.observacoes,
       h.createdAt,
+      h.ind1Webinars,
+      h.ind2Avaliacoes,
+      h.ind3Competencias,
+      h.ind4Tarefas,
+      h.ind5Engajamento,
+      h.ind6Aplicabilidade,
+      h.ind7EngajamentoFinal,
+      h.metasTotal,
+      h.metasCumpridas,
       dr.perfilPredominante,
       dr.perfilSecundario,
       dr.scoreD,
@@ -8886,17 +9803,20 @@ async function getHistoricoCiclosAluno(alunoId) {
   `));
   return Array.isArray(rows) ? rows : [];
 }
-var _db, _connection, onboardingRevisoesDb;
+var _db, _connection, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO, CONTRATO_NIVEL_STATUS_ATIVOS, onboardingRevisoesDb;
 var init_db = __esm({
   "server/db.ts"() {
     "use strict";
     init_schema();
     init_env();
     init_schema();
+    init_contrato_niveis_service();
     init_schema();
     init_schema();
     _db = null;
     _connection = null;
+    CONTRATO_NIVEL_STATUS_EM_ANDAMENTO = "em_andamento";
+    CONTRATO_NIVEL_STATUS_ATIVOS = ["em_andamento", "fechamento", "ajustes"];
     onboardingRevisoesDb = {
       create: createOnboardingRevisao,
       getByAluno: getOnboardingRevisoesByAluno,
@@ -10959,179 +11879,6 @@ var init_emailService = __esm({
   }
 });
 
-// server/_core/llm.ts
-var llm_exports = {};
-__export(llm_exports, {
-  invokeLLM: () => invokeLLM
-});
-async function invokeLLM(params) {
-  assertApiKey();
-  const {
-    messages,
-    tools,
-    toolChoice,
-    tool_choice,
-    outputSchema,
-    output_schema,
-    responseFormat,
-    response_format
-  } = params;
-  const payload = {
-    model: "gemini-2.5-flash",
-    messages: messages.map(normalizeMessage)
-  };
-  if (tools && tools.length > 0) {
-    payload.tools = tools;
-  }
-  const normalizedToolChoice = normalizeToolChoice(
-    toolChoice || tool_choice,
-    tools
-  );
-  if (normalizedToolChoice) {
-    payload.tool_choice = normalizedToolChoice;
-  }
-  payload.max_tokens = 32768;
-  payload.thinking = {
-    "budget_tokens": 128
-  };
-  const normalizedResponseFormat = normalizeResponseFormat({
-    responseFormat,
-    response_format,
-    outputSchema,
-    output_schema
-  });
-  if (normalizedResponseFormat) {
-    payload.response_format = normalizedResponseFormat;
-  }
-  const response = await fetch(resolveApiUrl(), {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`
-    },
-    body: JSON.stringify(payload)
-  });
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} \u2013 ${errorText}`
-    );
-  }
-  return await response.json();
-}
-var ensureArray, normalizeContentPart, normalizeMessage, normalizeToolChoice, resolveApiUrl, assertApiKey, normalizeResponseFormat;
-var init_llm = __esm({
-  "server/_core/llm.ts"() {
-    "use strict";
-    init_env();
-    ensureArray = (value) => Array.isArray(value) ? value : [value];
-    normalizeContentPart = (part) => {
-      if (typeof part === "string") {
-        return { type: "text", text: part };
-      }
-      if (part.type === "text") {
-        return part;
-      }
-      if (part.type === "image_url") {
-        return part;
-      }
-      if (part.type === "file_url") {
-        return part;
-      }
-      throw new Error("Unsupported message content part");
-    };
-    normalizeMessage = (message) => {
-      const { role, name, tool_call_id } = message;
-      if (role === "tool" || role === "function") {
-        const content = ensureArray(message.content).map((part) => typeof part === "string" ? part : JSON.stringify(part)).join("\n");
-        return {
-          role,
-          name,
-          tool_call_id,
-          content
-        };
-      }
-      const contentParts = ensureArray(message.content).map(normalizeContentPart);
-      if (contentParts.length === 1 && contentParts[0].type === "text") {
-        return {
-          role,
-          name,
-          content: contentParts[0].text
-        };
-      }
-      return {
-        role,
-        name,
-        content: contentParts
-      };
-    };
-    normalizeToolChoice = (toolChoice, tools) => {
-      if (!toolChoice) return void 0;
-      if (toolChoice === "none" || toolChoice === "auto") {
-        return toolChoice;
-      }
-      if (toolChoice === "required") {
-        if (!tools || tools.length === 0) {
-          throw new Error(
-            "tool_choice 'required' was provided but no tools were configured"
-          );
-        }
-        if (tools.length > 1) {
-          throw new Error(
-            "tool_choice 'required' needs a single tool or specify the tool name explicitly"
-          );
-        }
-        return {
-          type: "function",
-          function: { name: tools[0].function.name }
-        };
-      }
-      if ("name" in toolChoice) {
-        return {
-          type: "function",
-          function: { name: toolChoice.name }
-        };
-      }
-      return toolChoice;
-    };
-    resolveApiUrl = () => ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0 ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions` : "https://forge.manus.im/v1/chat/completions";
-    assertApiKey = () => {
-      if (!ENV.forgeApiKey) {
-        throw new Error("OPENAI_API_KEY is not configured");
-      }
-    };
-    normalizeResponseFormat = ({
-      responseFormat,
-      response_format,
-      outputSchema,
-      output_schema
-    }) => {
-      const explicitFormat = responseFormat || response_format;
-      if (explicitFormat) {
-        if (explicitFormat.type === "json_schema" && !explicitFormat.json_schema?.schema) {
-          throw new Error(
-            "responseFormat json_schema requires a defined schema object"
-          );
-        }
-        return explicitFormat;
-      }
-      const schema = outputSchema || output_schema;
-      if (!schema) return void 0;
-      if (!schema.name || !schema.schema) {
-        throw new Error("outputSchema requires both name and schema");
-      }
-      return {
-        type: "json_schema",
-        json_schema: {
-          name: schema.name,
-          schema: schema.schema,
-          ...typeof schema.strict === "boolean" ? { strict: schema.strict } : {}
-        }
-      };
-    };
-  }
-});
-
 // shared/discData.ts
 var discData_exports = {};
 __export(discData_exports, {
@@ -11603,6 +12350,179 @@ var init_discData = __esm({
       3: "Razo\xE1vel",
       4: "Bom dom\xEDnio",
       5: "Domino com excel\xEAncia"
+    };
+  }
+});
+
+// server/_core/llm.ts
+var llm_exports = {};
+__export(llm_exports, {
+  invokeLLM: () => invokeLLM
+});
+async function invokeLLM(params) {
+  assertApiKey();
+  const {
+    messages,
+    tools,
+    toolChoice,
+    tool_choice,
+    outputSchema,
+    output_schema,
+    responseFormat,
+    response_format
+  } = params;
+  const payload = {
+    model: "gemini-2.5-flash",
+    messages: messages.map(normalizeMessage)
+  };
+  if (tools && tools.length > 0) {
+    payload.tools = tools;
+  }
+  const normalizedToolChoice = normalizeToolChoice(
+    toolChoice || tool_choice,
+    tools
+  );
+  if (normalizedToolChoice) {
+    payload.tool_choice = normalizedToolChoice;
+  }
+  payload.max_tokens = 32768;
+  payload.thinking = {
+    "budget_tokens": 128
+  };
+  const normalizedResponseFormat = normalizeResponseFormat({
+    responseFormat,
+    response_format,
+    outputSchema,
+    output_schema
+  });
+  if (normalizedResponseFormat) {
+    payload.response_format = normalizedResponseFormat;
+  }
+  const response = await fetch(resolveApiUrl(), {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${ENV.forgeApiKey}`
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `LLM invoke failed: ${response.status} ${response.statusText} \u2013 ${errorText}`
+    );
+  }
+  return await response.json();
+}
+var ensureArray, normalizeContentPart, normalizeMessage, normalizeToolChoice, resolveApiUrl, assertApiKey, normalizeResponseFormat;
+var init_llm = __esm({
+  "server/_core/llm.ts"() {
+    "use strict";
+    init_env();
+    ensureArray = (value) => Array.isArray(value) ? value : [value];
+    normalizeContentPart = (part) => {
+      if (typeof part === "string") {
+        return { type: "text", text: part };
+      }
+      if (part.type === "text") {
+        return part;
+      }
+      if (part.type === "image_url") {
+        return part;
+      }
+      if (part.type === "file_url") {
+        return part;
+      }
+      throw new Error("Unsupported message content part");
+    };
+    normalizeMessage = (message) => {
+      const { role, name, tool_call_id } = message;
+      if (role === "tool" || role === "function") {
+        const content = ensureArray(message.content).map((part) => typeof part === "string" ? part : JSON.stringify(part)).join("\n");
+        return {
+          role,
+          name,
+          tool_call_id,
+          content
+        };
+      }
+      const contentParts = ensureArray(message.content).map(normalizeContentPart);
+      if (contentParts.length === 1 && contentParts[0].type === "text") {
+        return {
+          role,
+          name,
+          content: contentParts[0].text
+        };
+      }
+      return {
+        role,
+        name,
+        content: contentParts
+      };
+    };
+    normalizeToolChoice = (toolChoice, tools) => {
+      if (!toolChoice) return void 0;
+      if (toolChoice === "none" || toolChoice === "auto") {
+        return toolChoice;
+      }
+      if (toolChoice === "required") {
+        if (!tools || tools.length === 0) {
+          throw new Error(
+            "tool_choice 'required' was provided but no tools were configured"
+          );
+        }
+        if (tools.length > 1) {
+          throw new Error(
+            "tool_choice 'required' needs a single tool or specify the tool name explicitly"
+          );
+        }
+        return {
+          type: "function",
+          function: { name: tools[0].function.name }
+        };
+      }
+      if ("name" in toolChoice) {
+        return {
+          type: "function",
+          function: { name: toolChoice.name }
+        };
+      }
+      return toolChoice;
+    };
+    resolveApiUrl = () => ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0 ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions` : "https://forge.manus.im/v1/chat/completions";
+    assertApiKey = () => {
+      if (!ENV.forgeApiKey) {
+        throw new Error("OPENAI_API_KEY is not configured");
+      }
+    };
+    normalizeResponseFormat = ({
+      responseFormat,
+      response_format,
+      outputSchema,
+      output_schema
+    }) => {
+      const explicitFormat = responseFormat || response_format;
+      if (explicitFormat) {
+        if (explicitFormat.type === "json_schema" && !explicitFormat.json_schema?.schema) {
+          throw new Error(
+            "responseFormat json_schema requires a defined schema object"
+          );
+        }
+        return explicitFormat;
+      }
+      const schema = outputSchema || output_schema;
+      if (!schema) return void 0;
+      if (!schema.name || !schema.schema) {
+        throw new Error("outputSchema requires both name and schema");
+      }
+      return {
+        type: "json_schema",
+        json_schema: {
+          name: schema.name,
+          schema: schema.schema,
+          ...typeof schema.strict === "boolean" ? { strict: schema.strict } : {}
+        }
+      };
     };
   }
 });
@@ -14835,6 +15755,7 @@ function calcularAplicabilidadeFinal(params) {
 }
 
 // server/routers.ts
+init_discData();
 function parseCSVLine(line) {
   const result = [];
   let current = "";
@@ -14914,6 +15835,278 @@ var managerProcedure = protectedProcedure.use(({ ctx, next }) => {
   }
   return next({ ctx });
 });
+async function ensureNivelAbertoParaAtribuicao(alunoId, contratoNivelId, operacao) {
+  try {
+    await assertNivelPermiteNovasAtribuicoes(alunoId, contratoNivelId, operacao);
+  } catch (error) {
+    throw new TRPCError4({
+      code: "FORBIDDEN",
+      message: error?.message || "N\xEDvel em fechamento/encerrado. Novas atribui\xE7\xF5es est\xE3o bloqueadas."
+    });
+  }
+}
+function clampPercent(value) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, value));
+}
+function getFallbackDates(empresa, turma) {
+  const emp = empresa?.toLowerCase() || "";
+  const trm = turma?.toLowerCase() || "";
+  if (emp.includes("sebrae acre")) {
+    return { inicio: "2024-10-01", fim: "2026-10-30" };
+  }
+  if (emp.includes("sebrae to")) {
+    if (trm.includes("bs1")) return { inicio: "2025-05-01", fim: "2026-04-30" };
+    if (trm.includes("bs2")) return { inicio: "2025-04-01", fim: "2026-04-30" };
+    if (trm.includes("bs3")) return { inicio: "2025-09-01", fim: "2026-08-31" };
+  }
+  if (emp.includes("ebrapii") || emp.includes("embrap")) {
+    return { inicio: "2025-03-24", fim: "2026-10-30" };
+  }
+  return { inicio: null, fim: null };
+}
+function classifyByPercent(percentual) {
+  if (percentual >= 90) return "Excel\xEAncia";
+  if (percentual >= 75) return "Avan\xE7ado";
+  if (percentual >= 60) return "Intermedi\xE1rio";
+  if (percentual >= 40) return "B\xE1sico";
+  return "Inicial";
+}
+async function buildEvolucaoAlunoPayload(alunoId) {
+  const alunos2 = await getAlunos();
+  const aluno = alunos2.find((a) => a.id === alunoId);
+  if (!aluno) {
+    throw new TRPCError4({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+  }
+  const [niveisRaw, programas, turmas2, allDisc, discComparativo] = await Promise.all([
+    getContratoNiveisByAluno(alunoId),
+    getPrograms(),
+    getTurmas(),
+    getAllDiscResultadosByAluno(alunoId),
+    (async () => {
+      const resultados = await getAllDiscResultadosByAluno(alunoId);
+      if (resultados.length < 2) return null;
+      const primeiro = resultados[0];
+      const ultimo = resultados[resultados.length - 1];
+      return {
+        cicloInicial: {
+          ciclo: primeiro.ciclo,
+          data: primeiro.completedAt,
+          scores: { D: Number(primeiro.scoreD), I: Number(primeiro.scoreI), S: Number(primeiro.scoreS), C: Number(primeiro.scoreC) },
+          perfilPredominante: primeiro.perfilPredominante
+        },
+        cicloAtual: {
+          ciclo: ultimo.ciclo,
+          data: ultimo.completedAt,
+          scores: { D: Number(ultimo.scoreD), I: Number(ultimo.scoreI), S: Number(ultimo.scoreS), C: Number(ultimo.scoreC) },
+          perfilPredominante: ultimo.perfilPredominante
+        },
+        evolucao: {
+          D: Number(ultimo.scoreD) - Number(primeiro.scoreD),
+          I: Number(ultimo.scoreI) - Number(primeiro.scoreI),
+          S: Number(ultimo.scoreS) - Number(primeiro.scoreS),
+          C: Number(ultimo.scoreC) - Number(primeiro.scoreC)
+        },
+        totalCiclos: resultados.length
+      };
+    })()
+  ]);
+  const programa = aluno.programId ? programas.find((p) => p.id === aluno.programId) : null;
+  const turma = aluno.turmaId ? turmas2.find((t2) => t2.id === aluno.turmaId) : null;
+  const dataInicioContrato = aluno.contratoInicio || niveisRaw[0]?.dataInicio || getFallbackDates(programa?.name, turma?.name).inicio;
+  const dataFimContrato = aluno.contratoFim || niveisRaw[niveisRaw.length - 1]?.dataFim || getFallbackDates(programa?.name, turma?.name).fim;
+  let niveisProcessados = [...niveisRaw];
+  if (niveisRaw.length === 1 && dataInicioContrato && dataFimContrato) {
+    const inicio = new Date(dataInicioContrato);
+    const fim = new Date(dataFimContrato);
+    const hoje = /* @__PURE__ */ new Date();
+    const ciclosSimulados = [];
+    let dataReferencia = new Date(inicio);
+    let contadorNivel = 1;
+    while (dataReferencia < fim && dataReferencia <= hoje) {
+      const duracaoMeses = contadorNivel === 1 ? 3 : 6;
+      const dataFimCiclo = new Date(dataReferencia);
+      dataFimCiclo.setMonth(dataFimCiclo.getMonth() + duracaoMeses);
+      const dataFimEfetiva = dataFimCiclo > fim ? fim : dataFimCiclo;
+      ciclosSimulados.push({
+        id: 999e3 + contadorNivel,
+        // IDs fictícios para ciclos simulados
+        nivel: `N\xEDvel ${contadorNivel}`,
+        dataInicio: dataReferencia.toISOString(),
+        dataFim: dataFimEfetiva.toISOString(),
+        status: dataFimEfetiva < hoje ? "encerrado" : "em_andamento",
+        isSimulado: true
+      });
+      dataReferencia = new Date(dataFimEfetiva);
+      contadorNivel++;
+      if (contadorNivel > 10) break;
+    }
+    if (ciclosSimulados.length > 0) {
+      niveisProcessados = ciclosSimulados;
+    }
+  }
+  const niveis = [...niveisProcessados].sort((a, b) => {
+    const da = new Date(a.dataInicio).getTime();
+    const dbb = new Date(b.dataInicio).getTime();
+    return dbb - da;
+  });
+  const itens = await Promise.all(niveis.map(async (nivel) => {
+    const [pedagogia, nivelOperacional, certificado] = await Promise.all([
+      getPedagogiaByNivel(alunoId, nivel.id),
+      getContratoNivelComStatusOperacional(alunoId, nivel.id),
+      getNivelCertificateByAlunoNivel(alunoId, nivel.id)
+    ]);
+    const dataInicioReal = aluno.contratoInicio || nivel.dataInicio || getFallbackDates(programa?.name, turma?.name).inicio;
+    const dataFimReal = aluno.contratoFim || nivel.dataFim || getFallbackDates(programa?.name, turma?.name).fim;
+    const isSimuladoMaisRecente = nivel.isSimulado && nivel.status === "em_andamento";
+    const indicadoresConsolidados = null;
+    const assessments = pedagogia.assessments || [];
+    const plano = pedagogia.planoIndividual || [];
+    const metas2 = pedagogia.metas || [];
+    const mentorias = pedagogia.mentoringSessions || [];
+    const eventos = pedagogia.eventParticipation || [];
+    const cases = pedagogia.casesSucesso || [];
+    const studentPerf = pedagogia.studentPerformance || [];
+    const assessmentInicial = [...assessments].sort((a, b) => {
+      const da = new Date(a.createdAt || a.updatedAt || a.macroInicio || 0).getTime();
+      const dbb = new Date(b.createdAt || b.updatedAt || b.macroInicio || 0).getTime();
+      return da - dbb;
+    })[0] || null;
+    const obrigatorias = plano.filter((p) => Number(p.isObrigatoria ?? 1) === 1);
+    const obrigatoriasAprovadas = obrigatorias.filter((p) => {
+      const nota = Number(p.notaAtual ?? 0);
+      const meta = Number(p.metaNota ?? 7);
+      return Number.isFinite(nota) && nota >= meta;
+    }).length;
+    const metasConcluidas = metas2.filter((m) => String(m.status || "").toLowerCase() === "concluida").length;
+    const eventosPresentes = eventos.filter((e) => e.status === "presente").length;
+    const avgNotaPerformance = studentPerf.length > 0 ? studentPerf.reduce((acc, p) => acc + Number(p.notaAvaliacao ?? 0), 0) / studentPerf.length : 0;
+    const avgProgresso = studentPerf.length > 0 ? studentPerf.reduce((acc, p) => acc + Number(p.progressoTotal ?? 0), 0) / studentPerf.length : 0;
+    const mentoraId = nivel.mentoraPrincipalId || mentorias.find((s) => s.consultorId)?.consultorId || null;
+    const mentora = mentoraId ? await getConsultorById(mentoraId) : null;
+    const discPorNivel = allDisc.filter((d) => {
+      if (d.contratoNivelId === nivel.id) return true;
+      if (!d.contratoNivelId && d.completedAt && dataInicioReal && dataFimReal) {
+        const dDate = new Date(d.completedAt).getTime();
+        return dDate >= new Date(dataInicioReal).getTime() && dDate <= new Date(dataFimReal).getTime();
+      }
+      return false;
+    }).map((d) => {
+      const perfil = DISC_PERFIS[d.perfilPredominante];
+      return {
+        id: d.id,
+        ciclo: d.ciclo,
+        completedAt: d.completedAt,
+        perfilPredominante: d.perfilPredominante,
+        scores: { D: Number(d.scoreD), I: Number(d.scoreI), S: Number(d.scoreS), C: Number(d.scoreC) },
+        detalhes: perfil ? {
+          titulo: perfil.titulo,
+          descricao: perfil.descricao,
+          pontosFortes: perfil.pontosFortes,
+          areasDesenvolvimento: perfil.areasDesenvolvimento,
+          comoSeRelaciona: perfil.comoSeRelaciona,
+          cor: perfil.cor
+        } : null
+      };
+    });
+    const statusOperacional = nivelOperacional?.statusOperacional || nivel.status;
+    const isEmAndamento = statusOperacional === "em_andamento" || statusOperacional === "fechamento" || statusOperacional === "ajustes";
+    const elegibilidade = !isEmAndamento && obrigatorias.length > 0 && obrigatoriasAprovadas === obrigatorias.length ? "elegivel_futuramente" : !isEmAndamento ? "aguardando_certificacao" : "em_desenvolvimento";
+    const fallback = getFallbackDates(programa?.name, turma?.name);
+    return {
+      nivel: {
+        id: nivel.id,
+        nome: nivel.nivel,
+        dataInicio: dataInicioReal,
+        dataFim: dataFimReal,
+        statusFinal: statusOperacional,
+        emAndamento: isEmAndamento
+      },
+      mentora: mentora ? { id: mentora.id, nome: mentora.name, email: mentora.email } : null,
+      assessmentInicial: assessmentInicial ? {
+        id: assessmentInicial.id,
+        trilhaNome: assessmentInicial.trilhaNome || null,
+        macroInicio: assessmentInicial.macroInicio || null,
+        macroTermino: assessmentInicial.macroTermino || null,
+        status: assessmentInicial.status || null
+      } : null,
+      pdi: {
+        totalAssessments: assessments.length,
+        totalCompetenciasDefinidas: assessments.reduce((acc, a) => acc + (a.totalCompetencias || 0), 0),
+        totalCompetenciasObrigatorias: assessments.reduce((acc, a) => acc + (a.obrigatorias || 0), 0)
+      },
+      proposto: {
+        competenciasDefinidas: obrigatorias.length,
+        metasPrevistas: metas2.length,
+        sessoesPrevistas: assessmentInicial?.totalSessoesPrevistas || null
+      },
+      obtido: {
+        competenciasAprovadas: obrigatoriasAprovadas,
+        metasConcluidas,
+        mentoriasRealizadas: mentorias.filter((s) => s.presence === "presente").length,
+        mentoriasTotal: mentorias.length,
+        eventosPresenca: eventosPresentes,
+        eventosTotal: eventos.length,
+        casesEntregues: cases.filter((c) => c.entregue === 1).length,
+        casesTotal: cases.length,
+        mediaNotaPerformance: Number.isFinite(avgNotaPerformance) ? Number(avgNotaPerformance.toFixed(2)) : 0,
+        mediaProgressoPerformance: Number.isFinite(avgProgresso) ? Number(avgProgresso.toFixed(2)) : 0
+      },
+      resultados: {
+        competencias: {
+          total: isSimuladoMaisRecente ? 100 : obrigatorias.length,
+          aprovadas: isSimuladoMaisRecente ? indicadoresConsolidados?.ind7_engajamentoFinal || 0 : obrigatoriasAprovadas,
+          percentualAprovacao: isSimuladoMaisRecente ? indicadoresConsolidados?.ind7_engajamentoFinal || 0 : obrigatorias.length > 0 ? clampPercent(obrigatoriasAprovadas / obrigatorias.length * 100) : 0
+        },
+        metas: {
+          total: isSimuladoMaisRecente ? 100 : metas2.length,
+          concluidas: isSimuladoMaisRecente ? indicadoresConsolidados?.ind2_avaliacoes || 0 : metasConcluidas,
+          percentualConclusao: isSimuladoMaisRecente ? indicadoresConsolidados?.ind2_avaliacoes || 0 : metas2.length > 0 ? clampPercent(metasConcluidas / metas2.length * 100) : 0
+        },
+        aplicabilidade: isSimuladoMaisRecente ? indicadoresConsolidados?.ind6_aplicabilidade || 0 : null,
+        performanceFinal: isSimuladoMaisRecente ? classifyByPercent(indicadoresConsolidados?.ind7_engajamentoFinal || 0) : classifyByPercent(avgProgresso)
+      },
+      elegibilidadeCertificacaoFutura: elegibilidade,
+      certificadoEmitido: certificado ? {
+        id: certificado.id,
+        status: certificado.status,
+        arquivoUrl: certificado.arquivoUrl,
+        emitidoEm: certificado.emitidoEm,
+        hashDocumento: certificado.hashDocumento
+      } : null,
+      disc: {
+        totalNoNivel: discPorNivel.length,
+        historico: discPorNivel
+      },
+      snapshotPedagogico: {
+        contratoNivelId: pedagogia.contratoNivelId,
+        assessments,
+        planoIndividual: plano,
+        metas: metas2,
+        mentoringSessions: mentorias,
+        eventParticipation: eventos,
+        casesSucesso: cases,
+        studentPerformance: studentPerf
+      }
+    };
+  }));
+  return {
+    aluno: {
+      id: aluno.id,
+      nome: aluno.name,
+      email: aluno.email,
+      programa: programa?.name || "N\xE3o definido",
+      turma: turma?.name || "N\xE3o definida"
+    },
+    resumo: {
+      totalNiveis: itens.length,
+      niveisConcluidos: itens.filter((i) => !i.nivel.emAndamento).length,
+      nivelAtual: itens.find((i) => i.nivel.emAndamento) || null
+    },
+    discComparativo,
+    timeline: itens
+  };
+}
 var appRouter = router({
   system: systemRouter,
   jornada: jornadaRouter,
@@ -16245,12 +17438,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // Plano Individual (Competências obrigatórias por aluno)
   planoIndividual: router({
     // Buscar plano de um aluno
-    byAluno: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
-      return await getPlanoIndividualByAluno(input.alunoId);
+    byAluno: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().nullable().optional() })).query(async ({ input }) => {
+      return await getPlanoIndividualByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Adicionar competência ao plano
     addCompetencia: protectedProcedure.input(z4.object({
       alunoId: z4.number(),
+      contratoNivelId: z4.number().nullable().optional(),
       competenciaId: z4.number(),
       isObrigatoria: z4.number().optional(),
       metaNota: z4.string().optional()
@@ -16261,9 +17455,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     // Adicionar múltiplas competências
     addMultiple: protectedProcedure.input(z4.object({
       alunoId: z4.number(),
+      contratoNivelId: z4.number().nullable().optional(),
       competenciaIds: z4.array(z4.number())
     })).mutation(async ({ input }) => {
-      const success = await addCompetenciasToPlano(input.alunoId, input.competenciaIds);
+      const success = await addCompetenciasToPlano(input.alunoId, input.competenciaIds, input.contratoNivelId ?? null);
       return { success };
     }),
     // Remover competência do plano
@@ -17444,6 +18639,198 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         base64: buffer.toString("base64")
       };
     }),
+    performanceNivelAtual: protectedProcedure.input(z4.object({ alunoId: z4.number().optional() }).optional()).query(async ({ ctx, input }) => {
+      let alunoIdAlvo = null;
+      if (input?.alunoId) {
+        if (ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+          throw new TRPCError4({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
+        }
+        alunoIdAlvo = input.alunoId;
+      } else if (ctx.user.alunoId) {
+        alunoIdAlvo = ctx.user.alunoId;
+      } else {
+        const alunoCtx = await getAlunoFromCtx(ctx.user);
+        if (alunoCtx?.id) alunoIdAlvo = alunoCtx.id;
+      }
+      if (!alunoIdAlvo) {
+        const byExternal = await getAlunoByExternalId(ctx.user.openId);
+        alunoIdAlvo = byExternal?.id ?? null;
+      }
+      if (!alunoIdAlvo) {
+        return { found: false, message: "Aluno n\xE3o encontrado para a sess\xE3o atual." };
+      }
+      const alunos2 = await getAlunos();
+      const aluno = alunos2.find((a) => a.id === alunoIdAlvo);
+      if (!aluno) {
+        return { found: false, message: "Aluno n\xE3o encontrado." };
+      }
+      const nivelOperacional = await getContratoNivelComStatusOperacional(aluno.id, null);
+      let nivelReferencia = nivelOperacional;
+      if (!nivelReferencia) {
+        const historico = await getContratoNiveisByAluno(aluno.id);
+        nivelReferencia = historico[0] ? {
+          ...historico[0],
+          statusOperacional: "encerrado"
+        } : null;
+      }
+      const pedagogia = await getPedagogiaByNivel(aluno.id, nivelReferencia?.id ?? null);
+      const [programas, turmas2] = await Promise.all([getPrograms(), getTurmas()]);
+      const programa = aluno.programId ? programas.find((p) => p.id === aluno.programId) || null : null;
+      const turma = aluno.turmaId ? turmas2.find((t2) => t2.id === aluno.turmaId) || null : null;
+      const mentorias = pedagogia.mentoringSessions || [];
+      const eventos = pedagogia.eventParticipation || [];
+      const plano = pedagogia.planoIndividual || [];
+      const assessments = pedagogia.assessments || [];
+      const metas2 = pedagogia.metas || [];
+      const cases = pedagogia.casesSucesso || [];
+      const idUsuarioNivel = aluno.externalId || String(aluno.id);
+      const studentPerfNivel = pedagogia.studentPerformance || [];
+      const performanceNivelRecs = [];
+      for (const sp of studentPerfNivel) {
+        performanceNivelRecs.push({
+          idUsuario: idUsuarioNivel,
+          nomeTurma: sp.turmaName || "",
+          idCompetencia: sp.externalCompetenciaId || String(sp.competenciaId || ""),
+          nomeCompetencia: sp.competenciaName || "",
+          notaAvaliacao: sp.mediaAvaliacoesRespondidas != null ? Number(sp.mediaAvaliacoesRespondidas) / 10 : void 0,
+          aulasConcluidas: sp.aulasConcluidas || 0,
+          aulasDisponiveis: sp.aulasDisponiveis || 0,
+          aprovado: (sp.progressoTotal || 0) >= 100
+        });
+      }
+      for (const item of plano) {
+        if (item.notaAtual) {
+          const key = String(item.competenciaId);
+          if (!performanceNivelRecs.find((p) => p.idCompetencia === key)) {
+            performanceNivelRecs.push({
+              idUsuario: idUsuarioNivel,
+              nomeTurma: "",
+              idCompetencia: key,
+              nomeCompetencia: item.competenciaNome || "",
+              notaAvaliacao: parseFloat(item.notaAtual),
+              aprovado: parseFloat(item.notaAtual) >= 7
+            });
+          }
+        }
+      }
+      const mentoriasNivelRecs = mentorias.map((s) => ({
+        idUsuario: idUsuarioNivel,
+        nomeAluno: aluno.name,
+        empresa: programa?.name || "",
+        turma: turma?.name || "",
+        trilha: "",
+        ciclo: s.ciclo || "",
+        sessao: s.sessionNumber || 0,
+        dataSessao: s.sessionDate ? new Date(s.sessionDate) : void 0,
+        presenca: s.presence,
+        atividadeEntregue: s.isAssessment ? "sem_tarefa" : s.taskStatus || "sem_tarefa",
+        engajamento: s.engagementScore || void 0,
+        feedback: s.feedback || ""
+      }));
+      const eventosNivelRecs = eventos.map((e) => ({
+        idUsuario: idUsuarioNivel,
+        nomeAluno: aluno.name,
+        empresa: programa?.name || "",
+        turma: "",
+        trilha: "",
+        tituloEvento: e.eventTitle || "Evento",
+        dataEvento: e.eventDate ? new Date(e.eventDate) : void 0,
+        presenca: e.status
+      }));
+      const ciclosNivelCalc = await getCiclosForCalculator(aluno.id);
+      const ciclosV2Nivel = ciclosNivelCalc.map((c) => ({
+        ...c,
+        trilhaNome: c.nomeCiclo.split(" - ")[0] || "Geral"
+      }));
+      const compIdToCodigoMapNivel = await getCompIdToCodigoMap();
+      const casesDataNivel = cases.map((c) => ({
+        alunoId: c.alunoId,
+        trilhaId: c.trilhaId,
+        trilhaNome: c.trilhaNome || "",
+        entregue: c.entregue === 1
+      }));
+      const macrocicloPorAlunoNivel = await getMacrocicloPorAluno();
+      const macrocicloNivel = macrocicloPorAlunoNivel.get(idUsuarioNivel);
+      const indV2Nivel = calcularIndicadoresAluno2(
+        idUsuarioNivel,
+        mentoriasNivelRecs,
+        eventosNivelRecs,
+        performanceNivelRecs,
+        ciclosV2Nivel,
+        compIdToCodigoMapNivel,
+        casesDataNivel,
+        void 0,
+        macrocicloNivel
+      );
+      const webinarsTotal = eventos.length;
+      const webinarsPresente = eventos.filter((e) => e.status === "presente").length;
+      const ind1_webinars = indV2Nivel.consolidado?.ind1_webinars ?? (webinarsTotal > 0 ? clampPercent(webinarsPresente / webinarsTotal * 100) : 0);
+      const ind2_avaliacoes = indV2Nivel.consolidado?.ind2_avaliacoes ?? 0;
+      const ind3_competencias = indV2Nivel.consolidado?.ind3_competencias ?? 0;
+      const tarefasValidas = mentorias.filter((s) => s.taskStatus === "entregue" || s.taskStatus === "nao_entregue");
+      const tarefasEntregues = tarefasValidas.filter((s) => s.taskStatus === "entregue").length;
+      const ind4_tarefas = indV2Nivel.consolidado?.ind4_tarefas ?? (tarefasValidas.length > 0 ? clampPercent(tarefasEntregues / tarefasValidas.length * 100) : 0);
+      const engajamentos = mentorias.map((s) => s.engagementScore == null ? null : Number(s.engagementScore)).filter((v) => v != null && Number.isFinite(v));
+      const avgEngajamento = engajamentos.length > 0 ? engajamentos.reduce((acc, v) => acc + v, 0) / engajamentos.length : 0;
+      const ind5_engajamento = indV2Nivel.consolidado?.ind5_engajamento ?? clampPercent(avgEngajamento * 20);
+      const compObrigatorias = plano.filter((c) => Number(c.isObrigatoria ?? 1) === 1);
+      const aplicTotal = cases.length;
+      const aplicEntregues = cases.filter((c) => c.entregue === 1).length;
+      const ind6_aplicabilidade = indV2Nivel.consolidado?.ind6_aplicabilidade ?? (aplicTotal > 0 ? clampPercent(aplicEntregues / aplicTotal * 100) : 0);
+      const ind7_engajamentoFinal = indV2Nivel.consolidado?.ind7_engajamentoFinal ?? clampPercent(
+        (ind1_webinars + ind2_avaliacoes + ind3_competencias + ind4_tarefas + ind5_engajamento) / 5
+      );
+      const indicadoresNivel = {
+        ind1_webinars,
+        ind2_avaliacoes,
+        ind3_competencias,
+        ind4_tarefas,
+        ind5_engajamento,
+        ind6_aplicabilidade,
+        ind7_engajamentoFinal,
+        classificacao: indV2Nivel.consolidado?.classificacao ?? classifyByPercent(ind7_engajamentoFinal)
+      };
+      return {
+        found: true,
+        aluno: {
+          id: aluno.id,
+          name: aluno.name,
+          programa: programa?.name || "N\xE3o definido",
+          turma: turma?.name || "N\xE3o definida",
+          trilha: turma?.name || "N\xE3o definida"
+        },
+        nivel: nivelReferencia ? {
+          id: nivelReferencia.id,
+          nome: nivelReferencia.nivel,
+          // PRIORIDADE ABSOLUTA: Cadastro do Aluno (Formulário)
+          // Depois: Datas do Nível, Depois: Regra por Empresa/Turma
+          dataInicio: aluno.contratoInicio || nivelReferencia.dataInicio || getFallbackDates(programa?.name, turma?.name).inicio || null,
+          dataFim: aluno.contratoFim || nivelReferencia.dataFim || getFallbackDates(programa?.name, turma?.name).fim || null,
+          statusOperacional: nivelReferencia.statusOperacional || "encerrado",
+          isFallbackEncerrado: !nivelOperacional
+        } : null,
+        indicadoresNivel,
+        entregas: {
+          webinars: { total: webinarsTotal, presente: webinarsPresente },
+          avaliacoes: { total: avaliacoesTotal, concluidas: avaliacoesConcluidas },
+          competencias: { totalObrigatorias: compObrigatorias.length, aprovadas: compAprovadas },
+          tarefas: { total: tarefasValidas.length, entregues: tarefasEntregues },
+          mentorias: { total: mentorias.length },
+          metas: { total: metas2.length, concluidas: metas2.filter((m) => m.status === "concluida").length },
+          cases: { total: aplicTotal, entregues: aplicEntregues }
+        },
+        pedagogia: {
+          contratoNivelId: pedagogia.contratoNivelId,
+          assessments,
+          planoIndividual: plano,
+          metas: metas2,
+          mentoringSessions: mentorias,
+          eventParticipation: eventos,
+          casesSucesso: cases,
+          studentPerformance: pedagogia.studentPerformance || []
+        }
+      };
+    }),
     // Performance Filtrada - BLOCO 3
     // Calcula indicadores considerando apenas competências obrigatórias do plano individual
     performanceFiltrada: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
@@ -17873,7 +19260,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           mentorEmail: mentorAluno?.email || null,
           mentorEspecialidade: mentorAluno?.especialidade || null,
           mentorId: mentorAluno?.id || null,
-          plataformaAulas: aluno.plataformaAulas || "sistema_interno"
+          plataformaAulas: aluno.plataformaAulas || "sistema_interno",
+          contratoInicio: aluno.contratoInicio || null,
+          contratoFim: aluno.contratoFim || null
         },
         indicadores: {
           // Usar V2 para notaFinal e performanceGeral (consistente com Dashboard Gestor)
@@ -18116,8 +19505,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return stats;
     }),
     // Sessões de mentoria por aluno
-    sessionsByAluno: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
-      return await getMentoringSessionsByAluno(input.alunoId);
+    sessionsByAluno: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().nullable().optional() })).query(async ({ input }) => {
+      return await getMentoringSessionsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Progresso de sessões por aluno (baseado no Assessment PDI macro ciclo)
     sessionProgress: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
@@ -18235,6 +19624,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       if (!aluno) {
         throw new TRPCError4({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
+      await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.createSession");
       const sessions = await getMentoringSessionsByAluno(input.alunoId);
       const nextSessionNumber = sessions.length > 0 ? Math.max(...sessions.map((s) => s.sessionNumber ?? 0)) + 1 : 1;
       const effectiveTaskMode = input.taskMode ?? "sem_tarefa";
@@ -19526,6 +20916,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       if (!aluno) {
         throw new TRPCError4({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
+      await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.adminCreateSession");
       const sessionId = await createMentoringSession({
         alunoId: input.alunoId,
         consultorId: input.consultorId,
@@ -19651,8 +21042,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // ============ ASSESSMENT PDI ============
   assessment: router({
     // Listar assessments de um aluno
-    porAluno: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
-      return await getAssessmentsByAluno(input.alunoId);
+    porAluno: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().nullable().optional() })).query(async ({ input }) => {
+      return await getAssessmentsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Listar assessments de um programa (admin/mentor)
     porPrograma: protectedProcedure.input(z4.object({ programId: z4.number() })).query(async ({ input }) => {
@@ -19665,6 +21056,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     // Criar novo assessment PDI
     criar: protectedProcedure.input(z4.object({
       alunoId: z4.number(),
+      contratoNivelId: z4.number().nullable().optional(),
       trilhaId: z4.number(),
       turmaId: z4.number().nullable().optional(),
       programId: z4.number().nullable().optional(),
@@ -19686,6 +21078,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }))
     })).mutation(async ({ input }) => {
       const { competencias: competencias2, ...pdiData } = input;
+      await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "assessment.criar");
       const alunoCheck = await getAlunoById(input.alunoId);
       if (!alunoCheck) {
         throw new TRPCError4({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
@@ -20276,7 +21669,8 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     // Aluno marca presença e envia reflexão (funciona para webinários agendados e eventos importados)
     markPresence: protectedProcedure.input(z4.object({
       eventId: z4.number(),
-      reflexao: z4.string().min(20, "A reflex\xE3o deve ter pelo menos 20 caracteres")
+      reflexao: z4.string().min(20, "A reflex\xE3o deve ter pelo menos 20 caracteres"),
+      contratoNivelId: z4.number().nullable().optional()
     })).mutation(async ({ input, ctx }) => {
       const aluno = await getAlunoFromCtx(ctx.user);
       if (!aluno) {
@@ -20318,7 +21712,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
           }
         }
       }
-      const result = await markWebinarAttendance(aluno.id, realEventId, input.reflexao);
+      const result = await markWebinarAttendance(aluno.id, realEventId, input.reflexao, input.contratoNivelId ?? null);
       return { success: true, ...result };
     }),
     // Listar TODOS os eventos do aluno (lista unificada com status)
@@ -20556,13 +21950,27 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       totalSessoesContratadas: z4.number().min(1),
       observacoes: z4.string().optional()
     })).mutation(async ({ input, ctx }) => {
-      const id = await createContrato({
+      const dataInicio = new Date(input.periodoInicio);
+      const dataFim = new Date(input.periodoTermino);
+      const contratoId = await createContrato({
         ...input,
-        periodoInicio: new Date(input.periodoInicio),
-        periodoTermino: new Date(input.periodoTermino),
+        periodoInicio: dataInicio,
+        periodoTermino: dataFim,
         criadoPor: ctx.user.id
       });
-      return { id, success: true };
+      try {
+        const hoje = /* @__PURE__ */ new Date();
+        hoje.setHours(0, 0, 0, 0);
+        await createContratoNivel({
+          contratoId,
+          alunoId: input.alunoId,
+          nivel: "I",
+          status: dataFim < hoje ? "encerrado" : "em_andamento"
+        });
+      } catch (e) {
+        console.warn("[contratos.create] Falha ao criar contrato_niveis:", e);
+      }
+      return { id: contratoId, success: true };
     }),
     // Atualizar contrato (admin)
     update: adminProcedure3.input(z4.object({
@@ -20589,6 +21997,218 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     // Saldo de sessões do aluno
     saldo: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
       return await getSaldoSessoes(input.alunoId);
+    })
+  }),
+  // ============ NÍVEIS DO CONTRATO ============
+  contratoNiveis: router({
+    // Nível vigente do aluno (status em_andamento)
+    vigente: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
+      return await getContratoNivelVigenteByAluno(input.alunoId);
+    }),
+    statusOperacional: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().nullable().optional() })).query(async ({ input }) => {
+      const nivel = await getContratoNivelComStatusOperacional(input.alunoId, input.contratoNivelId ?? null);
+      return {
+        nivel,
+        bloqueadoNovasAtribuicoes: nivel ? ["fechamento", "ajustes", "encerrado"].includes(nivel.statusOperacional) : false,
+        encerrado: nivel ? nivel.statusOperacional === "encerrado" : false
+      };
+    }),
+    // Histórico de níveis por aluno
+    historico: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
+      return await getContratoNiveisByAluno(input.alunoId);
+    }),
+    // Listagem de níveis por contrato (inspeção/admin)
+    byContrato: protectedProcedure.input(z4.object({ contratoId: z4.number() })).query(async ({ input }) => {
+      return await getContratoNiveisByContrato(input.contratoId);
+    }),
+    // Criação manual de nível (admin)
+    // As datas são lidas de contratos_aluno via JOIN — não precisam ser informadas aqui
+    create: adminProcedure3.input(z4.object({
+      contratoId: z4.number(),
+      alunoId: z4.number(),
+      nivel: z4.enum(["I", "II", "III", "IV"]),
+      status: z4.enum(["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]),
+      assessmentPdiId: z4.number().nullable().optional(),
+      mentoraPrincipalId: z4.number().nullable().optional()
+    })).mutation(async ({ input }) => {
+      const id = await createContratoNivel({
+        ...input,
+        assessmentPdiId: input.assessmentPdiId ?? null,
+        mentoraPrincipalId: input.mentoraPrincipalId ?? null
+      });
+      return { id, success: true };
+    })
+  }),
+  pedagogiaNivel: router({
+    vigente: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
+      const vigente = await getContratoNivelVigenteByAluno(input.alunoId);
+      const snapshot = await getPedagogiaByNivel(input.alunoId, vigente?.id ?? null);
+      return { vigente, snapshot };
+    }),
+    porNivel: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number() })).query(async ({ input }) => {
+      return await getPedagogiaByNivel(input.alunoId, input.contratoNivelId);
+    })
+  }),
+  evolucao: router({
+    minha: protectedProcedure.query(async ({ ctx }) => {
+      let alunoId = ctx.user.alunoId ?? null;
+      if (!alunoId) {
+        const alunoCtx = await getAlunoFromCtx(ctx.user);
+        alunoId = alunoCtx?.id ?? null;
+      }
+      if (!alunoId) {
+        const byExternal = await getAlunoByExternalId(ctx.user.openId);
+        alunoId = byExternal?.id ?? null;
+      }
+      if (!alunoId) {
+        throw new TRPCError4({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado para a sess\xE3o atual." });
+      }
+      return await buildEvolucaoAlunoPayload(alunoId);
+    }),
+    porAluno: managerProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
+      return await buildEvolucaoAlunoPayload(input.alunoId);
+    })
+  }),
+  certificacao: router({
+    elegibilidade: protectedProcedure.input(z4.object({ contratoNivelId: z4.number(), alunoId: z4.number().optional() })).query(async ({ ctx, input }) => {
+      let alunoId = input.alunoId ?? ctx.user.alunoId ?? null;
+      if (!alunoId) {
+        const alunoCtx = await getAlunoFromCtx(ctx.user);
+        alunoId = alunoCtx?.id ?? null;
+      }
+      if (!alunoId) throw new TRPCError4({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (input.alunoId && input.alunoId !== alunoId && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+        throw new TRPCError4({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
+      }
+      return await avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
+    }),
+    statusPorNivel: protectedProcedure.input(z4.object({ alunoId: z4.number().optional() }).optional()).query(async ({ ctx, input }) => {
+      let alunoId = input?.alunoId ?? ctx.user.alunoId ?? null;
+      if (!alunoId) {
+        const alunoCtx = await getAlunoFromCtx(ctx.user);
+        alunoId = alunoCtx?.id ?? null;
+      }
+      if (!alunoId) throw new TRPCError4({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (input?.alunoId && input.alunoId !== alunoId && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+        throw new TRPCError4({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
+      }
+      const niveis = await getContratoNiveisByAluno(alunoId);
+      const status = await Promise.all(niveis.map(async (n) => {
+        const [elig, cert] = await Promise.all([
+          avaliarElegibilidadeCertificacao(alunoId, n.id),
+          getNivelCertificateByAlunoNivel(alunoId, n.id)
+        ]);
+        return {
+          contratoNivelId: n.id,
+          nivel: n.nivel,
+          elegivel: elig.elegivel,
+          motivo: elig.motivo,
+          certificadoEmitido: !!cert,
+          certificado: cert
+        };
+      }));
+      return status;
+    }),
+    minhas: protectedProcedure.query(async ({ ctx }) => {
+      let alunoId = ctx.user.alunoId ?? null;
+      if (!alunoId) {
+        const alunoCtx = await getAlunoFromCtx(ctx.user);
+        alunoId = alunoCtx?.id ?? null;
+      }
+      if (!alunoId) throw new TRPCError4({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      return await getNivelCertificatesByAluno(alunoId);
+    }),
+    emitir: protectedProcedure.input(z4.object({ contratoNivelId: z4.number(), alunoId: z4.number().optional() })).mutation(async ({ ctx, input }) => {
+      let alunoId = input.alunoId ?? ctx.user.alunoId ?? null;
+      if (!alunoId) {
+        const alunoCtx = await getAlunoFromCtx(ctx.user);
+        alunoId = alunoCtx?.id ?? null;
+      }
+      if (!alunoId) throw new TRPCError4({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (input.alunoId && input.alunoId !== alunoId && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+        throw new TRPCError4({ code: "FORBIDDEN", message: "Sem permiss\xE3o para emitir para outro aluno." });
+      }
+      const existing = await getNivelCertificateByAlunoNivel(alunoId, input.contratoNivelId);
+      if (existing) {
+        throw new TRPCError4({ code: "CONFLICT", message: "J\xE1 existe certificado emitido para este n\xEDvel." });
+      }
+      const elegibilidade = await avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
+      if (!elegibilidade.elegivel) {
+        throw new TRPCError4({ code: "PRECONDITION_FAILED", message: elegibilidade.motivo || "N\xEDvel n\xE3o eleg\xEDvel para certifica\xE7\xE3o." });
+      }
+      const nivel = elegibilidade.nivel;
+      const template = await getActiveCertificationTemplateByNivel(nivel?.nivel || "I");
+      if (!template) {
+        throw new TRPCError4({ code: "PRECONDITION_FAILED", message: "Sem template ativo para este n\xEDvel." });
+      }
+      const assinaturas = await getCertificationSignatures();
+      const gerente = assinaturas.find((a) => a.tipo === "gerente");
+      const gestorMaster = assinaturas.find((a) => a.tipo === "gestor_master");
+      if (!gerente || !gestorMaster) {
+        throw new TRPCError4({ code: "PRECONDITION_FAILED", message: "Assinaturas obrigat\xF3rias (gerente/gestor_master) ausentes." });
+      }
+      const pedagogia = await getPedagogiaByNivel(alunoId, input.contratoNivelId);
+      const mentorasUnicas = Array.from(
+        new Map(
+          (pedagogia.mentoringSessions || []).filter((s) => s.consultorId).map((s) => [s.consultorId, s])
+        ).values()
+      );
+      if (mentorasUnicas.length === 0) {
+        throw new TRPCError4({ code: "PRECONDITION_FAILED", message: "Nenhuma mentora v\xE1lida encontrada no n\xEDvel." });
+      }
+      const hashDocumento = `${alunoId}-${input.contratoNivelId}-${Date.now()}`;
+      const arquivoUrl = `/certificados/${alunoId}/${input.contratoNivelId}/${hashDocumento}.pdf`;
+      const certId = await createNivelCertificate(
+        {
+          alunoId,
+          contratoNivelId: input.contratoNivelId,
+          nivel: nivel?.nivel || "I",
+          templateId: template.id,
+          status: "emitido",
+          arquivoUrl,
+          emitidoPor: ctx.user.id || null,
+          hashDocumento
+        },
+        mentorasUnicas.map((m) => ({ consultorId: m.consultorId, nomeMentora: m.consultorNome || `Mentora #${m.consultorId}` }))
+      );
+      return { id: certId, arquivoUrl, hashDocumento, totalMentoras: mentorasUnicas.length };
+    }),
+    templates: adminProcedure3.query(async () => {
+      return await getCertificationTemplates();
+    }),
+    createTemplate: adminProcedure3.input(z4.object({
+      nome: z4.string().min(1),
+      nivel: z4.enum(["I", "II", "III", "IV"]),
+      ativo: z4.number().min(0).max(1).optional(),
+      arquivoModelo: z4.string().optional(),
+      camposMapeados: z4.any().optional()
+    })).mutation(async ({ ctx, input }) => {
+      const id = await createCertificationTemplate({
+        ...input,
+        ativo: input.ativo ?? 1,
+        createdBy: ctx.user.id || null
+      });
+      if ((input.ativo ?? 1) === 1) {
+        await setCertificationTemplateActive(id, input.nivel);
+      }
+      return { id };
+    }),
+    assinaturas: adminProcedure3.query(async () => {
+      return await getCertificationSignatures();
+    }),
+    createAssinatura: adminProcedure3.input(z4.object({
+      userId: z4.number().optional(),
+      tipo: z4.enum(["gerente", "mentora", "gestor_master"]),
+      nomeExibicao: z4.string().min(1),
+      cargo: z4.string().optional(),
+      imagemAssinaturaUrl: z4.string().optional(),
+      ativo: z4.number().min(0).max(1).optional()
+    })).mutation(async ({ input }) => {
+      const id = await createCertificationSignature({
+        ...input,
+        ativo: input.ativo ?? 1
+      });
+      return { id };
     })
   }),
   // ============ JORNADA DO ALUNO ============
@@ -20663,8 +22283,8 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
   // Cases de Sucesso routes
   cases: router({
     // Listar cases de um aluno
-    byAluno: adminProcedure3.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
-      return await getCasesSucessoByAluno(input.alunoId);
+    byAluno: adminProcedure3.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().nullable().optional() })).query(async ({ input }) => {
+      return await getCasesSucessoByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Listar todos os cases (admin)
     list: adminProcedure3.query(async () => {
@@ -20673,6 +22293,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     // Criar case de sucesso
     create: adminProcedure3.input(z4.object({
       alunoId: z4.number(),
+      contratoNivelId: z4.number().nullable().optional(),
       trilhaId: z4.number().optional(),
       trilhaNome: z4.string().optional(),
       entregue: z4.number().min(0).max(1),
@@ -20680,8 +22301,10 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       descricao: z4.string().optional(),
       observacao: z4.string().optional()
     })).mutation(async ({ input }) => {
+      await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "cases.create");
       const id = await createCaseSucesso({
         alunoId: input.alunoId,
+        contratoNivelId: input.contratoNivelId ?? null,
         trilhaId: input.trilhaId || null,
         trilhaNome: input.trilhaNome || null,
         entregue: input.entregue,
@@ -20983,9 +22606,10 @@ ${mensagem}`,
     // Listar metas de um aluno (para mentora e gestor)
     listar: protectedProcedure.input(z4.object({
       alunoId: z4.number(),
-      assessmentPdiId: z4.number().optional()
+      assessmentPdiId: z4.number().optional(),
+      contratoNivelId: z4.number().nullable().optional()
     })).query(async ({ input }) => {
-      return await getMetasDetalhadas(input.alunoId);
+      return await getMetasDetalhadasByNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Listar metas por competência específica
     porCompetencia: protectedProcedure.input(z4.object({
@@ -21000,10 +22624,12 @@ ${mensagem}`,
       assessmentCompetenciaId: z4.number(),
       competenciaId: z4.number(),
       assessmentPdiId: z4.number(),
+      contratoNivelId: z4.number().nullable().optional(),
       taskLibraryId: z4.number().nullable().optional(),
       titulo: z4.string().min(1),
       descricao: z4.string().nullable().optional()
     })).mutation(async ({ input, ctx }) => {
+      await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "metas.criar");
       const consultors2 = await getConsultors();
       const consultor = consultors2.find((c) => c.loginId === ctx.user.openId || ctx.user.consultorId && c.id === ctx.user.consultorId);
       return await createMeta({
@@ -21154,6 +22780,7 @@ Responda APENAS em JSON com o formato:
     // Salvar respostas e calcular resultado DISC (escolha forçada)
     salvarRespostas: protectedProcedure.input(z4.object({
       alunoId: z4.number(),
+      contratoNivelId: z4.number().nullable().optional(),
       respostas: z4.array(z4.object({
         blocoIndex: z4.number(),
         maisId: z4.string(),
@@ -21163,12 +22790,13 @@ Responda APENAS em JSON com o formato:
       }))
     })).mutation(async ({ input }) => {
       const { calcularDiscScores: calcularDiscScores2 } = (init_discData(), __toCommonJS(discData_exports));
-      const existingResult = await getDiscResultado(input.alunoId);
+      const existingResult = await getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
       const ciclo = existingResult ? existingResult.ciclo + 1 : 1;
       await saveDiscRespostas(input.alunoId, ciclo, input.respostas);
       const resultado = calcularDiscScores2(input.respostas);
       await saveDiscResultado({
         alunoId: input.alunoId,
+        contratoNivelId: input.contratoNivelId ?? null,
         scoreD: String(resultado.scores.D),
         scoreI: String(resultado.scores.I),
         scoreS: String(resultado.scores.S),
@@ -21204,8 +22832,8 @@ Responda APENAS em JSON com o formato:
       return resultado;
     }),
     // Buscar resultado DISC de um aluno
-    resultado: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
-      return await getDiscResultado(input.alunoId);
+    resultado: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().nullable().optional() })).query(async ({ input }) => {
+      return await getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Buscar perfis DISC (descrições)
     perfis: publicProcedure.query(() => {
@@ -21294,6 +22922,7 @@ Responda APENAS em JSON com o formato:
     // Salvar autoavaliação de competências
     salvar: protectedProcedure.input(z4.object({
       alunoId: z4.number(),
+      contratoNivelId: z4.number().nullable().optional(),
       avaliacoes: z4.array(z4.object({
         competenciaId: z4.number(),
         trilhaId: z4.number(),
@@ -21305,12 +22934,12 @@ Responda APENAS em JSON com o formato:
         competenciaId: a.competenciaId,
         trilhaId: a.trilhaId,
         nota: a.nota
-      })));
+      })), input.contratoNivelId ?? null);
       return { success: true };
     }),
     // Buscar autoavaliação de um aluno
-    porAluno: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
-      return await getAutopercepcoes(input.alunoId);
+    porAluno: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().nullable().optional() })).query(async ({ input }) => {
+      return await getAutopercepcoesByNivel(input.alunoId, input.contratoNivelId ?? null);
     })
   }),
   // ============ CONTRIBUIÇÕES DA MENTORA ============
@@ -21352,9 +22981,21 @@ Responda APENAS em JSON com o formato:
   }),
   // ============ PROGRESSO DO ONBOARDING ============
   onboarding: router({
+    contextoNivel: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().optional() })).query(async ({ input }) => {
+      const vigente = await getContratoNivelVigenteByAluno(input.alunoId);
+      const historico = await getContratoNiveisByAluno(input.alunoId);
+      const visualizandoNivelId = input.contratoNivelId ?? vigente?.id ?? null;
+      return {
+        vigente,
+        historico,
+        visualizandoNivelId,
+        isHistorico: !!(vigente?.id && visualizandoNivelId && vigente.id !== visualizandoNivelId)
+      };
+    }),
     // Salvar dados do cadastro (etapa 1)
     salvarCadastro: protectedProcedure.input(z4.object({
       alunoId: z4.number(),
+      contratoNivelId: z4.number().nullable().optional(),
       nome: z4.string().optional(),
       email: z4.string().optional(),
       telefone: z4.string().optional(),
@@ -21377,7 +23018,7 @@ Responda APENAS em JSON com o formato:
         minicurriculo: minicurriculo || null,
         quemEVoce: quemEVoce || null
       });
-      await upsertOnboardingJornada(alunoId, {
+      await upsertOnboardingJornadaByNivel(alunoId, input.contratoNivelId ?? null, {
         cadastroConfirmado: 1,
         cadastroConfirmadoEm: /* @__PURE__ */ new Date()
       });
@@ -21848,12 +23489,13 @@ Responda APENAS em JSON com o formato:
       return { watched };
     }),
     // Retorna o step atual do onboarding baseado nos dados do banco
-    progresso: protectedProcedure.input(z4.object({ alunoId: z4.number() })).query(async ({ input }) => {
+    progresso: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().nullable().optional() })).query(async ({ input }) => {
       const { alunoId } = input;
       if (!alunoId || alunoId === 0) return { step: 1, discCompleto: false, mentoraEscolhida: false, agendamentoFeito: false };
-      const discResult = await getDiscResultado(alunoId);
+      const contratoNivelId = input.contratoNivelId ?? (await getContratoNivelVigenteByAluno(alunoId))?.id ?? null;
+      const discResult = await getDiscResultadoByNivel(alunoId, contratoNivelId);
       const discCompleto = !!discResult;
-      const autopercepcoes = await getAutopercepcoes(alunoId);
+      const autopercepcoes = await getAutopercepcoesByNivel(alunoId, contratoNivelId);
       const autopercepCompleta = autopercepcoes.length > 0;
       const aluno = await getAlunoById(alunoId);
       const mentoraEscolhida = !!aluno?.consultorId;
@@ -21870,15 +23512,15 @@ Responda APENAS em JSON com o formato:
           agendamentoMeetLink = agendamentos[0].googleMeetLink || null;
         }
       }
-      const sessoes = await getMentoringSessionsByAluno(alunoId);
+      const sessoes = await getMentoringSessionsByAlunoAndNivel(alunoId, contratoNivelId);
       const presencaRegistrada = sessoes.some((s) => s.presence === "presente");
-      const assessments = await getAssessmentsByAluno(alunoId);
+      const assessments = await getAssessmentsByAlunoAndNivel(alunoId, contratoNivelId);
       const assessmentFeito = assessments.length > 0;
       const relatorioFeito = sessoes.some((s) => s.presence === "presente" && (s.feedback || s.notaEvolucao));
       const encontroRealizado = presencaRegistrada && assessmentFeito;
       const sessaoRealizada = sessoes.find((s) => s.presence === "presente");
       const encontroData = sessaoRealizada?.sessionDate ? String(sessaoRealizada.sessionDate) : null;
-      const jornada = await getOnboardingJornada(alunoId);
+      const jornada = await getOnboardingJornadaByNivel(alunoId, contratoNivelId);
       const pdiVisualizado = !!jornada?.pdiVisualizado;
       const todosVideosAssistidos = !!(jornada?.videoBoasVindas && jornada?.videoCompetencias && jornada?.videoWebinars && jornada?.videoTarefas && jornada?.videoMetas);
       const aceiteRealizado = !!jornada?.aceiteRealizado;
@@ -21925,6 +23567,7 @@ Responda APENAS em JSON com o formato:
         reassessmentElegivel,
         contratoTermino,
         cicloAtual,
+        contratoNivelId,
         // Etapas 6-8
         pdiVisualizado,
         todosVideosAssistidos,
@@ -21941,12 +23584,12 @@ Responda APENAS em JSON com o formato:
       };
     }),
     // Marcar PDI como visualizado (etapa 6)
-    marcarPdiVisualizado: protectedProcedure.input(z4.object({ alunoId: z4.number() })).mutation(async ({ input, ctx }) => {
+    marcarPdiVisualizado: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().nullable().optional() })).mutation(async ({ input, ctx }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
         throw new TRPCError4({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
-      await upsertOnboardingJornada(input.alunoId, {
+      await upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
         pdiVisualizado: 1,
         pdiVisualizadoEm: /* @__PURE__ */ new Date()
       });
@@ -21955,6 +23598,7 @@ Responda APENAS em JSON com o formato:
     // Marcar vídeo como assistido (etapa 7)
     marcarVideoAssistido: protectedProcedure.input(z4.object({
       alunoId: z4.number(),
+      contratoNivelId: z4.number().nullable().optional(),
       chave: z4.enum(["boas_vindas", "competencias", "webinars", "tarefas", "metas"])
     })).mutation(async ({ input, ctx }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx.user);
@@ -21970,7 +23614,7 @@ Responda APENAS em JSON com o formato:
       };
       const field = fieldMap[input.chave];
       const updateData = { [field]: 1 };
-      const jornada = await getOnboardingJornada(input.alunoId);
+      const jornada = await getOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null);
       const videoStates = {
         videoBoasVindas: jornada?.videoBoasVindas || 0,
         videoCompetencias: jornada?.videoCompetencias || 0,
@@ -21983,19 +23627,20 @@ Responda APENAS em JSON com o formato:
       if (todosAssistidos) {
         updateData.todosVideosEm = /* @__PURE__ */ new Date();
       }
-      await upsertOnboardingJornada(input.alunoId, updateData);
+      await upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, updateData);
       return { success: true, todosAssistidos };
     }),
     // Realizar aceite formal (etapa 8) — "De Acordo"
     realizarAceite: protectedProcedure.input(z4.object({
       alunoId: z4.number(),
+      contratoNivelId: z4.number().nullable().optional(),
       nomeAceite: z4.string().min(2)
     })).mutation(async ({ input, ctx }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
         throw new TRPCError4({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
-      await upsertOnboardingJornada(input.alunoId, {
+      await upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
         aceiteRealizado: 1,
         aceiteRealizadoEm: /* @__PURE__ */ new Date(),
         nomeAceite: input.nomeAceite

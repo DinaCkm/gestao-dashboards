@@ -326,8 +326,8 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
     // Se o nível for simulado e for o mais recente (em andamento), vamos buscar os dados reais da performance consolidada
     const isSimuladoMaisRecente = (nivel as any).isSimulado && (nivel as any).status === "em_andamento";
     
-    // Se for o mais recente, vamos usar os dados consolidados que a página de Performance usa
-    const indicadoresConsolidados = isSimuladoMaisRecente ? await db.getIndicadoresConsolidadosV2(alunoId) : null;
+    // getIndicadoresConsolidadosV2 não existe — indicadoresConsolidados sempre null (fallback para cálculo local)
+    const indicadoresConsolidados = null;
 
     const assessments = pedagogia.assessments || [];
     const plano = pedagogia.planoIndividual || [];
