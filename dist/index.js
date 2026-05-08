@@ -7931,12 +7931,10 @@ async function resetDiscAluno(alunoId) {
   const respostasRemovidas = await dbConn.delete(discRespostas).where(
     eq(discRespostas.alunoId, alunoId)
   );
-  const resultadosRemovidos = await dbConn.delete(discResultados).where(
-    eq(discResultados.alunoId, alunoId)
-  );
   return {
     respostasRemovidas: respostasRemovidas[0]?.affectedRows || 0,
-    resultadosRemovidos: resultadosRemovidos[0]?.affectedRows || 0
+    resultadosRemovidos: 0
+    // não deletamos mais resultados
   };
 }
 async function getAllDiscResultados(alunoId) {
@@ -8369,6 +8367,7 @@ async function deleteAluno(alunoId) {
     await db2.delete(eventParticipation).where(eq(eventParticipation.alunoId, alunoId));
     await db2.delete(studentPerformance).where(eq(studentPerformance.alunoId, alunoId));
     await db2.delete(ciclosExecucao).where(eq(ciclosExecucao.alunoId, alunoId));
+    await db2.execute(sql.raw(`DELETE FROM historico_ciclos_aluno WHERE alunoId = ${alunoId}`));
     await db2.delete(discResultados).where(eq(discResultados.alunoId, alunoId));
     await db2.delete(discRespostas).where(eq(discRespostas.alunoId, alunoId));
     await db2.delete(metas).where(eq(metas.alunoId, alunoId));
@@ -9722,7 +9721,7 @@ async function arquivarCicloAtual(alunoId) {
   const db2 = await getDb();
   if (!db2) return { numeroCiclo: 1 };
   const [discRows] = await db2.execute(sql.raw(
-    `SELECT id, ciclo FROM disc_resultados WHERE alunoId = ${alunoId} ORDER BY ciclo DESC, createdAt DESC LIMIT 1`
+    `SELECT id, ciclo, scoreD, scoreI, scoreS, scoreC, perfilPredominante, perfilSecundario FROM disc_resultados WHERE alunoId = ${alunoId} ORDER BY ciclo DESC, createdAt DESC LIMIT 1`
   ));
   const discRow = Array.isArray(discRows) ? discRows[0] : null;
   const [pdiActiveRows] = await db2.execute(sql.raw(
@@ -9922,6 +9921,12 @@ async function arquivarCicloAtual(alunoId) {
   const maxCiclo = maxCicloArr[0]?.maxCiclo ?? 0;
   const numeroCiclo = (Number(maxCiclo) || 0) + 1;
   const dataInicio = jornada?.aceiteRealizadoEm ? `'${new Date(jornada.aceiteRealizadoEm).toISOString().slice(0, 19).replace("T", " ")}'` : "NULL";
+  const discScoreD = discRow?.scoreD != null ? String(discRow.scoreD) : "NULL";
+  const discScoreI = discRow?.scoreI != null ? String(discRow.scoreI) : "NULL";
+  const discScoreS = discRow?.scoreS != null ? String(discRow.scoreS) : "NULL";
+  const discScoreC = discRow?.scoreC != null ? String(discRow.scoreC) : "NULL";
+  const discPerfil = discRow?.perfilPredominante ? `'${discRow.perfilPredominante}'` : "NULL";
+  const discPerfilSec = discRow?.perfilSecundario ? `'${discRow.perfilSecundario}'` : "NULL";
   await db2.execute(sql.raw(`
     INSERT INTO historico_ciclos_aluno (
       alunoId, numeroCiclo, discResultadoId, assessmentPdiId,
@@ -9932,6 +9937,8 @@ async function arquivarCicloAtual(alunoId) {
       snapshotEngajamento, snapshotMetasPercentual, snapshotAplicabilidade,
       snapshotMetasTotal, snapshotMetasCumpridas,
       snapshotInd1, snapshotInd2, snapshotInd3, snapshotInd4, snapshotInd5,
+      snapshotDiscD, snapshotDiscI, snapshotDiscS, snapshotDiscC,
+      snapshotDiscPerfil, snapshotDiscPerfilSecundario,
       createdAt, updatedAt
     ) VALUES (
       ${alunoId}, ${numeroCiclo}, ${discIdStr}, ${pdiIdStr === "NULL" ? "NULL" : pdiIdStr},
@@ -9942,6 +9949,8 @@ async function arquivarCicloAtual(alunoId) {
       ${snapshotEngajamento}, ${snapshotMetasPercentual}, ${snapshotAplicabilidade},
       ${metasTotal}, ${metasCumpridas},
       ${ind1Webinars}, ${ind2Avaliacoes}, ${ind3Competencias}, ${ind4Tarefas}, ${ind5Engajamento},
+      ${discScoreD}, ${discScoreI}, ${discScoreS}, ${discScoreC},
+      ${discPerfil}, ${discPerfilSec},
       NOW(), NOW()
     )
   `));
@@ -10046,12 +10055,13 @@ async function getHistoricoCiclosAluno(alunoId) {
       h.snapshotInd3,
       h.snapshotInd4,
       h.snapshotInd5,
-      dr.perfilPredominante,
-      dr.perfilSecundario,
-      dr.scoreD,
-      dr.scoreI,
-      dr.scoreS,
-      dr.scoreC,
+      -- DISC: usar snapshot do hist\xF3rico (autossuficiente) com fallback para o registro original
+      COALESCE(h.snapshotDiscPerfil, dr.perfilPredominante) as perfilPredominante,
+      COALESCE(h.snapshotDiscPerfilSecundario, dr.perfilSecundario) as perfilSecundario,
+      COALESCE(h.snapshotDiscD, dr.scoreD) as scoreD,
+      COALESCE(h.snapshotDiscI, dr.scoreI) as scoreI,
+      COALESCE(h.snapshotDiscS, dr.scoreS) as scoreS,
+      COALESCE(h.snapshotDiscC, dr.scoreC) as scoreC,
       dr.completedAt as discCompletadoEm,
       ap.macroInicio,
       ap.macroTermino,

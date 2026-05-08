@@ -8814,27 +8814,28 @@ export async function getContribuicoesMentora(alunoId: number) {
 
 
 /**
- * Reseta o teste DISC de um aluno: remove todas as respostas e resultados.
- * Isso permite que o aluno refaça o teste do zero.
+ * Reseta o teste DISC de um aluno: remove apenas as RESPOSTAS brutas.
+ * Os RESULTADOS (scores, perfil) são PRESERVADOS para o histórico de evolução.
+ * NUNCA deletar disc_resultados — eles são referênciados por historico_ciclos_aluno.
  * Retorna o número de registros removidos.
  */
 export async function resetDiscAluno(alunoId: number) {
   const dbConn = await getDb();
   if (!dbConn) throw new Error("Database not available");
   
-  // Deletar todas as respostas DISC do aluno
+  // Deletar apenas as respostas brutas DISC (não são necessárias para o histórico)
   const respostasRemovidas = await dbConn.delete(discRespostas).where(
     eq(discRespostas.alunoId, alunoId)
   );
   
-  // Deletar todos os resultados DISC do aluno
-  const resultadosRemovidos = await dbConn.delete(discResultados).where(
-    eq(discResultados.alunoId, alunoId)
-  );
+  // IMPORTANTE: disc_resultados NÃO é deletado.
+  // Os resultados (scoreD, scoreI, scoreS, scoreC, perfilPredominante) são preservados
+  // para exibição na página de Evolução (historico_ciclos_aluno.discResultadoId).
+  // O novo DISC do próximo ciclo será inserido com contratoNivelId diferente.
   
   return {
     respostasRemovidas: (respostasRemovidas as any)[0]?.affectedRows || 0,
-    resultadosRemovidos: (resultadosRemovidos as any)[0]?.affectedRows || 0,
+    resultadosRemovidos: 0, // não deletamos mais resultados
   };
 }
 
@@ -9456,6 +9457,8 @@ export async function deleteAluno(alunoId: number) {
     await db.delete(eventParticipation).where(eq(eventParticipation.alunoId, alunoId));
     await db.delete(studentPerformance).where(eq(studentPerformance.alunoId, alunoId));
     await db.delete(ciclosExecucao).where(eq(ciclosExecucao.alunoId, alunoId));
+    // historico_ciclos_aluno referencia disc_resultados — deletar histórico ANTES dos resultados DISC
+    await db.execute(sql.raw(`DELETE FROM historico_ciclos_aluno WHERE alunoId = ${alunoId}`));
     await db.delete(discResultados).where(eq(discResultados.alunoId, alunoId));
     await db.delete(discRespostas).where(eq(discRespostas.alunoId, alunoId));
     await db.delete(metas).where(eq(metas.alunoId, alunoId));
@@ -11610,7 +11613,7 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
 
   // Buscar o último DISC do aluno (ciclo mais recente)
   const [discRows] = await db.execute(sql.raw(
-    `SELECT id, ciclo FROM disc_resultados WHERE alunoId = ${alunoId} ORDER BY ciclo DESC, createdAt DESC LIMIT 1`
+    `SELECT id, ciclo, scoreD, scoreI, scoreS, scoreC, perfilPredominante, perfilSecundario FROM disc_resultados WHERE alunoId = ${alunoId} ORDER BY ciclo DESC, createdAt DESC LIMIT 1`
   )) as any;
   const discRow = Array.isArray(discRows) ? discRows[0] : null;
 
@@ -11882,6 +11885,14 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
     ? `'${new Date(jornada.aceiteRealizadoEm).toISOString().slice(0, 19).replace('T', ' ')}'`
     : 'NULL';
 
+  // Snapshot DISC — copiar scores diretamente para o histórico (autossuficiente mesmo após delete do aluno)
+  const discScoreD = discRow?.scoreD != null ? String(discRow.scoreD) : 'NULL';
+  const discScoreI = discRow?.scoreI != null ? String(discRow.scoreI) : 'NULL';
+  const discScoreS = discRow?.scoreS != null ? String(discRow.scoreS) : 'NULL';
+  const discScoreC = discRow?.scoreC != null ? String(discRow.scoreC) : 'NULL';
+  const discPerfil = discRow?.perfilPredominante ? `'${discRow.perfilPredominante}'` : 'NULL';
+  const discPerfilSec = discRow?.perfilSecundario ? `'${discRow.perfilSecundario}'` : 'NULL';
+
   await db.execute(sql.raw(`
     INSERT INTO historico_ciclos_aluno (
       alunoId, numeroCiclo, discResultadoId, assessmentPdiId,
@@ -11892,6 +11903,8 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
       snapshotEngajamento, snapshotMetasPercentual, snapshotAplicabilidade,
       snapshotMetasTotal, snapshotMetasCumpridas,
       snapshotInd1, snapshotInd2, snapshotInd3, snapshotInd4, snapshotInd5,
+      snapshotDiscD, snapshotDiscI, snapshotDiscS, snapshotDiscC,
+      snapshotDiscPerfil, snapshotDiscPerfilSecundario,
       createdAt, updatedAt
     ) VALUES (
       ${alunoId}, ${numeroCiclo}, ${discIdStr}, ${pdiIdStr === 'NULL' ? 'NULL' : pdiIdStr},
@@ -11902,6 +11915,8 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
       ${snapshotEngajamento}, ${snapshotMetasPercentual}, ${snapshotAplicabilidade},
       ${metasTotal}, ${metasCumpridas},
       ${ind1Webinars}, ${ind2Avaliacoes}, ${ind3Competencias}, ${ind4Tarefas}, ${ind5Engajamento},
+      ${discScoreD}, ${discScoreI}, ${discScoreS}, ${discScoreC},
+      ${discPerfil}, ${discPerfilSec},
       NOW(), NOW()
     )
   `));
@@ -12026,12 +12041,13 @@ export async function getHistoricoCiclosAluno(alunoId: number) {
       h.snapshotInd3,
       h.snapshotInd4,
       h.snapshotInd5,
-      dr.perfilPredominante,
-      dr.perfilSecundario,
-      dr.scoreD,
-      dr.scoreI,
-      dr.scoreS,
-      dr.scoreC,
+      -- DISC: usar snapshot do histórico (autossuficiente) com fallback para o registro original
+      COALESCE(h.snapshotDiscPerfil, dr.perfilPredominante) as perfilPredominante,
+      COALESCE(h.snapshotDiscPerfilSecundario, dr.perfilSecundario) as perfilSecundario,
+      COALESCE(h.snapshotDiscD, dr.scoreD) as scoreD,
+      COALESCE(h.snapshotDiscI, dr.scoreI) as scoreI,
+      COALESCE(h.snapshotDiscS, dr.scoreS) as scoreS,
+      COALESCE(h.snapshotDiscC, dr.scoreC) as scoreC,
       dr.completedAt as discCompletadoEm,
       ap.macroInicio,
       ap.macroTermino,
