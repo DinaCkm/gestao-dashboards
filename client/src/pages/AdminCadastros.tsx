@@ -570,6 +570,38 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   );
   const NIVEL_SEQUENCIA: Record<string, string> = { 'I': 'II', 'II': 'III', 'III': 'IV', 'IV': 'V' };
   const proximoNivelReset = nivelVigenteReset ? (NIVEL_SEQUENCIA[nivelVigenteReset.nivel] ?? null) : null;
+
+  // Validação de janela de reset
+  // Meses permitidos: 3 (opcional), 6, 12, 18, 24 (obrigatórios)
+  // Janela: 30 dias a partir do início do mês correspondente
+  const calcularJanelaReset = (contratoInicio: Date | string | null) => {
+    if (!contratoInicio) return { permitido: true, proxima: null, tipo: null };
+    const inicio = new Date(contratoInicio);
+    const hoje = new Date();
+    const mesesPermitidos = [3, 6, 12, 18, 24];
+    for (const mes of mesesPermitidos) {
+      const inicioJanela = new Date(inicio);
+      inicioJanela.setMonth(inicioJanela.getMonth() + mes);
+      const fimJanela = new Date(inicioJanela);
+      fimJanela.setDate(fimJanela.getDate() + 30);
+      if (hoje >= inicioJanela && hoje <= fimJanela) {
+        return { permitido: true, proxima: null, tipo: mes === 3 ? 'opcional' : 'obrigatorio' };
+      }
+    }
+    // Encontrar próxima janela
+    for (const mes of mesesPermitidos) {
+      const inicioJanela = new Date(inicio);
+      inicioJanela.setMonth(inicioJanela.getMonth() + mes);
+      if (inicioJanela > hoje) {
+        return { permitido: false, proxima: inicioJanela, tipo: mes === 3 ? 'opcional' : 'obrigatorio' };
+      }
+    }
+    return { permitido: false, proxima: null, tipo: null };
+  };
+  const janelaReset = liberarModalAluno
+    ? calcularJanelaReset(liberarModalAluno.contratoInicio)
+    : { permitido: true, proxima: null, tipo: null };
+
   const handleLiberarClick = (aluno: any) => {
     setLiberarModalAluno(aluno);
     setLiberarModalOpen(true);
@@ -1453,11 +1485,32 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                   </div>
                 </div>
               )}
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <p className="text-xs text-amber-800">
-                  <strong>Atenção:</strong> Esta ação é protegida contra duplicação. Se executada duas vezes, o segundo reset será ignorado automaticamente.
-                </p>
-              </div>
+              {/* Alerta de janela de reset bloqueada */}
+              {!janelaReset.permitido && (
+                <div className="bg-red-50 border border-red-300 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-semibold text-red-800">Reset não permitido neste momento</p>
+                      <p className="text-xs text-red-700 mt-0.5">
+                        A mudança de nível só pode ser realizada nas janelas de reset: <strong>mês 3</strong> (opcional), <strong>mês 6</strong>, <strong>mês 12</strong>, <strong>mês 18</strong> ou <strong>mês 24</strong> a partir do início do contrato. Cada janela fica aberta por 30 dias.
+                      </p>
+                      {janelaReset.proxima && (
+                        <p className="text-xs text-red-700 mt-1">
+                          Próxima janela disponível: <strong>{new Date(janelaReset.proxima).toLocaleDateString('pt-BR')}</strong>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {janelaReset.permitido && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p className="text-xs text-amber-800">
+                    <strong>Atenção:</strong> Esta ação é protegida contra duplicação. Se executada duas vezes, o segundo reset será ignorado automaticamente.
+                  </p>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
@@ -1465,7 +1518,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
             <Button
               className="bg-blue-600 hover:bg-blue-700 text-white"
               onClick={handleLiberarConfirm}
-              disabled={isLiberandoOnboarding}
+              disabled={isLiberandoOnboarding || !janelaReset.permitido}
             >
               {isLiberandoOnboarding ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Processando...</> : <><RotateCcw className="h-4 w-4 mr-2" /> Confirmar e Liberar</>}
             </Button>

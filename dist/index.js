@@ -19871,9 +19871,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const consultor = consultors2.find((c) => c.loginId === ctx.user.openId || ctx.user.consultorId && c.id === ctx.user.consultorId);
       let consultorId = consultor?.id;
       if (!consultorId && ctx.user.role === "admin") {
-        const sessions2 = await getMentoringSessionsByAluno(input.alunoId);
-        if (sessions2.length > 0) {
-          consultorId = sessions2[0].consultorId;
+        const sessions = await getMentoringSessionsByAluno(input.alunoId);
+        if (sessions.length > 0) {
+          consultorId = sessions[0].consultorId;
         }
       }
       if (!consultorId) {
@@ -19884,8 +19884,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         throw new TRPCError4({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.createSession");
-      const sessions = await getMentoringSessionsByAluno(input.alunoId);
-      const nextSessionNumber = sessions.length > 0 ? Math.max(...sessions.map((s) => s.sessionNumber ?? 0)) + 1 : 1;
+      const nivelVigenteParaSessao = await getContratoNivelVigenteByAluno(input.alunoId);
+      const nivelIdParaSessao = nivelVigenteParaSessao?.id ?? null;
+      const sessoesDoCiclo = await getMentoringSessionsByAlunoAndNivel(input.alunoId, nivelIdParaSessao);
+      const nextSessionNumber = sessoesDoCiclo.length > 0 ? Math.max(...sessoesDoCiclo.map((s) => s.sessionNumber ?? 0)) + 1 : 1;
+      const tipoSessaoEfetivo = input.tipoSessao ?? (nextSessionNumber === 1 ? "individual_assessment" : "individual_normal");
       const effectiveTaskMode = input.taskMode ?? "sem_tarefa";
       const effectiveTaskStatus = effectiveTaskMode !== "sem_tarefa" ? "nao_entregue" : input.taskStatus ?? "sem_tarefa";
       const sessionId = await createMentoringSession({
@@ -19908,7 +19911,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         taskMode: input.taskMode ?? "sem_tarefa",
         notaMentoraAplicabilidade: input.notaMentoraAplicabilidade ?? null,
         aplicabilidadeAvaliadaEm: input.notaMentoraAplicabilidade != null ? /* @__PURE__ */ new Date() : null,
-        tipoSessao: input.tipoSessao ?? "individual_normal",
+        tipoSessao: tipoSessaoEfetivo,
         appointmentId: input.appointmentId ?? null
       });
       try {

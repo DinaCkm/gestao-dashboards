@@ -49,6 +49,7 @@ import {
   Star,
   RotateCcw,
   Trash2,
+  GraduationCap,
 } from "lucide-react";
 import EditAssessmentDialog from "@/components/EditAssessmentDialog";
 
@@ -668,7 +669,101 @@ function AssessmentContent() {
               );
             })()}
 
-            {/* 6. Expectativas Profissionais */}
+            {/* 6. Formação e Escolaridade */}
+            {(() => {
+              const a = selectedAluno as any;
+              const formacoes = Array.isArray(a.formacaoSuperior) ? a.formacaoSuperior : (a.formacaoSuperior ? [a.formacaoSuperior] : []);
+              const posGrads = Array.isArray(a.posGraduacoes) ? a.posGraduacoes : (a.posGraduacoes ? [a.posGraduacoes] : []);
+              const cursos = Array.isArray(a.cursosExtracurriculares) ? a.cursosExtracurriculares : (a.cursosExtracurriculares ? [a.cursosExtracurriculares] : []);
+              if (formacoes.length === 0 && posGrads.length === 0 && cursos.length === 0) return null;
+              return (
+                <div className="border rounded-lg p-4 bg-white/60">
+                  <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-[#F5991F]" />
+                    6. Formação e Escolaridade
+                  </h4>
+                  <div className="space-y-3">
+                    {formacoes.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Formação Superior</p>
+                        {formacoes.map((f: any, i: number) => (
+                          <p key={i} className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md mb-1">
+                            {typeof f === 'string' ? f : `${f.curso || ''} ${f.instituicao ? `— ${f.instituicao}` : ''} ${f.ano ? `(${f.ano})` : ''}`.trim()}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {posGrads.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Pós-Graduações</p>
+                        {posGrads.map((p: any, i: number) => (
+                          <p key={i} className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md mb-1">
+                            {typeof p === 'string' ? p : `${p.curso || ''} ${p.instituicao ? `— ${p.instituicao}` : ''} ${p.ano ? `(${p.ano})` : ''}`.trim()}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {cursos.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Cursos Extracurriculares</p>
+                        {cursos.map((c: any, i: number) => (
+                          <p key={i} className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md mb-1">
+                            {typeof c === 'string' ? c : `${c.curso || c.nome || ''} ${c.instituicao ? `— ${c.instituicao}` : ''} ${c.ano ? `(${c.ano})` : ''}`.trim()}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 7. Experiência Profissional */}
+            {(() => {
+              const a = selectedAluno as any;
+              const experiencias = Array.isArray(a.experienciasAnteriores) ? a.experienciasAnteriores : (a.experienciasAnteriores ? [a.experienciasAnteriores] : []);
+              const tiposEquipe = Array.isArray(a.tipoEquipeGerenciada) ? a.tipoEquipeGerenciada : (a.tipoEquipeGerenciada ? [a.tipoEquipeGerenciada] : []);
+              if (experiencias.length === 0 && !a.experienciaLideranca && tiposEquipe.length === 0) return null;
+              return (
+                <div className="border rounded-lg p-4 bg-white/60">
+                  <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-[#F5991F]" />
+                    7. Experiência Profissional
+                  </h4>
+                  <div className="space-y-3">
+                    {a.experienciaLideranca != null && (
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Experiência em Liderança:</p>
+                        <p className="text-sm font-medium">{a.experienciaLideranca ? 'Sim' : 'Não'}</p>
+                        {a.gerenciouOutrosLideres ? <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Gerenciou outros líderes</span> : null}
+                      </div>
+                    )}
+                    {tiposEquipe.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Tipo de Equipe Gerenciada</p>
+                        <div className="flex flex-wrap gap-1">
+                          {tiposEquipe.map((t: any, i: number) => (
+                            <span key={i} className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{typeof t === 'string' ? t : JSON.stringify(t)}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {experiencias.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Experiências Anteriores</p>
+                        {experiencias.map((e: any, i: number) => (
+                          <p key={i} className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md mb-1">
+                            {typeof e === 'string' ? e : `${e.cargo || e.funcao || ''} ${e.empresa ? `— ${e.empresa}` : ''} ${e.periodo ? `(${e.periodo})` : ''}`.trim()}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 8. Expectativas Profissionais */}
             {(() => {
               const a = selectedAluno as any;
               const hasData = a.expectativaCurtoPrazo || a.expectativaMedioPrazo || a.expectativaLongoPrazo;

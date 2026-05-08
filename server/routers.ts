@@ -4673,11 +4673,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         }
         await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.createSession");
 
-        // Calcular próximo número de sessão
-        const sessions = await db.getMentoringSessionsByAluno(input.alunoId);
-        const nextSessionNumber = sessions.length > 0 
-          ? Math.max(...sessions.map(s => s.sessionNumber ?? 0)) + 1 
+        // Calcular próximo número de sessão (apenas do nível vigente)
+        const nivelVigenteParaSessao = await db.getContratoNivelVigenteByAluno(input.alunoId);
+        const nivelIdParaSessao = nivelVigenteParaSessao?.id ?? null;
+        const sessoesDoCiclo = await db.getMentoringSessionsByAlunoAndNivel(input.alunoId, nivelIdParaSessao);
+        const nextSessionNumber = sessoesDoCiclo.length > 0
+          ? Math.max(...sessoesDoCiclo.map(s => s.sessionNumber ?? 0)) + 1
           : 1;
+        // A 1ª sessão do ciclo é sempre do tipo assessment se não especificado
+        const tipoSessaoEfetivo = input.tipoSessao ?? (nextSessionNumber === 1 ? 'individual_assessment' : 'individual_normal');
 
         // Se a mentora atribuiu uma tarefa nesta sessão, o taskStatus deve ser 'nao_entregue'
         // para que o aluno veja o botão 'Entregar' no Portal
@@ -4706,7 +4710,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           taskMode: input.taskMode ?? "sem_tarefa",
           notaMentoraAplicabilidade: input.notaMentoraAplicabilidade ?? null,
           aplicabilidadeAvaliadaEm: input.notaMentoraAplicabilidade != null ? new Date() : null,
-          tipoSessao: input.tipoSessao ?? "individual_normal",
+          tipoSessao: tipoSessaoEfetivo,
           appointmentId: input.appointmentId ?? null,
         });
 
