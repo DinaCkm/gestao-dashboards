@@ -251,9 +251,11 @@ const COMPETENCIA_DESCRICOES: Record<string, { oQueE: string; impacto: string }>
 function TesteDisc({
   alunoId,
   onComplete,
+  contratoNivelId,
 }: {
   alunoId: number;
   onComplete: (scores: DiscScores, predominante: DiscDimensao, secundario: DiscDimensao) => void;
+  contratoNivelId?: number | null;
 }) {
   const { data: perguntasData } = trpc.disc.perguntas.useQuery();
   const salvarMutation = trpc.disc.salvarRespostas.useMutation();
@@ -354,6 +356,7 @@ function TesteDisc({
 
       const resultado = await salvarMutation.mutateAsync({
         alunoId,
+        contratoNivelId: contratoNivelId ?? null,
         respostas: respostasArray,
       });
 
@@ -707,9 +710,11 @@ function TesteDisc({
 function ReguaAutopercepção({
   alunoId,
   onComplete,
+  contratoNivelId,
 }: {
   alunoId: number;
   onComplete: () => void;
+  contratoNivelId?: number | null;
 }) {
   const { data: competenciasData } = trpc.competencias.listWithTrilha.useQuery();
   const { data: trilhasData } = trpc.trilhas.list.useQuery();
@@ -784,7 +789,7 @@ function ReguaAutopercepção({
         };
       });
 
-      await salvarMutation.mutateAsync({ alunoId, avaliacoes });
+      await salvarMutation.mutateAsync({ alunoId, contratoNivelId: contratoNivelId ?? null, avaliacoes });
       toast.success("Autopercepção salva com sucesso!");
       onComplete();
     } catch {
@@ -1361,11 +1366,13 @@ export default function EtapaAssessmentCompleta({
   onComplete,
   readOnly = false,
   labelContinuar = "Continuar para Escolha da Mentora",
+  contratoNivelId,
 }: {
   alunoId: number;
   onComplete: () => void;
   readOnly?: boolean;
   labelContinuar?: string;
+  contratoNivelId?: number | null;
 }) {
   // Verificar se já fez o teste
   const { data: discResultado } = trpc.disc.resultado.useQuery({ alunoId }, { enabled: !!alunoId });
@@ -1466,6 +1473,7 @@ export default function EtapaAssessmentCompleta({
           {subEtapa === "disc" && (
             <TesteDisc
               alunoId={alunoId}
+              contratoNivelId={contratoNivelId}
               onComplete={(scores, predominante, secundario) => {
                 setDiscScores(scores);
                 setPerfilPredominante(predominante);
@@ -1478,6 +1486,7 @@ export default function EtapaAssessmentCompleta({
           {subEtapa === "autopercepção" && (
             <ReguaAutopercepção
               alunoId={alunoId}
+              contratoNivelId={contratoNivelId}
               onComplete={() => setSubEtapa("relatorio")}
             />
           )}

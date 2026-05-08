@@ -118,7 +118,7 @@ __export(schema_exports, {
   uploadedFiles: () => uploadedFiles,
   users: () => users
 });
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, date, boolean } from "drizzle-orm/mysql-core";
+import { int, tinyint, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, date, boolean } from "drizzle-orm/mysql-core";
 var users, programs, consultors, turmas, trilhas, competencias, ciclosExecucao, cicloCompetencias, planoIndividual, alunos, mentoringSessions, events, eventParticipation, uploadBatches, uploadedFiles, dashboardMetrics, reports, assessmentPdi, assessmentCompetencias, performanceUploads, studentPerformance, departments, calculationFormulas, processedData, taskLibrary, scheduledWebinars, announcements, contratosAluno, contratoNiveis, certificationTemplates, certificationSignatures, nivelCertificates, nivelCertificateMentoras, historicoNivelCompetencia, casesSucesso, caseInteresses, practicalActivityComments, mentorAvailability, mentorAppointments, appointmentParticipants, metas, metaAcompanhamento, discRespostas, discResultados, autopercepcoesCompetencias, mentoraContribuicoes, inAppNotifications, courses, activities, activityRegistrations, activityTurmas, mentorSessionPricing, mentorSessionTypePricing, mentorDateAvailability, emailAlertasLog, onboardingJornada, onboardingVideos, onboardingRevisoes, competenciasModulos, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCompetenciaProrrogacao, cursosCompetencias, atividadesCurso, TIPOS_ATIVIDADE, avaliacoesAtividade, tentativasAvaliacao, alunoCursoAtribuido, alunoAtividadeProgresso, sessoesEstudoAtividade, fichasPedagogicasCompetencias, fichasPedagogicasConteudos, historicoCiclosAluno;
 var init_schema = __esm({
   "drizzle/schema.ts"() {
@@ -302,6 +302,27 @@ var init_schema = __esm({
       // Data/hora em que o aluno assistiu o video DISC pela 1a vez
       plataformaAulas: mysqlEnum("plataformaAulas", ["scaffold", "sistema_interno"]).default("sistema_interno"),
       // Plataforma onde o aluno faz as aulas
+      // Campos de perfil pessoal e profissional (preenchidos no onboarding)
+      dataNascimento: date("dataNascimento"),
+      estadoCivil: varchar("estadoCivil", { length: 30 }),
+      temFilhos: tinyint("temFilhos").default(0),
+      quantidadeFilhos: int("quantidadeFilhos").default(0),
+      expectativaCurtoPrazo: text("expectativaCurtoPrazo"),
+      expectativaMedioPrazo: text("expectativaMedioPrazo"),
+      expectativaLongoPrazo: text("expectativaLongoPrazo"),
+      formacaoSuperior: json("formacaoSuperior"),
+      posGraduacoes: json("posGraduacoes"),
+      cursosExtracurriculares: json("cursosExtracurriculares"),
+      experienciasAnteriores: json("experienciasAnteriores"),
+      experienciaLideranca: tinyint("experienciaLideranca").default(0),
+      tipoEquipeGerenciada: json("tipoEquipeGerenciada"),
+      gerenciouOutrosLideres: tinyint("gerenciouOutrosLideres").default(0),
+      linkedinUrl: varchar("linkedinUrl", { length: 500 }),
+      facebookUrl: varchar("facebookUrl", { length: 500 }),
+      instagramUrl: varchar("instagramUrl", { length: 500 }),
+      tiktokUrl: varchar("tiktokUrl", { length: 500 }),
+      outraRedeUrl: varchar("outraRedeUrl", { length: 500 }),
+      curriculoUrl: varchar("curriculoUrl", { length: 1e3 }),
       createdAt: timestamp("createdAt").defaultNow().notNull(),
       updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
     });
@@ -729,6 +750,10 @@ var init_schema = __esm({
       status: mysqlEnum("status", ["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]).default("planejado").notNull(),
       assessmentPdiId: int("assessmentPdiId"),
       // FK opcional para assessment_pdi (fase futura)
+      nivelInicio: date("nivelInicio"),
+      // Início do período deste nível específico
+      nivelFim: date("nivelFim"),
+      // Fim do período deste nível específico
       mentoraPrincipalId: int("mentoraPrincipalId"),
       // FK opcional para consultors
       createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -6131,6 +6156,8 @@ async function getContratoNivelVigenteByAluno(alunoId) {
     nivel: contratoNiveis.nivel,
     status: contratoNiveis.status,
     assessmentPdiId: contratoNiveis.assessmentPdiId,
+    nivelInicio: contratoNiveis.nivelInicio,
+    nivelFim: contratoNiveis.nivelFim,
     mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
     createdAt: contratoNiveis.createdAt,
     updatedAt: contratoNiveis.updatedAt,
@@ -7643,7 +7670,14 @@ async function upsertMetaAcompanhamento(data) {
 async function getMetasResumo(alunoId) {
   const db2 = await getDb();
   if (!db2) return { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
-  const allMetas = await db2.select().from(metas).where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1)));
+  const allMetasRaw = await db2.select().from(metas).where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1)));
+  const pdiIds = Array.from(new Set(allMetasRaw.map((m) => m.assessmentPdiId).filter(Boolean)));
+  const pdisStatus = pdiIds.length > 0 ? await db2.select({ id: assessmentPdi.id, status: assessmentPdi.status }).from(assessmentPdi).where(inArray(assessmentPdi.id, pdiIds)) : [];
+  const pdiStatusMap = new Map(pdisStatus.map((p) => [p.id, p.status]));
+  const allMetas = allMetasRaw.filter((m) => {
+    const pdiStatus = pdiStatusMap.get(m.assessmentPdiId);
+    return pdiStatus !== "congelado";
+  });
   if (allMetas.length === 0) return { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
   const allAcomp = await db2.select().from(metaAcompanhamento).where(eq(metaAcompanhamento.alunoId, alunoId));
   const metasComStatus = allMetas.map((meta) => {
@@ -7676,7 +7710,12 @@ async function getMetasResumo(alunoId) {
 async function getMetasDetalhadas(alunoId) {
   const db2 = await getDb();
   if (!db2) return [];
-  const allMetas = await db2.select().from(metas).where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1))).orderBy(metas.competenciaId, metas.createdAt);
+  const allMetasRaw = await db2.select().from(metas).where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1))).orderBy(metas.competenciaId, metas.createdAt);
+  if (allMetasRaw.length === 0) return [];
+  const pdiIds = Array.from(new Set(allMetasRaw.map((m) => m.assessmentPdiId).filter(Boolean)));
+  const pdisStatus = pdiIds.length > 0 ? await db2.select({ id: assessmentPdi.id, status: assessmentPdi.status }).from(assessmentPdi).where(inArray(assessmentPdi.id, pdiIds)) : [];
+  const pdiStatusMap = new Map(pdisStatus.map((p) => [p.id, p.status]));
+  const allMetas = allMetasRaw.filter((m) => pdiStatusMap.get(m.assessmentPdiId) !== "congelado");
   if (allMetas.length === 0) return [];
   const metaIds = allMetas.map((m) => m.id);
   const allAcomp = await db2.select().from(metaAcompanhamento).where(inArray(metaAcompanhamento.metaId, metaIds));
@@ -9933,6 +9972,43 @@ async function arquivarCicloAtual(alunoId) {
     console.warn("[DB] Aviso: n\xE3o foi poss\xEDvel registrar auditoria de reset:", auditErr);
   }
   console.log(`[DB] Ciclo ${numeroCiclo} arquivado para aluno ${alunoId}. DISC: ${discRow?.id ?? "N/A"}, PDI: ${pdiId ?? "N/A"}. Indicadores: Ind1=${ind1Webinars}%, Ind7=${ind7EngajamentoFinal}%`);
+  try {
+    const NIVEL_SEQUENCIA = { "I": "II", "II": "III", "III": "IV", "IV": "V" };
+    const [nivelAtualRows] = await db2.execute(sql.raw(
+      `SELECT id, nivel, contratoId, mentoraPrincipalId FROM contrato_niveis WHERE alunoId = ${alunoId} AND status = 'em_andamento' ORDER BY id DESC LIMIT 1`
+    ));
+    const nivelAtual = Array.isArray(nivelAtualRows) ? nivelAtualRows[0] : null;
+    if (nivelAtual) {
+      const proximoNivel = NIVEL_SEQUENCIA[nivelAtual.nivel];
+      if (proximoNivel) {
+        await db2.execute(sql.raw(
+          `UPDATE contrato_niveis SET status = 'encerrado', updatedAt = NOW() WHERE id = ${nivelAtual.id}`
+        ));
+        const mentorId = nivelAtual.mentoraPrincipalId ? String(nivelAtual.mentoraPrincipalId) : "NULL";
+        await db2.execute(sql.raw(
+          `INSERT INTO contrato_niveis (contratoId, alunoId, nivel, status, mentoraPrincipalId, createdAt, updatedAt) VALUES (${nivelAtual.contratoId ?? 0}, ${alunoId}, '${proximoNivel}', 'em_andamento', ${mentorId}, NOW(), NOW())`
+        ));
+        console.log(`[DB] N\xEDvel ${nivelAtual.nivel} encerrado \u2192 N\xEDvel ${proximoNivel} criado para aluno ${alunoId}.`);
+      } else {
+        console.warn(`[DB] Aluno ${alunoId} est\xE1 no n\xEDvel ${nivelAtual.nivel} \u2014 n\xE3o h\xE1 pr\xF3ximo n\xEDvel definido.`);
+      }
+    } else {
+      const [anyNivelRows] = await db2.execute(sql.raw(
+        `SELECT COUNT(*) as cnt FROM contrato_niveis WHERE alunoId = ${alunoId}`
+      ));
+      const anyNivel = Array.isArray(anyNivelRows) ? anyNivelRows[0] : null;
+      if (!anyNivel || Number(anyNivel.cnt) === 0) {
+        await db2.execute(sql.raw(
+          `INSERT INTO contrato_niveis (contratoId, alunoId, nivel, status, createdAt, updatedAt) VALUES (0, ${alunoId}, 'I', 'em_andamento', NOW(), NOW())`
+        ));
+        console.log(`[DB] N\xEDvel I criado para aluno ${alunoId} (sem n\xEDvel anterior).`);
+      } else {
+        console.warn(`[DB] Aluno ${alunoId} n\xE3o tem n\xEDvel em_andamento ap\xF3s reset. Nenhum novo n\xEDvel criado.`);
+      }
+    }
+  } catch (nivelErr) {
+    console.warn("[DB] Aviso: erro ao avan\xE7ar contrato_niveis:", nivelErr);
+  }
   return { numeroCiclo };
 }
 async function getHistoricoCiclosAluno(alunoId) {

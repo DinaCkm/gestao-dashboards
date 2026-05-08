@@ -8395,9 +8395,20 @@ export async function getMetasResumo(alunoId: number) {
   const db = await getDb();
   if (!db) return { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
   
-  // Buscar todas as metas ativas do aluno
-  const allMetas = await db.select().from(metas)
+  // Buscar todas as metas ativas do aluno, excluindo as vinculadas a PDIs congelados (ciclo anterior)
+  const allMetasRaw = await db.select().from(metas)
     .where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1)));
+  
+  // Filtrar metas cujo PDI está congelado (pertencem ao ciclo anterior)
+  const pdiIds = Array.from(new Set(allMetasRaw.map(m => m.assessmentPdiId).filter(Boolean)));
+  const pdisStatus = pdiIds.length > 0
+    ? await db.select({ id: assessmentPdi.id, status: assessmentPdi.status }).from(assessmentPdi).where(inArray(assessmentPdi.id, pdiIds as number[]))
+    : [];
+  const pdiStatusMap = new Map(pdisStatus.map(p => [p.id, p.status]));
+  const allMetas = allMetasRaw.filter(m => {
+    const pdiStatus = pdiStatusMap.get(m.assessmentPdiId);
+    return pdiStatus !== 'congelado';
+  });
   
   if (allMetas.length === 0) return { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
   
@@ -8448,9 +8459,19 @@ export async function getMetasDetalhadas(alunoId: number) {
   const db = await getDb();
   if (!db) return [];
   
-  const allMetas = await db.select().from(metas)
+  const allMetasRaw = await db.select().from(metas)
     .where(and(eq(metas.alunoId, alunoId), eq(metas.isActive, 1)))
     .orderBy(metas.competenciaId, metas.createdAt);
+  
+  if (allMetasRaw.length === 0) return [];
+  
+  // Filtrar metas cujo PDI está congelado (pertencem ao ciclo anterior)
+  const pdiIds = Array.from(new Set(allMetasRaw.map(m => m.assessmentPdiId).filter(Boolean)));
+  const pdisStatus = pdiIds.length > 0
+    ? await db.select({ id: assessmentPdi.id, status: assessmentPdi.status }).from(assessmentPdi).where(inArray(assessmentPdi.id, pdiIds as number[]))
+    : [];
+  const pdiStatusMap = new Map(pdisStatus.map(p => [p.id, p.status]));
+  const allMetas = allMetasRaw.filter(m => pdiStatusMap.get(m.assessmentPdiId) !== 'congelado');
   
   if (allMetas.length === 0) return [];
   

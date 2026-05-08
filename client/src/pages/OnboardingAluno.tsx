@@ -3429,6 +3429,13 @@ export default function OnboardingAluno() {
     { enabled: alunoId > 0 }
   );
 
+  // Buscar o contratoNivelId vigente para vincular DISC e autopercepção ao ciclo correto
+  const { data: nivelVigente } = trpc.contratoNiveis.vigente.useQuery(
+    { alunoId },
+    { enabled: alunoId > 0 }
+  );
+  const contratoNivelIdVigente = nivelVigente?.id ?? null;
+
   // Buscar status de onboarding para determinar readOnly baseado em PDI
   const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(
     undefined,
@@ -3595,6 +3602,7 @@ export default function OnboardingAluno() {
             onComplete={handleStepComplete}
             readOnly={readOnly && !reassessmentElegivel}
             labelContinuar={emNovoCiclo ? "Continuar para Meu PDI" : "Continuar para Escolha da Mentora"}
+            contratoNivelId={contratoNivelIdVigente}
           />
         )}
         {currentStep === 3 && (
