@@ -257,6 +257,11 @@ export default function NovoAssessment() {
     { alunoId },
     { enabled: alunoId > 0 }
   );
+  // Nível vigente do aluno
+  const { data: nivelVigente } = trpc.contratoNiveis.vigente.useQuery(
+    { alunoId },
+    { enabled: alunoId > 0 }
+  );
 
   // Get aluno info - admin sees all, mentor sees own
   const { data: adminAlunos = [] } = trpc.alunos.list.useQuery(
@@ -515,11 +520,18 @@ export default function NovoAssessment() {
             Voltar
           </Button>
           <Separator orientation="vertical" className="h-6" />
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <ClipboardCheck className="h-6 w-6 text-secondary" />
-              Novo Assessment
-            </h1>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <ClipboardCheck className="h-6 w-6 text-secondary" />
+                Novo Assessment
+              </h1>
+              {nivelVigente && (
+                <Badge className="text-xs px-2.5 py-1 bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold">
+                  Nível {nivelVigente.nivel}
+                </Badge>
+              )}
+            </div>
             {selectedAluno && (
               <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
                 <User className="h-3.5 w-3.5" />

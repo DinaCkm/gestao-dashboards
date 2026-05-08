@@ -11913,6 +11913,51 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   }
 
   console.log(`[DB] Ciclo ${numeroCiclo} arquivado para aluno ${alunoId}. DISC: ${discRow?.id ?? 'N/A'}, PDI: ${pdiId ?? 'N/A'}. Indicadores: Ind1=${ind1Webinars}%, Ind7=${ind7EngajamentoFinal}%`);
+
+  // === 10. AVANÇAR CONTRATO_NIVEIS: encerrar nível atual e criar próximo ===
+  try {
+    const NIVEL_SEQUENCIA: Record<string, string> = { 'I': 'II', 'II': 'III', 'III': 'IV', 'IV': 'V' };
+    // Buscar nível vigente (em_andamento) do aluno
+    const [nivelAtualRows] = await db.execute(sql.raw(
+      `SELECT id, nivel, contratoId, mentoraPrincipalId FROM contrato_niveis WHERE alunoId = ${alunoId} AND status = 'em_andamento' ORDER BY id DESC LIMIT 1`
+    )) as any;
+    const nivelAtual = Array.isArray(nivelAtualRows) ? nivelAtualRows[0] : null;
+    if (nivelAtual) {
+      const proximoNivel = NIVEL_SEQUENCIA[nivelAtual.nivel];
+      if (proximoNivel) {
+        // Encerrar nível atual
+        await db.execute(sql.raw(
+          `UPDATE contrato_niveis SET status = 'encerrado', updatedAt = NOW() WHERE id = ${nivelAtual.id}`
+        ));
+        // Criar próximo nível
+        const mentorId = nivelAtual.mentoraPrincipalId ? String(nivelAtual.mentoraPrincipalId) : 'NULL';
+        await db.execute(sql.raw(
+          `INSERT INTO contrato_niveis (contratoId, alunoId, nivel, status, mentoraPrincipalId, createdAt, updatedAt) VALUES (${nivelAtual.contratoId ?? 0}, ${alunoId}, '${proximoNivel}', 'em_andamento', ${mentorId}, NOW(), NOW())`
+        ));
+        console.log(`[DB] Nível ${nivelAtual.nivel} encerrado → Nível ${proximoNivel} criado para aluno ${alunoId}.`);
+      } else {
+        console.warn(`[DB] Aluno ${alunoId} está no nível ${nivelAtual.nivel} — não há próximo nível definido.`);
+      }
+    } else {
+      // Nenhum nível em_andamento: verificar se deve criar Nível I
+      const [anyNivelRows] = await db.execute(sql.raw(
+        `SELECT COUNT(*) as cnt FROM contrato_niveis WHERE alunoId = ${alunoId}`
+      )) as any;
+      const anyNivel = Array.isArray(anyNivelRows) ? anyNivelRows[0] : null;
+      if (!anyNivel || Number(anyNivel.cnt) === 0) {
+        await db.execute(sql.raw(
+          `INSERT INTO contrato_niveis (contratoId, alunoId, nivel, status, createdAt, updatedAt) VALUES (0, ${alunoId}, 'I', 'em_andamento', NOW(), NOW())`
+        ));
+        console.log(`[DB] Nível I criado para aluno ${alunoId} (sem nível anterior).`);
+      } else {
+        console.warn(`[DB] Aluno ${alunoId} não tem nível em_andamento após reset. Nenhum novo nível criado.`);
+      }
+    }
+  } catch (nivelErr) {
+    // Avanço de nível não deve bloquear o fluxo principal
+    console.warn('[DB] Aviso: erro ao avançar contrato_niveis:', nivelErr);
+  }
+
   return { numeroCiclo };
 }
 

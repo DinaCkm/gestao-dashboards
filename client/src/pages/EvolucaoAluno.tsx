@@ -2,11 +2,13 @@ import AlunoLayout from "@/components/AlunoLayout";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Sparkles, Brain, Target, TrendingUp, Award, History,
-  ChevronDown, ChevronUp, BookOpen, CheckCircle2
+  ChevronDown, ChevronUp, BookOpen, CheckCircle2, ExternalLink
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 type DiscDimensao = "D" | "I" | "S" | "C";
 
@@ -25,6 +27,22 @@ function formatarData(data: string | null | undefined) {
   try {
     return new Date(data).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   } catch { return null; }
+}
+
+// Botão que leva o aluno à tela de Performance para consultar o PDI do ciclo
+function ConsultarPDIButton({ numeroCiclo }: { numeroCiclo: number }) {
+  const [, navigate] = useLocation();
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="mt-2 w-full border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 gap-2"
+      onClick={() => navigate("/performance")}
+    >
+      <ExternalLink className="h-3.5 w-3.5" />
+      Consulte aqui o PDI do Ciclo {numeroCiclo}
+    </Button>
+  );
 }
 
 function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
@@ -155,6 +173,8 @@ function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
                   <span className="text-sm text-gray-600">Status: <span className="font-medium capitalize text-emerald-700">{ciclo.pdiStatus}</span></span>
                 </div>
               )}
+              {/* Botão: Consulte aqui o PDI do Ciclo */}
+              <ConsultarPDIButton numeroCiclo={ciclo.numeroCiclo} />
             </div>
           ) : (
             <div className="text-center py-4 text-gray-400 border-t pt-4">

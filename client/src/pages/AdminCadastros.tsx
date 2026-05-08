@@ -563,6 +563,13 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   // Modal de pré-verificação individual de liberar onboarding
   const [liberarModalOpen, setLiberarModalOpen] = useState(false);
   const [liberarModalAluno, setLiberarModalAluno] = useState<any>(null);
+  // Nível vigente do aluno selecionado para reset
+  const { data: nivelVigenteReset } = trpc.contratoNiveis.vigente.useQuery(
+    { alunoId: liberarModalAluno?.id ?? 0 },
+    { enabled: !!liberarModalAluno && liberarModalOpen }
+  );
+  const NIVEL_SEQUENCIA: Record<string, string> = { 'I': 'II', 'II': 'III', 'III': 'IV', 'IV': 'V' };
+  const proximoNivelReset = nivelVigenteReset ? (NIVEL_SEQUENCIA[nivelVigenteReset.nivel] ?? null) : null;
   const handleLiberarClick = (aluno: any) => {
     setLiberarModalAluno(aluno);
     setLiberarModalOpen(true);
@@ -1429,6 +1436,23 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                   </div>
                 </div>
               </div>
+              {/* Aviso de avanço de nível */}
+              {nivelVigenteReset && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 flex items-start gap-2">
+                  <span className="text-indigo-600 font-bold text-sm shrink-0 mt-0.5">📄</span>
+                  <div>
+                    <p className="text-xs font-semibold text-indigo-800">
+                      Nível vigente: <Badge className="ml-1 text-xs px-1.5 py-0 bg-indigo-100 text-indigo-700 border border-indigo-200">{nivelVigenteReset.nivel}</Badge>
+                      {proximoNivelReset && (
+                        <span className="ml-1 text-indigo-600">→ após o reset, avançará para <Badge className="text-xs px-1.5 py-0 bg-emerald-100 text-emerald-700 border border-emerald-200">{proximoNivelReset}</Badge></span>
+                      )}
+                    </p>
+                    <p className="text-xs text-indigo-600 mt-0.5">
+                      O Nível {nivelVigenteReset.nivel} será encerrado e o Nível {proximoNivelReset ?? '—'} será criado automaticamente.
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                 <p className="text-xs text-amber-800">
                   <strong>Atenção:</strong> Esta ação é protegida contra duplicação. Se executada duas vezes, o segundo reset será ignorado automaticamente.
