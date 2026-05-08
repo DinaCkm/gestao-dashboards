@@ -10746,7 +10746,11 @@ export async function getAssessmentPdiByAluno(alunoId: number) {
     const pdis = await db
       .select()
       .from(assessmentPdi)
-      .where(eq(assessmentPdi.alunoId, alunoId));
+      .where(and(
+        eq(assessmentPdi.alunoId, alunoId),
+        // Excluir PDIs congelados — pertencem ao ciclo anterior e só devem aparecer na Evolução
+        sql`${assessmentPdi.status} != 'congelado'`,
+      ));
     
     return pdis || [];
   } catch (error) {

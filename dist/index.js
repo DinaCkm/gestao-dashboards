@@ -9122,7 +9122,11 @@ async function getAssessmentPdiByAluno(alunoId) {
   const db2 = await getDb();
   if (!db2) return [];
   try {
-    const pdis = await db2.select().from(assessmentPdi).where(eq(assessmentPdi.alunoId, alunoId));
+    const pdis = await db2.select().from(assessmentPdi).where(and(
+      eq(assessmentPdi.alunoId, alunoId),
+      // Excluir PDIs congelados — pertencem ao ciclo anterior e só devem aparecer na Evolução
+      sql`${assessmentPdi.status} != 'congelado'`
+    ));
     return pdis || [];
   } catch (error) {
     console.error("Erro ao buscar PDIs do aluno:", error);

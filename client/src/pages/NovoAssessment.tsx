@@ -26,6 +26,8 @@ import {
   User,
   FileText,
   Info,
+  CalendarRange,
+  AlertCircle,
 } from "lucide-react";
 
 // ============ Step Indicator ============
@@ -527,9 +529,21 @@ export default function NovoAssessment() {
                 Novo Assessment
               </h1>
               {nivelVigente && (
-                <div className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-1.5 rounded-full shadow-sm">
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Ciclo</span>
-                  <span className="text-sm font-extrabold">Nível {nivelVigente.nivel}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-1.5 rounded-full shadow-sm">
+                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Ciclo</span>
+                    <span className="text-sm font-extrabold">Nível {nivelVigente.nivel}</span>
+                  </div>
+                  {(nivelVigente as any).nivelInicio && (nivelVigente as any).nivelFim && (
+                    <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+                      <CalendarRange className="h-3.5 w-3.5" />
+                      <span>
+                        {new Date((nivelVigente as any).nivelInicio + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {' → '}
+                        {new Date((nivelVigente as any).nivelFim + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -632,14 +646,58 @@ export default function NovoAssessment() {
                   <Calendar className="h-4 w-4 text-secondary" />
                   Macro Jornada (Duração da Trilha)
                 </Label>
+                {/* Alerta de período do nível vigente */}
+                {nivelVigente && (nivelVigente as any).nivelInicio && (nivelVigente as any).nivelFim && (
+                  <div className="flex items-start gap-2 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2.5 text-xs text-indigo-700">
+                    <CalendarRange className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <span>
+                      O período da Macro Jornada deve estar dentro do <strong>Nível {nivelVigente.nivel}</strong>:{' '}
+                      <strong>
+                        {new Date((nivelVigente as any).nivelInicio + 'T00:00:00').toLocaleDateString('pt-BR')}
+                        {' → '}
+                        {new Date((nivelVigente as any).nivelFim + 'T00:00:00').toLocaleDateString('pt-BR')}
+                      </strong>
+                    </span>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <Label className="text-sm text-muted-foreground">Data de Início *</Label>
-                    <Input type="date" value={macroInicio} onChange={e => setMacroInicio(e.target.value)} className="h-11" />
+                    <Input
+                      type="date"
+                      value={macroInicio}
+                      onChange={e => setMacroInicio(e.target.value)}
+                      className={`h-11 ${
+                        macroInicio && (nivelVigente as any)?.nivelInicio && macroInicio < (nivelVigente as any).nivelInicio
+                          ? 'border-amber-400 bg-amber-50'
+                          : ''
+                      }`}
+                    />
+                    {macroInicio && (nivelVigente as any)?.nivelInicio && macroInicio < (nivelVigente as any).nivelInicio && (
+                      <p className="text-xs text-amber-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Data anterior ao início do Nível {nivelVigente?.nivel} ({new Date((nivelVigente as any).nivelInicio + 'T00:00:00').toLocaleDateString('pt-BR')})
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-sm text-muted-foreground">Data de Término *</Label>
-                    <Input type="date" value={macroTermino} onChange={e => setMacroTermino(e.target.value)} className="h-11" />
+                    <Input
+                      type="date"
+                      value={macroTermino}
+                      onChange={e => setMacroTermino(e.target.value)}
+                      className={`h-11 ${
+                        macroTermino && (nivelVigente as any)?.nivelFim && macroTermino > (nivelVigente as any).nivelFim
+                          ? 'border-amber-400 bg-amber-50'
+                          : ''
+                      }`}
+                    />
+                    {macroTermino && (nivelVigente as any)?.nivelFim && macroTermino > (nivelVigente as any).nivelFim && (
+                      <p className="text-xs text-amber-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Data após o fim do Nível {nivelVigente?.nivel} ({new Date((nivelVigente as any).nivelFim + 'T00:00:00').toLocaleDateString('pt-BR')})
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
