@@ -680,6 +680,8 @@ export const contratoNiveis = mysqlTable("contrato_niveis", {
   // dataInicio e dataFim removidos — lidos de contratos_aluno.periodoInicio / periodoTermino via JOIN
   status: mysqlEnum("status", ["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]).default("planejado").notNull(),
   assessmentPdiId: int("assessmentPdiId"), // FK opcional para assessment_pdi (fase futura)
+  nivelInicio: date("nivelInicio"), // Início do período deste nível específico
+  nivelFim: date("nivelFim"),     // Fim do período deste nível específico
   mentoraPrincipalId: int("mentoraPrincipalId"), // FK opcional para consultors
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

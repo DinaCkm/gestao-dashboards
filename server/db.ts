@@ -6052,6 +6052,8 @@ export async function getContratoNivelVigenteByAluno(alunoId: number): Promise<C
       nivel: contratoNiveis.nivel,
       status: contratoNiveis.status,
       assessmentPdiId: contratoNiveis.assessmentPdiId,
+      nivelInicio: contratoNiveis.nivelInicio,
+      nivelFim: contratoNiveis.nivelFim,
       mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
       createdAt: contratoNiveis.createdAt,
       updatedAt: contratoNiveis.updatedAt,
@@ -10723,11 +10725,7 @@ export async function getAssessmentPdiByAluno(alunoId: number) {
     const pdis = await db
       .select()
       .from(assessmentPdi)
-      .where(and(
-        eq(assessmentPdi.alunoId, alunoId),
-        // Ignorar PDIs congelados — pertencem ao ciclo anterior e aparecem na Evolução
-        sql`${assessmentPdi.status} != 'congelado'`,
-      ));
+      .where(eq(assessmentPdi.alunoId, alunoId));
     
     return pdis || [];
   } catch (error) {
