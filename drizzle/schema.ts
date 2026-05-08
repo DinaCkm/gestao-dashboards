@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, date, boolean } from "drizzle-orm/mysql-core";
+import { int, tinyint, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, date, boolean } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -201,6 +201,27 @@ export const alunos = mysqlTable("alunos", {
   quemEVoce: text("quemEVoce"),
   discVideoWatchedAt: timestamp("discVideoWatchedAt"), // Data/hora em que o aluno assistiu o video DISC pela 1a vez
   plataformaAulas: mysqlEnum("plataformaAulas", ["scaffold", "sistema_interno"]).default("sistema_interno"), // Plataforma onde o aluno faz as aulas
+  // Campos de perfil pessoal e profissional (preenchidos no onboarding)
+  dataNascimento: date("dataNascimento"),
+  estadoCivil: varchar("estadoCivil", { length: 30 }),
+  temFilhos: tinyint("temFilhos").default(0),
+  quantidadeFilhos: int("quantidadeFilhos").default(0),
+  expectativaCurtoPrazo: text("expectativaCurtoPrazo"),
+  expectativaMedioPrazo: text("expectativaMedioPrazo"),
+  expectativaLongoPrazo: text("expectativaLongoPrazo"),
+  formacaoSuperior: json("formacaoSuperior"),
+  posGraduacoes: json("posGraduacoes"),
+  cursosExtracurriculares: json("cursosExtracurriculares"),
+  experienciasAnteriores: json("experienciasAnteriores"),
+  experienciaLideranca: tinyint("experienciaLideranca").default(0),
+  tipoEquipeGerenciada: json("tipoEquipeGerenciada"),
+  gerenciouOutrosLideres: tinyint("gerenciouOutrosLideres").default(0),
+  linkedinUrl: varchar("linkedinUrl", { length: 500 }),
+  facebookUrl: varchar("facebookUrl", { length: 500 }),
+  instagramUrl: varchar("instagramUrl", { length: 500 }),
+  tiktokUrl: varchar("tiktokUrl", { length: 500 }),
+  outraRedeUrl: varchar("outraRedeUrl", { length: 500 }),
+  curriculoUrl: varchar("curriculoUrl", { length: 1000 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -527,9 +527,10 @@ export default function NovoAssessment() {
                 Novo Assessment
               </h1>
               {nivelVigente && (
-                <Badge className="text-xs px-2.5 py-1 bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold">
-                  Nível {nivelVigente.nivel}
-                </Badge>
+                <div className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-1.5 rounded-full shadow-sm">
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Ciclo</span>
+                  <span className="text-sm font-extrabold">Nível {nivelVigente.nivel}</span>
+                </div>
               )}
             </div>
             {selectedAluno && (

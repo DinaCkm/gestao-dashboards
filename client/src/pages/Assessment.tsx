@@ -635,6 +635,129 @@ function AssessmentContent() {
               )}
             </div>
 
+            {/* 5. Perfil Pessoal */}
+            {(() => {
+              const a = selectedAluno as any;
+              const hasData = a.dataNascimento || a.estadoCivil || a.temFilhos != null;
+              if (!hasData) return null;
+              return (
+                <div className="border rounded-lg p-4 bg-white/60">
+                  <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                    <User className="h-4 w-4 text-[#F5991F]" />
+                    5. Perfil Pessoal
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    {a.dataNascimento && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Data de Nascimento</p>
+                        <p className="font-medium">{new Date(a.dataNascimento).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                    )}
+                    {a.estadoCivil && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Estado Civil</p>
+                        <p className="font-medium capitalize">{a.estadoCivil}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Filhos</p>
+                      <p className="font-medium">{a.temFilhos ? `Sim (${a.quantidadeFilhos || 0})` : 'Não'}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 6. Expectativas Profissionais */}
+            {(() => {
+              const a = selectedAluno as any;
+              const hasData = a.expectativaCurtoPrazo || a.expectativaMedioPrazo || a.expectativaLongoPrazo;
+              if (!hasData) return null;
+              return (
+                <div className="border rounded-lg p-4 bg-white/60">
+                  <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-[#F5991F]" />
+                    6. Expectativas Profissionais
+                  </h4>
+                  <div className="space-y-3">
+                    {a.expectativaCurtoPrazo && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Curto Prazo</p>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">{a.expectativaCurtoPrazo}</p>
+                      </div>
+                    )}
+                    {a.expectativaMedioPrazo && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Médio Prazo</p>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">{a.expectativaMedioPrazo}</p>
+                      </div>
+                    )}
+                    {a.expectativaLongoPrazo && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Longo Prazo</p>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">{a.expectativaLongoPrazo}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 7. Redes Sociais e Currículo */}
+            {(() => {
+              const a = selectedAluno as any;
+              const hasRedes = a.linkedinUrl || a.facebookUrl || a.instagramUrl || a.tiktokUrl || a.outraRedeUrl;
+              const hasCurriculo = a.curriculoUrl;
+              if (!hasRedes && !hasCurriculo) return null;
+              return (
+                <div className="border rounded-lg p-4 bg-white/60">
+                  <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                    <Star className="h-4 w-4 text-[#F5991F]" />
+                    7. Redes Sociais e Currículo
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {a.linkedinUrl && (
+                      <a href={a.linkedinUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors">
+                        LinkedIn
+                      </a>
+                    )}
+                    {a.instagramUrl && (
+                      <a href={a.instagramUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors">
+                        Instagram
+                      </a>
+                    )}
+                    {a.facebookUrl && (
+                      <a href={a.facebookUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-blue-800 text-white rounded-full hover:bg-blue-900 transition-colors">
+                        Facebook
+                      </a>
+                    )}
+                    {a.tiktokUrl && (
+                      <a href={a.tiktokUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-black text-white rounded-full hover:bg-gray-900 transition-colors">
+                        TikTok
+                      </a>
+                    )}
+                    {a.outraRedeUrl && (
+                      <a href={a.outraRedeUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-gray-600 text-white rounded-full hover:bg-gray-700 transition-colors">
+                        Outra Rede
+                      </a>
+                    )}
+                    {a.curriculoUrl && (
+                      <a href={a.curriculoUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 transition-colors">
+                        <FileText className="h-3 w-3" />
+                        Ver Currículo
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
           </CardContent>
         </Card>
       )}
