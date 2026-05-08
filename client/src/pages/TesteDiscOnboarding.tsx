@@ -1374,9 +1374,15 @@ export default function EtapaAssessmentCompleta({
   labelContinuar?: string;
   contratoNivelId?: number | null;
 }) {
-  // Verificar se já fez o teste
-  const { data: discResultado } = trpc.disc.resultado.useQuery({ alunoId }, { enabled: !!alunoId });
-  const { data: autopercepcoesExistentes } = trpc.autopercepção.porAluno.useQuery({ alunoId }, { enabled: !!alunoId });
+  // Verificar se já fez o teste — filtrar pelo contratoNivelId vigente para não pegar DISC do ciclo anterior
+  const { data: discResultado } = trpc.disc.resultado.useQuery(
+    { alunoId, contratoNivelId: contratoNivelId ?? null },
+    { enabled: !!alunoId }
+  );
+  const { data: autopercepcoesExistentes } = trpc.autopercepção.porAluno.useQuery(
+    { alunoId, contratoNivelId: contratoNivelId ?? null },
+    { enabled: !!alunoId }
+  );
 
   const [subEtapa, setSubEtapa] = useState<SubEtapa>("disc");
   const [discScores, setDiscScores] = useState<DiscScores | null>(null);

@@ -7112,8 +7112,11 @@ export async function liberarOnboardingAluno(alunoId: number) {
       .where(eq(alunos.id, alunoId));
 
     // 3. Limpar dados do ciclo anterior para o novo ciclo
+    // IMPORTANTE: disc_resultados NÃO é deletado — o histórico de evolução precisa dos scores DISC do ciclo anterior.
+    // Apenas disc_respostas (respostas brutas) e autopercepcoes são limpas para o novo ciclo.
     await db.execute(sql.raw(`DELETE FROM disc_respostas WHERE alunoId = ${alunoId}`));
-    await db.execute(sql.raw(`DELETE FROM disc_resultados WHERE alunoId = ${alunoId}`));
+    // disc_resultados: preservar para histórico — o novo DISC do ciclo 2 será inserido com contratoNivelId diferente
+    // await db.execute(sql.raw(`DELETE FROM disc_resultados WHERE alunoId = ${alunoId}`));
     await db.execute(sql.raw(`DELETE FROM autopercepcoes_competencias WHERE alunoId = ${alunoId}`));
 
     // 4. Resetar jornada de onboarding

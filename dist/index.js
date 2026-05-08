@@ -6848,7 +6848,6 @@ async function liberarOnboardingAluno(alunoId) {
     numeroCiclo = resultado.numeroCiclo;
     await db2.update(alunos).set({ onboardingLiberado: 1, onboardingLiberadoEm: /* @__PURE__ */ new Date() }).where(eq(alunos.id, alunoId));
     await db2.execute(sql.raw(`DELETE FROM disc_respostas WHERE alunoId = ${alunoId}`));
-    await db2.execute(sql.raw(`DELETE FROM disc_resultados WHERE alunoId = ${alunoId}`));
     await db2.execute(sql.raw(`DELETE FROM autopercepcoes_competencias WHERE alunoId = ${alunoId}`));
     const [jornadaRows] = await db2.execute(sql.raw(
       `SELECT id, ciclo FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
