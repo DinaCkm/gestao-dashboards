@@ -30,14 +30,17 @@ function formatarData(data: string | null | undefined) {
 }
 
 // Botão que leva o aluno à tela de visualização do PDI do ciclo anterior
-function ConsultarPDIButton({ numeroCiclo, pdiId }: { numeroCiclo: number; pdiId: number }) {
+function ConsultarPDIButton({ numeroCiclo, pdiId, ciclo }: { numeroCiclo: number; pdiId: number; ciclo: any }) {
   const [, navigate] = useLocation();
   return (
     <Button
       variant="outline"
       size="sm"
       className="mt-2 w-full border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 gap-2"
-      onClick={() => navigate(`/pdi/${pdiId}`)}
+      onClick={() => {
+        sessionStorage.setItem(`ciclo_snapshot_${pdiId}`, JSON.stringify(ciclo));
+        navigate(`/pdi/${pdiId}`);
+      }}
     >
       <ExternalLink className="h-3.5 w-3.5" />
       Consulte aqui o PDI do Ciclo {numeroCiclo}
@@ -174,7 +177,7 @@ function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
                 </div>
               )}
               {/* Botão: Consulte aqui o PDI do Ciclo */}
-              <ConsultarPDIButton numeroCiclo={ciclo.numeroCiclo} pdiId={ciclo.assessmentPdiId} />
+              <ConsultarPDIButton numeroCiclo={ciclo.numeroCiclo} pdiId={ciclo.assessmentPdiId} ciclo={ciclo} />
             </div>
           ) : (
             <div className="text-center py-4 text-gray-400 border-t pt-4">
