@@ -4294,6 +4294,23 @@ export async function getAssessmentById(pdiId: number) {
   const trilha = trilhaMap.get(p.trilhaId);
   const turma = p.turmaId ? turmaMap.get(p.turmaId) : null;
   const consultor = p.consultorId ? consultorMap.get(p.consultorId) : null;
+  // Buscar metas do PDI
+  const metasDoPdi = await db.select().from(metas)
+    .where(and(eq(metas.assessmentPdiId, pdiId), eq(metas.isActive, 1)));
+  // Calcular sessões previstas: usar campo explícito ou diferença de meses
+  let sessoesPrevistas: number | null = p.totalSessoesPrevistas ?? null;
+  if (!sessoesPrevistas || sessoesPrevistas === 0) {
+    if (p.macroInicio && p.macroTermino) {
+      const inicio = new Date(p.macroInicio);
+      const termino = new Date(p.macroTermino);
+      const meses = (termino.getFullYear() - inicio.getFullYear()) * 12
+        + (termino.getMonth() - inicio.getMonth());
+      sessoesPrevistas = Math.max(1, meses);
+    }
+  }
+  // Macrociclos distintos definidos nas competências
+  const macrociclosSet = new Set(comps.map((c: any) => c.microInicio ? String(c.microInicio) : null).filter(Boolean));
+  const qtdMacrociclos = macrociclosSet.size || 1;
   return {
     id: p.id,
     status: p.status,
@@ -4302,10 +4319,13 @@ export async function getAssessmentById(pdiId: number) {
     consultorNome: consultor?.name || null,
     macroInicio: p.macroInicio,
     macroTermino: p.macroTermino,
+    totalSessoesPrevistas: sessoesPrevistas,
+    tarefasPrevistas: sessoesPrevistas,
+    casesPrevistas: qtdMacrociclos,
     totalCompetencias: comps.length,
-    obrigatorias: comps.filter(c => c.peso === 'obrigatoria').length,
-    opcionais: comps.filter(c => c.peso === 'opcional').length,
-    competencias: comps.map(c => {
+    obrigatorias: comps.filter((c: any) => c.peso === 'obrigatoria').length,
+    opcionais: comps.filter((c: any) => c.peso === 'opcional').length,
+    competencias: comps.map((c: any) => {
       const comp = compMap.get(c.competenciaId);
       return {
         id: c.id,
@@ -4314,9 +4334,18 @@ export async function getAssessmentById(pdiId: number) {
         notaCorte: c.notaCorte,
         nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
         metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
+        metaCiclo1: c.metaCiclo1 ? parseFloat(c.metaCiclo1) : null,
+        metaCiclo2: c.metaCiclo2 ? parseFloat(c.metaCiclo2) : null,
         justificativa: c.justificativa || null,
+        microInicio: c.microInicio ? String(c.microInicio) : null,
+        microTermino: c.microTermino ? String(c.microTermino) : null,
       };
     }),
+    metas: metasDoPdi.map((m: any) => ({
+      id: m.id,
+      titulo: m.titulo,
+      descricao: m.descricao || null,
+    })),
   };
 }
 
