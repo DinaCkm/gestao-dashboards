@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, Users2, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square, RefreshCw } from "lucide-react";
+import { Loader2, Plus, Building2, Users, Users2, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square, RefreshCw, Layers, BookOpen } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -54,6 +54,116 @@ function getDisplayRole(user: any): string {
   if (user.role === 'manager' && user.consultorRole === 'gerente') return 'gerente';
   if (user.role === 'manager') return 'gerente';
   return user.role;
+}
+
+// Componente para exibir níveis e macrociclos do aluno no card expandido
+function AlunoNiveisEMacrociclos({ alunoId }: { alunoId: number }) {
+  const { data: niveis = [], isLoading: loadingNiveis } = trpc.contratoNiveis.historico.useQuery({ alunoId });
+  const { data: macrociclos = [], isLoading: loadingMacros } = trpc.assessment.porAluno.useQuery(
+    { alunoId, contratoNivelId: null },
+    { enabled: !!alunoId }
+  );
+
+  const statusLabel: Record<string, { label: string; color: string }> = {
+    planejado: { label: 'Planejado', color: 'bg-gray-100 text-gray-600' },
+    em_andamento: { label: 'Em andamento', color: 'bg-blue-100 text-blue-700' },
+    fechamento: { label: 'Fechamento', color: 'bg-amber-100 text-amber-700' },
+    ajustes: { label: 'Ajustes', color: 'bg-orange-100 text-orange-700' },
+    encerrado: { label: 'Encerrado', color: 'bg-red-100 text-red-600' },
+    certificado: { label: 'Certificado', color: 'bg-green-100 text-green-700' },
+  };
+
+  const macroStatusLabel: Record<string, { label: string; color: string }> = {
+    ativo: { label: 'Ativo', color: 'bg-blue-100 text-blue-700' },
+    congelado: { label: 'Congelado', color: 'bg-gray-100 text-gray-500' },
+    concluido: { label: 'Concluído', color: 'bg-green-100 text-green-700' },
+  };
+
+  if (loadingNiveis && loadingMacros) {
+    return (
+      <div className="mt-3 pt-3 border-t">
+        <p className="text-xs text-muted-foreground">Carregando níveis e macrociclos...</p>
+      </div>
+    );
+  }
+
+  if (niveis.length === 0 && macrociclos.length === 0) return null;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-purple-200">
+      {/* Níveis do Contrato */}
+      {niveis.length > 0 && (
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-purple-700 mb-2 flex items-center gap-1">
+            <Layers className="h-3.5 w-3.5" /> Períodos de Nível
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-muted-foreground border-b">
+                  <th className="pb-1 pr-3 font-medium">Nível</th>
+                  <th className="pb-1 pr-3 font-medium">Início</th>
+                  <th className="pb-1 pr-3 font-medium">Término</th>
+                  <th className="pb-1 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {niveis.map((nivel: any) => {
+                  const s = statusLabel[nivel.status] || { label: nivel.status, color: 'bg-gray-100 text-gray-600' };
+                  return (
+                    <tr key={nivel.id} className="border-b border-gray-100 last:border-0">
+                      <td className="py-1 pr-3 font-semibold text-purple-800">Nível {nivel.nivel}</td>
+                      <td className="py-1 pr-3">{nivel.dataInicio ? formatDateSafe(nivel.dataInicio) : <span className="text-muted-foreground italic">-</span>}</td>
+                      <td className="py-1 pr-3">{nivel.dataFim ? formatDateSafe(nivel.dataFim) : <span className="text-muted-foreground italic">-</span>}</td>
+                      <td className="py-1">
+                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${s.color}`}>{s.label}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Macrociclos */}
+      {macrociclos.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-indigo-700 mb-2 flex items-center gap-1">
+            <BookOpen className="h-3.5 w-3.5" /> Macrociclos (PDIs)
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-muted-foreground border-b">
+                  <th className="pb-1 pr-3 font-medium">Trilha</th>
+                  <th className="pb-1 pr-3 font-medium">Início</th>
+                  <th className="pb-1 pr-3 font-medium">Término</th>
+                  <th className="pb-1 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {macrociclos.map((macro: any) => {
+                  const s = macroStatusLabel[macro.status] || { label: macro.status, color: 'bg-gray-100 text-gray-600' };
+                  return (
+                    <tr key={macro.id} className="border-b border-gray-100 last:border-0">
+                      <td className="py-1 pr-3 font-medium">{macro.trilhaNome || macro.trilhaId || '-'}</td>
+                      <td className="py-1 pr-3">{macro.macroInicio ? formatDateSafe(macro.macroInicio) : <span className="text-muted-foreground italic">-</span>}</td>
+                      <td className="py-1 pr-3">{macro.macroTermino ? formatDateSafe(macro.macroTermino) : <span className="text-muted-foreground italic">-</span>}</td>
+                      <td className="py-1">
+                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${s.color}`}>{s.label}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function AdminCadastros() {
@@ -1309,6 +1419,9 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                             )}
                           </div>
                         )}
+                        {/* Níveis do Contrato e Macrociclos */}
+                        <AlunoNiveisEMacrociclos alunoId={aluno.id} />
+
                         {/* Ações */}
                         <div className="flex gap-2 mt-3 pt-3 border-t">
                           <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEditOpen(aluno); }}>
