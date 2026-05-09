@@ -56,6 +56,30 @@ function getDisplayRole(user: any): string {
   return user.role;
 }
 
+// Calcula a próxima janela de reset e dias restantes
+function calcularProximoReset(nivelInicio: string | null, contratoInicio: string | null): { label: string; diasRestantes: number | null } | null {
+  const inicio = nivelInicio ? new Date(nivelInicio) : (contratoInicio ? new Date(contratoInicio) : null);
+  if (!inicio || isNaN(inicio.getTime())) return null;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  // Janelas: mês 3 (opcional), 6, 12, 18, 24
+  const janelas = [3, 6, 12, 18, 24];
+  for (const mes of janelas) {
+    const aberturaJanela = new Date(inicio);
+    aberturaJanela.setMonth(aberturaJanela.getMonth() + mes);
+    const fechamentoJanela = new Date(aberturaJanela);
+    fechamentoJanela.setDate(fechamentoJanela.getDate() + 30);
+    if (hoje >= aberturaJanela && hoje <= fechamentoJanela) {
+      return { label: `Janela de reset aberta (mês ${mes})`, diasRestantes: 0 };
+    }
+    if (hoje < aberturaJanela) {
+      const diff = Math.ceil((aberturaJanela.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+      return { label: `Próximo reset em ${aberturaJanela.toLocaleDateString('pt-BR')} (mês ${mes})`, diasRestantes: diff };
+    }
+  }
+  return null;
+}
+
 // Componente para exibir níveis e macrociclos do aluno no card expandido
 function AlunoNiveisEMacrociclos({ alunoId }: { alunoId: number }) {
   const { data: niveis = [], isLoading: loadingNiveis } = trpc.contratoNiveis.historico.useQuery({ alunoId });
@@ -64,19 +88,21 @@ function AlunoNiveisEMacrociclos({ alunoId }: { alunoId: number }) {
     { enabled: !!alunoId }
   );
 
-  const statusLabel: Record<string, { label: string; color: string }> = {
-    planejado: { label: 'Planejado', color: 'bg-gray-100 text-gray-600' },
-    em_andamento: { label: 'Em andamento', color: 'bg-blue-100 text-blue-700' },
-    fechamento: { label: 'Fechamento', color: 'bg-amber-100 text-amber-700' },
-    ajustes: { label: 'Ajustes', color: 'bg-orange-100 text-orange-700' },
-    encerrado: { label: 'Encerrado', color: 'bg-red-100 text-red-600' },
-    certificado: { label: 'Certificado', color: 'bg-green-100 text-green-700' },
+  const nivelRomano: Record<string, string> = { I: '1', II: '2', III: '3', IV: '4', V: '5' };
+
+  const statusBadge: Record<string, { label: string; color: string }> = {
+    planejado: { label: 'Planejado', color: 'text-gray-400' },
+    em_andamento: { label: 'Em andamento', color: 'text-blue-600 font-semibold' },
+    fechamento: { label: 'Fechamento', color: 'text-amber-600' },
+    ajustes: { label: 'Ajustes', color: 'text-orange-600' },
+    encerrado: { label: 'Encerrado', color: 'text-red-500' },
+    certificado: { label: 'Certificado', color: 'text-green-600' },
   };
 
-  const macroStatusLabel: Record<string, { label: string; color: string }> = {
-    ativo: { label: 'Ativo', color: 'bg-blue-100 text-blue-700' },
-    congelado: { label: 'Congelado', color: 'bg-gray-100 text-gray-500' },
-    concluido: { label: 'Concluído', color: 'bg-green-100 text-green-700' },
+  const macroStatusBadge: Record<string, { label: string; color: string }> = {
+    ativo: { label: 'Ativo', color: 'text-blue-600 font-semibold' },
+    congelado: { label: 'Congelado', color: 'text-gray-400' },
+    concluido: { label: 'Concluído', color: 'text-green-600' },
   };
 
   if (loadingNiveis && loadingMacros) {
@@ -89,40 +115,44 @@ function AlunoNiveisEMacrociclos({ alunoId }: { alunoId: number }) {
 
   if (niveis.length === 0 && macrociclos.length === 0) return null;
 
+  // Deduplicar níveis pelo id
+  const niveisUnicos = Array.from(new Map(niveis.map((n: any) => [n.id, n])).values());
+
   return (
     <div className="mt-3 pt-3 border-t border-purple-200">
       {/* Níveis do Contrato */}
-      {niveis.length > 0 && (
+      {niveisUnicos.length > 0 && (
         <div className="mb-3">
-          <p className="text-xs font-semibold text-purple-700 mb-2 flex items-center gap-1">
+          <p className="text-xs font-semibold text-purple-700 mb-1.5 flex items-center gap-1">
             <Layers className="h-3.5 w-3.5" /> Períodos de Nível
           </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-left text-muted-foreground border-b">
-                  <th className="pb-1 pr-3 font-medium">Nível</th>
-                  <th className="pb-1 pr-3 font-medium">Início</th>
-                  <th className="pb-1 pr-3 font-medium">Término</th>
-                  <th className="pb-1 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {niveis.map((nivel: any) => {
-                  const s = statusLabel[nivel.status] || { label: nivel.status, color: 'bg-gray-100 text-gray-600' };
-                  return (
-                    <tr key={nivel.id} className="border-b border-gray-100 last:border-0">
-                      <td className="py-1 pr-3 font-semibold text-purple-800">Nível {nivel.nivel}</td>
-                      <td className="py-1 pr-3">{nivel.dataInicio ? formatDateSafe(nivel.dataInicio) : <span className="text-muted-foreground italic">-</span>}</td>
-                      <td className="py-1 pr-3">{nivel.dataFim ? formatDateSafe(nivel.dataFim) : <span className="text-muted-foreground italic">-</span>}</td>
-                      <td className="py-1">
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${s.color}`}>{s.label}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="space-y-1">
+            {niveisUnicos.map((nivel: any) => {
+              const s = statusBadge[nivel.status] || { label: nivel.status, color: 'text-gray-500' };
+              // Usar nivelInicio/nivelFim (datas específicas do nível) com fallback para datas do contrato
+              const dataInicio = nivel.nivelInicio || nivel.dataInicio;
+              const dataFim = nivel.nivelFim || nivel.dataFim;
+              const isAtivo = nivel.status === 'em_andamento';
+              const proximoReset = isAtivo ? calcularProximoReset(nivel.nivelInicio, nivel.dataInicio) : null;
+              return (
+                <div key={nivel.id} className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs ${isAtivo ? 'bg-blue-50 rounded px-2 py-1' : 'px-2 py-0.5'}`}>
+                  <span className="font-semibold text-purple-800 min-w-[52px]">Nível {nivelRomano[nivel.nivel] ?? nivel.nivel}</span>
+                  <span className="text-muted-foreground">
+                    {dataInicio ? formatDateSafe(dataInicio) : '?'}
+                    <span className="mx-1 text-gray-300">····</span>
+                    {dataFim ? formatDateSafe(dataFim) : '?'}
+                  </span>
+                  <span className={`text-[10px] ${s.color}`}>{s.label}</span>
+                  {proximoReset && (
+                    <span className={`text-[10px] ml-1 ${proximoReset.diasRestantes === 0 ? 'text-green-600 font-semibold' : 'text-amber-600'}`}>
+                      {proximoReset.diasRestantes === 0
+                        ? '✓ Janela de reset aberta'
+                        : `⏱ Reset em ${proximoReset.diasRestantes}d (${proximoReset.label.split('(')[1]?.replace(')', '') ?? ''})`}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -130,35 +160,24 @@ function AlunoNiveisEMacrociclos({ alunoId }: { alunoId: number }) {
       {/* Macrociclos */}
       {macrociclos.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-indigo-700 mb-2 flex items-center gap-1">
+          <p className="text-xs font-semibold text-indigo-700 mb-1.5 flex items-center gap-1">
             <BookOpen className="h-3.5 w-3.5" /> Macrociclos (PDIs)
           </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-left text-muted-foreground border-b">
-                  <th className="pb-1 pr-3 font-medium">Trilha</th>
-                  <th className="pb-1 pr-3 font-medium">Início</th>
-                  <th className="pb-1 pr-3 font-medium">Término</th>
-                  <th className="pb-1 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {macrociclos.map((macro: any) => {
-                  const s = macroStatusLabel[macro.status] || { label: macro.status, color: 'bg-gray-100 text-gray-600' };
-                  return (
-                    <tr key={macro.id} className="border-b border-gray-100 last:border-0">
-                      <td className="py-1 pr-3 font-medium">{macro.trilhaNome || macro.trilhaId || '-'}</td>
-                      <td className="py-1 pr-3">{macro.macroInicio ? formatDateSafe(macro.macroInicio) : <span className="text-muted-foreground italic">-</span>}</td>
-                      <td className="py-1 pr-3">{macro.macroTermino ? formatDateSafe(macro.macroTermino) : <span className="text-muted-foreground italic">-</span>}</td>
-                      <td className="py-1">
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${s.color}`}>{s.label}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="space-y-1">
+            {macrociclos.map((macro: any) => {
+              const s = macroStatusBadge[macro.status] || { label: macro.status, color: 'text-gray-500' };
+              return (
+                <div key={macro.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs px-2 py-0.5">
+                  <span className="font-medium min-w-[52px]">{macro.trilhaNome || macro.trilhaId || '-'}</span>
+                  <span className="text-muted-foreground">
+                    {macro.macroInicio ? formatDateSafe(macro.macroInicio) : '?'}
+                    <span className="mx-1 text-gray-300">····</span>
+                    {macro.macroTermino ? formatDateSafe(macro.macroTermino) : '?'}
+                  </span>
+                  <span className={`text-[10px] ${s.color}`}>{s.label}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

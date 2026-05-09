@@ -5983,6 +5983,8 @@ export async function getContratoNiveisByAluno(alunoId: number): Promise<Contrat
       status: contratoNiveis.status,
       assessmentPdiId: contratoNiveis.assessmentPdiId,
       mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
+      nivelInicio: contratoNiveis.nivelInicio,
+      nivelFim: contratoNiveis.nivelFim,
       createdAt: contratoNiveis.createdAt,
       updatedAt: contratoNiveis.updatedAt,
       dataInicio: contratosAluno.periodoInicio,
@@ -5991,7 +5993,7 @@ export async function getContratoNiveisByAluno(alunoId: number): Promise<Contrat
     .from(contratoNiveis)
     .leftJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id))
     .where(eq(contratoNiveis.alunoId, alunoId))
-    .orderBy(desc(contratoNiveis.createdAt));
+    .orderBy(asc(contratoNiveis.id));
 
   // Para níveis sem contrato formal, buscar datas do assessment_pdi
   const result: ContratoNivelComDatas[] = [];

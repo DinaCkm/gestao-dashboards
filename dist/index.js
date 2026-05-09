@@ -6107,11 +6107,13 @@ async function getContratoNiveisByAluno(alunoId) {
     status: contratoNiveis.status,
     assessmentPdiId: contratoNiveis.assessmentPdiId,
     mentoraPrincipalId: contratoNiveis.mentoraPrincipalId,
+    nivelInicio: contratoNiveis.nivelInicio,
+    nivelFim: contratoNiveis.nivelFim,
     createdAt: contratoNiveis.createdAt,
     updatedAt: contratoNiveis.updatedAt,
     dataInicio: contratosAluno.periodoInicio,
     dataFim: contratosAluno.periodoTermino
-  }).from(contratoNiveis).leftJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id)).where(eq(contratoNiveis.alunoId, alunoId)).orderBy(desc(contratoNiveis.createdAt));
+  }).from(contratoNiveis).leftJoin(contratosAluno, eq(contratoNiveis.contratoId, contratosAluno.id)).where(eq(contratoNiveis.alunoId, alunoId)).orderBy(asc(contratoNiveis.id));
   const result = [];
   for (const row of rows) {
     if (row.dataInicio && row.dataFim) {
