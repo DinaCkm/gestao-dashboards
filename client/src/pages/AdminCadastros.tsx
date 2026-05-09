@@ -56,27 +56,27 @@ function getDisplayRole(user: any): string {
   return user.role;
 }
 
-// Calcula a próxima janela de reset e dias restantes
-function calcularProximoReset(nivelInicio: string | null, contratoInicio: string | null): { label: string; diasRestantes: number | null } | null {
-  const inicio = nivelInicio ? new Date(nivelInicio) : (contratoInicio ? new Date(contratoInicio) : null);
-  if (!inicio || isNaN(inicio.getTime())) return null;
+// Calcula a janela de reset com base no FIM do nível
+// A janela abre no dia do fim do nível e fecha 30 dias depois
+function calcularProximoReset(nivelFim: string | null, _contratoInicio: string | null): { label: string; diasRestantes: number | null } | null {
+  if (!nivelFim) return null;
+  const fim = new Date(nivelFim);
+  if (isNaN(fim.getTime())) return null;
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
-  // Janelas: mês 3 (opcional), 6, 12, 18, 24
-  const janelas = [3, 6, 12, 18, 24];
-  for (const mes of janelas) {
-    const aberturaJanela = new Date(inicio);
-    aberturaJanela.setMonth(aberturaJanela.getMonth() + mes);
-    const fechamentoJanela = new Date(aberturaJanela);
-    fechamentoJanela.setDate(fechamentoJanela.getDate() + 30);
-    if (hoje >= aberturaJanela && hoje <= fechamentoJanela) {
-      return { label: `Janela de reset aberta (mês ${mes})`, diasRestantes: 0 };
-    }
-    if (hoje < aberturaJanela) {
-      const diff = Math.ceil((aberturaJanela.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-      return { label: `Próximo reset em ${aberturaJanela.toLocaleDateString('pt-BR')} (mês ${mes})`, diasRestantes: diff };
-    }
+  const fechamentoJanela = new Date(fim);
+  fechamentoJanela.setDate(fechamentoJanela.getDate() + 30);
+  // Janela aberta: entre o fim do nível e 30 dias depois
+  if (hoje >= fim && hoje <= fechamentoJanela) {
+    const diasRestantes = Math.ceil((fechamentoJanela.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+    return { label: `Janela de reset aberta (${diasRestantes}d restantes)`, diasRestantes: 0 };
   }
+  // Janela futura: antes do fim do nível
+  if (hoje < fim) {
+    const diff = Math.ceil((fim.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+    return { label: `Reset disponível em ${fim.toLocaleDateString('pt-BR')}`, diasRestantes: diff };
+  }
+  // Janela expirada (mais de 30 dias após o fim do nível)
   return null;
 }
 
@@ -133,7 +133,9 @@ function AlunoNiveisEMacrociclos({ alunoId }: { alunoId: number }) {
               const dataInicio = nivel.nivelInicio || nivel.dataInicio;
               const dataFim = nivel.nivelFim || nivel.dataFim;
               const isAtivo = nivel.status === 'em_andamento';
-              const proximoReset = isAtivo ? calcularProximoReset(nivel.nivelInicio, nivel.dataInicio) : null;
+              // Mostrar janela de reset para níveis em andamento OU encerrados recentemente
+              const podeReset = nivel.status === 'em_andamento' || nivel.status === 'encerrado' || nivel.status === 'fechamento';
+              const proximoReset = podeReset ? calcularProximoReset(nivel.nivelFim || nivel.dataFim, nivel.dataInicio) : null;
               return (
                 <div key={nivel.id} className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs ${isAtivo ? 'bg-blue-50 rounded px-2 py-1' : 'px-2 py-0.5'}`}>
                   <span className="font-semibold text-purple-800 min-w-[52px]">Nível {nivelRomano[nivel.nivel] ?? nivel.nivel}</span>
@@ -146,8 +148,8 @@ function AlunoNiveisEMacrociclos({ alunoId }: { alunoId: number }) {
                   {proximoReset && (
                     <span className={`text-[10px] ml-1 ${proximoReset.diasRestantes === 0 ? 'text-green-600 font-semibold' : 'text-amber-600'}`}>
                       {proximoReset.diasRestantes === 0
-                        ? '✓ Janela de reset aberta'
-                        : `⏱ Reset em ${proximoReset.diasRestantes}d (${proximoReset.label.split('(')[1]?.replace(')', '') ?? ''})`}
+                        ? `✓ Janela de reset aberta (${proximoReset.label.match(/\d+d/)?.[0] ?? ''} restantes)`
+                        : `⏱ ${proximoReset.label}`}
                     </span>
                   )}
                 </div>
