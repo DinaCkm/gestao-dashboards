@@ -4270,6 +4270,56 @@ export async function getAssessmentsByAluno(alunoId: number) {
   });
 }
 
+export async function getAssessmentById(pdiId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  // Busca o PDI por ID (incluindo congelados) via query raw para evitar filtro de status
+  const conn = await getRawConnection();
+  if (!conn) return null;
+  const [pdiRows]: any = await conn.execute(
+    `SELECT ap.id, ap.status, ap.trilhaId, ap.turmaId, ap.consultorId, ap.macroInicio, ap.macroTermino,
+            t.name as trilhaNome, tu.name as turmaNome, u.name as consultorNome
+     FROM assessment_pdi ap
+     LEFT JOIN trilhas t ON ap.trilhaId = t.id
+     LEFT JOIN turmas tu ON ap.turmaId = tu.id
+     LEFT JOIN users u ON ap.consultorId = u.id
+     WHERE ap.id = ?`,
+    [pdiId]
+  );
+  if (!pdiRows || pdiRows.length === 0) return null;
+  const p = pdiRows[0];
+  const [compRows]: any = await conn.execute(
+    `SELECT ac.id, ac.competenciaId, ac.peso, ac.notaCorte, ac.nivelAtual, ac.justificativa,
+            c.nome as competenciaNome
+     FROM assessment_competencias ac
+     LEFT JOIN competencias c ON ac.competenciaId = c.id
+     WHERE ac.pdiId = ?
+     ORDER BY ac.peso DESC, c.nome ASC`,
+    [pdiId]
+  );
+  const comps = compRows || [];
+  return {
+    id: p.id,
+    status: p.status,
+    trilhaNome: p.trilhaNome || 'Não definida',
+    turmaNome: p.turmaNome || null,
+    consultorNome: p.consultorNome || null,
+    macroInicio: p.macroInicio,
+    macroTermino: p.macroTermino,
+    totalCompetencias: comps.length,
+    obrigatorias: comps.filter((c: any) => c.peso === 'obrigatoria').length,
+    opcionais: comps.filter((c: any) => c.peso === 'opcional').length,
+    competencias: comps.map((c: any) => ({
+      id: c.id,
+      competenciaNome: c.competenciaNome || 'Desconhecida',
+      peso: c.peso,
+      notaCorte: c.notaCorte,
+      nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+      justificativa: c.justificativa || null,
+    })),
+  };
+}
+
 export async function getAssessmentsByAlunoAndNivel(alunoId: number, contratoNivelId?: number | null) {
   if (!contratoNivelId) {
     return getAssessmentsByAluno(alunoId);

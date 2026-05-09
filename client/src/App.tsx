@@ -82,6 +82,7 @@ import AlunoReflexaoFinal from "./pages/aluno/AlunoReflexaoFinal";
 import OnboardingVideos from "./pages/admin/OnboardingVideos";
 import BibliotecaPedagogica from "./pages/admin/BibliotecaPedagogica";
 import AuditoriaResets from "./pages/admin/AuditoriaResets";
+import VisualizarPDI from "./pages/VisualizarPDI";
 
 function Router() {
   return (
@@ -164,6 +165,7 @@ function Router() {
       <Route path={"/admin/onboarding-videos"} component={OnboardingVideos} />
       <Route path={"/admin/biblioteca-pedagogica"} component={BibliotecaPedagogica} />
       <Route path={"/admin/auditoria-resets"} component={AuditoriaResets} />
+      <Route path={"/pdi/:pdiId"} component={VisualizarPDI} />
 
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />

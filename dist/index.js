@@ -1895,6 +1895,7 @@ __export(db_exports, {
   getAppointmentById: () => getAppointmentById,
   getAppointmentParticipants: () => getAppointmentParticipants,
   getAppointmentsForDate: () => getAppointmentsForDate,
+  getAssessmentById: () => getAssessmentById,
   getAssessmentCompetenciasByPdi: () => getAssessmentCompetenciasByPdi,
   getAssessmentPdiByAluno: () => getAssessmentPdiByAluno,
   getAssessmentsByAluno: () => getAssessmentsByAluno,
@@ -4983,6 +4984,54 @@ async function getAssessmentsByAluno(alunoId) {
       opcionais: comps.filter((c) => c.peso === "opcional").length
     };
   });
+}
+async function getAssessmentById(pdiId) {
+  const db2 = await getDb();
+  if (!db2) return null;
+  const conn = await getRawConnection();
+  if (!conn) return null;
+  const [pdiRows] = await conn.execute(
+    `SELECT ap.id, ap.status, ap.trilhaId, ap.turmaId, ap.consultorId, ap.macroInicio, ap.macroTermino,
+            t.name as trilhaNome, tu.name as turmaNome, u.name as consultorNome
+     FROM assessment_pdi ap
+     LEFT JOIN trilhas t ON ap.trilhaId = t.id
+     LEFT JOIN turmas tu ON ap.turmaId = tu.id
+     LEFT JOIN users u ON ap.consultorId = u.id
+     WHERE ap.id = ?`,
+    [pdiId]
+  );
+  if (!pdiRows || pdiRows.length === 0) return null;
+  const p = pdiRows[0];
+  const [compRows] = await conn.execute(
+    `SELECT ac.id, ac.competenciaId, ac.peso, ac.notaCorte, ac.nivelAtual, ac.justificativa,
+            c.nome as competenciaNome
+     FROM assessment_competencias ac
+     LEFT JOIN competencias c ON ac.competenciaId = c.id
+     WHERE ac.pdiId = ?
+     ORDER BY ac.peso DESC, c.nome ASC`,
+    [pdiId]
+  );
+  const comps = compRows || [];
+  return {
+    id: p.id,
+    status: p.status,
+    trilhaNome: p.trilhaNome || "N\xE3o definida",
+    turmaNome: p.turmaNome || null,
+    consultorNome: p.consultorNome || null,
+    macroInicio: p.macroInicio,
+    macroTermino: p.macroTermino,
+    totalCompetencias: comps.length,
+    obrigatorias: comps.filter((c) => c.peso === "obrigatoria").length,
+    opcionais: comps.filter((c) => c.peso === "opcional").length,
+    competencias: comps.map((c) => ({
+      id: c.id,
+      competenciaNome: c.competenciaNome || "Desconhecida",
+      peso: c.peso,
+      notaCorte: c.notaCorte,
+      nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+      justificativa: c.justificativa || null
+    }))
+  };
 }
 async function getAssessmentsByAlunoAndNivel(alunoId, contratoNivelId) {
   if (!contratoNivelId) {
@@ -21308,6 +21357,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     // Listar assessments de um aluno
     porAluno: protectedProcedure.input(z4.object({ alunoId: z4.number(), contratoNivelId: z4.number().nullable().optional() })).query(async ({ input }) => {
       return await getAssessmentsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
+    }),
+    // Buscar um PDI específico por ID (incluindo congelados) — para visualização somente leitura
+    porId: protectedProcedure.input(z4.object({ pdiId: z4.number() })).query(async ({ input }) => {
+      return await getAssessmentById(input.pdiId);
     }),
     // Listar assessments de um programa (admin/mentor)
     porPrograma: protectedProcedure.input(z4.object({ programId: z4.number() })).query(async ({ input }) => {

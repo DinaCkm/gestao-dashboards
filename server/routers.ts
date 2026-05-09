@@ -6477,13 +6477,18 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.getAssessmentsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
 
+     // Buscar um PDI específico por ID (incluindo congelados) — para visualização somente leitura
+    porId: protectedProcedure
+      .input(z.object({ pdiId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAssessmentById(input.pdiId);
+      }),
     // Listar assessments de um programa (admin/mentor)
     porPrograma: protectedProcedure
       .input(z.object({ programId: z.number() }))
       .query(async ({ input }) => {
         return await db.getAssessmentsByProgram(input.programId);
       }),
-
     // Listar assessments dos alunos de um consultor
     porConsultor: protectedProcedure
       .input(z.object({ consultorId: z.number() }))
