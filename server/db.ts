@@ -4273,50 +4273,50 @@ export async function getAssessmentsByAluno(alunoId: number) {
 export async function getAssessmentById(pdiId: number) {
   const db = await getDb();
   if (!db) return null;
-  // Busca o PDI por ID (incluindo congelados) via query raw para evitar filtro de status
-  const conn = await getRawConnection();
-  if (!conn) return null;
-  const [pdiRows]: any = await conn.execute(
-    `SELECT ap.id, ap.status, ap.trilhaId, ap.turmaId, ap.consultorId, ap.macroInicio, ap.macroTermino,
-            t.name as trilhaNome, tu.name as turmaNome, u.name as consultorNome
-     FROM assessment_pdi ap
-     LEFT JOIN trilhas t ON ap.trilhaId = t.id
-     LEFT JOIN turmas tu ON ap.turmaId = tu.id
-     LEFT JOIN users u ON ap.consultorId = u.id
-     WHERE ap.id = ?`,
-    [pdiId]
-  );
+  // Busca o PDI por ID via Drizzle ORM (inclui congelados pois não filtra por status)
+  const pdiRows = await db.select().from(assessmentPdi)
+    .where(eq(assessmentPdi.id, pdiId))
+    .limit(1);
   if (!pdiRows || pdiRows.length === 0) return null;
   const p = pdiRows[0];
-  const [compRows]: any = await conn.execute(
-    `SELECT ac.id, ac.competenciaId, ac.peso, ac.notaCorte, ac.nivelAtual, ac.justificativa,
-            c.nome as competenciaNome
-     FROM assessment_competencias ac
-     LEFT JOIN competencias c ON ac.competenciaId = c.id
-     WHERE ac.pdiId = ?
-     ORDER BY ac.peso DESC, c.nome ASC`,
-    [pdiId]
-  );
-  const comps = compRows || [];
+  // Busca as competências do PDI
+  const comps = await db.select().from(assessmentCompetencias)
+    .where(eq(assessmentCompetencias.assessmentPdiId, pdiId));
+  // Enriquecer com nomes de trilha, turma e consultor
+  const allTrilhas = await db.select().from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t]));
+  const allTurmas = await db.select().from(turmas);
+  const turmaMap = new Map(allTurmas.map(t => [t.id, t]));
+  const allConsultors = await db.select().from(consultors);
+  const consultorMap = new Map(allConsultors.map(c => [c.id, c]));
+  const allCompetencias = await db.select().from(competencias);
+  const compMap = new Map(allCompetencias.map(c => [c.id, c]));
+  const trilha = trilhaMap.get(p.trilhaId);
+  const turma = p.turmaId ? turmaMap.get(p.turmaId) : null;
+  const consultor = p.consultorId ? consultorMap.get(p.consultorId) : null;
   return {
     id: p.id,
     status: p.status,
-    trilhaNome: p.trilhaNome || 'Não definida',
-    turmaNome: p.turmaNome || null,
-    consultorNome: p.consultorNome || null,
+    trilhaNome: trilha?.name || 'Não definida',
+    turmaNome: turma?.name || null,
+    consultorNome: consultor?.name || null,
     macroInicio: p.macroInicio,
     macroTermino: p.macroTermino,
     totalCompetencias: comps.length,
-    obrigatorias: comps.filter((c: any) => c.peso === 'obrigatoria').length,
-    opcionais: comps.filter((c: any) => c.peso === 'opcional').length,
-    competencias: comps.map((c: any) => ({
-      id: c.id,
-      competenciaNome: c.competenciaNome || 'Desconhecida',
-      peso: c.peso,
-      notaCorte: c.notaCorte,
-      nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
-      justificativa: c.justificativa || null,
-    })),
+    obrigatorias: comps.filter(c => c.peso === 'obrigatoria').length,
+    opcionais: comps.filter(c => c.peso === 'opcional').length,
+    competencias: comps.map(c => {
+      const comp = compMap.get(c.competenciaId);
+      return {
+        id: c.id,
+        competenciaNome: comp?.nome || 'Desconhecida',
+        peso: c.peso,
+        notaCorte: c.notaCorte,
+        nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+        metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
+        justificativa: c.justificativa || null,
+      };
+    }),
   };
 }
 

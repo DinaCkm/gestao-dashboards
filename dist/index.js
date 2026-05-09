@@ -4988,49 +4988,44 @@ async function getAssessmentsByAluno(alunoId) {
 async function getAssessmentById(pdiId) {
   const db2 = await getDb();
   if (!db2) return null;
-  const conn = await getRawConnection();
-  if (!conn) return null;
-  const [pdiRows] = await conn.execute(
-    `SELECT ap.id, ap.status, ap.trilhaId, ap.turmaId, ap.consultorId, ap.macroInicio, ap.macroTermino,
-            t.name as trilhaNome, tu.name as turmaNome, u.name as consultorNome
-     FROM assessment_pdi ap
-     LEFT JOIN trilhas t ON ap.trilhaId = t.id
-     LEFT JOIN turmas tu ON ap.turmaId = tu.id
-     LEFT JOIN users u ON ap.consultorId = u.id
-     WHERE ap.id = ?`,
-    [pdiId]
-  );
+  const pdiRows = await db2.select().from(assessmentPdi).where(eq(assessmentPdi.id, pdiId)).limit(1);
   if (!pdiRows || pdiRows.length === 0) return null;
   const p = pdiRows[0];
-  const [compRows] = await conn.execute(
-    `SELECT ac.id, ac.competenciaId, ac.peso, ac.notaCorte, ac.nivelAtual, ac.justificativa,
-            c.nome as competenciaNome
-     FROM assessment_competencias ac
-     LEFT JOIN competencias c ON ac.competenciaId = c.id
-     WHERE ac.pdiId = ?
-     ORDER BY ac.peso DESC, c.nome ASC`,
-    [pdiId]
-  );
-  const comps = compRows || [];
+  const comps = await db2.select().from(assessmentCompetencias).where(eq(assessmentCompetencias.assessmentPdiId, pdiId));
+  const allTrilhas = await db2.select().from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map((t2) => [t2.id, t2]));
+  const allTurmas = await db2.select().from(turmas);
+  const turmaMap = new Map(allTurmas.map((t2) => [t2.id, t2]));
+  const allConsultors = await db2.select().from(consultors);
+  const consultorMap = new Map(allConsultors.map((c) => [c.id, c]));
+  const allCompetencias = await db2.select().from(competencias);
+  const compMap = new Map(allCompetencias.map((c) => [c.id, c]));
+  const trilha = trilhaMap.get(p.trilhaId);
+  const turma = p.turmaId ? turmaMap.get(p.turmaId) : null;
+  const consultor = p.consultorId ? consultorMap.get(p.consultorId) : null;
   return {
     id: p.id,
     status: p.status,
-    trilhaNome: p.trilhaNome || "N\xE3o definida",
-    turmaNome: p.turmaNome || null,
-    consultorNome: p.consultorNome || null,
+    trilhaNome: trilha?.name || "N\xE3o definida",
+    turmaNome: turma?.name || null,
+    consultorNome: consultor?.name || null,
     macroInicio: p.macroInicio,
     macroTermino: p.macroTermino,
     totalCompetencias: comps.length,
     obrigatorias: comps.filter((c) => c.peso === "obrigatoria").length,
     opcionais: comps.filter((c) => c.peso === "opcional").length,
-    competencias: comps.map((c) => ({
-      id: c.id,
-      competenciaNome: c.competenciaNome || "Desconhecida",
-      peso: c.peso,
-      notaCorte: c.notaCorte,
-      nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
-      justificativa: c.justificativa || null
-    }))
+    competencias: comps.map((c) => {
+      const comp = compMap.get(c.competenciaId);
+      return {
+        id: c.id,
+        competenciaNome: comp?.nome || "Desconhecida",
+        peso: c.peso,
+        notaCorte: c.notaCorte,
+        nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+        metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
+        justificativa: c.justificativa || null
+      };
+    })
   };
 }
 async function getAssessmentsByAlunoAndNivel(alunoId, contratoNivelId) {
