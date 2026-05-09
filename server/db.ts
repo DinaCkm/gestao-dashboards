@@ -4349,6 +4349,101 @@ export async function getAssessmentById(pdiId: number) {
   };
 }
 
+/**
+ * Busca TODOS os PDIs de um contratoNivelId (todas as trilhas do ciclo).
+ * Usado na tela VisualizarPDI para mostrar o plano completo do ciclo.
+ */
+export async function getAllPdisByContratoNivel(contratoNivelId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Buscar todos os PDIs do contratoNivelId
+  const pdisRows = await db.select().from(assessmentPdi)
+    .where(eq(assessmentPdi.contratoNivelId, contratoNivelId))
+    .orderBy(assessmentPdi.id);
+
+  if (!pdisRows || pdisRows.length === 0) return [];
+
+  // Enriquecer com nomes de trilha, turma, consultor e competências
+  const allTrilhas = await db.select().from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t]));
+  const allTurmas = await db.select().from(turmas);
+  const turmaMap = new Map(allTurmas.map(t => [t.id, t]));
+  const allConsultors = await db.select().from(consultors);
+  const consultorMap = new Map(allConsultors.map(c => [c.id, c]));
+  const allCompetencias = await db.select().from(competencias);
+  const compMap = new Map(allCompetencias.map(c => [c.id, c]));
+
+  const results = [];
+  for (const p of pdisRows) {
+    // Competências do PDI
+    const comps = await db.select().from(assessmentCompetencias)
+      .where(eq(assessmentCompetencias.assessmentPdiId, p.id));
+
+    // Metas do PDI
+    const metasDoPdi = await db.select().from(metas)
+      .where(and(eq(metas.assessmentPdiId, p.id), eq(metas.isActive, 1)));
+
+    // Calcular sessões previstas
+    let sessoesPrevistas: number | null = p.totalSessoesPrevistas ?? null;
+    if (!sessoesPrevistas || sessoesPrevistas === 0) {
+      if (p.macroInicio && p.macroTermino) {
+        const inicio = new Date(p.macroInicio);
+        const termino = new Date(p.macroTermino);
+        const meses = (termino.getFullYear() - inicio.getFullYear()) * 12
+          + (termino.getMonth() - inicio.getMonth());
+        sessoesPrevistas = Math.max(1, meses);
+      }
+    }
+
+    // Macrociclos distintos
+    const macrociclosSet = new Set(comps.map((c: any) => c.microInicio ? String(c.microInicio) : null).filter(Boolean));
+    const qtdMacrociclos = macrociclosSet.size || 1;
+
+    const trilha = trilhaMap.get(p.trilhaId);
+    const turma = p.turmaId ? turmaMap.get(p.turmaId) : null;
+    const consultor = p.consultorId ? consultorMap.get(p.consultorId) : null;
+
+    results.push({
+      id: p.id,
+      status: p.status,
+      trilhaNome: trilha?.name || 'Não definida',
+      turmaNome: turma?.name || null,
+      consultorNome: consultor?.name || null,
+      macroInicio: p.macroInicio,
+      macroTermino: p.macroTermino,
+      totalSessoesPrevistas: sessoesPrevistas,
+      tarefasPrevistas: sessoesPrevistas,
+      casesPrevistas: qtdMacrociclos,
+      totalCompetencias: comps.length,
+      obrigatorias: comps.filter((c: any) => c.peso === 'obrigatoria').length,
+      opcionais: comps.filter((c: any) => c.peso === 'opcional').length,
+      competencias: comps.map((c: any) => {
+        const comp = compMap.get(c.competenciaId);
+        return {
+          id: c.id,
+          competenciaNome: comp?.nome || 'Desconhecida',
+          peso: c.peso,
+          notaCorte: c.notaCorte,
+          nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+          metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
+          metaCiclo1: c.metaCiclo1 ? parseFloat(c.metaCiclo1) : null,
+          metaCiclo2: c.metaCiclo2 ? parseFloat(c.metaCiclo2) : null,
+          justificativa: c.justificativa || null,
+          microInicio: c.microInicio ? String(c.microInicio) : null,
+          microTermino: c.microTermino ? String(c.microTermino) : null,
+        };
+      }),
+      metas: metasDoPdi.map((m: any) => ({
+        id: m.id,
+        titulo: m.titulo,
+        descricao: m.descricao || null,
+      })),
+    });
+  }
+  return results;
+}
+
 export async function getAssessmentsByAlunoAndNivel(alunoId: number, contratoNivelId?: number | null) {
   if (!contratoNivelId) {
     return getAssessmentsByAluno(alunoId);
@@ -12132,7 +12227,8 @@ export async function getHistoricoCiclosAluno(alunoId: number) {
       dr.completedAt as discCompletadoEm,
       ap.macroInicio,
       ap.macroTermino,
-      ap.status as pdiStatus
+      ap.status as pdiStatus,
+      ap.contratoNivelId as contratoNivelId
     FROM historico_ciclos_aluno h
     LEFT JOIN disc_resultados dr ON dr.id = h.discResultadoId
     LEFT JOIN assessment_pdi ap ON ap.id = h.assessmentPdiId

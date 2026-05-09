@@ -32,14 +32,21 @@ function formatarData(data: string | null | undefined) {
 // Botão que leva o aluno à tela de visualização do PDI do ciclo anterior
 function ConsultarPDIButton({ numeroCiclo, pdiId, ciclo }: { numeroCiclo: number; pdiId: number; ciclo: any }) {
   const [, navigate] = useLocation();
+  // Preferir contratoNivelId (retorna todos os PDIs do ciclo); fallback para pdiId
+  const contratoNivelId = ciclo?.contratoNivelId;
   return (
     <Button
       variant="outline"
       size="sm"
       className="mt-2 w-full border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 gap-2"
       onClick={() => {
-        sessionStorage.setItem(`ciclo_snapshot_${pdiId}`, JSON.stringify(ciclo));
-        navigate(`/pdi/${pdiId}`);
+        if (contratoNivelId) {
+          sessionStorage.setItem(`ciclo_nivel_${contratoNivelId}`, JSON.stringify(ciclo));
+          navigate(`/pdi/nivel/${contratoNivelId}`);
+        } else {
+          sessionStorage.setItem(`ciclo_snapshot_${pdiId}`, JSON.stringify(ciclo));
+          navigate(`/pdi/${pdiId}`);
+        }
       }}
     >
       <ExternalLink className="h-3.5 w-3.5" />

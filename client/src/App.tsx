@@ -165,6 +165,7 @@ function Router() {
       <Route path={"/admin/onboarding-videos"} component={OnboardingVideos} />
       <Route path={"/admin/biblioteca-pedagogica"} component={BibliotecaPedagogica} />
       <Route path={"/admin/auditoria-resets"} component={AuditoriaResets} />
+      <Route path={"/pdi/nivel/:contratoNivelId"} component={VisualizarPDI} />
       <Route path={"/pdi/:pdiId"} component={VisualizarPDI} />
 
       <Route path={"/404"} component={NotFound} />

@@ -6483,6 +6483,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .query(async ({ input }) => {
         return await db.getAssessmentById(input.pdiId);
       }),
+
+    // Buscar TODOS os PDIs de um contratoNivelId (todas as trilhas do ciclo)
+    porContratoNivel: protectedProcedure
+      .input(z.object({ contratoNivelId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAllPdisByContratoNivel(input.contratoNivelId);
+      }),
     // Listar assessments de um programa (admin/mentor)
     porPrograma: protectedProcedure
       .input(z.object({ programId: z.number() }))
