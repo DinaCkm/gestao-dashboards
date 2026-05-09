@@ -2757,7 +2757,7 @@ function EtapaMeuPDI({ onComplete, alunoId, readOnly = false }: { onComplete: ()
 // ETAPA 7: SUA JORNADA — Vídeos de Apresentação
 // ============================================================
 
-function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
+function EtapaSuaJornada({ onComplete, alunoId, readOnly = false, assessmentPdiFeito = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean; assessmentPdiFeito?: boolean }) {
   const { data: videos } = trpc.onboarding.videos.useQuery();
   const { data: progressoData } = trpc.onboarding.progresso.useQuery({ alunoId }, { enabled: alunoId > 0 });
   const marcarVideo = trpc.onboarding.marcarVideoAssistido.useMutation();
@@ -2819,6 +2819,31 @@ function EtapaSuaJornada({ onComplete, alunoId, readOnly = false }: { onComplete
   return (
     <div className="space-y-6">
       <MentoraGuiaBanner etapa={7} />
+
+      {/* Aviso proeminente: aguardar PDI da mentora */}
+      {!assessmentPdiFeito && (
+        <div className="rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 p-6 shadow-md">
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="w-16 h-16 rounded-full bg-amber-100 border-2 border-amber-300 flex items-center justify-center">
+              <Clock className="h-8 w-8 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-amber-800 mb-1">
+                Aguarde sua mentora estruturar o seu Plano de Desenvolvimento
+              </h3>
+              <p className="text-sm text-amber-700 leading-relaxed max-w-lg">
+                Após a sua sessão de mentoria, sua mentora irá analisar seu perfil e criar o seu PDI personalizado.
+                Enquanto isso, aproveite para assistir aos vídeos abaixo e se preparar para sua jornada!
+              </p>
+            </div>
+            <div className="flex items-center gap-2 bg-white/70 border border-amber-200 rounded-full px-4 py-2">
+              <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-xs font-semibold text-amber-700">PDI ainda não criado pela mentora</span>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <Card className="border-0 shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 text-white">
@@ -3502,11 +3527,11 @@ export default function OnboardingAluno() {
 
   const handleStepComplete = () => {
     if (currentStep < 8) {
-      // No novo ciclo, pular etapas de mentora (3), agendamento (4) e 1º encontro (5)
-      // O fluxo é: Cadastro (1) → Assessment (2) → Meu PDI (7) → Aceite (8)
+      // No novo ciclo, pular apenas a etapa 3 (Mentora) — o aluno já tem mentora.
+      // Agendamento (4), 1º Encontro (5), Sua Jornada (6), Meu PDI (7) e Aceite (8) são mantidos.
       let nextStep = currentStep + 1;
-      if (emNovoCiclo && (nextStep === 3 || nextStep === 4 || nextStep === 5 || nextStep === 6)) {
-        nextStep = 7; // Pular direto para Meu PDI
+      if (emNovoCiclo && nextStep === 3) {
+        nextStep = 4; // Pular Mentora, ir direto para Agendamento
       }
       setCurrentStep(nextStep);
     } else {
@@ -3601,7 +3626,7 @@ export default function OnboardingAluno() {
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
             onComplete={handleStepComplete}
             readOnly={readOnly && !reassessmentElegivel}
-            labelContinuar={emNovoCiclo ? "Continuar para Meu PDI" : "Continuar para Escolha da Mentora"}
+            labelContinuar={emNovoCiclo ? "Continuar para Agendamento" : "Continuar para Escolha da Mentora"}
             contratoNivelId={contratoNivelIdVigente}
           />
         )}
@@ -3618,7 +3643,7 @@ export default function OnboardingAluno() {
         )}
         {currentStep === 4 && <EtapaAgendamento mentora={selectedMentora} onComplete={handleStepComplete} alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0} readOnly={readOnly} />}
         {currentStep === 5 && <EtapaPrimeiroEncontro mentora={selectedMentora} onComplete={handleStepComplete} progressoData={progressoData ?? undefined} readOnly={readOnly} />}
-        {currentStep === 6 && <EtapaSuaJornada onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
+        {currentStep === 6 && <EtapaSuaJornada onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} assessmentPdiFeito={!!(progressoData?.assessmentFeito)} />}
         {currentStep === 7 && <EtapaMeuPDI onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
         {currentStep === 8 && <EtapaAceite onComplete={handleStepComplete} alunoId={alunoId} readOnly={readOnly} />}
       </div>
