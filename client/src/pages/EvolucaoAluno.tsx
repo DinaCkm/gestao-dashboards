@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Sparkles, Brain, Target, TrendingUp, Award, History,
-  ChevronDown, ChevronUp, BookOpen, CheckCircle2, ExternalLink
+  ChevronDown, ChevronUp, BookOpen, CheckCircle2, ExternalLink, Layers
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -50,12 +50,12 @@ function ConsultarPDIButton({ numeroCiclo, pdiId, ciclo }: { numeroCiclo: number
       }}
     >
       <ExternalLink className="h-3.5 w-3.5" />
-      Consulte aqui o PDI do Ciclo {numeroCiclo}
+      Consulte os seus planos de desenvolvimento anteriores
     </Button>
   );
 }
 
-function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
+function CicloCard({ ciclo, index, niveisAluno }: { ciclo: any; index: number; niveisAluno?: any[] }) {
   const [expandido, setExpandido] = useState(index === 0);
   const perfilPredominante = ciclo.perfilPredominante as DiscDimensao | null;
   const perfilSecundario = ciclo.perfilSecundario as DiscDimensao | null;
@@ -192,6 +192,62 @@ function CicloCard({ ciclo, index }: { ciclo: any; index: number }) {
               <p className="text-sm">PDI não registrado neste ciclo</p>
             </div>
           )}
+          {/* Jornada de Níveis do aluno */}
+          {niveisAluno && niveisAluno.length > 0 && (
+            <div className="border-t pt-4 space-y-3">
+              <h4 className="font-bold text-[#0A1E3E] flex items-center gap-2 text-sm">
+                <Layers className="h-4 w-4 text-purple-600" />
+                Jornada de Níveis
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {niveisAluno.map((nivel: any) => {
+                  const encerrado = nivel.status === 'encerrado' || nivel.status === 'congelado';
+                  const emAndamento = nivel.status === 'em_andamento' || nivel.status === 'ativo';
+                  const inicio = nivel.dataInicio
+                    ? new Date(nivel.dataInicio).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+                    : null;
+                  const fim = nivel.dataFim
+                    ? new Date(nivel.dataFim).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+                    : null;
+                  return (
+                    <div
+                      key={nivel.id}
+                      className={`rounded-xl p-3 border-2 flex flex-col gap-1 ${
+                        emAndamento
+                          ? 'border-emerald-300 bg-emerald-50'
+                          : encerrado
+                          ? 'border-gray-200 bg-gray-50'
+                          : 'border-blue-100 bg-blue-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-black ${
+                          emAndamento ? 'text-emerald-700' : 'text-gray-500'
+                        }`}>
+                          Nível {nivel.nivel}
+                        </span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                          emAndamento
+                            ? 'bg-emerald-200 text-emerald-800'
+                            : encerrado
+                            ? 'bg-gray-200 text-gray-600'
+                            : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {emAndamento ? 'Em andamento' : encerrado ? 'Encerrado' : nivel.status}
+                        </span>
+                      </div>
+                      {(inicio || fim) && (
+                        <p className="text-[10px] text-gray-400 leading-tight">
+                          {inicio}{inicio && fim ? ' → ' : ''}{fim}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* 3 Macroindicadores congelados do ciclo */}
           {ciclo.snapshotEngajamento != null && (
             <div className="border-t pt-4 space-y-3">
@@ -314,6 +370,9 @@ export default function EvolucaoAluno() {
   const { data: discAtual } = trpc.disc.resultado.useQuery(
     { alunoId }, { enabled: alunoId > 0 }
   );
+  const { data: niveisAluno } = trpc.contratoNiveis.historico.useQuery(
+    { alunoId }, { enabled: alunoId > 0 }
+  );
 
   const temHistorico = historico && historico.length > 0;
 
@@ -383,7 +442,7 @@ export default function EvolucaoAluno() {
             </div>
 
             {[...historico].reverse().map((ciclo: any, idx: number) => (
-              <CicloCard key={ciclo.id} ciclo={ciclo} index={idx} />
+              <CicloCard key={ciclo.id} ciclo={ciclo} index={idx} niveisAluno={niveisAluno} />
             ))}
 
             {discAtual && (
