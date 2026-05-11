@@ -6169,13 +6169,21 @@ export async function getContratoNiveisByAluno(alunoId: number): Promise<Contrat
     .where(eq(contratoNiveis.alunoId, alunoId))
     .orderBy(asc(contratoNiveis.id));
 
-  // Para níveis sem contrato formal, buscar datas do assessment_pdi
+  // Prioridade de datas: nivelInicio/nivelFim > contrato geral > assessment_pdi
   const result: ContratoNivelComDatas[] = [];
   for (const row of rows) {
-    if (row.dataInicio && row.dataFim) {
+    // 1ª prioridade: datas específicas do nível (nivelInicio / nivelFim)
+    if (row.nivelInicio && row.nivelFim) {
+      result.push({
+        ...row,
+        dataInicio: row.nivelInicio,
+        dataFim: row.nivelFim,
+      } as ContratoNivelComDatas);
+    } else if (row.dataInicio && row.dataFim) {
+      // 2ª prioridade: datas do contrato geral do aluno
       result.push(row as ContratoNivelComDatas);
     } else {
-      // Fallback: buscar datas do assessment_pdi mais recente do aluno
+      // 3ª prioridade (fallback): datas do assessment_pdi mais recente
       const assessments = await db
         .select({ macroInicio: assessmentPdi.macroInicio, macroTermino: assessmentPdi.macroTermino })
         .from(assessmentPdi)
