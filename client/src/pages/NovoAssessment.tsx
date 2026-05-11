@@ -796,7 +796,8 @@ export default function NovoAssessment() {
                   disabled={(() => {
                     if (!selectedTrilhaId) return true;
                     if (!selectedTrilhaExists && (!macroInicio || !macroTermino)) return true;
-                    if (!selectedTrilhaExists && nivelVigente) {
+                    // Valida datas contra o período do nível vigente (sempre, independente de trilha existir)
+                    if (nivelVigente) {
                       const nv = nivelVigente as any;
                       const toStr = (v: any): string | null => {
                         if (!v) return null;
