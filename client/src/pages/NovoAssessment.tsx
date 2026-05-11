@@ -518,6 +518,19 @@ export default function NovoAssessment() {
   // Expanded competencia detail state
   const [expandedComp, setExpandedComp] = useState<number | null>(null);
 
+  // Validação de datas contra o período do nível vigente
+  const toDateStr = (v: any): string | null => {
+    if (!v) return null;
+    if (typeof v === 'string') return v.includes('T') ? v.split('T')[0] : v;
+    if (v instanceof Date) return v.toISOString().split('T')[0];
+    return null;
+  };
+  const nv = nivelVigente as any;
+  const nivelLimiteInicio = toDateStr(nv?.nivelInicio ?? nv?.dataInicio);
+  const nivelLimiteFim = toDateStr(nv?.nivelFim ?? nv?.dataFim);
+  const inicioForaDoNivel = !!macroInicio && !!nivelLimiteInicio && macroInicio < nivelLimiteInicio;
+  const fimForaDoNivel = !!macroTermino && !!nivelLimiteFim && macroTermino > nivelLimiteFim;
+
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
@@ -716,72 +729,57 @@ export default function NovoAssessment() {
                   <Calendar className="h-4 w-4 text-secondary" />
                   Macro Jornada (Duração da Trilha)
                 </Label>
-                {/* Alerta de período do nível vigente */}
-                {(() => {
-                  const nv = nivelVigente as any;
-                  // Usa nivelInicio/nivelFim se preenchidos, senão dataInicio/dataFim do contrato
-                  const limiteInicio: string | null = nv?.nivelInicio ?? nv?.dataInicio ?? null;
-                  const limiteFim: string | null = nv?.nivelFim ?? nv?.dataFim ?? null;
-                  const toStr = (v: any): string | null => {
-                    if (!v) return null;
-                    if (typeof v === 'string') return v.includes('T') ? v.split('T')[0] : v;
-                    if (v instanceof Date) return v.toISOString().split('T')[0];
-                    return null;
-                  };
-                  const inicioStr = toStr(limiteInicio);
-                  const fimStr = toStr(limiteFim);
-                  const inicioInvalido = !!macroInicio && !!inicioStr && macroInicio < inicioStr;
-                  const fimInvalido = !!macroTermino && !!fimStr && macroTermino > fimStr;
-                  return (
-                    <>
-                      {nivelVigente && inicioStr && fimStr && (
-                        <div className="flex items-start gap-2 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2.5 text-xs text-indigo-700">
-                          <CalendarRange className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                          <span>
-                            O período da Macro Jornada deve estar dentro do <strong>Nível {nivelVigente.nivel}</strong>:{' '}
-                            <strong>
-                              {new Date(inicioStr + 'T00:00:00').toLocaleDateString('pt-BR')}
-                              {' → '}
-                              {new Date(fimStr + 'T00:00:00').toLocaleDateString('pt-BR')}
-                            </strong>
-                          </span>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-1.5">
-                          <Label className="text-sm text-muted-foreground">Data de Início *</Label>
-                          <Input
-                            type="date"
-                            value={macroInicio}
-                            onChange={e => setMacroInicio(e.target.value)}
-                            className={`h-11 ${inicioInvalido ? 'border-red-500 bg-red-50' : ''}`}
-                          />
-                          {inicioInvalido && (
-                            <p className="text-xs text-red-600 flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              Data anterior ao início do Nível {nivelVigente?.nivel} ({new Date(inicioStr! + 'T00:00:00').toLocaleDateString('pt-BR')})
-                            </p>
-                          )}
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-sm text-muted-foreground">Data de Término *</Label>
-                          <Input
-                            type="date"
-                            value={macroTermino}
-                            onChange={e => setMacroTermino(e.target.value)}
-                            className={`h-11 ${fimInvalido ? 'border-red-500 bg-red-50' : ''}`}
-                          />
-                          {fimInvalido && (
-                            <p className="text-xs text-red-600 flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              Data após o fim do Nível {nivelVigente?.nivel} ({new Date(fimStr! + 'T00:00:00').toLocaleDateString('pt-BR')})
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  );
-                })()}
+                {/* Aviso fixo: período do nível vigente */}
+                {nivelVigente && nivelLimiteInicio && nivelLimiteFim && (
+                  <div className="flex items-start gap-3 bg-amber-50 border-2 border-amber-400 rounded-xl px-4 py-3 text-sm text-amber-900 shadow-sm">
+                    <AlertCircle className="h-5 w-5 mt-0.5 shrink-0 text-amber-500" />
+                    <div>
+                      <p className="font-bold text-amber-800 uppercase tracking-wide text-xs mb-0.5">Atenção</p>
+                      <p>
+                        O <strong>Macro Ciclo</strong> selecionado deve ficar dentro do período do nível que o aluno está cursando.
+                      </p>
+                      <p className="mt-1 font-semibold">
+                        Nível {nivelVigente.nivel} em andamento:{' '}
+                        {new Date(nivelLimiteInicio + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}
+                        {' → '}
+                        {new Date(nivelLimiteFim + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Data de Início *</Label>
+                    <Input
+                      type="date"
+                      value={macroInicio}
+                      onChange={e => setMacroInicio(e.target.value)}
+                      className={`h-11 ${inicioForaDoNivel ? 'border-red-500 bg-red-50' : ''}`}
+                    />
+                    {inicioForaDoNivel && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Data anterior ao início do Nível {nivelVigente?.nivel} ({new Date(nivelLimiteInicio + 'T00:00:00').toLocaleDateString('pt-BR')})
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Data de Término *</Label>
+                    <Input
+                      type="date"
+                      value={macroTermino}
+                      onChange={e => setMacroTermino(e.target.value)}
+                      className={`h-11 ${fimForaDoNivel ? 'border-red-500 bg-red-50' : ''}`}
+                    />
+                    {fimForaDoNivel && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Data após o fim do Nível {nivelVigente?.nivel} ({new Date(nivelLimiteFim + 'T00:00:00').toLocaleDateString('pt-BR')})
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <Separator />
@@ -796,20 +794,8 @@ export default function NovoAssessment() {
                   disabled={(() => {
                     if (!selectedTrilhaId) return true;
                     if (!selectedTrilhaExists && (!macroInicio || !macroTermino)) return true;
-                    // Valida datas contra o período do nível vigente (sempre, independente de trilha existir)
-                    if (nivelVigente) {
-                      const nv = nivelVigente as any;
-                      const toStr = (v: any): string | null => {
-                        if (!v) return null;
-                        if (typeof v === 'string') return v.includes('T') ? v.split('T')[0] : v;
-                        if (v instanceof Date) return v.toISOString().split('T')[0];
-                        return null;
-                      };
-                      const inicioStr = toStr(nv?.nivelInicio ?? nv?.dataInicio);
-                      const fimStr = toStr(nv?.nivelFim ?? nv?.dataFim);
-                      if (macroInicio && inicioStr && macroInicio < inicioStr) return true;
-                      if (macroTermino && fimStr && macroTermino > fimStr) return true;
-                    }
+                    // Valida datas contra o período do nível vigente
+                    if (inicioForaDoNivel || fimForaDoNivel) return true;
                     return false;
                   })()}
                   className="bg-secondary hover:bg-secondary/90 gap-1.5"
