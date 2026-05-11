@@ -201,10 +201,19 @@ function CicloCard({ ciclo, index, niveisAluno }: { ciclo: any; index: number; n
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {niveisAluno.map((nivel: any) => {
-                  // Status baseado no campo do banco (fonte da verdade)
-                  const emAndamento = ['em_andamento', 'fechamento', 'ajustes'].includes(nivel.status);
-                  const futuro = nivel.status === 'planejado';
-                  const encerrado = ['encerrado', 'certificado'].includes(nivel.status);
+                  // Status visual baseado nas datas reais (não no campo status do banco,
+                  // que pode estar desatualizado após resets ou onboarding liberado)
+                  const hoje = new Date();
+                  hoje.setHours(0, 0, 0, 0);
+                  const dataInicioDate = nivel.dataInicio ? new Date(nivel.dataInicio) : null;
+                  const dataFimDate = nivel.dataFim ? new Date(nivel.dataFim) : null;
+                  if (dataFimDate) dataFimDate.setHours(23, 59, 59, 999);
+                  // Futuro: dataInicio ainda não chegou
+                  const futuro = dataInicioDate ? dataInicioDate > hoje : false;
+                  // Em andamento: já começou e ainda não terminou
+                  const emAndamento = !futuro && dataFimDate ? dataFimDate >= hoje : false;
+                  // Encerrado: dataFim já passou
+                  const encerrado = !futuro && !emAndamento;
                   const inicio = nivel.dataInicio
                     ? new Date(nivel.dataInicio).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
                     : null;
