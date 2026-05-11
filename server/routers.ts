@@ -2272,7 +2272,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .query(async ({ input }) => {
         const database = await db.getDb();
         if (!database) return { erro: 'database null' };
-        const conn = (database as any).$client;
+        const conn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
         if (!conn) return { erro: '$client null' };
         const resultados: any = {};
         // Query 1: aluno
@@ -2347,7 +2347,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .query(async ({ input }) => {
         const database = await db.getDb();
         if (!database) return { aluno: null, assessment: null, competenciasAssessment: [], competenciasPlano: [], cursosAtribuidos: [], contrato: null, periodo: { inicio: null, fim: null }, metas: null, webinares: [], tarefas: [], todasSessoes: [], metasDesafio: [], _erros: ['database null'] };
-        const conn = (database as any).$client;
+        const conn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
         if (!conn) return { aluno: null, assessment: null, competenciasAssessment: [], competenciasPlano: [], cursosAtribuidos: [], contrato: null, periodo: { inicio: null, fim: null }, metas: null, webinares: [], tarefas: [], todasSessoes: [], metasDesafio: [], _erros: ['$client null'] };
         try {
         // 1. Dados básicos do aluno + trilha + programa
@@ -2518,7 +2518,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .mutation(async ({ input, ctx }) => {
         const database = await db.getDb();
         if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
-        const conn = (database as any).$client;
+        const conn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
         if (!conn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: '$client indisponível' });
         // Buscar dados completos do aluno
         const [alunoRows] = await conn.execute(
@@ -9090,8 +9090,7 @@ Responda APENAS em JSON com o formato:
         addField('curriculoUrl', input.curriculoUrl ?? null);
         if (sets.length === 0) return { success: true };
         vals.push(input.alunoId);
-        // Usar sempre SQL puro via rawConn ou mysql2 direto — nunca Drizzle ORM para colunas fora do schema
-        const rawConn = await db.getRawConnection();
+        const rawConn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
         if (rawConn) {
           await (rawConn as any).execute(`UPDATE \`alunos\` SET ${sets.join(', ')} WHERE \`id\` = ?`, vals);
         } else {
@@ -9120,7 +9119,7 @@ Responda APENAS em JSON com o formato:
       .query(async ({ input }) => {
         const database = await db.getDb();
         if (!database) return null;
-        const rawConn = await db.getRawConnection();
+        const rawConn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
         if (rawConn) {
           const [rows] = await (rawConn as any).execute(
             `SELECT dataNascimento, estadoCivil, temFilhos, quantidadeFilhos,
@@ -11241,7 +11240,7 @@ Responda APENAS em JSON com o formato especificado.`
               });
             }
 
-            const conn = await db.getRawConnection();
+            const conn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
             if (!conn) {
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",

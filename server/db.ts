@@ -10004,6 +10004,7 @@ export async function getOnboardingTrackingList(programId?: number) {
       alunoId: aluno.id,
       name: aluno.name,
       email: aluno.email,
+      externalId: aluno.externalId || null,
       programName: aluno.programId ? programMap.get(aluno.programId) || null : null,
       turmaName: aluno.turmaId ? turmaMap.get(aluno.turmaId) || null : null,
       steps,
@@ -10015,6 +10016,8 @@ export async function getOnboardingTrackingList(programId?: number) {
       // Timestamps for detail view
       cadastroConfirmadoEm: jornada?.cadastroConfirmadoEm || null,
       aceiteRealizadoEm: jornada?.aceiteRealizadoEm || null,
+      pdiLiberadoPelaMentora: jornada?.pdiLiberadoPelaMentora === 1,
+      pdiLiberadoEm: jornada?.pdiLiberadoEm || null,
     };
   })
   // Sort by createdAt descending (most recent first)
