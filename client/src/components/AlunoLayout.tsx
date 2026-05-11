@@ -55,16 +55,13 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
   });
 
   // Determinar se o menu deve ser bloqueado
+  // Usa needsOnboarding do backend (fonte da verdade), que já considera:
+  // - Data de corte (01/03/2026)
+  // - aceiteRealizado
+  // - onboardingLiberado (reset de ciclo não bloqueia o menu)
   const menuBloqueado = useMemo(() => {
     if (!onboardingStatus) return false; // Enquanto carrega, não bloqueia
-    // Regra: só bloqueia alunos cadastrados a partir de 15/03/2026 que NÃO deram aceite
-    if (onboardingStatus.alunoCreatedAt) {
-      const createdAt = new Date(onboardingStatus.alunoCreatedAt);
-      if (createdAt >= ONBOARDING_CUTOFF_DATE && !onboardingStatus.aceiteRealizado) {
-        return true;
-      }
-    }
-    return false;
+    return !!onboardingStatus.needsOnboarding;
   }, [onboardingStatus]);
 
   // Redirecionar para onboarding se tentar acessar rota bloqueada
