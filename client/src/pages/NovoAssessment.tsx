@@ -739,12 +739,12 @@ export default function NovoAssessment() {
                       onChange={e => setMacroInicio(e.target.value)}
                       className={`h-11 ${
                         macroInicio && (nivelVigente as any)?.nivelInicio && macroInicio < (nivelVigente as any).nivelInicio
-                          ? 'border-amber-400 bg-amber-50'
+                          ? 'border-red-500 bg-red-50'
                           : ''
                       }`}
                     />
                     {macroInicio && (nivelVigente as any)?.nivelInicio && macroInicio < (nivelVigente as any).nivelInicio && (
-                      <p className="text-xs text-amber-600 flex items-center gap-1">
+                      <p className="text-xs text-red-600 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         Data anterior ao início do Nível {nivelVigente?.nivel} ({new Date((nivelVigente as any).nivelInicio + 'T00:00:00').toLocaleDateString('pt-BR')})
                       </p>
@@ -758,12 +758,12 @@ export default function NovoAssessment() {
                       onChange={e => setMacroTermino(e.target.value)}
                       className={`h-11 ${
                         macroTermino && (nivelVigente as any)?.nivelFim && macroTermino > (nivelVigente as any).nivelFim
-                          ? 'border-amber-400 bg-amber-50'
+                          ? 'border-red-500 bg-red-50'
                           : ''
                       }`}
                     />
                     {macroTermino && (nivelVigente as any)?.nivelFim && macroTermino > (nivelVigente as any).nivelFim && (
-                      <p className="text-xs text-amber-600 flex items-center gap-1">
+                      <p className="text-xs text-red-600 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         Data após o fim do Nível {nivelVigente?.nivel} ({new Date((nivelVigente as any).nivelFim + 'T00:00:00').toLocaleDateString('pt-BR')})
                       </p>
@@ -781,7 +781,12 @@ export default function NovoAssessment() {
                 </Button>
                 <Button
                   onClick={() => setStep(2)}
-                  disabled={!selectedTrilhaId || (!selectedTrilhaExists && (!macroInicio || !macroTermino))}
+                  disabled={
+                    !selectedTrilhaId ||
+                    (!selectedTrilhaExists && (!macroInicio || !macroTermino)) ||
+                    (!selectedTrilhaExists && !!macroInicio && !!(nivelVigente as any)?.nivelInicio && macroInicio < (nivelVigente as any).nivelInicio) ||
+                    (!selectedTrilhaExists && !!macroTermino && !!(nivelVigente as any)?.nivelFim && macroTermino > (nivelVigente as any).nivelFim)
+                  }
                   className="bg-secondary hover:bg-secondary/90 gap-1.5"
                   size="lg"
                 >
