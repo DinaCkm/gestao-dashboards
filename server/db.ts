@@ -6253,6 +6253,15 @@ export async function getContratoNivelVigenteByAluno(alunoId: number): Promise<C
     .orderBy(desc(contratoNiveis.id))
     .limit(1);
   if (!nivelVigente) return null;
+  // Serializar nivelInicio e nivelFim como strings YYYY-MM-DD (evitar Date objects via superjson)
+  const toDateStr = (v: any): string | null => {
+    if (!v) return null;
+    if (typeof v === 'string') return v.includes('T') ? v.split('T')[0] : v;
+    if (v instanceof Date) return v.toISOString().split('T')[0];
+    return String(v);
+  };
+  const nivelInicioStr = toDateStr(nivelVigente.nivelInicio);
+  const nivelFimStr = toDateStr(nivelVigente.nivelFim);
   // Fallback de datas para alunos legados sem contratos_aluno
   if (!nivelVigente.dataInicio || !nivelVigente.dataFim) {
     const [ap] = await db
@@ -6263,11 +6272,17 @@ export async function getContratoNivelVigenteByAluno(alunoId: number): Promise<C
       .limit(1);
     return {
       ...nivelVigente,
+      nivelInicio: nivelInicioStr,
+      nivelFim: nivelFimStr,
       dataInicio: ap?.macroInicio ?? null,
       dataFim: ap?.macroTermino ?? null,
     } as ContratoNivelComDatas;
   }
-  return nivelVigente as ContratoNivelComDatas;
+  return {
+    ...nivelVigente,
+    nivelInicio: nivelInicioStr,
+    nivelFim: nivelFimStr,
+  } as ContratoNivelComDatas;
 }
 
 export async function getContratoNivelComStatusOperacional(
