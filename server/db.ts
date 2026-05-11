@@ -9123,6 +9123,8 @@ export async function getOnboardingTrackingList(programId?: number) {
       // Timestamps for detail view
       cadastroConfirmadoEm: jornada?.cadastroConfirmadoEm || null,
       aceiteRealizadoEm: jornada?.aceiteRealizadoEm || null,
+      pdiLiberadoPelaMentora: jornada?.pdiLiberadoPelaMentora === 1,
+      pdiLiberadoEm: jornada?.pdiLiberadoEm || null,
     };
   })
   // Sort by createdAt descending (most recent first)

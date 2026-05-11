@@ -98,6 +98,11 @@ export async function verificarEEnviarLembretesOnboarding(options?: {
     // Step 1 (conviteEnviado) is admin's responsibility, skip it
     if (pendingStepKey === 'conviteEnviado') continue;
 
+    // O lembrete de 'assinar o Termo de Compromisso' (aceiteOnboarding) só deve ser enviado
+    // APÓS a mentora ter liberado o PDI para o aluno visualizar.
+    // Sem PDI liberado, o aluno ainda não tem como avançar para essa etapa.
+    if (pendingStepKey === 'aceiteOnboarding' && !(student as any).pdiLiberadoPelaMentora) continue;
+
     // Check if already sent recently
     if (!forceResend && recentReminderAlunoIds.has(student.alunoId)) {
       lembretes.push({
