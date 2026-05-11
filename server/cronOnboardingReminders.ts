@@ -10,7 +10,7 @@ import { getDb } from './db';
 import { getOnboardingTrackingList } from './db';
 import { emailAlertasLog } from '../drizzle/schema';
 import { eq, and, gte } from 'drizzle-orm';
-import { sendEmail, buildOnboardingReminderEmail } from './emailService';
+import { sendEmail, buildOnboardingReminderEmail, buildOnboardingInviteEmail } from './emailService';
 
 const HORAS_SEM_AVANCO = 24;
 const HORAS_ENTRE_LEMBRETES = 24; // Não reenviar lembrete para o mesmo aluno em menos de 24h
@@ -129,11 +129,24 @@ export async function verificarEEnviarLembretesOnboarding(options?: {
 
     if (!dryRun) {
       try {
-        const emailData = buildOnboardingReminderEmail({
-          alunoName: student.name,
-          etapaPendente,
-          loginUrl,
-        });
+        // Se o aluno ainda não confirmou o cadastro (nunca acessou o sistema),
+        // reenviar o email de boas-vindas/convite em vez do lembrete genérico.
+        let emailData: { subject: string; html: string; text: string };
+        if (pendingStepKey === 'cadastroPreenchido') {
+          emailData = buildOnboardingInviteEmail({
+            alunoName: student.name,
+            alunoEmail: student.email,
+            alunoId: (student as any).externalId || String(student.alunoId),
+            empresaName: student.programName || undefined,
+            loginUrl,
+          });
+        } else {
+          emailData = buildOnboardingReminderEmail({
+            alunoName: student.name,
+            etapaPendente,
+            loginUrl,
+          });
+        }
 
         const adminEmail = 'relacionamento@ckmtalents.net';
         const dinaEmail = 'dina@ckmtalents.net';

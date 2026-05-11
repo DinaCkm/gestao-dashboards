@@ -9112,6 +9112,7 @@ export async function getOnboardingTrackingList(programId?: number) {
       alunoId: aluno.id,
       name: aluno.name,
       email: aluno.email,
+      externalId: aluno.externalId || null,
       programName: aluno.programId ? programMap.get(aluno.programId) || null : null,
       turmaName: aluno.turmaId ? turmaMap.get(aluno.turmaId) || null : null,
       steps,
