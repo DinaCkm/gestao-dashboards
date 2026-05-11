@@ -201,8 +201,10 @@ function CicloCard({ ciclo, index, niveisAluno }: { ciclo: any; index: number; n
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {niveisAluno.map((nivel: any) => {
-                  const encerrado = nivel.status === 'encerrado' || nivel.status === 'congelado';
-                  const emAndamento = nivel.status === 'em_andamento' || nivel.status === 'ativo';
+                  // Status baseado no campo do banco (fonte da verdade)
+                  const emAndamento = ['em_andamento', 'fechamento', 'ajustes'].includes(nivel.status);
+                  const futuro = nivel.status === 'planejado';
+                  const encerrado = ['encerrado', 'certificado'].includes(nivel.status);
                   const inicio = nivel.dataInicio
                     ? new Date(nivel.dataInicio).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
                     : null;
@@ -233,7 +235,7 @@ function CicloCard({ ciclo, index, niveisAluno }: { ciclo: any; index: number; n
                             ? 'bg-gray-200 text-gray-600'
                             : 'bg-blue-100 text-blue-700'
                         }`}>
-                          {emAndamento ? 'Em andamento' : encerrado ? 'Encerrado' : nivel.status}
+                          {futuro ? 'Futuro' : emAndamento ? 'Em andamento' : 'Encerrado'}
                         </span>
                       </div>
                       {(inicio || fim) && (
