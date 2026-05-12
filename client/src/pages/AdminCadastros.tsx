@@ -57,7 +57,7 @@ function getDisplayRole(user: any): string {
 }
 
 // Calcula a janela de reset com base no FIM do nível
-// A janela abre no dia do fim do nível e fecha 30 dias depois
+// A janela abre no dia do fim do nível e fecha 60 dias depois
 function calcularProximoReset(nivelFim: string | null, _contratoInicio: string | null): { label: string; diasRestantes: number | null } | null {
   if (!nivelFim) return null;
   const fim = new Date(nivelFim);
@@ -714,7 +714,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       const inicioJanela = new Date(inicio);
       inicioJanela.setMonth(inicioJanela.getMonth() + mes);
       const fimJanela = new Date(inicioJanela);
-      fimJanela.setDate(fimJanela.getDate() + 30);
+      fimJanela.setDate(fimJanela.getDate() + 60);
       if (hoje >= inicioJanela && hoje <= fimJanela) {
         return { permitido: true, proxima: null, tipo: mes === 3 ? 'opcional' : 'obrigatorio' };
       }
