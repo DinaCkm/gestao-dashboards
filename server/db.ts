@@ -7153,38 +7153,12 @@ export async function getMacrocicloPorAluno(): Promise<Map<string, { macroInicio
   const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
   const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId || String(a.id)]));
   
-  // Buscar nivelInicio e nivelFim dos níveis vigentes (em_andamento) — o reset define um novo período
-  // Só aplica quando o aluno tem pelo menos 1 nível encerrado anterior (reset real ocorreu)
-  // Alunos no Nível I sem reset anterior continuam usando macroInicio/macroTermino do PDI
-  const niveisVigentes = await db.execute(sql.raw(`
-    SELECT cn.alunoId, cn.nivelInicio, cn.nivelFim
-    FROM contrato_niveis cn
-    WHERE cn.status = 'em_andamento' AND cn.nivelInicio IS NOT NULL
-      AND EXISTS (
-        SELECT 1 FROM contrato_niveis cn2
-        WHERE cn2.alunoId = cn.alunoId AND cn2.status = 'encerrado'
-      )
-  `)) as any;
-  const niveisVigentesList = Array.isArray(niveisVigentes[0]) ? niveisVigentes[0] : [];
-  const nivelPeriodoMap = new Map<number, { inicio: string; fim: string | null }>();
-  for (const n of niveisVigentesList) {
-    if (!nivelPeriodoMap.has(n.alunoId)) {
-      const toStr = (d: any) => d ? (typeof d === 'string' ? d.split('T')[0] : new Date(d).toISOString().split('T')[0]) : null;
-      nivelPeriodoMap.set(n.alunoId, { inicio: toStr(n.nivelInicio)!, fim: toStr(n.nivelFim) });
-    }
-  }
-
   const result = new Map<string, { macroInicio: string; macroTermino: string }>();
   
   for (const pdi of pdiList) {
     const alunoKey = alunoMap.get(pdi.alunoId) || String(pdi.alunoId);
     if (!result.has(alunoKey) && pdi.macroInicio && pdi.macroTermino) {
-      const nivelPeriodo = nivelPeriodoMap.get(pdi.alunoId);
-      // Se o aluno tem nível vigente (reset ocorreu): usar nivelInicio/nivelFim como período
-      // Caso contrário: usar macroInicio/macroTermino do PDI (sem reset ainda)
-      const macroInicioFinal = nivelPeriodo?.inicio ?? String(pdi.macroInicio).split('T')[0];
-      const macroTerminoFinal = (nivelPeriodo?.fim) ?? String(pdi.macroTermino).split('T')[0];
-      result.set(alunoKey, { macroInicio: macroInicioFinal, macroTermino: macroTerminoFinal });
+      result.set(alunoKey, { macroInicio: String(pdi.macroInicio).split('T')[0], macroTermino: String(pdi.macroTermino).split('T')[0] });
     }
   }
   
@@ -9627,50 +9601,19 @@ export async function getAlunoMacroInicioMap(): Promise<Map<number, Date>> {
   }).from(alunos);
   const alunoContratoMap = new Map(allAlunos.map(a => [a.id, a.contratoInicio]));
 
-  // Buscar nivelInicio dos níveis vigentes (em_andamento) — o reset define um novo start
-  // Só aplica quando o aluno tem pelo menos 1 nível encerrado anterior (reset real ocorreu)
-  // Alunos no Nível I sem reset anterior continuam usando macroInicio do PDI
-  const niveisVigentes = await db.execute(sql.raw(`
-    SELECT cn.alunoId, cn.nivelInicio
-    FROM contrato_niveis cn
-    WHERE cn.status = 'em_andamento' AND cn.nivelInicio IS NOT NULL
-      AND EXISTS (
-        SELECT 1 FROM contrato_niveis cn2
-        WHERE cn2.alunoId = cn.alunoId AND cn2.status = 'encerrado'
-      )
-  `)) as any;
-  const niveisVigentesList = Array.isArray(niveisVigentes[0]) ? niveisVigentes[0] : [];
-  const nivelInicioMap = new Map<number, Date>();
-  for (const n of niveisVigentesList) {
-    if (!nivelInicioMap.has(n.alunoId)) {
-      nivelInicioMap.set(n.alunoId, new Date(n.nivelInicio));
-    }
-  }
-  
   const result = new Map<number, Date>();
   
   for (const pdi of allPdis) {
+    const macroDate = new Date(pdi.macroInicio);
     const existing = result.get(pdi.alunoId);
-    // Se o aluno tem nível vigente com nivelInicio (reset ocorreu), usar como start
-    // Caso contrário, usar o macroInicio do PDI (sem reset ainda)
-    const nivelInicio = nivelInicioMap.get(pdi.alunoId);
-    if (nivelInicio) {
-      // Após reset: nivelInicio é o novo start — ignora datas anteriores
-      if (!existing || nivelInicio > existing) {
-        result.set(pdi.alunoId, nivelInicio);
-      }
-    } else {
-      // Sem reset: usar o macroInicio mais antigo do PDI
-      const macroDate = new Date(pdi.macroInicio);
-      if (!existing || macroDate < existing) {
-        result.set(pdi.alunoId, macroDate);
-      }
+    // Usar o macroInicio mais antigo (caso tenha múltiplos PDIs)
+    if (!existing || macroDate < existing) {
+      result.set(pdi.alunoId, macroDate);
     }
   }
   
-  // Se o aluno não tem PDI mas tem contratoInicio e não tem reset, usar contratoInicio
+  // Se o aluno tem contratoInicio e é anterior ao macroInicio, usar contratoInicio
   for (const [alunoId, macroDate] of Array.from(result.entries())) {
-    if (nivelInicioMap.has(alunoId)) continue; // Após reset: não sobrescrever com data anterior
     const contrato = alunoContratoMap.get(alunoId);
     if (contrato) {
       const contratoDate = new Date(contrato);
