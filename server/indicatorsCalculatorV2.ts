@@ -340,11 +340,9 @@ export function calcularIndicadoresCiclo(
   let somaNotasProvas = 0;
   let provasRealizadas = 0;
   
-  // FALLBACK: Se competenciaIds (obrigatórias) está vazio mas allCompetenciaIds tem competências,
-  // usar allCompetenciaIds para que ciclos com apenas competências opcionais não fiquem zerados
-  const compIdsParaCalculo = ciclo.competenciaIds.length > 0 
-    ? ciclo.competenciaIds 
-    : (ciclo.allCompetenciaIds || []);
+  // Ind. 2 e Ind. 3 usam APENAS competências obrigatórias (ciclo.competenciaIds).
+  // Competências opcionais NÃO entram no cálculo dos indicadores.
+  const compIdsParaCalculo = ciclo.competenciaIds;
   
   for (const compId of compIdsParaCalculo) {
     const codigo = compIdToCodigoMap.get(compId);
@@ -615,23 +613,22 @@ export function calcularIndicadoresAluno(
   //   (dependem das competências específicas de cada ciclo)
   // ============================================================
   
-  // Ciclos finalizados COM competências (obrigatórias OU opcionais via fallback) para Ind.2 e Ind.3
-  // Com o fallback de compIdsParaCalculo, ciclos com apenas opcionais agora têm dados calculados
+  // Apenas ciclos com competências obrigatórias entram no cálculo do Ind.2 e Ind.3
   const ciclosFinalizadosComComps = ciclosFinalizados
     .filter(c => {
       const cicloOriginal = ciclos.find(co => co.nomeCiclo === c.nomeCiclo);
-      if (!cicloOriginal) return true;
-      // Incluir se tem obrigatórias OU se tem opcionais (allCompetenciaIds)
-      return cicloOriginal.competenciaIds.length > 0 || (cicloOriginal.allCompetenciaIds && cicloOriginal.allCompetenciaIds.length > 0);
+      if (!cicloOriginal) return false;
+      // Incluir APENAS se tem obrigatórias
+      return cicloOriginal.competenciaIds.length > 0;
     });
   
-  // Consolidar Ind.2 e Ind.3 pelos microciclos (com competências obrigatórias ou opcionais via fallback)
+  // Consolidar Ind.2 e Ind.3 pelos microciclos (apenas com competências obrigatórias)
   const ciclosParaInd2Ind3 = ciclosFinalizadosComComps.length > 0
     ? ciclosFinalizadosComComps
     : [...ciclosFinalizados, ...ciclosEmAndamento].filter(c => {
         const cicloOriginal = ciclos.find(co => co.nomeCiclo === c.nomeCiclo);
-        if (!cicloOriginal) return true;
-        return cicloOriginal.competenciaIds.length > 0 || (cicloOriginal.allCompetenciaIds && cicloOriginal.allCompetenciaIds.length > 0);
+        if (!cicloOriginal) return false;
+        return cicloOriginal.competenciaIds.length > 0;
       });
   
   const consolidadoMicro = consolidarCiclos(ciclosParaInd2Ind3, trilha || 'Geral');
