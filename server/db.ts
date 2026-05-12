@@ -6143,7 +6143,45 @@ export async function createContratoNivel(data: InsertContratoNivel) {
   }, data);
 }
 
+/**
+ * Sincroniza automaticamente o status dos níveis de um aluno baseado nas datas do contrato:
+ * - nivelFim < hoje  → 'encerrado'
+ * - nivelInicio <= hoje <= nivelFim  → 'em_andamento'
+ * - nivelInicio > hoje  → 'planejado'
+ * Não altera status 'certificado' nem registros sem datas definidas.
+ */
+export async function syncStatusNiveisPorData(alunoId: number): Promise<void> {
+  const database = await getDb();
+  if (!database) return;
+  const rawConn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
+  if (!rawConn) return;
+  const hoje = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  try {
+    // 1. Encerrar níveis com nivelFim antes de hoje (exceto certificado)
+    await rawConn.execute(
+      `UPDATE contrato_niveis
+       SET status = 'encerrado', updatedAt = NOW()
+       WHERE alunoId = ? AND nivelFim IS NOT NULL AND nivelFim < ?
+         AND status NOT IN ('encerrado', 'certificado')`,
+      [alunoId, hoje]
+    );
+    // 2. Ativar níveis cujo período cobre hoje (nivelInicio <= hoje <= nivelFim)
+    await rawConn.execute(
+      `UPDATE contrato_niveis
+       SET status = 'em_andamento', updatedAt = NOW()
+       WHERE alunoId = ? AND nivelInicio IS NOT NULL AND nivelFim IS NOT NULL
+         AND nivelInicio <= ? AND nivelFim >= ?
+         AND status NOT IN ('em_andamento', 'encerrado', 'certificado')`,
+      [alunoId, hoje, hoje]
+    );
+  } catch (err) {
+    console.warn('[DB] Aviso: erro ao sincronizar status de níveis por data:', err);
+  }
+}
+
 export async function getContratoNiveisByAluno(alunoId: number): Promise<ContratoNivelComDatas[]> {
+  // Sincronizar status baseado nas datas antes de retornar
+  await syncStatusNiveisPorData(alunoId);
   const db = await getDb();
   if (!db) return [];
   // LEFT JOIN: alunos legados sem contratos_aluno também aparecem
@@ -7115,12 +7153,33 @@ export async function getMacrocicloPorAluno(): Promise<Map<string, { macroInicio
   const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
   const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId || String(a.id)]));
   
+  // Buscar nivelInicio e nivelFim dos níveis vigentes (em_andamento) — o reset define um novo período
+  // Quando há reset, nivelInicio e nivelFim substituem macroInicio/macroTermino do PDI
+  const niveisVigentes = await db.execute(sql.raw(`
+    SELECT alunoId, nivelInicio, nivelFim
+    FROM contrato_niveis
+    WHERE status = 'em_andamento' AND nivelInicio IS NOT NULL
+  `)) as any;
+  const niveisVigentesList = Array.isArray(niveisVigentes[0]) ? niveisVigentes[0] : [];
+  const nivelPeriodoMap = new Map<number, { inicio: string; fim: string | null }>();
+  for (const n of niveisVigentesList) {
+    if (!nivelPeriodoMap.has(n.alunoId)) {
+      const toStr = (d: any) => d ? (typeof d === 'string' ? d.split('T')[0] : new Date(d).toISOString().split('T')[0]) : null;
+      nivelPeriodoMap.set(n.alunoId, { inicio: toStr(n.nivelInicio)!, fim: toStr(n.nivelFim) });
+    }
+  }
+
   const result = new Map<string, { macroInicio: string; macroTermino: string }>();
   
   for (const pdi of pdiList) {
     const alunoKey = alunoMap.get(pdi.alunoId) || String(pdi.alunoId);
     if (!result.has(alunoKey) && pdi.macroInicio && pdi.macroTermino) {
-      result.set(alunoKey, { macroInicio: String(pdi.macroInicio), macroTermino: String(pdi.macroTermino) });
+      const nivelPeriodo = nivelPeriodoMap.get(pdi.alunoId);
+      // Se o aluno tem nível vigente (reset ocorreu): usar nivelInicio/nivelFim como período
+      // Caso contrário: usar macroInicio/macroTermino do PDI (sem reset ainda)
+      const macroInicioFinal = nivelPeriodo?.inicio ?? String(pdi.macroInicio).split('T')[0];
+      const macroTerminoFinal = (nivelPeriodo?.fim) ?? String(pdi.macroTermino).split('T')[0];
+      result.set(alunoKey, { macroInicio: macroInicioFinal, macroTermino: macroTerminoFinal });
     }
   }
   
@@ -9562,20 +9621,46 @@ export async function getAlunoMacroInicioMap(): Promise<Map<number, Date>> {
     contratoInicio: alunos.contratoInicio,
   }).from(alunos);
   const alunoContratoMap = new Map(allAlunos.map(a => [a.id, a.contratoInicio]));
+
+  // Buscar nivelInicio dos níveis vigentes (em_andamento) — o reset define um novo start
+  // Após o reset, o nivelInicio substitui qualquer data anterior como ponto de partida
+  const niveisVigentes = await db.execute(sql.raw(`
+    SELECT alunoId, nivelInicio
+    FROM contrato_niveis
+    WHERE status = 'em_andamento' AND nivelInicio IS NOT NULL
+  `)) as any;
+  const niveisVigentesList = Array.isArray(niveisVigentes[0]) ? niveisVigentes[0] : [];
+  const nivelInicioMap = new Map<number, Date>();
+  for (const n of niveisVigentesList) {
+    if (!nivelInicioMap.has(n.alunoId)) {
+      nivelInicioMap.set(n.alunoId, new Date(n.nivelInicio));
+    }
+  }
   
   const result = new Map<number, Date>();
   
   for (const pdi of allPdis) {
-    const macroDate = new Date(pdi.macroInicio);
     const existing = result.get(pdi.alunoId);
-    // Usar o macroInicio mais antigo (caso tenha múltiplos PDIs)
-    if (!existing || macroDate < existing) {
-      result.set(pdi.alunoId, macroDate);
+    // Se o aluno tem nível vigente com nivelInicio (reset ocorreu), usar como start
+    // Caso contrário, usar o macroInicio do PDI (sem reset ainda)
+    const nivelInicio = nivelInicioMap.get(pdi.alunoId);
+    if (nivelInicio) {
+      // Após reset: nivelInicio é o novo start — ignora datas anteriores
+      if (!existing || nivelInicio > existing) {
+        result.set(pdi.alunoId, nivelInicio);
+      }
+    } else {
+      // Sem reset: usar o macroInicio mais antigo do PDI
+      const macroDate = new Date(pdi.macroInicio);
+      if (!existing || macroDate < existing) {
+        result.set(pdi.alunoId, macroDate);
+      }
     }
   }
   
-  // Se o aluno tem contratoInicio e é anterior ao macroInicio, usar contratoInicio
+  // Se o aluno não tem PDI mas tem contratoInicio e não tem reset, usar contratoInicio
   for (const [alunoId, macroDate] of Array.from(result.entries())) {
+    if (nivelInicioMap.has(alunoId)) continue; // Após reset: não sobrescrever com data anterior
     const contrato = alunoContratoMap.get(alunoId);
     if (contrato) {
       const contratoDate = new Date(contrato);
