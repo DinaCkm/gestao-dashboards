@@ -4673,15 +4673,28 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         }
         await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.createSession");
 
-        // Calcular próximo número de sessão (apenas do nível vigente)
+        // Calcular próximo número de sessão
+        // REGRA: o reset é o marco que reinicia a contagem e ativa o nível como orientador de tudo.
+        // - Se o nível vigente já tem sessões vinculadas → reset ocorreu → contar só as sessões do nível atual
+        // - Se o nível vigente NÃO tem sessões vinculadas → reset ainda não ocorreu → continuar sequência geral
         const nivelVigenteParaSessao = await db.getContratoNivelVigenteByAluno(input.alunoId);
         const nivelIdParaSessao = nivelVigenteParaSessao?.id ?? null;
-        const sessoesDoCiclo = await db.getMentoringSessionsByAlunoAndNivel(input.alunoId, nivelIdParaSessao);
-        const nextSessionNumber = sessoesDoCiclo.length > 0
-          ? Math.max(...sessoesDoCiclo.map(s => s.sessionNumber ?? 0)) + 1
+        // Sessões vinculadas diretamente ao nível vigente (existem somente após o reset)
+        const sessoesDoCicloAtual = nivelIdParaSessao
+          ? await db.getMentoringSessionsByAlunoAndNivel(input.alunoId, nivelIdParaSessao)
+          : [];
+        // Determinar base de contagem: se reset ocorreu, usar só o ciclo atual; senão, usar todas as sessões
+        const resetOcorreu = sessoesDoCicloAtual.length > 0;
+        const baseParaContagem = resetOcorreu
+          ? sessoesDoCicloAtual
+          : await db.getMentoringSessionsByAluno(input.alunoId);
+        const nextSessionNumber = baseParaContagem.length > 0
+          ? Math.max(...baseParaContagem.map(s => s.sessionNumber ?? 0)) + 1
           : 1;
-        // A 1ª sessão do ciclo é sempre do tipo assessment se não especificado
-        const tipoSessaoEfetivo = input.tipoSessao ?? (nextSessionNumber === 1 ? 'individual_assessment' : 'individual_normal');
+        // A 1ª sessão só é assessment se for realmente o início (sem histórico nenhum)
+        // ou se o reset acabou de ocorrer (início do novo ciclo)
+        const isInicioDeCiclo = baseParaContagem.length === 0;
+        const tipoSessaoEfetivo = input.tipoSessao ?? (isInicioDeCiclo ? 'individual_assessment' : 'individual_normal');
 
         // Se a mentora atribuiu uma tarefa nesta sessão, o taskStatus deve ser 'nao_entregue'
         // para que o aluno veja o botão 'Entregar' no Portal
