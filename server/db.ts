@@ -7154,11 +7154,16 @@ export async function getMacrocicloPorAluno(): Promise<Map<string, { macroInicio
   const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId || String(a.id)]));
   
   // Buscar nivelInicio e nivelFim dos níveis vigentes (em_andamento) — o reset define um novo período
-  // Quando há reset, nivelInicio e nivelFim substituem macroInicio/macroTermino do PDI
+  // Só aplica quando o aluno tem pelo menos 1 nível encerrado anterior (reset real ocorreu)
+  // Alunos no Nível I sem reset anterior continuam usando macroInicio/macroTermino do PDI
   const niveisVigentes = await db.execute(sql.raw(`
-    SELECT alunoId, nivelInicio, nivelFim
-    FROM contrato_niveis
-    WHERE status = 'em_andamento' AND nivelInicio IS NOT NULL
+    SELECT cn.alunoId, cn.nivelInicio, cn.nivelFim
+    FROM contrato_niveis cn
+    WHERE cn.status = 'em_andamento' AND cn.nivelInicio IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM contrato_niveis cn2
+        WHERE cn2.alunoId = cn.alunoId AND cn2.status = 'encerrado'
+      )
   `)) as any;
   const niveisVigentesList = Array.isArray(niveisVigentes[0]) ? niveisVigentes[0] : [];
   const nivelPeriodoMap = new Map<number, { inicio: string; fim: string | null }>();
@@ -9623,11 +9628,16 @@ export async function getAlunoMacroInicioMap(): Promise<Map<number, Date>> {
   const alunoContratoMap = new Map(allAlunos.map(a => [a.id, a.contratoInicio]));
 
   // Buscar nivelInicio dos níveis vigentes (em_andamento) — o reset define um novo start
-  // Após o reset, o nivelInicio substitui qualquer data anterior como ponto de partida
+  // Só aplica quando o aluno tem pelo menos 1 nível encerrado anterior (reset real ocorreu)
+  // Alunos no Nível I sem reset anterior continuam usando macroInicio do PDI
   const niveisVigentes = await db.execute(sql.raw(`
-    SELECT alunoId, nivelInicio
-    FROM contrato_niveis
-    WHERE status = 'em_andamento' AND nivelInicio IS NOT NULL
+    SELECT cn.alunoId, cn.nivelInicio
+    FROM contrato_niveis cn
+    WHERE cn.status = 'em_andamento' AND cn.nivelInicio IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM contrato_niveis cn2
+        WHERE cn2.alunoId = cn.alunoId AND cn2.status = 'encerrado'
+      )
   `)) as any;
   const niveisVigentesList = Array.isArray(niveisVigentes[0]) ? niveisVigentes[0] : [];
   const nivelInicioMap = new Map<number, Date>();
