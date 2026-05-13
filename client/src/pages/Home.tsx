@@ -84,7 +84,7 @@ export default function Home() {
     // admin stays on Home
   }, [user, loading, setLocation, onboardingStatus]);
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "admin" || user?.role === "admin2";
 
   // Fetch stats for admin
   const { data: stats } = trpc.stats.overview.useQuery(undefined, {
@@ -125,7 +125,7 @@ export default function Home() {
     },
   ];
 
-  // If not admin, don't render the admin home (redirect will happen)
+  // Se não é admin nem admin2, não renderiza o painel admin
   if (!isAdmin) {
     return (
       <DashboardLayout>

@@ -12,7 +12,7 @@ export const users = mysqlTable("users", {
   passwordHash: varchar("passwordHash", { length: 255 }), // Para login tradicional com senha
   cpf: varchar("cpf", { length: 14 }), // CPF para login universal (formato: 12345678900)
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin", "manager"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "manager", "admin2"]).default("user").notNull(),
   programId: int("programId"), // Empresa vinculada (para gestores e alunos)
   alunoId: int("alunoId"), // Referência ao aluno (para perfil aluno)
   consultorId: int("consultorId"), // Referência ao consultor/gerente (para perfil gestor)

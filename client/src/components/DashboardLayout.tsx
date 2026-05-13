@@ -297,7 +297,9 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "admin" || user?.role === "admin2";
+  const isFullAdmin = user?.role === "admin"; // admin completo (acessa Parametrização)
+  const isAdmin2 = user?.role === "admin2"; // admin nível 2 (sem Parametrização)
   const hasConsultorId = !!(user as any)?.consultorId;
   const consultorRole = (user as any)?.consultorRole as string | null | undefined;
   const isGerente = consultorRole === 'gerente' || (!hasConsultorId && user?.role === 'manager' && !(user as any)?.alunoId);
@@ -421,6 +423,7 @@ function DashboardLayoutContent({
 
   const getRoleBadge = (role: string, cRole: string | null | undefined) => {
     if (role === 'admin') return { label: "Admin", className: "bg-primary/20 text-primary" };
+    if (role === 'admin2') return { label: "Admin N2", className: "bg-blue-100 text-blue-700" };
     if (role === 'manager' && cRole === 'mentor') return { label: "Mentor", className: "bg-orange-100 text-orange-700" };
     if (role === 'manager') return { label: "Gerente", className: "bg-secondary/20 text-secondary" };
     return { label: "Aluno", className: "bg-green-100 text-green-700" };
@@ -531,7 +534,7 @@ function DashboardLayoutContent({
                 </div>
 
                 {/* 7 ÁREAS COLAPSÁVEIS */}
-                {adminMenuGroups.map((group, groupIdx) => {
+                {adminMenuGroups.filter(group => isFullAdmin || group.label !== "Parametrização").map((group, groupIdx) => {
                   const isGroupActive = activeGroupIndex === groupIdx;
                   return (
                     <Collapsible

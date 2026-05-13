@@ -153,9 +153,16 @@ function montarResumoTempo(
   };
 }
 
-// Admin-only procedure
+// Admin-only procedure (acesso completo, inclui Parametrização)
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito a administradores' });
+  }
+  return next({ ctx });
+});
+// Admin N2 procedure (acesso a tudo exceto Parametrização)
+const adminOrAdmin2Procedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== 'admin' && ctx.user.role !== 'admin2') {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito a administradores' });
   }
   return next({ ctx });
@@ -637,14 +644,14 @@ export const appRouter = router({
 
   // User management
   users: router({
-    list: adminProcedure.query(async () => {
+    list: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllUsers();
     }),
     
     updateRole: adminProcedure
       .input(z.object({
         userId: z.number(),
-        role: z.enum(["user", "admin", "manager"])
+        role: z.enum(["user", "admin", "manager", "admin2"])
       }))
       .mutation(async ({ input }) => {
         await db.updateUserRole(input.userId, input.role);
@@ -1062,7 +1069,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // Performance Report Upload
   performanceReport: router({
     // Upload e processar CSV de performance
-    upload: adminProcedure
+    upload: adminOrAdmin2Procedure
       .input(z.object({
         fileName: z.string(),
         fileData: z.string(), // Base64 encoded CSV
@@ -1271,19 +1278,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
     
     // Listar histórico de uploads de performance
-    listUploads: adminProcedure
+    listUploads: adminOrAdmin2Procedure
       .input(z.object({ limit: z.number().optional() }).optional())
       .query(async ({ input }) => {
         return await db.getPerformanceUploads(input?.limit || 20);
       }),
     
     // Obter resumo dos dados de performance
-    summary: adminProcedure.query(async () => {
+    summary: adminOrAdmin2Procedure.query(async () => {
       return await db.getStudentPerformanceSummary();
     }),
     
     // Obter detalhes de um upload específico
-    getUpload: adminProcedure
+    getUpload: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return await db.getPerformanceUploadById(input.id);
@@ -1299,7 +1306,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
   // Formulas management
   formulas: router({
-    list: adminProcedure.query(async () => {
+    list: adminOrAdmin2Procedure.query(async () => {
       return await db.getActiveFormulas();
     }),
     
@@ -1349,7 +1356,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
   // Dashboard data
   dashboard: router({
-    adminMetrics: adminProcedure
+    adminMetrics: adminOrAdmin2Procedure
       .input(z.object({ batchId: z.number().optional() }).optional())
       .query(async ({ input }) => {
         const metrics = await db.getAdminMetrics(input?.batchId);
@@ -2033,7 +2040,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
   // System stats
   stats: router({
-    overview: adminProcedure.query(async () => {
+    overview: adminOrAdmin2Procedure.query(async () => {
       return await db.getSystemStats();
     }),
   }),
@@ -2044,7 +2051,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await db.getPrograms();
     }),
     
-    stats: adminProcedure.query(async () => {
+    stats: adminOrAdmin2Procedure.query(async () => {
       return await db.getProgramStats();
     }),
   }),
@@ -2133,7 +2140,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.getCompetenciaById(input.id);
       }),
     
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         nome: z.string().min(1),
         trilhaId: z.number(),
@@ -2146,7 +2153,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success: true, id };
       }),
     
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         nome: z.string().optional(),
@@ -2162,7 +2169,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success: true };
       }),
     
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const success = await db.deleteCompetencia(input.id);
@@ -2237,7 +2244,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
     
     // Atribuir competências em lote para uma turma inteira
-    addToTurma: adminProcedure
+    addToTurma: adminOrAdmin2Procedure
       .input(z.object({
         turmaId: z.number(),
         competenciaIds: z.array(z.number())
@@ -5343,14 +5350,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // CRUD Precificação V2
-    getPricingRulesV2: adminProcedure
+    getPricingRulesV2: adminOrAdmin2Procedure
       .query(async () => {
         const dbConn = await getDb();
         if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
         return await getSessionTypePricingRules(dbConn);
       }),
 
-    createPricingRuleV2: adminProcedure
+    createPricingRuleV2: adminOrAdmin2Procedure
       .input(z.object({
         programId: z.number(), // Obrigatório: empresa específica
         consultorId: z.number(), // Obrigatório: mentor específico
@@ -5387,7 +5394,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { id, success: true };
       }),
 
-    updatePricingRuleV2: adminProcedure
+    updatePricingRuleV2: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         programId: z.number().optional(), // Obrigatório na prática
@@ -5432,7 +5439,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success: true };
       }),
 
-    deletePricingRuleV2: adminProcedure
+    deletePricingRuleV2: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const dbConn = await getDb();
@@ -5705,11 +5712,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // Admin - Cadastros
   admin: router({
     // Empresas/Programas
-    listEmpresas: adminProcedure.query(async () => {
+    listEmpresas: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllPrograms();
     }),
     
-    createEmpresa: adminProcedure
+    createEmpresa: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         code: z.string().min(1),
@@ -5719,7 +5726,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.createProgram(input);
       }),
 
-    updateEmpresa: adminProcedure
+    updateEmpresa: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         name: z.string().min(1).optional(),
@@ -5730,7 +5737,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.updateProgram(input.id, input);
       }),
 
-    toggleEmpresaStatus: adminProcedure
+    toggleEmpresaStatus: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await db.toggleProgramStatus(input.id);
@@ -5738,15 +5745,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     
     // Mentores
     // Lista TODOS os mentores (ativos e inativos) - para tabela de Cadastros
-    listMentores: adminProcedure.query(async () => {
+    listMentores: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllMentores();
     }),
     // Lista apenas mentores ATIVOS - para dropdowns de seleção/filtro
-    listMentoresAtivos: adminProcedure.query(async () => {
+    listMentoresAtivos: adminOrAdmin2Procedure.query(async () => {
       return await db.getActiveMentores();
     }),
     
-     createMentor: adminProcedure
+     createMentor: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
@@ -5760,7 +5767,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.createMentor(input);
       }),
     
-    updateAcessoMentor: adminProcedure
+    updateAcessoMentor: adminOrAdmin2Procedure
       .input(z.object({
         consultorId: z.number(),
         loginId: z.string().nullable(),
@@ -5770,7 +5777,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, 'mentor');
       }),
 
-    editMentor: adminProcedure
+    editMentor: adminOrAdmin2Procedure
       .input(z.object({
         consultorId: z.number(),
         name: z.string().optional(),
@@ -5787,7 +5794,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
     
     // Ativar/Inativar mentor
-    toggleMentorStatus: adminProcedure
+    toggleMentorStatus: adminOrAdmin2Procedure
       .input(z.object({ consultorId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.toggleConsultorStatus(input.consultorId);
@@ -5802,13 +5809,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // Precificação flexível de sessões do mentor
-    getMentorPricing: adminProcedure
+    getMentorPricing: adminOrAdmin2Procedure
       .input(z.object({ consultorId: z.number() }))
       .query(async ({ input }) => {
         return await db.getMentorSessionPricing(input.consultorId);
       }),
 
-    setMentorPricing: adminProcedure
+    setMentorPricing: adminOrAdmin2Procedure
       .input(z.object({
         consultorId: z.number(),
         rules: z.array(z.object({
@@ -5837,11 +5844,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // Gerentes
-    listGerentes: adminProcedure.query(async () => {
+    listGerentes: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllGerentes();
     }),
     
-    createGerente: adminProcedure
+    createGerente: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
@@ -5871,7 +5878,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return gerenteResult;
       }),
     
-    updateAcessoGerente: adminProcedure
+    updateAcessoGerente: adminOrAdmin2Procedure
       .input(z.object({
         consultorId: z.number(),
         loginId: z.string().nullable(),
@@ -5881,7 +5888,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, 'gerente');
       }),
 
-    editGerente: adminProcedure
+    editGerente: adminOrAdmin2Procedure
       .input(z.object({
         consultorId: z.number(),
         name: z.string().optional(),
@@ -5894,11 +5901,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
     
     // Alunos
-    listAlunos: adminProcedure.query(async () => {
+    listAlunos: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllAlunosForAdmin();
     }),
     
-    createAluno: adminProcedure
+    createAluno: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
@@ -5942,7 +5949,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return result;
       }),
 
-    updateAluno: adminProcedure
+    updateAluno: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
         name: z.string().optional(),
@@ -5971,16 +5978,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
     
     // Gestão de Acesso (Email + CPF)
-    listAccessUsers: adminProcedure.query(async () => {
+    listAccessUsers: adminOrAdmin2Procedure.query(async () => {
       return await db.getAccessUsers();
     }),
     
-    createAccessUser: adminProcedure
+    createAccessUser: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
         cpf: z.string().min(1),
-        role: z.enum(["user", "admin", "manager"]),
+        role: z.enum(["user", "admin", "manager", "admin2"]),
         programId: z.number().nullable().optional(),
         isMentor: z.boolean().optional(), // true = Mentor, false/undefined = Gestor de Empresa
       }))
@@ -6013,13 +6020,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.createAccessUser(userData);
       }),
     
-    updateAccessUser: adminProcedure
+    updateAccessUser: adminOrAdmin2Procedure
       .input(z.object({
         userId: z.number(),
         name: z.string().optional(),
         email: z.string().email().optional(),
         cpf: z.string().optional(),
-        role: z.enum(["user", "admin", "manager"]).optional(),
+        role: z.enum(["user", "admin", "manager", "admin2"]).optional(),
         programId: z.number().nullable().optional(),
         isActive: z.number().optional(),
         consultorId: z.number().nullable().optional(),
@@ -6029,7 +6036,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.updateAccessUser(userId, data);
       }),
     
-    toggleAccessUserStatus: adminProcedure
+    toggleAccessUserStatus: adminOrAdmin2Procedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.toggleAccessUserStatus(input.userId);
@@ -6038,19 +6045,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     // ============ GERENTES DE EMPRESA (VISÃO DUPLA) ============
     
     // Listar gerentes de empresa com info completa
-    listGerentesEmpresa: adminProcedure.query(async () => {
+    listGerentesEmpresa: adminOrAdmin2Procedure.query(async () => {
       return await db.getGerentesEmpresa();
     }),
 
     // Buscar alunos de uma empresa (para select de promoção)
-    alunosByProgram: adminProcedure
+    alunosByProgram: adminOrAdmin2Procedure
       .input(z.object({ programId: z.number() }))
       .query(async ({ input }) => {
         return await db.getAlunosByProgram(input.programId);
       }),
 
     // Promover aluno a gerente de empresa
-    promoteToGerente: adminProcedure
+    promoteToGerente: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
         programId: z.number(),
@@ -6060,7 +6067,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // Criar gerente puro (sem perfil de aluno)
-    createGerentePuro: adminProcedure
+    createGerentePuro: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
@@ -6072,14 +6079,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // Remover papel de gerente
-    removeGerente: adminProcedure
+    removeGerente: adminOrAdmin2Procedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.removeGerenteRole(input.userId);
       }),
 
     // Cadastro Direto de Aluno pelo Admin (com bypass de onboarding)
-    createAlunoDireto: adminProcedure
+    createAlunoDireto: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
@@ -6120,21 +6127,21 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // Check aluno dependencies before deletion
-    getAlunoDependencies: adminProcedure
+    getAlunoDependencies: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .query(async ({ input }) => {
         return await db.getAlunoDependencies(input.alunoId);
       }),
 
     // Toggle ativar/inativar aluno
-    toggleAlunoStatus: adminProcedure
+    toggleAlunoStatus: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.toggleAlunoStatus(input.alunoId);
       }),
 
     // Delete aluno and all related data
-    deleteAluno: adminProcedure
+    deleteAluno: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number(), confirmCascade: z.boolean().default(false) }))
       .mutation(async ({ input }) => {
         // First check dependencies
@@ -6150,25 +6157,25 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // ============ LIBERAR ONBOARDING (NOVO CICLO) ============
-    liberarOnboarding: adminProcedure
+    liberarOnboarding: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.liberarOnboardingAluno(input.alunoId);
       }),
-    liberarOnboardingEmMassa: adminProcedure
+    liberarOnboardingEmMassa: adminOrAdmin2Procedure
       .input(z.object({ alunoIds: z.array(z.number()).min(1) }))
       .mutation(async ({ input }) => {
         return await db.liberarOnboardingEmMassa(input.alunoIds);
       }),
     // Reverter onboarding liberado (desfaz liberarOnboarding)
-    reverterOnboarding: adminProcedure
+    reverterOnboarding: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
         await db.resetOnboardingLiberado(input.alunoId);
         return { success: true, message: 'Onboarding revertido com sucesso.' };
       }),
     // ============ PAINEL DE AGENDAMENTOS =============
-    allAppointments: adminProcedure
+    allAppointments: adminOrAdmin2Procedure
       .input(z.object({
         status: z.string().optional(),
         type: z.string().optional(),
@@ -6181,7 +6188,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
        }),
 
     // ============ EDITAR MENTORIAS (PARAMETRIZAÇÃO) ============
-    listMentoringSessions: adminProcedure
+    listMentoringSessions: adminOrAdmin2Procedure
       .input(z.object({
         programId: z.number().optional(),
         turmaId: z.number().optional(),
@@ -6256,7 +6263,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { sessions: enrichedSessions, total };
       }),
 
-    updateSessionDate: adminProcedure
+    updateSessionDate: adminOrAdmin2Procedure
       .input(z.object({
         sessionId: z.number(),
         sessionDate: z.string().optional(),
@@ -6294,7 +6301,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success };
       }),
 
-    deleteSession: adminProcedure
+    deleteSession: adminOrAdmin2Procedure
       .input(z.object({
         sessionId: z.number(),
       }))
@@ -6303,7 +6310,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success };
       }),
 
-    adminCreateSession: adminProcedure
+    adminCreateSession: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
         consultorId: z.number(),
@@ -6397,12 +6404,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // Atualizar plataformaAulas de todos os alunos
-    updateAllAlunosPlataformaAulas: adminProcedure
+    updateAllAlunosPlataformaAulas: adminOrAdmin2Procedure
       .mutation(async () => {
         return await db.updateAllAlunosPlataformaAulas();
       }),
     
-    updateMultipleAlunosPlataforma: adminProcedure
+    updateMultipleAlunosPlataforma: adminOrAdmin2Procedure
       .input(z.array(z.object({
         alunoId: z.number(),
         plataformaAulas: z.enum(['scaffold', 'sistema_interno'])
@@ -6439,7 +6446,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // Criar ciclo
-    criar: adminProcedure
+    criar: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
         nomeCiclo: z.string().min(1),
@@ -6457,7 +6464,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // Atualizar ciclo
-    atualizar: adminProcedure
+    atualizar: adminOrAdmin2Procedure
       .input(z.object({
         cicloId: z.number(),
         nomeCiclo: z.string().optional(),
@@ -6473,7 +6480,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // Excluir ciclo
-    excluir: adminProcedure
+    excluir: adminOrAdmin2Procedure
       .input(z.object({ cicloId: z.number() }))
       .mutation(async ({ input }) => {
         const success = await db.deleteCicloExecucao(input.cicloId);
@@ -6885,19 +6892,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
   // ==================== WEBINARS MANAGEMENT ====================
   webinars: router({
-    list: adminProcedure
+    list: adminOrAdmin2Procedure
       .input(z.object({ status: z.string().optional() }).optional())
       .query(async ({ input }) => {
         return await db.listWebinars(input?.status);
       }),
 
-    getById: adminProcedure
+    getById: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return await db.getWebinarById(input.id);
       }),
 
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         title: z.string().min(1),
         description: z.string().optional(),
@@ -6931,7 +6938,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { id, success: true };
       }),
 
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         title: z.string().optional(),
@@ -6962,14 +6969,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success: true };
       }),
 
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteWebinar(input.id);
         return { success: true };
       }),
 
-    uploadCard: adminProcedure
+    uploadCard: adminOrAdmin2Procedure
       .input(z.object({
         webinarId: z.number(),
         fileBase64: z.string(),
@@ -6989,7 +6996,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { url, success: true };
       }),
 
-    sendReminder: adminProcedure
+    sendReminder: adminOrAdmin2Procedure
       .input(z.object({
         webinarId: z.number(),
         recipients: z.array(z.enum(['alunos', 'gerentes', 'mentores'])).min(1, 'Selecione pelo menos um grupo de destinatários'),
@@ -7189,19 +7196,19 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         const aluno = await db.getAlunoFromCtx(ctx.user);
         return await db.listActiveAnnouncementsForStudent(aluno?.programId || undefined);
       }),
-    list: adminProcedure
+    list: adminOrAdmin2Procedure
       .input(z.object({ activeOnly: z.boolean().optional() }).optional())
       .query(async ({ input }) => {
         return await db.listAnnouncements(input?.activeOnly);
       }),
 
-    getById: adminProcedure
+    getById: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return await db.getAnnouncementById(input.id);
       }),
 
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         title: z.string().min(1),
         content: z.string().optional(),
@@ -7224,7 +7231,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return { id, success: true };
       }),
 
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         title: z.string().optional(),
@@ -7249,7 +7256,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return { success: true };
       }),
 
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteAnnouncement(input.id);
@@ -7257,7 +7264,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
 
     // Upload de imagem de capa para avisos
-    uploadImage: adminProcedure
+    uploadImage: adminOrAdmin2Procedure
       .input(z.object({
         imageBase64: z.string(),
         mimeType: z.string().default('image/jpeg'),
@@ -7372,7 +7379,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
 
     // Admin: atualizar videoLink de um evento importado
-    updateVideoLink: adminProcedure
+    updateVideoLink: adminOrAdmin2Procedure
       .input(z.object({
         eventId: z.number(),
         videoLink: z.string().min(1, 'Link do vídeo é obrigatório'),
@@ -7618,7 +7625,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
 
     // Admin: visualizar reflexões dos alunos
-    reflections: adminProcedure
+    reflections: adminOrAdmin2Procedure
       .input(z.object({ eventId: z.number().optional() }).optional())
       .query(async ({ input }) => {
         return await db.getWebinarReflections(input?.eventId);
@@ -7642,7 +7649,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
 
     // Criar contrato (admin)
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
         programId: z.number(),
@@ -7678,7 +7685,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
 
     // Atualizar contrato (admin)
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         programId: z.number().optional(),
@@ -7699,7 +7706,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
 
     // Excluir contrato (soft delete - admin)
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteContrato(input.id);
@@ -7750,7 +7757,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
 
     // Criação manual de nível (admin)
     // As datas são lidas de contratos_aluno via JOIN — não precisam ser informadas aqui
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         contratoId: z.number(),
         alunoId: z.number(),
@@ -7932,11 +7939,11 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return { id: certId, arquivoUrl, hashDocumento, totalMentoras: mentorasUnicas.length };
       }),
 
-    templates: adminProcedure.query(async () => {
+    templates: adminOrAdmin2Procedure.query(async () => {
       return await db.getCertificationTemplates();
     }),
 
-    createTemplate: adminProcedure
+    createTemplate: adminOrAdmin2Procedure
       .input(z.object({
         nome: z.string().min(1),
         nivel: z.enum(["I", "II", "III", "IV"]),
@@ -7956,11 +7963,11 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return { id };
       }),
 
-    assinaturas: adminProcedure.query(async () => {
+    assinaturas: adminOrAdmin2Procedure.query(async () => {
       return await db.getCertificationSignatures();
     }),
 
-    createAssinatura: adminProcedure
+    createAssinatura: adminOrAdmin2Procedure
       .input(z.object({
         userId: z.number().optional(),
         tipo: z.enum(["gerente", "mentora", "gestor_master"]),
@@ -8074,19 +8081,19 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
   // Cases de Sucesso routes
   cases: router({
     // Listar cases de um aluno
-    byAluno: adminProcedure
+    byAluno: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
         return await db.getCasesSucessoByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
     
     // Listar todos os cases (admin)
-    list: adminProcedure.query(async () => {
+    list: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllCasesSucesso();
     }),
     
     // Criar case de sucesso
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
         contratoNivelId: z.number().nullable().optional(),
@@ -8114,7 +8121,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
     
     // Atualizar case de sucesso
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         entregue: z.number().min(0).max(1).optional(),
@@ -8133,7 +8140,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
     
     // Deletar case de sucesso
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteCaseSucesso(input.id);
@@ -8141,7 +8148,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }),
 
     // Alternar visibilidade do case no Mural (admin) — usa campo 'entregue' existente
-    toggleVisibilidade: adminProcedure
+    toggleVisibilidade: adminOrAdmin2Procedure
       .input(z.object({ id: z.number(), visivel: z.number().min(0).max(1) }))
       .mutation(async ({ input }) => {
         await db.updateCaseSucesso(input.id, { entregue: input.visivel });
@@ -8810,7 +8817,7 @@ Responda APENAS em JSON com o formato:
       }),
 
     // Admin: resetar teste DISC de um aluno (permite refazer)
-    resetAluno: adminProcedure
+    resetAluno: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
         // Verificar se o aluno existe
@@ -9910,7 +9917,7 @@ Responda APENAS em JSON com o formato:
       }),
 
     // Log de auditoria de resets de ciclos (admin)
-    auditoriaResets: adminProcedure
+    auditoriaResets: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number().optional(), limit: z.number().optional() }).optional())
       .query(async ({ input }) => {
         return await db.getAuditoriaResets(input ?? {});
@@ -9980,7 +9987,7 @@ Responda APENAS em JSON com o formato:
     }),
 
     // Criar notificação (admin only - para testes e envio manual)
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         userId: z.number(),
         title: z.string().min(1),
@@ -10004,11 +10011,11 @@ Responda APENAS em JSON com o formato:
 
   // ============ BIBLIOTECA DE TAREFAS ============
   taskLibrary: router({
-    list: adminProcedure.query(async () => {
+    list: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllTaskLibraryIncludingInactive();
     }),
 
-    getById: adminProcedure
+    getById: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const item = await db.getTaskLibraryById(input.id);
@@ -10016,7 +10023,7 @@ Responda APENAS em JSON com o formato:
         return item;
       }),
 
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         competencia: z.string().min(1, 'Competência é obrigatória'),
         nome: z.string().min(1, 'Nome é obrigatório'),
@@ -10035,7 +10042,7 @@ Responda APENAS em JSON com o formato:
         return { id, success: true };
       }),
 
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         competencia: z.string().min(1, 'Competência é obrigatória'),
@@ -10056,7 +10063,7 @@ Responda APENAS em JSON com o formato:
         return { success: true };
       }),
 
-    toggleActive: adminProcedure
+    toggleActive: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         isActive: z.number().min(0).max(1),
@@ -10066,7 +10073,7 @@ Responda APENAS em JSON com o formato:
         return { success: true };
       }),
 
-    generateWithAI: adminProcedure
+    generateWithAI: adminOrAdmin2Procedure
       .input(z.object({
         competencia: z.string().min(1, 'Competência é obrigatória'),
       }))
@@ -10129,7 +10136,7 @@ Responda APENAS em JSON com o formato especificado.`
   // ============ CURSOS DISPONÍVEIS ============
   courses: router({
     // Lista todos os cursos (admin)
-    list: adminProcedure.query(async () => {
+    list: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllCourses();
     }),
 
@@ -10139,7 +10146,7 @@ Responda APENAS em JSON com o formato especificado.`
     }),
 
     // Buscar curso por ID
-    getById: adminProcedure
+    getById: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const course = await db.getCourseById(input.id);
@@ -10148,7 +10155,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Criar curso
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         titulo: z.string().min(1, 'Título é obrigatório'),
         descricao: z.string().nullable().optional(),
@@ -10183,7 +10190,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Atualizar curso
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         titulo: z.string().min(1, 'Título é obrigatório'),
@@ -10219,7 +10226,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Ativar/desativar curso
-    toggleActive: adminProcedure
+    toggleActive: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         isActive: z.number().min(0).max(1),
@@ -10230,7 +10237,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Deletar curso
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteCourse(input.id);
@@ -10257,7 +10264,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Criar atividade (admin)
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         titulo: z.string().min(1),
         descricao: z.string().optional(),
@@ -10291,7 +10298,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Atualizar atividade (admin)
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         titulo: z.string().min(1).optional(),
@@ -10325,7 +10332,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Toggle ativo/inativo (admin)
-    toggleActive: adminProcedure
+    toggleActive: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         isActive: z.number().min(0).max(1),
@@ -10336,7 +10343,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Deletar atividade (admin) - também remove vinculações de turmas
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.setActivityTurmas(input.id, []); // Limpar vinculações
@@ -10352,7 +10359,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Obter mapa de todas as vinculações atividade-turma (admin)
-    getAllTurmasMap: adminProcedure.query(async () => {
+    getAllTurmasMap: adminOrAdmin2Procedure.query(async () => {
       const map = await db.getAllActivityTurmasMap();
       // Converter Map para objeto serializável
       const obj: Record<number, number[]> = {};
@@ -10380,7 +10387,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Listar inscrições de uma atividade (admin)
-    listRegistrations: adminProcedure
+    listRegistrations: adminOrAdmin2Procedure
       .input(z.object({ activityId: z.number() }))
       .query(async ({ input }) => {
         return db.listActivityRegistrations(input.activityId);
@@ -10424,7 +10431,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Atualizar status de inscrição (admin)
-    updateRegistrationStatus: adminProcedure
+    updateRegistrationStatus: adminOrAdmin2Procedure
       .input(z.object({
         registrationId: z.number(),
         status: z.enum(["inscrito", "confirmado", "cancelado", "presente", "ausente"]),
@@ -10438,7 +10445,7 @@ Responda APENAS em JSON com o formato especificado.`
   // ============ ALERTAS DE MENTORIA (EMAIL) ============
   alertasMentoria: router({
     // Verificar alunos sem mentoria há 30+ dias e enviar e-mails
-    enviarAlertas: adminProcedure
+    enviarAlertas: adminOrAdmin2Procedure
       .input(z.object({
         diasMinimo: z.number().min(1).default(30),
         dryRun: z.boolean().default(false), // Se true, apenas lista sem enviar
@@ -10583,7 +10590,7 @@ Responda APENAS em JSON com o formato especificado.`
   // ============ ALERTAS DE VENCIMENTO DE CICLO (EMAIL) ============
   vencimentoCiclo: router({
     // Verificar PDIs próximos do vencimento e enviar alertas
-    enviarAlertas: adminProcedure
+    enviarAlertas: adminOrAdmin2Procedure
       .input(z.object({
         dryRun: z.boolean().default(false),
         forceResend: z.boolean().default(false),
@@ -10600,7 +10607,7 @@ Responda APENAS em JSON com o formato especificado.`
 
   // ============ ONBOARDING TRACKING (ADMIN) ============
   onboardingTracking: router({
-    list: adminProcedure
+    list: adminOrAdmin2Procedure
       .input(z.object({ programId: z.number().optional() }).optional())
       .query(async ({ input }) => {
         return await db.getOnboardingTrackingList(input?.programId);
@@ -10611,7 +10618,7 @@ Responda APENAS em JSON com o formato especificado.`
      * - Garante que onboarding_jornada tem cadastroConfirmado=1 e aceiteRealizado=1
      * Útil quando o admin liberou onboarding por engano ou o registro foi perdido.
      */
-    corrigirOnboarding: adminProcedure
+    corrigirOnboarding: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
         const database = await db.getDb();
@@ -10654,7 +10661,7 @@ Responda APENAS em JSON com o formato especificado.`
 
         return { success: true };
       }),
-    resendInvite: adminProcedure
+    resendInvite: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
         const database = await db.getDb();
@@ -10891,7 +10898,7 @@ Responda APENAS em JSON com o formato especificado.`
     /**
      * Listar todos os cursos (competências)
      */
-    listCursos: adminProcedure
+    listCursos: adminOrAdmin2Procedure
       .query(async () => {
         try {
           const database = await getDb();
@@ -10909,7 +10916,7 @@ Responda APENAS em JSON com o formato especificado.`
     /**
      * Listar atividades de um curso (módulos/competenciasModulos)
      */
-    listAtividades: adminProcedure
+    listAtividades: adminOrAdmin2Procedure
       .input(z.object({ competenciaId: z.number() }))
       .query(async ({ input }) => {
         try {
@@ -10929,7 +10936,7 @@ Responda APENAS em JSON com o formato especificado.`
     /**
      * Criar nova atividade (módulo)
      */
-    createAtividade: adminProcedure
+    createAtividade: adminOrAdmin2Procedure
       .input(z.object({
         competenciaId: z.number(),
         titulo: z.string().min(1),
@@ -10967,7 +10974,7 @@ Responda APENAS em JSON com o formato especificado.`
     /**
      * Atualizar atividade
      */
-    updateAtividade: adminProcedure
+    updateAtividade: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         titulo: z.string().min(1),
@@ -11003,7 +11010,7 @@ Responda APENAS em JSON com o formato especificado.`
     /**
      * Deletar atividade
      */
-    deleteAtividade: adminProcedure
+    deleteAtividade: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         try {
@@ -11088,7 +11095,7 @@ Responda APENAS em JSON com o formato especificado.`
           return curso ?? null;
         }),
 
-      criarCurso: adminProcedure
+      criarCurso: adminOrAdmin2Procedure
         .input(
           z.object({
             competenciaId: z.number(),
@@ -11116,7 +11123,7 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true, id: result[0]?.insertId ?? null };
         }),
 
-      atualizarCurso: adminProcedure
+      atualizarCurso: adminOrAdmin2Procedure
         .input(
           z.object({
             cursoId: z.number(),
@@ -11146,7 +11153,7 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true };
         }),
 
-      excluirCurso: adminProcedure
+      excluirCurso: adminOrAdmin2Procedure
         .input(z.object({ cursoId: z.number() }))
         .mutation(async ({ input }) => {
           const database = await db.getDb();
@@ -11222,7 +11229,7 @@ Responda APENAS em JSON com o formato especificado.`
             .orderBy(asc(atividadesCurso.ordem));
         }),
 
-            criarAtividade: adminProcedure
+            criarAtividade: adminOrAdmin2Procedure
         .input(
           z.object({
             cursoId: z.number(),
@@ -11314,7 +11321,7 @@ Responda APENAS em JSON com o formato especificado.`
         }),
 
 
-      uploadImagemAtividade: adminProcedure
+      uploadImagemAtividade: adminOrAdmin2Procedure
         .input(
           z.object({
             nomeArquivo: z.string(),
@@ -11337,7 +11344,7 @@ Responda APENAS em JSON com o formato especificado.`
           }
         }),
 
-      atualizarAtividade: adminProcedure
+      atualizarAtividade: adminOrAdmin2Procedure
         .input(
           z.object({
             id: z.number(),
@@ -11378,7 +11385,7 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true };
         }),
 
-          deletarAtividade: adminProcedure
+          deletarAtividade: adminOrAdmin2Procedure
         .input(z.object({ atividadeId: z.number() }))
         .mutation(async ({ input }) => {
           const database = await db.getDb();
@@ -11417,7 +11424,7 @@ Responda APENAS em JSON com o formato especificado.`
           return result[0];
         }),
 
-      criarAvaliacao: adminProcedure
+      criarAvaliacao: adminOrAdmin2Procedure
         .input(
           z.object({
             atividadeId: z.number(),
@@ -11488,7 +11495,7 @@ Responda APENAS em JSON com o formato especificado.`
             .orderBy(desc(avaliacoesAtividade.createdAt));
         }),
       // Sincroniza retroativamente student_performance para todos os cursos já concluídos pela plataforma
-      syncPlatformPerformance: adminProcedure
+      syncPlatformPerformance: adminOrAdmin2Procedure
         .mutation(async () => {
           const database = await db.getDb();
           if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
@@ -11504,7 +11511,7 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true, synced };
         }),
 
-      deleteAtividade: adminProcedure
+      deleteAtividade: adminOrAdmin2Procedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ input }) => {
           const database = await db.getDb();
@@ -13137,7 +13144,7 @@ Responda APENAS em JSON com o formato especificado.`
             notaFinal,
           };
         }),
-      updateAtividade: adminProcedure
+      updateAtividade: adminOrAdmin2Procedure
         .input(
           z.object({
             id: z.number(),
@@ -13182,7 +13189,7 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true };
         }),
 
-      deleteAtividade: adminProcedure
+      deleteAtividade: adminOrAdmin2Procedure
         .input(z.object({ id: z.number() }))
         .mutation(async ({ input }) => {
           const database = await db.getDb();
@@ -13237,7 +13244,7 @@ Responda APENAS em JSON com o formato especificado.`
         return video[0] || null;
       }),
 
-    criar: adminProcedure
+    criar: adminOrAdmin2Procedure
       .input(z.object({
         chave: z.string(),
         titulo: z.string(),
@@ -13263,7 +13270,7 @@ Responda APENAS em JSON com o formato especificado.`
         return result;
       }),
 
-    atualizar: adminProcedure
+    atualizar: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         chave: z.string().optional(),
@@ -13284,7 +13291,7 @@ Responda APENAS em JSON com o formato especificado.`
         return result;
       }),
 
-    deletar: adminProcedure
+    deletar: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const database = await getDb();
