@@ -7135,7 +7135,7 @@ export async function getAllCiclosForCalculatorV2(): Promise<Map<string, { id: n
 export async function getMacrocicloPorAluno(): Promise<Map<string, { macroInicio: string; macroTermino: string }>> {
   const db = await getDb();
   if (!db) return new Map();
-  
+
   // Buscar todos os PDIs ativos com datas válidas, ordenados por macroInicio ASC
   const pdis = await db.execute(sql.raw(`
     SELECT ap.alunoId, ap.macroInicio, ap.macroTermino
@@ -7148,58 +7148,50 @@ export async function getMacrocicloPorAluno(): Promise<Map<string, { macroInicio
   const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
   const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId || String(a.id)]));
 
-  // Agrupar PDIs por aluno
+  // Agrupar PDIs por aluno (já ordenados por macroInicio ASC)
   const pdisPorAluno = new Map<number, Array<{ macroInicio: string; macroTermino: string }>>();
   for (const pdi of pdiList) {
     if (!pdisPorAluno.has(pdi.alunoId)) pdisPorAluno.set(pdi.alunoId, []);
     pdisPorAluno.get(pdi.alunoId)!.push(pdi);
   }
 
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-
   const result = new Map<string, { macroInicio: string; macroTermino: string }>();
 
   for (const [alunoId, pdisAluno] of pdisPorAluno) {
     const alunoKey = alunoMap.get(alunoId) || String(alunoId);
 
-    // 1ª prioridade: PDI cujo período inclui hoje (macroInicio <= hoje <= macroTermino)
-    const pdiAtual = pdisAluno.find(p => {
-      const inicio = new Date(String(p.macroInicio).split('T')[0] + 'T00:00:00');
-      const termino = new Date(String(p.macroTermino).split('T')[0] + 'T23:59:59');
-      return inicio <= hoje && hoje <= termino;
-    });
-    if (pdiAtual) {
-      result.set(alunoKey, {
-        macroInicio: String(pdiAtual.macroInicio).split('T')[0],
-        macroTermino: String(pdiAtual.macroTermino).split('T')[0],
-      });
-      continue;
-    }
+    // Lógica: enquanto não há reset, toda a jornada é um único macrociclo contínuo.
+    // Usar o menor macroInicio (início da jornada) e o maior macroTermino dos PDIs
+    // que já iniciaram (macroInicio <= hoje). PDIs futuros são ignorados.
+    const hoje = new Date();
+    hoje.setHours(23, 59, 59, 999);
 
-    // 2ª prioridade: PDI mais recente já iniciado (macroInicio <= hoje), mesmo que encerrado
-    const pdisPassados = pdisAluno.filter(p => {
+    const pdisIniciadosOuAtivos = pdisAluno.filter(p => {
       const inicio = new Date(String(p.macroInicio).split('T')[0] + 'T00:00:00');
       return inicio <= hoje;
     });
-    if (pdisPassados.length > 0) {
-      const pdiMaisRecente = pdisPassados.reduce((a, b) =>
-        new Date(String(a.macroInicio)) >= new Date(String(b.macroInicio)) ? a : b
+
+    if (pdisIniciadosOuAtivos.length > 0) {
+      // Início da jornada: menor macroInicio entre todos os PDIs já iniciados
+      const primeiroInicio = pdisIniciadosOuAtivos[0].macroInicio; // já ordenado ASC
+      // Fim da jornada: maior macroTermino entre todos os PDIs já iniciados
+      const ultimoTermino = pdisIniciadosOuAtivos.reduce((max, p) =>
+        String(p.macroTermino) > String(max) ? String(p.macroTermino) : max,
+        String(pdisIniciadosOuAtivos[0].macroTermino)
       );
       result.set(alunoKey, {
-        macroInicio: String(pdiMaisRecente.macroInicio).split('T')[0],
-        macroTermino: String(pdiMaisRecente.macroTermino).split('T')[0],
+        macroInicio: String(primeiroInicio).split('T')[0],
+        macroTermino: String(ultimoTermino).split('T')[0],
       });
-      continue;
-    }
-
-    // 3ª prioridade (fallback): PDI mais antigo ainda futuro
-    const pdiMaisAntigo = pdisAluno[0];
-    if (pdiMaisAntigo) {
-      result.set(alunoKey, {
-        macroInicio: String(pdiMaisAntigo.macroInicio).split('T')[0],
-        macroTermino: String(pdiMaisAntigo.macroTermino).split('T')[0],
-      });
+    } else {
+      // Fallback: aluno com apenas PDIs futuros — usar o mais antigo
+      const pdiMaisAntigo = pdisAluno[0];
+      if (pdiMaisAntigo) {
+        result.set(alunoKey, {
+          macroInicio: String(pdiMaisAntigo.macroInicio).split('T')[0],
+          macroTermino: String(pdiMaisAntigo.macroTermino).split('T')[0],
+        });
+      }
     }
   }
 
