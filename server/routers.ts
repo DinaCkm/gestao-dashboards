@@ -5673,6 +5673,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           validatedByName: validador?.name || null,
           validatedAt: session.validatedAt,
           relatoAluno: session.relatoAluno,
+          createdAt: session.createdAt,
           comments,
         };
       }),

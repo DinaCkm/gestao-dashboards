@@ -381,6 +381,26 @@ export default function AtividadesPraticas() {
                   </div>
                 </div>
 
+                {/* Data de solicitação e Sessão de mentoria */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
+                    <p className="text-xs text-gray-500 mb-1">Data da Solicitação</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {submissionDetail.createdAt
+                        ? new Date(submissionDetail.createdAt).toLocaleDateString('pt-BR')
+                        : '-'}
+                    </p>
+                  </div>
+                  <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
+                    <p className="text-xs text-gray-500 mb-1">Sessão de Mentoria</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {submissionDetail.sessionNumber
+                        ? `Sessão ${submissionDetail.sessionNumber}${submissionDetail.sessionDate ? ` — ${new Date(submissionDetail.sessionDate + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}`
+                        : '-'}
+                    </p>
+                  </div>
+                </div>
+
                 {/* Status */}
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium text-gray-700">Status:</span>
