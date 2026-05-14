@@ -7136,32 +7136,73 @@ export async function getMacrocicloPorAluno(): Promise<Map<string, { macroInicio
   const db = await getDb();
   if (!db) return new Map();
   
-  // Usar apenas o PDI ativo mais recente por aluno (evitar expandir range com PDIs congelados/antigos)
+  // Buscar todos os PDIs ativos com datas válidas, ordenados por macroInicio ASC
   const pdis = await db.execute(sql.raw(`
     SELECT ap.alunoId, ap.macroInicio, ap.macroTermino
     FROM assessment_pdi ap
-    INNER JOIN (
-      SELECT alunoId, MAX(createdAt) as maxCreatedAt
-      FROM assessment_pdi
-      WHERE status = 'ativo' AND macroInicio IS NOT NULL AND macroTermino IS NOT NULL
-      GROUP BY alunoId
-    ) latest ON ap.alunoId = latest.alunoId AND ap.createdAt = latest.maxCreatedAt
-    WHERE ap.status = 'ativo'
+    WHERE ap.status = 'ativo' AND ap.macroInicio IS NOT NULL AND ap.macroTermino IS NOT NULL
+    ORDER BY ap.alunoId, ap.macroInicio ASC
   `)) as any;
   const pdiList = Array.isArray(pdis[0]) ? pdis[0] : [];
-  
+
   const alunosList = await db.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
   const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId || String(a.id)]));
-  
-  const result = new Map<string, { macroInicio: string; macroTermino: string }>();
-  
+
+  // Agrupar PDIs por aluno
+  const pdisPorAluno = new Map<number, Array<{ macroInicio: string; macroTermino: string }>>();
   for (const pdi of pdiList) {
-    const alunoKey = alunoMap.get(pdi.alunoId) || String(pdi.alunoId);
-    if (!result.has(alunoKey) && pdi.macroInicio && pdi.macroTermino) {
-      result.set(alunoKey, { macroInicio: String(pdi.macroInicio).split('T')[0], macroTermino: String(pdi.macroTermino).split('T')[0] });
+    if (!pdisPorAluno.has(pdi.alunoId)) pdisPorAluno.set(pdi.alunoId, []);
+    pdisPorAluno.get(pdi.alunoId)!.push(pdi);
+  }
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const result = new Map<string, { macroInicio: string; macroTermino: string }>();
+
+  for (const [alunoId, pdisAluno] of pdisPorAluno) {
+    const alunoKey = alunoMap.get(alunoId) || String(alunoId);
+
+    // 1ª prioridade: PDI cujo período inclui hoje (macroInicio <= hoje <= macroTermino)
+    const pdiAtual = pdisAluno.find(p => {
+      const inicio = new Date(String(p.macroInicio).split('T')[0] + 'T00:00:00');
+      const termino = new Date(String(p.macroTermino).split('T')[0] + 'T23:59:59');
+      return inicio <= hoje && hoje <= termino;
+    });
+    if (pdiAtual) {
+      result.set(alunoKey, {
+        macroInicio: String(pdiAtual.macroInicio).split('T')[0],
+        macroTermino: String(pdiAtual.macroTermino).split('T')[0],
+      });
+      continue;
+    }
+
+    // 2ª prioridade: PDI mais recente já iniciado (macroInicio <= hoje), mesmo que encerrado
+    const pdisPassados = pdisAluno.filter(p => {
+      const inicio = new Date(String(p.macroInicio).split('T')[0] + 'T00:00:00');
+      return inicio <= hoje;
+    });
+    if (pdisPassados.length > 0) {
+      const pdiMaisRecente = pdisPassados.reduce((a, b) =>
+        new Date(String(a.macroInicio)) >= new Date(String(b.macroInicio)) ? a : b
+      );
+      result.set(alunoKey, {
+        macroInicio: String(pdiMaisRecente.macroInicio).split('T')[0],
+        macroTermino: String(pdiMaisRecente.macroTermino).split('T')[0],
+      });
+      continue;
+    }
+
+    // 3ª prioridade (fallback): PDI mais antigo ainda futuro
+    const pdiMaisAntigo = pdisAluno[0];
+    if (pdiMaisAntigo) {
+      result.set(alunoKey, {
+        macroInicio: String(pdiMaisAntigo.macroInicio).split('T')[0],
+        macroTermino: String(pdiMaisAntigo.macroTermino).split('T')[0],
+      });
     }
   }
-  
+
   return result;
 }
 
