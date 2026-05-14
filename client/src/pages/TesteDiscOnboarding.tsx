@@ -274,6 +274,18 @@ function TesteDisc({
   const [showIntro, setShowIntro] = useState(true);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [videoCompleted, setVideoCompleted] = useState(false);
+  // Sequência de vídeos: 0 = vídeo introdutório, 1 = vídeo DISC explicativo
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const VIDEOS = [
+    {
+      src: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663427002956/CvjchevMsVnMzcTy.mp4",
+      label: "Vídeo 1 de 2 — Apresentação",
+    },
+    {
+      src: "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/video-disc-explicativo_c13df132.mp4",
+      label: "Vídeo 2 de 2 — Entenda o DISC",
+    },
+  ];
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Se o aluno já assistiu antes, marcar videoCompleted como true
@@ -396,39 +408,74 @@ function TesteDisc({
               </p>
             </CardHeader>
             <CardContent className="p-6 space-y-5">
-              {/* Vídeo Player */}
+              {/* Vídeo Player - sequência de 2 vídeos */}
               {showVideoPlayer ? (
-                <div className="rounded-xl overflow-hidden shadow-md border border-gray-200 relative">
-                  <video
-                    ref={videoRef}
-                    controls
-                    autoPlay
-                    className="w-full aspect-video bg-black"
-                    src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/video-disc-explicativo_c13df132.mp4"
-                    onEnded={() => {
-                      setVideoCompleted(true);
-                      if (!alreadyWatched) {
-                        markVideoWatchedMutation.mutate({ alunoId });
-                      }
-                    }}
-                    onTimeUpdate={(e) => {
-                      const video = e.currentTarget;
-                      if (video.duration > 0 && video.currentTime / video.duration >= 0.9) {
-                        setVideoCompleted(true);
-                        if (!alreadyWatched) {
-                          markVideoWatchedMutation.mutate({ alunoId });
-                        }
-                      }
-                    }}
-                  >
-                    Seu navegador não suporta vídeo.
-                  </video>
-                  {videoCompleted && (
-                    <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 shadow-lg animate-in fade-in zoom-in duration-300">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Vídeo concluído
+                <div className="space-y-3">
+                  {/* Indicador de progresso dos vídeos */}
+                  {!videoCompleted && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {VIDEOS.map((v, idx) => (
+                        <div key={idx} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+                          idx === currentVideoIndex
+                            ? "bg-primary/10 text-primary border border-primary/30"
+                            : idx < currentVideoIndex
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-400"
+                        }`}>
+                          {idx < currentVideoIndex ? <CheckCircle2 className="h-3 w-3" /> : <span className="w-3 text-center">{idx + 1}</span>}
+                          <span>{v.label}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
+                  <div className="rounded-xl overflow-hidden shadow-md border border-gray-200 relative">
+                    <video
+                      key={currentVideoIndex}
+                      ref={currentVideoIndex === VIDEOS.length - 1 ? videoRef : undefined}
+                      controls
+                      autoPlay
+                      className="w-full aspect-video bg-black"
+                      src={VIDEOS[currentVideoIndex].src}
+                      onEnded={() => {
+                        if (currentVideoIndex < VIDEOS.length - 1) {
+                          setCurrentVideoIndex(currentVideoIndex + 1);
+                        } else {
+                          setVideoCompleted(true);
+                          if (!alreadyWatched) {
+                            markVideoWatchedMutation.mutate({ alunoId });
+                          }
+                        }
+                      }}
+                      onTimeUpdate={(e) => {
+                        const video = e.currentTarget;
+                        if (currentVideoIndex === VIDEOS.length - 1 && video.duration > 0 && video.currentTime / video.duration >= 0.9) {
+                          setVideoCompleted(true);
+                          if (!alreadyWatched) {
+                            markVideoWatchedMutation.mutate({ alunoId });
+                          }
+                        }
+                      }}
+                    >
+                      Seu navegador não suporta vídeo.
+                    </video>
+                    {currentVideoIndex < VIDEOS.length - 1 && (
+                      <div className="absolute bottom-3 right-3">
+                        <button
+                          onClick={() => setCurrentVideoIndex(currentVideoIndex + 1)}
+                          className="bg-primary text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 shadow-lg hover:bg-primary/90 transition-colors"
+                        >
+                          Próximo vídeo
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                    {videoCompleted && (
+                      <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 shadow-lg animate-in fade-in zoom-in duration-300">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Vídeos concluídos
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <button
