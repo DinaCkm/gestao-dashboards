@@ -7,7 +7,7 @@ import {
   PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   Legend
 } from "recharts";
-import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, ArrowLeft, HelpCircle, GraduationCap, PartyPopper, Info, ChevronDown, ChevronUp, User, Clock, CheckCircle2, XCircle, Snowflake } from "lucide-react";
+import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, ArrowLeft, HelpCircle, GraduationCap, PartyPopper, Info, ChevronDown, ChevronUp, User, Clock, CheckCircle2, XCircle, Snowflake, RefreshCw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -64,6 +64,11 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
                   <Snowflake className="h-3 w-3 mr-1" />PDI Congelado
                 </Badge>
               )}
+              {aluno.foiResetado && (
+                <Badge variant="outline" className="text-xs text-orange-700 border-orange-400 bg-orange-50">
+                  <RefreshCw className="h-3 w-3 mr-1" />Resetado · Ciclo {aluno.resetDataCiclo} arquivado
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -83,6 +88,27 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
       {/* Detalhes expandidos */}
       {expanded && (
         <div className="border-t bg-muted/30 p-4 space-y-4">
+          {/* Aviso de reset */}
+          {aluno.foiResetado && (
+            <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
+              <div className="flex items-center gap-2 mb-1">
+                <RefreshCw className="h-4 w-4 text-orange-600" />
+                <span className="text-sm font-semibold text-orange-800">Aluno em novo ciclo após reset</span>
+              </div>
+              <p className="text-xs text-orange-700 mb-1">
+                O ciclo {aluno.resetDataCiclo} foi arquivado em{' '}
+                <strong>{aluno.resetCriadoEm ? new Date(aluno.resetCriadoEm).toLocaleDateString('pt-BR') : '—'}</strong>
+                {aluno.resetAdminNome ? ` por ${aluno.resetAdminNome}` : ''}.
+                {aluno.resetInd7Snapshot != null && (
+                  <> Engajamento final do ciclo anterior: <strong>{aluno.resetInd7Snapshot.toFixed(0)}%</strong>.</>
+                )}
+              </p>
+              <p className="text-xs text-orange-600 italic">
+                Os indicadores atuais refletem o novo ciclo em andamento. O mentor precisa criar o novo PDI para iniciar o cálculo.
+              </p>
+            </div>
+          )}
+
           {/* Aviso de PDI congelado */}
           {aluno.temPdiCongelado && aluno.pdisCongelados?.length > 0 && (
             <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">

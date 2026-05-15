@@ -210,6 +210,8 @@ export default function AdminCadastros() {
   const { data: gerentes, refetch: refetchGerentes, isLoading: loadingGerentes } = trpc.admin.listGerentes.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: accessUsers, refetch: refetchAccessUsers, isLoading: loadingAccessUsers } = trpc.admin.listAccessUsers.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: allAlunos, refetch: refetchAllAlunos, isLoading: loadingAllAlunos } = trpc.admin.listAlunos.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: auditoriaResets = [] } = trpc.admin.auditoriaResets.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const resetsPorAlunoMap = new Map(auditoriaResets.map((r: any) => [r.alunoId, r]));
 
   // Mutations
   const createEmpresa = trpc.admin.createEmpresa.useMutation({
@@ -1318,6 +1320,12 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="font-medium text-sm">{aluno.name}</span>
+                        {resetsPorAlunoMap.has(aluno.id) && (
+                          <Badge variant="outline" className="ml-2 text-[10px] text-orange-700 border-orange-400 bg-orange-50 px-1.5 py-0">
+                            <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                            Resetado em {new Date(resetsPorAlunoMap.get(aluno.id)!.criadoEm).toLocaleDateString('pt-BR')}
+                          </Badge>
+                        )}
                       </div>
                       <div className="hidden sm:block text-xs text-muted-foreground truncate max-w-[200px]">
                         {aluno.programName || ''}
@@ -1402,6 +1410,41 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                             </span>
                           </div>
                         </div>
+                        {/* Dados de Reset */}
+                        {resetsPorAlunoMap.has(aluno.id) && (() => {
+                          const resetInfo = resetsPorAlunoMap.get(aluno.id)!;
+                          return (
+                            <div className="mt-3 pt-3 border-t border-orange-200">
+                              <div className="flex items-center gap-2 mb-1">
+                                <RefreshCw className="h-3.5 w-3.5 text-orange-600" />
+                                <p className="text-xs font-semibold text-orange-600">Histórico de Reset</p>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-1.5 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Data do reset:</span>
+                                  <span className="font-medium">{new Date(resetInfo.criadoEm).toLocaleDateString('pt-BR')}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Ciclo arquivado:</span>
+                                  <span className="font-medium">{resetInfo.numeroCicloArquivado}</span>
+                                </div>
+                                {resetInfo.ind7Snapshot != null && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">Engajamento final:</span>
+                                    <span className="font-medium">{parseFloat(resetInfo.ind7Snapshot).toFixed(0)}%</span>
+                                  </div>
+                                )}
+                                {resetInfo.adminNome && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">Executado por:</span>
+                                    <span>{resetInfo.adminNome}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
                         {/* Dados do Onboarding */}
                         {(aluno.telefone || aluno.cargo || aluno.areaAtuacao || aluno.minicurriculo || aluno.quemEVoce) && (
                           <div className="mt-3 pt-3 border-t border-blue-200">

@@ -12373,3 +12373,34 @@ export async function getAuditoriaResets(options?: { alunoId?: number; limit?: n
     return [];
   }
 }
+
+/**
+ * Retorna um Map de alunoId → dados do reset mais recente.
+ * Usado pelo dashboard Por Empresa e listagem de alunos para exibir badge de reset.
+ */
+export async function getAllResetsPorAluno(): Promise<Map<number, { criadoEm: Date; numeroCicloArquivado: number; adminNome: string | null; ind7Snapshot: number | null }>> {
+  const db = await getDb();
+  if (!db) return new Map();
+  try {
+    const [rows] = await db.execute(sql.raw(`
+      SELECT alunoId, MAX(criadoEm) as criadoEm, MAX(numeroCicloArquivado) as numeroCicloArquivado,
+             MAX(adminNome) as adminNome, MAX(ind7Snapshot) as ind7Snapshot
+      FROM auditoria_resets_ciclo
+      GROUP BY alunoId
+    `)) as any;
+    const result = new Map<number, { criadoEm: Date; numeroCicloArquivado: number; adminNome: string | null; ind7Snapshot: number | null }>();
+    if (Array.isArray(rows)) {
+      for (const row of rows) {
+        result.set(Number(row.alunoId), {
+          criadoEm: row.criadoEm,
+          numeroCicloArquivado: Number(row.numeroCicloArquivado),
+          adminNome: row.adminNome ?? null,
+          ind7Snapshot: row.ind7Snapshot != null ? parseFloat(row.ind7Snapshot) : null,
+        });
+      }
+    }
+    return result;
+  } catch (_) {
+    return new Map();
+  }
+}

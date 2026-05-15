@@ -3063,6 +3063,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           }
         }
         
+        // Buscar dados de reset de todos os alunos
+        const resetsPorAluno = await db.getAllResetsPorAluno();
+        
         const alunosEnriquecidos = dashboard.alunos.map(ind => {
           const alunoDb = alunosList.find(a => (a.externalId || String(a.id)) === ind.idUsuario);
           const turma = alunoDb?.turmaId ? turmaMap.get(alunoDb.turmaId) : null;
@@ -3099,6 +3102,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           // PDIs congelados do aluno
           const pdisCongelados = alunoDb ? (pdisCongeladosPorAluno.get(alunoDb.id) || []) : [];
           
+          // Dados de reset do aluno
+          const resetInfo = alunoDb ? resetsPorAluno.get(alunoDb.id) : undefined;
+          
           return {
             ...ind,
             alunoDbId: alunoDb?.id || 0,
@@ -3113,6 +3119,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             competenciasComNota: competencias.filter(c => c.nota !== null).length,
             pdisCongelados,
             temPdiCongelado: pdisCongelados.length > 0,
+            foiResetado: !!resetInfo,
+            resetDataCiclo: resetInfo ? resetInfo.numeroCicloArquivado : null,
+            resetCriadoEm: resetInfo ? resetInfo.criadoEm : null,
+            resetAdminNome: resetInfo ? resetInfo.adminNome : null,
+            resetInd7Snapshot: resetInfo ? resetInfo.ind7Snapshot : null,
           };
         });
         
