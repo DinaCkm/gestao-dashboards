@@ -3141,15 +3141,22 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           const temPdiAtivo = allAssessmentPdis.some(p => p.alunoId === alunoDb?.id && p.status === 'ativo');
           const usarSnapshot = !!historicoAluno && !temPdiAtivo;
 
+          const snapshotInd7 = parseFloat(String(historicoAluno?.ind7EngajamentoFinal ?? historicoAluno?.snapshotEngajamento ?? '0'));
           const indFinal = usarSnapshot ? {
             ...ind,
-            ind1_webinars: parseFloat(historicoAluno.snapshotInd1 ?? '0'),
-            ind2_avaliacoes: parseFloat(historicoAluno.snapshotInd2 ?? '0'),
-            ind3_competencias: parseFloat(historicoAluno.snapshotInd3 ?? '0'),
-            ind4_tarefas: parseFloat(historicoAluno.snapshotInd4 ?? '0'),
-            ind5_engajamento: parseFloat(historicoAluno.snapshotInd5 ?? '0'),
-            ind7_engajamento_final: parseFloat(String(historicoAluno.ind7EngajamentoFinal ?? historicoAluno.snapshotEngajamento ?? '0')),
-            notaFinal: parseFloat(String(historicoAluno.ind7EngajamentoFinal ?? historicoAluno.snapshotEngajamento ?? '0')),
+            // Sobrescrever consolidado com valores do snapshot
+            consolidado: {
+              ...(ind.consolidado || {}),
+              ind1_webinars: parseFloat(historicoAluno.snapshotInd1 ?? '0'),
+              ind2_avaliacoes: parseFloat(historicoAluno.snapshotInd2 ?? '0'),
+              ind3_competencias: parseFloat(historicoAluno.snapshotInd3 ?? '0'),
+              ind4_tarefas: parseFloat(historicoAluno.snapshotInd4 ?? '0'),
+              ind5_engajamento: parseFloat(historicoAluno.snapshotInd5 ?? '0'),
+              ind6_aplicabilidade: parseFloat(historicoAluno.snapshotAplicabilidade ?? '0'),
+              ind7_engajamentoFinal: snapshotInd7,
+            },
+            notaFinal: snapshotInd7 / 10,
+            performanceGeral: snapshotInd7,
           } : ind;
 
           return {
