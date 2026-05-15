@@ -12404,3 +12404,30 @@ export async function getAllResetsPorAluno(): Promise<Map<number, { criadoEm: Da
     return new Map();
   }
 }
+
+/**
+ * Busca todos os históricos de ciclos de uma lista de alunoIds.
+ * Usado pelo dashboard Por Empresa para calcular médias dos ciclos anteriores.
+ */
+export async function getHistoricoCiclosPorEmpresa(alunoIds: number[]) {
+  const db = await getDb();
+  if (!db || alunoIds.length === 0) return [];
+  const ids = alunoIds.join(',');
+  const [rows] = await db.execute(sql.raw(`
+    SELECT
+      h.alunoId,
+      h.numeroCiclo,
+      h.snapshotEngajamento,
+      h.snapshotInd1,
+      h.snapshotInd2,
+      h.snapshotInd3,
+      h.snapshotInd4,
+      h.snapshotInd5,
+      h.snapshotAplicabilidade,
+      h.snapshotMetasPercentual
+    FROM historico_ciclos_aluno h
+    WHERE h.alunoId IN (${ids})
+    ORDER BY h.alunoId, h.numeroCiclo DESC
+  `)) as any;
+  return Array.isArray(rows) ? rows : [];
+}

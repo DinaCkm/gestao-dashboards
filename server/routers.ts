@@ -3066,6 +3066,35 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         // Buscar dados de reset de todos os alunos
         const resetsPorAluno = await db.getAllResetsPorAluno();
         
+        // Buscar históricos de ciclos para calcular médias do ciclo anterior
+        const alunoDbIds = alunosList.map(a => a.id);
+        const historicosEmpresa = await db.getHistoricoCiclosPorEmpresa(alunoDbIds);
+        // Pegar apenas o ciclo mais recente de cada aluno (já ordenado DESC por numeroCiclo)
+        const historicoMaisRecentePorAluno = new Map<number, any>();
+        for (const h of historicosEmpresa) {
+          if (!historicoMaisRecentePorAluno.has(Number(h.alunoId))) {
+            historicoMaisRecentePorAluno.set(Number(h.alunoId), h);
+          }
+        }
+        // Calcular médias do ciclo anterior (snapshot) para alunos que têm histórico
+        const historicosValidos = Array.from(historicoMaisRecentePorAluno.values()).filter(
+          h => h.snapshotEngajamento != null
+        );
+        const calcMedia = (arr: any[], field: string) => {
+          const vals = arr.map(h => parseFloat(h[field] ?? 0)).filter(v => !isNaN(v));
+          return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+        };
+        const visaoEmpresaAnterior = historicosValidos.length > 0 ? {
+          totalAlunos: historicosValidos.length,
+          mediaInd1: calcMedia(historicosValidos, 'snapshotInd1'),
+          mediaInd2: calcMedia(historicosValidos, 'snapshotInd2'),
+          mediaInd3: calcMedia(historicosValidos, 'snapshotInd3'),
+          mediaInd4: calcMedia(historicosValidos, 'snapshotInd4'),
+          mediaInd5: calcMedia(historicosValidos, 'snapshotInd5'),
+          mediaInd6: calcMedia(historicosValidos, 'snapshotAplicabilidade'),
+          mediaInd7: calcMedia(historicosValidos, 'snapshotEngajamento'),
+        } : null;
+        
         const alunosEnriquecidos = dashboard.alunos.map(ind => {
           const alunoDb = alunosList.find(a => (a.externalId || String(a.id)) === ind.idUsuario);
           const turma = alunoDb?.turmaId ? turmaMap.get(alunoDb.turmaId) : null;
@@ -3130,6 +3159,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return {
           ...dashboard,
           alunos: alunosEnriquecidos,
+          visaoEmpresaAnterior,
         };
       }),
     

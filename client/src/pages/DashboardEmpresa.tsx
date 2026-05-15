@@ -331,7 +331,7 @@ export default function DashboardEmpresa() {
     );
   }
 
-  const { visaoEmpresa, porTurma } = data;
+  const { visaoEmpresa, porTurma, visaoEmpresaAnterior } = data as any;
 
   const melhorAluno = alunos.length > 0 
     ? alunos.reduce((best: any, current: any) => (current.notaFinal > best.notaFinal ? current : best), alunos[0])
@@ -505,6 +505,51 @@ export default function DashboardEmpresa() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Indicadores do Ciclo Anterior (Arquivado) */}
+        {visaoEmpresaAnterior && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-1 flex-1 bg-orange-200 rounded" />
+              <span className="text-sm font-semibold text-orange-700 flex items-center gap-1">
+                <span>↺</span> Ciclo Anterior Arquivado — {visaoEmpresaAnterior.totalAlunos} aluno(s) com histórico congelado
+              </span>
+              <div className="h-1 flex-1 bg-orange-200 rounded" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 opacity-80">
+              {[
+                { label: 'Ind. 1: Webinars', val: visaoEmpresaAnterior.mediaInd1 },
+                { label: 'Ind. 2: Avaliações', val: visaoEmpresaAnterior.mediaInd2 },
+                { label: 'Ind. 3: Competências', val: visaoEmpresaAnterior.mediaInd3 },
+                { label: 'Ind. 4: Tarefas', val: visaoEmpresaAnterior.mediaInd4 },
+                { label: 'Ind. 5: Engajamento', val: visaoEmpresaAnterior.mediaInd5 },
+                { label: 'Ind. 6: Aplicabilidade', val: visaoEmpresaAnterior.mediaInd6 },
+              ].map(({ label, val }) => (
+                <Card key={label} className="border-orange-200 bg-orange-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-orange-700">{label}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-orange-600">{(val ?? 0).toFixed(0)}%</div>
+                    <p className="text-xs text-orange-400">Média congelada</p>
+                  </CardContent>
+                </Card>
+              ))}
+              <Card className="border-2 border-orange-400 bg-orange-100">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-orange-800 flex items-center gap-2">
+                    <Target className="h-4 w-4" /> Ind. 7: Engajamento Final
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-700">{(visaoEmpresaAnterior.mediaInd7 ?? 0).toFixed(0)}%</div>
+                  <Progress value={visaoEmpresaAnterior.mediaInd7 ?? 0} className="h-2 mt-1" />
+                  <p className="text-xs text-orange-500 mt-1">Média congelada no encerramento</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
 
         {/* Gráficos */}
         <div className="grid gap-6 md:grid-cols-2">
