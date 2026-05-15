@@ -863,11 +863,11 @@ E-mail: ${email}`;
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 mb-0.5">
                           {/* Foto do aluno */}
-                          <div className="w-5 h-5 rounded-full overflow-hidden bg-amber-100 border border-amber-200 shrink-0 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-amber-100 border-2 border-amber-200 shrink-0 flex items-center justify-center">
                             {c.alunoFoto ? (
                               <img src={c.alunoFoto} alt={c.alunoNome} className="w-full h-full object-cover" />
                             ) : (
-                              <span className="text-[8px] font-bold text-amber-700">{(c.alunoNome || '?').charAt(0).toUpperCase()}</span>
+                              <span className="text-[10px] font-bold text-amber-700">{(c.alunoNome || '?').charAt(0).toUpperCase()}</span>
                             )}
                           </div>
                           <p className="text-[11px] text-gray-400 truncate">
