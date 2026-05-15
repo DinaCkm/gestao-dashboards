@@ -504,6 +504,9 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
   const [curriculoUrl, setCurriculoUrl] = useState("");
   const [curriculoNome, setCurriculoNome] = useState("");
   const [uploadingCurriculo, setUploadingCurriculo] = useState(false);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [uploadingFoto, setUploadingFoto] = useState(false);
+  const uploadFotoAluno = trpc.onboarding.uploadFotoAluno.useMutation();
 
   const [initialized, setInitialized] = useState(false);
   const [perfilInitialized, setPerfilInitialized] = useState(false);
@@ -547,8 +550,31 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
     if (p.tiktokUrl) setTiktok(p.tiktokUrl);
     if (p.outraRedeUrl) setOutraRede(p.outraRedeUrl);
     if (p.curriculoUrl) { setCurriculoUrl(p.curriculoUrl); setCurriculoNome("Currículo enviado"); }
+    if (p.photoUrl) setFotoPreview(p.photoUrl);
     setPerfilInitialized(true);
   }
+
+  const handleFotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande. Máximo 5MB."); return; }
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) { toast.error("Formato inválido. Use JPG, PNG ou WEBP."); return; }
+    setUploadingFoto(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const dataUrl = ev.target?.result as string;
+        const base64 = dataUrl.split(',')[1];
+        setFotoPreview(dataUrl);
+        const res = await uploadFotoAluno.mutateAsync({ alunoId, fotoBase64: base64, mimeType: file.type });
+        setFotoPreview(res.url);
+        toast.success("Foto enviada com sucesso!");
+        setUploadingFoto(false);
+      };
+      reader.readAsDataURL(file);
+    } catch { toast.error("Erro ao enviar foto."); setUploadingFoto(false); }
+  };
 
   const handleCurriculoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -641,15 +667,24 @@ function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: 
         <Card className="lg:row-span-2">
           <CardContent className="pt-6 flex flex-col items-center">
             <div className="relative mb-4">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#0A1E3E]/20 to-[#F5991F]/20 flex items-center justify-center border-4 border-white shadow-lg">
-                <User className="h-16 w-16 text-[#0A1E3E]/50" />
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#0A1E3E]/20 to-[#F5991F]/20 flex items-center justify-center border-4 border-white shadow-lg overflow-hidden">
+                {fotoPreview ? (
+                  <img src={fotoPreview} alt="Foto de perfil" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="h-16 w-16 text-[#0A1E3E]/50" />
+                )}
               </div>
-              <button
-                className="absolute bottom-0 right-0 w-10 h-10 bg-[#F5991F] rounded-full flex items-center justify-center text-white shadow-lg hover:bg-[#F5991F]/90 transition-colors"
-                onClick={() => toast.info("Upload de foto será implementado em breve")}
+              <label
+                className={`absolute bottom-0 right-0 w-10 h-10 bg-[#F5991F] rounded-full flex items-center justify-center text-white shadow-lg hover:bg-[#F5991F]/90 transition-colors cursor-pointer ${uploadingFoto ? 'opacity-60 pointer-events-none' : ''}`}
+                title="Clique para enviar sua foto"
               >
-                <Camera className="h-5 w-5" />
-              </button>
+                {uploadingFoto ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="h-5 w-5" />
+                )}
+                <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFotoUpload} disabled={uploadingFoto || readOnly} />
+              </label>
             </div>
             <h3 className="font-semibold text-gray-900">{perfil.nome}</h3>
             <Badge className="mt-2 bg-[#0A1E3E]/10 text-[#0A1E3E] border-0">

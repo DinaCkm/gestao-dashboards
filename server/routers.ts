@@ -4262,6 +4262,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           plataformaAulas: (aluno as any).plataformaAulas || 'sistema_interno',
           contratoInicio: (aluno as any).contratoInicio || null,
           contratoFim: (aluno as any).contratoFim || null,
+          photoUrl: (aluno as any).photoUrl || null,
         },
         indicadores: {
           // Usar V2 para notaFinal e performanceGeral (consistente com Dashboard Gestor)
@@ -8389,6 +8390,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           caseId: i.caseId,
           empresa: i.empresa || "Comunidade",
           alunoNome: i.autorNome,
+          alunoFoto: (i as any).alunoFoto || null,
           titulo: i.titulo || "Case de Sucesso",
           resumoPublico: i.resumoPublico || "",
           dataEntrega: i.dataEntrega,
@@ -9178,6 +9180,22 @@ Responda APENAS em JSON com o formato:
         const buffer = Buffer.from(input.dados, 'base64');
         const fileKey = `curriculos/${input.alunoId}-${Date.now()}-${input.nomeArquivo}`;
         const { url } = await storagePut(fileKey, buffer, input.tipoMime);
+        return { url, success: true };
+      }),
+
+    // Upload de foto de perfil do aluno
+    uploadFotoAluno: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        fotoBase64: z.string(),
+        mimeType: z.string().default('image/jpeg'),
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.fotoBase64, 'base64');
+        const ext = input.mimeType === 'image/png' ? 'png' : 'jpg';
+        const key = `alunos/${input.alunoId}/foto-${Date.now()}.${ext}`;
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        await db.updateAluno(input.alunoId, { photoUrl: url });
         return { url, success: true };
       }),
 

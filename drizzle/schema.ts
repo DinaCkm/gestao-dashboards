@@ -222,6 +222,7 @@ export const alunos = mysqlTable("alunos", {
   tiktokUrl: varchar("tiktokUrl", { length: 500 }),
   outraRedeUrl: varchar("outraRedeUrl", { length: 500 }),
   curriculoUrl: varchar("curriculoUrl", { length: 1000 }),
+  photoUrl: text("photoUrl"), // URL da foto de perfil do aluno (S3)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

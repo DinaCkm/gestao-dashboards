@@ -857,14 +857,24 @@ E-mail: ${email}`;
               {(casesVitrine || [])
                 .slice(0, vitrineExpandida ? undefined : VITRINE_INICIAL)
                 .map((c: any) => (
-                <Card key={c.caseId} className="border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 shadow-sm hover:shadow-md transition-all">
+                  <Card key={c.caseId} className="border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 shadow-sm hover:shadow-md transition-all">
                   <CardContent className="p-3">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <div className="min-w-0 flex-1">
-                        <p className="text-[11px] text-gray-400 truncate">
-                          <Building2 className="h-3 w-3 text-amber-500 inline mr-1" />
-                          {c.empresa} · {c.alunoNome}
-                        </p>
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          {/* Foto do aluno */}
+                          <div className="w-5 h-5 rounded-full overflow-hidden bg-amber-100 border border-amber-200 shrink-0 flex items-center justify-center">
+                            {c.alunoFoto ? (
+                              <img src={c.alunoFoto} alt={c.alunoNome} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[8px] font-bold text-amber-700">{(c.alunoNome || '?').charAt(0).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-gray-400 truncate">
+                            <Building2 className="h-3 w-3 text-amber-500 inline mr-1" />
+                            {c.empresa} · {c.alunoNome}
+                          </p>
+                        </div>
                         <h3 className="text-sm font-semibold text-[#0A1E3E] line-clamp-2 mt-0.5 leading-snug">{c.titulo}</h3>
                       </div>
                       <Trophy className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />

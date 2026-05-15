@@ -1983,6 +1983,7 @@ export async function updateAluno(alunoId: number, data: {
   areaAtuacao?: string | null;
   minicurriculo?: string | null;
   quemEVoce?: string | null;
+  photoUrl?: string | null;
   contratoInicio?: Date | null;
   contratoFim?: Date | null;
   tipoMentoria?: string | null;
@@ -2003,6 +2004,7 @@ export async function updateAluno(alunoId: number, data: {
   if (data.areaAtuacao !== undefined) updateData.areaAtuacao = data.areaAtuacao;
   if (data.minicurriculo !== undefined) updateData.minicurriculo = data.minicurriculo;
   if (data.quemEVoce !== undefined) updateData.quemEVoce = data.quemEVoce;
+  if (data.photoUrl !== undefined) updateData.photoUrl = data.photoUrl;
   if (data.contratoInicio !== undefined) updateData.contratoInicio = data.contratoInicio;
   if (data.contratoFim !== undefined) updateData.contratoFim = data.contratoFim;
   if (data.tipoMentoria !== undefined) updateData.tipoMentoria = data.tipoMentoria;
@@ -6968,6 +6970,7 @@ export async function getCasesVitrineMural(limit = 12) {
     dataEntrega: casesSucesso.dataEntrega,
     autorAlunoId: alunos.id,
     autorNome: alunos.name,
+    alunoFoto: alunos.photoUrl,
     empresa: programs.name,
   })
     .from(casesSucesso)

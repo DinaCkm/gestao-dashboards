@@ -18,7 +18,7 @@ import {
   Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
   ClipboardCheck, Play, ExternalLink, FileText, Send, Route, FileBarChart,
   AlertTriangle, Briefcase, HelpCircle, Upload, Paperclip, FileUp, Bell, Lock, Snowflake,
-  Cloud, Link2, Share2, Linkedin, X, Flag,
+  Cloud, Link2, Share2, Linkedin, X, Flag, Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -262,6 +262,33 @@ export default function DashboardMeuPerfil() {
   const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
+  const [fotoPreviewPerfil, setFotoPreviewPerfil] = useState<string | null>(null);
+  const [uploadingFotoPerfil, setUploadingFotoPerfil] = useState(false);
+  const uploadFotoAlunoMutation = trpc.onboarding.uploadFotoAluno.useMutation();
+
+  const handleFotoPerfilUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande. Máximo 5MB."); return; }
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) { toast.error("Formato inválido. Use JPG, PNG ou WEBP."); return; }
+    setUploadingFotoPerfil(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const dataUrl = ev.target?.result as string;
+        const base64 = dataUrl.split(',')[1];
+        setFotoPreviewPerfil(dataUrl);
+        const alunoIdLocal = (data as any)?.aluno?.id;
+        if (!alunoIdLocal) { toast.error("Aluno não identificado."); setUploadingFotoPerfil(false); return; }
+        const res = await uploadFotoAlunoMutation.mutateAsync({ alunoId: alunoIdLocal, fotoBase64: base64, mimeType: file.type });
+        setFotoPreviewPerfil(res.url);
+        toast.success("Foto atualizada com sucesso!");
+        setUploadingFotoPerfil(false);
+      };
+      reader.readAsDataURL(file);
+    } catch { toast.error("Erro ao enviar foto."); setUploadingFotoPerfil(false); }
+  };
   // Filtro de indicadores: "consolidado" | "trilha:NomeTrilha" | "ciclo:CicloId"
   const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
   const [showGlossario, setShowGlossario] = useState(false);
@@ -685,7 +712,22 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
           <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
-                <div>
+                <div className="flex items-center gap-4">
+                  {/* Foto de perfil */}
+                  <div className="relative shrink-0">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/30 bg-white/10 flex items-center justify-center">
+                      {(fotoPreviewPerfil || aluno.photoUrl) ? (
+                        <img src={fotoPreviewPerfil || aluno.photoUrl!} alt={aluno.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="h-8 w-8 text-white/60" />
+                      )}
+                    </div>
+                    <label className={`absolute -bottom-1 -right-1 w-6 h-6 bg-[#F5991F] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#F5991F]/90 transition-colors ${uploadingFotoPerfil ? 'opacity-60 pointer-events-none' : ''}`} title="Alterar foto">
+                      {uploadingFotoPerfil ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Camera className="h-3 w-3 text-white" />}
+                      <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFotoPerfilUpload} disabled={uploadingFotoPerfil} />
+                    </label>
+                  </div>
+                  <div>
                   <h1 className="text-2xl font-bold">{aluno.name}</h1>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge className="bg-white/20 text-white border-white/30">
@@ -723,10 +765,11 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                     <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-amber-500 shrink-0" /> Aguardando assessment da mentora</li>
                     <li className="flex items-center gap-2"><Lock className="h-4 w-4 text-gray-400 shrink-0" /> Portal completo será liberado após o assessment</li>
                   </ul>
-                </div>
-                {aluno.mentor && aluno.mentor !== 'Não definido' && (
-                  <p className="text-sm text-amber-700 mt-2">
-                    Sua mentora <strong>{aluno.mentor}</strong> será notificada para realizar o assessment.
+                  </div>
+                  </div>
+                  {aluno.mentor && aluno.mentor !== 'Não definido' && (
+                    <p className="text-sm text-amber-700 mt-2">
+                      Sua mentora <strong>{aluno.mentor}</strong> será notificada para realizar o assessment.
                   </p>
                 )}
               </div>
@@ -761,7 +804,22 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
           <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white flex-1 shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
-                <div>
+                <div className="flex items-center gap-4">
+                  {/* Foto de perfil */}
+                  <div className="relative shrink-0">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/30 bg-white/10 flex items-center justify-center">
+                      {(fotoPreviewPerfil || aluno.photoUrl) ? (
+                        <img src={fotoPreviewPerfil || aluno.photoUrl!} alt={aluno.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="h-8 w-8 text-white/60" />
+                      )}
+                    </div>
+                    <label className={`absolute -bottom-1 -right-1 w-6 h-6 bg-[#F5991F] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#F5991F]/90 transition-colors ${uploadingFotoPerfil ? 'opacity-60 pointer-events-none' : ''}`} title="Alterar foto">
+                      {uploadingFotoPerfil ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Camera className="h-3 w-3 text-white" />}
+                      <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFotoPerfilUpload} disabled={uploadingFotoPerfil} />
+                    </label>
+                  </div>
+                  <div>
                   <h1 className="text-2xl font-bold">{aluno.name}</h1>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge className="bg-white/20 text-white border-white/30">
