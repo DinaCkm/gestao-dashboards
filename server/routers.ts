@@ -3134,8 +3134,26 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           // Dados de reset do aluno
           const resetInfo = alunoDb ? resetsPorAluno.get(alunoDb.id) : undefined;
           
-          return {
+          // Para alunos resetados sem PDI ativo, usar snapshot histórico nos indicadores
+          const historicoAluno = alunoDb ? historicoMaisRecentePorAluno.get(alunoDb.id) : null;
+          const semPdiAtivo = alunoDb ? !(pdisCongeladosPorAluno.get(alunoDb.id) === undefined) && !alunosList.find(a => a.id === alunoDb.id) : false;
+          // Verificar se aluno tem PDI ativo
+          const temPdiAtivo = allAssessmentPdis.some(p => p.alunoId === alunoDb?.id && p.status === 'ativo');
+          const usarSnapshot = !!historicoAluno && !temPdiAtivo;
+
+          const indFinal = usarSnapshot ? {
             ...ind,
+            ind1_webinars: parseFloat(historicoAluno.snapshotInd1 ?? '0'),
+            ind2_avaliacoes: parseFloat(historicoAluno.snapshotInd2 ?? '0'),
+            ind3_competencias: parseFloat(historicoAluno.snapshotInd3 ?? '0'),
+            ind4_tarefas: parseFloat(historicoAluno.snapshotInd4 ?? '0'),
+            ind5_engajamento: parseFloat(historicoAluno.snapshotInd5 ?? '0'),
+            ind7_engajamento_final: parseFloat(String(historicoAluno.ind7EngajamentoFinal ?? historicoAluno.snapshotEngajamento ?? '0')),
+            notaFinal: parseFloat(String(historicoAluno.ind7EngajamentoFinal ?? historicoAluno.snapshotEngajamento ?? '0')),
+          } : ind;
+
+          return {
+            ...indFinal,
             alunoDbId: alunoDb?.id || 0,
             email: alunoDb?.email || null,
             turmaNome: turma?.name || 'Não definida',
@@ -3149,6 +3167,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             pdisCongelados,
             temPdiCongelado: pdisCongelados.length > 0,
             foiResetado: !!resetInfo,
+            usandoSnapshotHistorico: usarSnapshot,
             resetDataCiclo: resetInfo ? resetInfo.numeroCicloArquivado : null,
             resetCriadoEm: resetInfo ? resetInfo.criadoEm : null,
             resetAdminNome: resetInfo ? resetInfo.adminNome : null,
