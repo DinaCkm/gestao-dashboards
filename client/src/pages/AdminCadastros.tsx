@@ -211,7 +211,7 @@ export default function AdminCadastros() {
   const { data: accessUsers, refetch: refetchAccessUsers, isLoading: loadingAccessUsers } = trpc.admin.listAccessUsers.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: allAlunos, refetch: refetchAllAlunos, isLoading: loadingAllAlunos } = trpc.admin.listAlunos.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: auditoriaResets = [] } = trpc.admin.auditoriaResets.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
-  const resetsPorAlunoMap = new Map(auditoriaResets.map((r: any) => [r.alunoId, r]));
+  const resetsPorAlunoMap = useMemo(() => new Map(auditoriaResets.map((r: any) => [Number(r.alunoId), r])), [auditoriaResets]);
 
   // Mutations
   const createEmpresa = trpc.admin.createEmpresa.useMutation({
