@@ -739,6 +739,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                       </Badge>
                     )}
                   </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -765,11 +766,10 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                     <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-amber-500 shrink-0" /> Aguardando assessment da mentora</li>
                     <li className="flex items-center gap-2"><Lock className="h-4 w-4 text-gray-400 shrink-0" /> Portal completo será liberado após o assessment</li>
                   </ul>
-                  </div>
-                  </div>
-                  {aluno.mentor && aluno.mentor !== 'Não definido' && (
-                    <p className="text-sm text-amber-700 mt-2">
-                      Sua mentora <strong>{aluno.mentor}</strong> será notificada para realizar o assessment.
+                </div>
+                {aluno.mentor && aluno.mentor !== 'Não definido' && (
+                  <p className="text-sm text-amber-700 mt-2">
+                    Sua mentora <strong>{aluno.mentor}</strong> será notificada para realizar o assessment.
                   </p>
                 )}
               </div>
@@ -955,6 +955,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                       </div>
                     );
                   })()}
+                </div>
                 </div>
                 <div className="hidden text-right">
                   <p className="text-xs text-white/70 mb-1 flex items-center gap-1 justify-end">
