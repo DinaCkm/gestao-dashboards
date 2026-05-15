@@ -11960,7 +11960,7 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
     const [avalRows] = await db.execute(sql.raw(`
       SELECT AVG(sp.mediaAvaliacoesRespondidas) as mediaAval
       FROM student_performance sp
-      WHERE sp.idUsuario = '${externalIdSafe}' AND sp.mediaAvaliacoesRespondidas IS NOT NULL
+      WHERE sp.externalUserId = '${externalIdSafe}' AND sp.mediaAvaliacoesRespondidas IS NOT NULL
     `)) as any;
     const avalData = Array.isArray(avalRows) ? avalRows[0] : null;
     ind2Avaliacoes = avalData?.mediaAval != null ? Math.round(Number(avalData.mediaAval)) : 0;
@@ -11975,7 +11975,7 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
         COUNT(*) as total,
         SUM(CASE WHEN sp.progressoTotal >= 100 THEN 1 ELSE 0 END) as concluidas
       FROM student_performance sp
-      WHERE sp.idUsuario = '${externalIdSafe}'
+      WHERE sp.externalUserId = '${externalIdSafe}'
     `)) as any;
     const compData = Array.isArray(compRows) ? compRows[0] : null;
     ind3Competencias = compData?.total > 0
