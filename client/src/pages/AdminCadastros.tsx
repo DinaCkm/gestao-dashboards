@@ -210,8 +210,7 @@ export default function AdminCadastros() {
   const { data: gerentes, refetch: refetchGerentes, isLoading: loadingGerentes } = trpc.admin.listGerentes.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: accessUsers, refetch: refetchAccessUsers, isLoading: loadingAccessUsers } = trpc.admin.listAccessUsers.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: allAlunos, refetch: refetchAllAlunos, isLoading: loadingAllAlunos } = trpc.admin.listAlunos.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
-  const { data: auditoriaResets = [] } = trpc.admin.auditoriaResets.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
-  const resetsPorAlunoMap = useMemo(() => new Map(auditoriaResets.map((r: any) => [Number(r.alunoId), r])), [auditoriaResets]);
+
 
   // Mutations
   const createEmpresa = trpc.admin.createEmpresa.useMutation({
@@ -615,6 +614,10 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [editAluno, setEditAluno] = useState<any>(null);
+
+  // Auditoria de resets
+  const { data: auditoriaResets = [] } = trpc.admin.auditoriaResets.useQuery(undefined);
+  const resetsPorAlunoMap = useMemo(() => new Map(auditoriaResets.map((r: any) => [Number(r.alunoId), r])), [auditoriaResets]);
 
   // Delete state
   const [deleteOpen, setDeleteOpen] = useState(false);
