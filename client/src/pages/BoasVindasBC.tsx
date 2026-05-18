@@ -1,25 +1,23 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
-import { MessageCircle, ArrowRight, Star, TrendingUp, Users, Award } from "lucide-react";
+import { MessageCircle, ArrowRight, Star, TrendingUp, Users, Award, Play } from "lucide-react";
 
 interface BoasVindasBCProps {
   nomeAluno?: string;
 }
 
 export default function BoasVindasBC({ nomeAluno }: BoasVindasBCProps) {
-  const [, setLocation] = useLocation();
   const [nome, setNome] = useState(nomeAluno || "");
+  const firstName = nome ? nome.split(" ")[0] : "";
 
   useEffect(() => {
-    // Tentar pegar o nome do localStorage se não foi passado como prop
     if (!nome) {
-      const storedNome = localStorage.getItem("bc_nome_aluno");
-      if (storedNome) setNome(storedNome);
+      const stored = localStorage.getItem("bc_nome_aluno");
+      if (stored) setNome(stored);
     }
   }, []);
 
   const handleAcessarPlataforma = () => {
-    setLocation("/onboarding");
+    window.location.href = "/";
   };
 
   const handleWhatsApp = () => {
@@ -29,335 +27,230 @@ export default function BoasVindasBC({ nomeAluno }: BoasVindasBCProps) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #1A0A5E 0%, #3A1D8F 40%, #1A0A5E 100%)",
+      background: "linear-gradient(160deg, #0d1b2a 0%, #1a2744 30%, #0f3460 60%, #16213e 100%)",
       fontFamily: "'Inter', 'Segoe UI', sans-serif",
       position: "relative",
       overflow: "hidden",
     }}>
-      {/* Círculos decorativos de fundo */}
-      <div style={{
-        position: "absolute", top: "-120px", right: "-120px",
-        width: "500px", height: "500px", borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(0,184,217,0.12) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
-      <div style={{
-        position: "absolute", bottom: "-150px", left: "-100px",
-        width: "600px", height: "600px", borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(91,46,255,0.15) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
-      <div style={{
-        position: "absolute", top: "40%", right: "5%",
-        width: "300px", height: "300px", borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(0,184,217,0.08) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
+      {/* Círculos decorativos */}
+      <div style={{ position: "absolute", top: "-150px", right: "-150px", width: "600px", height: "600px", borderRadius: "50%", background: "radial-gradient(circle, rgba(0,184,217,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "-200px", left: "-100px", width: "700px", height: "700px", borderRadius: "50%", background: "radial-gradient(circle, rgba(91,46,255,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-      {/* Header com logo */}
+      {/* Header */}
       <header style={{
-        padding: "24px 48px",
+        padding: "24px 60px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        position: "relative",
+        zIndex: 10,
       }}>
-        <img
-          src="/eco-do-bem-logo.png"
-          alt="Eco do Bem"
-          style={{ height: "64px", objectFit: "contain" }}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{
+            width: "48px", height: "48px", borderRadius: "50%",
+            background: "linear-gradient(135deg, #5B2EFF, #00B8D9)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 0 20px rgba(91,46,255,0.3)",
+          }}>
+            <img src="/eco-do-bem-logo.png" alt="Eco do Bem" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+          </div>
+          <div>
+            <p style={{ color: "#ffffff", fontWeight: "700", fontSize: "15px", margin: 0 }}>Eco do Bem</p>
+            <p style={{ color: "#00B8D9", fontSize: "12px", margin: 0 }}>Desenvolvimento Express</p>
+          </div>
+        </div>
         <button
           onClick={handleWhatsApp}
           style={{
             display: "flex", alignItems: "center", gap: "8px",
-            background: "rgba(0,184,217,0.15)",
-            border: "1px solid rgba(0,184,217,0.4)",
+            background: "rgba(37,211,102,0.12)",
+            border: "1px solid rgba(37,211,102,0.3)",
             borderRadius: "50px",
-            color: "#00B8D9",
+            color: "#25D366",
             padding: "10px 20px",
             cursor: "pointer",
-            fontSize: "14px",
+            fontSize: "13px",
             fontWeight: "500",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,184,217,0.25)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,184,217,0.15)";
           }}
         >
-          <MessageCircle size={16} />
+          <MessageCircle size={15} />
           Fale Conosco
         </button>
       </header>
 
-      {/* Conteúdo principal */}
-      <main style={{
+      {/* Hero Section */}
+      <section style={{
         maxWidth: "1100px",
         margin: "0 auto",
-        padding: "60px 48px",
+        padding: "80px 60px 60px",
+        position: "relative",
+        zIndex: 1,
       }}>
-        {/* Seção de boas-vindas */}
-        <div style={{ textAlign: "center", marginBottom: "64px" }}>
-          {/* Badge de boas-vindas */}
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: "8px",
-            background: "rgba(94,211,140,0.15)",
-            border: "1px solid rgba(94,211,140,0.4)",
-            borderRadius: "50px",
-            padding: "8px 20px",
-            marginBottom: "32px",
-          }}>
-            <Star size={14} fill="#5ED38C" color="#5ED38C" />
-            <span style={{ color: "#5ED38C", fontSize: "13px", fontWeight: "600", letterSpacing: "0.5px" }}>
-              BEM-VINDO AO PROGRAMA
-            </span>
-          </div>
-
-          <h1 style={{
-            fontSize: "clamp(36px, 5vw, 64px)",
-            fontWeight: "800",
-            color: "#FFFFFF",
-            lineHeight: "1.15",
-            marginBottom: "16px",
-          }}>
-            {nome ? `${nome.split(" ")[0]}, você` : "Você"} acaba de dar
-            <br />
-            <span style={{
-              background: "linear-gradient(90deg, #5B2EFF, #00B8D9)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}>
-              o passo mais importante
-            </span>
-          </h1>
-
-          <p style={{
-            fontSize: "clamp(16px, 2vw, 20px)",
-            color: "rgba(255,255,255,0.7)",
-            maxWidth: "620px",
-            margin: "0 auto 16px",
-            lineHeight: "1.7",
-          }}>
-            Seja muito bem-vindo(a) ao <strong style={{ color: "#fff" }}>Programa Desenvolvimento Express</strong> —
-            uma jornada transformadora que vai elevar sua liderança e os resultados da sua equipe.
-          </p>
-
-          <p style={{
-            fontSize: "15px",
-            color: "rgba(255,255,255,0.5)",
-            fontStyle: "italic",
-          }}>
-            "Lideranças melhores. Equipes mais fortes."
-          </p>
+        {/* Badge */}
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: "8px",
+          background: "rgba(94,211,140,0.12)",
+          border: "1px solid rgba(94,211,140,0.3)",
+          borderRadius: "50px",
+          padding: "8px 20px",
+          marginBottom: "28px",
+        }}>
+          <Star size={13} fill="#5ED38C" color="#5ED38C" />
+          <span style={{ color: "#5ED38C", fontSize: "12px", fontWeight: "700", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+            Cadastro realizado com sucesso
+          </span>
         </div>
 
-        {/* Área do vídeo */}
-        <div style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: "20px",
-          overflow: "hidden",
-          marginBottom: "64px",
-          aspectRatio: "16/9",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
+        {/* Título principal */}
+        <h1 style={{
+          fontSize: "clamp(38px, 5vw, 64px)",
+          fontWeight: "800",
+          color: "#ffffff",
+          lineHeight: "1.15",
+          marginBottom: "20px",
+          maxWidth: "700px",
         }}>
-          {/* Placeholder do vídeo */}
-          <div style={{
-            textAlign: "center",
-            padding: "40px",
+          {firstName ? `${firstName}, você` : "Você"} faz parte de algo{" "}
+          <span style={{
+            background: "linear-gradient(90deg, #00B8D9, #5B2EFF)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
           }}>
-            <div style={{
-              width: "80px", height: "80px",
-              background: "linear-gradient(135deg, #5B2EFF, #00B8D9)",
-              borderRadius: "50%",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 20px",
-              boxShadow: "0 0 40px rgba(91,46,255,0.4)",
-            }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
-                <polygon points="5,3 19,12 5,21" />
-              </svg>
+            extraordinário
+          </span>
+        </h1>
+
+        <p style={{
+          fontSize: "18px",
+          color: "rgba(255,255,255,0.65)",
+          maxWidth: "580px",
+          lineHeight: "1.75",
+          marginBottom: "48px",
+        }}>
+          Bem-vindo(a) ao <strong style={{ color: "#fff" }}>Programa Desenvolvimento Express</strong> — 
+          uma jornada de transformação real, com mentoria especializada e indicadores claros de evolução.
+        </p>
+
+        {/* Dois cards lado a lado: vídeo + acesso */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "24px",
+          marginBottom: "60px",
+        }}>
+          {/* Card Vídeo */}
+          <div style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "20px",
+            overflow: "hidden",
+            aspectRatio: "16/9",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            cursor: "pointer",
+          }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{
+                width: "64px", height: "64px",
+                background: "linear-gradient(135deg, #5B2EFF, #00B8D9)",
+                borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                margin: "0 auto 12px",
+                boxShadow: "0 0 30px rgba(91,46,255,0.4)",
+              }}>
+                <Play size={24} fill="white" color="white" style={{ marginLeft: "3px" }} />
+              </div>
+              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px" }}>Vídeo de boas-vindas</p>
+              <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "11px", marginTop: "4px" }}>Em breve</p>
             </div>
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "15px" }}>
-              Vídeo de boas-vindas em breve
-            </p>
+          </div>
+
+          {/* Card Acesso */}
+          <div style={{
+            background: "linear-gradient(135deg, rgba(91,46,255,0.15), rgba(0,184,217,0.08))",
+            border: "1px solid rgba(91,46,255,0.25)",
+            borderRadius: "20px",
+            padding: "32px 28px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }}>
+            <div>
+              <h3 style={{ color: "#ffffff", fontSize: "18px", fontWeight: "700", marginBottom: "20px" }}>
+                Seus dados de acesso
+              </h3>
+              <div style={{ marginBottom: "16px" }}>
+                <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Login</p>
+                <p style={{ color: "#00B8D9", fontSize: "15px", fontWeight: "600" }}>Seu e-mail cadastrado</p>
+              </div>
+              <div style={{ marginBottom: "24px" }}>
+                <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Senha</p>
+                <p style={{ color: "#5ED38C", fontSize: "15px", fontWeight: "600" }}>Seu CPF (somente números)</p>
+              </div>
+              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "12px", lineHeight: "1.5" }}>
+                Você poderá alterar sua senha após o primeiro acesso.
+              </p>
+            </div>
+            <button
+              onClick={handleAcessarPlataforma}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+                background: "linear-gradient(135deg, #5B2EFF, #00B8D9)",
+                border: "none",
+                borderRadius: "12px",
+                color: "#fff",
+                padding: "14px",
+                fontSize: "15px",
+                fontWeight: "700",
+                cursor: "pointer",
+                boxShadow: "0 4px 20px rgba(91,46,255,0.4)",
+                marginTop: "20px",
+                letterSpacing: "0.3px",
+              }}
+            >
+              Iniciar minha jornada
+              <ArrowRight size={18} />
+            </button>
           </div>
         </div>
 
         {/* Cards de benefícios */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: "20px",
-          marginBottom: "64px",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "16px",
         }}>
           {[
-            {
-              icon: <TrendingUp size={24} color="#00B8D9" />,
-              titulo: "Desenvolvimento Acelerado",
-              desc: "Trilhas personalizadas para o seu perfil e objetivos profissionais.",
-            },
-            {
-              icon: <Users size={24} color="#5B2EFF" />,
-              titulo: "Mentoria Especializada",
-              desc: "Acompanhamento próximo com mentores experientes em liderança.",
-            },
-            {
-              icon: <Award size={24} color="#5ED38C" />,
-              titulo: "Resultados Mensuráveis",
-              desc: "Indicadores claros de evolução para você acompanhar seu progresso.",
-            },
+            { icon: <TrendingUp size={22} color="#00B8D9" />, titulo: "Desenvolvimento Acelerado", desc: "Trilhas personalizadas para o seu perfil e objetivos profissionais." },
+            { icon: <Users size={22} color="#5B2EFF" />, titulo: "Mentoria Especializada", desc: "Acompanhamento próximo com mentores experientes em liderança." },
+            { icon: <Award size={22} color="#5ED38C" />, titulo: "Resultados Mensuráveis", desc: "Indicadores claros de evolução para acompanhar seu progresso." },
           ].map((card, i) => (
             <div key={i} style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.07)",
               borderRadius: "16px",
-              padding: "28px 24px",
-              transition: "all 0.3s",
-            }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.08)";
-                (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(91,46,255,0.4)";
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)";
-                (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.1)";
-              }}
-            >
-              <div style={{ marginBottom: "16px" }}>{card.icon}</div>
-              <h3 style={{ color: "#fff", fontSize: "16px", fontWeight: "700", marginBottom: "8px" }}>
-                {card.titulo}
-              </h3>
-              <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", lineHeight: "1.6" }}>
-                {card.desc}
-              </p>
+              padding: "24px 20px",
+            }}>
+              <div style={{ marginBottom: "12px" }}>{card.icon}</div>
+              <h4 style={{ color: "#ffffff", fontSize: "14px", fontWeight: "700", marginBottom: "8px" }}>{card.titulo}</h4>
+              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px", lineHeight: "1.6" }}>{card.desc}</p>
             </div>
           ))}
         </div>
-
-        {/* Instruções de acesso */}
-        <div style={{
-          background: "linear-gradient(135deg, rgba(91,46,255,0.2), rgba(0,184,217,0.1))",
-          border: "1px solid rgba(91,46,255,0.3)",
-          borderRadius: "20px",
-          padding: "40px",
-          marginBottom: "40px",
-          textAlign: "center",
-        }}>
-          <h2 style={{ color: "#fff", fontSize: "22px", fontWeight: "700", marginBottom: "16px" }}>
-            Seus dados de acesso à plataforma
-          </h2>
-          <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "16px", lineHeight: "1.8", marginBottom: "8px" }}>
-            Para acessar a plataforma de desenvolvimento, utilize:
-          </p>
-          <div style={{ display: "flex", justifyContent: "center", gap: "32px", flexWrap: "wrap", marginBottom: "24px" }}>
-            <div style={{
-              background: "rgba(255,255,255,0.08)",
-              borderRadius: "12px",
-              padding: "16px 28px",
-              textAlign: "center",
-            }}>
-              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "1px" }}>Login</p>
-              <p style={{ color: "#00B8D9", fontSize: "16px", fontWeight: "600" }}>Seu e-mail cadastrado</p>
-            </div>
-            <div style={{
-              background: "rgba(255,255,255,0.08)",
-              borderRadius: "12px",
-              padding: "16px 28px",
-              textAlign: "center",
-            }}>
-              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "1px" }}>Senha</p>
-              <p style={{ color: "#5ED38C", fontSize: "16px", fontWeight: "600" }}>Seu CPF (somente números)</p>
-            </div>
-          </div>
-          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "13px" }}>
-            Você poderá alterar sua senha após o primeiro acesso.
-          </p>
-        </div>
-
-        {/* Botão CTA principal */}
-        <div style={{ textAlign: "center", marginBottom: "48px" }}>
-          <button
-            onClick={handleAcessarPlataforma}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: "12px",
-              background: "linear-gradient(135deg, #5B2EFF, #00B8D9)",
-              border: "none",
-              borderRadius: "50px",
-              color: "#fff",
-              padding: "18px 48px",
-              fontSize: "18px",
-              fontWeight: "700",
-              cursor: "pointer",
-              boxShadow: "0 8px 32px rgba(91,46,255,0.4)",
-              transition: "all 0.3s",
-              letterSpacing: "0.3px",
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 12px 40px rgba(91,46,255,0.5)";
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 32px rgba(91,46,255,0.4)";
-            }}
-          >
-            Iniciar minha jornada
-            <ArrowRight size={20} />
-          </button>
-          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", marginTop: "16px" }}>
-            Clique para acessar a plataforma e iniciar o seu onboarding
-          </p>
-        </div>
-
-        {/* Botão WhatsApp */}
-        <div style={{ textAlign: "center" }}>
-          <button
-            onClick={handleWhatsApp}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: "10px",
-              background: "rgba(37,211,102,0.15)",
-              border: "1px solid rgba(37,211,102,0.4)",
-              borderRadius: "50px",
-              color: "#25D366",
-              padding: "12px 28px",
-              fontSize: "15px",
-              fontWeight: "500",
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = "rgba(37,211,102,0.25)";
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = "rgba(37,211,102,0.15)";
-            }}
-          >
-            <MessageCircle size={18} />
-            Precisa de ajuda? Fale conosco no WhatsApp
-          </button>
-        </div>
-      </main>
+      </section>
 
       {/* Footer */}
       <footer style={{
         textAlign: "center",
-        padding: "32px 48px",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        marginTop: "40px",
+        padding: "32px 60px",
+        borderTop: "1px solid rgba(255,255,255,0.05)",
+        position: "relative",
+        zIndex: 1,
       }}>
-        <img
-          src="/eco-do-bem-logo.png"
-          alt="Eco do Bem"
-          style={{ height: "40px", objectFit: "contain", opacity: 0.6, marginBottom: "12px" }}
-        />
-        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "13px" }}>
+        <p style={{ color: "rgba(255,255,255,0.25)", fontSize: "12px" }}>
           © 2025 Eco do Bem · CKM Talents · Todos os direitos reservados
         </p>
       </footer>
