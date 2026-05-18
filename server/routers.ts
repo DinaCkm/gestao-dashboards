@@ -6555,6 +6555,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const success = await db.deleteCicloExecucao(input.cicloId);
         return { success };
       }),
+
+    // Log de auditoria de resets de ciclos
+    auditoriaResets: adminOrAdmin2Procedure
+      .input(z.object({ alunoId: z.number().optional(), limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getAuditoriaResets(input ?? {});
+      }),
   }),
 
   // ============ ASSESSMENT PDI ============
@@ -10000,13 +10007,6 @@ Responda APENAS em JSON com o formato:
       .query(async ({ input }) => {
         if (!input.alunoId || input.alunoId === 0) return [];
         return await db.getHistoricoCiclosAluno(input.alunoId);
-      }),
-
-    // Log de auditoria de resets de ciclos (admin)
-    auditoriaResets: adminOrAdmin2Procedure
-      .input(z.object({ alunoId: z.number().optional(), limit: z.number().optional() }).optional())
-      .query(async ({ input }) => {
-        return await db.getAuditoriaResets(input ?? {});
       }),
 
     // ============ REVISÕES DO PDI ============
