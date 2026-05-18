@@ -83,11 +83,13 @@ import OnboardingVideos from "./pages/admin/OnboardingVideos";
 import BibliotecaPedagogica from "./pages/admin/BibliotecaPedagogica";
 import AuditoriaResets from "./pages/admin/AuditoriaResets";
 import VisualizarPDI from "./pages/VisualizarPDI";
+import AutoRegistro from "./pages/AutoRegistro";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/login"} component={Login} />
+      <Route path={"/registro"} component={AutoRegistro} />
       <Route path={"/"} component={Home} />
       <Route path={"/upload"} component={Upload} />
       <Route path={"/dashboard/admin"} component={AdminDashboard} />
