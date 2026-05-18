@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
 import { Loader2, AlertCircle, CheckCircle2, User, Mail, Fingerprint, Building2 } from "lucide-react";
+import BoasVindasBC from "./BoasVindasBC";
 
 function formatCpf(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -23,10 +24,13 @@ export default function AutoRegistro() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [nomeRegistrado, setNomeRegistrado] = useState("");
 
   const registroMutation = trpc.auth.autoRegistro.useMutation({
     onSuccess: (data) => {
       if (data.success) {
+        setNomeRegistrado(name.trim());
+        localStorage.setItem("bc_nome_aluno", name.trim());
         setSuccess(true);
       }
       setLoading(false);
@@ -66,47 +70,31 @@ export default function AutoRegistro() {
   };
 
   if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-        <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur">
-          <CardContent className="pt-8 pb-8 text-center">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle2 className="w-9 h-9 text-green-600" />
-              </div>
-            </div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">Cadastro realizado!</h2>
-            <p className="text-slate-600 mb-6">
-              Seu acesso foi criado com sucesso. Você receberá um email de boas-vindas em breve.
-            </p>
-            <div className="bg-slate-50 rounded-lg p-4 text-left mb-6 space-y-2">
-              <p className="text-sm font-semibold text-slate-700">Seus dados de acesso:</p>
-              <p className="text-sm text-slate-600"><span className="font-medium">Login:</span> {email}</p>
-              <p className="text-sm text-slate-600"><span className="font-medium">Senha:</span> Seu CPF (apenas números)</p>
-              <p className="text-sm text-slate-600"><span className="font-medium">Turma:</span> Desenvolvimento Express</p>
-            </div>
-            <Button
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3"
-              onClick={() => window.location.href = "/"}
-            >
-              Acessar a Plataforma
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <BoasVindasBC nomeAluno={nomeRegistrado} />;
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-      <div className="w-full max-w-md">
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "linear-gradient(135deg, #1A0A5E 0%, #3A1D8F 40%, #1A0A5E 100%)",
+      padding: "24px",
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      {/* Círculos decorativos */}
+      <div style={{ position: "absolute", top: "-100px", right: "-100px", width: "400px", height: "400px", borderRadius: "50%", background: "radial-gradient(circle, rgba(0,184,217,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "-100px", left: "-100px", width: "400px", height: "400px", borderRadius: "50%", background: "radial-gradient(circle, rgba(91,46,255,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div className="w-full max-w-md" style={{ position: "relative", zIndex: 1 }}>
         {/* Logo / Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-600 shadow-lg mb-4">
-            <span className="text-white font-bold text-2xl">E</span>
-          </div>
-          <h1 className="text-3xl font-bold text-white">Ecossistema do Bem</h1>
-          <p className="text-slate-400 mt-1">Desenvolvimento Express</p>
+          <img src="/eco-do-bem-logo.png" alt="Eco do Bem" style={{ height: "80px", objectFit: "contain", margin: "0 auto 16px" }} />
+          <h1 className="text-3xl font-bold text-white">Programa</h1>
+          <p style={{ color: "#00B8D9", fontWeight: "600", fontSize: "18px", marginTop: "4px" }}>Desenvolvimento Express</p>
+          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "14px", marginTop: "8px", fontStyle: "italic" }}>"Lideranças melhores. Equipes mais fortes."</p>
         </div>
 
         <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur">
