@@ -525,7 +525,48 @@ export function calcularIndicadoresAluno(
   const empresa = primeiroRegistro?.empresa || 'Desconhecida';
   const turma = mentoriasAluno[0]?.turma || eventosAluno[0]?.turma;
   const trilha = mentoriasAluno[0]?.trilha || eventosAluno[0]?.trilha;
-  
+
+  // ============================================================
+  // REGRA: Sem PDI ativo (macrociclo ausente) = novo ciclo sem dados ainda
+  // Retornar todos os indicadores como zero para não contaminar médias
+  // com dados históricos do ciclo anterior
+  // ============================================================
+  if (!macrociclo) {
+    const zeroConsolidado: IndicadoresCiclo = {
+      cicloId: 0, nomeCiclo: 'Consolidado', trilhaNome: trilha || 'Geral',
+      status: 'em_andamento', dataInicio: '', dataFim: '',
+      ind1_webinars: 0, ind2_avaliacoes: 0, ind3_competencias: 0,
+      ind4_tarefas: 0, ind5_engajamento: 0, ind6_aplicabilidade: 0,
+      ind7_engajamentoFinal: 0,
+      detalhes: {
+        webinars: { total: 0, presentes: 0 },
+        avaliacoes: { total: 0, realizadas: 0, somaNotas: 0 },
+        competencias: { total: 0, finalizadas: 0, emAndamento: 0, competenciasDetalhe: [] },
+        tarefas: { total: 0, entregues: 0 },
+        engajamento: { sessoes: 0, somaNotas: 0 },
+        case: { entregue: false, obrigatorio: false },
+      },
+      classificacao: 'Inicial',
+    };
+    return {
+      idUsuario, nomeAluno, empresa, turma, trilha,
+      ciclosFinalizados: [], ciclosEmAndamento: [],
+      consolidado: zeroConsolidado,
+      participacaoMentorias: 0, atividadesPraticas: 0, engajamento: 0,
+      performanceCompetencias: 0, performanceAprendizado: 0,
+      participacaoEventos: 0, performanceGeral: 0,
+      classificacao: 'Inicial', notaFinal: 0,
+      totalMentorias: 0, mentoriasPresente: 0,
+      totalAtividades: 0, atividadesEntregues: 0,
+      totalEventos: 0, eventosPresente: 0,
+      totalCompetencias: 0, competenciasAprovadas: 0,
+      mediaEngajamentoRaw: 0,
+      engajamentoComponentes: { presenca: 0, atividades: 0, notaMentora: 0 },
+      ciclosFinalizadosLegacy: [], ciclosEmAndamentoLegacy: [],
+      alertaCasePendente: [],
+    };
+  }
+
   // ============================================================
   // IND.1, IND.4, IND.5: Calculados pelo MACROCICLO (período da jornada)
   // Não dependem dos microciclos, usam TODAS as sessões/eventos do período
