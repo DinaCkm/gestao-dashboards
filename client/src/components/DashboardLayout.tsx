@@ -72,6 +72,7 @@ import {
   Monitor,
   Trophy,
   History,
+  Mail,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -132,6 +133,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: CalendarDays, label: "Painel de Agendamentos", path: "/agendamentos" },
       { icon: Edit3, label: "Editar Mentorias", path: "/editar-mentorias" },
       { icon: DollarSign, label: "Precificação de Sessões", path: "/precificacao-sessoes" },
+      { icon: Mail, label: "Relatório de Mentorias", path: "/relatorio-mentorias" },
     ],
   },
   {

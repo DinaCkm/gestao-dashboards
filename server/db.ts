@@ -12561,3 +12561,26 @@ export async function getHistoricoCiclosPorEmpresa(alunoIds: number[]) {
   `)) as any;
   return Array.isArray(rows) ? rows : [];
 }
+
+export async function ensureRelatorioMentoriasLogTable(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw(`
+      CREATE TABLE IF NOT EXISTS \`relatorio_mentorias_log\` (
+        \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`data_envio\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`tipo\` enum('previa','definitivo','manual') NOT NULL,
+        \`periodo_inicio\` date NOT NULL,
+        \`periodo_fim\` date NOT NULL,
+        \`destinatarios\` json NOT NULL,
+        \`total_sessoes\` int NOT NULL DEFAULT 0,
+        \`total_valor\` decimal(10,2) NOT NULL DEFAULT 0,
+        \`enviado_por\` varchar(255) NULL
+      )
+    `));
+    console.log('[DB] Tabela relatorio_mentorias_log verificada/criada com sucesso.');
+  } catch (err: any) {
+    console.error('[DB] Erro ao criar tabela relatorio_mentorias_log:', err.message);
+  }
+}

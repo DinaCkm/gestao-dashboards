@@ -34,6 +34,7 @@ import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateTyp
 import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
+import { gerarEEnviarRelatorioMentorias, calcularPeriodoPadrao } from "./cronRelatorioMentorias";
 import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, sendEmail } from "./emailService";
 import { cacheOrFetch, cacheInvalidate } from './dataCache';
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
@@ -5778,6 +5779,107 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           totalAgendamentos: appointmentsInPeriod.length,
         };
       }),
+    // ==================== RELATÓRIO DE MENTORIAS POR MENTORA ====================
+    relatorioMentorias: router({
+      // Buscar dados do relatório (sem enviar e-mail)
+      preview: adminOrAdmin2Procedure
+        .input(z.object({
+          dateFrom: z.string().optional(),
+          dateTo: z.string().optional(),
+        }).optional())
+        .query(async ({ input }) => {
+          const dbConn = await getDb();
+          if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+          const periodo = input?.dateFrom && input?.dateTo
+            ? { inicio: input.dateFrom, fim: input.dateTo }
+            : calcularPeriodoPadrao();
+          const report = await getRelatorioFinanceiroV2(dbConn, periodo.inicio, periodo.fim);
+          const { consultors: consultorsTable, alunos: alunosTable, programs: programsTable } = await import('../drizzle/schema');
+          const todasMentoras = await dbConn.select({ id: consultorsTable.id, nome: consultorsTable.name, email: consultorsTable.email }).from(consultorsTable);
+          const emailMap = new Map(todasMentoras.map(m => [m.id, m.email || null]));
+          const todasEmpresas = await dbConn.select({ id: programsTable.id, nome: programsTable.name }).from(programsTable);
+          const empresaMap = new Map(todasEmpresas.map(e => [e.id, e.nome || '']));
+          const todosAlunos = await dbConn.select({ id: alunosTable.id, programId: alunosTable.programId }).from(alunosTable);
+          const alunoEmpresaMap = new Map(todosAlunos.map(a => [a.id, a.programId || null]));
+          return {
+            periodo: { inicio: periodo.inicio, fim: periodo.fim },
+            mentores: report.mentores.map(m => ({
+              consultorId: m.consultorId,
+              nome: m.consultorNome,
+              email: emailMap.get(m.consultorId) || null,
+              totalRealizado: m.totalSessoes,
+              totalValor: m.totalValor,
+              totalAgendadoSemRegistro: report.gapsAgendamento.filter(g => g.consultorId === m.consultorId).length,
+              sessoes: m.sessoes.map(s => ({
+                data: s.sessionDate,
+                aluno: s.alunoNome,
+                empresa: empresaMap.get(alunoEmpresaMap.get(s.alunoId) || 0) || 'N/A',
+                tipo: s.tipoSessao,
+                registroFeito: true,
+                valor: s.valor,
+              })),
+              agendadosSemRegistro: report.gapsAgendamento
+                .filter(g => g.consultorId === m.consultorId)
+                .flatMap(g => g.participantes.map(p => ({
+                  data: g.appointmentDate || '',
+                  aluno: p.alunoNome,
+                  empresa: empresaMap.get(alunoEmpresaMap.get(p.alunoId) || 0) || 'N/A',
+                  tipo: g.appointmentType || 'individual_normal',
+                }))),
+            })),
+            totalGeralSessoes: report.totalSessoesGeral,
+            totalGeralValor: report.totalGeral,
+          };
+        }),
+      // Envio manual do relatório por e-mail
+      enviarManual: adminOrAdmin2Procedure
+        .input(z.object({
+          dateFrom: z.string(),
+          dateTo: z.string(),
+          mentorIds: z.array(z.number()).optional(),
+          tipo: z.enum(['previa', 'definitivo', 'manual']).default('manual'),
+        }))
+        .mutation(async ({ input }) => {
+          const result = await gerarEEnviarRelatorioMentorias(
+            input.tipo,
+            input.dateFrom,
+            input.dateTo,
+            input.mentorIds,
+            false
+          );
+          return result;
+        }),
+      // Buscar histórico de envios
+      historico: adminOrAdmin2Procedure
+        .query(async () => {
+          const dbConn = await getDb();
+          if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+          try {
+            const { sql: sqlFn } = await import('drizzle-orm');
+            const rows = await dbConn.execute(sqlFn`
+              SELECT id, data_envio, tipo, periodo_inicio, periodo_fim,
+                     destinatarios, total_sessoes, total_valor, enviado_por
+              FROM relatorio_mentorias_log
+              ORDER BY data_envio DESC
+              LIMIT 50
+            `);
+            const data = Array.isArray(rows) ? rows[0] : [];
+            return (data as any[]).map(r => ({
+              id: r.id,
+              dataEnvio: r.data_envio ? new Date(r.data_envio).toISOString() : null,
+              tipo: r.tipo as 'previa' | 'definitivo' | 'manual',
+              periodoInicio: r.periodo_inicio ? String(r.periodo_inicio).slice(0, 10) : null,
+              periodoFim: r.periodo_fim ? String(r.periodo_fim).slice(0, 10) : null,
+              destinatarios: typeof r.destinatarios === 'string' ? JSON.parse(r.destinatarios) : (r.destinatarios || []),
+              totalSessoes: Number(r.total_sessoes),
+              totalValor: Number(r.total_valor),
+              enviadoPor: r.enviado_por || null,
+            }));
+          } catch {
+            return [];
+          }
+        }),
+    }),
   }),
 
   // ==================== ATIVIDADES PRÁTICAS (ADMIN) ====================

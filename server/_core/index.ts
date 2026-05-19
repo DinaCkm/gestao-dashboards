@@ -14,8 +14,9 @@ import { iniciarCronLembreteAplicabilidade } from "../cronLembreteAplicabilidade
 import { iniciarCronTarefasEmAberto } from "../cronTarefasEmAberto";
 import { iniciarCronAusenciaWebinar } from "../cronAusenciaWebinar";
 import { iniciarCronLembreteTarefaMentoria } from "../cronLembreteTarefaMentoria";
+import { iniciarCronRelatorioMentorias } from "../cronRelatorioMentorias";
 import { ENV } from "./env";
-import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable } from "../db";
+import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -41,6 +42,7 @@ async function startServer() {
   await ensureBibliotecaPedagogicaTables();
   await ensurePerfilProfissionalColumns();
   await ensureHistoricoCiclosTable();
+  await ensureRelatorioMentoriasLogTable();
 
   const app = express();
   const server = createServer(app);
@@ -89,6 +91,8 @@ async function startServer() {
       iniciarCronAusenciaWebinar();
       // Iniciar cron job de lembretes de tarefa pendente + próxima mentoria (verifica diariamente, cooldown 15 dias)
       iniciarCronLembreteTarefaMentoria();
+      // Iniciar cron job de relatório de mentorias (dia 25 = prévia, dia 30 = definitivo)
+      iniciarCronRelatorioMentorias();
     } else {
       console.log("Cron jobs de e-mail desativados temporariamente.");
     }

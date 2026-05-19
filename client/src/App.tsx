@@ -46,6 +46,7 @@ import AvisosAdmin from "./pages/AvisosAdmin";
 import OnboardingAluno from "./pages/OnboardingAluno";
 import AtividadesPraticas from "./pages/AtividadesPraticas";
 import DemonstrativoMentorias from "./pages/DemonstrativoMentorias";
+import RelatorioMentorias from "./pages/RelatorioMentorias";
 import MetasDesenvolvimento from "./pages/MetasDesenvolvimento";
 import MinhasMetasAluno from "./pages/MinhasMetasAluno";
 import MetasGestor from "./pages/MetasGestor";
@@ -126,6 +127,7 @@ function Router() {
       <Route path={"/avisos"} component={AvisosAdmin} />
       <Route path={"/atividades-praticas"} component={AtividadesPraticas} />
       <Route path={"/demonstrativo-mentorias"} component={DemonstrativoMentorias} />
+      <Route path={"/relatorio-mentorias"} component={RelatorioMentorias} />
       <Route path={"/metas"} component={MetasDesenvolvimento} />
       <Route path={"/minhas-metas"} component={MinhasMetasAluno} />
       <Route path={"/metas-gestor"} component={MetasGestor} />

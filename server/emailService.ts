@@ -2105,3 +2105,104 @@ export function buildLembreteTarefaMentoriaEmail(data: {
   const text = `Lembrete: tarefa pendente e proxima sessao de mentoria\n\nOla, ${data.alunoName}!\n\nTarefa pendente: ${data.taskTitle}${deadlineStr}\n${data.proximaSessaoDate ? `\nProxima sessao: ${data.proximaSessaoDate}${data.proximaSessaoTime ? ` as ${data.proximaSessaoTime}` : ''} com ${data.mentorName}` : ''}\n\nAcesse a plataforma: ${data.loginUrl}`;
   return { subject, html, text };
 }
+
+// ============================================================
+// RELATÓRIO DE MENTORIAS POR MENTORA
+// ============================================================
+
+export function buildRelatorioMentoriasEmail(data: {
+  mentoraNome: string;
+  periodoInicio: string;
+  periodoFim: string;
+  isFinal: boolean;
+  sessoes: Array<{
+    data: string | null;
+    aluno: string;
+    empresa: string;
+    tipo: string;
+    registroFeito: boolean;
+    valor: number;
+  }>;
+  agendadosSemRegistro: Array<{
+    data: string;
+    aluno: string;
+    empresa: string;
+    tipo: string;
+  }>;
+  totalRealizado: number;
+  totalAgendado: number;
+  totalValor: number;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const tipoRelatorio = data.isFinal ? 'Definitivo' : 'Previa';
+  const corBanner = data.isFinal ? '#065f46' : '#92400e';
+  const bgBanner = data.isFinal ? '#d1fae5' : '#fef3c7';
+  const subject = `${data.isFinal ? 'Relatorio Definitivo' : 'Previa do Relatorio'} de Mentorias - ${data.mentoraNome} - ${data.periodoInicio} a ${data.periodoFim}`;
+
+  const formatDate = (d: string | null) => {
+    if (!d) return '-';
+    const parts = d.slice(0, 10).split('-');
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  };
+
+  const formatTipo = (t: string) => {
+    const map: Record<string, string> = {
+      individual_normal: 'Individual',
+      individual_assessment: 'Assessment',
+      grupo_normal: 'Grupo',
+      grupo_assessment: 'Grupo Assessment',
+    };
+    return map[t] || t;
+  };
+
+  const sessoesRows = data.sessoes.map(s =>
+    `<tr style="border-bottom:1px solid #e5e7eb;"><td style="padding:10px 8px;font-size:13px;color:#374151;">${formatDate(s.data)}</td><td style="padding:10px 8px;font-size:13px;color:#374151;">${s.aluno}</td><td style="padding:10px 8px;font-size:13px;color:#374151;">${s.empresa}</td><td style="padding:10px 8px;font-size:13px;color:#374151;">${formatTipo(s.tipo)}</td><td style="padding:10px 8px;font-size:13px;text-align:center;">${s.registroFeito ? '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">Registrada</span>' : '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">Sem registro</span>'}</td><td style="padding:10px 8px;font-size:13px;color:#374151;text-align:right;font-weight:600;">R$ ${s.valor.toFixed(2).replace('.', ',')}</td></tr>`
+  ).join('');
+
+  const agendadosSection = data.agendadosSemRegistro.length > 0
+    ? `<tr><td colspan="6" style="padding:20px 0 8px;"><p style="color:#92400e;font-size:14px;font-weight:700;margin:0 0 6px;">Agendamentos sem registro de sessao (${data.agendadosSemRegistro.length})</p><p style="color:#b45309;font-size:13px;margin:0 0 8px;">Os agendamentos abaixo constam na agenda mas nao tem ficha de sessao preenchida. Verifique e registre se a sessao foi realizada.</p></td></tr>${data.agendadosSemRegistro.map(a => `<tr style="border-bottom:1px solid #fde68a;background-color:#fffbeb;"><td style="padding:10px 8px;font-size:13px;color:#92400e;">${formatDate(a.data)}</td><td style="padding:10px 8px;font-size:13px;color:#92400e;">${a.aluno}</td><td style="padding:10px 8px;font-size:13px;color:#92400e;">${a.empresa}</td><td style="padding:10px 8px;font-size:13px;color:#92400e;">${formatTipo(a.tipo)}</td><td style="padding:10px 8px;font-size:13px;text-align:center;"><span style="background:#fde68a;color:#92400e;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">Pendente</span></td><td style="padding:10px 8px;font-size:13px;color:#92400e;text-align:right;">-</td></tr>`).join('')}`
+    : '';
+
+  const avisoBox = !data.isFinal
+    ? `<tr><td style="padding:20px 40px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:16px 20px;"><p style="color:#92400e;font-size:14px;font-weight:700;margin:0 0 6px;">Esta e uma PREVIA - nao e o relatorio definitivo</p><p style="color:#b45309;font-size:13px;margin:0;line-height:1.6;">Este relatorio e uma previa do periodo <strong>${data.periodoInicio} a ${data.periodoFim}</strong>. Verifique as informacoes e nos informe qualquer ajuste necessario. No dia <strong>30</strong>, sera enviado o <strong>relatorio definitivo</strong> seguindo o mesmo processo.</p></td></tr></table></td></tr>`
+    : `<tr><td style="padding:20px 40px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:16px 20px;"><p style="color:#065f46;font-size:14px;font-weight:700;margin:0 0 6px;">Este e o RELATORIO DEFINITIVO</p><p style="color:#047857;font-size:13px;margin:0;line-height:1.6;">Este e o relatorio definitivo do periodo <strong>${data.periodoInicio} a ${data.periodoFim}</strong>. Confirme as informacoes e nos informe qualquer divergencia em ate 3 dias uteis.</p></td></tr></table></td></tr>`;
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="700" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/><p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="background:${bgBanner};padding:20px 40px;text-align:center;"><p style="color:${corBanner};font-size:18px;font-weight:700;margin:0;">Relatorio ${tipoRelatorio} de Mentorias</p><p style="color:${corBanner};font-size:14px;margin:8px 0 0;">Periodo: ${data.periodoInicio} a ${data.periodoFim}</p></td></tr>${avisoBox}<tr><td style="padding:30px 40px 10px;"><h2 style="color:#0f2b3c;margin:0 0 12px;font-size:20px;">Ola, ${data.mentoraNome}!</h2><p style="color:#4a5568;font-size:15px;line-height:1.8;margin:0;">Segue abaixo o relatorio das suas sessoes de mentoria no periodo indicado. Por favor, <strong>confira todas as informacoes</strong> e nos informe caso haja qualquer divergencia ou ajuste necessario.</p></td></tr><tr><td style="padding:20px 40px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="width:32%;text-align:center;background:#f0f7fa;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Sessoes Realizadas</p><p style="color:#0f2b3c;font-size:28px;font-weight:700;margin:0;">${data.totalRealizado}</p></td><td style="width:4%;"></td><td style="width:32%;text-align:center;background:#fef3c7;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Agendadas s/ Registro</p><p style="color:#92400e;font-size:28px;font-weight:700;margin:0;">${data.totalAgendado}</p></td><td style="width:4%;"></td><td style="width:32%;text-align:center;background:#d1fae5;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Valor Total</p><p style="color:#065f46;font-size:28px;font-weight:700;margin:0;">R$ ${data.totalValor.toFixed(2).replace('.', ',')}</p></td></tr></table></td></tr><tr><td style="padding:0 40px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;"><thead><tr style="background:#f9fafb;"><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Data</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Aluno</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Empresa</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Tipo</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Registro</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:right;font-weight:600;text-transform:uppercase;">Valor</th></tr></thead><tbody>${sessoesRows}${agendadosSection}</tbody></table></td></tr><tr><td style="padding:0 40px 30px;text-align:center;"><a href="${data.loginUrl}" style="display:inline-block;background-color:#e8a838;color:#fff;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">Acessar o Sistema</a><p style="color:#9ca3af;font-size:12px;margin:16px 0 0;">Em caso de duvidas ou divergencias, responda este e-mail ou acesse o sistema.</p></td></tr><tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;"><p style="color:#9ca3af;font-size:12px;margin:0;">Ecossistema do Bem - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+
+  const text = `Relatorio ${tipoRelatorio} de Mentorias - ${data.mentoraNome}\nPeriodo: ${data.periodoInicio} a ${data.periodoFim}\n\nSessoes Realizadas: ${data.totalRealizado}\nAgendadas sem Registro: ${data.totalAgendado}\nValor Total: R$ ${data.totalValor.toFixed(2).replace('.', ',')}\n\n${!data.isFinal ? 'ATENCAO: Esta e uma PREVIA. No dia 30 sera enviado o relatorio definitivo.' : 'Este e o RELATORIO DEFINITIVO. Confirme as informacoes em ate 3 dias uteis.'}\n\nAcesse o sistema em: ${data.loginUrl}`;
+
+  return { subject, html, text };
+}
+
+export function buildRelatorioMentoriasFinanceiroEmail(data: {
+  periodoInicio: string;
+  periodoFim: string;
+  isFinal: boolean;
+  mentoras: Array<{
+    nome: string;
+    totalRealizado: number;
+    totalAgendadoSemRegistro: number;
+    totalValor: number;
+  }>;
+  totalGeralValor: number;
+  totalGeralSessoes: number;
+}): { subject: string; html: string; text: string } {
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const tipoRelatorio = data.isFinal ? 'Definitivo' : 'Previa';
+  const subject = `[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias - ${data.periodoInicio} a ${data.periodoFim}`;
+
+  const linhasMentoras = data.mentoras.map(m =>
+    `<tr style="border-bottom:1px solid #e5e7eb;"><td style="padding:10px 12px;font-size:13px;color:#374151;">${m.nome}</td><td style="padding:10px 12px;font-size:13px;color:#374151;text-align:center;">${m.totalRealizado}</td><td style="padding:10px 12px;font-size:13px;color:${m.totalAgendadoSemRegistro > 0 ? '#92400e' : '#374151'};text-align:center;font-weight:${m.totalAgendadoSemRegistro > 0 ? '700' : '400'};">${m.totalAgendadoSemRegistro}</td><td style="padding:10px 12px;font-size:13px;color:#065f46;text-align:right;font-weight:600;">R$ ${m.totalValor.toFixed(2).replace('.', ',')}</td></tr>`
+  ).join('');
+
+  const avisoPrevia = !data.isFinal
+    ? `<tr><td style="padding:20px 40px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:14px 18px;"><p style="color:#92400e;font-size:13px;font-weight:700;margin:0 0 4px;">Esta e uma PREVIA - nao e o relatorio definitivo</p><p style="color:#b45309;font-size:13px;margin:0;">No dia 30 sera enviado o relatorio definitivo seguindo o mesmo processo.</p></td></tr></table></td></tr>`
+    : '';
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="650" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="background:#f0f7fa;padding:20px 40px;text-align:center;"><p style="color:#0f2b3c;font-size:18px;font-weight:700;margin:0;">[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias</p><p style="color:#4a5568;font-size:14px;margin:8px 0 0;">Periodo: ${data.periodoInicio} a ${data.periodoFim}</p></td></tr>${avisoPrevia}<tr><td style="padding:30px 40px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:24px;"><thead><tr style="background:#f9fafb;"><th style="padding:12px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Mentora</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Realizadas</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Sem Registro</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:right;font-weight:600;text-transform:uppercase;">Valor</th></tr></thead><tbody>${linhasMentoras}<tr style="background:#f9fafb;font-weight:700;"><td style="padding:12px;font-size:14px;color:#0f2b3c;">TOTAL</td><td style="padding:12px;font-size:14px;color:#0f2b3c;text-align:center;">${data.totalGeralSessoes}</td><td style="padding:12px;font-size:14px;color:#0f2b3c;text-align:center;">-</td><td style="padding:12px;font-size:14px;color:#065f46;text-align:right;">R$ ${data.totalGeralValor.toFixed(2).replace('.', ',')}</td></tr></tbody></table><p style="color:#9ca3af;font-size:12px;text-align:center;margin:0;">Os relatorios detalhados foram enviados individualmente para cada mentora.</p></td></tr><tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;"><p style="color:#9ca3af;font-size:12px;margin:0;">Ecossistema do Bem - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+
+  const text = `[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias - ${data.periodoInicio} a ${data.periodoFim}\n\n${data.mentoras.map(m => `${m.nome}: ${m.totalRealizado} sessoes - R$ ${m.totalValor.toFixed(2).replace('.', ',')}`).join('\n')}\n\nTotal Geral: ${data.totalGeralSessoes} sessoes - R$ ${data.totalGeralValor.toFixed(2).replace('.', ',')}`;
+
+  return { subject, html, text };
+}
