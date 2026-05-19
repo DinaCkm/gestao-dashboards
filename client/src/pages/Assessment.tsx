@@ -1430,6 +1430,19 @@ function AssessmentCard({
         <CardContent className="pt-0">
           <Separator className="mb-4" />
 
+          {/* Botão de edição do PDI */}
+          <div className="flex justify-end mb-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="text-xs border-secondary/40 text-secondary hover:bg-secondary/10 hover:text-secondary"
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1.5" />
+              Editar PDI
+            </Button>
+          </div>
+
           {/* Info de congelamento */}
           {isCongelado && (
             <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
