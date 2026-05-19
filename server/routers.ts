@@ -640,8 +640,7 @@ export const appRouter = router({
         
         return { success: true, user: result.user };
       }),
-    // ============ AUTO-CADASTRO (Landing Page / Mercado Pago) ============
-    // Rota pública: aluno se cadastra após pagamento confirmado
+    // ============ AUTO-CADASTRO (Landing Page) ============
     autoRegistro: publicProcedure
       .input(z.object({
         name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -650,27 +649,21 @@ export const appRouter = router({
         empresa: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        // Constantes da turma B&C
         const TURMA_EXPRESS_ID = 60002;
         const PROGRAMA_CKM_ID = 90002;
-
-        // Verificar/criar empresa se informada
         let programId = PROGRAMA_CKM_ID;
         if (input.empresa && input.empresa.trim().length > 0) {
           const empresaNome = input.empresa.trim();
           const allPrograms = await db.getPrograms();
-          const existing = allPrograms.find(p => p.name.toLowerCase() === empresaNome.toLowerCase());
+          const existing = allPrograms.find((p: any) => p.name.toLowerCase() === empresaNome.toLowerCase());
           if (existing) {
             programId = existing.id;
           } else {
-            // Criar nova empresa
             const code = empresaNome.toUpperCase().replace(/[^A-Z0-9]/g, '_').substring(0, 50);
             const newProg = await db.createProgram({ name: empresaNome, code });
             if (newProg?.id) programId = newProg.id;
           }
         }
-
-        // Criar aluno com turma Desenvolvimento Express
         const result = await db.createAlunoDireto({
           name: input.name,
           email: input.email,
@@ -678,12 +671,9 @@ export const appRouter = router({
           programId,
           turmaId: TURMA_EXPRESS_ID,
         });
-
         if (!result.success) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: result.message || 'Erro ao criar cadastro' });
         }
-
-        // Enviar email de boas-vindas ao aluno
         try {
           const { sendEmail, buildOnboardingInviteEmail } = await import('./emailService');
           const emailData = buildOnboardingInviteEmail({
@@ -694,33 +684,15 @@ export const appRouter = router({
             loginUrl: 'https://ecolider.ecodobem.com/',
           });
           await sendEmail({ to: input.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
-        } catch (e) { console.warn('[AutoRegistro] Erro ao enviar email ao aluno:', e); }
-
-        // Notificar administradores
+        } catch (e) { console.warn('[AutoRegistro] email aluno:', e); }
         try {
           const { sendEmail } = await import('./emailService');
-          const notifHtml = `
-            <h2>Novo aluno cadastrado via Landing Page</h2>
-            <p><strong>Nome:</strong> ${input.name}</p>
-            <p><strong>Email:</strong> ${input.email}</p>
-            <p><strong>CPF:</strong> ${input.cpf}</p>
-            <p><strong>Empresa:</strong> ${input.empresa || '(não informada)'}</p>
-            <p><strong>Turma:</strong> Desenvolvimento Express</p>
-            <p><strong>Data/Hora:</strong> ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
-            <hr/>
-            <p><a href="https://ecolider.ecodobem.com/cadastros">Ver no painel de Cadastros</a></p>
-          `;
-          await sendEmail({
-            to: 'relacionamento@ckmtalents.net',
-            cc: 'dina@makiyama.com.br',
-            subject: `[Novo Aluno] ${input.name} - Desenvolvimento Express`,
-            html: notifHtml,
-            text: `Novo aluno: ${input.name} | ${input.email} | CPF: ${input.cpf} | Empresa: ${input.empresa || 'não informada'}`,
-          });
-        } catch (e) { console.warn('[AutoRegistro] Erro ao enviar notificação admin:', e); }
-
+          const notifHtml = `<h2>Novo aluno via Landing Page</h2><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
+          await sendEmail({ to: 'relacionamento@ckmtalents.net', cc: 'dina@makiyama.com.br', subject: `[Novo Aluno] ${input.name} - Desenvolvimento Express`, html: notifHtml, text: `Novo aluno: ${input.name} | ${input.email}` });
+        } catch (e) { console.warn('[AutoRegistro] email admin:', e); }
         return { success: true, alunoId: result.alunoId };
       }),
+  }),
 
   // User management
   users: router({
@@ -2839,6 +2811,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .query(async ({ input }) => {
         return await db.getProgramsByConsultor(input.consultorId);
       }),
+  }),
 
   // Indicadores BEM
   indicadores: router({
