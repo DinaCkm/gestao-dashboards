@@ -1689,6 +1689,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             }
             const studentPerfRecs = await db.getStudentPerformanceAsRecords();
             for (const spRec of studentPerfRecs) { performanceV2.push(spRec); }
+            // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+            const atividadePerfRecsReport = await db.getAlunoAtividadePerformanceAsRecords();
+            const existingPerfKeysReport = new Set(performanceV2.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+            for (const apRec of atividadePerfRecsReport) {
+              const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+              if (!existingPerfKeysReport.has(key)) { performanceV2.push(apRec); }
+            }
             
             const ciclosPorAlunoReport = await db.getAllCiclosForCalculatorV2();
             const compIdToCodigoMapReport = await db.getCompIdToCodigoMap();
@@ -2930,6 +2937,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           existingPerfKeys.add(key);
         }
       }
+      // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+      const atividadePerfRecsGerencial = await db.getAlunoAtividadePerformanceAsRecords();
+      for (const apRec of atividadePerfRecsGerencial) {
+        const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+        if (!existingPerfKeys.has(key)) {
+          performance.push(apRec);
+          existingPerfKeys.add(key);
+        }
+      }
       
       // Buscar ciclos de execução (V2)
       const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
@@ -3077,6 +3093,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
           if (!existingPerfKeys.has(key)) {
             performance.push(spRec);
+            existingPerfKeys.add(key);
+          }
+        }
+        // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+        const atividadePerfRecsEmp = await db.getAlunoAtividadePerformanceAsRecords();
+        for (const apRec of atividadePerfRecsEmp) {
+          const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(apRec);
             existingPerfKeys.add(key);
           }
         }
@@ -3353,6 +3378,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             existingPerfKeys.add(key);
           }
         }
+        // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+        const atividadePerfRecsTurma = await db.getAlunoAtividadePerformanceAsRecords();
+        for (const apRec of atividadePerfRecsTurma) {
+          const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(apRec);
+            existingPerfKeys.add(key);
+          }
+        }
         
         const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
         const compIdToCodigoMap = await db.getCompIdToCodigoMap();
@@ -3477,6 +3511,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
           if (!existingPerfKeys.has(key)) {
             performance.push(spRec);
+            existingPerfKeys.add(key);
+          }
+        }
+        // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+        const atividadePerfRecsInd = await db.getAlunoAtividadePerformanceAsRecords();
+        for (const apRec of atividadePerfRecsInd) {
+          const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(apRec);
             existingPerfKeys.add(key);
           }
         }
@@ -3997,6 +4040,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             existingPerfKeys.add(key);
           }
         }
+        // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+        const atividadePerfRecords = await db.getAlunoAtividadePerformanceAsRecords();
+        for (const apRec of atividadePerfRecords) {
+          const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(apRec);
+            existingPerfKeys.add(key);
+          }
+        }
         
         // Converter competências para o formato esperado
         const compObrigatorias: CompetenciaObrigatoria[] = competenciasObrigatorias.map(c => ({
@@ -4235,7 +4287,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           existingPerfKeys.add(key);
         }
       }
-
+      // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+      const atividadePerfRecs = await db.getAlunoAtividadePerformanceAsRecords();
+      for (const apRec of atividadePerfRecs) {
+        const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+        if (!existingPerfKeys.has(key)) {
+          performance.push(apRec);
+          existingPerfKeys.add(key);
+        }
+      }
       const idUsuario = aluno.externalId || String(aluno.id);
       const compObrigatorias: CompetenciaObrigatoria[] = competenciasObrigatorias.map(c => ({
         competenciaId: c.competenciaId,

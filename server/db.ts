@@ -5408,8 +5408,130 @@ export async function getStudentPerformanceAsRecords(): Promise<{
   });
 }
 
-// ==================== SCHEDULED WEBINARS ====================
+/**
+ * Converte registros de aluno_atividade_progresso para PerformanceRecord[] do calculador.
+ * Usado como fallback para alunos que não têm dados em student_performance (alunos nativos da plataforma).
+ * Retorna o mesmo formato que getStudentPerformanceAsRecords().
+ */
+export async function getAlunoAtividadePerformanceAsRecords(): Promise<{
+  idUsuario: string;
+  nomeTurma: string;
+  idCompetencia: string;
+  nomeCompetencia: string;
+  progressoAulas: number;
+  notaAvaliacao: number;
+  aprovado: boolean;
+  totalAulas: number;
+  aulasDisponiveis: number;
+  aulasConcluidas: number;
+  aulasEmAndamento: number;
+  competenciaConcluida: boolean;
+}[]> {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
 
+  // Buscar todos os cursos atribuídos com competência e aluno
+  const cursosAtribuidos = await dbConn.select({
+    id: alunoCursoAtribuido.id,
+    alunoId: alunoCursoAtribuido.alunoId,
+    cursoId: alunoCursoAtribuido.cursoId,
+    competenciaId: alunoCursoAtribuido.competenciaId,
+  }).from(alunoCursoAtribuido);
+
+  if (cursosAtribuidos.length === 0) return [];
+
+  // Buscar alunos para mapear alunoId -> externalId
+  const alunosList = await dbConn.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
+  const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId]));
+
+  // Buscar competências para mapear competenciaId -> codigoIntegracao e nome
+  const allCompetencias = await dbConn.select({
+    id: competencias.id,
+    nome: competencias.nome,
+    codigoIntegracao: competencias.codigoIntegracao,
+  }).from(competencias);
+  const compCodigoMap2 = new Map(allCompetencias.map(c => [c.id, c.codigoIntegracao || String(c.id)]));
+  const compNomeMap2 = new Map(allCompetencias.map(c => [c.id, c.nome]));
+
+  // Buscar total de atividades por curso (apenas ativas)
+  const totalAtivPorCurso = await dbConn.select({
+    cursoId: atividadesCurso.cursoId,
+    count: sql<number>`COUNT(*)`,
+  }).from(atividadesCurso).where(eq(atividadesCurso.isActive, 1)).groupBy(atividadesCurso.cursoId);
+  const totalAtivMap = new Map(totalAtivPorCurso.map(r => [r.cursoId, Number(r.count)]));
+
+  // Buscar progresso de atividades
+  const progressos = await dbConn.select({
+    alunoId: alunoAtividadeProgresso.alunoId,
+    cursoAtribuidoId: alunoAtividadeProgresso.cursoAtribuidoId,
+    status: alunoAtividadeProgresso.status,
+    notaFinal: alunoAtividadeProgresso.notaFinal,
+  }).from(alunoAtividadeProgresso);
+
+  // Agrupar progressos por (alunoId, cursoAtribuidoId)
+  const progressoMap = new Map<string, typeof progressos>();
+  for (const p of progressos) {
+    const key = `${p.alunoId}|${p.cursoAtribuidoId}`;
+    if (!progressoMap.has(key)) progressoMap.set(key, []);
+    progressoMap.get(key)!.push(p);
+  }
+
+  const result: {
+    idUsuario: string; nomeTurma: string; idCompetencia: string; nomeCompetencia: string;
+    progressoAulas: number; notaAvaliacao: number; aprovado: boolean;
+    totalAulas: number; aulasDisponiveis: number; aulasConcluidas: number;
+    aulasEmAndamento: number; competenciaConcluida: boolean;
+  }[] = [];
+  const seen = new Set<string>(); // evitar duplicatas por (idUsuario, idCompetencia)
+
+  for (const curso of cursosAtribuidos) {
+    const idUsuario = alunoMap.get(curso.alunoId) || String(curso.alunoId);
+    const idCompetencia = compCodigoMap2.get(curso.competenciaId) || String(curso.competenciaId);
+    const key = `${idUsuario}|${idCompetencia}`;
+    // Se já processamos essa combinação (aluno+competência), pular — evitar duplicatas
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const totalAulas = totalAtivMap.get(curso.cursoId) || 0;
+    const progKey = `${curso.alunoId}|${curso.id}`;
+    const atividades = progressoMap.get(progKey) || [];
+
+    const concluidas = atividades.filter(a => a.status === 'aprovada' || a.status === 'concluida');
+    const emAndamento = atividades.filter(a => a.status === 'em_andamento');
+    const aulasConcluidas = concluidas.length;
+    const aulasEmAndamento = emAndamento.length;
+    const aulasDisponiveis = totalAulas;
+
+    // Nota: média das notas das atividades com avaliação (notaFinal não nula), escala 0-10
+    const notasValidas = concluidas.filter(a => a.notaFinal !== null && a.notaFinal !== undefined);
+    const mediaNotas = notasValidas.length > 0
+      ? notasValidas.reduce((sum, a) => sum + Number(a.notaFinal), 0) / notasValidas.length
+      : 0;
+
+    const competenciaConcluida = aulasDisponiveis > 0 && aulasConcluidas >= aulasDisponiveis;
+    const naoCursou = aulasConcluidas === 0 && aulasEmAndamento === 0;
+    const progressoAulas = aulasDisponiveis > 0 ? Math.round((aulasConcluidas / aulasDisponiveis) * 100) : 0;
+
+    result.push({
+      idUsuario,
+      nomeTurma: '',
+      idCompetencia,
+      nomeCompetencia: compNomeMap2.get(curso.competenciaId) || '',
+      progressoAulas,
+      notaAvaliacao: naoCursou ? -1 : mediaNotas,
+      aprovado: competenciaConcluida && !naoCursou && mediaNotas >= 7,
+      totalAulas,
+      aulasDisponiveis,
+      aulasConcluidas,
+      aulasEmAndamento,
+      competenciaConcluida,
+    });
+  }
+
+  return result;
+}
+
+// ==================== SCHEDULED WEBINARS ====================
 export async function createWebinar(data: InsertScheduledWebinar): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
