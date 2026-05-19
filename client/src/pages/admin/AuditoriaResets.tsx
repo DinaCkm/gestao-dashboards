@@ -16,7 +16,7 @@ function formatDate(d: any): string {
 export default function AuditoriaResets() {
   const [search, setSearch] = useState('');
 
-  const { data: registros = [], isLoading } = trpc.onboarding.auditoriaResets.useQuery({});
+  const { data: registros = [], isLoading } = trpc.ciclos.auditoriaResets.useQuery({});
 
   const filtered = registros.filter((r: any) => {
     const term = search.toLowerCase();
