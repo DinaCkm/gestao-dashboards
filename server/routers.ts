@@ -13467,8 +13467,4 @@ Responda APENAS em JSON com o formato especificado.`
         return result;
       }),
   }),
-
-  }),
-
-  }),
 });
