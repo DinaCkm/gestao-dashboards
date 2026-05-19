@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
@@ -46,6 +46,8 @@ export default function AlunoConteudoCurso() {
   const urlOriginal = atividade?.urlGenially || atividade?.urlMidia || "";
   const urlEmbed = adaptarUrlParaEmbed(urlOriginal);
 
+  const [timerPausado, setTimerPausado] = useState(false);
+
   const heartbeatMutation = trpc.competenciasCompTec.aluno.registrarHeartbeatAtividade.useMutation();
   const pausarSessaoMutation = trpc.competenciasCompTec.aluno.pausarSessaoAtividade.useMutation();
 
@@ -56,7 +58,7 @@ export default function AlunoConteudoCurso() {
     const HEARTBEAT_INTERVAL_MS = 15000;
 
     const enviarHeartbeat = () => {
-      if (document.visibilityState === "visible" && document.hasFocus()) {
+      if (document.visibilityState === "visible") {
         heartbeatMutation.mutate({
           cursoAtribuidoId,
           atividadeId,
@@ -77,20 +79,17 @@ export default function AlunoConteudoCurso() {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
         pausarSessao();
+        setTimerPausado(true);
+      } else {
+        setTimerPausado(false);
       }
     };
 
-    const handleBlur = () => {
-      pausarSessao();
-    };
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("blur", handleBlur);
 
     return () => {
       clearInterval(intervalId);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("blur", handleBlur);
       pausarSessao();
     };
   }, [cursoAtribuidoId, atividadeId]);
@@ -139,6 +138,16 @@ export default function AlunoConteudoCurso() {
           )}
         </div>
       </div>
+
+      {timerPausado && (
+        <div className="flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span className="text-lg">⏸</span>
+          <div>
+            <strong>Timer pausado.</strong> Você saiu desta aba e o tempo de estudo parou de ser contado.
+            Volte para esta aba para continuar acumulando o tempo mínimo necessário para liberar a avaliação.
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
