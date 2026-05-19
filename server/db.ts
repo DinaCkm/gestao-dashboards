@@ -5430,19 +5430,27 @@ export async function getAlunoAtividadePerformanceAsRecords(): Promise<{
   const dbConn = await getDb();
   if (!dbConn) return [];
 
-  // Buscar todos os cursos atribuídos com competência e aluno
+  // Buscar apenas alunos com plataformaAulas = 'sistema_interno' (alunos nativos da plataforma)
+  // Alunos 'scaffold' têm dados em student_performance via CSV externo
+  const alunosList = await dbConn.select({
+    id: alunos.id,
+    externalId: alunos.externalId,
+    plataformaAulas: alunos.plataformaAulas,
+  }).from(alunos).where(eq(alunos.plataformaAulas, 'sistema_interno'));
+  if (alunosList.length === 0) return [];
+  const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId]));
+  const alunoIds = new Set(alunosList.map(a => a.id));
+
+  // Buscar apenas cursos atribuídos de alunos sistema_interno
   const cursosAtribuidos = await dbConn.select({
     id: alunoCursoAtribuido.id,
     alunoId: alunoCursoAtribuido.alunoId,
     cursoId: alunoCursoAtribuido.cursoId,
     competenciaId: alunoCursoAtribuido.competenciaId,
   }).from(alunoCursoAtribuido);
+  const cursosAtribuidosFiltrados = cursosAtribuidos.filter(c => alunoIds.has(c.alunoId));
 
-  if (cursosAtribuidos.length === 0) return [];
-
-  // Buscar alunos para mapear alunoId -> externalId
-  const alunosList = await dbConn.select({ id: alunos.id, externalId: alunos.externalId }).from(alunos);
-  const alunoMap = new Map(alunosList.map(a => [a.id, a.externalId]));
+  if (cursosAtribuidosFiltrados.length === 0) return [];
 
   // Buscar competências para mapear competenciaId -> codigoIntegracao e nome
   const allCompetencias = await dbConn.select({
@@ -5484,7 +5492,7 @@ export async function getAlunoAtividadePerformanceAsRecords(): Promise<{
   }[] = [];
   const seen = new Set<string>(); // evitar duplicatas por (idUsuario, idCompetencia)
 
-  for (const curso of cursosAtribuidos) {
+  for (const curso of cursosAtribuidosFiltrados) {
     const idUsuario = alunoMap.get(curso.alunoId) || String(curso.alunoId);
     const idCompetencia = compCodigoMap2.get(curso.competenciaId) || String(curso.competenciaId);
     const key = `${idUsuario}|${idCompetencia}`;
