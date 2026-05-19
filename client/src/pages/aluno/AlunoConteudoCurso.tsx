@@ -58,7 +58,7 @@ export default function AlunoConteudoCurso() {
     const HEARTBEAT_INTERVAL_MS = 15000;
 
     const enviarHeartbeat = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && document.hasFocus()) {
         heartbeatMutation.mutate({
           cursoAtribuidoId,
           atividadeId,
