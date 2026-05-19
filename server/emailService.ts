@@ -2184,6 +2184,19 @@ export function buildRelatorioMentoriasFinanceiroEmail(data: {
     totalRealizado: number;
     totalAgendadoSemRegistro: number;
     totalValor: number;
+    sessoes: Array<{
+      data: string | null;
+      aluno: string;
+      empresa: string;
+      tipo: string;
+      valor: number;
+    }>;
+    agendadosSemRegistro: Array<{
+      data: string;
+      aluno: string;
+      empresa: string;
+      tipo: string;
+    }>;
   }>;
   totalGeralValor: number;
   totalGeralSessoes: number;
@@ -2192,17 +2205,94 @@ export function buildRelatorioMentoriasFinanceiroEmail(data: {
   const tipoRelatorio = data.isFinal ? 'Definitivo' : 'Previa';
   const subject = `[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias - ${data.periodoInicio} a ${data.periodoFim}`;
 
-  const linhasMentoras = data.mentoras.map(m =>
-    `<tr style="border-bottom:1px solid #e5e7eb;"><td style="padding:10px 12px;font-size:13px;color:#374151;">${m.nome}</td><td style="padding:10px 12px;font-size:13px;color:#374151;text-align:center;">${m.totalRealizado}</td><td style="padding:10px 12px;font-size:13px;color:${m.totalAgendadoSemRegistro > 0 ? '#92400e' : '#374151'};text-align:center;font-weight:${m.totalAgendadoSemRegistro > 0 ? '700' : '400'};">${m.totalAgendadoSemRegistro}</td><td style="padding:10px 12px;font-size:13px;color:#065f46;text-align:right;font-weight:600;">R$ ${m.totalValor.toFixed(2).replace('.', ',')}</td></tr>`
-  ).join('');
+  const formatDate = (d: string | null) => {
+    if (!d) return '-';
+    const parts = d.slice(0, 10).split('-');
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  };
+
+  const formatTipo = (t: string) => {
+    const map: Record<string, string> = {
+      individual_normal: 'Individual',
+      individual_assessment: 'Assessment',
+      grupo_normal: 'Grupo',
+      grupo_assessment: 'Grupo Assessment',
+    };
+    return map[t] || t;
+  };
 
   const avisoPrevia = !data.isFinal
     ? `<tr><td style="padding:20px 40px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:14px 18px;"><p style="color:#92400e;font-size:13px;font-weight:700;margin:0 0 4px;">Esta e uma PREVIA - nao e o relatorio definitivo</p><p style="color:#b45309;font-size:13px;margin:0;">No dia 30 sera enviado o relatorio definitivo seguindo o mesmo processo.</p></td></tr></table></td></tr>`
     : '';
 
-  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="650" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="background:#f0f7fa;padding:20px 40px;text-align:center;"><p style="color:#0f2b3c;font-size:18px;font-weight:700;margin:0;">[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias</p><p style="color:#4a5568;font-size:14px;margin:8px 0 0;">Periodo: ${data.periodoInicio} a ${data.periodoFim}</p></td></tr>${avisoPrevia}<tr><td style="padding:30px 40px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:24px;"><thead><tr style="background:#f9fafb;"><th style="padding:12px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Mentora</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Realizadas</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Sem Registro</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:right;font-weight:600;text-transform:uppercase;">Valor</th></tr></thead><tbody>${linhasMentoras}<tr style="background:#f9fafb;font-weight:700;"><td style="padding:12px;font-size:14px;color:#0f2b3c;">TOTAL</td><td style="padding:12px;font-size:14px;color:#0f2b3c;text-align:center;">${data.totalGeralSessoes}</td><td style="padding:12px;font-size:14px;color:#0f2b3c;text-align:center;">-</td><td style="padding:12px;font-size:14px;color:#065f46;text-align:right;">R$ ${data.totalGeralValor.toFixed(2).replace('.', ',')}</td></tr></tbody></table><p style="color:#9ca3af;font-size:12px;text-align:center;margin:0;">Os relatorios detalhados foram enviados individualmente para cada mentora.</p></td></tr><tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;"><p style="color:#9ca3af;font-size:12px;margin:0;">Ecossistema do Bem - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+  // Resumo geral (tabela de mentoras)
+  const linhasMentorasResumo = data.mentoras.map(m =>
+    `<tr style="border-bottom:1px solid #e5e7eb;"><td style="padding:10px 12px;font-size:13px;color:#374151;font-weight:600;">${m.nome}</td><td style="padding:10px 12px;font-size:13px;color:#374151;text-align:center;">${m.totalRealizado}</td><td style="padding:10px 12px;font-size:13px;color:${m.totalAgendadoSemRegistro > 0 ? '#92400e' : '#374151'};text-align:center;font-weight:${m.totalAgendadoSemRegistro > 0 ? '700' : '400'};">${m.totalAgendadoSemRegistro > 0 ? m.totalAgendadoSemRegistro : '-'}</td><td style="padding:10px 12px;font-size:13px;color:#065f46;text-align:right;font-weight:600;">R$ ${m.totalValor.toFixed(2).replace('.', ',')}</td></tr>`
+  ).join('');
 
-  const text = `[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias - ${data.periodoInicio} a ${data.periodoFim}\n\n${data.mentoras.map(m => `${m.nome}: ${m.totalRealizado} sessoes - R$ ${m.totalValor.toFixed(2).replace('.', ',')}`).join('\n')}\n\nTotal Geral: ${data.totalGeralSessoes} sessoes - R$ ${data.totalGeralValor.toFixed(2).replace('.', ',')}`;
+  // Detalhe por mentora: sessoes agrupadas por empresa
+  const detalhesMentoras = data.mentoras.map(m => {
+    // Agrupar sessoes por empresa
+    const empresaMap = new Map<string, { sessoes: typeof m.sessoes; subtotal: number }>();
+    for (const s of m.sessoes) {
+      const emp = s.empresa || 'N/A';
+      if (!empresaMap.has(emp)) empresaMap.set(emp, { sessoes: [], subtotal: 0 });
+      const entry = empresaMap.get(emp)!;
+      entry.sessoes.push(s);
+      entry.subtotal += s.valor;
+    }
+
+    const empresaBlocks = Array.from(empresaMap.entries()).map(([empresa, { sessoes: eSessoes, subtotal }]) => {
+      const rows = eSessoes.map(s =>
+        `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:8px 10px;font-size:12px;color:#374151;">${formatDate(s.data)}</td><td style="padding:8px 10px;font-size:12px;color:#374151;">${s.aluno}</td><td style="padding:8px 10px;font-size:12px;color:#374151;">${formatTipo(s.tipo)}</td><td style="padding:8px 10px;font-size:12px;color:#374151;text-align:right;">R$ ${s.valor.toFixed(2).replace('.', ',')}</td></tr>`
+      ).join('');
+      return `<tr><td colspan="4" style="padding:10px 10px 4px;background:#f0f7fa;"><span style="font-size:12px;font-weight:700;color:#0f2b3c;text-transform:uppercase;letter-spacing:0.5px;">${empresa}</span></td></tr>${rows}<tr style="background:#e8f4f0;"><td colspan="3" style="padding:8px 10px;font-size:12px;font-weight:700;color:#065f46;">Subtotal ${empresa}</td><td style="padding:8px 10px;font-size:12px;font-weight:700;color:#065f46;text-align:right;">R$ ${subtotal.toFixed(2).replace('.', ',')}</td></tr>`;
+    }).join('');
+
+    const agendadosRows = m.agendadosSemRegistro.length > 0
+      ? `<tr><td colspan="4" style="padding:10px 10px 4px;background:#fef3c7;"><span style="font-size:12px;font-weight:700;color:#92400e;">Agendamentos SEM REGISTRO (${m.agendadosSemRegistro.length})</span></td></tr>${m.agendadosSemRegistro.map(a => `<tr style="background:#fffbeb;border-bottom:1px solid #fde68a;"><td style="padding:8px 10px;font-size:12px;color:#92400e;">${formatDate(a.data)}</td><td style="padding:8px 10px;font-size:12px;color:#92400e;">${a.aluno}</td><td style="padding:8px 10px;font-size:12px;color:#92400e;">${a.empresa} — ${formatTipo(a.tipo)}</td><td style="padding:8px 10px;font-size:12px;color:#92400e;text-align:right;">-</td></tr>`).join('')}`
+      : '';
+
+    return `<tr><td style="padding:24px 40px 8px;"><p style="color:#0f2b3c;font-size:15px;font-weight:700;margin:0 0 2px;">${m.nome}</p><p style="color:#6b7280;font-size:12px;margin:0;">${m.totalRealizado} sessao(s) realizadas — R$ ${m.totalValor.toFixed(2).replace('.', ',')}</p></td></tr><tr><td style="padding:0 40px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;"><thead><tr style="background:#f9fafb;"><th style="padding:10px;font-size:11px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Data</th><th style="padding:10px;font-size:11px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Aluno</th><th style="padding:10px;font-size:11px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Tipo</th><th style="padding:10px;font-size:11px;color:#6b7280;text-align:right;font-weight:600;text-transform:uppercase;">Valor</th></tr></thead><tbody>${empresaBlocks}${agendadosRows}<tr style="background:#f9fafb;"><td colspan="3" style="padding:10px;font-size:13px;font-weight:700;color:#0f2b3c;">TOTAL ${m.nome}</td><td style="padding:10px;font-size:13px;font-weight:700;color:#065f46;text-align:right;">R$ ${m.totalValor.toFixed(2).replace('.', ',')}</td></tr></tbody></table></td></tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="700" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="background:#f0f7fa;padding:20px 40px;text-align:center;"><p style="color:#0f2b3c;font-size:18px;font-weight:700;margin:0;">[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias</p><p style="color:#4a5568;font-size:14px;margin:8px 0 0;">Periodo: ${data.periodoInicio} a ${data.periodoFim}</p></td></tr>${avisoPrevia}<tr><td style="padding:30px 40px 16px;"><p style="color:#0f2b3c;font-size:15px;font-weight:700;margin:0 0 12px;">Resumo Geral</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:8px;"><thead><tr style="background:#f9fafb;"><th style="padding:12px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Mentora</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Realizadas</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Sem Registro</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:right;font-weight:600;text-transform:uppercase;">Valor</th></tr></thead><tbody>${linhasMentorasResumo}<tr style="background:#f9fafb;font-weight:700;"><td style="padding:12px;font-size:14px;color:#0f2b3c;">TOTAL GERAL</td><td style="padding:12px;font-size:14px;color:#0f2b3c;text-align:center;">${data.totalGeralSessoes}</td><td style="padding:12px;font-size:14px;color:#0f2b3c;text-align:center;">-</td><td style="padding:12px;font-size:14px;color:#065f46;text-align:right;">R$ ${data.totalGeralValor.toFixed(2).replace('.', ',')}</td></tr></tbody></table></td></tr><tr><td style="padding:0 40px 8px;"><hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 8px;"/><p style="color:#0f2b3c;font-size:15px;font-weight:700;margin:0;">Detalhamento por Mentora</p></td></tr>${detalhesMentoras}<tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;"><p style="color:#9ca3af;font-size:12px;margin:0;">Ecossistema do Bem - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+
+  const textLines: string[] = [
+    `[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias - ${data.periodoInicio} a ${data.periodoFim}`,
+    '',
+    'RESUMO GERAL',
+    ...data.mentoras.map(m => `  ${m.nome}: ${m.totalRealizado} sessoes - R$ ${m.totalValor.toFixed(2).replace('.', ',')}`),
+    `  TOTAL: ${data.totalGeralSessoes} sessoes - R$ ${data.totalGeralValor.toFixed(2).replace('.', ',')}`,
+    '',
+    'DETALHAMENTO',
+    ...data.mentoras.flatMap(m => {
+      const empresaMap2 = new Map<string, { sessoes: typeof m.sessoes; subtotal: number }>();
+      for (const s of m.sessoes) {
+        const emp = s.empresa || 'N/A';
+        if (!empresaMap2.has(emp)) empresaMap2.set(emp, { sessoes: [], subtotal: 0 });
+        const entry = empresaMap2.get(emp)!;
+        entry.sessoes.push(s);
+        entry.subtotal += s.valor;
+      }
+      const lines: string[] = [`\n${m.nome} (${m.totalRealizado} sessoes - R$ ${m.totalValor.toFixed(2).replace('.', ',')}):`];
+      for (const [empresa, { sessoes: eSessoes, subtotal }] of Array.from(empresaMap2.entries())) {
+        lines.push(`  [${empresa}]`);
+        for (const s of eSessoes) {
+          lines.push(`    ${formatDate(s.data)} - ${s.aluno} - ${formatTipo(s.tipo)} - R$ ${s.valor.toFixed(2).replace('.', ',')}`);
+        }
+        lines.push(`    Subtotal ${empresa}: R$ ${subtotal.toFixed(2).replace('.', ',')}`);
+      }
+      if (m.agendadosSemRegistro.length > 0) {
+        lines.push(`  [SEM REGISTRO: ${m.agendadosSemRegistro.length}]`);
+        for (const a of m.agendadosSemRegistro) {
+          lines.push(`    ${formatDate(a.data)} - ${a.aluno} - ${a.empresa}`);
+        }
+      }
+      return lines;
+    }),
+  ];
+  const text = textLines.join('\n');
 
   return { subject, html, text };
 }

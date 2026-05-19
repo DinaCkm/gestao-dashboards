@@ -145,8 +145,14 @@ export async function gerarEEnviarRelatorioMentorias(
     alunoEmpresaMap.set(a.id, a.programId || null);
   }
 
+  // Tipo interno com detalhes de sessões (para o e-mail financeiro)
+  type MentoraSummaryDetalhado = RelatorioMentoriasResult['mentoras'][0] & {
+    sessoes: Array<{ data: string | null; aluno: string; empresa: string; tipo: string; valor: number }>;
+    agendadosSemRegistro: Array<{ data: string; aluno: string; empresa: string; tipo: string }>;
+  };
+
   const erros: string[] = [];
-  const mentoraSummary: RelatorioMentoriasResult['mentoras'] = [];
+  const mentoraSummaryDetalhado: MentoraSummaryDetalhado[] = [];
   let emailsEnviados = 0;
 
   // Filtrar mentoras se necessário
@@ -190,13 +196,15 @@ export async function gerarEEnviarRelatorioMentorias(
     const totalAgendado = agendadosSemRegistro.length;
     const totalValor = mentor.totalValor;
 
-    const summary = {
+    const summary: MentoraSummaryDetalhado = {
       nome: mentor.consultorNome,
       email: emailMentora,
       totalRealizado,
       totalAgendadoSemRegistro: totalAgendado,
       totalValor,
       emailEnviado: false,
+      sessoes: sessoesRealizadas,
+      agendadosSemRegistro,
     };
 
     if (!dryRun && emailMentora) {
@@ -237,24 +245,37 @@ export async function gerarEEnviarRelatorioMentorias(
       (summary as any).erro = 'E-mail não cadastrado';
     }
 
-    mentoraSummary.push(summary);
+    mentoraSummaryDetalhado.push(summary);
   }
 
+  // Montar mentoraSummary sem os campos de detalhe (para o retorno público)
+  const mentoraSummary: RelatorioMentoriasResult['mentoras'] = mentoraSummaryDetalhado.map(m => ({
+    nome: m.nome,
+    email: m.email,
+    totalRealizado: m.totalRealizado,
+    totalAgendadoSemRegistro: m.totalAgendadoSemRegistro,
+    totalValor: m.totalValor,
+    emailEnviado: m.emailEnviado,
+    erro: m.erro,
+  }));
+
   // Enviar cópia para financeiro/dina/relacionamento
-  if (!dryRun && mentoraSummary.length > 0) {
+  if (!dryRun && mentoraSummaryDetalhado.length > 0) {
     try {
       const financeiroDados = buildRelatorioMentoriasFinanceiroEmail({
         periodoInicio: periodoInicioFmt,
         periodoFim: periodoFimFmt,
         isFinal,
-        mentoras: mentoraSummary.map(m => ({
+        mentoras: mentoraSummaryDetalhado.map(m => ({
           nome: m.nome,
           totalRealizado: m.totalRealizado,
           totalAgendadoSemRegistro: m.totalAgendadoSemRegistro,
           totalValor: m.totalValor,
+          sessoes: m.sessoes,
+          agendadosSemRegistro: m.agendadosSemRegistro,
         })),
-        totalGeralValor: mentoraSummary.reduce((acc, m) => acc + m.totalValor, 0),
-        totalGeralSessoes: mentoraSummary.reduce((acc, m) => acc + m.totalRealizado, 0),
+        totalGeralValor: mentoraSummaryDetalhado.reduce((acc, m) => acc + m.totalValor, 0),
+        totalGeralSessoes: mentoraSummaryDetalhado.reduce((acc, m) => acc + m.totalRealizado, 0),
       });
 
       for (const dest of CC_DESTINATARIOS) {
