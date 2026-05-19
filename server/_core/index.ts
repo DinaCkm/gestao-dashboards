@@ -12,6 +12,8 @@ import { iniciarCronOnboardingReminders } from "../cronOnboardingReminders";
 import { iniciarCronVencimentoCiclo } from "../cronVencimentoCiclo";
 import { iniciarCronLembreteAplicabilidade } from "../cronLembreteAplicabilidade";
 import { iniciarCronTarefasEmAberto } from "../cronTarefasEmAberto";
+import { iniciarCronAusenciaWebinar } from "../cronAusenciaWebinar";
+import { iniciarCronLembreteTarefaMentoria } from "../cronLembreteTarefaMentoria";
 import { ENV } from "./env";
 import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable } from "../db";
 
@@ -83,6 +85,10 @@ async function startServer() {
       iniciarCronLembreteAplicabilidade();
       // Iniciar cron job de alertas de tarefas em aberto há 45+ dias (verifica diariamente)
       iniciarCronTarefasEmAberto();
+      // Iniciar cron job de lembretes de ausência em webinar (verifica diariamente, cooldown 15 dias)
+      iniciarCronAusenciaWebinar();
+      // Iniciar cron job de lembretes de tarefa pendente + próxima mentoria (verifica diariamente, cooldown 15 dias)
+      iniciarCronLembreteTarefaMentoria();
     } else {
       console.log("Cron jobs de e-mail desativados temporariamente.");
     }

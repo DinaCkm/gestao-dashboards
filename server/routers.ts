@@ -4504,11 +4504,25 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           // Criar mapa de performance por codigoIntegracao para lookup rápido
           const perfByCodigoMap = new Map<string, typeof studentPerfRecords[0]>();
           const alunoExternalId = aluno!.externalId || String(aluno!.id);
+          // Primeiro: dados de student_performance (alunos scaffold/externos)
           for (const sp of studentPerfRecords) {
             if (sp.idUsuario === alunoExternalId) {
               perfByCodigoMap.set(sp.idCompetencia.toLowerCase(), sp);
               if (sp.nomeCompetencia) {
                 perfByCodigoMap.set(sp.nomeCompetencia.toLowerCase(), sp);
+              }
+            }
+          }
+          // Fallback: dados de aluno_atividade_progresso (alunos sistema_interno)
+          const atividadePerfRecsForCiclos = await db.getAlunoAtividadePerformanceAsRecords();
+          for (const ap of atividadePerfRecsForCiclos) {
+            if (ap.idUsuario === alunoExternalId) {
+              const key = ap.idCompetencia.toLowerCase();
+              if (!perfByCodigoMap.has(key)) {
+                perfByCodigoMap.set(key, ap);
+              }
+              if (ap.nomeCompetencia && !perfByCodigoMap.has(ap.nomeCompetencia.toLowerCase())) {
+                perfByCodigoMap.set(ap.nomeCompetencia.toLowerCase(), ap);
               }
             }
           }
@@ -5273,7 +5287,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const existing = await db.checkAppointmentConflict(input.consultorId, input.scheduledDate, input.startTime);
         if (existing) throw new TRPCError({ code: 'CONFLICT', message: 'Este horário já está ocupado. Escolha outro.' });
 
-        return await db.createIndividualAppointment({
+        const appointment = await db.createIndividualAppointment({
           consultorId: input.consultorId,
           availabilityId: input.availabilityId,
           scheduledDate: input.scheduledDate,
@@ -5284,6 +5298,31 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           notes: input.notes || null,
           createdBy: ctx.user.id,
         });
+
+        // Disparar e-mail de confirmação ao aluno (assíncrono, não bloqueia a resposta)
+        try {
+          const { buildConfirmacaoAgendamentoEmail } = await import('./emailService');
+          const aluno = await db.getAlunoById(alunoId);
+          const mentor = await db.getConsultorById(input.consultorId);
+          if (aluno?.email && mentor) {
+            const scheduledDateFormatted = new Date(input.scheduledDate + 'T12:00:00').toLocaleDateString('pt-BR');
+            const emailData = buildConfirmacaoAgendamentoEmail({
+              alunoName: aluno.name,
+              mentorName: mentor.name,
+              scheduledDate: scheduledDateFormatted,
+              startTime: input.startTime,
+              endTime: input.endTime,
+              meetLink: null,
+              loginUrl: 'https://ecolider.ecodobem.com',
+            });
+            sendEmail({ to: aluno.email, subject: emailData.subject, html: emailData.html, text: emailData.text })
+              .catch(err => console.error('[bookAppointment] Erro ao enviar e-mail de confirmacao:', err));
+          }
+        } catch (err) {
+          console.error('[bookAppointment] Erro ao preparar e-mail de confirmacao:', err);
+        }
+
+        return appointment;
       }),
 
     // Aluno confirma/recusa convite de grupo

@@ -2043,3 +2043,65 @@ export function buildAlunoRemovidoEmail(data: {
   const text = `Aluno(a) ${data.alunoName} foi transferido(a) para outra mentora\n\nOlá, ${data.mentoraAntigaName}!\n\nO(a) aluno(a) ${data.alunoName} foi transferido(a) da sua carteira para a mentora ${data.mentoraNovaName}.\nAção realizada por: ${data.adminName}.`;
   return { subject, html, text };
 }
+
+
+// ============================================================
+// Template: Confirmação de Agendamento de Sessão (para o aluno)
+// ============================================================
+export function buildConfirmacaoAgendamentoEmail(data: {
+  alunoName: string;
+  mentorName: string;
+  scheduledDate: string;
+  startTime: string;
+  endTime: string;
+  meetLink?: string | null;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Sessão de mentoria confirmada — ${data.scheduledDate} às ${data.startTime}`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const meetSection = data.meetLink
+    ? `<tr><td style="padding:0 40px 20px;"><div style="text-align:center;"><a href="${data.meetLink}" style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:700;">Acessar Reunião Google Meet</a><p style="margin:8px 0 0;font-size:11px;color:#6b7280;word-break:break-all;">${data.meetLink}</p></div></td></tr>`
+    : '';
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="background:#fff;padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/><p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="padding:30px 40px 20px;"><div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;text-align:center;margin-bottom:20px;"><p style="margin:0;font-size:18px;font-weight:700;color:#15803d;">Sessao Confirmada!</p></div><p style="font-size:15px;color:#374151;margin:0 0 16px;">Ola, <strong>${data.alunoName}</strong>!</p><p style="font-size:15px;color:#374151;margin:0 0 20px;">Sua sessao de mentoria foi agendada com sucesso. Confira os detalhes abaixo:</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px;"><tr><td style="padding:6px 12px;font-size:14px;color:#6b7280;width:140px;">Mentora:</td><td style="padding:6px 12px;font-size:14px;font-weight:600;color:#0A1E3E;">${data.mentorName}</td></tr><tr><td style="padding:6px 12px;font-size:14px;color:#6b7280;">Data:</td><td style="padding:6px 12px;font-size:14px;font-weight:600;color:#0A1E3E;">${data.scheduledDate}</td></tr><tr><td style="padding:6px 12px;font-size:14px;color:#6b7280;">Horario:</td><td style="padding:6px 12px;font-size:14px;font-weight:600;color:#0A1E3E;">${data.startTime} - ${data.endTime}</td></tr></table></td></tr>${meetSection}<tr><td style="padding:0 40px 20px;"><p style="font-size:13px;color:#6b7280;margin:0;">Caso precise cancelar ou reagendar, acesse a plataforma com antecedencia.</p><div style="text-align:center;margin-top:16px;"><a href="${data.loginUrl}" style="display:inline-block;background:#0A1E3E;color:#fff;text-decoration:none;padding:10px 28px;border-radius:8px;font-size:13px;font-weight:600;">Acessar a Plataforma</a></div></td></tr><tr><td style="padding:16px 40px;border-top:1px solid #e5e7eb;"><p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">ECOSSISTEMA DO BEM - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+  const text = `Sessao de mentoria confirmada!\n\nOla, ${data.alunoName}!\nSua sessao foi agendada com sucesso.\n\nMentora: ${data.mentorName}\nData: ${data.scheduledDate}\nHorario: ${data.startTime} - ${data.endTime}${data.meetLink ? `\nLink: ${data.meetLink}` : ''}\n\nAcesse a plataforma: ${data.loginUrl}`;
+  return { subject, html, text };
+}
+
+// ============================================================
+// Template: Lembrete de Ausencia em Webinar (para o aluno)
+// ============================================================
+export function buildAusenciaWebinarEmail(data: {
+  alunoName: string;
+  webinarTitle: string;
+  eventDate: string;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Voce perdeu o webinar "${data.webinarTitle}" - fique de olho nos proximos`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="background:#fff;padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/><p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="padding:30px 40px 24px;"><div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px;text-align:center;margin-bottom:20px;"><p style="margin:0;font-size:16px;font-weight:700;color:#c2410c;">Voce perdeu um webinar</p></div><p style="font-size:15px;color:#374151;margin:0 0 16px;">Ola, <strong>${data.alunoName}</strong>!</p><p style="font-size:15px;color:#374151;margin:0 0 16px;">Notamos que voce nao participou do webinar <strong>"${data.webinarTitle}"</strong> realizado em <strong>${data.eventDate}</strong>.</p><p style="font-size:15px;color:#374151;margin:0 0 20px;">A participacao nos webinares e parte importante da sua jornada de desenvolvimento. Fique de olho na agenda para nao perder os proximos!</p><div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:20px;"><p style="margin:0;font-size:14px;color:#374151;"><strong>Dica:</strong> Acesse a plataforma para ver os proximos webinares agendados e garantir sua participacao.</p></div><div style="text-align:center;margin-top:16px;"><a href="${data.loginUrl}" style="display:inline-block;background:#0A1E3E;color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;">Ver Proximos Webinares</a></div></td></tr><tr><td style="padding:16px 40px;border-top:1px solid #e5e7eb;"><p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">ECOSSISTEMA DO BEM - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+  const text = `Voce perdeu o webinar "${data.webinarTitle}"\n\nOla, ${data.alunoName}!\n\nNotamos que voce nao participou do webinar "${data.webinarTitle}" realizado em ${data.eventDate}.\n\nFique de olho na agenda para nao perder os proximos!\n\nAcesse a plataforma: ${data.loginUrl}`;
+  return { subject, html, text };
+}
+
+// ============================================================
+// Template: Lembrete de Tarefa Pendente + Proxima Mentoria (para o aluno)
+// ============================================================
+export function buildLembreteTarefaMentoriaEmail(data: {
+  alunoName: string;
+  mentorName: string;
+  taskTitle: string;
+  taskDeadline?: string | null;
+  proximaSessaoDate?: string | null;
+  proximaSessaoTime?: string | null;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Lembrete: tarefa pendente e proxima sessao de mentoria`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const proximaSessaoSection = data.proximaSessaoDate
+    ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-bottom:16px;"><p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1d4ed8;">Proxima Sessao de Mentoria</p><p style="margin:0;font-size:14px;color:#374151;">Data: <strong>${data.proximaSessaoDate}</strong>${data.proximaSessaoTime ? ` as <strong>${data.proximaSessaoTime}</strong>` : ''}</p><p style="margin:4px 0 0;font-size:14px;color:#374151;">Mentora: <strong>${data.mentorName}</strong></p></div>`
+    : '';
+  const deadlineStr = data.taskDeadline ? ` (prazo: ${data.taskDeadline})` : '';
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="background:#fff;padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/><p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="padding:30px 40px 24px;"><p style="font-size:15px;color:#374151;margin:0 0 20px;">Ola, <strong>${data.alunoName}</strong>! Aqui esta um lembrete importante sobre sua jornada de desenvolvimento:</p><div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:14px;margin-bottom:16px;"><p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#92400e;">Tarefa Pendente</p><p style="margin:0;font-size:14px;color:#374151;"><strong>${data.taskTitle}</strong>${deadlineStr}</p><p style="margin:6px 0 0;font-size:13px;color:#6b7280;">Entregue sua tarefa antes da proxima sessao para aproveitar melhor o encontro com sua mentora.</p></div>${proximaSessaoSection}<div style="text-align:center;margin-top:20px;"><a href="${data.loginUrl}" style="display:inline-block;background:#0A1E3E;color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;">Acessar a Plataforma</a></div></td></tr><tr><td style="padding:16px 40px;border-top:1px solid #e5e7eb;"><p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">ECOSSISTEMA DO BEM - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+  const text = `Lembrete: tarefa pendente e proxima sessao de mentoria\n\nOla, ${data.alunoName}!\n\nTarefa pendente: ${data.taskTitle}${deadlineStr}\n${data.proximaSessaoDate ? `\nProxima sessao: ${data.proximaSessaoDate}${data.proximaSessaoTime ? ` as ${data.proximaSessaoTime}` : ''} com ${data.mentorName}` : ''}\n\nAcesse a plataforma: ${data.loginUrl}`;
+  return { subject, html, text };
+}

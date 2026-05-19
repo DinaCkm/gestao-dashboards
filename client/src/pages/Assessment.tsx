@@ -1748,6 +1748,15 @@ function CreateAssessmentDialog({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [competenciasTrilha, selectedTrilhaId]);
 
+  // Verificar se o contrato do aluno está completo no cadastro
+  const { data: alunoDataForContrato } = trpc.planoIndividual.alunosWithPlano.useQuery();
+  const alunoParaContrato = alunoDataForContrato?.find((a: any) => a.id === alunoId) as any;
+  const contratoIncompleto = !alunoParaContrato?.contratoInicio ||
+    !alunoParaContrato?.contratoFim ||
+    !alunoParaContrato?.totalSessoesContratadas ||
+    alunoParaContrato?.totalSessoesContratadas === 0 ||
+    !alunoParaContrato?.tipoMentoria;
+
   const criarMutation = trpc.assessment.criar.useMutation({
     onSuccess: (data: any) => {
       if (data?.addedToExisting) {
@@ -1919,14 +1928,24 @@ function CreateAssessmentDialog({
             {/* Info do contrato - somente leitura (definido pelo admin) */}
             <ContratoInfoReadonly alunoId={alunoId} />
 
+            {contratoIncompleto && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-red-800">
+                  <p className="font-semibold">Dados do contrato incompletos</p>
+                  <p className="text-xs mt-0.5">Fale com o Administrador — esta informação é imprescindível para criar o plano de desenvolvimento do aluno.</p>
+                </div>
+              </div>
+            )}
             <DialogFooter>
               <Button variant="outline" onClick={onClose}>Cancelar</Button>
               <Button
                 onClick={() => setStep(2)}
-                disabled={!selectedTrilhaId || (!selectedTrilhaExists && (!macroInicio || !macroTermino))}
+                disabled={contratoIncompleto || !selectedTrilhaId || (!selectedTrilhaExists && (!macroInicio || !macroTermino))}
+                title={contratoIncompleto ? "Fale com o Administrador: dados do contrato incompletos no cadastro do aluno" : undefined}
                 className="bg-secondary hover:bg-secondary/90"
               >
-                Próximo: Competências
+                {contratoIncompleto ? "Fale com o Administrador" : "Próximo: Competências"}
               </Button>
             </DialogFooter>
           </div>
