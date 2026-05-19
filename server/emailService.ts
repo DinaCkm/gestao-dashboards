@@ -2016,3 +2016,30 @@ Este e-mail foi enviado automaticamente. Administração e coordenação estão 
 
   return { subject, html, text };
 }
+
+
+// ============ TROCA DE MENTORA PELO ADMIN ============
+export function buildNovaAlunaEmail(data: {
+  mentoraNovaName: string;
+  alunoName: string;
+  alunoEmail?: string;
+  mentoraAntigaName: string;
+  adminName: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Você tem uma nova aluna — ${data.alunoName}`;
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;color:#111827;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;"><tr><td style="background:linear-gradient(135deg,#0A1E3E,#2D5A87);padding:24px;border-radius:12px 12px 0 0;text-align:center;"><h2 style="margin:0;color:#ffffff;font-size:22px;">Você tem uma nova aluna!</h2></td></tr><tr><td style="padding:24px;"><p style="font-size:15px;line-height:1.6;margin:0 0 16px;">Olá, <strong>${data.mentoraNovaName}</strong>!</p><p style="font-size:15px;line-height:1.6;margin:0 0 16px;">A administração transferiu o(a) aluno(a) <strong>${data.alunoName}</strong> para a sua carteira.</p><div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;margin-bottom:16px;"><p style="margin:0 0 6px;font-size:14px;"><strong>Aluno(a):</strong> ${data.alunoName}</p>${data.alunoEmail ? `<p style="margin:0 0 6px;font-size:14px;"><strong>E-mail:</strong> ${data.alunoEmail}</p>` : ''}<p style="margin:0;font-size:14px;"><strong>Mentora anterior:</strong> ${data.mentoraAntigaName}</p></div><div style="text-align:center;margin:24px 0;"><a href="https://ecolider.ecodobem.com/" style="display:inline-block;background:#0A1E3E;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">Acessar a Plataforma</a></div><p style="margin-top:20px;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:16px;">Ação realizada por: ${data.adminName}.</p></td></tr></table></body></html>`;
+  const text = `Você tem uma nova aluna — ${data.alunoName}\n\nOlá, ${data.mentoraNovaName}!\n\nA administração transferiu o(a) aluno(a) ${data.alunoName} para a sua carteira.\nMentora anterior: ${data.mentoraAntigaName}\nAção realizada por: ${data.adminName}.`;
+  return { subject, html, text };
+}
+
+export function buildAlunoRemovidoEmail(data: {
+  mentoraAntigaName: string;
+  alunoName: string;
+  mentoraNovaName: string;
+  adminName: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Aluno(a) ${data.alunoName} foi transferido(a) para outra mentora`;
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;color:#111827;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;"><tr><td style="background:#f9fafb;padding:24px;border-radius:12px 12px 0 0;border-bottom:1px solid #e5e7eb;"><h2 style="margin:0;color:#0A1E3E;font-size:20px;">Atualização na sua carteira de mentorados</h2></td></tr><tr><td style="padding:24px;"><p style="font-size:15px;line-height:1.6;margin:0 0 16px;">Olá, <strong>${data.mentoraAntigaName}</strong>!</p><p style="font-size:15px;line-height:1.6;margin:0 0 16px;">O(a) aluno(a) <strong>${data.alunoName}</strong> foi transferido(a) da sua carteira para outra mentora.</p><div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:14px;margin-bottom:16px;"><p style="margin:0 0 6px;font-size:14px;"><strong>Aluno(a):</strong> ${data.alunoName}</p><p style="margin:0;font-size:14px;"><strong>Nova mentora:</strong> ${data.mentoraNovaName}</p></div><p style="margin-top:20px;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:16px;">Ação realizada por: ${data.adminName}.</p></td></tr></table></body></html>`;
+  const text = `Aluno(a) ${data.alunoName} foi transferido(a) para outra mentora\n\nOlá, ${data.mentoraAntigaName}!\n\nO(a) aluno(a) ${data.alunoName} foi transferido(a) da sua carteira para a mentora ${data.mentoraNovaName}.\nAção realizada por: ${data.adminName}.`;
+  return { subject, html, text };
+}

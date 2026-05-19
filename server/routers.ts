@@ -9411,6 +9411,84 @@ Responda APENAS em JSON com o formato:
         return result;
       }),
 
+    // Trocar mentora do aluno (ação administrativa)
+    trocarMentora: adminOrAdmin2Procedure
+      .input(z.object({
+        alunoId: z.number(),
+        novaMentoraId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { alunoId, novaMentoraId } = input;
+        // Buscar dados atuais do aluno
+        const aluno = await db.getAlunoById(alunoId);
+        if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado.' });
+        const mentoraAntiga = aluno.consultorId ? await db.getConsultorById(aluno.consultorId) : null;
+        const mentoraNova = await db.getConsultorById(novaMentoraId);
+        if (!mentoraNova) throw new TRPCError({ code: 'NOT_FOUND', message: 'Nova mentora não encontrada.' });
+        // 1. Atualizar consultorId na tabela alunos
+        await db.updateAluno(alunoId, { consultorId: novaMentoraId });
+        // 2. Atualizar mentoraPrincipalId no contrato_nivel em_andamento
+        try {
+          const rawConn = await db.getRawConnection();
+          if (rawConn) {
+            await rawConn.execute(
+              'UPDATE contrato_niveis SET mentoraPrincipalId = ?, updatedAt = NOW() WHERE alunoId = ? AND status = ?',
+              [novaMentoraId, alunoId, 'em_andamento']
+            );
+          }
+        } catch (e) {
+          console.warn('[trocarMentora] Erro ao atualizar contrato_niveis:', e);
+        }
+        // 3. Enviar e-mail para mentora nova
+        try {
+          if (mentoraNova.email) {
+            const { sendEmail, buildNovaAlunaEmail } = await import('./emailService');
+            const emailData = buildNovaAlunaEmail({
+              mentoraNovaName: mentoraNova.name,
+              alunoName: aluno.name,
+              alunoEmail: aluno.email || undefined,
+              mentoraAntigaName: mentoraAntiga?.name || 'Não atribuída',
+              adminName: (ctx.user as any)?.name || 'Administração',
+            });
+            await sendEmail({ to: mentoraNova.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+          }
+        } catch (e) {
+          console.warn('[trocarMentora] Erro ao enviar e-mail para mentora nova:', e);
+        }
+        // 4. Enviar e-mail para mentora antiga
+        try {
+          if (mentoraAntiga?.email) {
+            const { sendEmail, buildAlunoRemovidoEmail } = await import('./emailService');
+            const emailData = buildAlunoRemovidoEmail({
+              mentoraAntigaName: mentoraAntiga.name,
+              alunoName: aluno.name,
+              mentoraNovaName: mentoraNova.name,
+              adminName: (ctx.user as any)?.name || 'Administração',
+            });
+            await sendEmail({ to: mentoraAntiga.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+          }
+        } catch (e) {
+          console.warn('[trocarMentora] Erro ao enviar e-mail para mentora antiga:', e);
+        }
+        // 5. Notificar admins via sininho
+        try {
+          const allUsers = await db.getAllUsers();
+          const adminUsers = allUsers.filter((u: any) => u.role === 'admin');
+          for (const adminUser of adminUsers) {
+            await db.createNotification({
+              userId: adminUser.id,
+              title: 'Mentora trocada',
+              message: `Aluno(a) ${aluno.name} foi transferido(a) de ${mentoraAntiga?.name || 'sem mentora'} para ${mentoraNova.name}.`,
+              type: 'info',
+              category: 'onboarding',
+              link: '/cadastros',
+            });
+          }
+        } catch (e) {
+          console.warn('[trocarMentora] Erro ao criar notificações:', e);
+        }
+        return { success: true };
+      }),
     // Solicitar alteração de mentora (sem trocar consultorId)
     solicitarAlteracaoMentora: protectedProcedure
       .input(z.object({

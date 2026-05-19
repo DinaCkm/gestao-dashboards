@@ -892,6 +892,27 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [editQuemEVoce, setEditQuemEVoce] = useState("");
   const [editPlataformaAulas, setEditPlataformaAulas] = useState("sistema_interno");
 
+  // Modal de troca de mentora
+  const [trocarMentoraModalOpen, setTrocarMentoraModalOpen] = useState(false);
+  const trocarMentora = trpc.onboarding.trocarMentora.useMutation({
+    onSuccess: () => {
+      toast.success("Mentora trocada com sucesso! E-mails enviados para as mentoras.");
+      setTrocarMentoraModalOpen(false);
+      setEditOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error(`Erro ao trocar mentora: ${err.message}`);
+    },
+  });
+
+  const handleTrocarMentora = () => {
+    if (!editAluno || !editConsultorId) return;
+    trocarMentora.mutate({
+      alunoId: editAluno.id,
+      novaMentoraId: parseInt(editConsultorId),
+    });
+  };
+
   const handleEditOpen = (aluno: any) => {
     setEditAluno(aluno);
     setEditNome(aluno.name || "");
@@ -1104,10 +1125,23 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                 </div>
                 <div className="space-y-2">
                   <Label>Mentor(a) Vinculado(a)</Label>
-                  <select value={editConsultorId} onChange={(e) => setEditConsultorId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                    <option value="">Sem mentor atribuído</option>
-                    {mentoresList.map((m: any) => (<option key={m.id} value={m.id.toString()}>{m.name}</option>))}
-                  </select>
+                  <div className="flex gap-2 items-center">
+                    <select value={editConsultorId} onChange={(e) => setEditConsultorId(e.target.value)} className="flex h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <option value="">Sem mentor atribuído</option>
+                      {mentoresList.map((m: any) => (<option key={m.id} value={m.id.toString()}>{m.name}</option>))}
+                    </select>
+                    {editConsultorId && editAluno && editConsultorId !== (editAluno.consultorId?.toString() ?? '') && (
+                      <button
+                        type="button"
+                        onClick={() => setTrocarMentoraModalOpen(true)}
+                        className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
+                      >
+                        <ArrowLeftRight className="h-3.5 w-3.5" />
+                        Trocar Mentora
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Ao trocar a mentora, e-mails serão enviados automaticamente para a mentora nova e a anterior.</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Turma</Label>
@@ -1701,6 +1735,68 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
               disabled={isLiberandoOnboarding || !janelaReset.permitido}
             >
               {isLiberandoOnboarding ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Processando...</> : <><RotateCcw className="h-4 w-4 mr-2" /> Confirmar e Liberar</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmação: Trocar Mentora */}
+      <Dialog open={trocarMentoraModalOpen} onOpenChange={(open) => { if (!open) setTrocarMentoraModalOpen(false); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <ArrowLeftRight className="h-5 w-5" />
+              Confirmar Troca de Mentora
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação atualizará a mentora do aluno em todo o sistema.
+            </DialogDescription>
+          </DialogHeader>
+          {editAluno && (
+            <div className="space-y-4 py-2">
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <p className="font-semibold text-gray-900">{editAluno.name}</p>
+                <p className="text-sm text-gray-500">{editAluno.email}</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-500 w-20 shrink-0">Mentora atual:</span>
+                  <span className="font-medium text-red-700">{mentoresList.find((m: any) => m.id.toString() === (editAluno.consultorId?.toString() ?? ''))?.name || 'Nenhuma'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-500 w-20 shrink-0">Nova mentora:</span>
+                  <span className="font-medium text-green-700">{mentoresList.find((m: any) => m.id.toString() === editConsultorId)?.name || '-'}</span>
+                </div>
+              </div>
+              <div className="space-y-1.5 text-sm">
+                <p className="text-xs font-semibold text-gray-700">O que acontece ao confirmar:</p>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">Mentora atualizada no perfil do aluno e no nível de contrato ativo</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">Nova mentora passa a ver este aluno na sua lista de mentorados</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">E-mail enviado para a nova mentora informando o novo aluno</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">E-mail enviado para a mentora anterior informando a remoção</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTrocarMentoraModalOpen(false)}>Cancelar</Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={handleTrocarMentora}
+              disabled={trocarMentora.isPending}
+            >
+              {trocarMentora.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Processando...</> : <><ArrowLeftRight className="h-4 w-4 mr-2" /> Confirmar Troca</>}
             </Button>
           </DialogFooter>
         </DialogContent>
