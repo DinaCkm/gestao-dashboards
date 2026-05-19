@@ -16,14 +16,6 @@ export default function BoasVindasBC({ nomeAluno }: BoasVindasBCProps) {
     }
   }, []);
 
-  const handleAcessarPlataforma = () => {
-    window.location.href = "/";
-  };
-
-  const handleWhatsApp = () => {
-    window.open("https://wa.me/5511940196378?text=Olá!%20Acabei%20de%20me%20cadastrar%20no%20Programa%20Desenvolvimento%20Express%20e%20preciso%20de%20ajuda.", "_blank");
-  };
-
   return (
     <div style={{
       minHeight: "100vh",
@@ -35,14 +27,14 @@ export default function BoasVindasBC({ nomeAluno }: BoasVindasBCProps) {
       position: "relative",
       overflow: "hidden",
     }}>
-      {/* Círculos decorativos */}
-      <div style={{ position: "fixed", top: "-200px", right: "-200px", width: "700px", height: "700px", borderRadius: "50%", background: "radial-gradient(circle, rgba(0,184,217,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
-      <div style={{ position: "fixed", bottom: "-200px", left: "-150px", width: "700px", height: "700px", borderRadius: "50%", background: "radial-gradient(circle, rgba(91,46,255,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
+      {/* Decoração */}
+      <div style={{ position: "fixed", top: "-200px", right: "-200px", width: "600px", height: "600px", borderRadius: "50%", background: "radial-gradient(circle, rgba(0,184,217,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "fixed", bottom: "-200px", left: "-150px", width: "600px", height: "600px", borderRadius: "50%", background: "radial-gradient(circle, rgba(91,46,255,0.07) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-      {/* Header */}
+      {/* Header com logo */}
       <header style={{
         width: "100%",
-        padding: "20px clamp(20px, 5vw, 60px)",
+        padding: "16px clamp(20px, 5vw, 60px)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
@@ -51,16 +43,15 @@ export default function BoasVindasBC({ nomeAluno }: BoasVindasBCProps) {
         position: "relative",
         zIndex: 10,
       }}>
-        {/* Logo + nome */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <div style={{
-            width: "44px", height: "44px", borderRadius: "50%",
+            width: "42px", height: "42px", borderRadius: "50%",
             background: "linear-gradient(135deg, #5B2EFF, #00B8D9)",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 0 16px rgba(91,46,255,0.3)",
             flexShrink: 0,
           }}>
-            <img src="/eco-do-bem-logo.png" alt="Eco do Bem" style={{ width: "82%", height: "82%", objectFit: "contain" }} />
+            <img src="/eco-do-bem-logo.png" alt="Eco do Bem" style={{ width: "80%", height: "80%", objectFit: "contain" }} />
           </div>
           <div>
             <p style={{ color: "#ffffff", fontWeight: "700", fontSize: "14px", margin: 0 }}>Eco do Bem</p>
@@ -68,7 +59,7 @@ export default function BoasVindasBC({ nomeAluno }: BoasVindasBCProps) {
           </div>
         </div>
         <button
-          onClick={handleWhatsApp}
+          onClick={() => window.open("https://wa.me/5511940196378?text=Olá!%20Acabei%20de%20me%20cadastrar%20no%20Programa%20Desenvolvimento%20Express%20e%20preciso%20de%20ajuda.", "_blank")}
           style={{
             display: "flex", alignItems: "center", gap: "7px",
             background: "rgba(37,211,102,0.1)",
@@ -81,17 +72,17 @@ export default function BoasVindasBC({ nomeAluno }: BoasVindasBCProps) {
             fontWeight: "500",
           }}
         >
-          <MessageCircle size={14} />
+          <MessageCircle size={13} />
           Fale Conosco
         </button>
       </header>
 
-      {/* Conteúdo principal */}
+      {/* Conteúdo */}
       <main style={{
         flex: 1,
         width: "100%",
-        maxWidth: "760px",
-        padding: "clamp(40px, 6vw, 72px) clamp(20px, 5vw, 40px)",
+        maxWidth: "680px",
+        padding: "40px clamp(20px, 5vw, 40px) 40px",
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
@@ -106,22 +97,22 @@ export default function BoasVindasBC({ nomeAluno }: BoasVindasBCProps) {
           background: "rgba(94,211,140,0.12)",
           border: "1px solid rgba(94,211,140,0.3)",
           borderRadius: "50px",
-          padding: "7px 18px",
-          marginBottom: "24px",
+          padding: "6px 16px",
+          marginBottom: "20px",
         }}>
-          <Star size={12} fill="#5ED38C" color="#5ED38C" />
+          <Star size={11} fill="#5ED38C" color="#5ED38C" />
           <span style={{ color: "#5ED38C", fontSize: "11px", fontWeight: "700", letterSpacing: "1.5px", textTransform: "uppercase" }}>
             Cadastro realizado com sucesso
           </span>
         </div>
 
-        {/* Título */}
+        {/* Título — tamanho fixo proporcional */}
         <h1 style={{
-          fontSize: "clamp(32px, 5vw, 56px)",
+          fontSize: "28px",
           fontWeight: "800",
           color: "#ffffff",
-          lineHeight: "1.15",
-          marginBottom: "16px",
+          lineHeight: "1.3",
+          marginBottom: "12px",
         }}>
           {firstName ? `${firstName}, você` : "Você"} faz parte de algo{" "}
           <span style={{
@@ -134,46 +125,43 @@ export default function BoasVindasBC({ nomeAluno }: BoasVindasBCProps) {
         </h1>
 
         <p style={{
-          fontSize: "clamp(14px, 2vw, 17px)",
+          fontSize: "14px",
           color: "rgba(255,255,255,0.6)",
-          maxWidth: "520px",
-          lineHeight: "1.75",
-          marginBottom: "48px",
+          maxWidth: "480px",
+          lineHeight: "1.7",
+          marginBottom: "32px",
         }}>
           Bem-vindo(a) ao <strong style={{ color: "#fff" }}>Programa Desenvolvimento Express</strong> —
           uma jornada de transformação real, com mentoria especializada e indicadores claros de evolução.
         </p>
 
-        {/* Vídeo centralizado */}
+        {/* Vídeo */}
         <div style={{
           width: "100%",
-          maxWidth: "560px",
+          maxWidth: "480px",
           aspectRatio: "16/9",
           background: "rgba(255,255,255,0.04)",
           border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: "20px",
+          borderRadius: "16px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          marginBottom: "40px",
-          cursor: "pointer",
-          position: "relative",
-          overflow: "hidden",
-          boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
+          marginBottom: "28px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
         }}>
           <div style={{
-            width: "72px", height: "72px",
+            width: "60px", height: "60px",
             background: "linear-gradient(135deg, #5B2EFF, #00B8D9)",
             borderRadius: "50%",
             display: "flex", alignItems: "center", justifyContent: "center",
-            marginBottom: "14px",
-            boxShadow: "0 0 40px rgba(91,46,255,0.5)",
+            marginBottom: "10px",
+            boxShadow: "0 0 30px rgba(91,46,255,0.4)",
           }}>
-            <Play size={28} fill="white" color="white" style={{ marginLeft: "4px" }} />
+            <Play size={22} fill="white" color="white" style={{ marginLeft: "3px" }} />
           </div>
-          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", margin: 0 }}>Vídeo de boas-vindas</p>
-          <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px", marginTop: "4px" }}>Em breve</p>
+          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13px", margin: 0 }}>Vídeo de boas-vindas</p>
+          <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "11px", marginTop: "3px" }}>Em breve</p>
         </div>
 
         {/* Card de acesso */}
@@ -182,54 +170,51 @@ export default function BoasVindasBC({ nomeAluno }: BoasVindasBCProps) {
           maxWidth: "480px",
           background: "linear-gradient(135deg, rgba(91,46,255,0.12), rgba(0,184,217,0.07))",
           border: "1px solid rgba(91,46,255,0.2)",
-          borderRadius: "20px",
-          padding: "28px 32px",
-          marginBottom: "40px",
+          borderRadius: "16px",
+          padding: "24px 28px",
         }}>
-          <h3 style={{ color: "#ffffff", fontSize: "16px", fontWeight: "700", marginBottom: "20px", textAlign: "left" }}>
+          <h3 style={{ color: "#ffffff", fontSize: "15px", fontWeight: "700", marginBottom: "16px", textAlign: "left" }}>
             Seus dados de acesso
           </h3>
-          <div style={{ display: "flex", gap: "32px", marginBottom: "16px", flexWrap: "wrap" as const }}>
+          <div style={{ display: "flex", gap: "32px", marginBottom: "12px", flexWrap: "wrap" as const }}>
             <div>
-              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Login</p>
-              <p style={{ color: "#00B8D9", fontSize: "14px", fontWeight: "600" }}>Seu e-mail cadastrado</p>
+              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "3px" }}>Login</p>
+              <p style={{ color: "#00B8D9", fontSize: "13px", fontWeight: "600" }}>Seu e-mail cadastrado</p>
             </div>
             <div>
-              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Senha</p>
-              <p style={{ color: "#5ED38C", fontSize: "14px", fontWeight: "600" }}>Seu CPF (somente números)</p>
+              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "3px" }}>Senha</p>
+              <p style={{ color: "#5ED38C", fontSize: "13px", fontWeight: "600" }}>Seu CPF (somente números)</p>
             </div>
           </div>
-          <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "12px", marginBottom: "20px" }}>
+          <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "11px", marginBottom: "16px" }}>
             Você poderá alterar sua senha após o primeiro acesso.
           </p>
           <button
-            onClick={handleAcessarPlataforma}
+            onClick={() => { window.location.href = "/"; }}
             style={{
               width: "100%",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
               background: "linear-gradient(135deg, #5B2EFF, #00B8D9)",
               border: "none",
-              borderRadius: "12px",
+              borderRadius: "10px",
               color: "#fff",
-              padding: "14px",
-              fontSize: "15px",
+              padding: "13px",
+              fontSize: "14px",
               fontWeight: "700",
               cursor: "pointer",
-              boxShadow: "0 4px 20px rgba(91,46,255,0.4)",
-              letterSpacing: "0.3px",
+              boxShadow: "0 4px 16px rgba(91,46,255,0.35)",
             }}
           >
             Iniciar minha jornada
-            <ArrowRight size={17} />
+            <ArrowRight size={16} />
           </button>
         </div>
       </main>
 
-      {/* Footer */}
       <footer style={{
         width: "100%",
         textAlign: "center",
-        padding: "24px",
+        padding: "20px",
         borderTop: "1px solid rgba(255,255,255,0.05)",
         position: "relative",
         zIndex: 1,
