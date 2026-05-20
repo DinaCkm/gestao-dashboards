@@ -353,6 +353,15 @@ export default function UploadPage() {
         try {
           const fileData = await readFileAsBase64(file.name);
           if (!fileData) throw new Error("Não foi possível ler o arquivo");
+          
+          // Arquivos PDI usam rota dedicada
+          if (file.type === 'pdi') {
+            const pdiResult = await uploadPDIsMutation.mutateAsync({ fileData, fileName: file.name, preview: false });
+            setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: "success" as const, sheets: [{ name: 'PDIs', rows: pdiResult.created || 0, columns: 0 }] } : f));
+            successCount++;
+            continue;
+          }
+          
           const result = await uploadFileMutation.mutateAsync({
             batchId: currentBatchId!, fileName: file.name, fileData, fileType: file.type
           });
