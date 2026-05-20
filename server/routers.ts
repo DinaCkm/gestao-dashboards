@@ -1161,13 +1161,23 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           if (a.name) alunoByName.set(a.name.toLowerCase().trim(), a.id);
           if (a.email) alunoByEmail.set(a.email.toLowerCase().trim(), a.id);
         }
+        // Normaliza texto: lowercase, remove acentos, colapsa espaços
+        const normalizeText = (s: string) => s.toLowerCase().trim()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
+          .replace(/\s+/g, ' ');                             // colapsa espaços
         const trilhaByName = new Map<string, number>();
         for (const t of trilhasList) {
-          if (t.name) trilhaByName.set(t.name.toLowerCase().trim(), t.id);
+          if (t.name) {
+            trilhaByName.set(t.name.toLowerCase().trim(), t.id);
+            trilhaByName.set(normalizeText(t.name), t.id); // versão sem acentos
+          }
         }
         const compByName = new Map<string, number>();
         for (const c of compList) {
-          if (c.nome) compByName.set(c.nome.toLowerCase().trim(), c.id);
+          if (c.nome) {
+            compByName.set(c.nome.toLowerCase().trim(), c.id);
+            compByName.set(normalizeText(c.nome), c.id); // versão sem acentos
+          }
         }
 
         const results: { row: number; aluno: string; status: 'ok' | 'erro' | 'aviso'; message: string }[] = [];
@@ -1187,11 +1197,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           // Resolver alunoId
           let alunoId = alunoByName.get(nomeAluno.toLowerCase().trim());
           if (!alunoId && emailAluno) alunoId = alunoByEmail.get(emailAluno.toLowerCase().trim());
-          if (!alunoId) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: `Aluno não encontrado: "${nomeAluno}"` }); errors++; continue; }
+          if (!alunoId) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: `Aluno não encontrado: nome "${nomeAluno}"${emailAluno ? ` / e-mail "${emailAluno}"` : ''}. Verifique se o aluno está cadastrado no sistema.` }); errors++; continue; }
 
-          // Resolver trilhaId
-          const trilhaId = trilhaByName.get(nomeTrilha.toLowerCase().trim());
-          if (!trilhaId) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: `Trilha não encontrada: "${nomeTrilha}"` }); errors++; continue; }
+          // Resolver trilhaId (tenta nome exato, depois sem acentos)
+          const trilhaId = trilhaByName.get(nomeTrilha.toLowerCase().trim()) ?? trilhaByName.get(normalizeText(nomeTrilha));
+          if (!trilhaId) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: `Trilha não encontrada: "${nomeTrilha}". Trilhas disponíveis: ${trilhasList.map(t => t.name).join(', ')}` }); errors++; continue; }
 
           if (!macroInicio || !macroTermino) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: 'Datas de macro início/término inválidas' }); errors++; continue; }
 
@@ -1200,8 +1210,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           for (let n = 1; n <= 15; n++) {
             const nomeComp = getVal(row, `Competência ${n}`);
             if (!nomeComp) break;
-            const compId = compByName.get(nomeComp.toLowerCase().trim());
-            if (!compId) { results.push({ row: i+1, aluno: nomeAluno, status: 'aviso', message: `Competência ${n} não encontrada: "${nomeComp}" (linha ignorada)` }); continue; }
+            const compId = compByName.get(nomeComp.toLowerCase().trim()) ?? compByName.get(normalizeText(nomeComp));
+            if (!compId) { results.push({ row: i+1, aluno: nomeAluno, status: 'aviso', message: `Competência ${n} não encontrada: "${nomeComp}" (pulada)` }); continue; }
             const peso = getVal(row, `Peso ${n}`) || 'obrigatoria';
             const notaCorte = getVal(row, `Nota Corte ${n}`) || '70';
             const metaFinal = getVal(row, `Meta Final ${n}`);

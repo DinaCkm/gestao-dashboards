@@ -169,6 +169,7 @@ export default function UploadPage() {
   // Estado para upload de PDIs em massa
   const [pdiFile, setPdiFile] = useState<File | null>(null);
   const [pdiPreviewResults, setPdiPreviewResults] = useState<{ row: number; aluno: string; status: 'ok' | 'erro' | 'aviso'; message: string }[] | null>(null);
+  const [pdiResultMode, setPdiResultMode] = useState<'preview' | 'result'>('preview'); // distingue pré-visualização de resultado real
   const [pdiIsProcessing, setPdiIsProcessing] = useState(false);
   const [pdiIsConfirming, setPdiIsConfirming] = useState(false);
   const pdiFileInputRef = useRef<HTMLInputElement>(null);
@@ -177,7 +178,7 @@ export default function UploadPage() {
 
   const handlePdiFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) { setPdiFile(f); setPdiPreviewResults(null); }
+    if (f) { setPdiFile(f); setPdiPreviewResults(null); setPdiResultMode('preview'); }
   };
 
   const handlePdiPreview = async () => {
@@ -188,6 +189,7 @@ export default function UploadPage() {
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
       const result = await uploadPDIsMutation.mutateAsync({ fileData: base64, fileName: pdiFile.name, preview: true });
       setPdiPreviewResults(result.results);
+      setPdiResultMode('preview');
       toast.info(`Pré-visualização: ${result.results.filter(r => r.status === 'ok').length} PDIs válidos, ${result.results.filter(r => r.status === 'erro').length} erros`);
     } catch (err: any) {
       toast.error('Erro ao validar planilha: ' + (err?.message || 'Erro desconhecido'));
@@ -204,7 +206,14 @@ export default function UploadPage() {
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
       const result = await uploadPDIsMutation.mutateAsync({ fileData: base64, fileName: pdiFile.name, preview: false });
       setPdiPreviewResults(result.results);
-      toast.success(`${result.created} PDI(s) criado(s) com sucesso! ${result.errors > 0 ? `${result.errors} erro(s).` : ''}`);
+      setPdiResultMode('result');
+      if (result.errors > 0 && result.created === 0) {
+        toast.error(`Nenhum PDI criado. ${result.errors} erro(s) encontrado(s). Veja o relatório abaixo.`);
+      } else if (result.errors > 0) {
+        toast.warning(`${result.created} PDI(s) criado(s) com sucesso, mas ${result.errors} erro(s). Veja o relatório abaixo.`);
+      } else {
+        toast.success(`${result.created} PDI(s) criado(s) com sucesso!`);
+      }
     } catch (err: any) {
       toast.error('Erro ao criar PDIs: ' + (err?.message || 'Erro desconhecido'));
     } finally {
@@ -684,24 +693,36 @@ export default function UploadPage() {
                         {pdiIsProcessing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
                         Pré-visualizar
                       </Button>
-                      {pdiPreviewResults && pdiPreviewResults.some(r => r.status === 'ok') && (
-                        <Button onClick={handlePdiConfirm} disabled={pdiIsProcessing || pdiIsConfirming} className="bg-purple-600 hover:bg-purple-700 text-white">
-                          {pdiIsConfirming ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                          Confirmar e Criar PDIs
-                        </Button>
-                      )}
+                      <Button onClick={handlePdiConfirm} disabled={pdiIsProcessing || pdiIsConfirming} className="bg-purple-600 hover:bg-purple-700 text-white">
+                        {pdiIsConfirming ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                        Confirmar e Criar PDIs
+                      </Button>
                     </>
                   )}
                 </div>
 
                 {pdiPreviewResults && (
                   <div className="space-y-2">
+                    {/* Título diferente para pré-visualização vs resultado real */}
+                    <div className={`flex items-center gap-2 p-2 rounded-lg text-sm font-semibold ${
+                      pdiResultMode === 'result'
+                        ? (pdiPreviewResults.some(r => r.status === 'erro') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200')
+                        : 'bg-blue-50 text-blue-700 border border-blue-200'
+                    }`}>
+                      {pdiResultMode === 'result' ? (
+                        pdiPreviewResults.some(r => r.status === 'erro')
+                          ? <><XCircle className="h-4 w-4 shrink-0" /> Resultado da criação — verifique os erros abaixo e corrija a planilha</>
+                          : <><CheckCircle2 className="h-4 w-4 shrink-0" /> PDIs criados com sucesso!</>
+                      ) : (
+                        <><Eye className="h-4 w-4 shrink-0" /> Pré-visualização — nenhum PDI foi criado ainda</>
+                      )}
+                    </div>
                     <div className="flex gap-4 text-sm">
-                      <span className="text-green-600 font-medium">{pdiPreviewResults.filter(r => r.status === 'ok').length} válidos</span>
+                      <span className="text-green-600 font-medium">{pdiPreviewResults.filter(r => r.status === 'ok').length} {pdiResultMode === 'result' ? 'criados' : 'válidos'}</span>
                       <span className="text-red-600 font-medium">{pdiPreviewResults.filter(r => r.status === 'erro').length} erros</span>
                       <span className="text-yellow-600 font-medium">{pdiPreviewResults.filter(r => r.status === 'aviso').length} avisos</span>
                     </div>
-                    <div className="max-h-80 overflow-y-auto space-y-1 rounded-lg border border-border/30 p-2">
+                    <div className="max-h-96 overflow-y-auto space-y-1 rounded-lg border border-border/30 p-2">
                       {pdiPreviewResults.map((r, i) => (
                         <div key={i} className={`flex items-start gap-2 p-2 rounded text-sm ${
                           r.status === 'ok' ? 'bg-green-500/10 text-green-700' :
@@ -721,7 +742,7 @@ export default function UploadPage() {
                 <div className="p-4 bg-muted/30 rounded-lg text-sm space-y-1">
                   <p className="font-medium">Instruções:</p>
                   <p className="text-muted-foreground">1. Baixe o modelo PDI na aba <strong>Upload → Modelos de Planilha</strong></p>
-                  <p className="text-muted-foreground">2. Preencha uma linha por aluno com trilha, datas e até 5 competências</p>
+                  <p className="text-muted-foreground">2. Preencha uma linha por aluno com trilha, datas e até 15 competências</p>
                   <p className="text-muted-foreground">3. Clique em <strong>Pré-visualizar</strong> para validar antes de criar</p>
                   <p className="text-muted-foreground">4. Clique em <strong>Confirmar e Criar PDIs</strong> para salvar no sistema</p>
                 </div>
