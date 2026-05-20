@@ -213,16 +213,10 @@ function PlanoContent() {
   });
 
   // Resumo do plano do aluno (cursos, sessões, webinars)
-  const { data: resumoPlano, error: resumoPlanoError } = trpc.planoIndividual.resumoPlanoAluno.useQuery(
+  const { data: resumoPlano } = trpc.planoIndividual.resumoPlanoAluno.useQuery(
     { alunoId: selectedAluno! },
     { enabled: !!selectedAluno }
   );
-  // Diagnóstico temporário — remover após correção
-  const { data: diagnostico } = trpc.planoIndividual.diagnosticoResumoPDI.useQuery(
-    { alunoId: selectedAluno! },
-    { enabled: !!selectedAluno }
-  );
-
   // DISC
   const { data: discResultado } = trpc.disc.resultado.useQuery(
     { alunoId: selectedAluno! },
@@ -1400,15 +1394,6 @@ function PlanoContent() {
                 </Card>
               )}
 
-              {/* ===== DIAGNÓSTICO TEMPORÁRIO ===== */}
-              {selectedAluno && (
-                <div className="p-3 bg-yellow-50 border border-yellow-300 rounded-lg text-xs font-mono">
-                  <p className="font-bold text-yellow-800 mb-1">Diagnóstico resumoPlano (remover após correção):</p>
-                  <p>resumoPlano: {resumoPlano ? 'OK (' + JSON.stringify(Object.keys(resumoPlano)) + ')' : 'null/undefined'}</p>
-                  <p>erro: {resumoPlanoError ? resumoPlanoError.message : 'nenhum'}</p>
-                  {diagnostico && <pre className="mt-1 text-xs overflow-auto max-h-40">{JSON.stringify(diagnostico, null, 2)}</pre>}
-                </div>
-              )}
               {/* ===== SEÇÃO 9: MAPA RESUMO DO PLANO (instrução 09) ===== */}
               {resumoPlano && (
                 <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
