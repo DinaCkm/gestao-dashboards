@@ -1248,6 +1248,26 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           }
         }
 
+        // Registrar no histórico de lotes (somente quando não for preview)
+        if (!input.preview) {
+          try {
+            const now = new Date();
+            const weekNumber = Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+            const notes = [
+              `Upload PDI em Massa: ${created} PDI(s) criado(s)`,
+              errors > 0 ? `${errors} erro(s): ${results.filter(r => r.status === 'erro').map(r => `Linha ${r.row} (${r.aluno}): ${r.message}`).join(' | ')}` : null,
+            ].filter(Boolean).join(' — ');
+            await db.createUploadBatch({
+              weekNumber,
+              year: now.getFullYear(),
+              uploadedBy: ctx.user.id,
+              status: errors > 0 && created === 0 ? 'error' : 'completed',
+              totalRecords: created,
+              notes,
+            });
+          } catch (_) { /* não bloqueia o retorno se o batch falhar */ }
+        }
+
         return { created, errors, total: results.length, results, preview: input.preview ?? false };
       }),
 

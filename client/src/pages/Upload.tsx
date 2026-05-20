@@ -173,6 +173,7 @@ export default function UploadPage() {
   const [pdiIsProcessing, setPdiIsProcessing] = useState(false);
   const [pdiIsConfirming, setPdiIsConfirming] = useState(false);
   const pdiFileInputRef = useRef<HTMLInputElement>(null);
+  const pdiResultRef = useRef<HTMLDivElement>(null); // ref para scroll automático ao resultado
 
   const uploadPDIsMutation = trpc.uploads.uploadPDIs.useMutation();
 
@@ -207,6 +208,10 @@ export default function UploadPage() {
       const result = await uploadPDIsMutation.mutateAsync({ fileData: base64, fileName: pdiFile.name, preview: false });
       setPdiPreviewResults(result.results);
       setPdiResultMode('result');
+      // Rolar automaticamente para o relatório de resultado
+      setTimeout(() => pdiResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+      // Atualizar histórico de lotes para refletir o novo registro
+      refetchBatches();
       if (result.errors > 0 && result.created === 0) {
         toast.error(`Nenhum PDI criado. ${result.errors} erro(s) encontrado(s). Veja o relatório abaixo.`);
       } else if (result.errors > 0) {
@@ -702,7 +707,7 @@ export default function UploadPage() {
                 </div>
 
                 {pdiPreviewResults && (
-                  <div className="space-y-2">
+                  <div ref={pdiResultRef} className="space-y-2">
                     {/* Título diferente para pré-visualização vs resultado real */}
                     <div className={`flex items-center gap-2 p-2 rounded-lg text-sm font-semibold ${
                       pdiResultMode === 'result'
