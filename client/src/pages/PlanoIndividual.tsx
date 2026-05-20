@@ -1240,12 +1240,9 @@ function PlanoContent() {
                     <Flag className="h-5 w-5 text-primary" />
                     <CardTitle className="text-base">Metas de Desenvolvimento</CardTitle>
                   </div>
-                  <CardDescription>Metas por competência com acompanhamento mensal</CardDescription>
+                  <CardDescription>Objetivo macro por competência e micrometas para atingí-lo</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Resumo de metas — mini cards removidos (instrução 07) */}
-
-                  {/* Competências e metas */}
                   {assessments.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">O aluno precisa ter um Assessment/PDI para criar metas.</p>
                   ) : metasByCompetencia.length === 0 ? (
@@ -1254,11 +1251,15 @@ function PlanoContent() {
                     <div className="space-y-2">
                       {metasByCompetencia.map((comp) => {
                         const isExpanded = expandedCompId === comp.competenciaId;
-                        const totalMetas = comp.metas.length;
-                        const cumpridas = comp.metas.filter((m: any) => m.ultimoStatus === "cumprida").length;
-                        const pctComp = totalMetas > 0 ? Math.round((cumpridas / totalMetas) * 100) : 0;
+                        // Separar meta macro (primeira sem número) das micrometas (numeradas)
+                        const metaMacro = comp.metas.find((m: any) => !/^\d+\./.test(m.titulo.trim()));
+                        const micrometas = comp.metas.filter((m: any) => /^\d+\./.test(m.titulo.trim()));
+                        const totalMicro = micrometas.length;
+                        const microCumpridas = micrometas.filter((m: any) => m.ultimoStatus === 'cumprida').length;
+                        const pctMicro = totalMicro > 0 ? Math.round((microCumpridas / totalMicro) * 100) : 0;
                         return (
                           <div key={comp.competenciaId} className="border rounded-lg overflow-hidden">
+                            {/* Cabeçalho da competência */}
                             <button
                               onClick={() => setExpandedCompId(isExpanded ? null : comp.competenciaId)}
                               className="w-full flex items-center gap-3 p-3 hover:bg-accent/30 transition-colors text-left"
@@ -1269,49 +1270,93 @@ function PlanoContent() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <p className="font-medium text-sm">{comp.competenciaNome}</p>
-                                  <Badge variant="outline" className="text-xs">{totalMetas} meta{totalMetas !== 1 ? "s" : ""}</Badge>
+                                  {totalMicro > 0 && (
+                                    <Badge variant="outline" className="text-xs">{microCumpridas}/{totalMicro} micrometa{totalMicro !== 1 ? 's' : ''}</Badge>
+                                  )}
+                                  {comp.metas.length === 0 && (
+                                    <Badge variant="outline" className="text-xs text-muted-foreground">0 metas</Badge>
+                                  )}
                                 </div>
-                                {totalMetas > 0 && (
+                                {totalMicro > 0 && (
                                   <div className="flex items-center gap-2 mt-1">
-                                    <Progress value={pctComp} className="h-1.5 flex-1 max-w-32" />
-                                    <span className="text-xs text-muted-foreground">{pctComp}%</span>
+                                    <Progress value={pctMicro} className="h-1.5 flex-1 max-w-32" />
+                                    <span className="text-xs text-muted-foreground">{pctMicro}%</span>
                                   </div>
                                 )}
                               </div>
                               {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                             </button>
+
                             {isExpanded && (
                               <div className="border-t bg-muted/10">
                                 {comp.metas.length === 0 ? (
                                   <div className="p-4 text-center text-sm text-muted-foreground">Nenhuma meta definida</div>
                                 ) : (
-                                  <div className="divide-y">
-                                    {comp.metas.map((meta: any) => (
-                                      <div key={meta.id} className="p-3 flex items-start gap-3">
-                                        <div className="mt-0.5">{getMetaStatusIcon(meta.ultimoStatus || "")}</div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 flex-wrap">
-                                            <p className="text-sm font-medium">{meta.titulo}</p>
-                                            {meta.taskLibraryId && <Badge variant="secondary" className="text-xs gap-1"><Library className="h-3 w-3" />Biblioteca</Badge>}
-                                          </div>
-                                          {meta.descricao && <p className="text-xs text-muted-foreground mt-1">{meta.descricao}</p>}
-                                          {meta.ultimoStatus && (
-                                            <div className="flex items-center gap-2 mt-1">
-                                              <Badge className={`text-xs ${getMetaStatusColor(meta.ultimoStatus)}`}>{getMetaStatusLabel(meta.ultimoStatus)}</Badge>
-                                              {meta.ultimoMes && meta.ultimoAno && <span className="text-xs text-muted-foreground">{meses[(meta.ultimoMes as number) - 1]} {meta.ultimoAno}</span>}
+                                  <div className="p-3 space-y-3">
+                                    {/* META MACRO */}
+                                    {metaMacro && (
+                                      <div className="rounded-lg border-l-4 border-primary bg-primary/5 p-3">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div className="flex items-start gap-2 flex-1 min-w-0">
+                                            <Flag className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-0.5">Objetivo Principal</p>
+                                              <p className="text-sm font-medium">{metaMacro.titulo}</p>
+                                              {metaMacro.descricao && (
+                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-3">{metaMacro.descricao}</p>
+                                              )}
+                                              {metaMacro.ultimoStatus && (
+                                                <div className="flex items-center gap-2 mt-1.5">
+                                                  <Badge className={`text-xs ${getMetaStatusColor(metaMacro.ultimoStatus)}`}>{getMetaStatusLabel(metaMacro.ultimoStatus)}</Badge>
+                                                  {metaMacro.ultimoMes && metaMacro.ultimoAno && <span className="text-xs text-muted-foreground">{meses[(metaMacro.ultimoMes as number) - 1]} {metaMacro.ultimoAno}</span>}
+                                                </div>
+                                              )}
                                             </div>
-                                          )}
-                                        </div>
-                                        <div className="flex items-center gap-1 shrink-0">
-                                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Acompanhamento" onClick={() => handleOpenAcomp(meta.id, meta.titulo)}>
-                                            <Calendar className="h-4 w-4" />
-                                          </Button>
-                                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500" title="Remover" onClick={() => { if (confirm("Remover esta meta?")) removerMeta.mutate({ id: meta.id }); }}>
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
+                                          </div>
+                                          <div className="flex items-center gap-1 shrink-0">
+                                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Acompanhamento" onClick={() => handleOpenAcomp(metaMacro.id, metaMacro.titulo)}>
+                                              <Calendar className="h-3.5 w-3.5" />
+                                            </Button>
+                                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-500" title="Remover" onClick={() => { if (confirm('Remover esta meta?')) removerMeta.mutate({ id: metaMacro.id }); }}>
+                                              <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                          </div>
                                         </div>
                                       </div>
-                                    ))}
+                                    )}
+
+                                    {/* MICROMETAS */}
+                                    {micrometas.length > 0 && (
+                                      <div className="ml-3 space-y-1.5">
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Micrometas</p>
+                                        {micrometas.map((meta: any) => (
+                                          <div key={meta.id} className="flex items-start gap-2 p-2.5 rounded-lg border bg-card">
+                                            <div className="mt-0.5 shrink-0">{getMetaStatusIcon(meta.ultimoStatus || '')}</div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center gap-2 flex-wrap">
+                                                <p className="text-sm">{meta.titulo}</p>
+                                                {meta.taskLibraryId && <Badge variant="secondary" className="text-xs gap-1"><Library className="h-3 w-3" />Biblioteca</Badge>}
+                                              </div>
+                                              {meta.descricao && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{meta.descricao}</p>}
+                                              {meta.ultimoStatus && (
+                                                <div className="flex items-center gap-2 mt-1">
+                                                  <Badge className={`text-xs ${getMetaStatusColor(meta.ultimoStatus)}`}>{getMetaStatusLabel(meta.ultimoStatus)}</Badge>
+                                                  {meta.ultimoMes && meta.ultimoAno && <span className="text-xs text-muted-foreground">{meses[(meta.ultimoMes as number) - 1]} {meta.ultimoAno}</span>}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Acompanhamento" onClick={() => handleOpenAcomp(meta.id, meta.titulo)}>
+                                                <Calendar className="h-3.5 w-3.5" />
+                                              </Button>
+                                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-500" title="Remover" onClick={() => { if (confirm('Remover esta meta?')) removerMeta.mutate({ id: meta.id }); }}>
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                                 <div className="p-2 border-t">
@@ -1777,84 +1822,84 @@ function PlanoContent() {
 
               {/* ===== SEÇÃO 14: METAS DESAFIO ===== */}
               {resumoPlano?.metasDesafio && resumoPlano.metasDesafio.length > 0 && (() => {
-                const cumpridas = resumoPlano.metasDesafio.filter((m: any) => m.ultimoStatus === 'cumprida');
-                const naoCumpridas = resumoPlano.metasDesafio.filter((m: any) => m.ultimoStatus === 'nao_cumprida');
-                const semStatus = resumoPlano.metasDesafio.filter((m: any) => !m.ultimoStatus);
-                // Agrupar por competencia
+                // Agrupar por competência
                 const porComp: Record<string, any[]> = {};
                 resumoPlano.metasDesafio.forEach((m: any) => {
                   const k = m.competenciaNome || 'Sem competência';
                   if (!porComp[k]) porComp[k] = [];
                   porComp[k].push(m);
                 });
+                // Contar apenas micrometas (numeradas) para o resumo
+                const todasMicro = resumoPlano.metasDesafio.filter((m: any) => /^\d+\./.test(m.titulo.trim()));
+                const microCumpridas = todasMicro.filter((m: any) => m.ultimoStatus === 'cumprida');
+                const totalComps = Object.keys(porComp).length;
                 return (
                   <Card className="overflow-hidden">
                     <div className="bg-gradient-to-r from-rose-600 to-rose-700 p-4 text-white">
                       <h3 className="text-base font-bold flex items-center gap-2">
-                        <Flag className="h-5 w-5" /> Metas Desafio
+                        <Flag className="h-5 w-5" /> Metas de Desenvolvimento
                       </h3>
                       <p className="text-white/80 text-xs mt-1">
-                        {cumpridas.length} cumprida{cumpridas.length !== 1 ? 's' : ''} de {resumoPlano.metasDesafio.length} meta{resumoPlano.metasDesafio.length !== 1 ? 's' : ''}
+                        {totalComps} competência{totalComps !== 1 ? 's' : ''} • {microCumpridas.length}/{todasMicro.length} micrometa{todasMicro.length !== 1 ? 's' : ''} cumprida{microCumpridas.length !== 1 ? 's' : ''}
                       </p>
                     </div>
                     <CardContent className="pt-4">
-                      <div className="flex items-center gap-4 mb-3 p-3 bg-rose-50 rounded-lg">
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-rose-700">{resumoPlano.metasDesafio.length}</p>
-                          <p className="text-xs text-rose-600">Total</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-emerald-700">{cumpridas.length}</p>
-                          <p className="text-xs text-emerald-600">Cumpridas</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-red-500">{naoCumpridas.length}</p>
-                          <p className="text-xs text-red-500">Não cumpridas</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-gray-400">{semStatus.length}</p>
-                          <p className="text-xs text-gray-400">Sem status</p>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        {Object.entries(porComp).map(([comp, metas]: [string, any[]]) => (
-                          <div key={comp}>
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <Target className="h-3.5 w-3.5 text-rose-500" />
-                              <h4 className="font-semibold text-xs text-gray-700 uppercase tracking-wide">{comp}</h4>
-                              <Badge variant="outline" className="text-xs ml-auto">{metas.length}</Badge>
+                      <div className="space-y-4">
+                        {Object.entries(porComp).map(([comp, metas]: [string, any[]]) => {
+                          const macro = metas.find((m: any) => !/^\d+\./.test(m.titulo.trim()));
+                          const micros = metas.filter((m: any) => /^\d+\./.test(m.titulo.trim()));
+                          const microsCumpridas = micros.filter((m: any) => m.ultimoStatus === 'cumprida').length;
+                          return (
+                          <div key={comp} className="border rounded-lg overflow-hidden">
+                            <div className="flex items-center gap-2 p-3 bg-rose-50/50">
+                              <Target className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                              <h4 className="font-semibold text-xs text-gray-700 uppercase tracking-wide flex-1">{comp}</h4>
+                              {micros.length > 0 && <Badge variant="outline" className="text-xs">{microsCumpridas}/{micros.length} micrometas</Badge>}
                             </div>
-                            <div className="space-y-1.5 ml-5">
-                              {metas.map((m: any) => (
-                                <div key={m.id} className="flex items-start justify-between p-2.5 rounded-lg border bg-gray-50/50">
-                                  <div className="flex items-start gap-2 min-w-0">
-                                    {m.ultimoStatus === 'cumprida'
-                                      ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                                      : m.ultimoStatus === 'nao_cumprida'
-                                        ? <XCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
-                                        : m.ultimoStatus === 'parcial'
-                                          ? <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                                          : <Circle className="h-4 w-4 text-gray-300 shrink-0 mt-0.5" />}
-                                    <p className="text-sm">{m.titulo}</p>
+                            {/* Objetivo Principal (macro) */}
+                            {macro && (
+                              <div className="mx-3 mb-2 mt-1 rounded-lg border-l-4 border-rose-400 bg-rose-50/60 p-2.5">
+                                <p className="text-xs font-semibold text-rose-600 uppercase tracking-wide mb-0.5">Objetivo Principal</p>
+                                <p className="text-sm font-medium">{macro.titulo}</p>
+                                {macro.descricao && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{macro.descricao}</p>}
+                              </div>
+                            )}
+                            {/* Micrometas */}
+                            {micros.length > 0 && (
+                              <div className="mx-3 mb-3 space-y-1.5">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Micrometas</p>
+                                {micros.map((m: any) => (
+                                  <div key={m.id} className="flex items-start justify-between p-2 rounded-lg border bg-gray-50/50">
+                                    <div className="flex items-start gap-2 min-w-0">
+                                      {m.ultimoStatus === 'cumprida'
+                                        ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                        : m.ultimoStatus === 'nao_cumprida'
+                                          ? <XCircle className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
+                                          : m.ultimoStatus === 'parcial'
+                                            ? <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                                            : <Circle className="h-3.5 w-3.5 text-gray-300 shrink-0 mt-0.5" />}
+                                      <p className="text-sm">{m.titulo}</p>
+                                    </div>
+                                    {m.ultimoStatus && (
+                                      <Badge
+                                        className={`text-xs shrink-0 ml-2 ${
+                                          m.ultimoStatus === 'cumprida' ? 'bg-emerald-100 text-emerald-700'
+                                          : m.ultimoStatus === 'nao_cumprida' ? 'bg-red-100 text-red-700'
+                                          : 'bg-amber-100 text-amber-700'
+                                        }`}
+                                      >
+                                        {m.ultimoStatus === 'cumprida' ? 'Cumprida'
+                                          : m.ultimoStatus === 'nao_cumprida' ? 'Não cumprida'
+                                          : 'Parcial'}
+                                      </Badge>
+                                    )}
                                   </div>
-                                  {m.ultimoStatus && (
-                                    <Badge
-                                      className={`text-xs shrink-0 ml-2 ${
-                                        m.ultimoStatus === 'cumprida' ? 'bg-emerald-100 text-emerald-700'
-                                        : m.ultimoStatus === 'nao_cumprida' ? 'bg-red-100 text-red-700'
-                                        : 'bg-amber-100 text-amber-700'
-                                      }`}
-                                    >
-                                      {m.ultimoStatus === 'cumprida' ? 'Cumprida'
-                                        : m.ultimoStatus === 'nao_cumprida' ? 'Não cumprida'
-                                        : 'Parcial'}
-                                    </Badge>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
