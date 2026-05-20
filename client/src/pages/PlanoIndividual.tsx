@@ -1233,8 +1233,8 @@ function PlanoContent() {
                 );
               })()}
 
-              {/* ===== SEÇÃO 7: METAS DE DESENVOLVIMENTO ===== */}
-              <Card>
+              {/* ===== SEÇÃO 7: METAS DE DESENVOLVIMENTO — OCULTA ===== */}
+              {false && <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
                     <Flag className="h-5 w-5 text-primary" />
@@ -1372,7 +1372,7 @@ function PlanoContent() {
                     </div>
                   )}
                 </CardContent>
-              </Card>
+              </Card>}
 
               {/* ===== SEÇÃO 8: PERFORMANCE FILTRADA — OCULTA (instrução 08a) ===== */}
               {false && performanceFiltrada && planoAluno && planoAluno.length > 0 && (
