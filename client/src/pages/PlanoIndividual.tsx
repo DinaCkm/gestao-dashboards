@@ -873,6 +873,9 @@ function PlanoContent() {
                           <div className="p-4 bg-muted/30 flex items-center justify-between">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                  PDI {String(ass.numeroPdi ?? 1).padStart(3, '0')}
+                                </span>
                                 <h4 className="font-semibold text-sm">{ass.trilhaNome || "Trilha"}</h4>
                                 <Badge className="bg-green-500">
                                   <Play className="h-3 w-3 mr-1" /> ativo
@@ -944,6 +947,9 @@ function PlanoContent() {
                                   <div className="p-4 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-mono text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                                          PDI {String(ass.numeroPdi ?? 1).padStart(3, '0')}
+                                        </span>
                                         <h4 className="font-semibold text-sm text-gray-600 dark:text-gray-400">{ass.trilhaNome || "Trilha"}</h4>
                                         <Badge className="bg-gray-400 text-white text-xs">
                                           <Snowflake className="h-3 w-3 mr-1" /> Ciclo Anterior — PDI Congelado

@@ -4315,6 +4315,7 @@ export async function getAssessmentById(pdiId: number) {
   const qtdMacrociclos = macrociclosSet.size || 1;
   return {
     id: p.id,
+    numeroPdi: p.numeroPdi ?? 1,
     status: p.status,
     trilhaNome: trilha?.name || 'Não definida',
     turmaNome: turma?.name || null,
@@ -4689,6 +4690,14 @@ export async function createAssessmentPdi(
     }
   }
   
+  // Calcular próximo número sequencial de PDI para este aluno
+  const existingPdis = await db.select({ numeroPdi: assessmentPdi.numeroPdi })
+    .from(assessmentPdi)
+    .where(eq(assessmentPdi.alunoId, pdiData.alunoId));
+  const proximoNumeroPdi = existingPdis.length > 0
+    ? Math.max(...existingPdis.map(p => p.numeroPdi ?? 0)) + 1
+    : 1;
+
   // Insert PDI - convert string dates to Date objects
   const result = await db.insert(assessmentPdi).values({
     alunoId: pdiData.alunoId,
@@ -4700,6 +4709,7 @@ export async function createAssessmentPdi(
     macroInicio: pdiData.macroInicio,
     macroTermino: pdiData.macroTermino,
     observacoes: pdiData.observacoes || null,
+    numeroPdi: proximoNumeroPdi,
   });
   const pdiId = result[0].insertId;
   

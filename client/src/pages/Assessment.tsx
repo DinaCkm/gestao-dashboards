@@ -1395,6 +1395,9 @@ function AssessmentCard({
             </div>
             <div>
               <CardTitle className="text-base flex items-center gap-2">
+                <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                  PDI {String(pdi.numeroPdi ?? 1).padStart(3, '0')}
+                </span>
                 {pdi.trilhaNome}
                 <Badge variant={isCongelado ? "secondary" : isExpirado ? "destructive" : "default"} className="text-[10px]">
                   {isCongelado ? "Finalizada" : isExpirado ? "Expirada" : "Em Andamento"}

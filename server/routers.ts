@@ -1078,7 +1078,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     // Baixar template de planilha
     downloadTemplate: publicProcedure
       .input(z.object({
-        type: z.enum(["mentorias", "eventos", "performance"])
+        type: z.enum(["mentorias", "eventos", "performance", "pdi"])
       }))
       .mutation(async ({ input }) => {
         const buffer = generateTemplate(input.type as TemplateType);
@@ -1091,7 +1091,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     // Obter estrutura esperada do template
     getTemplateStructure: publicProcedure
       .input(z.object({
-        type: z.enum(["mentorias", "eventos", "performance"])
+        type: z.enum(["mentorias", "eventos", "performance", "pdi"])
       }))
       .query(({ input }) => {
         return TEMPLATE_STRUCTURES[input.type as TemplateType];
@@ -1101,13 +1101,146 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     validateFile: protectedProcedure
       .input(z.object({
         fileData: z.string(), // Base64
-        expectedType: z.enum(["mentorias", "eventos", "performance"])
+        expectedType: z.enum(["mentorias", "eventos", "performance", "pdi"])
       }))
       .mutation(async ({ input }) => {
         const buffer = Buffer.from(input.fileData, 'base64');
         return validateSpreadsheet(buffer, input.expectedType as TemplateType);
       }),
     
+    // Upload em massa de PDIs via planilha XLSX
+    uploadPDIs: protectedProcedure
+      .input(z.object({
+        fileData: z.string(), // Base64 encoded XLSX
+        fileName: z.string(),
+        preview: z.boolean().optional(), // Se true, apenas valida sem salvar
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.fileData, 'base64');
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames.find((n: string) => n !== 'Instruções') || workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        if (rows.length < 2) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Planilha sem dados' });
+
+        const headers = (rows[0] as string[]).map((h: string) => String(h || '').trim());
+        const colIdx = (name: string) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+
+        const getVal = (row: unknown[], name: string): string => {
+          const idx = colIdx(name);
+          if (idx < 0) return '';
+          const v = row[idx];
+          return v === null || v === undefined ? '' : String(v).trim();
+        };
+
+        const parseDate = (val: string): string | null => {
+          if (!val) return null;
+          // Formato DD/MM/AAAA
+          const parts = val.split('/');
+          if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+          // Formato AAAA-MM-DD
+          if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+          // Formato serial do Excel
+          const num = parseFloat(val);
+          if (!isNaN(num) && num > 40000) {
+            const d = new Date((num - 25569) * 86400 * 1000);
+            return d.toISOString().slice(0, 10);
+          }
+          return null;
+        };
+
+        // Carregar dados do banco para lookup
+        const alunosList = await db.getAlunos();
+        const trilhasList = await db.getAllTrilhas();
+        const compList = await db.getAllCompetencias();
+
+        const alunoByName = new Map<string, number>();
+        const alunoByEmail = new Map<string, number>();
+        for (const a of alunosList) {
+          if (a.name) alunoByName.set(a.name.toLowerCase().trim(), a.id);
+          if (a.email) alunoByEmail.set(a.email.toLowerCase().trim(), a.id);
+        }
+        const trilhaByName = new Map<string, number>();
+        for (const t of trilhasList) {
+          if (t.name) trilhaByName.set(t.name.toLowerCase().trim(), t.id);
+        }
+        const compByName = new Map<string, number>();
+        for (const c of compList) {
+          if (c.nome) compByName.set(c.nome.toLowerCase().trim(), c.id);
+        }
+
+        const results: { row: number; aluno: string; status: 'ok' | 'erro' | 'aviso'; message: string }[] = [];
+        let created = 0;
+        let errors = 0;
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i] as unknown[];
+          if (row.every(v => !v)) continue; // linha vazia
+
+          const nomeAluno = getVal(row, 'Nome do Aluno');
+          const emailAluno = getVal(row, 'E-mail');
+          const nomeTrilha = getVal(row, 'Trilha');
+          const macroInicio = parseDate(getVal(row, 'Macro Início'));
+          const macroTermino = parseDate(getVal(row, 'Macro Término'));
+
+          // Resolver alunoId
+          let alunoId = alunoByName.get(nomeAluno.toLowerCase().trim());
+          if (!alunoId && emailAluno) alunoId = alunoByEmail.get(emailAluno.toLowerCase().trim());
+          if (!alunoId) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: `Aluno não encontrado: "${nomeAluno}"` }); errors++; continue; }
+
+          // Resolver trilhaId
+          const trilhaId = trilhaByName.get(nomeTrilha.toLowerCase().trim());
+          if (!trilhaId) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: `Trilha não encontrada: "${nomeTrilha}"` }); errors++; continue; }
+
+          if (!macroInicio || !macroTermino) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: 'Datas de macro início/término inválidas' }); errors++; continue; }
+
+          // Montar competencias
+          const competencias: any[] = [];
+          for (let n = 1; n <= 5; n++) {
+            const nomeComp = getVal(row, `Competência ${n}`);
+            if (!nomeComp) break;
+            const compId = compByName.get(nomeComp.toLowerCase().trim());
+            if (!compId) { results.push({ row: i+1, aluno: nomeAluno, status: 'aviso', message: `Competência ${n} não encontrada: "${nomeComp}" (linha ignorada)` }); continue; }
+            const peso = getVal(row, `Peso ${n}`) || 'obrigatoria';
+            const notaCorte = getVal(row, `Nota Corte ${n}`) || '70';
+            const metaFinal = getVal(row, `Meta Final ${n}`);
+            const microInicio = parseDate(getVal(row, `Micro Início ${n}`));
+            const microTermino = parseDate(getVal(row, `Micro Término ${n}`));
+            competencias.push({
+              competenciaId: compId,
+              peso: (peso === 'opcional' ? 'opcional' : 'obrigatoria') as 'obrigatoria' | 'opcional',
+              notaCorte,
+              metaFinal: metaFinal ? parseFloat(metaFinal) : null,
+              microInicio: microInicio || null,
+              microTermino: microTermino || null,
+            });
+          }
+
+          if (competencias.length === 0) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: 'Nenhuma competência válida encontrada' }); errors++; continue; }
+
+          if (input.preview) {
+            results.push({ row: i+1, aluno: nomeAluno, status: 'ok', message: `PDI válido: trilha "${nomeTrilha}", ${competencias.length} competência(s)` });
+            continue;
+          }
+
+          // Criar PDI no banco
+          try {
+            await db.createAssessmentPdi(
+              { alunoId, trilhaId, macroInicio: macroInicio!, macroTermino: macroTermino! },
+              competencias
+            );
+            results.push({ row: i+1, aluno: nomeAluno, status: 'ok', message: `PDI criado: trilha "${nomeTrilha}", ${competencias.length} compet\u00eancia(s)` });
+            created++;
+          } catch (err: any) {
+            results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: `Erro ao criar PDI: ${err?.message || 'Erro desconhecido'}` });
+            errors++;
+          }
+        }
+
+        return { created, errors, total: results.length, results, preview: input.preview ?? false };
+      }),
+
     // Listar histórico de uploads por tipo
     getUploadHistory: protectedProcedure
       .input(z.object({

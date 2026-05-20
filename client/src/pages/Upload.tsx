@@ -24,9 +24,10 @@ import {
   HelpCircle,
   Eye,
   Clock,
-  Trash2
+  Trash2,
+  ClipboardList
 } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -157,7 +158,53 @@ export default function UploadPage() {
   );
 
   // Função para baixar template
-  const handleDownloadTemplate = async (type: "mentorias" | "eventos" | "performance") => {
+  // Estado para upload de PDIs em massa
+  const [pdiFile, setPdiFile] = useState<File | null>(null);
+  const [pdiPreviewResults, setPdiPreviewResults] = useState<{ row: number; aluno: string; status: 'ok' | 'erro' | 'aviso'; message: string }[] | null>(null);
+  const [pdiIsProcessing, setPdiIsProcessing] = useState(false);
+  const [pdiIsConfirming, setPdiIsConfirming] = useState(false);
+  const pdiFileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadPDIsMutation = trpc.uploads.uploadPDIs.useMutation();
+
+  const handlePdiFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) { setPdiFile(f); setPdiPreviewResults(null); }
+  };
+
+  const handlePdiPreview = async () => {
+    if (!pdiFile) return;
+    setPdiIsProcessing(true);
+    try {
+      const arrayBuffer = await pdiFile.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const result = await uploadPDIsMutation.mutateAsync({ fileData: base64, fileName: pdiFile.name, preview: true });
+      setPdiPreviewResults(result.results);
+      toast.info(`Pré-visualização: ${result.results.filter(r => r.status === 'ok').length} PDIs válidos, ${result.results.filter(r => r.status === 'erro').length} erros`);
+    } catch (err: any) {
+      toast.error('Erro ao validar planilha: ' + (err?.message || 'Erro desconhecido'));
+    } finally {
+      setPdiIsProcessing(false);
+    }
+  };
+
+  const handlePdiConfirm = async () => {
+    if (!pdiFile) return;
+    setPdiIsConfirming(true);
+    try {
+      const arrayBuffer = await pdiFile.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const result = await uploadPDIsMutation.mutateAsync({ fileData: base64, fileName: pdiFile.name, preview: false });
+      setPdiPreviewResults(result.results);
+      toast.success(`${result.created} PDI(s) criado(s) com sucesso! ${result.errors > 0 ? `${result.errors} erro(s).` : ''}`);
+    } catch (err: any) {
+      toast.error('Erro ao criar PDIs: ' + (err?.message || 'Erro desconhecido'));
+    } finally {
+      setPdiIsConfirming(false);
+    }
+  };
+
+  const handleDownloadTemplate = async (type: "mentorias" | "eventos" | "performance" | "pdi") => {
     setIsDownloadingTemplate(true);
     try {
       const result = await downloadTemplateMutation.mutateAsync({ type });
@@ -362,10 +409,14 @@ export default function UploadPage() {
 
         {/* Tabs: Upload | Histórico */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsList className="grid w-full grid-cols-3 max-w-lg">
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <UploadIcon className="h-4 w-4" />
               Upload
+            </TabsTrigger>
+            <TabsTrigger value="pdi" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              PDI em Massa
             </TabsTrigger>
             <TabsTrigger value="historico" className="flex items-center gap-2">
               <History className="h-4 w-4" />
@@ -489,7 +540,21 @@ export default function UploadPage() {
                 <CardDescription>Baixe os modelos com o formato correto para cada tipo de arquivo</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-4">
+                  <div className="p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ClipboardList className="h-5 w-5 text-purple-600" />
+                      <span className="font-medium">PDI</span>
+                      <span className="text-muted-foreground cursor-help" title="Colunas: Nome do Aluno, Trilha, Macro Início/Término, Competência 1-5, Peso, Nota Corte, Meta Final, Micro Início/Término">
+                        <HelpCircle className="h-4 w-4" />
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3">Criação de PDIs em massa para múltiplos alunos</p>
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => handleDownloadTemplate('pdi')} disabled={isDownloadingTemplate}>
+                      {isDownloadingTemplate ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                      Baixar Modelo
+                    </Button>
+                  </div>
                   <div className="p-4 rounded-lg border border-primary/30 bg-primary/5">
                     <div className="flex items-center gap-2 mb-2">
                       <Users className="h-5 w-5 text-primary" />
@@ -569,6 +634,74 @@ export default function UploadPage() {
                   <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/30">
                     <strong>Dica:</strong> Copie o nome exato acima e cole ao renomear seu arquivo.
                   </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ========== TAB: PDI EM MASSA ========== */}
+          <TabsContent value="pdi" className="space-y-6 mt-6">
+            <Card className="gradient-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-purple-600" />
+                  Upload de PDIs em Massa
+                </CardTitle>
+                <CardDescription>Crie múltiplos PDIs de uma vez enviando uma planilha XLSX. Baixe o modelo na aba Upload para ver o formato correto.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <input ref={pdiFileInputRef} type="file" accept=".xlsx" className="hidden" onChange={handlePdiFileChange} />
+                  <Button variant="outline" onClick={() => pdiFileInputRef.current?.click()}>
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    {pdiFile ? pdiFile.name : 'Selecionar planilha XLSX'}
+                  </Button>
+                  {pdiFile && (
+                    <>
+                      <Button variant="secondary" onClick={handlePdiPreview} disabled={pdiIsProcessing || pdiIsConfirming}>
+                        {pdiIsProcessing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
+                        Pré-visualizar
+                      </Button>
+                      {pdiPreviewResults && pdiPreviewResults.some(r => r.status === 'ok') && (
+                        <Button onClick={handlePdiConfirm} disabled={pdiIsProcessing || pdiIsConfirming} className="bg-purple-600 hover:bg-purple-700 text-white">
+                          {pdiIsConfirming ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                          Confirmar e Criar PDIs
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {pdiPreviewResults && (
+                  <div className="space-y-2">
+                    <div className="flex gap-4 text-sm">
+                      <span className="text-green-600 font-medium">{pdiPreviewResults.filter(r => r.status === 'ok').length} válidos</span>
+                      <span className="text-red-600 font-medium">{pdiPreviewResults.filter(r => r.status === 'erro').length} erros</span>
+                      <span className="text-yellow-600 font-medium">{pdiPreviewResults.filter(r => r.status === 'aviso').length} avisos</span>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto space-y-1 rounded-lg border border-border/30 p-2">
+                      {pdiPreviewResults.map((r, i) => (
+                        <div key={i} className={`flex items-start gap-2 p-2 rounded text-sm ${
+                          r.status === 'ok' ? 'bg-green-500/10 text-green-700' :
+                          r.status === 'erro' ? 'bg-red-500/10 text-red-700' :
+                          'bg-yellow-500/10 text-yellow-700'
+                        }`}>
+                          {r.status === 'ok' ? <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" /> :
+                           r.status === 'erro' ? <XCircle className="h-4 w-4 mt-0.5 shrink-0" /> :
+                           <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />}
+                          <span><strong>Linha {r.row} — {r.aluno}:</strong> {r.message}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-4 bg-muted/30 rounded-lg text-sm space-y-1">
+                  <p className="font-medium">Instruções:</p>
+                  <p className="text-muted-foreground">1. Baixe o modelo PDI na aba <strong>Upload → Modelos de Planilha</strong></p>
+                  <p className="text-muted-foreground">2. Preencha uma linha por aluno com trilha, datas e até 5 competências</p>
+                  <p className="text-muted-foreground">3. Clique em <strong>Pré-visualizar</strong> para validar antes de criar</p>
+                  <p className="text-muted-foreground">4. Clique em <strong>Confirmar e Criar PDIs</strong> para salvar no sistema</p>
                 </div>
               </CardContent>
             </Card>
