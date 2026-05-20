@@ -1482,7 +1482,8 @@ function PlanoContent() {
               )}
 
               {/* ===== SEÇÃO 10: COMPETÊNCIAS COM MICROCICLOS (ASSESSMENT) ===== */}
-              {resumoPlano?.competenciasAssessment && resumoPlano.competenciasAssessment.length > 0 && (
+              {/* Card ocultado a pedido — dados já aparecem no PDI ativo acima */}
+              {false && resumoPlano?.competenciasAssessment && resumoPlano.competenciasAssessment.length > 0 && (
                 <Card>
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-2">
