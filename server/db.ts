@@ -12584,3 +12584,25 @@ export async function ensureRelatorioMentoriasLogTable(): Promise<void> {
     console.error('[DB] Erro ao criar tabela relatorio_mentorias_log:', err.message);
   }
 }
+
+/**
+ * Retorna a data do último reset de um aluno específico (criadoEm da auditoria_resets_ciclo).
+ * Usado pela página de Performance para filtrar eventos e mentorias anteriores ao reset.
+ * Se o aluno nunca sofreu reset, retorna null.
+ */
+export async function getDataUltimoResetAluno(alunoId: number): Promise<Date | null> {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const [rows] = await db.execute(sql.raw(
+      `SELECT MAX(criadoEm) as ultimoReset FROM auditoria_resets_ciclo WHERE alunoId = ${alunoId} LIMIT 1`
+    )) as any;
+    const arr = Array.isArray(rows) ? rows : [];
+    if (arr[0]?.ultimoReset) {
+      return new Date(arr[0].ultimoReset);
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}

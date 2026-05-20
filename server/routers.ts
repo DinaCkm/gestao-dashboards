@@ -4153,6 +4153,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         planoItems,
         sessoesAluno,
         eventosAluno,
+        dataUltimoReset,
       ] = await Promise.all([
         db.getCompetenciasObrigatoriasAluno(aluno.id),
         cacheOrFetch('allSessions', () => db.getAllMentoringSessions()),
@@ -4172,6 +4173,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         db.getPlanoIndividualByAluno(aluno.id),
         db.getMentoringSessionsByAluno(aluno.id),
         db.getEventParticipationByAluno(aluno.id),
+        db.getDataUltimoResetAluno(aluno.id),
       ]);
 
       const mentorias: MentoringRecord[] = [];
@@ -4182,9 +4184,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const programMap = new Map(programsList.map(p => [p.id, p]));
       const turmaMap = new Map(turmasList.map(t => [t.id, t]));
 
+      // Marco zero do ciclo atual: data do último reset (se houver), senão considera tudo
+      const marcoZeroCicloAtual: Date | null = dataUltimoReset ?? null;
+
       for (const session of allSessions) {
         const sessionAluno = alunoMap.get(session.alunoId);
         if (!sessionAluno) continue;
+        // Se o aluno sofreu reset, ignorar sessões anteriores ao reset
+        if (sessionAluno.id === aluno.id && marcoZeroCicloAtual && session.sessionDate) {
+          if (new Date(session.sessionDate) < marcoZeroCicloAtual) continue;
+        }
         const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
         const turma = sessionAluno.turmaId ? turmaMap.get(sessionAluno.turmaId) : null;
         mentorias.push({
@@ -4206,6 +4215,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       for (const ep of allEventParticipations) {
         const epAluno = alunoMap.get(ep.alunoId);
         if (!epAluno) continue;
+        // Se o aluno sofreu reset, ignorar participações em eventos anteriores ao reset
+        if (epAluno.id === aluno.id && marcoZeroCicloAtual && ep.eventDate) {
+          if (new Date(ep.eventDate) < marcoZeroCicloAtual) continue;
+        }
         const program = epAluno.programId ? programMap.get(epAluno.programId) : null;
         eventos.push({
           idUsuario: epAluno.externalId || String(epAluno.id),
@@ -4244,12 +4257,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const alunoIdStr = a.externalId || String(a.id);
         const program = programMap.get(a.programId);
         const macroInicioAluno = macroInicioMapMeuDash.get(a.id);
+        // Para o aluno atual: usar dataUltimoReset como marco zero se disponível
+        const marcoZeroAusencias = (a.id === aluno.id && marcoZeroCicloAtual)
+          ? marcoZeroCicloAtual
+          : macroInicioAluno ?? null;
         for (const evt of progEvents) {
           if (!alunoParticipatedEvents.has(evt.id)) {
-            // Só marcar ausência se o evento é posterior ao macroInicio do aluno
-            if (macroInicioAluno && evt.eventDate) {
+            // Só marcar ausência se o evento é posterior ao marco zero do aluno
+            if (marcoZeroAusencias && evt.eventDate) {
               const evtDate = new Date(evt.eventDate);
-              if (evtDate < macroInicioAluno) continue;
+              if (evtDate < marcoZeroAusencias) continue;
             }
             eventos.push({
               idUsuario: alunoIdStr,
@@ -4333,7 +4350,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // Buscar detalhes dos eventos (com cache)
       const allEvents = aluno.programId ? await cacheOrFetch(`eventsByProgram_${aluno.programId}`, () => db.getEventsByProgramOrGlobal(aluno.programId!)) : [];
       const eventMap = new Map(allEvents.map(e => [e.id, e]));
-      // Eventos com registro de participação
+      // Eventos com registro de participação — filtrar por data do reset se houver
       const eventosDetalhados: Array<{
         id: number;
         eventId: number;
@@ -4343,23 +4360,35 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         status: string;
         reflexao: string | null;
         selfReportedAt: Date | null;
-      }> = eventosAluno.map(ep => {
-        const evento = eventMap.get(ep.eventId);
-        return {
-          id: ep.id,
-          eventId: ep.eventId,
-          titulo: evento?.title || `Evento #${ep.eventId}`,
-          tipo: evento?.eventType || 'webinar',
-          data: evento?.eventDate || null,
-          status: ep.status,
-          reflexao: ep.reflexao || null,
-          selfReportedAt: ep.selfReportedAt || null,
-        };
-      });
+      }> = eventosAluno
+        .filter(ep => {
+          // Se o aluno sofreu reset, ignorar presenças anteriores ao reset
+          if (marcoZeroCicloAtual) {
+            const evtData = eventMap.get(ep.eventId)?.eventDate;
+            if (evtData && new Date(evtData) < marcoZeroCicloAtual) return false;
+          }
+          return true;
+        })
+        .map(ep => {
+          const evento = eventMap.get(ep.eventId);
+          return {
+            id: ep.id,
+            eventId: ep.eventId,
+            titulo: evento?.title || `Evento #${ep.eventId}`,
+            tipo: evento?.eventType || 'webinar',
+            data: evento?.eventDate || null,
+            status: ep.status,
+            reflexao: ep.reflexao || null,
+            selfReportedAt: ep.selfReportedAt || null,
+          };
+        });
       // Adicionar eventos do programa SEM registro de participação como 'ausente'
+      // Só incluir eventos posteriores ao marco zero (data do reset)
       const eventosAlunoIds = new Set(eventosAluno.map(ep => ep.eventId));
       for (const evt of allEvents) {
         if (!eventosAlunoIds.has(evt.id)) {
+          // Filtrar por data do reset
+          if (marcoZeroCicloAtual && evt.eventDate && new Date(evt.eventDate) < marcoZeroCicloAtual) continue;
           eventosDetalhados.push({
             id: -(evt.id), // id negativo indica que não tem registro real
             eventId: evt.id,
