@@ -241,6 +241,10 @@ export default function UploadPage() {
     'embrapii-mentorias.xlsx': 'embrapii_mentorias',
     'embrapii-eventos.xlsx': 'embrapii_eventos',
     'relatorio-de-performance.xlsx': 'performance',
+    'modelo_pdi.xlsx': 'pdi',
+    'pdi.xlsx': 'pdi',
+    'pdis.xlsx': 'pdi',
+    'pdi-em-massa.xlsx': 'pdi',
   };
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -285,7 +289,8 @@ export default function UploadPage() {
         '• SEBRAETO-Eventos.xlsx',
         '• EMBRAPII-Mentorias.xlsx',
         '• EMBRAPII-Eventos.xlsx',
-        '• relatorio-de-performance.xlsx'
+        '• relatorio-de-performance.xlsx',
+        '• modelo_pdi.xlsx  (ou pdi.xlsx / pdis.xlsx / pdi-em-massa.xlsx)'
       ]);
       setShowValidationDialog(true);
     }

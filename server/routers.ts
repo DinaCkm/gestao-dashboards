@@ -1197,7 +1197,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
           // Montar competencias
           const competencias: any[] = [];
-          for (let n = 1; n <= 5; n++) {
+          for (let n = 1; n <= 15; n++) {
             const nomeComp = getVal(row, `Competência ${n}`);
             if (!nomeComp) break;
             const compId = compByName.get(nomeComp.toLowerCase().trim());
