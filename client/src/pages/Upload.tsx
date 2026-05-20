@@ -46,7 +46,8 @@ type FileType =
   | "sebraeto_eventos" 
   | "embrapii_mentorias" 
   | "embrapii_eventos" 
-  | "performance";
+  | "performance"
+  | "pdi";
 
 type UploadedFileInfo = {
   name: string;
@@ -112,6 +113,13 @@ const FILE_TYPE_CONFIG: Record<FileType, {
     color: "text-chart-4",
     empresa: "Consolidado",
     description: "Progresso em competências, notas e avaliações"
+  },
+  pdi: {
+    label: "PDI em Massa",
+    icon: ClipboardList,
+    color: "text-purple-600",
+    empresa: "Todos",
+    description: "Criação de PDIs em massa para múltiplos alunos"
   }
 };
 
