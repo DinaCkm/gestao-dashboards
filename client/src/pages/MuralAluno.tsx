@@ -598,15 +598,12 @@ export default function MuralAluno() {
     );
   }, [myAttendance]);
 
-  // Dica da Semana: primeiro anuncio ativo do tipo news com actionUrl, priority > 0 e titulo contendo 'dica'
+  // Dica da Semana: primeiro aviso ativo do tipo news (o backend já filtra isActive, publishAt e expiresAt)
+  // Ordena por prioridade decrescente e pega o primeiro
   const dicaDaSemana = useMemo(() => {
     return (
       (activeAnnouncements ?? [])
-        .filter((a: any) =>
-          a.type === "news" &&
-          Number(a.isActive) === 1 &&
-          Number(a.priority ?? 0) > 0
-        )
+        .filter((a: any) => a.type === "news")
         .sort((a: any, b: any) => Number(b.priority ?? 0) - Number(a.priority ?? 0))[0] ?? null
     );
   }, [activeAnnouncements]);
@@ -820,14 +817,16 @@ E-mail: ${email}`;
                       </p>
                     )}
 
-                    {/* Botao */}
-                    <Button
-                      onClick={() => window.open(dicaDaSemana.actionUrl, "_blank")}
-                      className="bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold shadow-md hover:shadow-[0_0_20px_rgba(245,153,31,0.5)] hover:scale-105 transition-all duration-200"
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      {dicaDaSemana.actionLabel || "Assistir agora"}
-                    </Button>
+                    {/* Botao - só exibe se tiver actionUrl */}
+                    {dicaDaSemana.actionUrl && (
+                      <Button
+                        onClick={() => window.open(dicaDaSemana.actionUrl, "_blank")}
+                        className="bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold shadow-md hover:shadow-[0_0_20px_rgba(245,153,31,0.5)] hover:scale-105 transition-all duration-200"
+                      >
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        {dicaDaSemana.actionLabel || "Ler mais"}
+                      </Button>
+                    )}
                   </div>
 
                   {/* Imagem lateral (se houver) */}
