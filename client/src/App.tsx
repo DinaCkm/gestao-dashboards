@@ -83,6 +83,7 @@ import AlunoReflexaoFinal from "./pages/aluno/AlunoReflexaoFinal";
 import OnboardingVideos from "./pages/admin/OnboardingVideos";
 import BibliotecaPedagogica from "./pages/admin/BibliotecaPedagogica";
 import AuditoriaResets from "./pages/admin/AuditoriaResets";
+import AuditoriaNotesMentoria from "./pages/admin/AuditoriaNotesMentoria";
 import VisualizarPDI from "./pages/VisualizarPDI";
 import AutoRegistro from "./pages/AutoRegistro";
 
@@ -169,6 +170,7 @@ function Router() {
       <Route path={"/admin/onboarding-videos"} component={OnboardingVideos} />
       <Route path={"/admin/biblioteca-pedagogica"} component={BibliotecaPedagogica} />
       <Route path={"/admin/auditoria-resets"} component={AuditoriaResets} />
+      <Route path={"/admin/auditoria-notas-mentoria"} component={AuditoriaNotesMentoria} />
       <Route path={"/pdi/nivel/:contratoNivelId"} component={VisualizarPDI} />
       <Route path={"/pdi/:pdiId"} component={VisualizarPDI} />
 

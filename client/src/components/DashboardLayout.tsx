@@ -73,6 +73,7 @@ import {
   Trophy,
   History,
   Mail,
+  ClipboardList,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -117,6 +118,7 @@ const adminMenuGroups: MenuGroup[] = [
     items: [
       { icon: Footprints, label: "Onboarding Tracking", path: "/onboarding-tracking" },
       { icon: History, label: "Auditoria de Resets", path: "/admin/auditoria-resets" },
+      { icon: ClipboardList, label: "Auditoria Notas Mentoria", path: "/admin/auditoria-notas-mentoria" },
       { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes" },
       { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment" },
       { icon: Target, label: "Plano Individual", path: "/plano-individual" },

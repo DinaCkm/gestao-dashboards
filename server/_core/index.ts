@@ -16,7 +16,7 @@ import { iniciarCronAusenciaWebinar } from "../cronAusenciaWebinar";
 import { iniciarCronLembreteTarefaMentoria } from "../cronLembreteTarefaMentoria";
 import { iniciarCronRelatorioMentorias } from "../cronRelatorioMentorias";
 import { ENV } from "./env";
-import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable } from "../db";
+import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -43,6 +43,7 @@ async function startServer() {
   await ensurePerfilProfissionalColumns();
   await ensureHistoricoCiclosTable();
   await ensureRelatorioMentoriasLogTable();
+  await ensureAuditoriaNotesMentoriaTable();
 
   const app = express();
   const server = createServer(app);

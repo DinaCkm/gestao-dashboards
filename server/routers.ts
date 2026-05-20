@@ -4845,7 +4845,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         taskMode: z.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
         notaMentoraAplicabilidade: z.number().min(0).max(10).nullable().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { sessionId, ...data } = input;
         const updateData: any = { ...data };
         if (input.notaMentoraAplicabilidade != null) {
@@ -4855,7 +4855,54 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (input.taskMode && input.taskMode !== 'sem_tarefa') {
           updateData.taskStatus = 'nao_entregue';
         }
+        // Auditoria: buscar sessão atual para comparar valores antes/depois
+        const sessaoAtual = await db.getMentoringSessionById(sessionId);
         const success = await db.updateMentoringSession(sessionId, updateData);
+        // Registrar auditoria se engagementScore ou notaMentoraAplicabilidade foi alterado
+        if (sessaoAtual && (input.engagementScore !== undefined || input.notaMentoraAplicabilidade !== undefined)) {
+          const alteradoPor = ctx.user?.email || ctx.user?.openId || null;
+          const alteradoPorRole = ctx.user?.role || null;
+          // Buscar nome do aluno e consultor para o log
+          const alunoAudit = await db.getAlunoById(sessaoAtual.alunoId);
+          const consultors = await db.getConsultors();
+          const consultorAudit = sessaoAtual.consultorId ? consultors.find(c => c.id === sessaoAtual.consultorId) : null;
+          if (input.engagementScore !== undefined) {
+            const anterior = sessaoAtual.engagementScore != null ? Number(sessaoAtual.engagementScore) : null;
+            const novo = input.engagementScore != null ? Number(input.engagementScore) : null;
+            if (anterior !== novo) {
+              await db.logAuditoriaNota({
+                sessaoId: sessionId,
+                alunoId: sessaoAtual.alunoId,
+                alunoNome: alunoAudit?.name ?? null,
+                consultorId: sessaoAtual.consultorId ?? null,
+                consultorNome: consultorAudit?.name ?? null,
+                campo: 'engagementScore',
+                valorAnterior: anterior,
+                valorNovo: novo,
+                alteradoPor,
+                alteradoPorRole,
+              });
+            }
+          }
+          if (input.notaMentoraAplicabilidade !== undefined) {
+            const anterior = sessaoAtual.notaMentoraAplicabilidade != null ? Number(sessaoAtual.notaMentoraAplicabilidade) : null;
+            const novo = input.notaMentoraAplicabilidade != null ? Number(input.notaMentoraAplicabilidade) : null;
+            if (anterior !== novo) {
+              await db.logAuditoriaNota({
+                sessaoId: sessionId,
+                alunoId: sessaoAtual.alunoId,
+                alunoNome: alunoAudit?.name ?? null,
+                consultorId: sessaoAtual.consultorId ?? null,
+                consultorNome: consultorAudit?.name ?? null,
+                campo: 'notaMentoraAplicabilidade',
+                valorAnterior: anterior,
+                valorNovo: novo,
+                alteradoPor,
+                alteradoPorRole,
+              });
+            }
+          }
+        }
         return { success };
       }),
 
@@ -6843,6 +6890,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .input(z.object({ alunoId: z.number().optional(), limit: z.number().optional() }).optional())
       .query(async ({ input }) => {
         return await db.getAuditoriaResets(input ?? {});
+      }),
+
+    // Histórico de alterações de notas de mentoria (engagementScore e notaMentoraAplicabilidade)
+    auditoriaNotasMentoria: adminOrAdmin2Procedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAuditoriaNotesMentoria(input.alunoId);
       }),
   }),
 

@@ -12606,3 +12606,121 @@ export async function getDataUltimoResetAluno(alunoId: number): Promise<Date | n
     return null;
   }
 }
+
+/**
+ * Cria a tabela de auditoria de notas de mentoria (engagementScore e notaMentoraAplicabilidade).
+ * Registra toda criação ou edição de nota, com valor anterior, valor novo, quem alterou e quando.
+ */
+export async function ensureAuditoriaNotesMentoriaTable(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw(`
+      CREATE TABLE IF NOT EXISTS \`auditoria_notas_mentoria\` (
+        \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`sessaoId\` int NOT NULL,
+        \`alunoId\` int NOT NULL,
+        \`alunoNome\` varchar(255) NULL,
+        \`consultorId\` int NULL,
+        \`consultorNome\` varchar(255) NULL,
+        \`campo\` enum('engagementScore','notaMentoraAplicabilidade') NOT NULL,
+        \`valorAnterior\` decimal(5,2) NULL,
+        \`valorNovo\` decimal(5,2) NULL,
+        \`alteradoPor\` varchar(255) NULL COMMENT 'email ou nome do usuário que fez a alteração',
+        \`alteradoPorRole\` varchar(50) NULL,
+        \`criadoEm\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_alunoId (\`alunoId\`),
+        INDEX idx_sessaoId (\`sessaoId\`),
+        INDEX idx_criadoEm (\`criadoEm\`)
+      )
+    `));
+    console.log('[DB] Tabela auditoria_notas_mentoria verificada/criada com sucesso.');
+  } catch (err: any) {
+    console.error('[DB] Erro ao criar tabela auditoria_notas_mentoria:', err.message);
+  }
+}
+
+/**
+ * Registra uma entrada de auditoria para alteração de nota de mentoria.
+ */
+export async function logAuditoriaNota(params: {
+  sessaoId: number;
+  alunoId: number;
+  alunoNome?: string | null;
+  consultorId?: number | null;
+  consultorNome?: string | null;
+  campo: 'engagementScore' | 'notaMentoraAplicabilidade';
+  valorAnterior: number | null;
+  valorNovo: number | null;
+  alteradoPor?: string | null;
+  alteradoPorRole?: string | null;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    const alunoNome = params.alunoNome ? `'${params.alunoNome.replace(/'/g, "''")}'` : 'NULL';
+    const consultorNome = params.consultorNome ? `'${params.consultorNome.replace(/'/g, "''")}'` : 'NULL';
+    const alteradoPor = params.alteradoPor ? `'${params.alteradoPor.replace(/'/g, "''")}'` : 'NULL';
+    const alteradoPorRole = params.alteradoPorRole ? `'${params.alteradoPorRole.replace(/'/g, "''")}'` : 'NULL';
+    const valorAnterior = params.valorAnterior != null ? String(params.valorAnterior) : 'NULL';
+    const valorNovo = params.valorNovo != null ? String(params.valorNovo) : 'NULL';
+    const consultorId = params.consultorId != null ? String(params.consultorId) : 'NULL';
+    await db.execute(sql.raw(`
+      INSERT INTO auditoria_notas_mentoria
+        (sessaoId, alunoId, alunoNome, consultorId, consultorNome, campo, valorAnterior, valorNovo, alteradoPor, alteradoPorRole, criadoEm)
+      VALUES
+        (${params.sessaoId}, ${params.alunoId}, ${alunoNome}, ${consultorId}, ${consultorNome},
+         '${params.campo}', ${valorAnterior}, ${valorNovo}, ${alteradoPor}, ${alteradoPorRole}, NOW())
+    `));
+  } catch (err: any) {
+    // Não bloquear a operação principal por falha de auditoria
+    console.error('[DB] Erro ao registrar auditoria de nota:', err.message);
+  }
+}
+
+/**
+ * Busca o histórico de auditoria de notas de mentoria de um aluno.
+ */
+export async function getAuditoriaNotesMentoria(alunoId: number): Promise<Array<{
+  id: number;
+  sessaoId: number;
+  alunoId: number;
+  alunoNome: string | null;
+  consultorId: number | null;
+  consultorNome: string | null;
+  campo: string;
+  valorAnterior: number | null;
+  valorNovo: number | null;
+  alteradoPor: string | null;
+  alteradoPorRole: string | null;
+  criadoEm: Date;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const [rows] = await db.execute(sql.raw(`
+      SELECT id, sessaoId, alunoId, alunoNome, consultorId, consultorNome,
+             campo, valorAnterior, valorNovo, alteradoPor, alteradoPorRole, criadoEm
+      FROM auditoria_notas_mentoria
+      WHERE alunoId = ${alunoId}
+      ORDER BY criadoEm DESC
+      LIMIT 200
+    `)) as any;
+    return Array.isArray(rows) ? rows.map((r: any) => ({
+      id: Number(r.id),
+      sessaoId: Number(r.sessaoId),
+      alunoId: Number(r.alunoId),
+      alunoNome: r.alunoNome ?? null,
+      consultorId: r.consultorId != null ? Number(r.consultorId) : null,
+      consultorNome: r.consultorNome ?? null,
+      campo: r.campo,
+      valorAnterior: r.valorAnterior != null ? parseFloat(r.valorAnterior) : null,
+      valorNovo: r.valorNovo != null ? parseFloat(r.valorNovo) : null,
+      alteradoPor: r.alteradoPor ?? null,
+      alteradoPorRole: r.alteradoPorRole ?? null,
+      criadoEm: new Date(r.criadoEm),
+    })) : [];
+  } catch (_) {
+    return [];
+  }
+}
