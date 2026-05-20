@@ -20,8 +20,8 @@ import { SelectContentNoPortal } from "@/components/ui/select";
 import {
   Search, Plus, Trash2, BookOpen, Target, CheckCircle2, Clock, AlertCircle,
   Users, Building2, TrendingUp, Award, BarChart3, Calendar, Edit2, ChevronRight,
-  Circle, ChevronDown, Flag, User, Loader2, Library, Sparkles, Edit3,
-  MessageSquare, XCircle, FileText, Snowflake, Play, ArrowLeft, ListChecks, AlertTriangle, Gauge, Mail
+  Circle, ChevronDown, ChevronUp, Flag, User, Loader2, Library, Sparkles, Edit3,
+  MessageSquare, XCircle, FileText, Snowflake, Play, ArrowLeft, ListChecks, AlertTriangle, Gauge, Mail, History
 } from "lucide-react";
 import DualIndicators from "@/components/DualIndicators";
 import EditAssessmentDialog from "@/components/EditAssessmentDialog";
@@ -873,16 +873,15 @@ function PlanoContent() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {assessments.map((ass: any) => (
+                      {/* PDIs ATIVOS — ciclo atual, exibidos primeiro */}
+                      {assessments.filter((a: any) => a.status === 'ativo').map((ass: any) => (
                         <div key={ass.id} className="border rounded-lg overflow-hidden">
-                          {/* Assessment header */}
                           <div className="p-4 bg-muted/30 flex items-center justify-between">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <h4 className="font-semibold text-sm">{ass.trilhaNome || "Trilha"}</h4>
-                                <Badge className={ass.status === 'ativo' ? 'bg-green-500' : ass.status === 'congelado' ? 'bg-blue-400' : 'bg-gray-400'}>
-                                  {ass.status === 'ativo' ? <Play className="h-3 w-3 mr-1" /> : ass.status === 'congelado' ? <Snowflake className="h-3 w-3 mr-1" /> : null}
-                                  {ass.status}
+                                <Badge className="bg-green-500">
+                                  <Play className="h-3 w-3 mr-1" /> ativo
                                 </Badge>
                                 {ass.consultorNome && <span className="text-xs text-muted-foreground">Mentora: {ass.consultorNome}</span>}
                               </div>
@@ -892,9 +891,7 @@ function PlanoContent() {
                                 <span>{(ass.competencias || []).length} competências</span>
                               </div>
                             </div>
-
                           </div>
-                          {/* Competencias table */}
                           {(ass.competencias || []).length > 0 && (
                             <div className="overflow-x-auto">
                               <Table>
@@ -931,6 +928,82 @@ function PlanoContent() {
                           )}
                         </div>
                       ))}
+
+                      {/* PDIs CONGELADOS — ciclos anteriores, colapsados por padrão */}
+                      {assessments.filter((a: any) => a.status === 'congelado').length > 0 && (() => {
+                        const congelados = assessments.filter((a: any) => a.status === 'congelado');
+                        return (
+                          <details className="group">
+                            <summary className="cursor-pointer list-none">
+                              <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                                <History className="h-4 w-4 text-gray-500" />
+                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                  Ciclos Anteriores — PDIs Congelados ({congelados.length})
+                                </span>
+                                <ChevronDown className="h-4 w-4 text-gray-400 ml-auto group-open:hidden" />
+                                <ChevronUp className="h-4 w-4 text-gray-400 ml-auto hidden group-open:block" />
+                              </div>
+                            </summary>
+                            <div className="mt-2 space-y-3 pl-2 border-l-2 border-gray-200 dark:border-gray-700">
+                              {congelados.map((ass: any) => (
+                                <div key={ass.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden opacity-80">
+                                  <div className="p-4 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <h4 className="font-semibold text-sm text-gray-600 dark:text-gray-400">{ass.trilhaNome || "Trilha"}</h4>
+                                        <Badge className="bg-gray-400 text-white text-xs">
+                                          <Snowflake className="h-3 w-3 mr-1" /> Ciclo Anterior — PDI Congelado
+                                        </Badge>
+                                        {ass.congeladoEm && (
+                                          <span className="text-xs text-gray-400">Congelado em {formatDate(ass.congeladoEm)}</span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
+                                        <span>Macro: {formatDate(ass.macroInicio)} — {formatDate(ass.macroTermino)}</span>
+                                        <span>{(ass.competencias || []).length} competências</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {(ass.competencias || []).length > 0 && (
+                                    <div className="overflow-x-auto">
+                                      <Table>
+                                        <TableHeader>
+                                          <TableRow className="bg-gray-50 dark:bg-gray-900">
+                                            <TableHead className="text-xs text-gray-400">Competência</TableHead>
+                                            <TableHead className="text-xs w-20 text-gray-400">Peso</TableHead>
+                                            <TableHead className="text-xs w-20 text-gray-400">Nível</TableHead>
+                                            <TableHead className="text-xs w-20 text-gray-400">Meta Final</TableHead>
+                                            <TableHead className="text-xs w-40 text-gray-400">Micro Jornada</TableHead>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                          {(ass.competencias || []).map((comp: any) => (
+                                            <TableRow key={comp.id} className="opacity-70">
+                                              <TableCell className="text-sm font-medium text-gray-500">{comp.competenciaNome}</TableCell>
+                                              <TableCell>
+                                                <Badge variant={comp.peso === 'obrigatoria' ? 'default' : 'outline'} className="text-xs opacity-60">
+                                                  {comp.peso === 'obrigatoria' ? 'Obrig.' : 'Opc.'}
+                                                </Badge>
+                                              </TableCell>
+                                              <TableCell className="text-sm text-gray-500">{comp.nivelAtualEfetivo ?? comp.nivelAtual ?? "—"}%</TableCell>
+                                              <TableCell className="text-sm text-gray-500">{comp.metaFinal ?? "—"}%</TableCell>
+                                              <TableCell className="text-xs text-gray-400">
+                                                {comp.microInicio || comp.microTermino
+                                                  ? `${formatDate(comp.microInicio)} — ${formatDate(comp.microTermino)}`
+                                                  : "—"}
+                                              </TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </TableBody>
+                                      </Table>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        );
+                      })()}
                     </div>
                   )}
                 </CardContent>
