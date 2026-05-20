@@ -2543,7 +2543,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const tarefas = todasSessoes.filter((s: any) =>
           s.taskMode && s.taskMode !== 'sem_tarefa' && (s.tarefaNome || s.customTaskTitle)
         );
-        // 10. Metas desafio do aluno
+        // 10. Data do último reset do aluno (para separar webinares por ciclo)
+        const [resetRows] = await conn.execute(
+          `SELECT MAX(criadoEm) as dataUltimoReset FROM auditoria_resets_ciclo WHERE alunoId = ?`,
+          [input.alunoId]
+        );
+        const dataUltimoReset: Date | null = (resetRows as any[])[0]?.dataUltimoReset
+          ? new Date((resetRows as any[])[0].dataUltimoReset)
+          : null;
+        // 11. Metas desafio do aluno
         const [metasDesafioRows] = await conn.execute(
           `SELECT m.id, m.titulo, m.descricao, m.createdAt,
                   c.nome as competenciaNome,
@@ -2573,6 +2581,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           tarefas,
           todasSessoes,
           metasDesafio,
+          dataUltimoReset: dataUltimoReset?.toISOString() ?? null,
         };
         } catch (err: any) {
           console.error('[resumoPlanoAluno] Erro:', err?.message || err);

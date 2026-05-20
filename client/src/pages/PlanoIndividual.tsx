@@ -1592,20 +1592,22 @@ function PlanoContent() {
 
               {/* ===== SEÇÃO 12: WEBINARES DO ALUNO ===== */}
               {resumoPlano?.webinares && resumoPlano.webinares.length > 0 && (() => {
-                const presentes = resumoPlano.webinares.filter((w: any) => w.status === 'presente');
-                const ausentes = resumoPlano.webinares.filter((w: any) => w.status !== 'presente');
-                return (
-                  <Card className="overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white">
-                      <h3 className="text-base font-bold flex items-center gap-2">
-                        <Play className="h-5 w-5" /> Webinares
-                      </h3>
-                      <p className="text-white/80 text-xs mt-1">
-                        {presentes.length} presença{presentes.length !== 1 ? 's' : ''} confirmada{presentes.length !== 1 ? 's' : ''} de {resumoPlano.webinares.length} evento{resumoPlano.webinares.length !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    <CardContent className="pt-4">
-                      <div className="flex items-center gap-4 mb-3 p-3 bg-blue-50 rounded-lg">
+                const dataReset = resumoPlano.dataUltimoReset ? new Date(resumoPlano.dataUltimoReset) : null;
+
+                // Separar webinares por ciclo (se houver reset)
+                const webinaresCicloAtual = dataReset
+                  ? resumoPlano.webinares.filter((w: any) => w.eventDate && new Date(w.eventDate) >= dataReset)
+                  : resumoPlano.webinares;
+                const webinaresHistorico = dataReset
+                  ? resumoPlano.webinares.filter((w: any) => !w.eventDate || new Date(w.eventDate) < dataReset)
+                  : [];
+
+                const renderListaWebinares = (lista: any[], corBg: string, metaWebinars?: number) => {
+                  const presentes = lista.filter((w: any) => w.status === 'presente');
+                  const ausentes = lista.filter((w: any) => w.status !== 'presente');
+                  return (
+                    <>
+                      <div className={`flex items-center gap-4 mb-3 p-3 ${corBg} rounded-lg`}>
                         <div className="text-center">
                           <p className="text-2xl font-bold text-blue-700">{presentes.length}</p>
                           <p className="text-xs text-blue-600">Presenças</p>
@@ -1614,17 +1616,17 @@ function PlanoContent() {
                           <p className="text-2xl font-bold text-gray-500">{ausentes.length}</p>
                           <p className="text-xs text-gray-500">Ausências</p>
                         </div>
-                        {resumoPlano.metas?.webinarsMinimos && (
+                        {metaWebinars && (
                           <div className="text-center">
                             <p className="text-2xl font-bold text-emerald-700">
-                              {Math.round((presentes.length / resumoPlano.metas.webinarsMinimos) * 100)}%
+                              {Math.round((presentes.length / metaWebinars) * 100)}%
                             </p>
-                            <p className="text-xs text-emerald-600">da meta ({resumoPlano.metas.webinarsMinimos})</p>
+                            <p className="text-xs text-emerald-600">da meta ({metaWebinars})</p>
                           </div>
                         )}
                       </div>
                       <div className="space-y-1.5 max-h-64 overflow-y-auto">
-                        {resumoPlano.webinares.map((w: any) => (
+                        {lista.map((w: any) => (
                           <div key={w.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-gray-50/50">
                             <div className="flex items-center gap-2 min-w-0">
                               {w.status === 'presente'
@@ -1641,8 +1643,64 @@ function PlanoContent() {
                           </div>
                         ))}
                       </div>
-                    </CardContent>
-                  </Card>
+                    </>
+                  );
+                };
+
+                return (
+                  <div className="space-y-4">
+                    {/* Ciclo Atual */}
+                    <Card className="overflow-hidden">
+                      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white">
+                        <h3 className="text-base font-bold flex items-center gap-2">
+                          <Play className="h-5 w-5" />
+                          Webinares {dataReset ? '— Ciclo Atual' : ''}
+                        </h3>
+                        <p className="text-white/80 text-xs mt-1">
+                          {dataReset
+                            ? `A partir de ${dataReset.toLocaleDateString('pt-BR')} (pós-reset)`
+                            : `${webinaresCicloAtual.filter((w: any) => w.status === 'presente').length} presença(s) de ${webinaresCicloAtual.length} evento(s)`}
+                        </p>
+                      </div>
+                      <CardContent className="pt-4">
+                        {webinaresCicloAtual.length > 0
+                          ? renderListaWebinares(webinaresCicloAtual, 'bg-blue-50', resumoPlano.metas?.webinarsMinimos)
+                          : <p className="text-sm text-muted-foreground text-center py-4">Nenhum webinar registrado neste ciclo ainda.</p>
+                        }
+                      </CardContent>
+                    </Card>
+
+                    {/* Histórico (pré-reset) */}
+                    {dataReset && webinaresHistorico.length > 0 && (
+                      <details className="group">
+                        <summary className="cursor-pointer list-none">
+                          <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                            <History className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                              Webinares — Ciclos Anteriores ({webinaresHistorico.length} evento{webinaresHistorico.length !== 1 ? 's' : ''})
+                            </span>
+                            <ChevronDown className="h-4 w-4 text-gray-400 ml-auto group-open:hidden" />
+                            <ChevronUp className="h-4 w-4 text-gray-400 ml-auto hidden group-open:block" />
+                          </div>
+                        </summary>
+                        <div className="mt-2">
+                          <Card className="overflow-hidden opacity-80">
+                            <div className="bg-gray-400 p-4 text-white">
+                              <h3 className="text-base font-bold flex items-center gap-2">
+                                <History className="h-5 w-5" /> Webinares — Histórico (pré-reset)
+                              </h3>
+                              <p className="text-white/80 text-xs mt-1">
+                                Antes de {dataReset.toLocaleDateString('pt-BR')}
+                              </p>
+                            </div>
+                            <CardContent className="pt-4">
+                              {renderListaWebinares(webinaresHistorico, 'bg-gray-50')}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </details>
+                    )}
+                  </div>
                 );
               })()}
 
