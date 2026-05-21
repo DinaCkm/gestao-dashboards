@@ -1,20 +1,26 @@
 import { google, calendar_v3 } from 'googleapis';
 
+// ID do calendário central
+const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'relacionamento@ckmtalents.net';
+
 // Credenciais da Service Account (via variável de ambiente)
+// Usa Domain-Wide Delegation para impersonar o dono do calendário e enviar convites
 function getAuth() {
   const credentialsJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!credentialsJson) {
     throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON não configurado');
   }
   const credentials = JSON.parse(credentialsJson);
-  return new google.auth.GoogleAuth({
-    credentials,
+  // Impersona o dono do calendário para que os convites sejam enviados em nome dele
+  const impersonateUser = process.env.GOOGLE_CALENDAR_IMPERSONATE || CALENDAR_ID;
+  const { JWT } = require('google-auth-library');
+  return new JWT({
+    email: credentials.client_email,
+    key: credentials.private_key,
     scopes: ['https://www.googleapis.com/auth/calendar'],
+    subject: impersonateUser,
   });
 }
-
-// ID do calendário central
-const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'relacionamento@ckmtalents.net';
 
 // Fuso horário padrão (Brasília)
 const TIMEZONE = 'America/Sao_Paulo';
