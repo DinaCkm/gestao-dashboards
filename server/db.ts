@@ -3068,21 +3068,44 @@ export async function getAlunosWithPlano(programId?: number) {
 export async function getCompetenciasObrigatoriasAluno(alunoId: number) {
   const db = await getDb();
   if (!db) return [];
-  
+
+  // Buscar competências do PDI ativo do aluno (assessment_competencias → assessment_pdi ativo)
   const result = await db.select({
-    id: planoIndividual.id,
-    competenciaId: planoIndividual.competenciaId,
+    id: assessmentCompetencias.id,
+    competenciaId: assessmentCompetencias.competenciaId,
     nome: competencias.nome,
     codigoIntegracao: competencias.codigoIntegracao,
-    notaAtual: planoIndividual.notaAtual,
-    metaNota: planoIndividual.metaNota,
-    status: planoIndividual.status,
-    isObrigatoria: planoIndividual.isObrigatoria,
+    notaAtual: assessmentCompetencias.nivelAtual,
+    metaNota: assessmentCompetencias.metaFinal,
+    status: sql<string>`'ativo'`,
+    isObrigatoria: sql<number>`IF(${assessmentCompetencias.peso} = 'obrigatoria', 1, 0)`,
   })
-  .from(planoIndividual)
-  .leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id))
-  .where(eq(planoIndividual.alunoId, alunoId));
-  
+  .from(assessmentCompetencias)
+  .innerJoin(assessmentPdi, and(
+    eq(assessmentCompetencias.assessmentPdiId, assessmentPdi.id),
+    eq(assessmentPdi.alunoId, alunoId),
+    eq(assessmentPdi.status, 'ativo')
+  ))
+  .leftJoin(competencias, eq(assessmentCompetencias.competenciaId, competencias.id));
+
+  // Fallback: se não há PDI ativo, retornar competências do plano_individual (comportamento anterior)
+  if (result.length === 0) {
+    const fallback = await db.select({
+      id: planoIndividual.id,
+      competenciaId: planoIndividual.competenciaId,
+      nome: competencias.nome,
+      codigoIntegracao: competencias.codigoIntegracao,
+      notaAtual: planoIndividual.notaAtual,
+      metaNota: planoIndividual.metaNota,
+      status: planoIndividual.status,
+      isObrigatoria: planoIndividual.isObrigatoria,
+    })
+    .from(planoIndividual)
+    .leftJoin(competencias, eq(planoIndividual.competenciaId, competencias.id))
+    .where(eq(planoIndividual.alunoId, alunoId));
+    return fallback;
+  }
+
   return result;
 }
 
