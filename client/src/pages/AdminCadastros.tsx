@@ -3287,6 +3287,22 @@ function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTo
 
   const clearAll = () => setSelectedPerms([]);
 
+  // Estado para copiar permissões de outro admin
+  const [copyFromId, setCopyFromId] = useState<string>('');
+  const { data: copySourcePerms, refetch: fetchCopyPerms } = trpc.admin.getPermissions.useQuery(
+    { userId: Number(copyFromId) },
+    { enabled: false }
+  );
+
+  const handleCopyFrom = async () => {
+    if (!copyFromId) return;
+    const result = await fetchCopyPerms();
+    if (result.data !== undefined) {
+      setSelectedPerms(result.data);
+      toast.success('Permissões copiadas! Clique em Salvar para aplicar.');
+    }
+  };
+
   const savePermissions = () => {
     if (!permAdmin) return;
     onSetPermissions(permAdmin.id, selectedPerms);
@@ -3310,6 +3326,7 @@ function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTo
   };
 
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
@@ -3461,6 +3478,31 @@ function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTo
           </div>
         ) : (
           <div className="space-y-4 py-2">
+            {/* Copiar permissões de outro admin */}
+            {admins.filter((a: any) => a.id !== permAdmin?.id).length > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <span className="text-sm font-medium text-blue-700 whitespace-nowrap">Copiar de:</span>
+                <Select value={copyFromId} onValueChange={setCopyFromId}>
+                  <SelectTrigger className="flex-1 h-8 text-sm">
+                    <SelectValue placeholder="Selecione um administrador..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {admins.filter((a: any) => a.id !== permAdmin?.id).map((a: any) => (
+                      <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyFrom}
+                  disabled={!copyFromId}
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100 whitespace-nowrap"
+                >
+                  Aplicar Cópia
+                </Button>
+              </div>
+            )}
             <div className="flex gap-2 mb-2">
               <Button variant="outline" size="sm" onClick={selectAll}>Selecionar Tudo</Button>
               <Button variant="outline" size="sm" onClick={clearAll}>Limpar Tudo</Button>
@@ -3513,5 +3555,6 @@ function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTo
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
