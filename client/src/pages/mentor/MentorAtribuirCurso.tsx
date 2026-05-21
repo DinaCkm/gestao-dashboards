@@ -273,7 +273,16 @@ export default function MentorAtribuirCurso() {
 
             <div className="space-y-2">
               <Label>Competência do PDI</Label>
-              <Select value={competenciaSelecionada} onValueChange={setCompetenciaSelecionada}>
+              <Select value={competenciaSelecionada} onValueChange={(val) => {
+                setCompetenciaSelecionada(val);
+                // Preencher prazo automaticamente com o microTermino da competência
+                const comp = (competenciasQuery.data ?? []).find((c: any) => String(c.competenciaId ?? c.id) === val || String(c.id) === val);
+                const microTermino = (comp as any)?.microTermino;
+                if (microTermino) {
+                  // microTermino vem como 'YYYY-MM-DD'
+                  setPrazo(microTermino.slice(0, 10));
+                }
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma competência" />
                 </SelectTrigger>
@@ -315,6 +324,20 @@ export default function MentorAtribuirCurso() {
                 value={prazo}
                 onChange={(e) => setPrazo(e.target.value)}
               />
+{competenciaSelecionada && (() => {
+                const comp = (competenciasQuery.data ?? []).find((c: any) => String(c.competenciaId ?? c.id) === competenciaSelecionada || String(c.id) === competenciaSelecionada);
+                const inicio = (comp as any)?.microInicio;
+                const termino = (comp as any)?.microTermino;
+                const fmt = (d: string) => d ? d.slice(0,10).split('-').reverse().join('/') : null;
+                const fInicio = fmt(inicio);
+                const fTermino = fmt(termino);
+                if (!fInicio && !fTermino) return null;
+                return (
+                  <p className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                    📅 Prazo de realização da competência: <strong>{fInicio ?? '—'}</strong> a <strong>{fTermino ?? '—'}</strong> conforme definido no PDI
+                  </p>
+                );
+              })()}
             </div>
 
             <Button

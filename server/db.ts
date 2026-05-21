@@ -3079,6 +3079,8 @@ export async function getCompetenciasObrigatoriasAluno(alunoId: number) {
     metaNota: assessmentCompetencias.metaFinal,
     status: sql<string>`'ativo'`,
     isObrigatoria: sql<number>`IF(${assessmentCompetencias.peso} = 'obrigatoria', 1, 0)`,
+    microInicio: assessmentCompetencias.microInicio,
+    microTermino: assessmentCompetencias.microTermino,
   })
   .from(assessmentCompetencias)
   .innerJoin(assessmentPdi, and(
