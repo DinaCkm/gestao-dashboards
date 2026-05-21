@@ -12749,6 +12749,7 @@ export async function listAdminUsers() {
     isActive: users.isActive,
     createdAt: users.createdAt,
     lastSignedIn: users.lastSignedIn,
+    cpf: users.cpf,
   })
     .from(users)
     .where(inArray(users.role, ['admin', 'admin2']))

@@ -3259,6 +3259,7 @@ function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTo
                   <TableHead>Nome</TableHead>
                   <TableHead>E-mail</TableHead>
                   <TableHead>Username</TableHead>
+                  <TableHead>CPF</TableHead>
                   <TableHead>Último acesso</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -3270,6 +3271,7 @@ function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTo
                     <TableCell className="font-medium">{admin.name}</TableCell>
                     <TableCell>{admin.email}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">{admin.openId}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{admin.cpf ? displayCpf(admin.cpf) : '—'}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {admin.lastSignedIn ? new Date(admin.lastSignedIn).toLocaleDateString('pt-BR') : '—'}
                     </TableCell>
