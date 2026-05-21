@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, Users2, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square, RefreshCw, Layers, BookOpen } from "lucide-react";
+import { Loader2, Plus, Building2, Users, Users2, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square, RefreshCw, Layers, BookOpen, Shield } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -192,7 +192,7 @@ export default function AdminCadastros() {
   const [, setLocation] = useLocation();
   const searchString = useSearch();
   const tabFromUrl = new URLSearchParams(searchString).get("tab");
-  const validTabs = ["acesso", "empresas", "mentores", "gerentes", "gerentes-empresa"];
+  const validTabs = ["acesso", "empresas", "mentores", "gerentes", "gerentes-empresa", "administradores"];
   const initialTab = tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : "acesso";
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -210,6 +210,7 @@ export default function AdminCadastros() {
   const { data: gerentes, refetch: refetchGerentes, isLoading: loadingGerentes } = trpc.admin.listGerentes.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: accessUsers, refetch: refetchAccessUsers, isLoading: loadingAccessUsers } = trpc.admin.listAccessUsers.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: allAlunos, refetch: refetchAllAlunos, isLoading: loadingAllAlunos } = trpc.admin.listAlunos.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: adminUsers, refetch: refetchAdminUsers, isLoading: loadingAdminUsers } = trpc.admin.listAdmins.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
 
 
   // Mutations
@@ -263,6 +264,22 @@ export default function AdminCadastros() {
       }
     },
     onError: (err) => toast.error(`Erro ao criar usuário: ${err.message}`),
+  });
+
+  const createAdminUser = trpc.admin.createAdmin.useMutation({
+    onSuccess: () => {
+      toast.success('Administrador criado com sucesso!');
+      refetchAdminUsers();
+    },
+    onError: (err) => toast.error(`Erro ao criar administrador: ${err.message}`),
+  });
+
+  const toggleAdminStatus = trpc.admin.toggleAdminStatus.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.isActive ? 'Administrador habilitado!' : 'Administrador inabilitado!');
+      refetchAdminUsers();
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
   });
 
   const toggleAccessUserStatus = trpc.admin.toggleAccessUserStatus.useMutation({
@@ -497,7 +514,7 @@ export default function AdminCadastros() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="acesso" className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
               Alunos
@@ -513,6 +530,10 @@ export default function AdminCadastros() {
             <TabsTrigger value="gerentes-empresa" className="flex items-center gap-2">
               <Crown className="h-4 w-4" />
               Gerentes
+            </TabsTrigger>
+            <TabsTrigger value="administradores" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Admins
             </TabsTrigger>
           </TabsList>
 
@@ -581,6 +602,18 @@ export default function AdminCadastros() {
               isPromoting={promoteToGerente.isPending}
               isCreatingPuro={createGerentePuro.isPending}
               isRemoving={removeGerente.isPending}
+            />
+          </TabsContent>
+
+          {/* Administradores Tab */}
+          <TabsContent value="administradores">
+            <AdminsTab
+              admins={adminUsers || []}
+              loading={loadingAdminUsers}
+              onCreate={createAdminUser.mutate}
+              isCreating={createAdminUser.isPending}
+              onToggleStatus={(userId: number) => toggleAdminStatus.mutate({ userId })}
+              isTogglingStatus={toggleAdminStatus.isPending}
             />
           </TabsContent>
         </Tabs>
@@ -3110,6 +3143,158 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
             </Table>
             </div>
           </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============ ADMINS TAB ============
+function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTogglingStatus }: {
+  admins: any[];
+  loading: boolean;
+  onCreate: (data: any) => void;
+  isCreating: boolean;
+  onToggleStatus: (userId: number) => void;
+  isTogglingStatus: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 6) {
+      toast.error("A senha deve ter ao menos 6 caracteres.");
+      return;
+    }
+    onCreate({ name: nome, email, username, password });
+    setNome("");
+    setEmail("");
+    setUsername("");
+    setPassword("");
+    setOpen(false);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-purple-600" />
+            Administradores
+          </CardTitle>
+          <CardDescription>Gerencie os administradores do sistema. Apenas o admin principal pode criar ou inabilitar outros admins.</CardDescription>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="h-4 w-4 mr-2" /> Novo Administrador</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <form onSubmit={handleSubmit}>
+              <DialogHeader>
+                <DialogTitle>Cadastrar Novo Administrador</DialogTitle>
+                <DialogDescription>Preencha os dados de acesso do novo administrador.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-nome">Nome Completo</Label>
+                  <Input id="admin-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do administrador" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-email">E-mail</Label>
+                  <Input id="admin-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-username">Username (login)</Label>
+                  <Input id="admin-username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ex: ana.admin" required minLength={3} />
+                  <p className="text-xs text-muted-foreground">Usado para entrar no sistema junto com a senha.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="admin-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2 top-2 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? "Ocultar" : "Mostrar"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : admins.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">Nenhum administrador cadastrado.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>E-mail</TableHead>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Último acesso</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {admins.map((admin: any) => (
+                  <TableRow key={admin.id}>
+                    <TableCell className="font-medium">{admin.name}</TableCell>
+                    <TableCell>{admin.email}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{admin.openId}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {admin.lastSignedIn ? new Date(admin.lastSignedIn).toLocaleDateString('pt-BR') : '—'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={admin.isActive ? "default" : "secondary"} className={admin.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                        {admin.isActive ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onToggleStatus(admin.id)}
+                        disabled={isTogglingStatus}
+                        className={admin.isActive ? "text-red-600 hover:text-red-700 hover:bg-red-50" : "text-green-600 hover:text-green-700 hover:bg-green-50"}
+                      >
+                        <Power className="h-4 w-4 mr-1" />
+                        {admin.isActive ? "Inabilitar" : "Habilitar"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>

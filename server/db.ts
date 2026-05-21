@@ -12734,3 +12734,79 @@ export async function getAuditoriaNotesMentoria(alunoId: number): Promise<Array<
     return [];
   }
 }
+
+// ============ ADMINISTRADORES ============
+
+export async function listAdminUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db.select({
+    id: users.id,
+    name: users.name,
+    email: users.email,
+    openId: users.openId,
+    role: users.role,
+    isActive: users.isActive,
+    createdAt: users.createdAt,
+    lastSignedIn: users.lastSignedIn,
+  })
+    .from(users)
+    .where(inArray(users.role, ['admin', 'admin2']))
+    .orderBy(users.name);
+  return result;
+}
+
+export async function createAdminUser(input: {
+  name: string;
+  email: string;
+  username: string;
+  passwordHash: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error('Banco de dados não disponível');
+
+  // Verificar se username (openId) já existe
+  const [existing] = await db.select({ id: users.id })
+    .from(users)
+    .where(eq(users.openId, input.username))
+    .limit(1);
+  if (existing) throw new Error('Username já está em uso. Escolha outro.');
+
+  // Verificar se e-mail já existe como admin
+  const [existingEmail] = await db.select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.email, input.email), inArray(users.role, ['admin', 'admin2'])))
+    .limit(1);
+  if (existingEmail) throw new Error('Já existe um administrador com este e-mail.');
+
+  const openId = `admin-${input.username}-${Date.now()}`;
+  await db.insert(users).values({
+    openId,
+    name: input.name,
+    email: input.email,
+    loginMethod: 'admin',
+    role: 'admin',
+    passwordHash: input.passwordHash,
+    isActive: 1,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastSignedIn: new Date(),
+  } as any);
+
+  return { success: true, message: 'Administrador criado com sucesso.' };
+}
+
+export async function toggleAdminUserStatus(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error('Banco de dados não disponível');
+
+  const [user] = await db.select({ id: users.id, isActive: users.isActive })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!user) throw new Error('Administrador não encontrado.');
+
+  const newStatus = user.isActive ? 0 : 1;
+  await db.update(users).set({ isActive: newStatus, updatedAt: new Date() }).where(eq(users.id, userId));
+  return { success: true, isActive: newStatus };
+}

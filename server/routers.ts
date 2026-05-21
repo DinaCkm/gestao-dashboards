@@ -6987,6 +6987,39 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .mutation(async ({ input }) => {
         return await db.updateMultipleAlunosPlataforma(input);
       }),
+
+    // ============ ADMINISTRADORES ============
+    listAdmins: adminProcedure.query(async () => {
+      return await db.listAdminUsers();
+    }),
+
+    createAdmin: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        username: z.string().min(3, 'Username deve ter ao menos 3 caracteres'),
+        password: z.string().min(6, 'Senha deve ter ao menos 6 caracteres'),
+      }))
+      .mutation(async ({ input }) => {
+        const crypto = await import('crypto');
+        const passwordHash = crypto.createHash('sha256').update(input.password).digest('hex');
+        return await db.createAdminUser({
+          name: input.name,
+          email: input.email,
+          username: input.username,
+          passwordHash,
+        });
+      }),
+
+    toggleAdminStatus: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        // Impedir que o admin inabilite a si mesmo
+        if (ctx.user.id === input.userId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Você não pode inabilitar sua própria conta.' });
+        }
+        return await db.toggleAdminUserStatus(input.userId);
+      }),
   }),
   // Status de onboarding do aluno logado
   aluno: router({
