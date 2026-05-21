@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import {
   Mail, Send, Clock, CheckCircle2, AlertTriangle, Calendar, DollarSign,
-  Users, RefreshCw, ChevronDown, ChevronUp, Loader2, History, Eye, Info,
+  Users, RefreshCw, ChevronDown, ChevronUp, Loader2, History, Eye, Info, Download,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -203,6 +203,41 @@ function SecaoPreview() {
     });
   };
 
+  const handleDownloadCSV = () => {
+    if (mentores.length === 0) return;
+    const headers = ["Mentora", "E-mail", "Data", "Aluno", "Empresa", "Tipo", "Valor (R$)"];
+    const rows: string[][] = [];
+    for (const mentor of mentores) {
+      for (const sessao of mentor.sessoes) {
+        rows.push([
+          mentor.nome,
+          mentor.email ?? "",
+          formatDateBR(sessao.data),
+          sessao.aluno,
+          sessao.empresa,
+          formatTipo(sessao.tipo),
+          sessao.valor.toFixed(2),
+        ]);
+      }
+      // Linha de subtotal por mentora
+      rows.push([mentor.nome, "", "", "", "", "SUBTOTAL", mentor.totalValor.toFixed(2)]);
+      rows.push(["", "", "", "", "", "", ""]); // linha em branco
+    }
+    // Total geral
+    const totalGeral = mentores.reduce((s, m) => s + m.totalValor, 0);
+    rows.push(["", "", "", "", "", "TOTAL GERAL", totalGeral.toFixed(2)]);
+
+    const csvContent = [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `relatorio_mentorias_${dateFrom}_${dateTo}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Relatório baixado com sucesso!");
+  };
+
   const toggleMentor = (id: number) => {
     setExpandedMentor(prev => prev === id ? null : id);
   };
@@ -248,6 +283,15 @@ function SecaoPreview() {
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`} />
               Atualizar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleDownloadCSV}
+              disabled={isLoading || mentores.length === 0}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Baixar Relatório
             </Button>
             <Button
               size="sm"
