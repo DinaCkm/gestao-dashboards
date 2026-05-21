@@ -2,12 +2,6 @@ var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined") return require.apply(this, arguments);
-  throw Error('Dynamic require of "' + x + '" is not supported');
-});
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
@@ -13613,8 +13607,7 @@ function getAuth() {
   }
   const credentials = JSON.parse(credentialsJson);
   const impersonateUser = process.env.GOOGLE_CALENDAR_IMPERSONATE || CALENDAR_ID;
-  const { JWT } = __require("google-auth-library");
-  return new JWT({
+  return new google.auth.JWT({
     email: credentials.client_email,
     key: credentials.private_key,
     scopes: ["https://www.googleapis.com/auth/calendar"],

@@ -4,7 +4,7 @@ import { google, calendar_v3 } from 'googleapis';
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'relacionamento@ckmtalents.net';
 
 // Credenciais da Service Account (via variável de ambiente)
-// Usa Domain-Wide Delegation para impersonar o dono do calendário e enviar convites
+// Usa Domain-Wide Delegation com google.auth.JWT (disponível via googleapis)
 function getAuth() {
   const credentialsJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!credentialsJson) {
@@ -13,8 +13,7 @@ function getAuth() {
   const credentials = JSON.parse(credentialsJson);
   // Impersona o dono do calendário para que os convites sejam enviados em nome dele
   const impersonateUser = process.env.GOOGLE_CALENDAR_IMPERSONATE || CALENDAR_ID;
-  const { JWT } = require('google-auth-library');
-  return new JWT({
+  return new google.auth.JWT({
     email: credentials.client_email,
     key: credentials.private_key,
     scopes: ['https://www.googleapis.com/auth/calendar'],
