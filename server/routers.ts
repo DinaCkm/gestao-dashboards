@@ -2072,14 +2072,28 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           } else if (input.type === 'financeiro_mentora') {
             // ===== RELATÓRIO FINANCEIRO POR MENTORA =====
             const pricingMap = await db.getAllMentorSessionPricing();
-            
-            // Sheet 1: Resumo por Mentora
+
+            // Buscar agendamentos do período para todos os mentores
+            const allAppointmentsInPeriod = await db.getAllAppointments({
+              dateFrom: input.dateFrom,
+              dateTo: input.dateTo,
+            });
+
+            // Montar mapa: consultorId -> lista de agendamentos
+            const apptByConsultor = new Map<number, typeof allAppointmentsInPeriod>();
+            for (const appt of allAppointmentsInPeriod) {
+              const existing = apptByConsultor.get(appt.consultorId) || [];
+              existing.push(appt);
+              apptByConsultor.set(appt.consultorId, existing);
+            }
+
+            // Montar mapa de sessões por mentora
             const mentoraSummary: Record<number, {
               nome: string;
               valorPadrao: number;
-              sessoes: Array<{ alunoNome: string; empresaNome: string; data: string; sessionNumber: number; valor: number }>;
+              sessoes: Array<{ alunoNome: string; empresaNome: string; data: string; sessionNumber: number; valor: number; tipoSessao: string }>;
             }> = {};
-            
+
             for (const s of mentoringSessions) {
               if (!s.consultorId) continue;
               const consultor = consultorMap.get(s.consultorId);
@@ -2087,7 +2101,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               const aluno = s.alunoId ? alunoMap.get(s.alunoId) : null;
               const program = aluno?.programId ? programMap.get(aluno.programId) : null;
               const valorPadrao = consultor.valorSessao ? Number(consultor.valorSessao) : 0;
-              
+
               if (!mentoraSummary[s.consultorId]) {
                 mentoraSummary[s.consultorId] = {
                   nome: consultor.name || 'Desconhecido',
@@ -2095,46 +2109,67 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
                   sessoes: [],
                 };
               }
-              
+
               // Calcular valor usando precificação flexível
               const rules = pricingMap.get(s.consultorId) || [];
               const sessionNum = s.sessionNumber || 0;
               const matchingRule = rules.find(r => sessionNum >= r.sessionFrom && sessionNum <= r.sessionTo);
               const valorSessao = matchingRule ? Number(matchingRule.valor) : valorPadrao;
-              
+
               mentoraSummary[s.consultorId].sessoes.push({
                 alunoNome: aluno?.name || 'N/A',
                 empresaNome: program?.name || 'N/A',
                 data: s.sessionDate ? new Date(s.sessionDate).toLocaleDateString('pt-BR') : '',
                 sessionNumber: s.sessionNumber || 0,
                 valor: valorSessao,
+                tipoSessao: s.tipoSessao || 'individual_normal',
               });
             }
-            
+
             // Sheet 1: Resumo Geral por Mentora
-            const resumoMentoras = Object.values(mentoraSummary).map(m => ({
-              'Mentora': m.nome,
-              'Total de Sessões': m.sessoes.length,
-              'Valor Total (R$)': m.sessoes.reduce((sum, s) => sum + s.valor, 0).toFixed(2),
-              'Alunos Atendidos': Array.from(new Set(m.sessoes.map(s => s.alunoNome))).length,
-              'Empresas': Array.from(new Set(m.sessoes.map(s => s.empresaNome))).join(', '),
-            })).sort((a, b) => parseFloat(b['Valor Total (R$)']) - parseFloat(a['Valor Total (R$)']));
-            
+            // Coletar todos os consultorIds (sessões + agendamentos)
+            const allConsultorIds = new Set<number>([
+              ...Object.keys(mentoraSummary).map(Number),
+              ...Array.from(apptByConsultor.keys()),
+            ]);
+
+            const resumoMentoras = Array.from(allConsultorIds).map(cid => {
+              const m = mentoraSummary[cid];
+              const appts = apptByConsultor.get(cid) || [];
+              const apptNaoCancelados = appts.filter(a => a.status !== 'cancelado');
+              const nome = m?.nome || consultorMap.get(cid)?.name || 'Desconhecido';
+              const totalSessoes = m?.sessoes.length || 0;
+              const totalValor = m?.sessoes.reduce((sum, s) => sum + s.valor, 0) || 0;
+              return {
+                'Mentora': nome,
+                'Mentorias Realizadas': totalSessoes,
+                'Agendamentos no Período': appts.length,
+                'Agendamentos Realizados (não cancelados)': apptNaoCancelados.length,
+                'Agendamentos Cancelados': appts.filter(a => a.status === 'cancelado').length,
+                'Valor Total (R$)': totalValor.toFixed(2),
+                'Alunos Atendidos': Array.from(new Set((m?.sessoes || []).map(s => s.alunoNome))).length,
+                'Empresas': Array.from(new Set((m?.sessoes || []).map(s => s.empresaNome))).join(', '),
+              };
+            }).sort((a, b) => parseFloat(b['Valor Total (R$)']) - parseFloat(a['Valor Total (R$)']));
+
             const totalGeralMentoras = resumoMentoras.reduce((sum, m) => sum + parseFloat(m['Valor Total (R$)']), 0);
             resumoMentoras.push({
               'Mentora': 'TOTAL GERAL',
-              'Total de Sessões': resumoMentoras.reduce((sum, m) => sum + m['Total de Sessões'], 0),
+              'Mentorias Realizadas': resumoMentoras.reduce((sum, m) => sum + m['Mentorias Realizadas'], 0),
+              'Agendamentos no Período': resumoMentoras.reduce((sum, m) => sum + m['Agendamentos no Período'], 0),
+              'Agendamentos Realizados (não cancelados)': resumoMentoras.reduce((sum, m) => sum + m['Agendamentos Realizados (não cancelados)'], 0),
+              'Agendamentos Cancelados': resumoMentoras.reduce((sum, m) => sum + m['Agendamentos Cancelados'], 0),
               'Valor Total (R$)': totalGeralMentoras.toFixed(2),
               'Alunos Atendidos': 0,
               'Empresas': '',
             });
-            
+
             const wsResumoM = XLSX.utils.json_to_sheet(resumoMentoras);
             XLSX.utils.book_append_sheet(wb, wsResumoM, 'Resumo por Mentora');
-            
-            // Sheet 2: Detalhamento - todas as sessões
+
+            // Sheet 2: Mentorias Realizadas (mentoring_sessions)
             const detalheMentora: any[] = [];
-            for (const m of Object.values(mentoraSummary)) {
+            for (const [cid2, m] of Object.entries(mentoraSummary)) {
               for (const s of m.sessoes) {
                 detalheMentora.push({
                   'Mentora': m.nome,
@@ -2142,14 +2177,48 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
                   'Empresa': s.empresaNome,
                   'Data da Sessão': s.data,
                   'Nº Sessão': s.sessionNumber,
+                  'Tipo': s.tipoSessao === 'individual_assessment' ? 'Individual Assessment'
+                        : s.tipoSessao === 'grupo_normal' ? 'Grupo'
+                        : s.tipoSessao === 'grupo_assessment' ? 'Grupo Assessment'
+                        : 'Individual',
                   'Valor (R$)': s.valor.toFixed(2),
                 });
               }
             }
-            detalheMentora.sort((a, b) => a['Mentora'].localeCompare(b['Mentora']));
+            detalheMentora.sort((a, b) => a['Mentora'].localeCompare(b['Mentora']) || a['Data da Sessão'].localeCompare(b['Data da Sessão']));
             if (detalheMentora.length > 0) {
               const wsDetalheM = XLSX.utils.json_to_sheet(detalheMentora);
-              XLSX.utils.book_append_sheet(wb, wsDetalheM, 'Detalhamento Sessões');
+              XLSX.utils.book_append_sheet(wb, wsDetalheM, 'Mentorias Realizadas');
+            }
+
+            // Sheet 3: Agendamentos do Período (mentor_appointments)
+            const detalheAgendamentos: any[] = [];
+            for (const appt of allAppointmentsInPeriod) {
+              const consultor = consultorMap.get(appt.consultorId);
+              const mentoraNome = consultor?.name || appt.mentorName || 'Desconhecido';
+              const participantes = (appt.participants || []).map((p: any) => p.alunoName).join(', ');
+              const participantesEmpresas = (appt.participants || []).map((p: any) => {
+                const al = alunoMap.get(p.alunoId);
+                return al?.programId ? (programMap.get(al.programId)?.name || 'N/A') : 'N/A';
+              }).filter((v, i, arr) => arr.indexOf(v) === i).join(', ');
+              const dataFmt = appt.scheduledDate
+                ? new Date(appt.scheduledDate + 'T12:00:00').toLocaleDateString('pt-BR')
+                : '';
+              detalheAgendamentos.push({
+                'Mentora': mentoraNome,
+                'Data': dataFmt,
+                'Horário': appt.startTime ? `${appt.startTime}${appt.endTime ? ' - ' + appt.endTime : ''}` : '',
+                'Tipo': appt.type === 'grupo' ? 'Grupo' : 'Individual',
+                'Status': appt.status || '',
+                'Título': appt.title || '',
+                'Participantes': participantes,
+                'Empresa(s)': participantesEmpresas,
+              });
+            }
+            detalheAgendamentos.sort((a, b) => a['Mentora'].localeCompare(b['Mentora']) || a['Data'].localeCompare(b['Data']));
+            if (detalheAgendamentos.length > 0) {
+              const wsAgend = XLSX.utils.json_to_sheet(detalheAgendamentos);
+              XLSX.utils.book_append_sheet(wb, wsAgend, 'Agendamentos');
             }
             
           } else if (input.type === 'financeiro_empresa') {
