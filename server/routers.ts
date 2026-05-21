@@ -2071,7 +2071,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             }
           } else if (input.type === 'financeiro_mentora') {
             // ===== RELATÓRIO FINANCEIRO POR MENTORA =====
-            const pricingMap = await db.getAllMentorSessionPricing();
+            // Usar precificação V2 (por tipo de sessão) como fonte principal
+            const allV2Rules = await getSessionTypePricingRules(dbConn);
+            // Fallback: precificação legada por faixa de sessão
+            const legacyPricingMap = await db.getAllMentorSessionPricing();
 
             // Buscar agendamentos do período para todos os mentores
             const allAppointmentsInPeriod = await db.getAllAppointments({
@@ -2091,7 +2094,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             const mentoraSummary: Record<number, {
               nome: string;
               valorPadrao: number;
-              sessoes: Array<{ alunoNome: string; empresaNome: string; data: string; sessionNumber: number; valor: number; tipoSessao: string }>;
+              sessoes: Array<{ alunoNome: string; empresaNome: string; data: string; sessionNumber: number; valor: number; tipoSessao: string; origemPreco: string }>;
             }> = {};
 
             for (const s of mentoringSessions) {
@@ -2101,6 +2104,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               const aluno = s.alunoId ? alunoMap.get(s.alunoId) : null;
               const program = aluno?.programId ? programMap.get(aluno.programId) : null;
               const valorPadrao = consultor.valorSessao ? Number(consultor.valorSessao) : 0;
+              const tipoSessao = (s.tipoSessao || 'individual_normal') as TipoSessao;
+              const programId = aluno?.programId || null;
+              const sessionDateStr = s.sessionDate ? String(s.sessionDate).slice(0, 10) : null;
 
               if (!mentoraSummary[s.consultorId]) {
                 mentoraSummary[s.consultorId] = {
@@ -2110,11 +2116,37 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
                 };
               }
 
-              // Calcular valor usando precificação flexível
-              const rules = pricingMap.get(s.consultorId) || [];
-              const sessionNum = s.sessionNumber || 0;
-              const matchingRule = rules.find(r => sessionNum >= r.sessionFrom && sessionNum <= r.sessionTo);
-              const valorSessao = matchingRule ? Number(matchingRule.valor) : valorPadrao;
+              // Calcular valor: tentar V2 primeiro, fallback para legado
+              let valorSessao = 0;
+              let origemPreco = 'zero';
+              const v2Applicable = allV2Rules.filter((r: any) => {
+                if (!r.isActive) return false;
+                if (r.tipoSessao !== tipoSessao) return false;
+                if (sessionDateStr) {
+                  if (r.validoDesde && sessionDateStr < String(r.validoDesde)) return false;
+                  if (r.validoAte && sessionDateStr > String(r.validoAte)) return false;
+                }
+                return true;
+              });
+              const v2Rule = programId
+                ? v2Applicable.find((r: any) => r.programId === programId && r.consultorId === s.consultorId)
+                : null;
+              if (v2Rule) {
+                valorSessao = Number(v2Rule.valor);
+                origemPreco = 'empresa_mentor';
+              } else {
+                // Fallback legado por faixa de sessão
+                const legacyRules = legacyPricingMap.get(s.consultorId) || [];
+                const sessionNum = s.sessionNumber || 0;
+                const legacyRule = legacyRules.find((r: any) => sessionNum >= r.sessionFrom && sessionNum <= r.sessionTo);
+                if (legacyRule) {
+                  valorSessao = Number(legacyRule.valor);
+                  origemPreco = 'legado_faixa';
+                } else if (valorPadrao > 0) {
+                  valorSessao = valorPadrao;
+                  origemPreco = 'legado_padrao';
+                }
+              }
 
               mentoraSummary[s.consultorId].sessoes.push({
                 alunoNome: aluno?.name || 'N/A',
@@ -2122,7 +2154,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
                 data: s.sessionDate ? new Date(s.sessionDate).toLocaleDateString('pt-BR') : '',
                 sessionNumber: s.sessionNumber || 0,
                 valor: valorSessao,
-                tipoSessao: s.tipoSessao || 'individual_normal',
+                tipoSessao,
+                origemPreco,
               });
             }
 
@@ -2177,11 +2210,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
                   'Empresa': s.empresaNome,
                   'Data da Sessão': s.data,
                   'Nº Sessão': s.sessionNumber,
-                  'Tipo': s.tipoSessao === 'individual_assessment' ? 'Individual Assessment'
-                        : s.tipoSessao === 'grupo_normal' ? 'Grupo'
-                        : s.tipoSessao === 'grupo_assessment' ? 'Grupo Assessment'
+                  'Tipo': s.tipoSessao === 'individual_assessment' ? 'Assessment'
+                        : s.tipoSessao === 'grupo_normal' ? 'Grupal'
                         : 'Individual',
                   'Valor (R$)': s.valor.toFixed(2),
+                  'Origem Preço': s.origemPreco === 'empresa_mentor' ? 'Tabela V2'
+                              : s.origemPreco === 'legado_faixa' ? 'Faixa (legado)'
+                              : s.origemPreco === 'legado_padrao' ? 'Padrão (legado)'
+                              : 'Sem regra',
                 });
               }
             }

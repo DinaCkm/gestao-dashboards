@@ -89,6 +89,8 @@ export default function RegistroMentoria() {
   // Aplicabilidade Prática - nota da mentora
   const [newNotaMentoraAplic, setNewNotaMentoraAplic] = useState<number | null>(null);
   const [editNotaMentoraAplic, setEditNotaMentoraAplic] = useState<number | null>(null);
+  // Tipo de sessão
+  const [newTipoSessao, setNewTipoSessao] = useState<"individual_normal" | "individual_assessment" | "grupo_normal">("individual_normal");
 
   // Queries
   const { data: allPrograms = [] } = trpc.programs.list.useQuery(undefined, { enabled: isAdmin });
@@ -321,6 +323,7 @@ export default function RegistroMentoria() {
     setNewCustomTaskTitle("");
     setNewCustomTaskDescription("");
     setNewNotaMentoraAplic(null);
+    setNewTipoSessao("individual_normal");
   };
 
   const handleCreateSession = () => {
@@ -352,6 +355,7 @@ export default function RegistroMentoria() {
       customTaskTitle: newCustomTaskTitle || null,
       customTaskDescription: newCustomTaskDescription || null,
       notaMentoraAplicabilidade: newNotaMentoraAplic ?? undefined,
+      tipoSessao: newTipoSessao,
     });
   };
 
@@ -918,11 +922,48 @@ export default function RegistroMentoria() {
                       <Input type="date" value={newSessionDate} onChange={(e) => setNewSessionDate(e.target.value)} className="max-w-xs" />
                     </div>
 
-                    {/* Presença */}
+                    {/* Tipo de Sessão */}
+                    <div>
+                      <Label className="flex items-center gap-2 mb-2">
+                        <Users className="h-4 w-4 text-[#0A1E3E]" />
+                        Tipo de Sessão *
+                      </Label>
+                      <div className="flex gap-3 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setNewTipoSessao("individual_normal")}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                            newTipoSessao === "individual_normal" ? "border-[#0A1E3E] bg-[#0A1E3E]/10 text-[#0A1E3E] font-semibold" : "border-gray-200 bg-white hover:border-gray-300"
+                          }`}
+                        >
+                          <User className="h-4 w-4" /> Individual
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewTipoSessao("individual_assessment")}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                            newTipoSessao === "individual_assessment" ? "border-purple-600 bg-purple-50 text-purple-800 font-semibold" : "border-gray-200 bg-white hover:border-gray-300"
+                          }`}
+                        >
+                          <ClipboardCheck className="h-4 w-4" /> Assessment
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewTipoSessao("grupo_normal")}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                            newTipoSessao === "grupo_normal" ? "border-emerald-600 bg-emerald-50 text-emerald-800 font-semibold" : "border-gray-200 bg-white hover:border-gray-300"
+                          }`}
+                        >
+                          <Users className="h-4 w-4" /> Grupal
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Presênça */}
                     <div>
                       <Label className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className="h-4 w-4 text-[#0A1E3E]" />
-                        Presença *
+                        Presênça *
                       </Label>
                       <div className="flex gap-3">
                         <button
