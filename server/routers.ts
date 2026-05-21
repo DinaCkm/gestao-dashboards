@@ -5301,6 +5301,22 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           }
         } catch (e) { /* notificação não deve bloquear registro */ }
 
+        // Marcar evento no Google Calendar como realizado (assíncrono)
+        if (input.appointmentId) {
+          (async () => {
+            try {
+              const appt = await db.getAppointmentById(input.appointmentId!);
+              if (appt?.googleEventId) {
+                const { markCalendarEventRealized } = await import('./googleCalendarService');
+                await markCalendarEventRealized(appt.googleEventId);
+                console.log(`[GoogleCalendar] Evento marcado como realizado: ${appt.googleEventId}`);
+              }
+            } catch (err) {
+              console.warn('[GoogleCalendar] Erro ao marcar evento como realizado:', err);
+            }
+          })();
+        }
+
         return { success: true, sessionId, sessionNumber: nextSessionNumber };
       }),
 
@@ -5600,7 +5616,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         alunoIds: z.array(z.number()).min(1),
       }))
       .mutation(async ({ input, ctx }) => {
-        return await db.createGroupAppointment({
+        const result = await db.createGroupAppointment({
           consultorId: input.consultorId,
           title: input.title,
           description: input.description || null,
@@ -5611,6 +5627,46 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           alunoIds: input.alunoIds,
           createdBy: ctx.user.id,
         });
+
+        // Integração Google Calendar (assíncrono, não bloqueia a resposta)
+        if (result.success && result.id) {
+          const appointmentId = result.id;
+          (async () => {
+            try {
+              const { createCalendarEvent } = await import('./googleCalendarService');
+              const consultor = await db.getConsultorById(input.consultorId);
+              // Buscar e-mails dos alunos
+              const attendees: { email: string; displayName?: string }[] = [];
+              if (consultor?.email) attendees.push({ email: consultor.email, displayName: consultor.name });
+              for (const alunoId of input.alunoIds) {
+                const aluno = await db.getAlunoById(alunoId);
+                if (aluno?.email) attendees.push({ email: aluno.email, displayName: aluno.name });
+              }
+              const startDateTime = `${input.scheduledDate}T${input.startTime}:00-03:00`;
+              const endDateTime = `${input.scheduledDate}T${input.endTime}:00-03:00`;
+              const calResult = await createCalendarEvent({
+                title: input.title,
+                description: input.description,
+                startDateTime,
+                endDateTime,
+                attendees,
+                meetLink: !input.googleMeetLink, // gera Meet se não tiver link próprio
+              });
+              if (calResult) {
+                await db.updateAppointmentGoogleEventId(
+                  appointmentId,
+                  calResult.googleEventId,
+                  calResult.meetLink || input.googleMeetLink || null
+                );
+                console.log(`[GoogleCalendar] Evento grupal criado: ${calResult.googleEventId}`);
+              }
+            } catch (err) {
+              console.warn('[GoogleCalendar] Erro ao criar evento grupal:', err);
+            }
+          })();
+        }
+
+        return result;
       }),
 
     // Aluno agenda sessão individual (escolhe horário disponível)
@@ -5676,6 +5732,38 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           console.error('[bookAppointment] Erro ao preparar e-mail de confirmacao:', err);
         }
 
+        // Integração Google Calendar (assíncrono)
+        if (appointment?.id) {
+          const apptId = appointment.id;
+          (async () => {
+            try {
+              const { createCalendarEvent } = await import('./googleCalendarService');
+              const aluno = await db.getAlunoById(alunoId);
+              const mentor = await db.getConsultorById(input.consultorId);
+              const attendees: { email: string; displayName?: string }[] = [];
+              if (mentor?.email) attendees.push({ email: mentor.email, displayName: mentor.name });
+              if (aluno?.email) attendees.push({ email: aluno.email, displayName: aluno.name });
+              const startDateTime = `${input.scheduledDate}T${input.startTime}:00-03:00`;
+              const endDateTime = `${input.scheduledDate}T${input.endTime}:00-03:00`;
+              const eventTitle = `Mentoria Individual - ${aluno?.name || 'Aluno'} com ${mentor?.name || 'Mentor'}`;
+              const calResult = await createCalendarEvent({
+                title: eventTitle,
+                description: input.notes,
+                startDateTime,
+                endDateTime,
+                attendees,
+                meetLink: true, // sempre gera Meet para individuais
+              });
+              if (calResult) {
+                await db.updateAppointmentGoogleEventId(apptId, calResult.googleEventId, calResult.meetLink || null);
+                console.log(`[GoogleCalendar] Evento individual criado: ${calResult.googleEventId}`);
+              }
+            } catch (err) {
+              console.warn('[GoogleCalendar] Erro ao criar evento individual:', err);
+            }
+          })();
+        }
+
         return appointment;
       }),
 
@@ -5696,7 +5784,22 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     cancelAppointment: protectedProcedure
       .input(z.object({ appointmentId: z.number() }))
       .mutation(async ({ input }) => {
-        return await db.cancelAppointment(input.appointmentId);
+        // Buscar googleEventId antes de cancelar
+        const appt = await db.getAppointmentById(input.appointmentId);
+        const result = await db.cancelAppointment(input.appointmentId);
+        // Remover evento do Google Calendar (assíncrono)
+        if (appt?.googleEventId) {
+          (async () => {
+            try {
+              const { deleteCalendarEvent } = await import('./googleCalendarService');
+              await deleteCalendarEvent(appt.googleEventId!);
+              console.log(`[GoogleCalendar] Evento cancelado: ${appt.googleEventId}`);
+            } catch (err) {
+              console.warn('[GoogleCalendar] Erro ao cancelar evento:', err);
+            }
+          })();
+        }
+        return result;
       }),
 
     // Reagendar agendamento (alterar data/horário)
@@ -5775,6 +5878,24 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           } catch (emailErr) {
             console.error('[Reagendamento] Erro ao enviar emails:', emailErr);
           }
+        }
+        // Atualizar evento no Google Calendar (assíncrono)
+        if (result.success && oldAppointment?.googleEventId) {
+          (async () => {
+            try {
+              const { updateCalendarEvent } = await import('./googleCalendarService');
+              const startDateTime = `${input.scheduledDate}T${input.startTime}:00-03:00`;
+              const endDateTime = `${input.scheduledDate}T${input.endTime}:00-03:00`;
+              await updateCalendarEvent(oldAppointment.googleEventId!, {
+                startDateTime,
+                endDateTime,
+                meetLink: input.googleMeetLink,
+              });
+              console.log(`[GoogleCalendar] Evento reagendado: ${oldAppointment.googleEventId}`);
+            } catch (err) {
+              console.warn('[GoogleCalendar] Erro ao reagendar evento:', err);
+            }
+          })();
         }
         return result;
       }),

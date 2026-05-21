@@ -12866,3 +12866,39 @@ export async function setAdminPermissions(userId: number, permissions: string[])
      ON DUPLICATE KEY UPDATE permissions = '${permsJson}', updatedAt = CURRENT_TIMESTAMP`
   ));
 }
+
+// ============ MIGRATION: GOOGLE CALENDAR INTEGRATION ============
+export async function ensureGoogleCalendarColumns(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const columns = [
+    "ALTER TABLE `mentor_appointments` ADD COLUMN IF NOT EXISTS `googleEventId` varchar(255)",
+  ];
+  for (const col of columns) {
+    try {
+      await db.execute(sql.raw(col));
+    } catch (e: any) {
+      if (!e?.message?.includes("Duplicate column")) {
+        console.warn("[DB] ensureGoogleCalendarColumns:", e?.message);
+      }
+    }
+  }
+  console.log("[DB] Colunas do Google Calendar verificadas/criadas com sucesso.");
+}
+
+// ============ GOOGLE CALENDAR: SALVAR EVENT ID ============
+export async function updateAppointmentGoogleEventId(
+  appointmentId: number,
+  googleEventId: string,
+  googleMeetLink?: string | null
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const updateData: any = { googleEventId };
+  if (googleMeetLink !== undefined) {
+    updateData.googleMeetLink = googleMeetLink;
+  }
+  await db.update(mentorAppointments)
+    .set(updateData)
+    .where(eq(mentorAppointments.id, appointmentId));
+}

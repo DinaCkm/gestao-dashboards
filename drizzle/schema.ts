@@ -888,6 +888,7 @@ export const mentorAppointments = mysqlTable("mentor_appointments", {
   startTime: varchar("startTime", { length: 5 }).notNull(), // "09:00"
   endTime: varchar("endTime", { length: 5 }).notNull(), // "10:00"
   googleMeetLink: varchar("googleMeetLink", { length: 500 }), // Link do Google Meet
+  googleEventId: varchar("googleEventId", { length: 255 }), // ID do evento no Google Calendar
   type: mysqlEnum("type", ["individual", "grupo"]).default("individual").notNull(),
   title: varchar("title", { length: 255 }), // Título da sessão (obrigatório para grupo)
   description: text("description"), // Descrição/pauta da sessão
