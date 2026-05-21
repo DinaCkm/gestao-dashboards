@@ -91,6 +91,8 @@ export default function RegistroMentoria() {
   const [editNotaMentoraAplic, setEditNotaMentoraAplic] = useState<number | null>(null);
   // Tipo de sessão
   const [newTipoSessao, setNewTipoSessao] = useState<"individual_normal" | "individual_assessment" | "grupo_normal">("individual_normal");
+  // Agendamento vinculado
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
 
   // Queries
   const { data: allPrograms = [] } = trpc.programs.list.useQuery(undefined, { enabled: isAdmin });
@@ -119,6 +121,21 @@ export default function RegistroMentoria() {
     { enabled: !!selectedAlunoId }
   );
   const { data: taskLibrary = [] } = trpc.mentor.getTaskLibrary.useQuery();
+
+  // Agendamentos do consultor (para vincular ao registro de sessão)
+  const consultorIdForAppt = userConsultorId;
+  // Busca agendamentos ativos do aluno selecionado com esta mentora (para vincular ao registro)
+  const { data: mentorAppointments = [] } = trpc.mentor.getAppointments.useQuery(
+    { 
+      consultorId: consultorIdForAppt!,
+      alunoId: selectedAlunoId ?? undefined,
+    },
+    { enabled: !!consultorIdForAppt && showNewSession && !!selectedAlunoId }
+  );
+  // Agendamentos pendentes (agendado ou confirmado) para o aluno selecionado
+  const pendingAppointments = mentorAppointments.filter(
+    (a: any) => a.status === 'agendado' || a.status === 'confirmado'
+  );
 
   // Alerta de atualização de metas
   const { data: alertaMetas } = trpc.metas.alertaAtualizacao.useQuery(
@@ -324,6 +341,7 @@ export default function RegistroMentoria() {
     setNewCustomTaskDescription("");
     setNewNotaMentoraAplic(null);
     setNewTipoSessao("individual_normal");
+    setSelectedAppointmentId(null);
   };
 
   const handleCreateSession = () => {
@@ -356,6 +374,7 @@ export default function RegistroMentoria() {
       customTaskDescription: newCustomTaskDescription || null,
       notaMentoraAplicabilidade: newNotaMentoraAplic ?? undefined,
       tipoSessao: newTipoSessao,
+      appointmentId: selectedAppointmentId ?? undefined,
     });
   };
 
@@ -912,6 +931,87 @@ export default function RegistroMentoria() {
                       <ListChecks className="h-5 w-5 text-[#0A1E3E]" />
                       <h4 className="text-base font-bold text-[#0A1E3E]">Parte 1 — Registro da Sessão Atual</h4>
                     </div>
+
+                    {/* Vincular a um Agendamento */}
+                    {pendingAppointments.length > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+                        <Label className="flex items-center gap-2 text-blue-800 font-semibold">
+                          <Calendar className="h-4 w-4" />
+                          Vincular a um Agendamento
+                        </Label>
+                        <p className="text-xs text-blue-700">
+                          Selecione o agendamento correspondente a esta sessão. O evento no Google Calendar será marcado como realizado automaticamente.
+                        </p>
+                        <div className="space-y-2">
+                          {/* Opção: sem vínculo */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedAppointmentId(null);
+                            }}
+                            className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg border-2 transition-all text-sm ${
+                              selectedAppointmentId === null
+                                ? 'border-gray-400 bg-gray-100 text-gray-700 font-medium'
+                                : 'border-gray-200 bg-white hover:border-gray-300 text-gray-500'
+                            }`}
+                          >
+                            <X className="h-4 w-4 flex-shrink-0" />
+                            <span>Sem vínculo (sessão avulsa)</span>
+                          </button>
+                          {/* Lista de agendamentos pendentes */}
+                          {pendingAppointments.map((appt: any) => {
+                            const [year, month, day] = appt.scheduledDate.split('-');
+                            const dateLabel = `${day}/${month}/${year}`;
+                            const typeLabel = appt.type === 'grupo' ? 'Grupal' : 'Individual';
+                            const meetLink = appt.googleMeetLink?.startsWith('http') ? appt.googleMeetLink : null;
+                            return (
+                              <button
+                                key={appt.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedAppointmentId(appt.id);
+                                  setNewSessionDate(appt.scheduledDate);
+                                  if (appt.type === 'grupo') setNewTipoSessao('grupo_normal');
+                                  else setNewTipoSessao('individual_normal');
+                                }}
+                                className={`w-full text-left flex items-start gap-3 px-3 py-2.5 rounded-lg border-2 transition-all ${
+                                  selectedAppointmentId === appt.id
+                                    ? 'border-blue-500 bg-blue-100 text-blue-900'
+                                    : 'border-gray-200 bg-white hover:border-blue-300 text-gray-700'
+                                }`}
+                              >
+                                <Calendar className="h-4 w-4 flex-shrink-0 mt-0.5 text-blue-600" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-semibold text-sm">{dateLabel} às {appt.startTime}</span>
+                                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                                      appt.type === 'grupo' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                                    }`}>{typeLabel}</span>
+                                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                                      appt.status === 'confirmado' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                                    }`}>{appt.status === 'confirmado' ? 'Confirmado' : 'Agendado'}</span>
+                                  </div>
+                                  {appt.title && (
+                                    <p className="text-xs text-gray-500 mt-0.5 truncate">{appt.title}</p>
+                                  )}
+                                  {meetLink && (
+                                    <a
+                                      href={meetLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"
+                                    >
+                                      <ExternalLink className="h-3 w-3" /> Abrir Meet
+                                    </a>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Data da Sessão */}
                     <div>

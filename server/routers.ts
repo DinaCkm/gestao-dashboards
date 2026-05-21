@@ -5301,8 +5301,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           }
         } catch (e) { /* notificação não deve bloquear registro */ }
 
-        // Marcar evento no Google Calendar como realizado (assíncrono)
+        // Marcar agendamento como realizado no banco + Google Calendar (assíncrono)
         if (input.appointmentId) {
+          // Atualizar status no banco imediatamente
+          db.markAppointmentRealized(input.appointmentId).catch(err =>
+            console.warn('[Appointment] Erro ao marcar agendamento como realizado:', err)
+          );
+          // Marcar no Google Calendar
           (async () => {
             try {
               const appt = await db.getAppointmentById(input.appointmentId!);
@@ -5598,6 +5603,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         status: z.string().optional(),
         dateFrom: z.string().optional(),
         dateTo: z.string().optional(),
+        alunoId: z.number().optional(),
       }))
       .query(async ({ input }) => {
         return await db.getMentorAppointments(input.consultorId, input);

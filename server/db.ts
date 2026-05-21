@@ -7913,6 +7913,7 @@ export async function getMentorAppointments(consultorId: number, filters?: {
   status?: string;
   dateFrom?: string;
   dateTo?: string;
+  alunoId?: number;
 }) {
   const db = await getDb();
   if (!db) return [];
@@ -7933,14 +7934,17 @@ export async function getMentorAppointments(consultorId: number, filters?: {
     .orderBy(desc(mentorAppointments.scheduledDate), mentorAppointments.startTime);
 
   // Buscar participantes de cada agendamento
+  const allAlunos = await getAlunos();
+  const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
   const result = [];
   for (const appt of appointments) {
     const participants = await db.select().from(appointmentParticipants)
       .where(eq(appointmentParticipants.appointmentId, appt.id));
 
-    // Enriquecer com nomes dos alunos
-    const allAlunos = await getAlunos();
-    const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
+    // Filtrar por alunoId se fornecido
+    if (filters?.alunoId && !participants.some(p => p.alunoId === filters.alunoId)) {
+      continue;
+    }
 
     const enrichedParticipants = participants.map(p => ({
       ...p,
@@ -12900,5 +12904,13 @@ export async function updateAppointmentGoogleEventId(
   }
   await db.update(mentorAppointments)
     .set(updateData)
+    .where(eq(mentorAppointments.id, appointmentId));
+}
+
+export async function markAppointmentRealized(appointmentId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(mentorAppointments)
+    .set({ status: 'realizado' })
     .where(eq(mentorAppointments.id, appointmentId));
 }
