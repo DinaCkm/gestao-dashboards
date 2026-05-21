@@ -7020,6 +7020,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         }
         return await db.toggleAdminUserStatus(input.userId);
       }),
+
+    getPermissions: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAdminPermissions(input.userId);
+      }),
+
+    setPermissions: adminProcedure
+      .input(z.object({ userId: z.number(), permissions: z.array(z.string()) }))
+      .mutation(async ({ input }) => {
+        await db.setAdminPermissions(input.userId, input.permissions);
+        return { success: true };
+      }),
   }),
   // Status de onboarding do aluno logado
   aluno: router({

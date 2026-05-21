@@ -12811,3 +12811,33 @@ export async function toggleAdminUserStatus(userId: number) {
   await db.update(users).set({ isActive: newStatus, updatedAt: new Date() }).where(eq(users.id, userId));
   return { success: true, isActive: newStatus };
 }
+
+// ============ PERMISSÕES DE PÁGINAS DO ADMIN ============
+
+export async function getAdminPermissions(userId: number): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const [rows] = await db.execute(sql.raw(
+    `SELECT permissions FROM admin_page_permissions WHERE userId = ${userId}`
+  )) as any;
+  if (!rows || rows.length === 0) return [];
+  try {
+    const perms = typeof rows[0].permissions === 'string'
+      ? JSON.parse(rows[0].permissions)
+      : rows[0].permissions;
+    return Array.isArray(perms) ? perms : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function setAdminPermissions(userId: number, permissions: string[]): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const permsJson = JSON.stringify(permissions).replace(/'/g, "''");
+  await db.execute(sql.raw(
+    `INSERT INTO admin_page_permissions (userId, permissions)
+     VALUES (${userId}, '${permsJson}')
+     ON DUPLICATE KEY UPDATE permissions = '${permsJson}', updatedAt = CURRENT_TIMESTAMP`
+  ));
+}

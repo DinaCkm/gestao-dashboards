@@ -305,6 +305,18 @@ function DashboardLayoutContent({
   const isAdmin = user?.role === "admin" || user?.role === "admin2";
   const isFullAdmin = user?.role === "admin"; // admin completo (acessa Parametrização)
   const isAdmin2 = user?.role === "admin2"; // admin nível 2 (sem Parametrização)
+
+  // Permissões de páginas do admin logado (vazio = acesso total)
+  const { data: adminPagePerms } = trpc.admin.getPermissions.useQuery(
+    { userId: (user as any)?.id ?? 0 },
+    { enabled: isAdmin && !!(user as any)?.id }
+  );
+  const hasPageRestrictions = isAdmin && Array.isArray(adminPagePerms) && adminPagePerms.length > 0;
+  const canAccessPage = (path: string) => {
+    if (!hasPageRestrictions) return true;
+    const basePath = path.split('?')[0];
+    return adminPagePerms!.some(p => p === basePath || basePath.startsWith(p + '/'));
+  };
   const hasConsultorId = !!(user as any)?.consultorId;
   const consultorRole = (user as any)?.consultorRole as string | null | undefined;
   const isGerente = consultorRole === 'gerente' || (!hasConsultorId && user?.role === 'manager' && !(user as any)?.alunoId);
@@ -541,6 +553,9 @@ function DashboardLayoutContent({
                 {/* 7 ÁREAS COLAPSÁVEIS */}
                 {adminMenuGroups.filter(group => isFullAdmin || group.label !== "Parametrização").map((group, groupIdx) => {
                   const isGroupActive = activeGroupIndex === groupIdx;
+                  // Filtrar itens do grupo por permissões do admin
+                  const visibleItems = group.items.filter(item => canAccessPage(item.path));
+                  if (visibleItems.length === 0) return null;
                   return (
                     <Collapsible
                       key={group.label}
@@ -567,7 +582,7 @@ function DashboardLayoutContent({
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                               <SidebarMenuSub>
-                                {group.items.map(item => {
+                                {visibleItems.map(item => {
                                   const isActive = isPathActive(item.path);
                                   // No more placeholders - all items are functional
                                   const isPlaceholder = false;
@@ -742,7 +757,16 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6">
+          {/* Proteção de rota por permissões do admin */}
+          {isAdmin && hasPageRestrictions && !canAccessPage(location) && location !== '/' ? (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-4">
+              <div className="text-6xl">🔒</div>
+              <h2 className="text-2xl font-bold text-gray-800">Acesso Restrito</h2>
+              <p className="text-muted-foreground max-w-md">Você não tem permissão para acessar esta página. Entre em contato com o administrador principal para solicitar acesso.</p>
+            </div>
+          ) : children}
+        </main>
       </SidebarInset>
     </>
   );

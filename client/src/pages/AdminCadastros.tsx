@@ -282,6 +282,11 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro: ${err.message}`),
   });
 
+  const setAdminPermissions = trpc.admin.setPermissions.useMutation({
+    onSuccess: () => toast.success('Permissões salvas com sucesso!'),
+    onError: (err) => toast.error(`Erro ao salvar permissões: ${err.message}`),
+  });
+
   const toggleAccessUserStatus = trpc.admin.toggleAccessUserStatus.useMutation({
     onSuccess: () => {
       toast.success("Status do usuário atualizado!");
@@ -614,6 +619,8 @@ export default function AdminCadastros() {
               isCreating={createAdminUser.isPending}
               onToggleStatus={(userId: number) => toggleAdminStatus.mutate({ userId })}
               isTogglingStatus={toggleAdminStatus.isPending}
+              onSetPermissions={(userId: number, permissions: string[]) => setAdminPermissions.mutate({ userId, permissions })}
+              isSavingPermissions={setAdminPermissions.isPending}
             />
           </TabsContent>
         </Tabs>
@@ -3149,19 +3156,142 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   );
 }
 
+// ============ LISTA DE PÁGINAS DO SISTEMA PARA PERMISSÕES ============
+const ADMIN_PAGE_GROUPS = [
+  {
+    group: 'Alunos',
+    pages: [
+      { path: '/onboarding-tracking', label: 'Onboarding Tracking' },
+      { path: '/admin/auditoria-resets', label: 'Auditoria de Resets' },
+      { path: '/admin/auditoria-notas-mentoria', label: 'Auditoria Notas Mentoria' },
+      { path: '/painel-revisoes', label: 'Painel de Revisões PDI' },
+      { path: '/assessment', label: 'Assessment / PDI' },
+      { path: '/plano-individual', label: 'Plano Individual' },
+      { path: '/metas', label: 'Metas de Desenvolvimento' },
+      { path: '/atividades-praticas', label: 'Atividades Práticas' },
+    ],
+  },
+  {
+    group: 'Mentores',
+    pages: [
+      { path: '/dashboard/mentor', label: 'Dashboard de Mentores' },
+      { path: '/demonstrativo-mentorias', label: 'Sessões de Mentoria' },
+      { path: '/agendamentos', label: 'Painel de Agendamentos' },
+      { path: '/editar-mentorias', label: 'Editar Mentorias' },
+      { path: '/precificacao-sessoes', label: 'Precificação de Sessões' },
+      { path: '/relatorio-mentorias', label: 'Relatório de Mentorias' },
+    ],
+  },
+  {
+    group: 'Empresas e Resultados',
+    pages: [
+      { path: '/dashboard/visao-geral', label: 'Visão Geral' },
+      { path: '/dashboard/empresa', label: 'Por Empresa' },
+    ],
+  },
+  {
+    group: 'Parametrização',
+    pages: [
+      { path: '/cadastros', label: 'Cadastros' },
+      { path: '/turmas', label: 'Turmas' },
+      { path: '/trilhas-competencias', label: 'Trilhas e Competências' },
+      { path: '/competencias-comp-tec', label: 'Cursos_Criação' },
+      { path: '/cursos', label: 'Mini-Cursos' },
+      { path: '/admin/avaliacoes', label: 'Avaliações' },
+      { path: '/atividades-extras', label: 'Atividades Extras' },
+      { path: '/formulas', label: 'Fórmulas' },
+      { path: '/biblioteca-tarefas', label: 'Biblioteca de Tarefas' },
+      { path: '/admin/atribuir-cursos', label: 'Atribuir Cursos' },
+      { path: '/admin/plataforma-aulas', label: 'Gerenciar Plataforma de Cursos' },
+      { path: '/admin/biblioteca-pedagogica', label: 'Biblioteca Pedagógica' },
+    ],
+  },
+  {
+    group: 'Conteúdo e Comunicação',
+    pages: [
+      { path: '/webinars', label: 'Webinars' },
+      { path: '/admin/onboarding-videos', label: 'Vídeos de Onboarding' },
+      { path: '/avisos', label: 'Avisos e Comunicados' },
+      { path: '/mural', label: 'Mural de Cases' },
+    ],
+  },
+  {
+    group: 'Dados e Relatórios',
+    pages: [
+      { path: '/upload', label: 'Upload de Planilhas' },
+      { path: '/relatorios', label: 'Relatórios' },
+    ],
+  },
+];
+
 // ============ ADMINS TAB ============
-function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTogglingStatus }: {
+function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTogglingStatus, onSetPermissions, isSavingPermissions }: {
   admins: any[];
   loading: boolean;
   onCreate: (data: any) => void;
   isCreating: boolean;
   onToggleStatus: (userId: number) => void;
   isTogglingStatus: boolean;
+  onSetPermissions: (userId: number, permissions: string[]) => void;
+  isSavingPermissions: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
+
+  // Estado do modal de permissões
+  const [permOpen, setPermOpen] = useState(false);
+  const [permAdmin, setPermAdmin] = useState<any>(null);
+  const [selectedPerms, setSelectedPerms] = useState<string[]>([]);
+
+  // Buscar permissões do admin selecionado
+  const { data: currentPerms, isLoading: loadingPerms } = trpc.admin.getPermissions.useQuery(
+    { userId: permAdmin?.id ?? 0 },
+    { enabled: !!permAdmin }
+  );
+
+  // Sincronizar permissões quando carregadas
+  React.useEffect(() => {
+    if (currentPerms !== undefined) {
+      setSelectedPerms(currentPerms);
+    }
+  }, [currentPerms, permAdmin?.id]);
+
+  const openPermModal = (admin: any) => {
+    setPermAdmin(admin);
+    setSelectedPerms([]);
+    setPermOpen(true);
+  };
+
+  const togglePerm = (path: string) => {
+    setSelectedPerms(prev =>
+      prev.includes(path) ? prev.filter(p => p !== path) : [...prev, path]
+    );
+  };
+
+  const toggleGroupPerms = (groupPages: { path: string }[]) => {
+    const groupPaths = groupPages.map(p => p.path);
+    const allSelected = groupPaths.every(p => selectedPerms.includes(p));
+    if (allSelected) {
+      setSelectedPerms(prev => prev.filter(p => !groupPaths.includes(p)));
+    } else {
+      setSelectedPerms(prev => [...new Set([...prev, ...groupPaths])]);
+    }
+  };
+
+  const selectAll = () => {
+    const allPaths = ADMIN_PAGE_GROUPS.flatMap(g => g.pages.map(p => p.path));
+    setSelectedPerms(allPaths);
+  };
+
+  const clearAll = () => setSelectedPerms([]);
+
+  const savePermissions = () => {
+    if (!permAdmin) return;
+    onSetPermissions(permAdmin.id, selectedPerms);
+    setPermOpen(false);
+  };
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -3281,16 +3411,27 @@ function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTo
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onToggleStatus(admin.id)}
-                        disabled={isTogglingStatus}
-                        className={admin.isActive ? "text-red-600 hover:text-red-700 hover:bg-red-50" : "text-green-600 hover:text-green-700 hover:bg-green-50"}
-                      >
-                        <Power className="h-4 w-4 mr-1" />
-                        {admin.isActive ? "Inabilitar" : "Habilitar"}
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openPermModal(admin)}
+                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                        >
+                          <Shield className="h-4 w-4 mr-1" />
+                          Permissões
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onToggleStatus(admin.id)}
+                          disabled={isTogglingStatus}
+                          className={admin.isActive ? "text-red-600 hover:text-red-700 hover:bg-red-50" : "text-green-600 hover:text-green-700 hover:bg-green-50"}
+                        >
+                          <Power className="h-4 w-4 mr-1" />
+                          {admin.isActive ? "Inabilitar" : "Habilitar"}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -3300,5 +3441,77 @@ function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTo
         )}
       </CardContent>
     </Card>
+
+    {/* Modal de Permissões */}
+    <Dialog open={permOpen} onOpenChange={setPermOpen}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-purple-600" />
+            Permissões de Páginas
+          </DialogTitle>
+          <DialogDescription>
+            Defina quais páginas <strong>{permAdmin?.name}</strong> pode acessar. Admins sem permissões definidas têm acesso total.
+          </DialogDescription>
+        </DialogHeader>
+
+        {loadingPerms ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="space-y-4 py-2">
+            <div className="flex gap-2 mb-2">
+              <Button variant="outline" size="sm" onClick={selectAll}>Selecionar Tudo</Button>
+              <Button variant="outline" size="sm" onClick={clearAll}>Limpar Tudo</Button>
+              <span className="ml-auto text-sm text-muted-foreground self-center">{selectedPerms.length} página(s) selecionada(s)</span>
+            </div>
+            {ADMIN_PAGE_GROUPS.map((group) => {
+              const groupPaths = group.pages.map(p => p.path);
+              const allGroupSelected = groupPaths.every(p => selectedPerms.includes(p));
+              const someGroupSelected = groupPaths.some(p => selectedPerms.includes(p));
+              return (
+                <div key={group.group} className="border rounded-lg p-3">
+                  <div
+                    className="flex items-center gap-2 cursor-pointer mb-2"
+                    onClick={() => toggleGroupPerms(group.pages)}
+                  >
+                    <Checkbox
+                      checked={allGroupSelected}
+                      className={someGroupSelected && !allGroupSelected ? 'opacity-50' : ''}
+                      onCheckedChange={() => toggleGroupPerms(group.pages)}
+                    />
+                    <span className="font-semibold text-sm">{group.group}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">{groupPaths.filter(p => selectedPerms.includes(p)).length}/{groupPaths.length}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 ml-6">
+                    {group.pages.map((page) => (
+                      <div
+                        key={page.path}
+                        className="flex items-center gap-2 cursor-pointer py-1"
+                        onClick={() => togglePerm(page.path)}
+                      >
+                        <Checkbox
+                          checked={selectedPerms.includes(page.path)}
+                          onCheckedChange={() => togglePerm(page.path)}
+                        />
+                        <span className="text-sm">{page.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setPermOpen(false)}>Cancelar</Button>
+          <Button onClick={savePermissions} disabled={isSavingPermissions}>
+            {isSavingPermissions ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : 'Salvar Permissões'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
