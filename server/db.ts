@@ -12211,12 +12211,12 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   // Macro 3: Aplicabilidade Prática = calculado igual ao endpoint meuDashboard
   let snapshotAplicabilidade = 0;
   try {
-    const CUTOFF_DATE = new Date('2026-04-01');
+    const CUTOFF_DATE = new Date('2026-01-01');
     const [sessAplic] = await db.execute(sql.raw(`
       SELECT notaAlunoAplicabilidade, notaMentoraAplicabilidade
       FROM mentoring_sessions
       WHERE alunoId = ${alunoId}
-        AND sessionDate >= '2026-04-01'
+        AND sessionDate >= '2026-01-01'
         AND (notaAlunoAplicabilidade IS NOT NULL OR notaMentoraAplicabilidade IS NOT NULL)
     `)) as any;
     const sessoesComAplic = Array.isArray(sessAplic) ? sessAplic : [];
@@ -12225,7 +12225,7 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
       SELECT notaAlunoAplicabilidade, notaMentoraAplicabilidade, entregue
       FROM cases_sucesso
       WHERE alunoId = ${alunoId} AND entregue = 1
-        AND dataEntrega >= '2026-04-01'
+        AND dataEntrega >= '2026-01-01'
         AND (notaAlunoAplicabilidade IS NOT NULL OR notaMentoraAplicabilidade IS NOT NULL)
     `)) as any;
     const casesComAplic = Array.isArray(casesAplic) ? casesAplic : [];

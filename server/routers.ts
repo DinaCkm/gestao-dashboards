@@ -4810,9 +4810,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         })),
         // === Indicador 6: Aplicabilidade Prática ===
         aplicabilidadePratica: await (async () => {
-          const CUTOFF_DATE = new Date('2026-04-01');
+          const CUTOFF_DATE = new Date('2026-01-01');
           
-          // Buscar sessões com notas de aplicabilidade (após 01/04/2026)
+          // Buscar sessões com notas de aplicabilidade (após 01/01/2026)
           const todasSessoes = await db.getMentoringSessionsByAluno(aluno!.id);
           const sessoesComAplic = todasSessoes.filter(s => {
             const dataSession = s.sessionDate ? new Date(s.sessionDate) : null;

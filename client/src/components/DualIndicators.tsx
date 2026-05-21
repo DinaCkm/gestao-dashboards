@@ -410,8 +410,10 @@ export default function DualIndicators({
                   )}
                   {!compact && (
                     <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                      Aplicabilidade calculada separadamente do Engajamento.
-                      {aplicabilidade.totalAvaliacoes === 0 ? ' Sem avaliações registradas no período.' : ` ${aplicabilidade.totalAvaliacoes} avaliação(ões) registrada(s).`}
+                      Mede a aplicação prática do conhecimento adquirido nas mentorias, avaliada pela mentora em cada sessão e pelo case de sucesso. Calculado a partir de janeiro de 2026.
+                      {aplicabilidade.totalAvaliacoes === 0
+                        ? ' Nenhuma avaliação de aplicabilidade registrada a partir de jan/2026.'
+                        : ` ${aplicabilidade.totalAvaliacoes} avaliação(ões) registrada(s) a partir de jan/2026.`}
                     </p>
                   )}
                   {!compact && (
