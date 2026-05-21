@@ -167,9 +167,7 @@ export default function MentorAtribuirCurso() {
   const alunos = useMemo(
     () => {
       const dados = alunosQuery.data ?? [];
-      const filtrados = isAdmin
-        ? dados.filter((item: any) => (item.plataformaAulas || 'sistema_interno') === 'sistema_interno')
-        : dados;
+      const filtrados = dados;
       return filtrados.map(normalizarAluno).filter((x) => x.id > 0);
     },
     [alunosQuery.data, isAdmin]
