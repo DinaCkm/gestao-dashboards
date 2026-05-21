@@ -30055,6 +30055,13 @@ async function startServer() {
   app.use(express2.json({ limit: "50mb" }));
   app.use(express2.urlencoded({ limit: "50mb", extended: true }));
   registerOAuthRoutes(app);
+  app.use(
+    "/api/trpc",
+    createExpressMiddleware({
+      router: appRouter,
+      createContext
+    })
+  );
   app.get("/api/diag-calendar", (_req, res) => {
     const val = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
     if (!val) return res.json({ ok: false, error: "GOOGLE_SERVICE_ACCOUNT_JSON nao definida" });
@@ -30065,13 +30072,6 @@ async function startServer() {
       return res.json({ ok: false, error: "JSON invalido: " + e.message, preview: val.substring(0, 80) });
     }
   });
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext
-    })
-  );
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {

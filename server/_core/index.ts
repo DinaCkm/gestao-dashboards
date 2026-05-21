@@ -54,6 +54,15 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
 
+  // tRPC API
+  app.use(
+    "/api/trpc",
+    createExpressMiddleware({
+      router: appRouter,
+      createContext,
+    })
+  );
+
   // Rota de diagnóstico temporária para verificar variáveis de ambiente do Google Calendar
   app.get('/api/diag-calendar', (_req, res) => {
     const val = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -66,14 +75,6 @@ async function startServer() {
     }
   });
 
-  // tRPC API
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    })
-  );
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
