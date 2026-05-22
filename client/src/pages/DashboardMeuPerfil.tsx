@@ -2078,7 +2078,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
             {aluno.mentorId && <MentorProfileCard mentorId={aluno.mentorId} mentorName={aluno.mentor} />}
 
             {/* Agendamento de Sessão + Convites de Grupo */}
-            {aluno.mentorId && <AlunoAgendamentoSection alunoId={aluno.id} consultorId={aluno.mentorId} mentorName={aluno.mentor} />}
+            {aluno.mentorId && <AlunoAgendamentoSection alunoId={aluno.id} consultorId={aluno.mentorId} mentorName={aluno.mentor} isEfetivo={onboardingStatus?.aceiteRealizado === true} />}
 
             <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader>
@@ -3621,7 +3621,7 @@ function MentorProfileCard({ mentorId, mentorName }: { mentorId: number; mentorN
 }
 
 
-function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId: number; consultorId: number; mentorName: string }) {
+function AlunoAgendamentoSection({ alunoId, consultorId, mentorName, isEfetivo = false }: { alunoId: number; consultorId: number; mentorName: string; isEfetivo?: boolean }) {
   const { data: availability } = trpc.mentor.getAvailability.useQuery({ consultorId });
   const { data: dateAvailability } = trpc.mentor.getDateAvailability.useQuery({ consultorId });
   const { data: myAppointments } = trpc.mentor.getAppointments.useQuery({ consultorId });
@@ -3842,7 +3842,7 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
       )}
 
       {/* Botão para Agendar Nova Sessão */}
-      <Card className="bg-white border border-gray-200 shadow-sm">
+      {!isEfetivo && <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-sm text-gray-700">
@@ -3938,7 +3938,7 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
             )}
           </CardContent>
         )}
-      </Card>
+      </Card>}
     </div>
   );
 }
