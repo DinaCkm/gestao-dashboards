@@ -26139,6 +26139,38 @@ Responda APENAS em JSON com o formato:
       } catch (e) {
         console.warn("[Onboarding] Erro ao enviar email de avan\xE7o (agendamento):", e);
       }
+      if (result.success && result.id) {
+        const appointmentId = result.id;
+        (async () => {
+          try {
+            const { createCalendarEvent: createCalendarEvent2 } = await Promise.resolve().then(() => (init_googleCalendarService(), googleCalendarService_exports));
+            const attendees = [];
+            if (consultor?.email) attendees.push({ email: consultor.email, displayName: consultor.name });
+            if (aluno?.email) attendees.push({ email: aluno.email, displayName: aluno.name });
+            const startDateTime = `${scheduledDate}T${startTime}:00-03:00`;
+            const endDateTime = `${scheduledDate}T${endTime}:00-03:00`;
+            const calResult = await createCalendarEvent2({
+              title: "Encontro Inicial - Onboarding",
+              description: notes || "Primeiro encontro de mentoria agendado pelo onboarding",
+              startDateTime,
+              endDateTime,
+              attendees,
+              meetLink: !googleMeetLink
+              // gera Meet se não tiver link próprio
+            });
+            if (calResult) {
+              await updateAppointmentGoogleEventId(
+                appointmentId,
+                calResult.googleEventId,
+                calResult.meetLink || googleMeetLink || null
+              );
+              console.log(`[GoogleCalendar] Evento onboarding criado: ${calResult.googleEventId}`);
+            }
+          } catch (err) {
+            console.warn("[GoogleCalendar] Erro ao criar evento de onboarding:", err);
+          }
+        })();
+      }
       return { success: result.success, appointmentId: result.id };
     }),
     // Marcar que o aluno assistiu o vídeo DISC
