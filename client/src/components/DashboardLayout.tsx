@@ -70,6 +70,7 @@ import {
   Edit3,
   Footprints,
   Home,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -138,6 +139,13 @@ const adminMenuGroups: MenuGroup[] = [
     ],
   },
   {
+    icon: BriefcaseBusiness,
+    label: "Processos Seletivos",
+    items: [
+      { icon: BriefcaseBusiness, label: "Painel de Processos", path: "/processos-seletivos" },
+    ],
+  },
+  {
     icon: Settings,
     label: "Parametrização",
     items: [
@@ -203,6 +211,8 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'gerente' },
   
+  // === PROCESSOS SELETIVOS ===
+  { icon: BriefcaseBusiness, label: "Processo Seletivo", path: "/processos-seletivos", roles: ["user", "manager"] },
   // === ALUNO ===
   { icon: Compass, label: "Portal do Aluno", path: "/meu-dashboard", roles: ["user"] },
   { icon: GraduationCap, label: "Cursos Disponíveis", path: "/meus-cursos", roles: ["user"] },

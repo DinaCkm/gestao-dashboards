@@ -14,6 +14,7 @@ import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateTyp
 import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
+import { processosSeletivosRouter } from "./routers/processosSeletivos";
 
 // Admin-only procedure
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -33,6 +34,7 @@ const managerProcedure = protectedProcedure.use(({ ctx, next }) => {
 
 export const appRouter = router({
   system: systemRouter,
+  processosSeletivos: processosSeletivosRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

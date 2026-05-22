@@ -1155,3 +1155,179 @@ export const onboardingRevisoes = mysqlTable("onboarding_revisoes", {
 });
 export type OnboardingRevisao = typeof onboardingRevisoes.$inferSelect;
 export type InsertOnboardingRevisao = typeof onboardingRevisoes.$inferInsert;
+
+/**
+ * Processos Seletivos - modulo isolado para operacoes de selecao de clientes.
+ * As tabelas abaixo sao add-only e preservam os fluxos atuais do sistema.
+ */
+export const processosSeletivos = mysqlTable("processos_seletivos", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  clienteNome: varchar("clienteNome", { length: 255 }).notNull(),
+  clienteEmail: varchar("clienteEmail", { length: 320 }),
+  descricao: text("descricao"),
+  status: mysqlEnum("status", ["rascunho", "ativo", "pausado", "encerrado"]).default("rascunho").notNull(),
+  dataInicio: date("dataInicio", { mode: "string" }),
+  dataFim: date("dataFim", { mode: "string" }),
+  responsavelCkmId: int("responsavelCkmId"),
+  criadoPor: int("criadoPor").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProcessoSeletivo = typeof processosSeletivos.$inferSelect;
+export type InsertProcessoSeletivo = typeof processosSeletivos.$inferInsert;
+
+export const processoVagas = mysqlTable("processo_vagas", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  codigo: varchar("codigo", { length: 80 }),
+  descricao: text("descricao"),
+  quantidadeVagas: int("quantidadeVagas").default(1).notNull(),
+  status: mysqlEnum("status", ["ativa", "pausada", "encerrada"]).default("ativa").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProcessoVaga = typeof processoVagas.$inferSelect;
+export type InsertProcessoVaga = typeof processoVagas.$inferInsert;
+
+export const processoRegioes = mysqlTable("processo_regioes", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  codigo: varchar("codigo", { length: 80 }),
+  vagasPrevistas: int("vagasPrevistas").default(0).notNull(),
+  status: mysqlEnum("status", ["ativa", "pausada", "encerrada"]).default("ativa").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProcessoRegiao = typeof processoRegioes.$inferSelect;
+export type InsertProcessoRegiao = typeof processoRegioes.$inferInsert;
+
+export const processoClienteUsuarios = mysqlTable("processo_cliente_usuarios", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  userId: int("userId").notNull(),
+  permissao: mysqlEnum("permissao", ["leitura", "comentario"]).default("leitura").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ProcessoClienteUsuario = typeof processoClienteUsuarios.$inferSelect;
+export type InsertProcessoClienteUsuario = typeof processoClienteUsuarios.$inferInsert;
+
+export const processoCandidatos = mysqlTable("processo_candidatos", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  vagaId: int("vagaId"),
+  regiaoId: int("regiaoId").notNull(),
+  userId: int("userId"),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  telefone: varchar("telefone", { length: 30 }),
+  cpf: varchar("cpf", { length: 14 }),
+  statusCadastro: mysqlEnum("statusCadastro", ["importado", "convidado", "ativo", "inativo"]).default("importado").notNull(),
+  statusTeste: mysqlEnum("statusTeste", ["nao_enviado", "enviado", "em_andamento", "concluido", "expirado"]).default("nao_enviado").notNull(),
+  testeConcluidoEm: timestamp("testeConcluidoEm"),
+  statusEntrevista: mysqlEnum("statusEntrevista", ["nao_agendada", "aguardando_agenda", "agendada", "realizada", "cancelada", "reagendada"]).default("nao_agendada").notNull(),
+  statusResultado: mysqlEnum("statusResultado", ["pendente", "aprovado", "reprovado", "suplente", "desistente"]).default("pendente").notNull(),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProcessoCandidato = typeof processoCandidatos.$inferSelect;
+export type InsertProcessoCandidato = typeof processoCandidatos.$inferInsert;
+
+export const processoAgendasGrupo = mysqlTable("processo_agendas_grupo", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  regiaoId: int("regiaoId").notNull(),
+  vagaId: int("vagaId"),
+  nomeGrupo: varchar("nomeGrupo", { length: 255 }).notNull(),
+  dataAgenda: date("dataAgenda", { mode: "string" }).notNull(),
+  inicio: varchar("inicio", { length: 5 }).notNull(),
+  fim: varchar("fim", { length: 5 }).notNull(),
+  intervaloInicio: varchar("intervaloInicio", { length: 5 }),
+  intervaloFim: varchar("intervaloFim", { length: 5 }),
+  duracaoMinutos: int("duracaoMinutos").default(30).notNull(),
+  linkPadrao: varchar("linkPadrao", { length: 500 }),
+  status: mysqlEnum("status", ["aberta", "fechada", "cancelada"]).default("aberta").notNull(),
+  criadoPor: int("criadoPor").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProcessoAgendaGrupo = typeof processoAgendasGrupo.$inferSelect;
+export type InsertProcessoAgendaGrupo = typeof processoAgendasGrupo.$inferInsert;
+
+export const processoAgendaSlots = mysqlTable("processo_agenda_slots", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  agendaGrupoId: int("agendaGrupoId").notNull(),
+  regiaoId: int("regiaoId").notNull(),
+  vagaId: int("vagaId"),
+  candidatoId: int("candidatoId"),
+  dataAgenda: date("dataAgenda", { mode: "string" }).notNull(),
+  inicio: varchar("inicio", { length: 5 }).notNull(),
+  fim: varchar("fim", { length: 5 }).notNull(),
+  linkEntrevista: varchar("linkEntrevista", { length: 500 }),
+  status: mysqlEnum("status", ["disponivel", "reservado", "confirmado", "realizado", "cancelado", "bloqueado"]).default("disponivel").notNull(),
+  emailConvocacaoEnviado: int("emailConvocacaoEnviado").default(0).notNull(),
+  emailConvocacaoEnviadoEm: timestamp("emailConvocacaoEnviadoEm"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProcessoAgendaSlot = typeof processoAgendaSlots.$inferSelect;
+export type InsertProcessoAgendaSlot = typeof processoAgendaSlots.$inferInsert;
+
+export const processoEntrevistas = mysqlTable("processo_entrevistas", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  candidatoId: int("candidatoId").notNull(),
+  agendaSlotId: int("agendaSlotId").notNull(),
+  entrevistadorNome: varchar("entrevistadorNome", { length: 255 }),
+  linkEntrevista: varchar("linkEntrevista", { length: 500 }),
+  status: mysqlEnum("status", ["agendada", "realizada", "cancelada", "reagendada"]).default("agendada").notNull(),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProcessoEntrevista = typeof processoEntrevistas.$inferSelect;
+export type InsertProcessoEntrevista = typeof processoEntrevistas.$inferInsert;
+
+export const processoResultados = mysqlTable("processo_resultados", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  candidatoId: int("candidatoId").notNull(),
+  resultado: mysqlEnum("resultado", ["pendente", "aprovado", "reprovado", "suplente", "desistente"]).default("pendente").notNull(),
+  notaEntrevista: int("notaEntrevista"),
+  parecer: text("parecer"),
+  registradoPor: int("registradoPor").notNull(),
+  publicadoEm: timestamp("publicadoEm"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProcessoResultado = typeof processoResultados.$inferSelect;
+export type InsertProcessoResultado = typeof processoResultados.$inferInsert;
+
+export const processoPublicacoesMapa = mysqlTable("processo_publicacoes_mapa", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  tipo: mysqlEnum("tipo", ["entrevistas", "aprovados"]).notNull(),
+  publicadoPor: int("publicadoPor").notNull(),
+  publicadoEm: timestamp("publicadoEm").defaultNow().notNull(),
+  observacoes: text("observacoes"),
+});
+export type ProcessoPublicacaoMapa = typeof processoPublicacoesMapa.$inferSelect;
+export type InsertProcessoPublicacaoMapa = typeof processoPublicacoesMapa.$inferInsert;
+
+export const processoLogs = mysqlTable("processo_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  candidatoId: int("candidatoId"),
+  userId: int("userId"),
+  acao: varchar("acao", { length: 120 }).notNull(),
+  detalhe: text("detalhe"),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ProcessoLog = typeof processoLogs.$inferSelect;
+export type InsertProcessoLog = typeof processoLogs.$inferInsert;
+

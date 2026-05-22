@@ -54,6 +54,7 @@ import OnboardingTracking from "./pages/admin/OnboardingTracking";
 import PainelRevisoes from "./pages/admin/PainelRevisoes";
 import BoasVindasGestor from "./pages/BoasVindasGestor";
 import PrecificacaoSessoes from "./pages/PrecificacaoSessoes";
+import ProcessosSeletivosDashboard from "./pages/processos-seletivos/ProcessosSeletivosDashboard";
 
 function Router() {
   return (
@@ -105,6 +106,9 @@ function Router() {
       <Route path={"/mentor/configuracoes"} component={MentorConfiguracoes} />
       <Route path={"/boas-vindas-gestor"} component={BoasVindasGestor} />
       <Route path={"/precificacao-sessoes"} component={PrecificacaoSessoes} />
+      <Route path={"/processos-seletivos"} component={ProcessosSeletivosDashboard} />
+      <Route path={"/portal-cliente-processos"} component={ProcessosSeletivosDashboard} />
+      <Route path={"/portal-candidato-processo"} component={ProcessosSeletivosDashboard} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
