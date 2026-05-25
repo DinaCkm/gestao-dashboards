@@ -3222,6 +3222,16 @@ const ADMIN_PAGE_GROUPS = [
       { path: '/relatorios', label: 'Relatórios' },
     ],
   },
+  {
+    group: 'Visão do Gestor',
+    pages: [
+      { path: '/boas-vindas-gestor', label: 'Boas-Vindas Gestor' },
+      { path: '/dashboard/ciclos-turmas', label: 'Ciclos & Turmas' },
+      { path: '/dashboard/gestor', label: 'Minha Empresa (Gestor)' },
+      { path: '/dashboard/ranking-geral-engajamento', label: 'Ranking Geral de Engajamento' },
+      { path: '/metas-gestor', label: 'Metas de Desenvolvimento (Gestor)' },
+    ],
+  },
 ];
 
 // ============ ADMINS TAB ============

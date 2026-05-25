@@ -182,6 +182,18 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: FileSpreadsheet, label: "Relatórios", path: "/relatorios" },
     ],
   },
+  {
+    icon: Trophy,
+    label: "Visão do Gestor",
+    items: [
+      { icon: Home, label: "Boas-Vindas Gestor", path: "/boas-vindas-gestor" },
+      { icon: CalendarDays, label: "Ciclos & Turmas", path: "/dashboard/ciclos-turmas" },
+      { icon: Building2, label: "Minha Empresa (Gestor)", path: "/dashboard/gestor" },
+      { icon: BarChart3, label: "Ranking Geral de Engajamento", path: "/dashboard/ranking-geral-engajamento" },
+      { icon: Calendar, label: "Sessões de Mentoria (Gestor)", path: "/demonstrativo-mentorias" },
+      { icon: Flag, label: "Metas de Desenvolvimento (Gestor)", path: "/metas-gestor" },
+    ],
+  },
 ];
 
 // ============================================================
