@@ -755,40 +755,121 @@ export default function DashboardAluno() {
                       </Card>
                     )}
 
-                    {/* Todos os Ciclos — ordenados do mais recente para o mais antigo */}
+                    {/* Cursos Realizados — competências com % de conclusão por período */}
                     {(() => {
-                      const todosOsCiclos = [
+                      // Coletar todas as competências de todos os ciclos (finalizados + em andamento)
+                      const todosCiclos = [
                         ...(v2.ciclosEmAndamento || []).map((c: any) => ({ ...c, _tipo: 'em_andamento' as const })),
                         ...(v2.ciclosFinalizados || []).map((c: any) => ({ ...c, _tipo: 'finalizado' as const })),
                       ].sort((a, b) => {
-                        // Em andamento primeiro, depois por data decrescente
                         if (a._tipo === 'em_andamento' && b._tipo !== 'em_andamento') return -1;
                         if (a._tipo !== 'em_andamento' && b._tipo === 'em_andamento') return 1;
                         const dateA = new Date(a.dataFim || a.dataInicio || 0).getTime();
                         const dateB = new Date(b.dataFim || b.dataInicio || 0).getTime();
                         return dateB - dateA;
                       });
-                      if (todosOsCiclos.length === 0) {
+
+                      // Extrair competências únicas com seus dados de conclusão
+                      const cursosMap = new Map<string, { nome: string; aulasConcluidas: number; aulasDisponiveis: number; dataInicio: string; dataFim: string; tipo: string }>();
+                      todosCiclos.forEach((ciclo: any) => {
+                        const comps: any[] = ciclo.detalhes?.competencias?.competenciasDetalhe || [];
+                        comps.forEach((comp: any) => {
+                          const key = `${comp.nome}||${ciclo.dataInicio}`;
+                          if (!cursosMap.has(key)) {
+                            cursosMap.set(key, {
+                              nome: comp.nome,
+                              aulasConcluidas: comp.aulasConcluidas || 0,
+                              aulasDisponiveis: comp.aulasDisponiveis || 0,
+                              dataInicio: ciclo.dataInicio || '',
+                              dataFim: ciclo.dataFim || '',
+                              tipo: ciclo._tipo,
+                            });
+                          }
+                        });
+                      });
+
+                      const cursos = Array.from(cursosMap.values());
+
+                      if (cursos.length === 0) {
                         return (
                           <Card>
                             <CardContent className="py-8 text-center text-gray-500">
-                              <Layers className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                              <p>Nenhum ciclo encontrado para este aluno.</p>
-                              <p className="text-sm mt-2">Os indicadores serão calculados quando ciclos forem definidos.</p>
+                              <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                              <p>Nenhum curso encontrado para este aluno.</p>
                             </CardContent>
                           </Card>
                         );
                       }
+
                       return (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                            <Layers className="h-5 w-5 text-gray-600" />
-                            Ciclos por Competência
-                            <span className="text-sm font-normal text-gray-400">({todosOsCiclos.length} ciclo{todosOsCiclos.length !== 1 ? 's' : ''})</span>
+                            <BookOpen className="h-5 w-5 text-gray-600" />
+                            Cursos Realizados
+                            <span className="text-sm font-normal text-gray-400">({cursos.length} curso{cursos.length !== 1 ? 's' : ''})</span>
                           </h3>
-                          {todosOsCiclos.map((ciclo: any, idx: number) => (
-                            <CicloIndicadores key={`ciclo-${idx}`} ciclo={ciclo} tipo={ciclo._tipo} />
-                          ))}
+                          <div className="rounded-lg border overflow-hidden">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-gray-50 border-b">
+                                  <th className="text-left px-4 py-2 font-medium text-gray-600">Curso / Competência</th>
+                                  <th className="text-center px-4 py-2 font-medium text-gray-600 w-36">Período</th>
+                                  <th className="text-center px-4 py-2 font-medium text-gray-600 w-24">Aulas</th>
+                                  <th className="text-center px-4 py-2 font-medium text-gray-600 w-40">Conclusão</th>
+                                  <th className="text-center px-4 py-2 font-medium text-gray-600 w-28">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {cursos.map((curso, idx) => {
+                                  const pct = curso.aulasDisponiveis > 0
+                                    ? Math.round((curso.aulasConcluidas / curso.aulasDisponiveis) * 100)
+                                    : 0;
+                                  const concluido = pct >= 100;
+                                  const emAndamento = pct > 0 && pct < 100;
+                                  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—';
+                                  return (
+                                    <tr key={idx} className={`border-b last:border-0 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                                      <td className="px-4 py-3 font-medium text-gray-800">{curso.nome}</td>
+                                      <td className="px-4 py-3 text-center text-xs text-gray-500">{fmtDate(curso.dataInicio)} – {fmtDate(curso.dataFim)}</td>
+                                      <td className="px-4 py-3 text-center text-gray-600">
+                                        {curso.aulasConcluidas}/{curso.aulasDisponiveis > 0 ? curso.aulasDisponiveis : '—'}
+                                      </td>
+                                      <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2">
+                                          <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                            <div
+                                              className={`h-2 rounded-full transition-all ${
+                                                concluido ? 'bg-emerald-500' : emAndamento ? 'bg-amber-400' : 'bg-gray-300'
+                                              }`}
+                                              style={{ width: `${pct}%` }}
+                                            />
+                                          </div>
+                                          <span className={`text-xs font-bold w-9 text-right ${
+                                            concluido ? 'text-emerald-600' : emAndamento ? 'text-amber-600' : 'text-gray-400'
+                                          }`}>{pct}%</span>
+                                        </div>
+                                      </td>
+                                      <td className="px-4 py-3 text-center">
+                                        {concluido ? (
+                                          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                            <CheckCircle2 className="h-3 w-3" /> Concluído
+                                          </span>
+                                        ) : emAndamento ? (
+                                          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                                            <Clock className="h-3 w-3" /> Em andamento
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                                            <Clock className="h-3 w-3" /> Não iniciado
+                                          </span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
                       );
                     })()}
