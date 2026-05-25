@@ -16067,6 +16067,58 @@ var jornadaRouter = router({
       console.error("[performancePorAluno] Erro:", error);
       return [];
     }
+  }),
+  // Atualizar nível e metas de competência (mentora)
+  updateNivel: protectedProcedure.input(z2.object({
+    assessmentCompetenciaId: z2.number(),
+    nivelAtual: z2.number().min(0).max(100).optional(),
+    metaCiclo1: z2.number().min(0).max(100).optional(),
+    metaCiclo2: z2.number().min(0).max(100).optional(),
+    metaFinal: z2.number().min(0).max(100).optional(),
+    justificativa: z2.string().optional(),
+    sessaoReferencia: z2.number().optional(),
+    observacao: z2.string().optional()
+  })).mutation(async ({ input, ctx }) => {
+    const updates = {};
+    if (input.nivelAtual !== void 0) updates.nivelAtual = String(input.nivelAtual);
+    if (input.metaCiclo1 !== void 0) updates.metaCiclo1 = String(input.metaCiclo1);
+    if (input.metaCiclo2 !== void 0) updates.metaCiclo2 = String(input.metaCiclo2);
+    if (input.metaFinal !== void 0) updates.metaFinal = String(input.metaFinal);
+    if (input.justificativa !== void 0) updates.justificativa = input.justificativa;
+    if (Object.keys(updates).length > 0) {
+      await updateAssessmentCompetenciaFields(input.assessmentCompetenciaId, updates);
+    }
+    if (input.nivelAtual !== void 0) {
+      await updateNivelCompetencia(
+        input.assessmentCompetenciaId,
+        input.nivelAtual,
+        ctx.user.id,
+        input.sessaoReferencia,
+        input.observacao
+      );
+    }
+    return { success: true };
+  }),
+  // Definir meta final de competência
+  setMeta: protectedProcedure.input(z2.object({
+    assessmentCompetenciaId: z2.number(),
+    metaFinal: z2.number().min(0).max(100),
+    justificativa: z2.string().optional()
+  })).mutation(async ({ input }) => {
+    await setMetaFinalCompetencia(
+      input.assessmentCompetenciaId,
+      input.metaFinal,
+      input.justificativa
+    );
+    return { success: true };
+  }),
+  // Histórico de evolução de uma competência
+  historico: protectedProcedure.input(z2.object({ assessmentCompetenciaId: z2.number() })).query(async ({ input }) => {
+    return await getHistoricoNivel(input.assessmentCompetenciaId);
+  }),
+  // Verificar se precisa reavaliar
+  checkReavaliacao: protectedProcedure.input(z2.object({ alunoId: z2.number() })).query(async ({ input }) => {
+    return await checkReavaliacaoPendente(input.alunoId);
   })
 });
 
@@ -30087,16 +30139,6 @@ async function startServer() {
       createContext
     })
   );
-  app.get("/api/diag-calendar", (_req, res) => {
-    const val = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-    if (!val) return res.json({ ok: false, error: "GOOGLE_SERVICE_ACCOUNT_JSON nao definida" });
-    try {
-      const parsed = JSON.parse(val);
-      return res.json({ ok: true, client_email: parsed.client_email, project_id: parsed.project_id, key_len: parsed.private_key?.length });
-    } catch (e) {
-      return res.json({ ok: false, error: "JSON invalido: " + e.message, preview: val.substring(0, 80) });
-    }
-  });
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
