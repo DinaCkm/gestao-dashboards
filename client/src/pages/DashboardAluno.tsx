@@ -663,7 +663,7 @@ export default function DashboardAluno() {
                 <TabsTrigger value="indicadores">Indicadores</TabsTrigger>
                 <TabsTrigger value="competencias">Competências</TabsTrigger>
                 <TabsTrigger value="eventos">Eventos</TabsTrigger>
-                <TabsTrigger value="ciclos">Ciclos</TabsTrigger>
+                <TabsTrigger value="ciclos">Mentoria</TabsTrigger>
                 <TabsTrigger value="historico">Histórico</TabsTrigger>
               </TabsList>
 
@@ -1140,55 +1140,109 @@ export default function DashboardAluno() {
                 )}
               </TabsContent>
 
-              {/* Tab Ciclos */}
+              {/* Tab Mentoria */}
               <TabsContent value="ciclos" className="space-y-4">
                 {loadingDetalhe ? (
                   <Card>
                     <CardContent className="py-8 text-center text-gray-500">
-                      Carregando ciclos...
+                      Carregando sessões de mentoria...
                     </CardContent>
                   </Card>
-                ) : detalheAluno && detalheAluno.ciclos.length > 0 ? (
+                ) : detalheAluno && detalheAluno.sessoes && detalheAluno.sessoes.length > 0 ? (
                   <>
-                    {detalheAluno.ciclos.map((ciclo) => (
-                      <Card key={ciclo.id} className={ciclo.status === 'em_andamento' ? 'border-l-4 border-l-blue-500' : 'border-l-4 border-l-emerald-500'}>
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2 text-base">
-                              <Layers className="h-4 w-4" />
-                              {ciclo.nomeCiclo}
-                            </CardTitle>
-                            <Badge className={ciclo.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'}>
-                              {ciclo.status === 'em_andamento' ? 'Em Andamento' : 'Finalizado'}
-                            </Badge>
-                          </div>
-                          <CardDescription>
-                            {formatDate(ciclo.dataInicio)} a {formatDate(ciclo.dataFim)}
-                            {ciclo.observacoes && ` — ${ciclo.observacoes}`}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm font-medium text-gray-700 mb-2">Competências do Ciclo:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {ciclo.competencias.map((comp: any) => (
-                              <Badge key={comp.id} variant="outline" className="text-xs">
-                                {comp.competenciaNome} ({comp.trilhaNome})
-                              </Badge>
-                            ))}
-                          </div>
-                          {ciclo.competencias.length === 0 && (
-                            <p className="text-sm text-gray-400">Nenhuma competência vinculada a este ciclo.</p>
-                          )}
+                    {/* Resumo */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card>
+                        <CardContent className="pt-6 text-center">
+                          <p className="text-3xl font-bold text-[#0A1E3E]">{detalheAluno.totalMentorias}</p>
+                          <p className="text-sm text-gray-500">Total de Sessões</p>
                         </CardContent>
                       </Card>
-                    ))}
+                      <Card>
+                        <CardContent className="pt-6 text-center">
+                          <p className="text-3xl font-bold text-emerald-600">{detalheAluno.mentoriasPresente}</p>
+                          <p className="text-sm text-gray-500">Presenças</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-6 text-center">
+                          <p className="text-3xl font-bold text-amber-600">
+                            {detalheAluno.totalMentorias > 0
+                              ? (((detalheAluno.mentoriasPresente ?? 0) / (detalheAluno.totalMentorias ?? 1)) * 100).toFixed(0)
+                              : 0}%
+                          </p>
+                          <p className="text-sm text-gray-500">Taxa de Presença</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    {/* Tabela */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Calendar className="h-5 w-5 text-[#0A1E3E]" />
+                          Sessões de Mentoria
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-16">Sessão</TableHead>
+                              <TableHead className="w-28">Data</TableHead>
+                              <TableHead className="w-24 text-center">Presença</TableHead>
+                              <TableHead className="w-28 text-center">Tarefa</TableHead>
+                              <TableHead className="w-32 text-center">Nota da Mentora</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {detalheAluno.sessoes.map((sessao) => (
+                              <TableRow key={sessao.id}>
+                                <TableCell className="font-medium">#{sessao.sessionNumber || '—'}</TableCell>
+                                <TableCell className="text-gray-500">{formatDate(sessao.sessionDate)}</TableCell>
+                                <TableCell className="text-center">
+                                  {sessao.presence === 'presente' ? (
+                                    <Badge className="bg-emerald-100 text-emerald-800">Presente</Badge>
+                                  ) : (
+                                    <Badge className="bg-red-100 text-red-800">Ausente</Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {sessao.taskStatus === 'entregue' ? (
+                                    <Badge className="bg-emerald-100 text-emerald-800">Entregue</Badge>
+                                  ) : sessao.taskStatus === 'nao_entregue' ? (
+                                    <Badge className="bg-red-100 text-red-800">Não entregue</Badge>
+                                  ) : (
+                                    <span className="text-gray-400">—</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {sessao.sessionNumber === 1 ? (
+                                    <span className="text-gray-400 text-xs italic">N/A (1ª sessão)</span>
+                                  ) : (() => {
+                                    const nota = sessao.notaEvolucao ?? sessao.engagementScore;
+                                    if (nota == null) return <span className="text-gray-400">—</span>;
+                                    const stageLabel = nota >= 9 ? 'Excelência' : nota >= 7 ? 'Avançado' : nota >= 5 ? 'Intermediário' : nota >= 3 ? 'Básico' : 'Inicial';
+                                    const stageColor = nota >= 9 ? 'bg-emerald-100 text-emerald-800' : nota >= 7 ? 'bg-blue-100 text-blue-800' : nota >= 5 ? 'bg-amber-100 text-amber-800' : nota >= 3 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800';
+                                    return (
+                                      <div className="flex flex-col items-center gap-0.5">
+                                        <span className="font-bold">{nota}/10</span>
+                                        <Badge className={`text-xs ${stageColor}`}>{stageLabel}</Badge>
+                                      </div>
+                                    );
+                                  })()}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
                   </>
                 ) : (
                   <Card>
                     <CardContent className="py-8 text-center text-gray-500">
-                      <Layers className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>Nenhum ciclo de execução definido para este aluno.</p>
-                      <p className="text-sm mt-2">Os ciclos são definidos pela mentora durante o Assessment.</p>
+                      <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>Nenhuma sessão de mentoria registrada para este aluno.</p>
                     </CardContent>
                   </Card>
                 )}
