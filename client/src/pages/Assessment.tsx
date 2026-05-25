@@ -1413,9 +1413,22 @@ function AssessmentCard({
           <div className="flex items-center gap-3">
             {compsComNivel.length > 0 && (
               <div className="text-right">
-                <div className="text-xs text-muted-foreground">Nível Geral</div>
+                <div className="flex items-center justify-end gap-1">
+                  <span className="text-xs text-muted-foreground">Nível Geral</span>
+                  <span
+                    title={`Média do progresso de aulas das ${compsComNivel.length} competências com nível identificado.\nCálculo: soma dos progressos ÷ nº de competências.\nObs: o Indicador 3 do aluno mede apenas competências 100% concluídas.`}
+                    className="cursor-help text-muted-foreground/50 hover:text-muted-foreground"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </span>
+                </div>
                 <div className={`text-lg font-bold ${mediaAtual >= 75 ? "text-emerald-600" : mediaAtual >= 50 ? "text-amber-600" : "text-red-600"}`}>
                   {mediaAtual}%
+                </div>
+                <div className="text-[10px] text-muted-foreground/60 leading-tight">
+                  média de {compsComNivel.length} comp.
                 </div>
               </div>
             )}
