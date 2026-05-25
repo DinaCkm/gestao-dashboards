@@ -902,86 +902,144 @@ export default function DashboardAluno() {
                   </Card>
                 ) : detalheAluno && Object.keys(detalheAluno.competencias).length > 0 ? (
                   <>
-                    {/* Resumo */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Card>
-                        <CardContent className="pt-6 text-center">
-                          <p className="text-3xl font-bold text-[#0A1E3E]">{detalheAluno.totalCompetencias}</p>
-                          <p className="text-sm text-gray-500">Total de Competências</p>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="pt-6 text-center">
-                          <p className="text-3xl font-bold text-emerald-600">{detalheAluno.competenciasAprovadas}</p>
-                          <p className="text-sm text-gray-500">Aprovadas (nota ≥ 7)</p>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="pt-6 text-center">
-                          <p className="text-3xl font-bold text-amber-600">{(detalheAluno?.mediaNotas ?? 0).toFixed(1)}</p>
-                          <p className="text-sm text-gray-500">Média das Notas</p>
-                        </CardContent>
-                      </Card>
-                    </div>
+                    {/* Montar mapa de notas de avaliação por nome de competência (dos ciclos do v2) */}
+                    {(() => {
+                      // Construir mapa: nomeCompetencia (lowercase) -> notaAvaliacao
+                      const notaAvaliacaoMap = new Map<string, number>();
+                      const todosCiclosComp = [
+                        ...(v2?.ciclosEmAndamento || []),
+                        ...(v2?.ciclosFinalizados || []),
+                      ];
+                      todosCiclosComp.forEach((ciclo: any) => {
+                        const compsDetalhe: any[] = ciclo.detalhes?.competencias?.competenciasDetalhe || [];
+                        compsDetalhe.forEach((cd: any) => {
+                          if (cd.notaAvaliacao != null && cd.notaAvaliacao >= 0) {
+                            const key = (cd.nome || '').toLowerCase().trim();
+                            if (!notaAvaliacaoMap.has(key)) {
+                              notaAvaliacaoMap.set(key, cd.notaAvaliacao);
+                            }
+                          }
+                        });
+                      });
 
-                    {/* Competências agrupadas por trilha */}
-                    {Object.entries(detalheAluno.competencias).map(([trilhaNome, comps]) => (
-                      <Card key={trilhaNome}>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2 text-base">
-                            <Route className="h-4 w-4 text-[#0A1E3E]" />
-                            Trilha: {trilhaNome}
-                            <Badge variant="outline" className="ml-2">{(comps as any[]).length} competências</Badge>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Competência</TableHead>
-                                <TableHead className="w-24 text-center">Status</TableHead>
-                                <TableHead className="w-20 text-center">Nota</TableHead>
-                                <TableHead className="w-20 text-center">Meta</TableHead>
-                                <TableHead className="w-24 text-center">Resultado</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {(comps as any[]).map((comp: any, idx: number) => (
-                                <TableRow key={idx}>
-                                  <TableCell className="font-medium">{comp.competenciaNome}</TableCell>
-                                  <TableCell className="text-center">
-                                    <Badge className={getStatusColor(comp.status)}>
-                                      {getStatusLabel(comp.status)}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    {comp.notaAtual ? (
-                                      <span className={`font-bold ${parseFloat(comp.notaAtual) >= 7 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        {(parseFloat(comp?.notaAtual ?? '0') ?? 0).toFixed(1)}
-                                      </span>
-                                    ) : '—'}
-                                  </TableCell>
-                                  <TableCell className="text-center text-gray-500">
-                                    {comp?.metaNota ? (parseFloat(comp.metaNota) ?? 0).toFixed(1) : '7.0'}
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    {comp.notaAtual ? (
-                                      parseFloat(comp.notaAtual) >= parseFloat(comp.metaNota || '7') ? (
-                                        <CheckCircle2 className="h-5 w-5 text-emerald-500 mx-auto" />
-                                      ) : (
-                                        <XCircle className="h-5 w-5 text-red-500 mx-auto" />
-                                      )
-                                    ) : (
-                                      <Clock className="h-5 w-5 text-gray-400 mx-auto" />
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </CardContent>
-                      </Card>
-                    ))}
+                      // Calcular totais enriquecidos
+                      const allComps = Object.values(detalheAluno.competencias).flat() as any[];
+                      const compsComNota = allComps.filter((c: any) => {
+                        const notaManual = c.notaAtual ? parseFloat(c.notaAtual) : null;
+                        const notaAuto = notaAvaliacaoMap.get((c.competenciaNome || '').toLowerCase().trim());
+                        return notaManual !== null || notaAuto !== undefined;
+                      });
+                      const totalComNota = compsComNota.length;
+                      const somaNotas = compsComNota.reduce((sum: number, c: any) => {
+                        const notaManual = c.notaAtual ? parseFloat(c.notaAtual) : null;
+                        const notaAuto = notaAvaliacaoMap.get((c.competenciaNome || '').toLowerCase().trim());
+                        return sum + (notaManual ?? notaAuto ?? 0);
+                      }, 0);
+                      const mediaCalculada = totalComNota > 0 ? somaNotas / totalComNota : 0;
+                      const aprovadas = compsComNota.filter((c: any) => {
+                        const notaManual = c.notaAtual ? parseFloat(c.notaAtual) : null;
+                        const notaAuto = notaAvaliacaoMap.get((c.competenciaNome || '').toLowerCase().trim());
+                        return (notaManual ?? notaAuto ?? 0) >= 7;
+                      }).length;
+
+                      return (
+                        <>
+                          {/* Resumo */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Card>
+                              <CardContent className="pt-6 text-center">
+                                <p className="text-3xl font-bold text-[#0A1E3E]">{detalheAluno.totalCompetencias}</p>
+                                <p className="text-sm text-gray-500">Total de Competências</p>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardContent className="pt-6 text-center">
+                                <p className="text-3xl font-bold text-emerald-600">{aprovadas}</p>
+                                <p className="text-sm text-gray-500">Aprovadas (nota ≥ 7)</p>
+                              </CardContent>
+                            </Card>
+                            <Card>
+                              <CardContent className="pt-6 text-center">
+                                <p className="text-3xl font-bold text-amber-600">{mediaCalculada.toFixed(1)}</p>
+                                <p className="text-sm text-gray-500">Média das Notas</p>
+                              </CardContent>
+                            </Card>
+                          </div>
+
+                          {/* Competências agrupadas por trilha */}
+                          {Object.entries(detalheAluno.competencias).map(([trilhaNome, comps]) => (
+                            <Card key={trilhaNome}>
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                  <Route className="h-4 w-4 text-[#0A1E3E]" />
+                                  Trilha: {trilhaNome}
+                                  <Badge variant="outline" className="ml-2">{(comps as any[]).length} competências</Badge>
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Competência</TableHead>
+                                      <TableHead className="w-24 text-center">Aulas</TableHead>
+                                      <TableHead className="w-20 text-center">Nota Avaliação</TableHead>
+                                      <TableHead className="w-20 text-center">Meta</TableHead>
+                                      <TableHead className="w-24 text-center">Resultado</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {(comps as any[]).map((comp: any, idx: number) => {
+                                      // Nota: priorizar notaAtual (manual) e complementar com notaAvaliacao dos ciclos
+                                      const notaManual = comp.notaAtual ? parseFloat(comp.notaAtual) : null;
+                                      const notaAuto = notaAvaliacaoMap.get((comp.competenciaNome || '').toLowerCase().trim());
+                                      const nota = notaManual ?? notaAuto ?? null;
+                                      const meta = parseFloat(comp.metaNota || '7');
+                                      // Buscar progresso de aulas dos ciclos
+                                      const cicloComp = todosCiclosComp
+                                        .flatMap((c: any) => c.detalhes?.competencias?.competenciasDetalhe || [])
+                                        .find((cd: any) => (cd.nome || '').toLowerCase().trim() === (comp.competenciaNome || '').toLowerCase().trim());
+                                      const aulasConcluidas = cicloComp?.aulasConcluidas ?? null;
+                                      const aulasDisponiveis = cicloComp?.aulasDisponiveis ?? null;
+                                      return (
+                                        <TableRow key={idx}>
+                                          <TableCell className="font-medium">{comp.competenciaNome}</TableCell>
+                                          <TableCell className="text-center text-gray-600 text-sm">
+                                            {aulasConcluidas !== null && aulasDisponiveis !== null
+                                              ? `${aulasConcluidas}/${aulasDisponiveis}`
+                                              : '—'}
+                                          </TableCell>
+                                          <TableCell className="text-center">
+                                            {nota !== null ? (
+                                              <span className={`font-bold ${nota >= 7 ? 'text-emerald-600' : nota > 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                                                {nota.toFixed(1)}
+                                              </span>
+                                            ) : <span className="text-gray-400 text-sm">Pendente</span>}
+                                          </TableCell>
+                                          <TableCell className="text-center text-gray-500">
+                                            {meta.toFixed(1)}
+                                          </TableCell>
+                                          <TableCell className="text-center">
+                                            {nota !== null ? (
+                                              nota >= meta ? (
+                                                <CheckCircle2 className="h-5 w-5 text-emerald-500 mx-auto" />
+                                              ) : (
+                                                <XCircle className="h-5 w-5 text-red-500 mx-auto" />
+                                              )
+                                            ) : (
+                                              <Clock className="h-5 w-5 text-gray-400 mx-auto" />
+                                            )}
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
+                                  </TableBody>
+                                </Table>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </>
+                      );
+                    })()}
                   </>
                 ) : (
                   <Card>
