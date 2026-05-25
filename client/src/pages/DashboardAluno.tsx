@@ -1117,6 +1117,8 @@ export default function DashboardAluno() {
                                 <TableCell className="text-center">
                                   {evento.status === 'presente' ? (
                                     <Badge className="bg-emerald-100 text-emerald-800">Presente</Badge>
+                                  ) : evento.status === 'pendente' ? (
+                                    <Badge className="bg-gray-100 text-gray-500">Aguardando</Badge>
                                   ) : (
                                     <Badge className="bg-red-100 text-red-800">Ausente</Badge>
                                   )}

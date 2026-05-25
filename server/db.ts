@@ -3979,15 +3979,28 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
   }
 
   // Montar lista unificada: eventos deduplicados com participação + eventos sem participação (ausentes)
+  const hojeEvt = new Date();
+  hojeEvt.setHours(0, 0, 0, 0);
   const eventosDetalhados = deduplicatedProgramEvents.map(evt => {
     const part = participationMap.get(evt.id);
+    // Se não há participação registrada, verificar se o evento ainda não ocorreu
+    let statusFinal: string;
+    if (part?.status) {
+      statusFinal = part.status;
+    } else if (evt.eventDate) {
+      const dataEvento = new Date(evt.eventDate);
+      dataEvento.setHours(0, 0, 0, 0);
+      statusFinal = dataEvento > hojeEvt ? 'pendente' : 'ausente';
+    } else {
+      statusFinal = 'ausente';
+    }
     return {
       id: part?.id || 0,
       eventId: evt.id,
       titulo: evt.title || `Evento #${evt.id}`,
       tipo: evt.eventType || 'webinar',
       data: evt.eventDate || null,
-      status: part?.status || 'ausente',
+      status: statusFinal,
     };
   });
 
@@ -4028,7 +4041,8 @@ export async function getAlunoDetalheCompleto(alunoId: number) {
       ? planoItems.reduce((sum, p) => sum + (p.notaAtual ? parseFloat(p.notaAtual) : 0), 0) / planoItems.filter(p => p.notaAtual).length
       : 0,
     eventos: eventosDetalhados,
-    totalEventos: eventosDetalhados.length,
+    // Eventos passados (ocorridos): excluir os pendentes (futuros) do total e da taxa
+    totalEventos: eventosDetalhados.filter(e => e.status !== 'pendente').length,
     eventosPresente: eventosDetalhados.filter(e => e.status === 'presente').length,
     ciclos: ciclos.map(c => ({
       id: c.id,
